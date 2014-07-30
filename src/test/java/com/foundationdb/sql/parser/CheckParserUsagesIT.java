@@ -175,6 +175,9 @@ public class CheckParserUsagesIT {
         }
     }
 
+    /**
+     * Finds all fields and methods adding them to a list of nodes
+     */
     public static class PropertyFinder extends ClassVisitor {
 
         private Map<String, NodeClass> nodes;
@@ -229,6 +232,9 @@ public class CheckParserUsagesIT {
         }
     }
 
+    /**
+     * Marks all nodes & there members as referenced, if they are.
+     */
     public static class UsageClassVisitor extends ClassVisitor{
 
         private Map<String, NodeClass> nodes;
@@ -552,9 +558,6 @@ public class CheckParserUsagesIT {
             }
         }
 
-        /**
-         * Created by scott on 7/30/14.
-         */
         public static abstract class Member {
             protected final String className;
             protected final String name;
@@ -584,8 +587,10 @@ public class CheckParserUsagesIT {
             protected String sqlColumnNames() {
                 return "DeclaredType,SubType,PropertyType,IsReferenced,Name";
             }
+
             protected String sqlColumnValues(String forType) {
-                return "'" + getClassName() + "','" + forType + "','" + getPropertyType() + "'," + isReferenced + ",'" + name + "'";
+                return "'" + getClassName() + "','" + forType + "','" + getPropertyType() + "'," +
+                        isReferenced + ",'" + name + "'";
             }
 
             protected abstract String getPropertyType();
