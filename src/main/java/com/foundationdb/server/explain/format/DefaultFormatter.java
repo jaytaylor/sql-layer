@@ -317,7 +317,8 @@ public class DefaultFormatter
     protected void appendScanOperator(String name, Attributes atts) {
         if (name.equals("IndexScan_Default")) {
             appendIndexScanOperator(atts);
-            if (levelOfDetail != LevelOfDetail.BRIEF) {
+            if ((levelOfDetail == LevelOfDetail.VERBOSE_WITHOUT_COST) ||
+                    (levelOfDetail == LevelOfDetail.VERBOSE)) {
                 if((Long)atts.getValue(Label.PIPELINE) !=1){
                     sb.append(", Pipelining ");
                     sb.append((long)(atts.getValue(Label.PIPELINE)));
@@ -520,10 +521,12 @@ public class DefaultFormatter
                 append(atts.getAttribute(Label.ANCESTOR_TYPE));
                 sb.append(')');
             }
-            if( name.equals("GroupLookup_Default" ) || name.equals("AncestorLookup_Nested") || name.equals("BranchLookup_Nested")){
-                if((Long)atts.getValue(Label.PIPELINE) != 1){
-                    sb.append(", Pipelining ");
-                    sb.append((long)(atts.getValue(Label.PIPELINE)));
+            if(levelOfDetail != LevelOfDetail.NORMAL) {
+                if (name.equals("GroupLookup_Default") || name.equals("AncestorLookup_Nested") || name.equals("BranchLookup_Nested")) {
+                    if ((Long) atts.getValue(Label.PIPELINE) != 1) {
+                        sb.append(", Pipelining ");
+                        sb.append((long) (atts.getValue(Label.PIPELINE)));
+                    }
                 }
             }
         }
@@ -748,7 +751,7 @@ public class DefaultFormatter
                         sb.append(", ");
                     }
                 }
-                if((Boolean)atts.getValue(Label.PIPELINE)){
+                if(levelOfDetail != LevelOfDetail.NORMAL && (Boolean)atts.getValue(Label.PIPELINE)){
                     sb.append("Pipelining");
                 } else if (atts.containsKey(Label.EXPRESSIONS) && atts.get(Label.EXPRESSIONS).size() > 0){
                     sb.setLength(sb.length() - 2);
@@ -787,7 +790,8 @@ public class DefaultFormatter
     }
 
     protected void appendUnionOperator(String name, Attributes atts) {
-        if (levelOfDetail != LevelOfDetail.BRIEF) {
+        if ((levelOfDetail == LevelOfDetail.VERBOSE_WITHOUT_COST) ||
+                (levelOfDetail == LevelOfDetail.VERBOSE)) {
             if((Boolean)atts.getValue(Label.PIPELINE)){
                 sb.append("Pipelining");
             }
