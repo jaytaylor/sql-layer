@@ -29,7 +29,6 @@ import com.foundationdb.server.error.UnsupportedSQLException;
 import org.junit.Test;
 
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.FullTextIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
@@ -436,17 +435,6 @@ public class TableDDLIT extends AISDDLITBase {
         assertTrue (index.isSpatial());
     }
     
-    @Test
-    public void createFullTextIndexTable() throws Exception {
-        String sql = "CREATE TABLE test.t17 (c1 varchar(1000), INDEX t17_ft (FULL_TEXT(c1)))";
-        executeDDL(sql);
-        Table table = ais().getTable("test","t17");
-        assertNull (table.getIndex("t17_ft"));
-        assertEquals (1, table.getFullTextIndexes().size());
-        FullTextIndex index = table.getFullTextIndexes().iterator().next();
-        assertNotNull (table.getFullTextIndex("t17_ft"));
-    }
-
     @Test
     public void testCreateNationalChar() throws Exception {
         String sql1 = "CREATE TABLE test.T1 (c1 NATIONAL CHAR(10), c2 NATIONAL CHARACTER VARYING(10), c3 LONG NVARCHAR) ";
