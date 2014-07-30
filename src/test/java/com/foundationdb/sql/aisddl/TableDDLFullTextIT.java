@@ -41,7 +41,7 @@ public class TableDDLFullTextIT extends AISDDLITBase {
 
     @Override
     protected Map<String, String> startupConfigProperties() {
-        return uniqueStartupConfigProperties(TableDDLIT.class);
+        return uniqueStartupConfigProperties(TableDDLFullTextIT.class);
     }
 
     @Test
@@ -54,7 +54,4 @@ public class TableDDLFullTextIT extends AISDDLITBase {
         FullTextIndex index = table.getFullTextIndexes().iterator().next();
         assertNotNull (table.getFullTextIndex("t17_ft"));
     }
-    
-    
-
 }

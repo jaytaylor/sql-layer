@@ -364,8 +364,6 @@ public class TableDDLIT extends AISDDLITBase {
         executeDDL(sql);
         
         assertEquals (0, ais().getSequences().size());
-        
-
     }
     
     @Test
