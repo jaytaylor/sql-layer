@@ -303,8 +303,6 @@ public final class SingleIndexScan extends IndexScan implements EqualityColumnsS
         int nequals = 0;
         if (equalityComparands != null)
             nequals = equalityComparands.size();
-        if ((conditionRange != null) && conditionRange.isAllSingle())
-            nequals++;
         return nequals;
     }
 
