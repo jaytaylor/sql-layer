@@ -35,6 +35,10 @@ import static org.junit.Assert.assertTrue;
 
 public class CheckParserUsagesIT {
 
+
+    private static boolean printCsv = false;
+    private static boolean printSql = false;
+
     private static Set<Class<? extends QueryTreeNode>> queryTreeNodes;
     private static Collection<String> sqlLayerClassPaths;
     private PropertyFinder finder;
@@ -119,9 +123,33 @@ public class CheckParserUsagesIT {
                 System.exit(1);
             }
         }
+        logHeaderInfo();
         Collection<String> unused = new TreeSet<>();
-        boolean printCsv = false;
-        boolean printSql = false;
+        for (NodeClass nodeClass : finder.getNodes().values()) {
+            if (nodeClass.isReferenced && nodeClass.isConcrete()) {
+                String name = nodeClass.getJavaName();
+                for (NodeClass.Field field : nodeClass.fields) {
+                    if (!field.isReferenced) {
+                        unused.add(name + "." + field.name);
+                    }
+                    logMember(name, field);
+                }
+                for (NodeClass.Method method : nodeClass.methods) {
+                    if (!method.isReferenced) {
+                        unused.add(method.getJavaString(name) + " -- " + method.descriptor);
+                    }
+                    logMember(name, method);
+                }
+            }
+        }
+        // TODO eventually we want the list to be empty, either by removing methods in initializeFinder, or actually
+        // using the methods
+        // assertThat(unused, empty());
+
+        assertThat(unused.size(), equalTo(305));
+    }
+
+    public void logHeaderInfo() {
         if (printCsv) {
             System.out.println("DeclaredType,SubType,PropertyType,IsReferenced,Name,Java Declaration,Code To Remove");
         } else if (printSql) {
@@ -141,38 +169,14 @@ public class CheckParserUsagesIT {
                     "PropertyType VARCHAR(25),IsReferenced BOOLEAN,Name VARCHAR(100)," +
                     "Java VARCHAR(200),Removal VARCHAR(200));");
         }
-        for (NodeClass nodeClass : finder.getNodes().values()) {
-            if (nodeClass.isReferenced && nodeClass.isConcrete()) {
-                String name = nodeClass.getJavaName();
-                for (NodeClass.Field field : nodeClass.fields) {
-                    if (!field.isReferenced) {
-                        unused.add(name + "." + field.name);
-                    }
-                    if (printCsv) {
-                        System.out.println(field.getClassName() + "," + name + ",FIELD," + field.isReferenced + "," + field.name);
-                    } else if (printSql) {
-                        System.out.println(field.sqlInsertStatement("fields", name));
-                    }
-                }
-                for (NodeClass.Method method : nodeClass.methods) {
-                    if (!method.isReferenced) {
-                        unused.add(method.getJavaString(name) + " -- " + method.descriptor);
-                    }
-                    if (printCsv) {
-                        System.out.println(method.getClassName() + "," + name + ",METHOD," + method.isReferenced + ","
-                                + method.name + ",\"" + method.getJavaString(null) + "\",\""
-                                + ".removeMethod(\"\"" + method.name + "\"\", \"\"" + method.descriptor + ")\"");
-                    } else if (printSql) {
-                        System.out.println(method.sqlInsertStatement("methods", name));
-                    }
-                }
-            }
-        }
-        // TODO eventually we want the list to be empty, either by removing methods in initializeFinder, or actually
-        // using the methods
-        // assertThat(unused, empty());
+    }
 
-        assertThat(unused.size(), equalTo(305));
+    public void logMember(String typeName, NodeClass.Member member) {
+        if (printCsv) {
+            System.out.println(member.csvString(typeName));
+        } else if (printSql) {
+            System.out.println(member.sqlInsertStatement("methods", typeName));
+        }
     }
 
     public static class PropertyFinder extends ClassVisitor {
@@ -493,6 +497,12 @@ public class CheckParserUsagesIT {
             }
 
             @Override
+            public String csvString(String forType) {
+                return super.csvString(forType) + ",\"" + getJavaString(null) + "\",\""
+                                + ".removeMethod(\"\"" + name + "\"\", \"\"" + descriptor + ")\"";
+            }
+
+            @Override
             public String sqlInsertStatement(String table, String forType) {
                 return "INSERT INTO \"" + table +
                         "\" (" + sqlColumnNames() + ",Java,Removal) VALUES (" + sqlColumnValues(forType) + ",'" +
@@ -561,6 +571,10 @@ public class CheckParserUsagesIT {
 
             public void reference() {
                 isReferenced = true;
+            }
+
+            public String csvString(String forType) {
+                return getClassName() + "," + forType + "," + getPropertyType() + "," + isReferenced + "," + name;
             }
 
             public abstract String sqlInsertStatement(String table, String forType);
