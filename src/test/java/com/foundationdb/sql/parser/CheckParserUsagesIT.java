@@ -30,6 +30,8 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.reflections.Reflections;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -48,9 +50,9 @@ import static org.junit.Assert.assertThat;
 
 public class CheckParserUsagesIT {
 
-
-    private static boolean printCsv = false;
-    private static boolean printSql = false;
+    private static Logger logger = LoggerFactory.getLogger(CheckParserUsagesIT.class);
+    private static Logger csvLogger = LoggerFactory.getLogger(CheckParserUsagesIT.class.getName() + ".csv");
+    private static Logger sqlLogger = LoggerFactory.getLogger(CheckParserUsagesIT.class.getName() + ".sql");
 
     private static Set<Class<? extends QueryTreeNode>> queryTreeNodes;
     private static Collection<String> sqlLayerClassPaths;
@@ -66,7 +68,6 @@ public class CheckParserUsagesIT {
     @BeforeClass
     public static void getSqlLayerClassNames() throws Exception {
         sqlLayerClassPaths = getClassesInPackage("com.foundationdb.sql", "com.foundationdb.sql.Main");
-        System.out.println(sqlLayerClassPaths);
     }
 
     private static Collection<String> getClassesInPackage(String packageName, String sampleClass) {
@@ -133,7 +134,9 @@ public class CheckParserUsagesIT {
                 throw new Exception("Failed to check against class", e);
             }
         }
-        logHeaderInfo();
+        StringBuilder sql = new StringBuilder("Sql\n");
+        StringBuilder csv = new StringBuilder("\n");
+        logHeaderInfo(sql, csv);
         Collection<String> unused = new TreeSet<>();
         for (NodeClass nodeClass : finder.getNodes().values()) {
             if (nodeClass.isReferenced && nodeClass.isConcrete()) {
@@ -142,15 +145,21 @@ public class CheckParserUsagesIT {
                     if (!field.isReferenced) {
                         unused.add(name + "." + field.name);
                     }
-                    logMember(name, field);
+                    logMember(name, field, sql, csv);
                 }
                 for (NodeClass.Method method : nodeClass.methods) {
                     if (!method.isReferenced) {
                         unused.add(method.getJavaString(name) + " -- " + method.descriptor);
                     }
-                    logMember(name, method);
+                    logMember(name, method, sql, csv);
                 }
             }
+        }
+        if (sqlLogger.isDebugEnabled()) {
+            sqlLogger.debug(sql.toString());
+        }
+        if (csvLogger.isDebugEnabled()) {
+            csvLogger.debug(csv.toString());
         }
         // TODO eventually we want the list to be empty, either by removing methods in initializeFinder, or actually
         // using the methods
@@ -159,10 +168,11 @@ public class CheckParserUsagesIT {
         assertThat(unused.size(), equalTo(305));
     }
 
-    public void logHeaderInfo() {
-        if (printCsv) {
-            System.out.println("DeclaredType,SubType,PropertyType,IsReferenced,Name,Java Declaration,Code To Remove");
-        } else if (printSql) {
+    public void logHeaderInfo(StringBuilder sql, StringBuilder csv) {
+        if (csvLogger.isDebugEnabled()) {
+            csv.append("DeclaredType,SubType,PropertyType,IsReferenced,Name,Java Declaration,Code To Remove\n");
+        }
+        if (sqlLogger.isDebugEnabled()) {
             // helpful sql:
             // SELECT declaredtype,name,cnr,cr FROM
             //     (SELECT declaredtype,name,count(*) as cr FROM methods
@@ -173,19 +183,22 @@ public class CheckParserUsagesIT {
             //     USING(declaredtype,name) ORDER BY cnr;
             //
             // SELECT declaredtype,name,java,removal FROM methods WHERE declaredtype = subtype AND isreferenced IS FALSE;
-            System.out.println("CREATE TABLE fields (DeclaredType VARCHAR(100),SubType VARCHAR(100)," +
-                    "PropertyType VARCHAR(25),IsReferenced BOOLEAN,Name VARCHAR(100));");
-            System.out.println("CREATE TABLE methods (DeclaredType VARCHAR(100),SubType VARCHAR(100)," +
+            sql.append("CREATE TABLE fields (DeclaredType VARCHAR(100),SubType VARCHAR(100)," +
+                    "PropertyType VARCHAR(25),IsReferenced BOOLEAN,Name VARCHAR(100));\n");
+            sql.append("CREATE TABLE methods (DeclaredType VARCHAR(100),SubType VARCHAR(100)," +
                     "PropertyType VARCHAR(25),IsReferenced BOOLEAN,Name VARCHAR(100)," +
-                    "Java VARCHAR(200),Removal VARCHAR(200));");
+                    "Java VARCHAR(200),Removal VARCHAR(200));\n");
         }
     }
 
-    public void logMember(String typeName, NodeClass.Member member) {
-        if (printCsv) {
-            System.out.println(member.csvString(typeName));
-        } else if (printSql) {
-            System.out.println(member.sqlInsertStatement("methods", typeName));
+    public void logMember(String typeName, NodeClass.Member member, StringBuilder sql, StringBuilder csv) {
+        if (csvLogger.isDebugEnabled()) {
+            csv.append(member.csvString(typeName));
+            csv.append("\n");
+        }
+        if (sqlLogger.isDebugEnabled()) {
+            sql.append(member.sqlInsertStatement("methods", typeName));
+            sql.append("\n");
         }
     }
 
@@ -374,7 +387,9 @@ public class CheckParserUsagesIT {
             if ((access & Opcodes.ACC_PUBLIC) > 0) {
                 if ((access & Opcodes.ACC_STATIC) == 0) {
                     fields.add(new Field(this.name, fieldName));
-                    System.out.println("WARNING " + getJavaName() + " has a public field: " + fieldName);
+                    if (logger.isWarnEnabled()) {
+                        logger.warn(getJavaName() + " has a public field: " + fieldName);
+                    }
                 }
             }
         }
