@@ -135,6 +135,10 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
     public abstract boolean isHighInclusive();
     public abstract void visitComparands(ExpressionRewriteVisitor v);
     public abstract void visitComparands(ExpressionVisitor v);
+
+    /**
+     * The index of the first column that may have more than one result
+     */
     public abstract int getNEquality();
     public abstract boolean isAscendingAt(int index);
     public abstract boolean isRecoverableAt(int index);
