@@ -317,6 +317,12 @@ public class DefaultFormatter
     protected void appendScanOperator(String name, Attributes atts) {
         if (name.equals("IndexScan_Default")) {
             appendIndexScanOperator(atts);
+            if (levelOfDetail != LevelOfDetail.BRIEF) {
+                if((Long)atts.getValue(Label.PIPELINE) !=1){
+                    sb.append(", Pipelining ");
+                    sb.append((long)(atts.getValue(Label.PIPELINE)));
+                }
+            }
         }
         else if (name.equals("ValuesScan_Default")) {
             if (levelOfDetail != LevelOfDetail.BRIEF) {
@@ -508,11 +514,18 @@ public class DefaultFormatter
             sb.append(", ");
         }
         sb.setLength(sb.length() - 2);
-        if ((levelOfDetail != LevelOfDetail.BRIEF) && 
-            atts.containsKey(Label.ANCESTOR_TYPE)) {
-            sb.append(" (via ");
-            append(atts.getAttribute(Label.ANCESTOR_TYPE));
-            sb.append(')');
+        if ((levelOfDetail != LevelOfDetail.BRIEF)){
+            if(atts.containsKey(Label.ANCESTOR_TYPE)) {
+                sb.append(" (via ");
+                append(atts.getAttribute(Label.ANCESTOR_TYPE));
+                sb.append(')');
+            }
+            if( name.equals("GroupLookup_Default" ) || name.equals("AncestorLookup_Nested") || name.equals("BranchLookup_Nested")){
+                if((Long)atts.getValue(Label.PIPELINE) != 1){
+                    sb.append(", Pipelining ");
+                    sb.append((long)(atts.getValue(Label.PIPELINE)));
+                }
+            }
         }
     }
 
@@ -608,6 +621,9 @@ public class DefaultFormatter
                 if ((levelOfDetail == LevelOfDetail.VERBOSE_WITHOUT_COST) ||
                     (levelOfDetail == LevelOfDetail.VERBOSE)) {
                     append(atts.getAttribute(Label.BINDING_POSITION));
+                    if((Boolean)atts.getValue(Label.PIPELINE)){
+                        sb.append(", Pipelining");
+                    }
                 }
             }
         }
@@ -731,6 +747,10 @@ public class DefaultFormatter
                         append(ex);
                         sb.append(", ");
                     }
+                }
+                if((Boolean)atts.getValue(Label.PIPELINE)){
+                    sb.append("Pipelining");
+                } else if (atts.containsKey(Label.EXPRESSIONS) && atts.get(Label.EXPRESSIONS).size() > 0){
                     sb.setLength(sb.length() - 2);
                 }
             }
@@ -767,6 +787,11 @@ public class DefaultFormatter
     }
 
     protected void appendUnionOperator(String name, Attributes atts) {
+        if (levelOfDetail != LevelOfDetail.BRIEF) {
+            if((Boolean)atts.getValue(Label.PIPELINE)){
+                sb.append("Pipelining");
+            }
+        }
     }
 
     protected void appendBufferOperator(String name, Attributes atts) {
