@@ -27,6 +27,8 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -106,8 +108,7 @@ public class CheckParserUsagesIT {
             }
             total++;
         }
-        assertTrue(fullyUsed + " < " + total, fullyUsed < total);
-        System.out.println(fullyUsed + " / " + total);
+        assertThat(fullyUsed, lessThan(total));
         for (String usageClass : sqlLayerClassPaths) {
             try {
                 ClassReader reader = new ClassReader(new FileInputStream(usageClass));
