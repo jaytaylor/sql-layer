@@ -47,7 +47,6 @@ public class TableDDLIT extends AISDDLITBase {
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider();
-               // .bindAndRequire(FullTextIndexService.class, FullTextIndexServiceImpl.class);
     }
 
     @Override
