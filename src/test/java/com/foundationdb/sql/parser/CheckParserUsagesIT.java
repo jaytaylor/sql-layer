@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertThat;
@@ -100,7 +99,7 @@ public class CheckParserUsagesIT {
 
     @Test
     public void testAllReferencedClassesHaveReferencedGetters() {
-        PropertyChecker checker = new PropertyChecker(finder.getNodes());
+        UsageClassVisitor checker = new UsageClassVisitor(finder.getNodes());
         int fullyUsed = 0;
         int total = 0;
         Iterator<Map.Entry<String, NodeClass>> iterator = finder.getNodes().entrySet().iterator();
@@ -233,11 +232,11 @@ public class CheckParserUsagesIT {
         }
     }
 
-    public static class PropertyChecker extends ClassVisitor{
+    public static class UsageClassVisitor extends ClassVisitor{
 
         private Map<String, NodeClass> nodes;
 
-        public PropertyChecker(Map<String, NodeClass> nodes) {
+        public UsageClassVisitor(Map<String, NodeClass> nodes) {
             super(Opcodes.ASM5);
             this.nodes = nodes;
         }
