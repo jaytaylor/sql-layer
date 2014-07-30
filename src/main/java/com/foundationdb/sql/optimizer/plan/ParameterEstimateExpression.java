@@ -24,11 +24,13 @@ import com.foundationdb.sql.types.DataTypeDescriptor;
 public class ParameterEstimateExpression extends ParameterExpression {
 
     private Object value;
+    private boolean isSet;
 
     public ParameterEstimateExpression(int position,
             DataTypeDescriptor sqlType, ValueNode sqlSource, TInstance type) {
         super(position, sqlType, sqlSource, type);
         this.value = null;
+        isSet = false;
     }
 
     public ParameterEstimateExpression(int position, DataTypeDescriptor sqlType,
@@ -39,9 +41,14 @@ public class ParameterEstimateExpression extends ParameterExpression {
 
     public void setValue(Object value) {
         this.value = value;
+        isSet = true;
     }
 
     public Object getValue() {
         return value;
+    }
+
+    public boolean isSet() {
+        return isSet;
     }
 }
