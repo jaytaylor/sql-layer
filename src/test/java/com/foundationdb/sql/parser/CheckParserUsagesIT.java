@@ -118,9 +118,8 @@ public class CheckParserUsagesIT {
                 System.exit(1);
             }
         }
-        int fullyUsed2 = 0;
         Collection<String> unused = new TreeSet<>();
-        System.out.println("DeclaredType,SubType,PropertyType,Name,Java Declaration,Code To Remove");
+        System.out.println("DeclaredType,SubType,PropertyType,Referenced?,Name,Java Declaration,Code To Remove");
         for (NodeClass nodeClass : finder.getNodes().values()) {
             if (nodeClass.isReferenced && nodeClass.isConcrete()) {
                 String name = nodeClass.getJavaName();
