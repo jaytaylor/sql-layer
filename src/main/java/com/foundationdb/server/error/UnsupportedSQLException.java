@@ -21,10 +21,20 @@ import com.foundationdb.sql.parser.QueryTreeNode;
 
 public class UnsupportedSQLException extends BaseSQLException {
     public UnsupportedSQLException(String msg, QueryTreeNode sql) {
-        super(ErrorCode.UNSUPPORTED_SQL, msg, sql);
+        super(ErrorCode.UNSUPPORTED_SQL, combine(msg, sql), getErrorPosition(sql));
     }
     
     public UnsupportedSQLException(String msg) {
-        super(ErrorCode.UNSUPPORTED_SQL, msg, -1);
+        this(msg, null);
+    }
+
+    private static String combine(String msg, QueryTreeNode sql) {
+        assert msg != null;
+        String sqlMsg = formatSQL(sql);
+        if(sqlMsg == null) {
+            return msg;
+        } else {
+            return String.format("%s: %s", msg, sqlMsg);
+        }
     }
 }
