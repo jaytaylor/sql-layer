@@ -120,7 +120,25 @@ public class CheckParserUsagesIT {
             }
         }
         Collection<String> unused = new TreeSet<>();
-        System.out.println("DeclaredType,SubType,PropertyType,Referenced?,Name,Java Declaration,Code To Remove");
+        boolean printCsv = false;
+        boolean printSql = false;
+        if (printCsv) {
+            System.out.println("DeclaredType,SubType,PropertyType,IsReferenced,Name,Java Declaration,Code To Remove");
+        } else if (printSql) {
+            // helpful sql:
+            // SELECT declaredtype,name,cnr,cr FROM
+            //     (SELECT declaredtype,name,count(*) as cr FROM methods
+            //          WHERE IsReferenced IS TRUE GROUP BY declaredtype,name) AS ReferencedCounts
+            //     RIGHT OUTER JOIN
+            //     (SELECT declaredtype,name,COUNT(*) as cnr FROM methods
+            //          WHERE IsReferenced IS FALSE GROUP BY declaredtype,name) AS UnReferencedCounts
+            //     USING(declaredtype,name) ORDER BY cnr;
+            System.out.println("CREATE TABLE fields (DeclaredType VARCHAR(100),SubType VARCHAR(100)," +
+                    "PropertyType VARCHAR(25),IsReferenced BOOLEAN,Name VARCHAR(100));");
+            System.out.println("CREATE TABLE methods (DeclaredType VARCHAR(100),SubType VARCHAR(100)," +
+                    "PropertyType VARCHAR(25),IsReferenced BOOLEAN,Name VARCHAR(100)," +
+                    "Java VARCHAR(200),Removal VARCHAR(200));");
+        }
         for (NodeClass nodeClass : finder.getNodes().values()) {
             if (nodeClass.isReferenced && nodeClass.isConcrete()) {
                 String name = nodeClass.getJavaName();
@@ -128,15 +146,23 @@ public class CheckParserUsagesIT {
                     if (!field.isReferenced) {
                         unused.add(name + "." + field.name);
                     }
-                    System.out.println(field.className + "," + name + ",FIELD," + field.isReferenced + "," + field.name);
+                    if (printCsv) {
+                        System.out.println(field.getClassName() + "," + name + ",FIELD," + field.isReferenced + "," + field.name);
+                    } else if (printSql) {
+                        System.out.println(field.sqlInsertStatement("fields", name));
+                    }
                 }
                 for (NodeClass.Method method : nodeClass.methods) {
                     if (!method.isReferenced) {
                         unused.add(method.getJavaString(name) + " -- " + method.descriptor);
                     }
-                    System.out.println(method.className + "," + name + ",METHOD," + method.isReferenced + ","
-                            + method.name + ",\"" + method.getJavaString(null) + "\",\""
-                            + ".removeMethod(\"\"" + method.name + "\"\", \"\"" + method.descriptor + ")\"");
+                    if (printCsv) {
+                        System.out.println(method.getClassName() + "," + name + ",METHOD," + method.isReferenced + ","
+                                + method.name + ",\"" + method.getJavaString(null) + "\",\""
+                                + ".removeMethod(\"\"" + method.name + "\"\", \"\"" + method.descriptor + ")\"");
+                    } else if (printSql) {
+                        System.out.println(method.sqlInsertStatement("methods", name));
+                    }
                 }
             }
         }
@@ -462,12 +488,34 @@ public class CheckParserUsagesIT {
                 return stringBuilder.toString();
             }
 
+            @Override
+            public String sqlInsertStatement(String table, String forType) {
+                return "INSERT INTO \"" + table +
+                        "\" (" + sqlColumnNames() + ",Java,Removal) VALUES (" + sqlColumnValues(forType) + ",'" +
+                        getJavaString(null) + "','" + ".removeMethod(\"" + name + "\", \"" + descriptor + "\")');";
+            }
+
+            @Override
+            protected String getPropertyType() {
+                return "Method";
+            }
         }
 
         public static class Field extends Member {
 
             public Field(String className, String name) {
                 super(className, name);
+            }
+
+            @Override
+            public String sqlInsertStatement(String table, String forType) {
+                return "INSERT INTO \"" + table +
+                        "\" (" + sqlColumnNames() + ") VALUES (" + sqlColumnValues(forType) + ");";
+            }
+
+            @Override
+            protected String getPropertyType() {
+                return "Field";
             }
 
             public Field(Field field) {
@@ -483,7 +531,7 @@ public class CheckParserUsagesIT {
         /**
          * Created by scott on 7/30/14.
          */
-        public static class Member {
+        public static abstract class Member {
             protected final String className;
             protected final String name;
             boolean isReferenced;
@@ -509,6 +557,21 @@ public class CheckParserUsagesIT {
 
             public void reference() {
                 isReferenced = true;
+            }
+
+            public abstract String sqlInsertStatement(String table, String forType);
+
+            protected String sqlColumnNames() {
+                return "DeclaredType,SubType,PropertyType,IsReferenced,Name";
+            }
+            protected String sqlColumnValues(String forType) {
+                return "'" + getClassName() + "','" + forType + "','" + getPropertyType() + "'," + isReferenced + ",'" + name + "'";
+            }
+
+            protected abstract String getPropertyType();
+
+            public String getClassName() {
+                return className.replaceAll("/", ".");
             }
         }
     }
