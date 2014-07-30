@@ -34,6 +34,7 @@ import com.foundationdb.ais.model.DefaultIndexNameGenerator;
 import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.ais.model.IndexNameGenerator;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.Routine;
@@ -296,10 +297,11 @@ public class AlterTableDDL {
                             indexChanges.add(TableChange.createDrop(name));
                         }
                     } else if (cdn.getConstraintType() == ConstraintType.PRIMARY_KEY) {
-                        if (origTable.getPrimaryKey() == null && origTable.getPrimaryKeyIncludingInternal().isAkibanPK())
+                        if (origTable.getPrimaryKeyIncludingInternal().isAkibanPK())
                         {
                             columnChanges.add(TableChange.createDrop(Column.AKIBAN_PK_NAME));
-                            indexChanges.add(TableChange.createDrop(Index.PRIMARY));
+                            String indexName = origTable.getPrimaryKeyIncludingInternal().getIndex().getIndexName().getName();
+                            indexChanges.add(TableChange.createDrop(indexName));
                         }
                         conDefNodes.add(cdn);
                     } else {

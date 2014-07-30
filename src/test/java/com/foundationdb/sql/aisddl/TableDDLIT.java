@@ -25,6 +25,7 @@ import static org.junit.Assert.assertNull;
 
 import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.server.error.UnsupportedSQLException;
+
 import org.junit.Test;
 
 import com.foundationdb.ais.model.Column;
@@ -32,7 +33,7 @@ import com.foundationdb.ais.model.FullTextIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.server.error.MultipleIdentityColumnsException;
+import com.foundationdb.server.error.DuplicateSequenceNameException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 
@@ -392,7 +393,7 @@ public class TableDDLIT extends AISDDLITBase {
     }
     
     
-    @Test (expected=MultipleIdentityColumnsException.class)
+    @Test (expected=DuplicateSequenceNameException.class)
     public void createDoubleSerialTable() throws Exception {
         String sql = "CREATE TABLE test.t13 (c1 SERIAL PRIMARY KEY, c2 SERIAL)";
         executeDDL(sql);

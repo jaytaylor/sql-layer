@@ -238,7 +238,7 @@ public class AISMerge {
                 } else {
                     indexesToFix.put(newIndex.getIndexName(), new IndexInfo(null, null));
                 }
-                LOG.info("Indexes to fix: {} -> {}", oldName,  newIndex.getIndexName() );
+                LOG.debug("Indexes to fix: {} -> {}", oldName,  newIndex.getIndexName() );
             }
 
             for(TableName name : desc.getDroppedSequences()) {

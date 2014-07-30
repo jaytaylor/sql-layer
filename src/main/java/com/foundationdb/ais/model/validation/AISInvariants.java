@@ -164,9 +164,7 @@ public class AISInvariants {
     public static void checkJoinTo(Join join, TableName childName, boolean isInternal) {
         TableName parentName = (join != null) ? join.getParent().getName() : null;
         if(parentName != null) {
-            String parentSchema = parentName.getSchemaName();
-            boolean inAIS = (TableName.INFORMATION_SCHEMA.equals(parentSchema) ||
-                             TableName.SECURITY_SCHEMA.equals(parentSchema));
+            boolean inAIS = parentName.inSystemSchema();
             if(inAIS && !isInternal) {
                 throw new JoinToProtectedTableException(parentName, childName);
             } else if(!inAIS && isInternal) {
