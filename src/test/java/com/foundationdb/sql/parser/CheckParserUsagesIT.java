@@ -122,22 +122,23 @@ public class CheckParserUsagesIT {
         Collection<String> unused = new TreeSet<>();
         System.out.println("DeclaredType,SubType,PropertyType,Name,Java Declaration,Code To Remove");
         for (NodeClass nodeClass : finder.getNodes().values()) {
-            if (!nodeClass.fullyUsed()) {
-                if (nodeClass.isReferenced && nodeClass.isConcrete()) {
-                    String name = nodeClass.getJavaName();
-                    for (NodeClass.Field field : nodeClass.fields) {
+            if (nodeClass.isReferenced && nodeClass.isConcrete()) {
+                String name = nodeClass.getJavaName();
+                for (NodeClass.Field field : nodeClass.fields) {
+                    if (!field.isReferenced) {
                         unused.add(name + "." + field.name);
-                        // technically incorrect, not checking for public field inheritance here
-                        System.out.println(nodeClass.name + "," + name + ",FIELD," + field);
                     }
-                    for (NodeClass.Method method : nodeClass.members) {
-                        unused.add(method.getJavaString(name) + " -- " + method.descriptor);
-                        System.out.println(method.className + "," + name + ",METHOD," + method.name + ",\"" + method.getJavaString(null) + "\",\""
-                                + ".removeMethod(\"\"" + method.name + "\"\", \"\"" + method.descriptor + ")\"");
-                    }
+                    // technically incorrect, not checking for public field inheritance here
+                    System.out.println(field.className + "," + name + ",FIELD," + field.isReferenced + "," + field.name);
                 }
-            } else {
-                fullyUsed2++;
+                for (NodeClass.Method method : nodeClass.methods) {
+                    if (!method.isReferenced) {
+                        unused.add(method.getJavaString(name) + " -- " + method.descriptor);
+                    }
+                    System.out.println(method.className + "," + name + ",METHOD," + method.isReferenced + ","
+                            + method.name + ",\"" + method.getJavaString(null) + "\",\""
+                            + ".removeMethod(\"\"" + method.name + "\"\", \"\"" + method.descriptor + ")\"");
+                }
             }
         }
         System.out.println("Unused: " + unused.size());
@@ -269,7 +270,7 @@ public class CheckParserUsagesIT {
             @Override
             public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
                 if (nodes.containsKey(owner)) {
-                    nodes.get(owner).usedMethod(name, desc);
+                    nodes.get(owner).referenceMethod(name, desc);
                 }
             }
 
@@ -292,7 +293,7 @@ public class CheckParserUsagesIT {
         public String baseClassName;
         public NodeClass baseClass;
         public Set<Field> fields;
-        private Set<Method> members;
+        private Set<Method> methods;
         private boolean isAbstract;
         private boolean isInterface;
         private boolean isReferenced;
@@ -303,7 +304,7 @@ public class CheckParserUsagesIT {
             this.isAbstract = isAbstract;
             this.isInterface = isInterface;
             fields = new HashSet<>();
-            members = new HashSet<>();
+            methods = new HashSet<>();
         }
 
         public String getName() {
@@ -312,14 +313,6 @@ public class CheckParserUsagesIT {
 
         public String getJavaName() {
             return name.replaceAll("/", ".");
-        }
-
-        public String getBaseClassName() {
-            return baseClassName;
-        }
-
-        public NodeClass getBaseClass() {
-            return baseClass;
         }
 
         public void addField(int access, String fieldName) {
@@ -336,7 +329,7 @@ public class CheckParserUsagesIT {
                 if ((access & Opcodes.ACC_STATIC) == 0) {
                     if (name.startsWith("get")) {
                         Method member = new Method(this.name, name, descriptor);
-                        members.add(member);
+                        methods.add(member);
                         return member;
                     }
                 }
@@ -349,8 +342,12 @@ public class CheckParserUsagesIT {
                 if (nodeClasses.containsKey(baseClassName)) {
                     baseClass = nodeClasses.get(baseClassName);
                     baseClass.incorporateBaseClass(nodeClasses);
-                    fields.addAll(baseClass.fields);
-                    members.addAll(baseClass.members);
+                    for (Field field : baseClass.fields){
+                        fields.add(new Field(field));
+                    }
+                    for (Method method : baseClass.methods) {
+                        methods.add(new Method(method));
+                    }
                 }
             }
         }
@@ -364,25 +361,33 @@ public class CheckParserUsagesIT {
                 stringBuilder.append(field);
                 stringBuilder.append(", ");
             }
-            for (Method member : members) {
+            for (Method member : methods) {
                 stringBuilder.append(member);
                 stringBuilder.append(", ");
             }
             return stringBuilder.toString();
         }
 
-        public void usedMethod(String name, String desc) {
+        public void referenceMethod(String name, String desc) {
             if (name.startsWith("get")) {
-                removeMethod(name, desc);
+                for (Method method : methods) {
+                    if (method.equals(name, desc)) {
+                        method.reference();
+                    }
+                }
             }
         }
 
         public void usedField(String name) {
-            fields.remove(name);
+            for (Field field : fields) {
+                if (field.name.equals(name)) {
+                    field.reference();
+                }
+            }
         }
 
         public boolean fullyUsed() {
-            return members.size() == 0 && fields.size() == 0;
+            return methods.size() == 0 && fields.size() == 0;
         }
 
         public void reference() {
@@ -390,7 +395,7 @@ public class CheckParserUsagesIT {
         }
 
         public NodeClass removeMethod(String name, String descriptor) {
-            Iterator<Method> iterator = members.iterator();
+            Iterator<Method> iterator = methods.iterator();
             while (iterator.hasNext()) {
                 if (iterator.next().equals(name, descriptor)) {
                     iterator.remove();
@@ -411,6 +416,11 @@ public class CheckParserUsagesIT {
             public Method(String className, String name, String descriptor) {
                 super(className, name);
                 this.descriptor = descriptor;
+            }
+
+            public Method(Method method) {
+                super(method);
+                this.descriptor = method.descriptor;
             }
 
             @Override
@@ -461,6 +471,10 @@ public class CheckParserUsagesIT {
                 super(className, name);
             }
 
+            public Field(Field field) {
+                super(field);
+            }
+
             @Override
             public String toString() {
                 return name;
@@ -472,12 +486,18 @@ public class CheckParserUsagesIT {
          */
         public static class Member {
             protected final String className;
-            protected String name;
+            protected final String name;
             boolean isReferenced;
 
             public Member(String className, String name) {
                 this.className = className;
                 this.name = name;
+            }
+
+            public Member(Member member) {
+                className = member.className;
+                name = member.name;
+                isReferenced = member.isReferenced;
             }
 
             protected String typeToString(Type type) {
