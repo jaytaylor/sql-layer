@@ -75,15 +75,14 @@ public class CheckParserUsagesIT {
     }
 
     @Before
-    public void initializeFinder() {
+    public void initializeFinder() throws Exception {
         finder = new PropertyFinder();
         for (Class<? extends QueryTreeNode> nodeClass : queryTreeNodes) {
             try {
                 ClassReader reader = new ClassReader(nodeClass.getName());
                 reader.accept(finder, 0);
             } catch (IOException e) {
-                System.err.println("Could not open class to scan: " + nodeClass.getName());
-                System.exit(1);
+                throw new Exception("Could not open class to scan: " + nodeClass.getName(), e);
             }
         }
         // Remove any base class methods here, before they get propagated down
@@ -95,7 +94,7 @@ public class CheckParserUsagesIT {
     }
 
     @Test
-    public void testAllReferencedClassesHaveReferencedGetters() {
+    public void testAllReferencedClassesHaveReferencedGetters() throws Exception {
         UsageClassVisitor checker = new UsageClassVisitor(finder.getNodes());
         int fullyUsed = 0;
         int total = 0;
@@ -114,9 +113,7 @@ public class CheckParserUsagesIT {
                 ClassReader reader = new ClassReader(new FileInputStream(usageClass));
                 reader.accept(checker, 0);
             } catch (IOException e) {
-                System.err.println("Failed to check against class");
-                e.printStackTrace();
-                System.exit(1);
+                throw new Exception("Failed to check against class", e);
             }
         }
         logHeaderInfo();
