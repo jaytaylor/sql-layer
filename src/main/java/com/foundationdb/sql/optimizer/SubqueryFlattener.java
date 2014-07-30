@@ -271,8 +271,7 @@ public class SubqueryFlattener
         if (leftOperand instanceof RowConstructorNode) {
             RowConstructorNode rcn = (RowConstructorNode)leftOperand;
             if (rcn.listSize() != selectNode.getResultColumns().size()) {
-                // invalid query, with multiple columns on the left, equal number of columns on the right operand are required
-                throw new UnsupportedSQLException("Subquery needs equal number of columns on left and right side of WHERE ... IN ... clause ");
+                throw new UnsupportedSQLException("Subquery needs equal number of columns on left and right side of ... IN ... clause ");
             }
             ResultColumnList rcl = selectNode.getResultColumns();
             ValueNode leftO = null, rightO = null;

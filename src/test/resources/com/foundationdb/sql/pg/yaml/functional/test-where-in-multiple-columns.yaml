@@ -51,12 +51,15 @@
 - Statement: INSERT INTO "albums_tags" ("album_id1", "album_id2", "tag_id1", "tag_id2") VALUES (11, 12, 15, 16)
 --- # original failing case
 - Statement: SELECT "artists".* FROM "artists" INNER JOIN "artists" AS "b" ON (("b"."id1" = "artists"."id1") AND ("b"."id2" = "artists"."id2")) WHERE (("artists"."id1", "artists"."id2") IN (SELECT "albums"."artist_id1", "albums"."artist_id2" FROM "albums" WHERE (("name" = 'Al') AND ("albums"."artist_id1" IS NOT NULL) AND ("albums"."artist_id2" IS NOT NULL) AND ("albums"."id1" = 1) AND ("albums"."id2" = 2))))
+- output: [[3, 4, Ar]]
 ---
 - Statement: UPDATE "albums" SET "artist_id1" = 13, "artist_id2" = 14 WHERE (("id1" = 11) AND ("id2" = 12))
 --- # original failing case
 - Statement: SELECT "albums_tags"."album_id1", "albums_tags"."album_id2" FROM "albums" INNER JOIN "albums_tags" ON (("albums_tags"."album_id1" = "albums"."id1") AND ("albums_tags"."album_id2" = "albums"."id2")) WHERE (("albums_tags"."tag_id1", "albums_tags"."tag_id2") IN (SELECT "tags"."id1", "tags"."id2" FROM "tags" WHERE (("tags"."id1" = 15) AND ("tags"."id2" = 16))))
+- output: [[11, 12]]
 --- # single column 
 - Statement: SELECT "albums_tags"."album_id1", "albums_tags"."album_id2" FROM "albums" INNER JOIN "albums_tags" ON (("albums_tags"."album_id1" = "albums"."id1") AND ("albums_tags"."album_id2" = "albums"."id2")) WHERE (("albums_tags"."tag_id1") IN (SELECT "tags"."id1" FROM "tags" WHERE (("tags"."id1" = 15) AND ("tags"."id2" = 16))))
+- output: [[11, 12]]
 --- # unequal number of columns
 - Statement: SELECT "albums_tags"."album_id1", "albums_tags"."album_id2" FROM "albums" INNER JOIN "albums_tags" ON (("albums_tags"."album_id1" = "albums"."id1") AND ("albums_tags"."album_id2" = "albums"."id2")) WHERE (("albums_tags"."tag_id1", "albums_tags"."tag_id2", "albums_tags"."tag_id2") IN (SELECT "tags"."id1", "tags"."id2" FROM "tags" WHERE (("tags"."id1" = 15) AND ("tags"."id2" = 16))))
 - error: [0A500]
