@@ -139,15 +139,19 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
 
     /**
      * The index of the first column that may have more than one result
+     * NOTE: by default Unions are included in this count.
      */
     public abstract int getNEquality();
     /**
-     * The number of unions that come after the equalities
+     * The number of unions that come after the true equalities.
      */
     public abstract int getNUnions();
 
     /**
-     * This generally applies to when the NEquality
+     * By Default a union (i.e. UNION of [% = 30, % = 50, % = 90]) is considered
+     * to be an equality, and thus can be turned into UnionOrdered. If there is an OrderBy or MIN on that column,
+     * we need to compare the union column and not skip over it. Setting this to false means that the union column
+     * is not included in NEquality.
      */
     public abstract void setIncludeUnionAsEquality(boolean sortColumn);
     public abstract boolean isAscendingAt(int index);
