@@ -27,21 +27,47 @@ import com.foundationdb.tuple.ByteArrayUtil;
 import org.junit.Test;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertNull;
 
 public class BlobAsyncIT extends FDBITBase
 {
     @Test
-    public void scanBounds() {
-        final byte[] testBytes = new byte[1024];
-        for(int i = 0; i < testBytes.length; ++i) {
-            testBytes[i] = (byte)(i % 10);
-        }
+    public void empty() {
+        writeAndRead(0);
+    }
 
+    @Test
+    public void tiny() {
+        writeAndRead(100);
+    }
+
+    @Test
+    public void small() {
+        writeAndRead(1000);
+    }
+
+    @Test
+    public void medium() {
+        writeAndRead(10000);
+    }
+
+    @Test
+    public void large() {
+        writeAndRead(100000);
+    }
+
+    @Test
+    public void huge() {
+        writeAndRead(1000000);
+    }
+
+    @Test
+    public void scanBounds() {
+        final byte[] testBytes = generateBytes(4096);
         fdbHolder().getDatabase().run(new Function<Transaction, Void>() {
             @Override
             public Void apply(Transaction tr) {
-                DirectorySubspace dir = fdbHolder().getRootDirectory().create(tr, PathUtil.from("blob_test")).get();
-
+                DirectorySubspace dir = getDir(tr);
                 byte[] beforePrefix = ByteArrayUtil.join(dir.pack(), new byte[] { 0x41 });
                 byte[] blobPrefix = ByteArrayUtil.join(dir.pack(), new byte[] { 0x42 });
                 byte[] afterPrefix = ByteArrayUtil.join(dir.pack(), new byte[] { 0x43 });
@@ -58,5 +84,37 @@ public class BlobAsyncIT extends FDBITBase
                 return null;
             }
         });
+    }
+
+    private void writeAndRead(final int len) {
+        final byte[] testBytes = generateBytes(len);
+        fdbHolder().getDatabase().run(new Function<Transaction, Void>() {
+            @Override
+            public Void apply(Transaction tr) {
+                BlobAsync blob = new BlobAsync(getDir(tr));
+                blob.write(tr, 0, testBytes).get();
+                byte[] readBytes = blob.read(tr).get();
+                if(len == 0) {
+                    assertNull(readBytes);
+                } else {
+                    assertArrayEquals(testBytes, readBytes);
+                }
+                return null;
+            }
+        });
+    }
+
+    private DirectorySubspace getDir(Transaction tr) {
+        DirectorySubspace dir = fdbHolder().getRootDirectory().createOrOpen(tr, PathUtil.from("blob_test")).get();
+        tr.clear(dir.range());
+        return dir;
+    }
+
+    private static byte[] generateBytes(int len) {
+        byte[] bytes = new byte[len];
+        for(int i = 0; i < len; ++i) {
+            bytes[i] = (byte)(i % 10);
+        }
+        return bytes;
     }
 }
