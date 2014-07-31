@@ -108,7 +108,7 @@ public class BlobAsyncIT extends FDBITBase
     }
 
     @Test
-    public void writeOffset() {
+    public void writePartial() {
         final byte[] testBytes = generateBytes(100);
         fdbHolder().getDatabase().run(new Function<Transaction, Void>() {
             @Override
