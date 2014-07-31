@@ -29,23 +29,24 @@ public class TestStorageDescription extends StorageDescription
 {
     private String storageKey;
 
-    public TestStorageDescription(HasStorage forObject) {
-        super(forObject);
+    public TestStorageDescription(HasStorage forObject, String storageFormat) {
+        super(forObject, storageFormat);
     }
 
-    public TestStorageDescription(HasStorage forObject, String storageKey) {
-        super(forObject);
+    public
+    TestStorageDescription(HasStorage forObject, String storageKey, String storageFormat) {
+        super(forObject, storageFormat);
         this.storageKey = storageKey;
     }
 
-    public TestStorageDescription(HasStorage forObject, TestStorageDescription other) {
-        super(forObject, other);
+    public TestStorageDescription(HasStorage forObject, TestStorageDescription other, String storageFormat) {
+        super(forObject, other, storageFormat);
         this.storageKey = other.storageKey;
     }
 
     @Override
     public StorageDescription cloneForObject(HasStorage forObject) {
-        return new TestStorageDescription(forObject, this);
+        return new TestStorageDescription(forObject, this, storageFormat);
     }
 
     @Override

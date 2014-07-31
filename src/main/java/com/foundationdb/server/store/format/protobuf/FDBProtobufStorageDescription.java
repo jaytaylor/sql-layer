@@ -43,19 +43,19 @@ public class FDBProtobufStorageDescription extends TupleStorageDescription imple
     private FileDescriptorProto fileProto;
     private transient ProtobufRowDataConverter converter;
 
-    public FDBProtobufStorageDescription(HasStorage forObject) {
-        super(forObject);
+    public FDBProtobufStorageDescription(HasStorage forObject, String storageFormat) {
+        super(forObject, storageFormat);
     }
 
-    public FDBProtobufStorageDescription(HasStorage forObject, FDBProtobufStorageDescription other) {
-        super(forObject, other);
+    public FDBProtobufStorageDescription(HasStorage forObject, FDBProtobufStorageDescription other, String storageFormat) {
+        super(forObject, other, storageFormat);
         this.formatType = other.formatType;
         this.fileProto = other.fileProto;
     }
 
     @Override
     public StorageDescription cloneForObject(HasStorage forObject) {
-        return new FDBProtobufStorageDescription(forObject, this);
+        return new FDBProtobufStorageDescription(forObject, this, storageFormat);
     }
 
     @Override

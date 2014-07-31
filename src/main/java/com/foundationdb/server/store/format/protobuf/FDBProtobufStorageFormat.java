@@ -27,24 +27,25 @@ import com.foundationdb.sql.parser.StorageFormatNode;
 
 public class FDBProtobufStorageFormat extends StorageFormat<FDBProtobufStorageDescription>
 {
+    private static final String identifier = "protobuf";
     private FDBProtobufStorageFormat() {
     }
 
     public static void register(StorageFormatRegistry registry) {
         CustomOptions.registerAllExtensions(registry.getExtensionRegistry());
-        registry.registerStorageFormat(CommonProtobuf.protobufRow, "protobuf", FDBProtobufStorageDescription.class, new FDBProtobufStorageFormat());
+        registry.registerStorageFormat(CommonProtobuf.protobufRow, identifier, FDBProtobufStorageDescription.class, new FDBProtobufStorageFormat());
     }
 
     public FDBProtobufStorageDescription readProtobuf(Storage pbStorage, HasStorage forObject, FDBProtobufStorageDescription storageDescription) {
         if (storageDescription == null) {
-            storageDescription = new FDBProtobufStorageDescription(forObject);
+            storageDescription = new FDBProtobufStorageDescription(forObject, identifier);
         }
         storageDescription.readProtobuf(pbStorage.getExtension(CommonProtobuf.protobufRow));
         return storageDescription;
     }
 
     public FDBProtobufStorageDescription parseSQL(StorageFormatNode node, HasStorage forObject) {
-        FDBProtobufStorageDescription storageDescription = new FDBProtobufStorageDescription(forObject);
+        FDBProtobufStorageDescription storageDescription = new FDBProtobufStorageDescription(forObject,identifier);
         String singleTableOption = node.getOptions().get("no_group");
         boolean singleTable = (singleTableOption != null) && Boolean.valueOf(singleTableOption);
         String noTupleOption = node.getOptions().get("no_tuple");

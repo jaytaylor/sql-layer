@@ -40,19 +40,19 @@ public class PersistitProtobufStorageDescription extends PersistitStorageDescrip
     private FileDescriptorProto fileProto;
     private transient ProtobufRowDataConverter converter;
 
-    public PersistitProtobufStorageDescription(HasStorage forObject) {
-        super(forObject);
+    public PersistitProtobufStorageDescription(HasStorage forObject, String storageFormat) {
+        super(forObject, storageFormat);
     }
 
-    public PersistitProtobufStorageDescription(HasStorage forObject, PersistitProtobufStorageDescription other) {
-        super(forObject, other);
+    public PersistitProtobufStorageDescription(HasStorage forObject, PersistitProtobufStorageDescription other, String storageFormat) {
+        super(forObject, other, storageFormat);
         this.formatType = other.formatType;
         this.fileProto = other.fileProto;
     }
 
     @Override
     public StorageDescription cloneForObject(HasStorage forObject) {
-        return new PersistitProtobufStorageDescription(forObject, this);
+        return new PersistitProtobufStorageDescription(forObject, this, storageFormat);
     }
 
     @Override
