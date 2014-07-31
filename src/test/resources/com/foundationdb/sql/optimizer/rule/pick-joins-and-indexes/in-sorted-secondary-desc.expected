@@ -1,9 +1,8 @@
-SelectQuery@3f3ad01f
-  ResultSet@2e35c3a7[sku]
-    Project@4bc020a4[items.sku]
-      Sort@606ca099[items.sku DESC]
-        Select@329f15d6[]
-          TableGroupJoinTree@4255174c(TableGroup@615d8344(customers), customers INNER orders INNER items - SingleIndexScan@4dbf3e93(Index(test.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), covering/NONE, UNIONs of [% = Adams, % = Jones, % = Smith], rows = 3, cost = 128.372))
-            TableSource@57f8858c(customers - TableGroup@615d8344(customers))
-              TableSource@85c1f05(orders - TableGroupJoin@46a54cc5(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
-                TableSource@1b6cd3c(items - TableGroupJoin@e533dbf(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))
+SelectQuery@35acb48
+  ResultSet@3dd7e5b0[sku]
+    Project@2928a588[items.sku]
+      Select@2b8b98d4[]
+        TableGroupJoinTree@53c53420(TableGroup@76417c(customers), customers INNER orders INNER items - SingleIndexScan@14762ab5(Index(test.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), covering/SORTED/reverse, UNIONs of [% = Adams, % = Jones, % = Smith], rows = 3, cost = 19.3716))
+          TableSource@5645eb54(customers - TableGroup@76417c(customers))
+            TableSource@33ceed6e(orders - TableGroupJoin@59eddb91(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+              TableSource@42259e97(items - TableGroupJoin@eea3ab7(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))
