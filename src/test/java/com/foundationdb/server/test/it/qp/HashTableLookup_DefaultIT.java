@@ -50,7 +50,6 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
                 "address varchar(100)",
                 "name varchar(20)");
         createIndex("schema", "fullAddress", "name", "name");
-
     }
 
     @Override
@@ -110,7 +109,6 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
 
     @Test(expected = IllegalArgumentException.class)
     public void testHashJoinNullComparisonFields() {
-        int columnsToJoinOn[] = {};
         hashTableLookup_Default(null, null, false, ROW_BINDING_POSITION, TABLE_BINDING_POSITION, customerRowType, customerRowType);
     }
 
