@@ -477,7 +477,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                     }
                 }
                 OrderByExpression indexColumn = getIndexColumn(indexOrdering, idx);
-                if (indexColumn == null && idx <= nequals) {
+                if (indexColumn == null && idx < nequals) {
                     // if we we're trying the union column, but that failed, try just treating it as equals
                     idx++;
                     indexColumn = getIndexColumn(indexOrdering, idx);
@@ -490,7 +490,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 }
                 if (indexColumn != null) {
                     boolean matchingColumn = orderingExpressionMatches(indexColumn, targetExpression);
-                    if (!matchingColumn && idx <= nequals) {
+                    if (!matchingColumn && idx < nequals) {
                         // if we we're trying the union column, but that failed, try just treating it as equals
                         idx++;
                         indexColumn = getIndexColumn(indexOrdering, idx);
