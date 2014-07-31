@@ -739,7 +739,7 @@ public class ASTStatementLoader extends BaseRule
                     condition.setType(conditionType);
                 }
                 conditionInst = typesTranslator.typeForSQLType(conditionType);
-                conditions.add(new ParameterEstimateCondition(((ParameterNode)condition)
+                conditions.add(new ParameterCondition(((ParameterNode)condition)
                                                       .getParameterNumber(),
                                                       conditionType, condition, conditionInst));
                 return;
@@ -1592,7 +1592,7 @@ public class ASTStatementLoader extends BaseRule
             }
             else if (valueNode instanceof ParameterNode) {
                 assert (parameters != null) && parameters.contains(valueNode) : valueNode;
-                return new ParameterEstimateExpression(((ParameterNode)valueNode)
+                return new ParameterExpression(((ParameterNode)valueNode)
                                                .getParameterNumber(),
                         sqlType, valueNode, type);
             }
