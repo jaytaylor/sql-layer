@@ -633,7 +633,7 @@ public class OperatorAssembler extends BaseRule
                         stream.rowType = indexRowType;
                     }
                     else if (unionOrdered) {
-                        int nequals = indexScan.getNEquality();
+                        int nequals = indexScan.getPeggedCount();
                         List<OrderByExpression> ordering = indexScan.getOrdering();
                         int nordering = ordering.size() - nequals;
                         boolean[] ascending = new boolean[nordering];

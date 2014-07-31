@@ -307,6 +307,14 @@ public final class SingleIndexScan extends IndexScan implements EqualityColumnsS
     }
 
     @Override
+    public int getNUnions() {
+        int nunions = 0;
+        if ((conditionRange != null) && conditionRange.isAllSingle())
+            nunions++;
+        return nunions;
+    }
+
+    @Override
     public void incrementConditionsCounter(ConditionsCounter<? super ConditionExpression> counter) {
         for (ConditionExpression cond : getConditions())
             counter.increment(cond);

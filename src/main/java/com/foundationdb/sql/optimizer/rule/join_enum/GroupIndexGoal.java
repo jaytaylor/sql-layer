@@ -417,7 +417,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 // like first comparison, trailing columns ordered
                 // like last comparison.
                 int i = 0;
-                while (i < index.getPeggedCount()) {
+                while (i < index.getNEquality()) {
                     indexOrdering.get(i++).setAscending(outputOrdering.get(outputPeggedCount).isAscending());
                 }
                 for (int j = 0; j < comparisonFields; j++) {
@@ -447,6 +447,8 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         if (indexOrdering == null) return result;
         BitSet reverse = new BitSet(indexOrdering.size());
         int nequals = index.getNEquality();
+        int nunions = index.getNUnions();
+        //nequals += nunions;
         List<ExpressionNode> equalityColumns = null;
         if (nequals > 0) {
             equalityColumns = index.getColumns().subList(0, nequals);
@@ -481,7 +483,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                     if (indexColumn.getExpression() == null)
                         indexColumn = null; // Index sorts by unknown column.
                 }
-                if ((indexColumn != null) && 
+                if ((indexColumn != null) &&
                     orderingExpressionMatches(indexColumn, targetExpression)) {
                     if (indexColumn.isAscending() != targetColumn.isAscending()) {
                         // To avoid mixed mode as much as possible,
