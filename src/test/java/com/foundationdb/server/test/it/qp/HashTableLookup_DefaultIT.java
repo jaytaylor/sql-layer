@@ -17,8 +17,6 @@
 
 package com.foundationdb.server.test.it.qp;
 
-
-
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
@@ -34,8 +32,7 @@ import java.util.*;
 
 import static com.foundationdb.qp.operator.API.*;
 
-
-public class HashJoinIT extends OperatorITBase {
+public class HashTableLookup_DefaultIT extends OperatorITBase {
 
     static int ROW_BINDING_POSITION = 100;
     static int TABLE_BINDING_POSITION = 200;
@@ -59,7 +56,6 @@ public class HashJoinIT extends OperatorITBase {
     @Override
     protected void setupPostCreateSchema() {
         super.setupPostCreateSchema();
-
         NewRow[] db = new NewRow[]{
                 createNewRow(customer, 1L, "northbridge"), // two orders, two addresses
                 createNewRow(customer, 2L, "foundation"), // two orders, one address
@@ -95,65 +91,61 @@ public class HashJoinIT extends OperatorITBase {
         };
         use(db);
         fullAddressRowType = schema.tableRowType(table(fullAddress));
-
         ciCollator = customerRowType.table().getColumn(1).getCollator();
     }
 
-    /** Test argument hashJoin */
+    /** Test argument HashJoinLookup_Default */
 
     @Test(expected = IllegalArgumentException.class)
     public void testHashJoinbindingsSame() {
         int columnsToJoinOn[] = {1};
-        hashJoin(null, columnsToJoinOn, false, ROW_BINDING_POSITION, ROW_BINDING_POSITION);
+        hashTableLookup_Default(null, columnsToJoinOn, false, ROW_BINDING_POSITION, ROW_BINDING_POSITION);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testHashJoinEmptyComparisonFields() {
         int columnsToJoinOn[] = {};
-        hashJoin(null, columnsToJoinOn, false, ROW_BINDING_POSITION, TABLE_BINDING_POSITION);
+        hashTableLookup_Default(null, columnsToJoinOn, false, ROW_BINDING_POSITION, TABLE_BINDING_POSITION);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testHashJoinNullComparisonFields() {
         int columnsToJoinOn[] = {};
-        hashJoin(null, null, false, ROW_BINDING_POSITION, TABLE_BINDING_POSITION);
+        hashTableLookup_Default(null, null, false, ROW_BINDING_POSITION, TABLE_BINDING_POSITION);
     }
 
-    /** Test arguments using_HashJoin  */
+    /** Test arguments using_HashTable  */
 
     @Test(expected = IllegalArgumentException.class)
     public void testUsingHashJoinRightInputNull() {
         int columnsToJoinOn[] = {1};
-        using_HashJoin(groupScan_Default(coi),columnsToJoinOn,  TABLE_BINDING_POSITION, null, null);
+        using_HashTable(groupScan_Default(coi), columnsToJoinOn, TABLE_BINDING_POSITION, null, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testUsingHashJoinLeftInputNull() {
         int columnsToJoinOn[] = {1};
-        using_HashJoin(null,columnsToJoinOn,  TABLE_BINDING_POSITION, groupScan_Default(coi), null);
+        using_HashTable(null, columnsToJoinOn, TABLE_BINDING_POSITION, groupScan_Default(coi), null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testUsingHashJoinBothInputsNull() {
         int columnsToJoinOn[] = {1};
-        using_HashJoin(null,columnsToJoinOn,  TABLE_BINDING_POSITION, null, null);
+        using_HashTable(null, columnsToJoinOn, TABLE_BINDING_POSITION, null, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testUsingHashJoinEmptyComparisonFields() {
         int columnsToJoinOn[] = {};
-        using_HashJoin(groupScan_Default(coi), columnsToJoinOn, TABLE_BINDING_POSITION, groupScan_Default(coi), null);
+        using_HashTable(groupScan_Default(coi), columnsToJoinOn, TABLE_BINDING_POSITION, groupScan_Default(coi), null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testUsingHashJoinNullComparisonFields() {
-        using_HashJoin(groupScan_Default(coi), null, TABLE_BINDING_POSITION, groupScan_Default(coi), null);
+        using_HashTable(groupScan_Default(coi), null, TABLE_BINDING_POSITION, groupScan_Default(coi), null);
     }
 
-
-
-
-
+    /** Hash join tests **/
 
     @Test
     public void testSingleColumnJoin() {
@@ -177,7 +169,6 @@ public class HashJoinIT extends OperatorITBase {
         int orderFieldsToCompare[] = {1};
         int customerFieldsToCompare[] = {0};
         Operator firstPlan = hashJoinPlan( orderRowType,customerRowType,  orderFieldsToCompare,customerFieldsToCompare, null, false);
-
         int secondHashFieldsToCompare[] = {1,2};
         List<AkCollator> secondCollators = Arrays.asList(null, ciCollator);
         Operator plan = hashJoinPlan(projectRowType,
@@ -192,7 +183,6 @@ public class HashJoinIT extends OperatorITBase {
                                      secondCollators,
                                      false
                         );
-
         Row[] expected = new Row[]{
                 row(projectRowType, 100L, 1L, "ori", "northbridge", 100L),
                 row(projectRowType, 100L, 1L, "ori", "northbridge", 101L),
@@ -238,7 +228,6 @@ public class HashJoinIT extends OperatorITBase {
     public void testAllMatch() {
         int orderFieldsToCompare[] = {0,1,2};
         List<AkCollator> collators = Arrays.asList(null,null,ciCollator);
-
         Operator plan = hashJoinPlan(orderRowType, orderRowType,  orderFieldsToCompare,orderFieldsToCompare, collators, false);
         Row[] expected = new Row[]{
                 row(projectRowType, 100L, 1L, "ori"),
@@ -311,7 +300,6 @@ public class HashJoinIT extends OperatorITBase {
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
-
     private Operator hashJoinPlan( RowType outerRowType,
                                    RowType innerRowType,
                                    int outerJoinFields[],
@@ -356,7 +344,7 @@ public class HashJoinIT extends OperatorITBase {
         }
 
         Operator project = project_Default(
-                hashJoin(
+                hashTableLookup_Default(
                         collators,
                         outerJoinFields,
                         leftOuterJoin,
@@ -369,7 +357,7 @@ public class HashJoinIT extends OperatorITBase {
 
         projectRowType = project.rowType();
 
-        return using_HashJoin(
+        return using_HashTable(
                 innerStream,
                 innerJoinFields,
                 TABLE_BINDING_POSITION++,

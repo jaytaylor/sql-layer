@@ -18,11 +18,9 @@
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.*;
-import com.foundationdb.qp.rowtype.*;
+import com.foundationdb.qp.util.KeyWrapper;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types.value.ValueSource;
-import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
 import com.google.common.collect.ArrayListMultimap;
@@ -31,14 +29,13 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-class HashJoin extends Operator
+class HashTableLookup_Default extends Operator
 {
     @Override
     public String toString()
     {
-        return "HashJoin";
+        return getClass().getSimpleName();
     }
-
     // Operator interface
 
     @Override
@@ -47,29 +44,27 @@ class HashJoin extends Operator
         return new Execution(context, bindingsCursor);
     }
 
-    public HashJoin(List<AkCollator> collators,
-                    int outerComparisonFields[],
-                    boolean outerLeftJoin,
-                    int hashBindingPosition,
-                    int rowBindingPosition
-                    )
+    public HashTableLookup_Default(List<AkCollator> collators,
+                                   int outerComparisonFields[],
+                                   boolean outerLeftJoin,
+                                   int hashBindingPosition,
+                                   int rowBindingPosition
+    )
     {
         ArgumentValidation.notNull("outerComparisonFields", outerComparisonFields);
         ArgumentValidation.isGTE("outerOrderingFields", outerComparisonFields.length, 1);
         ArgumentValidation.isNotSame("hashBindingPosition", hashBindingPosition,"rowBindingPosition", rowBindingPosition);
-
         this.collators = collators;
         this.outerComparisonFields = outerComparisonFields;
         this.outerLeftJoin = outerLeftJoin;
         this.hashBindingPosition = hashBindingPosition;
         this.rowBindingPosition = rowBindingPosition;
-
     }
 
     // Class state
 
-    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: intersect_Ordered open");
-    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: intersect_Ordered next");
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: HashTableLookup_Default open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: HashTableLookup_Default next");
     private static final Logger LOG = LoggerFactory.getLogger(Intersect_Ordered.class);
 
     // Object state
@@ -97,7 +92,7 @@ class HashJoin extends Operator
             TAP_OPEN.in();
             try {
                 CursorLifecycle.checkIdle(this);
-                hashTable = bindings.getHashJoinTable(hashBindingPosition);
+                hashTable = bindings.getHashTable(hashBindingPosition);
                 innerRowList = hashTable.get(new KeyWrapper(getOuterRow(), outerComparisonFields, collators));
                 innerRowListPosition = 0;
                 closed = false;
@@ -188,7 +183,6 @@ class HashJoin extends Operator
             bindingsCursor.cancelBindings(bindings);
         }
 
-        // For use by this class
 
         private Row getOuterRow()
         {
@@ -198,8 +192,6 @@ class HashJoin extends Operator
             }
             return row;
         }
-
-        // Execution interface
 
         Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
@@ -215,37 +207,5 @@ class HashJoin extends Operator
         private int innerRowListPosition = 0;
         private QueryBindings bindings;
         private boolean destroyed = false;
-
-    }
-
-    public static class KeyWrapper{
-        List<ValueSource> values = new ArrayList<>();
-        Integer hashKey = 0;
-
-        @Override
-        public int hashCode(){
-            return hashKey;
-        }
-
-        @Override
-        public boolean equals(Object x) {
-            if (((KeyWrapper)x).values.size() != this.values.size())
-                return false;
-            for (int i = 0; i < values.size(); i++) {
-                if (((KeyWrapper)x).values.get(i).equals(this.values.get(i)))
-                    return false;
-            }
-            return true;
-        }
-
-        public KeyWrapper(Row row, int comparisonFields[], List<AkCollator> collators){
-
-            for (int f = 0; f < comparisonFields.length; f++) {
-                ValueSource columnValue=row.value(comparisonFields[f]);
-                AkCollator collator = (collators != null) ? collators.get(f) : null;
-                hashKey = hashKey ^ ValueSources.hash(columnValue, collator);
-                values.add(columnValue);
-            }
-        }
     }
 }

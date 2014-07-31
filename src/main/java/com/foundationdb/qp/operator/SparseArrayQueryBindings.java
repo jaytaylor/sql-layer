@@ -19,6 +19,7 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.util.KeyWrapper;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTargets;
@@ -151,12 +152,12 @@ public class SparseArrayQueryBindings implements QueryBindings
     }
 
     @Override
-    public ArrayListMultimap<HashJoin.KeyWrapper, Row> getHashJoinTable(int index){
+    public ArrayListMultimap<KeyWrapper, Row> getHashTable(int index){
         if (bindings.isDefined(index)) {
-            return (ArrayListMultimap<HashJoin.KeyWrapper, Row>)bindings.get(index);
+            return (ArrayListMultimap<KeyWrapper, Row>)bindings.get(index);
         }
         else if (parent != null) {
-            return parent.getHashJoinTable(index);
+            return parent.getHashTable(index);
         }
          else {
             throw new BindingNotSetException(index);
@@ -164,7 +165,7 @@ public class SparseArrayQueryBindings implements QueryBindings
     }
 
     @Override
-    public void setHashJoinTable(int index, ArrayListMultimap<HashJoin.KeyWrapper, Row> hashTable) {
+    public void setHashTable(int index, ArrayListMultimap<KeyWrapper, Row> hashTable) {
         bindings.set(index, hashTable);
     }
 

@@ -19,7 +19,7 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.operator.HashJoin.KeyWrapper;
+import com.foundationdb.qp.util.KeyWrapper;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.util.ArgumentValidation;
@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Set;
 
 
-class Using_HashJoin extends Operator
+class Using_HashTable extends Operator
 {
     // Object interface
 
@@ -44,7 +44,6 @@ class Using_HashJoin extends Operator
     }
 
     // Operator interface
-
 
     @Override
     public void findDerivedTypes(Set<RowType> derivedTypes)
@@ -71,11 +70,11 @@ class Using_HashJoin extends Operator
         return String.format("%s\n%s", describePlan(hashInput), describePlan(joinedInput));
     }
 
-    public Using_HashJoin(Operator hashInput,
-                          int comparisonFields[],
-                          int tableBindingPosition,
-                          Operator joinedInput,
-                          List<AkCollator> collators)
+    public Using_HashTable(Operator hashInput,
+                           int comparisonFields[],
+                           int tableBindingPosition,
+                           Operator joinedInput,
+                           List<AkCollator> collators)
     {
         ArgumentValidation.notNull("hashInput", hashInput);
         ArgumentValidation.notNull("comparisonFields", comparisonFields);
@@ -98,9 +97,9 @@ class Using_HashJoin extends Operator
 
     // Class state
 
-    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Using_HashJoin open");
-    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Using_HashJoin next");
-    private static final Logger LOG = LoggerFactory.getLogger(Using_HashJoin.class);
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Using_HashTable open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Using_HashTable next");
+    private static final Logger LOG = LoggerFactory.getLogger(Using_HashTable.class);
 
     // Object state
 
@@ -133,7 +132,7 @@ class Using_HashJoin extends Operator
             TAP_OPEN.in();
             try {
                 ArrayListMultimap<KeyWrapper, Row> hashTable = buildHashTable();
-                bindings.setHashJoinTable(tableBindingPosition, hashTable);
+                bindings.setHashTable(tableBindingPosition, hashTable);
                 input.open();
             } finally {
                 TAP_OPEN.out();
@@ -149,7 +148,7 @@ class Using_HashJoin extends Operator
             try {
                 Row output = input.next();
                 if (LOG_EXECUTION) {
-                    LOG.debug("Using_HashJoin: yield {}", output);
+                    LOG.debug("Using_HashTable: yield {}", output);
                 }
                 return output;
             } finally {
@@ -165,7 +164,7 @@ class Using_HashJoin extends Operator
             close();
             input.destroy();
             if (bindings != null) {
-                bindings.setHashJoinTable(tableBindingPosition, null);
+                bindings.setHashTable(tableBindingPosition, null);
             }
         }
 

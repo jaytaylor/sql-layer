@@ -19,6 +19,7 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.util.KeyWrapper;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.BloomFilter;
 import com.google.common.collect.ArrayListMultimap;
@@ -85,13 +86,13 @@ public interface QueryBindings
      * @return the hash join table at that index
      * @throws BindingNotSetException if the given index wasn't set
      */
-    public ArrayListMultimap<HashJoin.KeyWrapper, Row> getHashJoinTable(int index);
+    public ArrayListMultimap<KeyWrapper, Row> getHashTable(int index);
 
     /**Bind a hash table hash join table to the given index.
      * @param index the index to set
      * @param hashTable the hash join table to assign
      */
-    public void setHashJoinTable(int index, ArrayListMultimap<HashJoin.KeyWrapper, Row> hashTable);
+    public void setHashTable(int index, ArrayListMultimap<KeyWrapper, Row> hashTable);
 
     /**
      * Clear all bindings.

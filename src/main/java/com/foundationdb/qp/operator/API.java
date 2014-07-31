@@ -812,13 +812,14 @@ public class API
                 depth);
     }
 
-    public static Operator hashJoin(List<AkCollator> collators,
-                                    int outerComparisonFields[],
-                                    boolean outerLeftJoin,
-                                    int hashBindingPosition,
-                                    int rowBindingPosition)
+    // hashTableLookup_Default
+    public static Operator hashTableLookup_Default(List<AkCollator> collators,
+                                                   int outerComparisonFields[],
+                                                   boolean outerLeftJoin,
+                                                   int hashBindingPosition,
+                                                   int rowBindingPosition)
     {
-        return new HashJoin(
+        return new HashTableLookup_Default(
                 collators,
                 outerComparisonFields,
                 outerLeftJoin,
@@ -826,15 +827,15 @@ public class API
                 rowBindingPosition);
     }
 
-    public static Operator using_HashJoin(Operator hashInput,
-                          int comparisonFields[],
-                          int filterBindingPosition,
-                          Operator joinedInput,
-                          List<AkCollator> collators)
+    // using_HashTable
+    public static Operator using_HashTable(Operator hashInput,
+                                           int comparisonFields[],
+                                           int filterBindingPosition,
+                                           Operator joinedInput,
+                                           List<AkCollator> collators)
     {
-        return new Using_HashJoin(hashInput, comparisonFields, filterBindingPosition, joinedInput, collators);
+        return new Using_HashTable(hashInput, comparisonFields, filterBindingPosition, joinedInput, collators);
     }
-
 
     // EmitBoundRow_Nesteda
 
