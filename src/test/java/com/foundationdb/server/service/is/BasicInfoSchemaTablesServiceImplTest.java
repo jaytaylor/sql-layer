@@ -679,19 +679,13 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void sequencesScan() {
         final Object[][] expected = {
-                {null, "gco", "w___row_id_seq", "bigint",     1L, 0L, LONG, 1L, false, "gco.w___row_id_seq", LONG},
-                {null, "gco", "x___row_id_seq", "bigint",     1L, 0L, LONG, 1L, false, "gco.x___row_id_seq", LONG},
                 {null, "test", "_col_sequence", "bigint",   1L, 0L, 1000L, 1L, false, "test._col_sequence", LONG},
-                {null, "test", "bar2___row_id_seq", "bigint",        1L, 0L, LONG,  1L, false, "test.bar2___row_id_seq", LONG},
-                {null, "test", "defaults___row_id_seq", "bigint",    1L, 0L, LONG,  1L, false, "test.defaults___row_id_seq", LONG},
-                {null, "test", "foo___row_id_seq", "bigint",         1L, 0L, LONG,  1L, false, "test.foo___row_id_seq", LONG},
                 {null, "test", "sequence",  "bigint",   1L, 0L, 1000L, 1L, false, "test.sequence", LONG },
                 {null, "test", "sequence1", "bigint", 1000L, 0L, 1000L, -1L,false, "test.sequence1", LONG},
-                {null, "zap", "pow___row_id_seq", "bigint", 1L, 0L, LONG, 1L, false, "zap.pow___row_id_seq", LONG}
         };
         GroupScan scan = getFactory (BasicInfoSchemaTablesServiceImpl.SEQUENCES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skip I_S sequences", 22, skipped);
+        assertEquals("Skip I_S sequences", 0, skipped);
     }
 
     @Test
