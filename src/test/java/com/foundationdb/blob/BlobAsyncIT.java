@@ -26,39 +26,130 @@ import com.foundationdb.subspace.Subspace;
 import com.foundationdb.tuple.ByteArrayUtil;
 import org.junit.Test;
 
+import java.util.Arrays;
+
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 public class BlobAsyncIT extends FDBITBase
 {
     @Test
-    public void empty() {
+    public void writeReadEmpty() {
         writeAndRead(0);
     }
 
     @Test
-    public void tiny() {
+    public void writeReadTiny() {
         writeAndRead(100);
     }
 
     @Test
-    public void small() {
+    public void writeReadSmall() {
         writeAndRead(1000);
     }
 
     @Test
-    public void medium() {
+    public void writeReadMedium() {
         writeAndRead(10000);
     }
 
     @Test
-    public void large() {
+    public void writeReadLarge() {
         writeAndRead(100000);
     }
 
     @Test
-    public void huge() {
+    public void writeReadHuge() {
         writeAndRead(1000000);
+    }
+
+    @Test
+    public void append() {
+        final byte[] testBytes1 = generateBytes(100);
+        final byte[] testBytes2 = generateBytes(100);
+        final byte[] testBytesBoth = ByteArrayUtil.join(testBytes1, testBytes2);
+        fdbHolder().getDatabase().run(new Function<Transaction, Void>() {
+            @Override
+            public Void apply(Transaction tr) {
+                BlobAsync blob = new BlobAsync(getDir(tr));
+                // Append to non-existent
+                blob.append(tr, testBytes1).get();
+                byte[] readBytes = blob.read(tr).get();
+                assertArrayEquals(testBytes1, readBytes);
+                // Append to pre-existing
+                blob.append(tr, testBytes2).get();
+                readBytes = blob.read(tr).get();
+                assertArrayEquals(testBytesBoth, readBytes);
+                return null;
+            }
+        });
+    }
+
+    @Test
+    public void truncate() {
+        final byte[] testBytes = generateBytes(100);
+        fdbHolder().getDatabase().run(new Function<Transaction, Void>() {
+            @Override
+            public Void apply(Transaction tr) {
+                BlobAsync blob = new BlobAsync(getDir(tr));
+                blob.write(tr, 0, testBytes).get();
+
+                blob.truncate(tr, 50).get();
+                byte[] readBytes = blob.read(tr).get();
+                assertArrayEquals(Arrays.copyOf(testBytes, 50), readBytes);
+
+                blob.truncate(tr, 0).get();
+                readBytes = blob.read(tr).get();
+                assertNull(readBytes);
+                return null;
+            }
+        });
+    }
+
+    @Test
+    public void writeOffset() {
+        final byte[] testBytes = generateBytes(100);
+        fdbHolder().getDatabase().run(new Function<Transaction, Void>() {
+            @Override
+            public Void apply(Transaction tr) {
+                BlobAsync blob = new BlobAsync(getDir(tr));
+                blob.write(tr, 0, testBytes).get();
+
+                byte[] subBytes = new byte[10];
+                for(int i = 0; i < subBytes.length; ++i) {
+                    subBytes[i] = (byte)(0x42 + i);
+                }
+
+                blob.write(tr, 42, subBytes).get();
+
+                byte[] newBytes = Arrays.copyOf(testBytes, testBytes.length);
+                System.arraycopy(subBytes, 0, newBytes, 42, subBytes.length);
+
+                byte[] readBytes = blob.read(tr).get();
+                assertArrayEquals(newBytes, readBytes);
+
+                return null;
+            }
+        });
+    }
+
+    @Test
+    public void readPartial() {
+        final byte[] testBytes = generateBytes(100);
+        fdbHolder().getDatabase().run(new Function<Transaction, Void>() {
+            @Override
+            public Void apply(Transaction tr) {
+                BlobAsync blob = new BlobAsync(getDir(tr));
+                blob.write(tr, 0, testBytes).get();
+
+                byte[] subBytes = Arrays.copyOfRange(testBytes, 42, 52);
+                byte[] readBytes = blob.read(tr, 42, 10).get();
+                assertArrayEquals(subBytes, readBytes);
+
+                return null;
+            }
+        });
     }
 
     @Test
@@ -93,6 +184,7 @@ public class BlobAsyncIT extends FDBITBase
             public Void apply(Transaction tr) {
                 BlobAsync blob = new BlobAsync(getDir(tr));
                 blob.write(tr, 0, testBytes).get();
+                assertEquals(Integer.valueOf(len), blob.getSize(tr).get());
                 byte[] readBytes = blob.read(tr).get();
                 if(len == 0) {
                     assertNull(readBytes);
