@@ -1,6 +1,6 @@
-SelectQuery@532988dd
-  ResultSet@4bd88fd2[_SQL_COL_1]
-    Project@475f7e17[GROUP[0]]
-      AggregateSource@66b378c2(UNGROUPED,[MIN])
-        Project@10e88aac[customers.cid]
-          SingleIndexScan@640fd532(Index(test.customers.name[IndexColumn(name)]), covering/NONE, UNIONs of [% = Adams, % = Jones, % = Smith], rows = 3, cost = 18.1266)
+SelectQuery@5d9cf4ce
+  ResultSet@6b8c3065[_SQL_COL_1]
+    Project@165ad92b[GROUP[0]]
+      AggregateSource@423d0396(FIRST_FROM_INDEX,[MIN])
+        Project@980b9cd[customers.cid]
+          SingleIndexScan@6226469a(Index(test.customers.name[IndexColumn(name)]), covering/FOR_MIN_MAX, UNIONs of [% = Adams, % = Jones, % = Smith], rows = 3, cost = 18.1266)
