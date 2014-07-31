@@ -475,19 +475,24 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                                 .get(column.getPosition());
                         }
                     }
-                } // TODO if the indexColumn comes back null, we'll want to try not including the union
+                }
                 OrderByExpression indexColumn = getIndexColumn(indexOrdering, idx);
+                if (indexColumn == null && idx <= nequals) {
+                    // if we we're trying the union column, but that failed, try just treating it as equals
+                    idx++;
+                    indexColumn = getIndexColumn(indexOrdering, idx);
+                    if (indexColumn != null && orderingExpressionMatches(indexColumn, targetExpression)) {
+                        index.setIncludeUnionAsEquality(true);
+                    }
+                }
                 if (indexColumn != null) {
                     boolean matchingColumn = orderingExpressionMatches(indexColumn, targetExpression);
                     if (!matchingColumn && idx <= nequals) {
                         // if we we're trying the union column, but that failed, try just treating it as equals
                         idx++;
                         indexColumn = getIndexColumn(indexOrdering, idx);
-                        if (indexColumn != null) {
-                            matchingColumn = orderingExpressionMatches(indexColumn, targetExpression);
-                            if (matchingColumn) {
-                                index.setIncludeUnionAsEquality(true);
-                            }
+                        if (indexColumn != null && orderingExpressionMatches(indexColumn, targetExpression)) {
+                            index.setIncludeUnionAsEquality(true);
                         }
                     }
                     if (matchingColumn) {
