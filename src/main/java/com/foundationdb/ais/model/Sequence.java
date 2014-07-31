@@ -81,7 +81,10 @@ public class Sequence extends HasStorage {
     public final boolean isCycle() {
         return cycle;
     }
-    
+
+    public final boolean isInternalSequence() {
+        return sequenceName.getTableName().contains(Column.ROW_ID_NAME);
+    }
     // State
     protected final AkibanInformationSchema ais;
     protected final TableName sequenceName;

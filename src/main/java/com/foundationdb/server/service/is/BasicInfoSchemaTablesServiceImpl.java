@@ -951,7 +951,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 while(it.hasNext()) {
                     Sequence sequence = it.next();
                     if(isAccessible(session, sequence.getSequenceName()) && 
-                            !sequence.getSequenceName().getTableName().contains(Column.ROW_ID_NAME)) {
+                            !sequence.isInternalSequence()) {
                         return new ValuesRow(rowType,
                                              null,      //sequence catalog
                                              sequence.getSequenceName().getSchemaName(),
