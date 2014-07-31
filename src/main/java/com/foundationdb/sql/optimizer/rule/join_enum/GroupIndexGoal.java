@@ -453,7 +453,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         }
         try_sorted:
         if (queryGoal.getOrdering() != null) {
-            int idx = nequals;
+            int idx = nequals - index.getNUnions();
             for (OrderByExpression targetColumn : queryGoal.getOrdering().getOrderBy()) {
                 // Get the expression by which this is ordering, recognizing the
                 // special cases where the Sort is fed by GROUP BY or feeds DISTINCT.

@@ -147,6 +147,11 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
+    public int getNUnions() {
+        return outputScan.getNUnions();
+    }
+
+    @Override
     public void incrementConditionsCounter(ConditionsCounter<? super ConditionExpression> counter) {
         outputScan.incrementConditionsCounter(counter);
         selectorScan.incrementConditionsCounter(counter);

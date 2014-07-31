@@ -24,6 +24,7 @@ import java.util.*;
 
 public abstract class IndexScan extends BaseScan implements IndexIntersectionNode<ConditionExpression,IndexScan>, JoinTreeScan
 {
+
     public static enum OrderEffectiveness {
         NONE, PARTIAL_GROUPED, GROUPED, SORTED, FOR_MIN_MAX
     }
@@ -140,6 +141,10 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
      * The index of the first column that may have more than one result
      */
     public abstract int getNEquality();
+    /**
+     * The number of unions that come after the equalities
+     */
+    public abstract int getNUnions();
     public abstract boolean isAscendingAt(int index);
     public abstract boolean isRecoverableAt(int index);
     

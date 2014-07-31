@@ -303,7 +303,16 @@ public final class SingleIndexScan extends IndexScan implements EqualityColumnsS
         int nequals = 0;
         if (equalityComparands != null)
             nequals = equalityComparands.size();
+        nequals += getNUnions();
         return nequals;
+    }
+
+    @Override
+    public int getNUnions() {
+        if ((conditionRange != null) && conditionRange.isAllSingle())
+            return 1;
+        else
+            return 0;
     }
 
     @Override
