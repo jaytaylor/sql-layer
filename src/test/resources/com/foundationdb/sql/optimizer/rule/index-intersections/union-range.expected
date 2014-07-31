@@ -1,0 +1,4 @@
+MultiIndexIntersectScan@4adf9095(compare 2
+    skip 1: SingleIndexScan@390f34cc(Index(test.items.sku[IndexColumn(sku)]), UNIONs of [% = 1234, % = 9876])
+    skip 1: SingleIndexScan@588491b8(Index(test.orders.order_date[IndexColumn(order_date)]), =2000-10-31)
+    -> NONE, rows = 2, cost = 225.701)
