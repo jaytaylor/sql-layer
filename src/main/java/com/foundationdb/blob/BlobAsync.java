@@ -26,6 +26,7 @@ import com.foundationdb.async.Future;
 import com.foundationdb.async.ReadyFuture;
 import com.foundationdb.async.AsyncUtil;
 import com.foundationdb.subspace.Subspace;
+import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple;
 import com.foundationdb.tuple.Tuple2;
 
@@ -125,7 +126,7 @@ public class BlobAsync {
     private int dataKeyOffset(byte[] key) {
         // Gets the last key in the Tuple.
         Tuple t = (Tuple) subspace.unpack(key);
-        return Integer.valueOf(t.getString(t.size() - 1).trim()); 
+        return Integer.valueOf(t.getString(t.size() - 1).trim());
     }
 
     // Key to the location of the Blob's size.
@@ -138,36 +139,25 @@ public class BlobAsync {
         return tcx.runAsync(new Function<Transaction, Future<Chunk>>() {
             @Override
             public Future<Chunk> apply(final Transaction tr) {
-                return tr.getKey(KeySelector.lastLessOrEqual(dataKey(offset)))
-                        .flatMap(new Function<byte[], Future<Chunk>>() {
-                            @Override
-                            public Future<Chunk> apply(final byte[] chunkKey) {
-                                if (chunkKey == null) {
-                                    // Nothing before (sparse).
-                                    return new ReadyFuture<Chunk>(new Chunk());
-                                }
-                                if (Tuple2.fromBytes(chunkKey).compareTo(
-                                        Tuple2.fromBytes(dataKey(0))) < 0) {
-                                    // Off beginning.
-                                    return new ReadyFuture<Chunk>(new Chunk());
-                                }
-                                final int chunkOffset = dataKeyOffset(chunkKey);
-                                return tr.get(chunkKey).map(
-                                        new Function<byte[], Chunk>() {
-                                            @Override
-                                            public Chunk apply(byte[] chunkData) {
-                                                if (chunkOffset
-                                                        + chunkData.length <= offset) {
-                                                    // In sparse region after chunk.
-                                                    return new Chunk();
-                                                }
-
-                                                // Success.
-                                                return new Chunk(chunkKey, chunkData, chunkOffset);
-                                            }
-                                        });
-                            }
-                        });
+                return tr.getRange(subspace.get(DATA_KEY).range(), 1)
+                  .asList()
+                  .flatMap(new Function<List<KeyValue>, Future<Chunk>>() {
+                      @Override
+                      public Future<Chunk> apply(final List<KeyValue> kvList) {
+                          if(kvList.isEmpty()) {
+                              return new ReadyFuture<Chunk>(new Chunk());
+                          }
+                          KeyValue kv = kvList.get(0);
+                          int chunkOffset = dataKeyOffset(kv.getKey());
+                          if (chunkOffset + kv.getValue().length <= offset) {
+                              // In sparse region after chunk.
+                              return new ReadyFuture<>(new Chunk());
+                          } else {
+                              // Success.
+                              return new ReadyFuture<>(new Chunk(kv.getKey(), kv.getValue(), chunkOffset));
+                          }
+                      }
+                  });
             }
         });
     }
