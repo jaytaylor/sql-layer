@@ -679,9 +679,9 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void sequencesScan() {
         final Object[][] expected = {
-                {null, "test", "_col_sequence", "bigint",  1L, 0L, 1000L, 1L, false, "test._col_sequence", LONG},
-                {null, "test", "sequence",  "bigint",      1L, 0L, 1000L, 1L, false, "test.sequence", LONG },
-                {null, "test", "sequence1", "bigint",   1000L, 0L, 1000L, -1L,false, "test.sequence1", LONG},
+                {null, "test", "_col_sequence", "bigint",   1L, 0L, 1000L, 1L, false, "test._col_sequence", LONG},
+                {null, "test", "sequence",  "bigint",   1L, 0L, 1000L, 1L, false, "test.sequence", LONG },
+                {null, "test", "sequence1", "bigint", 1000L, 0L, 1000L, -1L,false, "test.sequence1", LONG},
         };
         GroupScan scan = getFactory (BasicInfoSchemaTablesServiceImpl.SEQUENCES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);

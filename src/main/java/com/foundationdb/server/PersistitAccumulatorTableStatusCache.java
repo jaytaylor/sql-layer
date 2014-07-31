@@ -98,7 +98,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     private class AccumulatorStatus implements TableStatus {
         private final int expectedID;
         private volatile AccumulatorAdapter rowCount;
-        private volatile AccumulatorAdapter uniqueID;
         private volatile AccumulatorAdapter autoIncrement;
 
         public AccumulatorStatus(int expectedID) {
@@ -139,15 +138,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public long getUniqueID(Session session) {
-            try {
-                return uniqueID.getSnapshot();
-            } catch(PersistitException | RollbackException e) {
-                throw PersistitAdapter.wrapPersistitException(null, e);
-            }
-        }
-
-        @Override
         public int getTableID() {
             return expectedID;
         }
@@ -160,11 +150,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         @Override
         public void rowsWritten(Session session, long count) {
             rowCount.sumAdd(count);
-        }
-
-        @Override
-        public long createNewUniqueID(Session session) {
-            return uniqueID.seqAllocate();
         }
 
         @Override
@@ -185,12 +170,11 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         @Override
         public void setRowDef(RowDef rowDef) {
             if(rowDef == null) {
-                rowCount = uniqueID = autoIncrement = null;
+                rowCount = autoIncrement = null;
             } else {
                 checkExpectedRowDefID(expectedID, rowDef);
                 Tree tree = getTreeForRowDef(rowDef);
                 rowCount = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, tree);
-                uniqueID = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, tree);
                 autoIncrement = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.AUTO_INC, tree);
             }
         }

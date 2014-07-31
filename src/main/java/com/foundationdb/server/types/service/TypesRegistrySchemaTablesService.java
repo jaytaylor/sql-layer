@@ -17,17 +17,6 @@
 
 package com.foundationdb.server.types.service;
 
-import com.foundationdb.server.types.TClass;
-import com.foundationdb.server.types.TKeyComparable;
-import com.foundationdb.server.types.texpressions.TValidatedAggregator;
-import com.foundationdb.server.types.texpressions.TValidatedScalar;
+public interface TypesRegistrySchemaTablesService {
 
-public interface TypesRegistryService {
-    TypesRegistry getTypesRegistry();
-    OverloadResolver<TValidatedScalar> getScalarsResolver();
-    OverloadResolver<TValidatedAggregator> getAggregatesResolver();
-    TCastResolver getCastsResolver();
-    TKeyComparable getKeyComparable(TClass left, TClass right);
-    enum FunctionKind { SCALAR, AGGREGATE };
-    FunctionKind getFunctionKind(String name);
 }

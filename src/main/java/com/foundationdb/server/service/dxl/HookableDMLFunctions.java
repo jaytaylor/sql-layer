@@ -187,30 +187,6 @@ public final class HookableDMLFunctions implements DMLFunctions {
     }
 
     @Override
-    public RowData convertNewRow(NewRow row){
-        Session session = sessionService.createSession();
-        Throwable thrown = null;
-        try {
-            hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.CONVERT_NEW_ROW);
-            return delegate.convertNewRow(row);
-        } catch (RuntimeException t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.CONVERT_NEW_ROW, t);
-            throw t;
-        } catch (Throwable t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.CONVERT_NEW_ROW, t);
-            throw throwAlways(t);
-        } finally {
-            try {
-                hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.CONVERT_NEW_ROW, thrown);
-            } finally {
-                session.close();
-            }
-        }
-    }
-
-    @Override
     public NewRow wrapRowData(Session session, RowData rowData) {
         Throwable thrown = null;
         try {

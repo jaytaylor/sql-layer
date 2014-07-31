@@ -416,11 +416,7 @@ public class OnlineHelper implements RowListener
                 public void handleRow(Row oldRow) {
                     TableTransform transform = transformCache.get(oldRow.rowType().typeId());
                     Row newRow = transformRow(origContext, origBindings, transform, oldRow);
-                    origAdapter.writeRow(newRow, transform.tableIndexes, transform.groupIndexes,
-                            // if adding a PK, fillHiddenPK has no effect
-                            // if dropping the PK we want to fill the hidden PK
-                            // otherwise we don't want to fill the hidden PK, we want to copy the values
-                            changeLevel == ChangeLevel.GROUP);
+                    origAdapter.writeRow(newRow, transform.tableIndexes, transform.groupIndexes);
                 }
             });
         }
@@ -556,7 +552,7 @@ public class OnlineHelper implements RowListener
                 if(doWrite) {
                     Row origNewRow = new RowDataRow(transform.rowType, newRowData);
                     Row newNewRow = transformRow(context, bindings, transform, origNewRow);
-                    adapter.writeRow(newNewRow, transform.tableIndexes, transform.groupIndexes, true);
+                    adapter.writeRow(newNewRow, transform.tableIndexes, transform.groupIndexes);
                 }
                 break;
         }
@@ -943,7 +939,6 @@ public class OnlineHelper implements RowListener
             case GROUP:
                 Table oldTable = oldAIS.getTable(newTable.getTableId());
                 if((changeSet.getColumnChangeCount() > 0) ||
-                   // TODO: Hidden PK changes are not in ChangeSet. They really should be.
                    (newRowType.nFields() != oldTable.getColumnsIncludingInternal().size())) {
                     projectedRowType = buildProjectedRowType(changeSet,
                                                              oldTable,

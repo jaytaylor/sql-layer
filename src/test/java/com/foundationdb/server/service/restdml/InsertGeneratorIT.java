@@ -98,7 +98,7 @@ public class InsertGeneratorIT extends ITBase {
         
         assertEquals(
                 "Insert_Returning(INTO c)\n" +
-                "  Project_Default(NULL, NULL, NULL)\n" +
+                "  Project_Default(NULL, NULL, _SEQ_NEXT(test, c___row_id_seq))\n" +
                 "    ValuesScan_Default([])",
                 getExplain(insert, table.getSchemaName())
         );
@@ -298,7 +298,7 @@ public class InsertGeneratorIT extends ITBase {
         Operator insert = insertGenerator.create(table);
         assertEquals(
             "Insert_Returning(INTO all_types)\n" +
-            "  Project_Default(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)\n" +
+            "  Project_Default(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, _SEQ_NEXT(test, all_types___row_id_seq))\n" +
             "    ValuesScan_Default([])",
             getExplain(insert, table.getSchemaName())
         );

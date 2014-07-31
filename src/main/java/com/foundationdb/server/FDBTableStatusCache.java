@@ -130,7 +130,6 @@ public class FDBTableStatusCache implements TableStatusCache {
         private final int tableID;
         private volatile byte[] rowCountKey;
         private volatile byte[] autoIncKey;
-        private volatile byte[] uniqueKey;
 
         public FDBTableStatus(int tableID) {
             this.tableID = tableID;
@@ -164,33 +163,15 @@ public class FDBTableStatusCache implements TableStatusCache {
         public void setRowDef(RowDef rowDef) {
             if(rowDef == null) {
                 this.autoIncKey = null;
-                this.uniqueKey = null;
                 this.rowCountKey = null;
             } else {
                 assert rowDef.getRowDefId() == tableID;
                 byte[] prefixBytes = FDBStoreDataHelper.prefixBytes(rowDef.getPKIndex());
                 this.autoIncKey = ByteArrayUtil.join(packedTableStatusPrefix, prefixBytes, AUTO_INC_PACKED);
-                this.uniqueKey = ByteArrayUtil.join(packedTableStatusPrefix, prefixBytes, UNIQUE_PACKED);
                 this.rowCountKey = ByteArrayUtil.join(packedTableStatusPrefix, prefixBytes, ROW_COUNT_PACKED);
             }
         }
 
-        @Override
-        public long createNewUniqueID(Session session) {
-            // Use new transaction to avoid conflicts. Can result in gaps, but that's OK.
-            return db.run(
-                new Function<Transaction, Long>()
-                {
-                    @Override
-                    public Long apply(Transaction txn) {
-                        byte[] curBytes = txn.get(uniqueKey).get();
-                        long newValue = 1 + decodeOrZero(curBytes);
-                        txn.set(uniqueKey, Tuple2.from(newValue).pack());
-                        return newValue;
-                    }
-                }
-            );
-        }
 
         @Override
         public long getAutoIncrement(Session session) {
@@ -210,21 +191,6 @@ public class FDBTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public long getUniqueID(Session session) {
-            // Use new transaction to avoid conflicts.
-            return db.run(
-                new Function<Transaction, Long>()
-                {
-                    @Override
-                    public Long apply(Transaction txn) {
-                        byte[] curBytes = txn.get(uniqueKey).get();
-                        return decodeOrZero(curBytes);
-                    }
-                }
-            );
-        }
-
-        @Override
         public int getTableID() {
             return tableID;
         }
@@ -239,7 +205,6 @@ public class FDBTableStatusCache implements TableStatusCache {
             TransactionState txn = txnService.getTransaction(session);
             txn.clearKey(rowCountKey);
             txn.clearKey(autoIncKey);
-            txn.clearKey(uniqueKey);
         }
 
         private void internalSetAutoInc(Session session, long value, boolean evenIfLess) {

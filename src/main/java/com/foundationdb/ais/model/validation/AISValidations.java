@@ -54,6 +54,7 @@ public final class AISValidations {
     public static final AISValidation UUID_PRESENT = new UUIDPresent();
     public static final AISValidation VIEW_REFERENCES = new ViewReferences();
     public static final AISValidation FOREIGN_KEY_INDEXES = new ForeignKeyIndexes();
+    public static final AISValidation TABLE_HAS_ONE_IDENTITY = new TableHasOneIdentityColumn();
 
 
     /** Validations any AIS should satisfy (e.g. references are valid) */
@@ -80,7 +81,8 @@ public final class AISValidations {
             SUPPORTED_COLUMN_TYPES,
             TABLE_ID_UNIQUE,
             TABLES_IN_A_GROUP,
-            TABLE_HAS_PRIMARY_KEY
+            TABLE_HAS_PRIMARY_KEY,
+            TABLE_HAS_ONE_IDENTITY
             //VIEW_REFERENCES
         )
     );

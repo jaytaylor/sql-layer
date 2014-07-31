@@ -328,7 +328,7 @@ public enum ErrorCode {
     UNSUPPORTED_COLUMN_DATA_TYPE   ("50", "008", Importance.DEBUG, UnsupportedColumnDataTypeException.class),
     JOIN_TO_MULTIPLE_PARENTS("50", "009", Importance.DEBUG, JoinToMultipleParentsException.class), 
     UNSUPPORTED_INDEX_DATA_TYPE("50", "00A", Importance.DEBUG, UnsupportedIndexDataTypeException.class),
-    //50,00B
+    MULTIPLE_IDENTITY_COLUMNS("50", "00B", Importance.DEBUG, MultipleIdentityColumnsException.class),
     DUPLICATE_COLUMN        ("50", "00C", Importance.DEBUG, DuplicateColumnNameException.class),
     DUPLICATE_GROUP         ("50", "00D", Importance.DEBUG, DuplicateGroupNameException.class), 
     REFERENCED_TABLE        ("50", "00E", Importance.DEBUG, ReferencedTableException.class),  

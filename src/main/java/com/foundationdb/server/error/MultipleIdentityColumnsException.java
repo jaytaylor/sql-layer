@@ -15,19 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.types.service;
+package com.foundationdb.server.error;
 
-import com.foundationdb.server.types.TClass;
-import com.foundationdb.server.types.TKeyComparable;
-import com.foundationdb.server.types.texpressions.TValidatedAggregator;
-import com.foundationdb.server.types.texpressions.TValidatedScalar;
+import com.foundationdb.ais.model.TableName;
 
-public interface TypesRegistryService {
-    TypesRegistry getTypesRegistry();
-    OverloadResolver<TValidatedScalar> getScalarsResolver();
-    OverloadResolver<TValidatedAggregator> getAggregatesResolver();
-    TCastResolver getCastsResolver();
-    TKeyComparable getKeyComparable(TClass left, TClass right);
-    enum FunctionKind { SCALAR, AGGREGATE };
-    FunctionKind getFunctionKind(String name);
+public final class MultipleIdentityColumnsException extends InvalidOperationException {
+
+    public MultipleIdentityColumnsException(TableName name) {
+        super(ErrorCode.MULTIPLE_IDENTITY_COLUMNS, name.getSchemaName(), name.getTableName());
+    }
+
 }
