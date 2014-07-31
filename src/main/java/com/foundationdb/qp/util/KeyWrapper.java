@@ -36,10 +36,10 @@ public  class KeyWrapper{
 
     @Override
     public boolean equals(Object x) {
-        if (((KeyWrapper)x).values.size() != this.values.size())
+        if ( !(x instanceof KeyWrapper) ||  ((KeyWrapper)x).values.size() != values.size() )
             return false;
         for (int i = 0; i < values.size(); i++) {
-            if (((KeyWrapper)x).values.get(i).equals(this.values.get(i)))
+            if(!ValueSources.areEqual(((KeyWrapper)x).values.get(i), values.get(i), values.get(i).getType()))
                 return false;
         }
         return true;
