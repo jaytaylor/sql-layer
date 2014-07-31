@@ -47,57 +47,23 @@ class HashJoin extends Operator
         return new Execution(context, bindingsCursor);
     }
 
-    @Override
-    public void findDerivedTypes(Set<RowType> derivedTypes)
-    {
-        outerInputOperator.findDerivedTypes(derivedTypes);
-        innerInputOperator.findDerivedTypes(derivedTypes);
-    }
-
-    @Override
-    public List<Operator> getInputOperators()
-    {
-        List<Operator> result = new ArrayList<>(2);
-        result.add(innerInputOperator);
-        result.add(outerInputOperator);
-        return result;
-    }
-
-    @Override
-    public String describePlan()
-    {
-        return String.format("%s\n%s", describePlan(outerInputOperator), describePlan(innerInputOperator));
-    }
-
-    public HashJoin(Operator outerInputOperator,
-                    Operator innerInputOperator,
-                    RowType outerRowType,
-                    RowType innerRowType,
-                    //List<? extends TPreparedExpression> tFields,
-                    List<AkCollator> collators,
+    public HashJoin(List<AkCollator> collators,
                     int outerComparisonFields[],
-                    int innerComparisonFields[],
-                    boolean outerLeftJoin)
+                    boolean outerLeftJoin,
+                    int hashBindingPosition,
+                    int rowBindingPosition
+                    )
     {
-        ArgumentValidation.notNull("outerInputOperator", outerInputOperator);
-        ArgumentValidation.notNull("innerInputOperator", innerInputOperator);
-        ArgumentValidation.notNull("outerRowType", outerRowType);
-        ArgumentValidation.notNull("innerRowType", innerRowType);
         ArgumentValidation.notNull("outerComparisonFields", outerComparisonFields);
-        ArgumentValidation.notNull("innerComparisonFields", innerComparisonFields);
         ArgumentValidation.isGTE("outerOrderingFields", outerComparisonFields.length, 1);
-        ArgumentValidation.isGTE("innerOrderingFields", innerComparisonFields.length, 1);
-        ArgumentValidation.isSame("innerComparisonFields", innerComparisonFields.length, "outerComparisonFields", outerComparisonFields.length);
-        //ArgumentValidation.notNull("Fields", tFields);
-        //ArgumentValidation.isGT("fields.size()", tFields.size(), 0);
-        this.outerInputOperator = outerInputOperator;
-        this.innerInputOperator = innerInputOperator;
-        this.outputRowType = new JoinedRowType(outerRowType.schema(), 1, outerRowType, innerRowType);
-        //this.tFields = tFields;
+        ArgumentValidation.isNotSame("hashBindingPosition", hashBindingPosition,"rowBindingPosition", rowBindingPosition);
+
         this.collators = collators;
         this.outerComparisonFields = outerComparisonFields;
-        this.innerComparisonFields = innerComparisonFields;
         this.outerLeftJoin = outerLeftJoin;
+        this.hashBindingPosition = hashBindingPosition;
+        this.rowBindingPosition = rowBindingPosition;
+
     }
 
     // Class state
@@ -108,38 +74,22 @@ class HashJoin extends Operator
 
     // Object state
 
-    private final Operator outerInputOperator;
-    private final Operator innerInputOperator;
     private final int outerComparisonFields[];
-    private final int innerComparisonFields[];
-    private final CompoundRowType outputRowType;
-   // private final List<? extends TPreparedExpression> tFields;
+    private final int hashBindingPosition;
+    private final int rowBindingPosition;
+
     private final List<AkCollator> collators;
     private final boolean outerLeftJoin;
-
-    public class JoinedRowType extends CompoundRowType {
-
-        public JoinedRowType(Schema schema, int typeID, RowType first, RowType second) {
-            super(schema, typeID, first, second);
-        }
-    }
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
     {
         Attributes atts = new Attributes();
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
-        //atts.put(Label.NUM_COMPARE, PrimitiveExplainer.getInstance(tFields.size()));
-        atts.put(Label.INPUT_OPERATOR, outerInputOperator.getExplainer(context));
-        atts.put(Label.INPUT_OPERATOR, innerInputOperator.getExplainer(context));
         return new CompoundExplainer(Type.HASH_JOIN, atts);
     }
 
-    public RowType rowType(){
-        return outputRowType;
-    }
-
-    private class Execution<E> extends OperatorCursor
+    private class Execution extends OperatorCursor
     {
 
         @Override
@@ -147,11 +97,9 @@ class HashJoin extends Operator
             TAP_OPEN.in();
             try {
                 CursorLifecycle.checkIdle(this);
-                outerInput.open();
-                innerInput.open();
-                buildHashTable();
-                innerInput.close();
-                nextOuterRow();
+                hashTable = bindings.getHashJoinTable(hashBindingPosition);
+                innerRowList = hashTable.get(new KeyWrapper(getOuterRow(), outerComparisonFields, collators));
+                innerRowListPosition = 0;
                 closed = false;
             } finally {
                 TAP_OPEN.out();
@@ -169,28 +117,13 @@ class HashJoin extends Operator
                     CursorLifecycle.checkIdleOrActive(this);
                 }
                 Row next = null;
-                while (!closed && next == null && outerRow != null) {
-                    if (innerRowList == null || innerRowList.isEmpty()) {
-                        KeyWrapper keyWrapper = new KeyWrapper(outerRow, outerComparisonFields);
-                        innerRowList = multimap.get(keyWrapper);
-                        innerRowListPosition = 0;
-                        if (innerRowList.isEmpty()) {
-                            if(outerLeftJoin)
-                                next = outerRow;
-                            nextOuterRow();
-                        }
-                    }
-                    if (!innerRowList.isEmpty()) {
-                        innerRow = innerRowList.get(innerRowListPosition++);
-                        next = new CompoundRow(outputRowType, outerRow, innerRow);
-                        if (innerRowListPosition == innerRowList.size()) {
-                            innerRowList = null;
-                            nextOuterRow();
-                        }
-                    }
+                if(innerRowListPosition < innerRowList.size()) {
+                    next = innerRowList.get(innerRowListPosition++);
+                } else if(outerLeftJoin && innerRowListPosition++ == 0){
+                    next = getOuterRow();
                 }
                 if (LOG_EXECUTION) {
-                    LOG.debug("Hash_Join: yield {}", next);
+                    LOG.debug("HashJoin: yield {}", next);
                 }
                 return next;
             } finally {
@@ -205,10 +138,6 @@ class HashJoin extends Operator
         {
             CursorLifecycle.checkIdleOrActive(this);
             if (!closed) {
-                outerRow = null;
-                innerRow = null;
-                outerInput.close();
-                innerInput.close();
                 closed = true;
             }
         }
@@ -216,16 +145,13 @@ class HashJoin extends Operator
         @Override
         public void closeBindings() {
             bindingsCursor.closeBindings();
-            outerInput.closeBindings();
-            innerInput.closeBindings();
         }
 
         @Override
         public void destroy()
         {
             close();
-            outerInput.destroy();
-            innerInput.destroy();
+            destroyed = true;
         }
 
         @Override
@@ -241,56 +167,37 @@ class HashJoin extends Operator
         }
 
         @Override
-        public boolean isDestroyed()
-        {
-            assert outerInput.isDestroyed() == innerInput.isDestroyed();
-            return innerInput.isDestroyed();
-        }
-
-        @Override
         public void openBindings() {
             bindingsCursor.openBindings();
-            outerInput.openBindings();
-            innerInput.openBindings();
         }
 
         @Override
         public QueryBindings nextBindings() {
-            QueryBindings bindings = bindingsCursor.nextBindings();
-            QueryBindings other = outerInput.nextBindings();
-            assert (bindings == other);
-            other = innerInput.nextBindings();
-            assert (bindings == other);
+             bindings = bindingsCursor.nextBindings();
             return bindings;
         }
 
         @Override
+        public boolean isDestroyed()
+        {
+            return destroyed;
+        }
+
+        @Override
         public void cancelBindings(QueryBindings bindings) {
-            outerInput.cancelBindings(bindings);
-            innerInput.cancelBindings(bindings);
             bindingsCursor.cancelBindings(bindings);
         }
 
         // For use by this class
 
-        private void nextOuterRow()
+        private Row getOuterRow()
         {
-            Row row = outerInput.next();
-            outerRow = row;
+            Row row = bindings.getRow(rowBindingPosition);
             if (LOG_EXECUTION) {
                 LOG.debug("hash_join: outer {}", row);
             }
+            return row;
         }
-
-        private void nextInnerRow()
-        {
-            Row row = innerInput.next();
-            innerRow = row;
-            if (LOG_EXECUTION) {
-                LOG.debug("hash_join: inner {}", row);
-            }
-        }
-
 
         // Execution interface
 
@@ -299,59 +206,46 @@ class HashJoin extends Operator
             super(context);
             MultipleQueryBindingsCursor multiple = new MultipleQueryBindingsCursor(bindingsCursor);
             this.bindingsCursor = multiple;
-            this.outerInput = outerInputOperator.cursor(context, multiple.newCursor());
-            this.innerInput = innerInputOperator.cursor(context, multiple.newCursor());
         }
         // Cursor interface
-
-        protected class KeyWrapper{
-            List<ValueSource> values = new ArrayList<>();
-            Integer hashKey = 0;
-
-            @Override
-            public int hashCode(){
-                return hashKey;
-            }
-
-            @Override
-            public boolean equals(Object x) {
-                if (((KeyWrapper)x).values.size() != this.values.size())
-                    return false;
-                for (int i = 0; i < values.size(); i++) {
-                    if (((KeyWrapper)x).values.get(i).equals(this.values.get(i)))
-                        return false;
-                }
-                return true;
-            }
-
-            public KeyWrapper(Row row, int comparisonFields[]){
-
-                for (int f = 0; f < comparisonFields.length; f++) {
-                    ValueSource columnValue=row.value(comparisonFields[f]);
-                    AkCollator collator = (collators != null) ? collators.get(f) : null;
-                    hashKey = hashKey ^ ValueSources.hash(columnValue, collator);
-                    values.add(columnValue);
-                }
-            }
-        }
-        
-        private void  buildHashTable() {
-            nextInnerRow();
-            while (innerRow != null) {
-                KeyWrapper keyWrapper = new KeyWrapper(innerRow, innerComparisonFields);
-                multimap.put(keyWrapper, innerRow);
-                nextInnerRow();
-            }
-        }
-
-        protected final Cursor outerInput;
-        protected final Cursor innerInput;
-        protected ArrayListMultimap<KeyWrapper, Row> multimap = ArrayListMultimap.create();
+        protected ArrayListMultimap<KeyWrapper, Row> hashTable = ArrayListMultimap.create();
         private boolean closed = true;
         private final QueryBindingsCursor bindingsCursor;
-        private Row outerRow;
-        private Row innerRow;
         private List<Row> innerRowList;
-        private int innerRowListPosition;
+        private int innerRowListPosition = 0;
+        private QueryBindings bindings;
+        private boolean destroyed = false;
+
+    }
+
+    public static class KeyWrapper{
+        List<ValueSource> values = new ArrayList<>();
+        Integer hashKey = 0;
+
+        @Override
+        public int hashCode(){
+            return hashKey;
+        }
+
+        @Override
+        public boolean equals(Object x) {
+            if (((KeyWrapper)x).values.size() != this.values.size())
+                return false;
+            for (int i = 0; i < values.size(); i++) {
+                if (((KeyWrapper)x).values.get(i).equals(this.values.get(i)))
+                    return false;
+            }
+            return true;
+        }
+
+        public KeyWrapper(Row row, int comparisonFields[], List<AkCollator> collators){
+
+            for (int f = 0; f < comparisonFields.length; f++) {
+                ValueSource columnValue=row.value(comparisonFields[f]);
+                AkCollator collator = (collators != null) ? collators.get(f) : null;
+                hashKey = hashKey ^ ValueSources.hash(columnValue, collator);
+                values.add(columnValue);
+            }
+        }
     }
 }

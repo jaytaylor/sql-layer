@@ -21,6 +21,7 @@ import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.BloomFilter;
+import com.google.common.collect.ArrayListMultimap;
 
 /** The bindings associated with the execution of a query.
  * This includes query parameters (? markers) as well as current values for iteration.
@@ -77,6 +78,20 @@ public interface QueryBindings
      * @param filter the bloom filter to assign
      */
     public void setBloomFilter(int index, BloomFilter filter);
+
+    /**
+     * Gets the hash join table bound to the given index.
+     * @param index the index to look up
+     * @return the hash join table at that index
+     * @throws BindingNotSetException if the given index wasn't set
+     */
+    public ArrayListMultimap<HashJoin.KeyWrapper, Row> getHashJoinTable(int index);
+
+    /**Bind a hash table hash join table to the given index.
+     * @param index the index to set
+     * @param hashTable the hash join table to assign
+     */
+    public void setHashJoinTable(int index, ArrayListMultimap<HashJoin.KeyWrapper, Row> hashTable);
 
     /**
      * Clear all bindings.

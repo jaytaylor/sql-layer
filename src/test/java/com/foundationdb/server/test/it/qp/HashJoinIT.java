@@ -18,24 +18,30 @@
 package com.foundationdb.server.test.it.qp;
 
 
+
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.types.texpressions.TPreparedBoundField;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedField;
 import org.junit.Test;
 
 import java.util.*;
 
 import static com.foundationdb.qp.operator.API.*;
-import static com.foundationdb.server.test.ExpressionGenerators.field;
 
 
 public class HashJoinIT extends OperatorITBase {
 
+    static int ROW_BINDING_POSITION = 100;
+    static int TABLE_BINDING_POSITION = 200;
     private int fullAddress;
     TableRowType fullAddressRowType;
+    private RowType projectRowType;
 
     @Override
     protected void setupCreateSchema() {
@@ -93,44 +99,59 @@ public class HashJoinIT extends OperatorITBase {
         ciCollator = customerRowType.table().getColumn(1).getCollator();
     }
 
-    // Test argument validation
+    /** Test argument hashJoin */
 
     @Test(expected = IllegalArgumentException.class)
-    public void testLeftInputNull() {
+    public void testHashJoinbindingsSame() {
         int columnsToJoinOn[] = {1};
-        hashJoin(null, groupScan_Default(coi), customerRowType, customerRowType, columnsToJoinOn, columnsToJoinOn);
+        hashJoin(null, columnsToJoinOn, false, ROW_BINDING_POSITION, ROW_BINDING_POSITION);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testRightInputNull() {
-        int columnsToJoinOn[] = {1};
-        hashJoin(groupScan_Default(coi), null, customerRowType, customerRowType,columnsToJoinOn, columnsToJoinOn);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testBothInputsNull() {
-        int columnsToJoinOn[] = {1};
-        hashJoin(null, null, customerRowType, customerRowType,columnsToJoinOn, columnsToJoinOn);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testnullFieldsToCompare() {
-        int columnsToJoinOn[] = {1};
-        hashJoin(groupScan_Default(coi), groupScan_Default(coi), customerRowType, customerRowType,columnsToJoinOn, null);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testMismatchedFieldsToCompare() {
-        int columnsToJoinOn1[] = {1};
-        int columnsToJoinOn2[] = {1, 2};
-        hashJoin(groupScan_Default(coi), groupScan_Default(coi), customerRowType, customerRowType,columnsToJoinOn1, columnsToJoinOn2);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testEmptyFieldsToCompare() {
+    public void testHashJoinEmptyComparisonFields() {
         int columnsToJoinOn[] = {};
-        hashJoin(groupScan_Default(coi), groupScan_Default(coi), customerRowType, customerRowType,columnsToJoinOn, columnsToJoinOn);
+        hashJoin(null, columnsToJoinOn, false, ROW_BINDING_POSITION, TABLE_BINDING_POSITION);
     }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testHashJoinNullComparisonFields() {
+        int columnsToJoinOn[] = {};
+        hashJoin(null, null, false, ROW_BINDING_POSITION, TABLE_BINDING_POSITION);
+    }
+
+    /** Test arguments using_HashJoin  */
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testUsingHashJoinRightInputNull() {
+        int columnsToJoinOn[] = {1};
+        using_HashJoin(groupScan_Default(coi),columnsToJoinOn,  TABLE_BINDING_POSITION, null, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testUsingHashJoinLeftInputNull() {
+        int columnsToJoinOn[] = {1};
+        using_HashJoin(null,columnsToJoinOn,  TABLE_BINDING_POSITION, groupScan_Default(coi), null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testUsingHashJoinBothInputsNull() {
+        int columnsToJoinOn[] = {1};
+        using_HashJoin(null,columnsToJoinOn,  TABLE_BINDING_POSITION, null, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testUsingHashJoinEmptyComparisonFields() {
+        int columnsToJoinOn[] = {};
+        using_HashJoin(groupScan_Default(coi), columnsToJoinOn, TABLE_BINDING_POSITION, groupScan_Default(coi), null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testUsingHashJoinNullComparisonFields() {
+        using_HashJoin(groupScan_Default(coi), null, TABLE_BINDING_POSITION, groupScan_Default(coi), null);
+    }
+
+
+
 
 
 
@@ -139,15 +160,14 @@ public class HashJoinIT extends OperatorITBase {
         int orderFieldsToCompare[] = {1};
         int customerFieldsToCompare[] = {0};
         Operator plan = hashJoinPlan(orderRowType, customerRowType,  orderFieldsToCompare,customerFieldsToCompare, null, false);
-        RowType projectRowType = plan.rowType();
         Row[] expected = new Row[]{
-                row(projectRowType, 100L, 1L, "ori", 1L, "northbridge"),
-                row(projectRowType, 101L, 1L, "ori", 1L, "northbridge"),
-                row(projectRowType, 200L, 2L, "david", 2L, "foundation"),
-                row(projectRowType, 201L, 2L, "david", 2L, "foundation"),
-                row(projectRowType, 300L, 3L, "tom", 3L, "matrix"),
-                row(projectRowType, 400L, 4L, "jack", 4L, "atlas"),
-                row(projectRowType, 401L, 4L, "jack", 4L, "atlas"),
+                row(projectRowType, 100L, 1L, "ori","northbridge"),
+                row(projectRowType, 101L, 1L, "ori", "northbridge"),
+                row(projectRowType, 200L, 2L, "david", "foundation"),
+                row(projectRowType, 201L, 2L, "david", "foundation"),
+                row(projectRowType, 300L, 3L, "tom", "matrix"),
+                row(projectRowType, 400L, 4L, "jack", "atlas"),
+                row(projectRowType, 401L, 4L, "jack", "atlas"),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
@@ -157,36 +177,38 @@ public class HashJoinIT extends OperatorITBase {
         int orderFieldsToCompare[] = {1};
         int customerFieldsToCompare[] = {0};
         Operator firstPlan = hashJoinPlan( orderRowType,customerRowType,  orderFieldsToCompare,customerFieldsToCompare, null, false);
-        RowType firstProjectRowType = firstPlan.rowType();
 
         int secondHashFieldsToCompare[] = {1,2};
         List<AkCollator> secondCollators = Arrays.asList(null, ciCollator);
-        Operator secondPlan = hashJoin(firstPlan,
-                                       filter_Default(
-                                               groupScan_Default(coi),
-                                               Collections.singleton(orderRowType)),
-                                       firstProjectRowType,
-                                       orderRowType,
-                                       secondCollators,
-                                       secondHashFieldsToCompare,
-                                       secondHashFieldsToCompare);
-        RowType secondProjectRowType = secondPlan.rowType();
+        Operator plan = hashJoinPlan(projectRowType,
+                                     orderRowType,
+                                     firstPlan,
+                                     filter_Default(
+                                             groupScan_Default(orderRowType.table().getGroup()),
+                                             Collections.singleton(orderRowType)
+                                     ),
+                                     secondHashFieldsToCompare,
+                                     secondHashFieldsToCompare,
+                                     secondCollators,
+                                     false
+                        );
+
         Row[] expected = new Row[]{
-                row(secondProjectRowType, 100L, 1L, "ori", 1L, "northbridge", 100L, 1L, "ori"),
-                row(secondProjectRowType, 100L, 1L, "ori", 1L, "northbridge", 101L, 1L, "ori"),
-                row(secondProjectRowType, 101L, 1L, "ori", 1L, "northbridge", 100L, 1L, "ori"),
-                row(secondProjectRowType, 101L, 1L, "ori", 1L, "northbridge", 101L, 1L, "ori"),
-                row(secondProjectRowType, 200L, 2L, "david", 2L, "foundation", 200L, 2L, "david"),
-                row(secondProjectRowType, 200L, 2L, "david", 2L, "foundation", 201L, 2L, "david"),
-                row(secondProjectRowType, 201L, 2L, "david", 2L, "foundation", 200L, 2L, "david"),
-                row(secondProjectRowType, 201L, 2L, "david", 2L, "foundation", 201L, 2L, "david"),
-                row(secondProjectRowType, 300L, 3L, "tom", 3L, "matrix", 300L, 3L, "tom"),
-                row(secondProjectRowType, 400L, 4L, "jack", 4L, "atlas", 400L, 4L, "jack"),
-                row(secondProjectRowType, 400L, 4L, "jack", 4L, "atlas", 401L, 4L, "jack"),
-                row(secondProjectRowType, 401L, 4L, "jack", 4L, "atlas", 400L, 4L, "jack"),
-                row(secondProjectRowType, 401L, 4L, "jack", 4L, "atlas", 401L, 4L, "jack"),
+                row(projectRowType, 100L, 1L, "ori", "northbridge", 100L),
+                row(projectRowType, 100L, 1L, "ori", "northbridge", 101L),
+                row(projectRowType, 101L, 1L, "ori", "northbridge", 100L),
+                row(projectRowType, 101L, 1L, "ori", "northbridge", 101L),
+                row(projectRowType, 200L, 2L, "david", "foundation", 200L),
+                row(projectRowType, 200L, 2L, "david", "foundation", 201L),
+                row(projectRowType, 201L, 2L, "david", "foundation", 200L),
+                row(projectRowType, 201L, 2L, "david", "foundation", 201L),
+                row(projectRowType, 300L, 3L, "tom", "matrix", 300L),
+                row(projectRowType, 400L, 4L, "jack", "atlas", 400L),
+                row(projectRowType, 400L, 4L, "jack", "atlas", 401L),
+                row(projectRowType, 401L, 4L, "jack", "atlas", 400L),
+                row(projectRowType, 401L, 4L, "jack", "atlas", 401L),
         };
-        compareRows(expected, cursor(secondPlan, queryContext, queryBindings));
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -194,23 +216,12 @@ public class HashJoinIT extends OperatorITBase {
         int addressFieldsToCompare[] = {1};
         int customerFieldsToCompare[] = {0};
         List<AkCollator> collators = Arrays.asList(ciCollator);
-        Operator joinPlan = hashJoinPlan(addressRowType,
+        Operator plan = hashJoinPlan(    addressRowType,
                                          customerRowType,
                                          addressFieldsToCompare,
                                          customerFieldsToCompare,
                                          collators,
                                          false);
-        // customer order inner join, done as a general join
-        RowType projectedRowType = joinPlan.rowType();
-        Operator plan =
-                project_DefaultTest(
-                        joinPlan,
-                        projectedRowType,
-                        Arrays.asList(field(projectedRowType, 0),
-                                      field(projectedRowType, 1),
-                                      field(projectedRowType, 2),
-                                      field(projectedRowType, 4))
-                        );
         Row[] expected = new Row[]{
                 row(fullAddressRowType, 1000L, 1L, "111 1000 st", "northbridge"),
                 row(fullAddressRowType, 1001L, 1L, "111 1001 st", "northbridge"),
@@ -229,15 +240,14 @@ public class HashJoinIT extends OperatorITBase {
         List<AkCollator> collators = Arrays.asList(null,null,ciCollator);
 
         Operator plan = hashJoinPlan(orderRowType, orderRowType,  orderFieldsToCompare,orderFieldsToCompare, collators, false);
-        RowType projectRowType = plan.rowType();
         Row[] expected = new Row[]{
-                row(projectRowType, 100L, 1L, "ori", 100L, 1L, "ori"),
-                row(projectRowType, 101L, 1L, "ori", 101L, 1L, "ori"),
-                row(projectRowType, 200L, 2L, "david",200L, 2L, "david"),
-                row(projectRowType, 201L, 2L, "david", 201L, 2L, "david"),
-                row(projectRowType, 300L, 3L, "tom", 300L, 3L, "tom"),
-                row(projectRowType, 400L, 4L, "jack", 400L, 4L, "jack"),
-                row(projectRowType, 401L, 4L, "jack",  401L, 4L, "jack"),
+                row(projectRowType, 100L, 1L, "ori"),
+                row(projectRowType, 101L, 1L, "ori"),
+                row(projectRowType, 200L, 2L, "david"),
+                row(projectRowType, 201L, 2L, "david"),
+                row(projectRowType, 300L, 3L, "tom"),
+                row(projectRowType, 400L, 4L, "jack"),
+                row(projectRowType, 401L, 4L, "jack"),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
@@ -250,20 +260,20 @@ public class HashJoinIT extends OperatorITBase {
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
+
     @Test
     public void testLeftOuterJoin() {
         int customerFieldsToCompare[] = {0};
         int orderFieldsToCompare[] = {1};
         Operator plan = hashJoinPlan(customerRowType, orderRowType,  customerFieldsToCompare,orderFieldsToCompare, null, true);
-        RowType projectRowType = plan.rowType();
         Row[] expected = new Row[]{
-                row(projectRowType, 1L, "northbridge", 100L, 1L, "ori"),
-                row(projectRowType, 1L, "northbridge", 101L, 1L, "ori"),
-                row(projectRowType, 2L, "foundation",200L, 2L, "david"),
-                row(projectRowType, 2L, "foundation",201L, 2L, "david"),
-                row(projectRowType, 3L, "matrix", 300L, 3L, "tom"),
-                row(projectRowType, 4L, "atlas",  400L, 4L, "jack"),
-                row(projectRowType, 4L, "atlas",  401L, 4L, "jack"),
+                row(projectRowType, 1L, "northbridge", 100L, "ori"),
+                row(projectRowType, 1L, "northbridge", 101L, "ori"),
+                row(projectRowType, 2L, "foundation",200L, "david"),
+                row(projectRowType, 2L, "foundation",201L, "david"),
+                row(projectRowType, 3L, "matrix", 300L, "tom"),
+                row(projectRowType, 4L, "atlas",  400L, "jack"),
+                row(projectRowType, 4L, "atlas",  401L, "jack"),
                 row(customerRowType, 5L, "highland"),
                 row(customerRowType, 6L, "flybridge")
         };
@@ -274,51 +284,104 @@ public class HashJoinIT extends OperatorITBase {
     public void testNullColumns() {
         int FieldsToCompare[] = {1};
         Operator plan = hashJoinPlan(itemRowType, itemRowType,  FieldsToCompare,FieldsToCompare, null, false);
-        RowType projectRowType = plan.rowType();
         Row[] expected = new Row[]{
-                row(projectRowType, 111L, null, 111L, null),
-                row(projectRowType, 111L, null, 112L, null),
-                row(projectRowType, 111L, null, 211L, null),
-                row(projectRowType, 111L, null, 222L, null),
-                row(projectRowType, 112L, null, 111L, null),
-                row(projectRowType, 112L, null, 112L, null),
-                row(projectRowType, 112L, null, 211L, null),
-                row(projectRowType, 112L, null, 222L, null),
-                row(projectRowType, 211L, null, 111L, null),
-                row(projectRowType, 211L, null, 112L, null),
-                row(projectRowType, 211L, null, 211L, null),
-                row(projectRowType, 211L, null, 222L, null),
-                row(projectRowType, 222L, null, 111L, null),
-                row(projectRowType, 222L, null, 112L, null),
-                row(projectRowType, 222L, null, 211L, null),
-                row(projectRowType, 222L, null, 222L, null),
-                row(projectRowType, 121L, 12L, 121L, 12L),
-                row(projectRowType, 121L, 12L, 122L, 12L),
-                row(projectRowType, 122L, 12L, 121L, 12L),
-                row(projectRowType, 122L, 12L, 122L, 12L),
-                row(projectRowType, 212L, 21L, 212L, 21L),
-                row(projectRowType, 221L, 22L, 221L, 22L)
+                row(projectRowType, 111L, null, 111L),
+                row(projectRowType, 111L, null, 112L),
+                row(projectRowType, 111L, null, 211L),
+                row(projectRowType, 111L, null, 222L),
+                row(projectRowType, 112L, null, 111L),
+                row(projectRowType, 112L, null, 112L),
+                row(projectRowType, 112L, null, 211L),
+                row(projectRowType, 112L, null, 222L),
+                row(projectRowType, 211L, null, 111L),
+                row(projectRowType, 211L, null, 112L),
+                row(projectRowType, 211L, null, 211L),
+                row(projectRowType, 211L, null, 222L),
+                row(projectRowType, 222L, null, 111L),
+                row(projectRowType, 222L, null, 112L),
+                row(projectRowType, 222L, null, 211L),
+                row(projectRowType, 222L, null, 222L),
+                row(projectRowType, 121L, 12L, 121L),
+                row(projectRowType, 121L, 12L, 122L),
+                row(projectRowType, 122L, 12L, 121L),
+                row(projectRowType, 122L, 12L, 122L),
+                row(projectRowType, 212L, 21L, 212L),
+                row(projectRowType, 221L, 22L, 221L)
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
-    private Operator hashJoinPlan(TableRowType t1, TableRowType t2, int leftJoinFields[], int rightJoinFields[], List<AkCollator> collators, boolean leftOuterJoin) {
-        Operator plan =
-                hashJoin(
-                        filter_Default(
-                                groupScan_Default(coi),
-                                Collections.singleton(t1)),
-                        filter_Default(
-                                groupScan_Default(coi),
-                                Collections.singleton(t2)),
-                        t1,
-                        t2,
-                        collators,
-                        leftJoinFields,
-                        rightJoinFields,
-                        leftOuterJoin);
-        return plan;
+
+    private Operator hashJoinPlan( RowType outerRowType,
+                                   RowType innerRowType,
+                                   int outerJoinFields[],
+                                   int innerJoinFields[],
+                                   List<AkCollator> collators,
+                                   boolean leftOuterJoin) {
+        return hashJoinPlan(outerRowType,
+                     innerRowType,
+                     filter_Default(
+                            groupScan_Default(outerRowType.table().getGroup()),
+                            Collections.singleton(outerRowType)
+                     ),
+                     filter_Default(
+                            groupScan_Default(innerRowType.table().getGroup()),
+                            Collections.singleton(innerRowType)),
+                     outerJoinFields,
+                     innerJoinFields,
+                     collators,
+                     leftOuterJoin
+        );
     }
 
+    private Operator hashJoinPlan( RowType outerRowType,
+                                   RowType innerRowType,
+                                   Operator outerStream,
+                                   Operator innerStream,
+                                   int outerJoinFields[],
+                                   int innerJoinFields[],
+                                   List<AkCollator> collators,
+                                   boolean leftOuterJoin) {
+
+        List<TPreparedExpression> expressions = new ArrayList<>();
+        for( int i = 0; i < outerRowType.nFields(); i++){
+            expressions.add(new TPreparedBoundField(outerRowType, ROW_BINDING_POSITION, i));
+        }
+        for( int i = 0, j = 0; i < innerRowType.nFields(); i++){
+            if(j < innerJoinFields.length && innerJoinFields[j] == i) {
+                j++;
+            }else{
+                expressions.add(new TPreparedField(innerRowType.typeAt(i), i));
+            }
+        }
+
+        Operator project = project_Default(
+                hashJoin(
+                        collators,
+                        outerJoinFields,
+                        leftOuterJoin,
+                        TABLE_BINDING_POSITION,
+                        ROW_BINDING_POSITION
+                ),
+                innerRowType,
+                expressions
+        );
+
+        projectRowType = project.rowType();
+
+        return using_HashJoin(
+                innerStream,
+                innerJoinFields,
+                TABLE_BINDING_POSITION++,
+                map_NestedLoops(
+                        outerStream,
+                        project,
+                        ROW_BINDING_POSITION++,
+                        false,
+                        1
+                ),
+                collators
+        );
+    }
 }
 

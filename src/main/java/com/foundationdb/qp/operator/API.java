@@ -812,67 +812,31 @@ public class API
                 depth);
     }
 
-    public static Operator hashJoin(Operator outerInputOperator,
-                                    Operator innerInputOperator,
-                                    RowType outerRowType,
-                                    RowType innerRowType,
-                                    //List<? extends TPreparedExpression> tFields,
-                                    List<AkCollator> collators,
+    public static Operator hashJoin(List<AkCollator> collators,
                                     int outerComparisonFields[],
-                                    int innerComparisonFields[],
-                                    boolean outerLeftJoin
-    )
+                                    boolean outerLeftJoin,
+                                    int hashBindingPosition,
+                                    int rowBindingPosition)
     {
-        return new HashJoin(outerInputOperator,
-                innerInputOperator,
-                outerRowType,
-                innerRowType,
-                //tFields,
+        return new HashJoin(
                 collators,
                 outerComparisonFields,
-                innerComparisonFields,
-                outerLeftJoin);
+                outerLeftJoin,
+                hashBindingPosition,
+                rowBindingPosition);
     }
 
-    public static Operator hashJoin(Operator outerInputOperator,
-                                    Operator innerInputOperator,
-                                    RowType outerRowType,
-                                    RowType innerRowType,
-                                    //List<? extends TPreparedExpression> tFields,
-                                    List<AkCollator> collators,
-                                    int outerComparisonFields[],
-                                    int innerComparisonFields[])
+    public static Operator using_HashJoin(Operator hashInput,
+                          int comparisonFields[],
+                          int filterBindingPosition,
+                          Operator joinedInput,
+                          List<AkCollator> collators)
     {
-        return new HashJoin(outerInputOperator,
-                innerInputOperator,
-                outerRowType,
-                innerRowType,
-                //tFields,
-                collators,
-                outerComparisonFields,
-                innerComparisonFields,
-                false);
+        return new Using_HashJoin(hashInput, comparisonFields, filterBindingPosition, joinedInput, collators);
     }
 
-    public static Operator hashJoin(Operator outerInputOperator,
-                                    Operator innerInputOperator,
-                                    RowType outerRowType,
-                                    RowType innerRowType,
-                                    int outerComparisonFields[],
-                                    int innerComparisonFields[])
-    {
-        return new HashJoin(outerInputOperator,
-                innerInputOperator,
-                outerRowType,
-                innerRowType,
-                //tFields,
-                null,
-                outerComparisonFields,
-                innerComparisonFields,
-                false);
-    }
 
-    // EmitBoundRow_Nested
+    // EmitBoundRow_Nesteda
 
     public static Operator emitBoundRow_Nested(Operator input,
                                                RowType inputRowType,

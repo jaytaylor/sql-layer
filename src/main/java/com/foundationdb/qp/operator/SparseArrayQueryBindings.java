@@ -24,6 +24,7 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTargets;
 import com.foundationdb.util.BloomFilter;
 import com.foundationdb.util.SparseArray;
+import com.google.common.collect.ArrayListMultimap;
 
 public class SparseArrayQueryBindings implements QueryBindings
 {
@@ -147,6 +148,24 @@ public class SparseArrayQueryBindings implements QueryBindings
     @Override
     public void setBloomFilter(int index, BloomFilter filter) {
         bindings.set(index, filter);
+    }
+
+    @Override
+    public ArrayListMultimap<HashJoin.KeyWrapper, Row> getHashJoinTable(int index){
+        if (bindings.isDefined(index)) {
+            return (ArrayListMultimap<HashJoin.KeyWrapper, Row>)bindings.get(index);
+        }
+        else if (parent != null) {
+            return parent.getHashJoinTable(index);
+        }
+         else {
+            throw new BindingNotSetException(index);
+        }
+    }
+
+    @Override
+    public void setHashJoinTable(int index, ArrayListMultimap<HashJoin.KeyWrapper, Row> hashTable) {
+        bindings.set(index, hashTable);
     }
 
     @Override
