@@ -71,17 +71,20 @@ class Using_HashTable extends Operator
     }
 
     public Using_HashTable(Operator hashInput,
+                           RowType hashedRowType,
                            int comparisonFields[],
                            int tableBindingPosition,
                            Operator joinedInput,
                            List<AkCollator> collators)
     {
         ArgumentValidation.notNull("hashInput", hashInput);
+        ArgumentValidation.notNull("hashedRowType", hashedRowType);
         ArgumentValidation.notNull("comparisonFields", comparisonFields);
         ArgumentValidation.isGTE("comparisonFields", comparisonFields.length, 1);
         ArgumentValidation.notNull("joinedInput", joinedInput);
 
         this.hashInput = hashInput;
+        this.hashedRowType = hashedRowType;
         this.comparisonFields = comparisonFields;
         this.tableBindingPosition = tableBindingPosition;
         this.joinedInput = joinedInput;
@@ -104,6 +107,7 @@ class Using_HashTable extends Operator
     // Object state
 
     private final Operator hashInput;
+    private final RowType hashedRowType;
     private final int comparisonFields[];
     private final int tableBindingPosition;
     private final Operator joinedInput;
@@ -187,6 +191,7 @@ class Using_HashTable extends Operator
             Row row;
             KeyWrapper keyWrapper;
             while ((row = loadCursor.next()) != null) {
+                assert(row.rowType().equals(hashedRowType));
                 keyWrapper = new KeyWrapper(row, comparisonFields, collators);
                 hashTable.put(keyWrapper, row);
             }

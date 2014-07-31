@@ -817,24 +817,29 @@ public class API
                                                    int outerComparisonFields[],
                                                    boolean outerLeftJoin,
                                                    int hashBindingPosition,
-                                                   int rowBindingPosition)
+                                                   int rowBindingPosition,
+                                                   RowType boundRowType,
+                                                   RowType hashedRowType)
     {
         return new HashTableLookup_Default(
                 collators,
                 outerComparisonFields,
                 outerLeftJoin,
                 hashBindingPosition,
-                rowBindingPosition);
+                rowBindingPosition,
+                boundRowType,
+                hashedRowType);
     }
 
     // using_HashTable
     public static Operator using_HashTable(Operator hashInput,
+                                           RowType hashedRowType,
                                            int comparisonFields[],
                                            int filterBindingPosition,
                                            Operator joinedInput,
                                            List<AkCollator> collators)
     {
-        return new Using_HashTable(hashInput, comparisonFields, filterBindingPosition, joinedInput, collators);
+        return new Using_HashTable(hashInput, hashedRowType, comparisonFields, filterBindingPosition, joinedInput, collators);
     }
 
     // EmitBoundRow_Nesteda

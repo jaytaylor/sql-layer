@@ -99,19 +99,19 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
     @Test(expected = IllegalArgumentException.class)
     public void testHashJoinbindingsSame() {
         int columnsToJoinOn[] = {1};
-        hashTableLookup_Default(null, columnsToJoinOn, false, ROW_BINDING_POSITION, ROW_BINDING_POSITION);
+        hashTableLookup_Default(null, columnsToJoinOn, false, ROW_BINDING_POSITION, ROW_BINDING_POSITION, customerRowType, customerRowType);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testHashJoinEmptyComparisonFields() {
         int columnsToJoinOn[] = {};
-        hashTableLookup_Default(null, columnsToJoinOn, false, ROW_BINDING_POSITION, TABLE_BINDING_POSITION);
+        hashTableLookup_Default(null, columnsToJoinOn, false, ROW_BINDING_POSITION, TABLE_BINDING_POSITION, customerRowType, customerRowType);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testHashJoinNullComparisonFields() {
         int columnsToJoinOn[] = {};
-        hashTableLookup_Default(null, null, false, ROW_BINDING_POSITION, TABLE_BINDING_POSITION);
+        hashTableLookup_Default(null, null, false, ROW_BINDING_POSITION, TABLE_BINDING_POSITION, customerRowType, customerRowType);
     }
 
     /** Test arguments using_HashTable  */
@@ -119,30 +119,30 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
     @Test(expected = IllegalArgumentException.class)
     public void testUsingHashJoinRightInputNull() {
         int columnsToJoinOn[] = {1};
-        using_HashTable(groupScan_Default(coi), columnsToJoinOn, TABLE_BINDING_POSITION, null, null);
+        using_HashTable(groupScan_Default(coi), customerRowType, columnsToJoinOn, TABLE_BINDING_POSITION, null, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testUsingHashJoinLeftInputNull() {
         int columnsToJoinOn[] = {1};
-        using_HashTable(null, columnsToJoinOn, TABLE_BINDING_POSITION, groupScan_Default(coi), null);
+        using_HashTable(null, customerRowType, columnsToJoinOn, TABLE_BINDING_POSITION, groupScan_Default(coi), null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testUsingHashJoinBothInputsNull() {
         int columnsToJoinOn[] = {1};
-        using_HashTable(null, columnsToJoinOn, TABLE_BINDING_POSITION, null, null);
+        using_HashTable(null, customerRowType,columnsToJoinOn,  TABLE_BINDING_POSITION, null, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testUsingHashJoinEmptyComparisonFields() {
         int columnsToJoinOn[] = {};
-        using_HashTable(groupScan_Default(coi), columnsToJoinOn, TABLE_BINDING_POSITION, groupScan_Default(coi), null);
+        using_HashTable(groupScan_Default(coi), customerRowType, columnsToJoinOn, TABLE_BINDING_POSITION, groupScan_Default(coi), null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testUsingHashJoinNullComparisonFields() {
-        using_HashTable(groupScan_Default(coi), null, TABLE_BINDING_POSITION, groupScan_Default(coi), null);
+        using_HashTable(groupScan_Default(coi), customerRowType, null, TABLE_BINDING_POSITION, groupScan_Default(coi), null);
     }
 
     /** Hash join tests **/
@@ -349,7 +349,9 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
                         outerJoinFields,
                         leftOuterJoin,
                         TABLE_BINDING_POSITION,
-                        ROW_BINDING_POSITION
+                        ROW_BINDING_POSITION,
+                        outerRowType,
+                        innerRowType
                 ),
                 innerRowType,
                 expressions
@@ -359,6 +361,7 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
 
         return using_HashTable(
                 innerStream,
+                innerRowType,
                 innerJoinFields,
                 TABLE_BINDING_POSITION++,
                 map_NestedLoops(

@@ -18,6 +18,7 @@
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.*;
+import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.util.KeyWrapper;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.explain.*;
@@ -48,17 +49,24 @@ class HashTableLookup_Default extends Operator
                                    int outerComparisonFields[],
                                    boolean outerLeftJoin,
                                    int hashBindingPosition,
-                                   int rowBindingPosition
+                                   int rowBindingPosition,
+                                   RowType boundRowType,
+                                   RowType hashedRowType
     )
     {
         ArgumentValidation.notNull("outerComparisonFields", outerComparisonFields);
         ArgumentValidation.isGTE("outerOrderingFields", outerComparisonFields.length, 1);
-        ArgumentValidation.isNotSame("hashBindingPosition", hashBindingPosition,"rowBindingPosition", rowBindingPosition);
+        ArgumentValidation.isNotSame("hashBindingPosition", hashBindingPosition, "rowBindingPosition", rowBindingPosition);
+        ArgumentValidation.notNull("boundRowType", boundRowType);
+        ArgumentValidation.notNull("hashedRowType", hashedRowType);
+
         this.collators = collators;
         this.outerComparisonFields = outerComparisonFields;
         this.outerLeftJoin = outerLeftJoin;
         this.hashBindingPosition = hashBindingPosition;
         this.rowBindingPosition = rowBindingPosition;
+        this.boundRowType = boundRowType;
+        this.hashedRowType = hashedRowType;
     }
 
     // Class state
@@ -72,6 +80,8 @@ class HashTableLookup_Default extends Operator
     private final int outerComparisonFields[];
     private final int hashBindingPosition;
     private final int rowBindingPosition;
+    private final RowType boundRowType;
+    private final RowType hashedRowType;
 
     private final List<AkCollator> collators;
     private final boolean outerLeftJoin;
@@ -114,6 +124,7 @@ class HashTableLookup_Default extends Operator
                 Row next = null;
                 if(innerRowListPosition < innerRowList.size()) {
                     next = innerRowList.get(innerRowListPosition++);
+                    assert(next.rowType().equals(hashedRowType));
                 } else if(outerLeftJoin && innerRowListPosition++ == 0){
                     next = getOuterRow();
                 }
@@ -187,6 +198,7 @@ class HashTableLookup_Default extends Operator
         private Row getOuterRow()
         {
             Row row = bindings.getRow(rowBindingPosition);
+            assert(row.rowType().equals(boundRowType));
             if (LOG_EXECUTION) {
                 LOG.debug("hash_join: outer {}", row);
             }
