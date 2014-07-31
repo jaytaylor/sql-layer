@@ -874,8 +874,10 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
             Subspace subDir = dir.open(txn.getTransaction(), PathUtil.from(subDirName)).get();
             BlobAsync blob = new BlobAsync(subDir);
             byte[] data = blob.read(txn.getTransaction()).get();
-            ByteBuffer buffer = ByteBuffer.wrap(data);
-            reader.loadBuffer(buffer);
+            if(data != null) {
+                ByteBuffer buffer = ByteBuffer.wrap(data);
+                reader.loadBuffer(buffer);
+            }
         }
     }
 
