@@ -367,15 +367,13 @@ public class BlobAsync {
                 return tr.get(sizeKey()).map(new Function<byte[],Integer>() {
                     @Override
                     public Integer apply(byte[] sizeBytes) {
-                        try{
-                            // Get the size (which is stored as a string) and returns the
-                            // integer case of it.
-                            return Integer.valueOf(Tuple2.fromBytes(sizeBytes).getString(0));
-                        } catch(RuntimeException e){
-                            // There is either no size stored or something bad is stored
-                            // at the place where size is supposed to be.
+                        if(sizeBytes == null) {
                             return 0;
                         }
+                        // Get the size (which is stored as a string) and returns the
+                        // integer case of it.
+                        String sizeStr = Tuple2.fromBytes(sizeBytes).getString(0);
+                        return Integer.valueOf(sizeStr);
                     }
                 });
             }
