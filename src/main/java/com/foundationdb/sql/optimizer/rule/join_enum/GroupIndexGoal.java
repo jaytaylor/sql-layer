@@ -447,13 +447,14 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         if (indexOrdering == null) return result;
         BitSet reverse = new BitSet(indexOrdering.size());
         int nequals = index.getNEquality();
+        int nunions = index.getNUnions();
         List<ExpressionNode> equalityColumns = null;
         if (nequals > 0) {
             equalityColumns = index.getColumns().subList(0, nequals);
         }
         try_sorted:
         if (queryGoal.getOrdering() != null) {
-            int idx = nequals - index.getNUnions();
+            int idx = nequals-nunions;
             for (OrderByExpression targetColumn : queryGoal.getOrdering().getOrderBy()) {
                 // Get the expression by which this is ordering, recognizing the
                 // special cases where the Sort is fed by GROUP BY or feeds DISTINCT.
@@ -483,6 +484,9 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 }
                 if ((indexColumn != null) && 
                     orderingExpressionMatches(indexColumn, targetExpression)) {
+                    if (idx <= nequals) {
+                        index.setIncludeUnionAsEquality(false);
+                    }
                     if (indexColumn.isAscending() != targetColumn.isAscending()) {
                         // To avoid mixed mode as much as possible,
                         // defer changing the index order until

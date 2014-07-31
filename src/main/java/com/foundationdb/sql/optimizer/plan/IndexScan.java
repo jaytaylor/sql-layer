@@ -145,6 +145,11 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
      * The number of unions that come after the equalities
      */
     public abstract int getNUnions();
+
+    /**
+     * This generally applies to when the NEquality
+     */
+    public abstract void setIncludeUnionAsEquality(boolean sortColumn);
     public abstract boolean isAscendingAt(int index);
     public abstract boolean isRecoverableAt(int index);
     

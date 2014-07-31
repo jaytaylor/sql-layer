@@ -152,6 +152,11 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
+    public void setIncludeUnionAsEquality(boolean sortColumn) {
+        outputScan.setIncludeUnionAsEquality(sortColumn);
+    }
+
+    @Override
     public void incrementConditionsCounter(ConditionsCounter<? super ConditionExpression> counter) {
         outputScan.incrementConditionsCounter(counter);
         selectorScan.incrementConditionsCounter(counter);
