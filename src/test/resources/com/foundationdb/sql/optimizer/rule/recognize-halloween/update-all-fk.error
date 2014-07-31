@@ -1,1 +1,1 @@
-com.foundationdb.server.error.UnsupportedSQLException: UNSUPPORTED_SQL: Unsupported SQL: Halloween vulnerable query on referenced table : {1}
+com.foundationdb.server.error.UnsupportedSQLException: UNSUPPORTED_SQL: Unsupported SQL: Halloween vulnerable query on referenced table
