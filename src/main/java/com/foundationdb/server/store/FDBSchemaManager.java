@@ -771,7 +771,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
 
         if(newAIS.getSchema(schema) != null) {
             Subspace blobDir = dir.createOrOpen(txn.getTransaction(), PathUtil.from(schema)).get();
-            BlobAsync blob = new BlobAsync(blobDir);
             buffer = serialize(buffer, newAIS, selector);
             byte[] newValue;
             if((buffer.position() == 0) && (buffer.limit() == buffer.capacity())) {
@@ -779,6 +778,8 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
             } else {
                 newValue = Arrays.copyOfRange(buffer.array(), buffer.position(), buffer.limit());
             }
+            BlobAsync blob = new BlobAsync(blobDir);
+            blob.truncate(txn.getTransaction(), 0).get();
             blob.write(txn.getTransaction(), 0, newValue).get();
         } else {
             dir.removeIfExists(txn.getTransaction(), PathUtil.from(schema)).get();
@@ -877,8 +878,10 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
             Subspace subDir = dir.open(txn.getTransaction(), PathUtil.from(subDirName)).get();
             BlobAsync blob = new BlobAsync(subDir);
             byte[] data = blob.read(txn.getTransaction()).get();
-            ByteBuffer buffer = ByteBuffer.wrap(data);
-            reader.loadBuffer(buffer);
+            if(data != null) {
+                ByteBuffer buffer = ByteBuffer.wrap(data);
+                reader.loadBuffer(buffer);
+            }
         }
     }
 
