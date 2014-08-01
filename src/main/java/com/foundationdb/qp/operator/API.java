@@ -842,7 +842,7 @@ public class API
         return new Using_HashTable(hashInput, hashedRowType, comparisonFields, filterBindingPosition, joinedInput, collators);
     }
 
-    // EmitBoundRow_Nesteda
+    // EmitBoundRow_Nested
 
     public static Operator emitBoundRow_Nested(Operator input,
                                                RowType inputRowType,
