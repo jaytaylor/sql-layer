@@ -291,6 +291,7 @@ public enum ErrorCode {
     DEFAULT_OUTSIDE_INSERT  ("42", "521", Importance.DEBUG, DefaultOutsideInsertException.class),
     FOREIGN_KEY_NOT_DEFERRABLE ("42", "523", Importance.DEBUG, ForeignKeyNotDeferrableException.class),
     NO_AGGREGATE_WITH_GROUP_BY("42", "524", Importance.DEBUG, NoAggregateWithGroupByException.class),
+    NO_TABLE_SPECIFIED      ("42", "525", Importance.DEBUG, NoTableSpecifiedInQueryException.class),
     
     // Class 42/600 - JSON interface errors
     KEY_COLUMN_MISMATCH     ("42", "600", Importance.DEBUG, KeyColumnMismatchException.class),
