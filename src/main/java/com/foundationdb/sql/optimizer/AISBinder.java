@@ -954,7 +954,11 @@ public class AISBinder implements Visitor
 
         // Give an error if the qualification name did not match an exposed name.
         if (resultColumnList == null) {
-            throw new NoSuchTableException(allTableName.getSchemaName(), allTableName.getTableName(), allTableName);
+            if (allTableName == null) {
+                throw new NoSuchTableException ("null", "null", null);
+            } else {
+                throw new NoSuchTableException(allTableName.getSchemaName(), allTableName.getTableName(), allTableName);
+            }
         }
 
         return resultColumnList;
