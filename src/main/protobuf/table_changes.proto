@@ -24,4 +24,6 @@ message ChangeSet {
     repeated IndexChange index_change = 8;
     // Note: Contains name of sequences, not the columns
     repeated Change identity_change = 9;
+    optional string select_statement = 10;
+    optional int32 to_table_id = 11;
 }

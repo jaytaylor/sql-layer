@@ -29,6 +29,7 @@ import com.foundationdb.server.error.DuplicateRoutineNameException;
 import com.foundationdb.server.error.DuplicateSequenceNameException;
 import com.foundationdb.server.error.DuplicateSQLJJarNameException;
 import com.foundationdb.server.error.DuplicateTableNameException;
+import com.foundationdb.server.error.JoinToProtectedTableException;
 import com.foundationdb.server.error.NameIsNullException;
 
 public class AISInvariants {
@@ -159,4 +160,17 @@ public class AISInvariants {
             }
         }
     }
+    
+    public static void checkJoinTo(Join join, TableName childName, boolean isInternal) {
+        TableName parentName = (join != null) ? join.getParent().getName() : null;
+        if(parentName != null) {
+            boolean inAIS = parentName.inSystemSchema();
+            if(inAIS && !isInternal) {
+                throw new JoinToProtectedTableException(parentName, childName);
+            } else if(!inAIS && isInternal) {
+                throw new IllegalArgumentException("Internal table join to non-IS table: " + childName);
+            }
+        }
+    }
+    
 }

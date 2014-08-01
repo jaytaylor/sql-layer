@@ -77,10 +77,10 @@ public abstract class StoreAdapter implements KeyCreator
     public abstract void updateRow(Row oldRow, Row newRow);
 
     public void writeRow(Row newRow) {
-        writeRow(newRow, null, null, true);
+        writeRow(newRow, null, null);
     }
 
-    public abstract void writeRow(Row newRow, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes, boolean fillHiddenPK);
+    public abstract void writeRow(Row newRow, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes);
     
     public abstract void deleteRow (Row oldRow, boolean cascadeDelete);
 
@@ -117,26 +117,11 @@ public abstract class StoreAdapter implements KeyCreator
         return session;
     }
 
-    public static NewRow newRow(RowDef rowDef)
-    {
-        NiceRow row = new NiceRow(rowDef.getRowDefId(), rowDef);
-        Table table = rowDef.table();
-        PrimaryKey primaryKey = table.getPrimaryKeyIncludingInternal();
-        if(primaryKey != null && table.getPrimaryKey() == null) {
-            // Generated PK. Initialize its value to a dummy value, which will be replaced later. The
-            // important thing is that the value be non-null (because of the NotNullConstraint).
-            // primaryKey.getColumns should always be 1 column, but this is the safer than blindly getColumns()[0]
-            for (Column column : primaryKey.getColumns()) {
-                row.put(column.getPosition(), -1L);
-            }
-        }
-        return row;
-    }
-
     public RowData rowData(RowDef rowDef, Row row, RowDataCreator creator) {
         // Generic conversion, subclasses should override to check for known group rows
-        NewRow niceRow = newRow(rowDef);
-        for(int i = 0; i < row.rowType().nFields(); ++i) {
+        NewRow niceRow = new NiceRow(rowDef.getRowDefId(), rowDef);
+        int fields = rowDef.table().getColumnsIncludingInternal().size();
+        for(int i = 0; i < fields; ++i) {
             creator.put(row.value(i), niceRow, i);
         }
         return niceRow.toRowData();

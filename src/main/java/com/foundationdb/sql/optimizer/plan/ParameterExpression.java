@@ -25,14 +25,28 @@ import com.foundationdb.sql.parser.ValueNode;
 public class ParameterExpression extends BaseExpression 
 {
     private int position;
+    private Object value;
+    private boolean isSet;
 
     public ParameterExpression(int position, 
                                DataTypeDescriptor sqlType, ValueNode sqlSource,
                                TInstance type) {
         super(sqlType, sqlSource, type);
         this.position = position;
+        this.value = null;
+        this.isSet = false;
     }
 
+    public ParameterExpression(int position, 
+            DataTypeDescriptor sqlType, ValueNode sqlSource,
+            TInstance type, Object value) {
+        super(sqlType, sqlSource, type);
+        this.position = position;
+        this.value = value;
+        this.isSet = true;
+    }
+
+    
     public int getPosition() {
         return position;
     }
@@ -64,4 +78,16 @@ public class ParameterExpression extends BaseExpression
         return "$" + position;
     }
 
+    public void setValue(Object value) {
+        this.value = value;
+        isSet = true;
+    }
+
+    public Object getValue() {
+        return value;
+    }
+
+    public boolean isSet() {
+        return isSet;
+    }
 }

@@ -493,12 +493,6 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public RowData convertNewRow(NewRow row) {
-        logger.trace("converting to RowData: {}", row);
-        return row.toRowData();
-    }
-
-    @Override
     public NewRow wrapRowData(Session session, RowData rowData) {
         logger.trace("wrapping in NewRow: {}", rowData);
         RowDef rowDef = ddlFunctions.getRowDef(session, rowData.getRowDefId());
@@ -538,8 +532,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     public void writeRow(Session session, NewRow row)
     {
         logger.trace("writing a row");
-        final RowData rowData = niceRowToRowData(row);
-        store().writeRow(session, rowData);
+        store().writeNewRow(session, row);
     }
 
     @Override

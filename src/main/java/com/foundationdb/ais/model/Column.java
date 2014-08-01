@@ -416,7 +416,7 @@ public class Column implements ColumnContainer, Visitable
 
     public Boolean isAkibanPKColumn()
     {
-        return columnName.equals(AKIBAN_PK_NAME);
+        return columnName.equals(ROW_ID_NAME);
     }
 
     public void setDefaultValue(String defaultValue) {
@@ -474,10 +474,10 @@ public class Column implements ColumnContainer, Visitable
 
     // State
 
-    public static final String AKIBAN_PK_NAME = "__akiban_pk";
+    public static final String ROW_ID_NAME = "__row_id";
 
     public static boolean isInternalName(String columnName) {
-        return AKIBAN_PK_NAME.equals(columnName);
+        return ROW_ID_NAME.equals(columnName);
     }
 
     private final String columnName;

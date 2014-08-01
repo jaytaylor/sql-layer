@@ -33,6 +33,7 @@ import java.util.UUID;
 public class ProtobufWriter {
     public static interface WriteSelector {
         Columnar getSelected(Columnar columnar);
+        /** Called for any table.getGroup() when getSelected(table) is not null */
         boolean isSelected(Group group);
         /** Called for all parent joins where getSelected(Table) is not null **/
         boolean isSelected(Join parentJoin);

@@ -32,24 +32,25 @@ public class BaseSQLException extends InvalidOperationException
 
     protected BaseSQLException(ErrorCode code, QueryTreeNode sql) {
         super(code, formatSQL(sql));
-        if (sql != null)
-            errorPosition = sql.getBeginOffset() + 1;
+        this.errorPosition = getErrorPosition(sql);
     }
 
     protected BaseSQLException(ErrorCode code, String msg, QueryTreeNode sql) {
         super(code, msg, formatSQL(sql));
-        if (sql != null)
-            errorPosition = sql.getBeginOffset() + 1;
+        this.errorPosition = getErrorPosition(sql);
     }
     
     protected BaseSQLException(ErrorCode code, String msg1, String msg2, QueryTreeNode sql) {
         super(code, msg1, msg2, formatSQL(sql));
-        if (sql != null)
-            errorPosition = sql.getBeginOffset() + 1;
+        this.errorPosition = getErrorPosition(sql);
     }
     
     public int getErrorPosition() {
         return errorPosition;
+    }
+
+    protected static int getErrorPosition(QueryTreeNode sql) {
+        return (sql == null) ? 0 : sql.getBeginOffset() + 1;
     }
 
     protected static String formatSQL(QueryTreeNode sql) {

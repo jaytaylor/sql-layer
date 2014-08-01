@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
+import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.sql.optimizer.*;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.ExpressionsSource.DistinctState;
@@ -60,6 +61,7 @@ import com.foundationdb.server.types.texpressions.TNullExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.texpressions.TPreparedField;
 import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.Value;
 
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.UnsupportedSQLException;
@@ -102,6 +104,7 @@ public class OperatorAssembler extends BaseRule
     private static final PointTap INSERT_COUNT = Tap.createCount("sql: insert");
     private static final PointTap UPDATE_COUNT = Tap.createCount("sql: update");
     private static final PointTap DELETE_COUNT = Tap.createCount("sql: delete");
+    public static final int CREATE_AS_BINDING_POSITION = 2;
 
     public static final int INSERTION_SORT_MAX_LIMIT = 100;
 
@@ -216,7 +219,7 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = assembleQuery(planQuery);
             
             stream = assembleInsertProjectTable (stream, projectFields, insert);
-            
+
             stream.operator = API.insert_Returning(stream.operator);
             
             if (explainContext != null)
@@ -354,6 +357,29 @@ public class OperatorAssembler extends BaseRule
         
         }
 
+        protected RowStream assembleCreateAsTemp( CreateAs createAs) {
+            RowStream stream = new RowStream();
+            TableSource tableSource = createAs.getTableSource();
+            TableRowType rowType = tableRowType(tableSource);
+            com.foundationdb.server.types.value.Value values[] = new com.foundationdb.server.types.value.Value[rowType.nFields()];
+            for(int i = 0; i < rowType.nFields(); i++){
+                values[i] = new Value(rowType.typeAt(i));
+                values[i].putNull();
+            }
+            ValuesRow valuesRow = new ValuesRow(rowType, values);
+            Collection<BindableRow> bindableRows = new ArrayList<>();
+            bindableRows.add(BindableRow.of(valuesRow));
+
+            stream.operator = API.emitBoundRow_Nested(
+                    API.valuesScan_Default(bindableRows, rowType),
+                    rowType,
+                    rowType,
+                    rowType,
+                    CREATE_AS_BINDING_POSITION);
+            stream.rowType = rowType;
+            return stream;
+        }
+
         protected void explainDeleteStatement(Operator plan, DeleteStatement deleteStatement) {
             Attributes atts = new Attributes();
             TableName tableName = deleteStatement.getTargetTable().getTable().getName();
@@ -445,6 +471,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleBuffer((Buffer)node);
             else if (node instanceof ExpressionsHKeyScan)
                 return assembleExpressionsHKeyScan((ExpressionsHKeyScan) node);
+            else if (node instanceof CreateAs)
+                return assembleCreateAsTemp((CreateAs)node);
             else if (node instanceof SetPlanNode) {
                 SetPlanNode setPlan = (SetPlanNode)node;
                 switch (setPlan.getOperationType()) {
@@ -2065,6 +2093,16 @@ public class OperatorAssembler extends BaseRule
             @Override
             public int getBindingPosition(ColumnExpressionToIndex boundRow) {
                 return Assembler.this.getBindingPosition(boundRow);
+            }
+
+            @Override
+            public RowType getRowType(CreateAs createAs){
+                return Assembler.this.tableRowType(createAs.getTableSource());
+            }
+
+            @Override
+            public RowType getRowType(int tableID){
+                return schema.tableRowType(tableID);
             }
         }
         

@@ -48,23 +48,23 @@ public class PersistitStorageDescription extends StoreStorageDescription<Persist
     private String treeName;
     private Tree treeCache;
 
-    public PersistitStorageDescription(HasStorage forObject) {
-        super(forObject);
+    public PersistitStorageDescription(HasStorage forObject, String storageFormat) {
+        super(forObject, storageFormat);
     }
 
-    public PersistitStorageDescription(HasStorage forObject, String treeName) {
-        super(forObject);
+    public PersistitStorageDescription(HasStorage forObject, String treeName, String storageFormat) {
+        super(forObject, storageFormat);
         this.treeName = treeName;
     }
 
-    public PersistitStorageDescription(HasStorage forObject, PersistitStorageDescription other) {
-        super(forObject, other);
+    public PersistitStorageDescription(HasStorage forObject, PersistitStorageDescription other, String storageFormat) {
+        super(forObject, other, storageFormat);
         this.treeName = other.treeName;
     }
 
     @Override
     public StorageDescription cloneForObject(HasStorage forObject) {
-        return new PersistitStorageDescription(forObject, this);
+        return new PersistitStorageDescription(forObject, this, storageFormat);
     }
 
     @Override

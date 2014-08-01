@@ -21,25 +21,12 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.foundationdb.*;
-import com.foundationdb.async.Function;
-import com.foundationdb.async.Future;
-import com.foundationdb.async.ReadyFuture;
-import com.foundationdb.async.AsyncUtil;
-import com.foundationdb.subspace.Subspace;
-import com.foundationdb.tuple.Tuple;
-import com.foundationdb.tuple.Tuple2;
+import com.foundationdb.async.*;
+import com.foundationdb.subspace.*;
+import com.foundationdb.tuple.*;
 
-/**
- * Represents a potentially large binary value in FoundationDB. For more
- * detailed information, see the synchronized {@link Blob} class, which
- * provides the same functionality in serial. This class, however, runs
- * asynchronously, meaning that its read and write operations can occur
- * in parallel with other operations on the storage substrate without
- * blocking them and allowing the main thread of a program to continue
- * without having to wait for the completion of this class's operations.  
- */
+/** Represents a potentially large binary value in FoundationDB. */
 public class BlobAsync {
-    // Constants.
     /**
      * The size parameter of the blob is held in the subspace indexed by
      * <code>SIZE_KEY</code> of the blob's main subspace.
@@ -69,27 +56,21 @@ public class BlobAsync {
      */
     protected static final int CHUNK_SMALL = 200;
 
-    private Subspace subspace;
+    private final Subspace subspace;
 
-    // Constructor.
     /**
      * Create a new object representing a binary large object (blob).
-     * 
-     * @param subspace Only keys within the subspace will be used by the object.
-     * Other clients of the database should refrain from modifying the subspace. 
-     * If there is data already in this subspace in a given database, the blob will 
-     * overwrite and may delete this previous data.
+     *
+     * @param subspace Subspace to use to write data. Should be considered owned by the blob.
      */
     public BlobAsync(Subspace subspace) {
         this.subspace = subspace;
     }
 
-    // Internal class for moving data around within.
-    // It is not safe for hash tables. In C/C++, it would be a struct.
-    private class Chunk {
-        private byte[] key;
-        private byte[] data;
-        private int startOffset;
+    private static class Chunk {
+        private final byte[] key;
+        private final byte[] data;
+        private final int startOffset;
 
         private Chunk() {
             this(null, null, 0);
@@ -102,78 +83,70 @@ public class BlobAsync {
         }
     }
 
-    // Private functions.
-
     /**
      * Gets the location of whatever attributes are stored about the blob. This
      * is mainly included for inheritance purposes as subclasses may use the
      * attribute field, though the vanilla blob does not use this function.
-     * 
+     *
      * @return The location of the attributes of the blob.
      */
     protected byte[] attributeKey() {
         return subspace.pack(Tuple2.from(ATTRIBUTE_KEY));
     }
 
-    // The key to data "offset" chunks from the beginning of the Blob.
+    /** The key to data "offset" chunks from the beginning of the Blob. */
     private byte[] dataKey(int offset) {
-        return subspace
-                .pack(Tuple2.from(DATA_KEY, String.format("%16d", offset)));
-    }
-    
-    // Given a key to some data, this will return how many chunks from the beginning the data is.
-    private int dataKeyOffset(byte[] key) {
-        // Gets the last key in the Tuple.
-        Tuple t = (Tuple) subspace.unpack(key);
-        return Integer.valueOf(t.getString(t.size() - 1).trim()); 
+        return subspace.pack(Tuple2.from(DATA_KEY, String.format("%16d", offset)));
     }
 
-    // Key to the location of the Blob's size.
+    /** Given a key to some data, this will return how many chunks from the beginning the data is. **/
+    private int dataKeyOffset(byte[] key) {
+        Tuple t = subspace.unpack(key);
+        return Integer.valueOf(t.getString(t.size() - 1).trim());
+    }
+
+    /** Key to the location of the Blob's size. */
     private byte[] sizeKey() {
         return subspace.pack(Tuple2.from(SIZE_KEY));
     }
 
-    // Returns either (key, data, startOffset) or (null, null, 0l).
+    /** Returns either (key, data, startOffset) or (null, null, 0) */
     private Future<Chunk> getChunkAt(TransactionContext tcx, final int offset) {
         return tcx.runAsync(new Function<Transaction, Future<Chunk>>() {
             @Override
             public Future<Chunk> apply(final Transaction tr) {
                 return tr.getKey(KeySelector.lastLessOrEqual(dataKey(offset)))
-                        .flatMap(new Function<byte[], Future<Chunk>>() {
-                            @Override
-                            public Future<Chunk> apply(final byte[] chunkKey) {
-                                if (chunkKey == null) {
-                                    // Nothing before (sparse).
-                                    return new ReadyFuture<Chunk>(new Chunk());
-                                }
-                                if (Tuple2.fromBytes(chunkKey).compareTo(
-                                        Tuple2.fromBytes(dataKey(0))) < 0) {
-                                    // Off beginning.
-                                    return new ReadyFuture<Chunk>(new Chunk());
-                                }
-                                final int chunkOffset = dataKeyOffset(chunkKey);
-                                return tr.get(chunkKey).map(
-                                        new Function<byte[], Chunk>() {
-                                            @Override
-                                            public Chunk apply(byte[] chunkData) {
-                                                if (chunkOffset
-                                                        + chunkData.length <= offset) {
-                                                    // In sparse region after chunk.
-                                                    return new Chunk();
-                                                }
-
-                                                // Success.
-                                                return new Chunk(chunkKey, chunkData, chunkOffset);
-                                            }
-                                        });
-                            }
-                        });
+                         .flatMap(new Function<byte[], Future<Chunk>>() {
+                             @Override
+                             public Future<Chunk> apply(final byte[] chunkKey) {
+                                 // Nothing before (sparse) or before beginning
+                                 if ((chunkKey == null) ||
+                                     (ByteArrayUtil.compareUnsigned(chunkKey, dataKey(0)) < 0)) {
+                                     return new ReadyFuture<>(new Chunk());
+                                 }
+                                 final int chunkOffset = dataKeyOffset(chunkKey);
+                                 return tr.get(chunkKey).map(
+                                     new Function<byte[], Chunk>() {
+                                         @Override
+                                         public Chunk apply(byte[] chunkData) {
+                                             if (chunkOffset + chunkData.length <= offset) {
+                                                 // In sparse region after chunk.
+                                                 return new Chunk();
+                                             }
+                                             // Success.
+                                             return new Chunk(chunkKey, chunkData, chunkOffset);
+                                         }
+                                     });
+                             }
+                         });
             }
         });
     }
 
-    // Splits up the data so that a unit data which we care about that is split
-    // across multiple chunks in the blob can be accessed.
+    /**
+     * Splits up the data so that a unit of data which we care about that is split
+     * across multiple chunks in the blob can be accessed.
+     */
     private Future<Void> makeSplitPoint(TransactionContext tcx, final int offset) {
         return tcx.runAsync(new Function<Transaction, Future<Void>>() {
             @Override
@@ -190,16 +163,15 @@ public class BlobAsync {
 
                         int splitPoint = offset - chunk.startOffset;
 
-                        // Set the value at (DATA_KEY, chunk.startOffset) to the
-                        // values in
+                        // Set the value at (DATA_KEY, chunk.startOffset) to the values in
                         // chunk.data[:offset-chunk.startOffset].
                         tr.set(dataKey(chunk.startOffset),
                                 Arrays.copyOfRange(chunk.data, 0, splitPoint));
 
                         // Set the value at (DATA_KEY, offset) to the values in
                         // chunk.data[offset-chunk.startOffset].
-                        tr.set(dataKey(offset), Arrays.copyOfRange(chunk.data,
-                                splitPoint, chunk.data.length));
+                        tr.set(dataKey(offset),
+                               Arrays.copyOfRange(chunk.data, splitPoint, chunk.data.length));
 
                         return null;
                     }
@@ -208,42 +180,30 @@ public class BlobAsync {
         });
     }
 
-    // Removed data between start and end. It will break up chunks if necessary.
-    private Future<Void> makeSparse(TransactionContext tcx, final int start,
-            final int end) {
+    /** Removed data between start and end. It will break up chunks if necessary. */
+    private Future<Void> makeSparse(TransactionContext tcx, final int start, final int end) {
         return tcx.runAsync(new Function<Transaction, Future<Void>>() {
             @Override
             public Future<Void> apply(final Transaction tr) {
-                /*
-                 * Logically, this is equivalent to applying the following
-                 * operations in serial:
-                 * 
-                 * makeSplitPoint(tr, start); 
-                 * makeSplitPoint(tr, end);
-                 * tr.clear(dataKey(start), dataKey(end)); return null;
-                 */
                 return makeSplitPoint(tr, start).flatMap(
-                        new Function<Void, Future<Void>>() {
-                            @Override
-                            // Note that arg v1 is not used.
-                            public Future<Void> apply(Void v1) {
-                                return makeSplitPoint(tr, end).map(
-                                        new Function<Void, Void>() {
-                                            @Override
-                                            // Note that arg v2 is not used.
-                                            public Void apply(Void v2) {
-                                                tr.clear(dataKey(start),
-                                                        dataKey(end));
-                                                return null;
-                                            }
-                                        });
-                            }
-                        });
+                    new Function<Void, Future<Void>>() {
+                        @Override
+                        public Future<Void> apply(Void v1) {
+                            return makeSplitPoint(tr, end).map(
+                                new Function<Void, Void>() {
+                                    @Override
+                                    public Void apply(Void v2) {
+                                        tr.clear(dataKey(start), dataKey(end));
+                                        return null;
+                                    }
+                                });
+                        }
+                    });
             }
         });
     }
 
-    // Return true if split point successfully made and false otherwise.
+    /** Return true if split point successfully made and false otherwise. */
     private Future<Boolean> tryRemoveSplitPoint(TransactionContext tcx, final int offset) {
         return tcx.runAsync(new Function<Transaction, Future<Boolean>>() {
             @Override
@@ -253,9 +213,8 @@ public class BlobAsync {
                     public Future<Boolean> apply(final Chunk bChunk) {
                         if (bChunk.key == null || bChunk.startOffset == 0) {
                             // In sparse region or at beginning.
-                            return new ReadyFuture<Boolean>(false);
+                            return new ReadyFuture<>(false);
                         }
-
                         return getChunkAt(tr, bChunk.startOffset - 1).map(new Function<Chunk, Boolean>() {
                             @Override
                             public Boolean apply(Chunk aChunk) {
@@ -287,78 +246,65 @@ public class BlobAsync {
         });
     }
 
-    // This is where the magic really happens--here is where the data is split
-    // into chunks and written, chunk by chunk, into the blob.
-    private Future<Void> writeToSparse(TransactionContext tcx,
-            final int offset, final byte[] data) {
+    /** Split data into chunks and write into the blob. */
+    private Future<Void> writeToSparse(TransactionContext tcx, final int offset, final byte[] data) {
         return tcx.runAsync(new Function<Transaction, Future<Void>>() {
             @Override
             public Future<Void> apply(Transaction tr) {
                 if (data.length == 0) {
                 	// Don't bother writing nothing to the database.
-                    return new ReadyFuture<Void>((Void) null); 
+                    return new ReadyFuture<>((Void)null);
                 }
 
-                // Determine the number and size of the chunks we will be
-                // writing.
+                // Determine the number and size of the chunks we will be writing.
                 int numChunks = (data.length + CHUNK_LARGE - 1) / (CHUNK_LARGE);
                 int chunkSize = (data.length + numChunks) / (numChunks);
 
-                // Write each chunk.
                 for (int i = 0; i * chunkSize < data.length; i++) {
-                	// Copy over the chunk.
                     int start = i * chunkSize;
                     int end = Math.min((i + 1) * chunkSize, data.length);
-                    byte[] chunk = Arrays.copyOfRange(data, start, end); 
+                    byte[] chunk = Arrays.copyOfRange(data, start, end);
                     tr.set(dataKey(start + offset), chunk); // Write it.
                 }
 
-                return new ReadyFuture<Void>((Void) null);
+                return new ReadyFuture<>((Void)null);
             }
         });
     }
 
-    // Sets the value of the size parameter.
+    /** Sets the value of the size parameter. Does not change any blob data. */
     private Future<Void> setSize(TransactionContext tcx, final int size) {
         return tcx.runAsync(new Function<Transaction, Future<Void>>() {
             @Override
             public Future<Void> apply(Transaction tr) {
                 tr.set(sizeKey(), Tuple2.from(String.valueOf(size)).pack());
-                return new ReadyFuture<Void>((Void) null);
+                return new ReadyFuture<>((Void) null);
             }
         });
     }
 
-    // Public methods
+
     /**
-     * Deletes all key-value pairs associated with the blob so that the
-     * information being held is removed from the database. Also, it will remove
-     * any data being held in the subspace to which the blob is defined, so if
-     * this blob is initialized over a subspace on which previous operations
-     * have stored data, this will erase that data.
-     * 
-     * @param tcx Context to conduct the deletion (typically either the database
-     * where the transaction is occurring or another transaction that uses this delete).
+     * Deletes all key-value pairs associated with the blob by
+     * <b>clearing the underlying subspace</b>.
+     *
+     * @param tcx Context to conduct the deletion
      */
     public Future<Void> delete(TransactionContext tcx) {
         return tcx.runAsync(new Function<Transaction, Future<Void>>() {
             @Override
             public Future<Void> apply(Transaction tr) {
-                // Clears the range covered by the blob.
                 tr.clear(subspace.range());
-                return new ReadyFuture<Void>((Void)null);
+                return new ReadyFuture<>((Void)null);
             }
         });
     }
 
     /**
-     * Gets the size of the blob. If there is no size set (or if the size is set
-     * to something that is not an integer), then this operation will still
-     * succeed, but it will return 0.
-     * 
-     * @param tcx Context to conduct the transaction (typically either the
-     * database where the transaction is occurring or another transaction that uses this one).
-     * @return The size the blob or 0 if this information is not accessible.
+     * Gets the size of the blob.
+     *
+     * @param tcx Context to conduct the transaction
+     * @return The size the blob or 0 if no size is set.
      */
     public Future<Integer> getSize(TransactionContext tcx) {
         return tcx.runAsync(new Function<Transaction, Future<Integer>>() {
@@ -367,15 +313,11 @@ public class BlobAsync {
                 return tr.get(sizeKey()).map(new Function<byte[],Integer>() {
                     @Override
                     public Integer apply(byte[] sizeBytes) {
-                        try{
-                            // Get the size (which is stored as a string) and returns the
-                            // integer case of it.
-                            return Integer.valueOf(Tuple2.fromBytes(sizeBytes).getString(0));
-                        } catch(RuntimeException e){
-                            // There is either no size stored or something bad is stored
-                            // at the place where size is supposed to be.
+                        if(sizeBytes == null) {
                             return 0;
                         }
+                        String sizeStr = Tuple2.fromBytes(sizeBytes).getString(0);
+                        return Integer.valueOf(sizeStr);
                     }
                 });
             }
@@ -386,50 +328,18 @@ public class BlobAsync {
      * Reads from the blob a certain number of bytes and returns them in a
      * single array. Essentially, this method reconstitutes a certain subset of
      * the stored blob and presents in the way the user expects.
-     * 
-     * @param tcx The context in which to grab the data (usually either the
-     * database where the blob is stored or another transaction that needs the 
-     * result of this transaction).
+     *
+     * @param tcx The context in which to grab the data
      * @param offset The starting position of the read expressed as the bytes from
      * the beginning of the blob.
      * @param n The maximum number of bytes to grab. If the end of the blob is
      * reached during the read, only the rest of the blob will be returned. Otherwise,
      * the next available n bytes are grabbed.
-     * @return The data accessed from the blob. This method strings together the
-     * raw bytes stored in the database into a larger array of bytes. It is up to the 
-     * accessing actor to recreate whatever data underlie these bytes. If there is no 
-     * data to read (because <code>offset</code> is greater than the size of the blob, 
-     * this returns <code>null</code>.
+     *
+     * @return The data accessed from the blob. <code>null</code> is returned if
+     * there is no data to read.
      */
     public Future<byte[]> read(TransactionContext tcx, final int offset, final int n) {
-        /* Logically equivalent to the following serial code:
-         * 
-         *      // Get the chunks from the database.
-         *      AsyncIterable<KeyValue> chunks = tr.getRange(
-         *              KeySelector.lastLessOrEqual(dataKey(offset)),
-         *              KeySelector.firstGreaterOrEqual(dataKey(offset + n)));
-         *      int size = getSize(tr);
-         *
-         *      if (offset >= size) {
-         *          // Gone too far.
-         *          return null;
-         *      }
-         *
-         *      // Copy the data over from the database into a byte array.
-         *      byte[] result = new byte[(int) Math.min(n, size - (int) offset)];
-         *      for (KeyValue chunk : chunks) {
-         *          long chunkOffset = dataKeyOffset(chunk.getKey());
-         *          for (int i = 0; i < chunk.getValue().length; i++) {
-         *              int rPos = (int) (chunkOffset + i - offset);
-         *              if (rPos >= 0 && rPos < result.length) {
-         *                  result[rPos] = chunk.getValue()[i];
-         *              }
-         *          }
-         *      }
-         *
-         *      // Return a byte array as taken from the database..
-         *      return result;
-         */
         return tcx.runAsync(new Function<Transaction, Future<byte[]>>() {
             @Override
             public Future<byte[]> apply(final Transaction tr) {
@@ -438,33 +348,30 @@ public class BlobAsync {
                     public Future<byte[]> apply(final Integer size) {
                         if(offset >= size){
                             // Gone too far. Return null.
-                            return new ReadyFuture<byte[]>((byte[])null);
+                            return new ReadyFuture<>((byte[])null);
                         }
-                        
                         // Collect all of the results of the range read taken over the appropriate
-                        // range and pack them all together in the same list. 
-                        return AsyncUtil.collect(tr.getRange(KeySelector.lastLessOrEqual(dataKey(offset)),
-                                KeySelector.firstGreaterOrEqual(dataKey(offset+n)))).map(new Function<List<KeyValue>,byte[]>() {
-
-                            @Override
-                            public byte[] apply(List<KeyValue> chunks) {
-                                // Copy the data over from the list into a byte array.
-                                byte[] result = new byte[(int) Math.min(n, size-offset)];
-                                
-                                for(KeyValue chunk : chunks){
-                                    // Copy this chunk over into the larger array.
-                                    long chunkOffset = dataKeyOffset(chunk.getKey());
-                                    for(int i = 0; i < chunk.getValue().length; i++){
-                                        int rPos = (int)(chunkOffset + i -offset);
-                                        if(rPos >= 0 && rPos < result.length) {
-                                            result[rPos] = chunk.getValue()[i];
-                                        }
-                                    }
-                                }
-                                
-                                return result;
-                            }
-                        });
+                        // range and pack them all together in the same list.
+                        return tr.getRange(KeySelector.lastLessOrEqual(dataKey(offset)),
+                                           KeySelector.firstGreaterOrEqual(dataKey(offset+n)))
+                                 .asList()
+                                 .map(new Function<List<KeyValue>,byte[]>() {
+                                     @Override
+                                     public byte[] apply(List<KeyValue> chunks) {
+                                         // Copy the data over from the list into a byte array.
+                                         byte[] result = new byte[Math.min(n, size-offset)];
+                                         for(KeyValue chunk : chunks){
+                                             long chunkOffset = dataKeyOffset(chunk.getKey());
+                                             for(int i = 0; i < chunk.getValue().length; i++){
+                                                 int rPos = (int)(chunkOffset + i -offset);
+                                                 if(rPos >= 0 && rPos < result.length) {
+                                                     result[rPos] = chunk.getValue()[i];
+                                                 }
+                                             }
+                                         }
+                                         return result;
+                                     }
+                                 });
                     }
                 });
             }
@@ -474,11 +381,8 @@ public class BlobAsync {
     /**
      * Reads and returns the entire blob. 
      * 
-     * @param tcx The context in which to grab the data (usually either the database where
-     * the blob is stored or another transaction that needs the result of this transaction).
-     * @return The data contained in the blob. This is expressed as an array of <code>byte</code>s
-     * formed by stitching back together the chunked up <code>byte</code>s in the store. It is
-     * up to the accessing actor to recreate whatever data underlie these <code>byte</code>s.
+     * @param tcx The context in which to grab the data
+     * @return The data contained in the blob.
      */
     public Future<byte[]> read(TransactionContext tcx) {
         return tcx.runAsync(new Function<Transaction,Future<byte[]>>() {
@@ -497,71 +401,41 @@ public class BlobAsync {
     /**
      * Writes <code>data</code> to the database starting at <code>offset</code>.
      * It will break <code>data</code> into chunks as necessary by its size and
-     * will. It will also overwrite any data that it encounters as it writes, so
-     * it is up to the user to be sure there is no data of import where the
-     * write is occurring. (Alternatively, this can be used to update old
-     * information with new and improved data.) Also, if the end of the blob is
-     * encountered during the write, the size of the blob will be increased.
+     * will. It will also overwrite any data that it encounters as it writes.
      * 
-     * @param tcx The context in which to conduct the write (typically either
-     * the database where the data will be written or another transaction that needs 
-     * the write to occur).
+     * @param tcx The context in which to conduct the write.
      * @param offset The place to begin writing expressed as a number of bytes
      * offset from the beginning of the blob.
      * @param data The bytes to write to the blob.
      */
     public Future<Void> write(TransactionContext tcx, final int offset, final byte[] data) {
-        /*
-         * Logically equivalent to the following serial code:
-         * 
-         *      if (data.length == 0) {
-         *          return null; // Don't bother writing nothing.
-         *      }
-         *
-         *      int end = (int) (offset + data.length);
-         *      makeSparse(tr, offset, end);
-         *      writeToSparse(tr, offset, data);
-         *      tryRemoveSplitPoint(tr, offset);
-         *      int oldLength = getSize(tr);
-         *
-         *      if (end > oldLength) {
-         *          setSize(tr, end); // Embiggen file if necessary.
-         *      } else {
-         *          tryRemoveSplitPoint(tr, end); // Write end needs to be merged.
-         *      }
-         *      return null;
-         */
-        return tcx.runAsync(new Function<Transaction,Future<Void>>() {
+         return tcx.runAsync(new Function<Transaction,Future<Void>>() {
             @Override
             public Future<Void> apply(final Transaction tr) {
                 if(data.length == 0){
-                    return new ReadyFuture<Void>((Void)null); // Don't bother writing nothing.
+                    return new ReadyFuture<>((Void)null); // Don't bother writing nothing.
                 }
                 
                 final int end = offset + data.length;
                 return makeSparse(tr, offset, end).flatMap(new Function<Void,Future<Void>>() {
                     @Override
-                    // Argument v1 not used.
                     public Future<Void> apply(Void v1) {
                         return writeToSparse(tr, offset, data).flatMap(new Function<Void,Future<Void>>() {
                             @Override
-                            // Argument v2 not used.
                             public Future<Void> apply(Void v2) {
                                 return tryRemoveSplitPoint(tr, offset).flatMap(new Function<Boolean,Future<Void>>() {
                                     @Override
-                                    // Argument b1 not used.
                                     public Future<Void> apply(Boolean b1) {
                                         return getSize(tr).flatMap(new Function<Integer,Future<Void>>() {
                                             @Override
                                             public Future<Void> apply(Integer oldLength) {
                                                 if(end > oldLength){
-                                                    // Embiggen file if necessary.
+                                                    // Lengthen if necessary.
                                                     return setSize(tr, end); 
                                                 } else {
                                                     // Write end needs to be merged.
                                                     return tryRemoveSplitPoint(tr, end).map(new Function<Boolean,Void>() {
                                                         @Override
-                                                        // Argument b2 not used.
                                                         public Void apply(Boolean b2) {
                                                             return null;
                                                         }
@@ -582,18 +456,10 @@ public class BlobAsync {
     /**
      * Appends the contents of <code>data</code> onto the end of the blob.
      * 
-     * @param tcx The context in which to conduct the write (typically either
-     * the database where the data will be written or another transaction that 
-     * needs this write).
+     * @param tcx The context in which to conduct the write
      * @param data The bytes to write to the blob.
      */
     public Future<Void> append(TransactionContext tcx, final byte[] data) {
-        /*
-         * Logically equivalent to the following serial code:
-         * 
-         *      write(tr, getSize(tr), data);
-         *      return null;
-         */
         return tcx.runAsync(new Function<Transaction,Future<Void>>() {
             @Override
             public Future<Void> apply(final Transaction tr) {
@@ -608,21 +474,14 @@ public class BlobAsync {
     }
 
     /**
-     * Changes the blob length to <code>newLength</code>. It erases and data
-     * when shrinking, and when enlengthening the blob, the new bytes are filled
+     * Changes the blob length to <code>newLength</code>. It erases the data
+     * when shrinking, and when lengthening the blob, the new bytes are filled
      * by zeros.
      * 
-     * @param tcx The context in which to truncate the blob (typically either
-     * the database where the data will be written or another transaction that needs this truncation).
+     * @param tcx The context in which to truncate the blob.
      * @param newLength The new size of the blob as expressed in bytes.
      */
     public Future<Void> truncate(TransactionContext tcx, final int newLength) {
-        /*
-         * Logically equivalent to the following serial code:
-         * 
-         *      makeSparse(tr, newLength, getSize(tr));
-         *      setSize(tr, newLength);
-         */
         return tcx.runAsync(new Function<Transaction,Future<Void>>() {
             @Override
             public Future<Void> apply(final Transaction tr) {
@@ -631,7 +490,6 @@ public class BlobAsync {
                     public Future<Void> apply(Integer size) {
                         return makeSparse(tr, newLength, size).flatMap(new Function<Void,Future<Void>>() {
                             @Override
-                            // Argument v not used.
                             public Future<Void> apply(Void v) {
                                 return setSize(tr, newLength);
                             }

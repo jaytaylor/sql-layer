@@ -42,9 +42,9 @@ public class MultipleNullUniqueIndexIT  extends ITBase {
         ddl().createTable(session(), builder.akibanInformationSchema().getTable(SCHEMA, TABLE));
         updateAISGeneration();
         final int tid = tableId(SCHEMA, TABLE);
-        
-        writeRows(createNewRow(tid, null, -1L));
-        writeRows(createNewRow(tid, null, -1L));
+        Object[] data = new Object[1];
+        writeRows(createNewRow(tid, data));
+        writeRows(createNewRow(tid, data));
         expectFullRows(tid,
                        createNewRow(tid, (Object)null),
                        createNewRow(tid, (Object)null));

@@ -30,6 +30,7 @@ import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.server.api.dml.ColumnSelector;
+import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.ScanLimit;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
@@ -49,7 +50,8 @@ public interface Store extends KeyCreator {
     /**  If not {@code null}, only maintain the given {@code tableIndexes} and {@code groupIndexes}. */
     void writeRow(Session session, RowData row);
     void writeRow(Session session, RowData row, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes);
-    void writeRow(Session session, RowDef rowDef, RowData row, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes, boolean fillHiddenPk);
+    void writeRow(Session session, RowDef rowDef, RowData row, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes);
+    void writeNewRow(Session session, NewRow row);
 
     void deleteRow(Session session, RowData row, boolean cascadeDelete);
     void deleteRow(Session session, RowDef rowDef, RowData row, boolean cascadeDelete);
@@ -154,8 +156,6 @@ public interface Store extends KeyCreator {
     StoreAdapter createAdapter(Session session, Schema schema);
 
     boolean treeExists(Session session, StorageDescription storageDescription);
-
-    boolean isRetryableException(Throwable t);
 
     // TODO: Better abstraction
     void traverse(Session session, Group group, TreeRecordVisitor visitor);

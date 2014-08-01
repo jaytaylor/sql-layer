@@ -25,6 +25,8 @@ import java.io.File;
 
 public class FullTextIndexFileStorageFormat extends StorageFormat<FullTextIndexFileStorageDescription>
 {
+    private final static String identifier = "fulltext";
+
     private FullTextIndexFileStorageFormat() {
     }
 
@@ -34,7 +36,7 @@ public class FullTextIndexFileStorageFormat extends StorageFormat<FullTextIndexF
 
     public FullTextIndexFileStorageDescription readProtobuf(Storage pbStorage, HasStorage forObject, FullTextIndexFileStorageDescription storageDescription) {
         if (storageDescription == null) {
-            storageDescription = new FullTextIndexFileStorageDescription(forObject);
+            storageDescription = new FullTextIndexFileStorageDescription(forObject, identifier);
         }
         storageDescription.setPath(new File(pbStorage.getExtension(CommonProtobuf.fullTextIndexPath)));
         return storageDescription;

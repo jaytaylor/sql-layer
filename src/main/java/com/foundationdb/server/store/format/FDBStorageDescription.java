@@ -53,23 +53,23 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
 {
     private byte[] prefixBytes;
 
-    public FDBStorageDescription(HasStorage forObject) {
-        super(forObject);
+    public FDBStorageDescription(HasStorage forObject, String storageFormat) {
+        super(forObject, storageFormat);
     }
 
-    public FDBStorageDescription(HasStorage forObject, byte[] prefixBytes) {
-        super(forObject);
+    public FDBStorageDescription(HasStorage forObject, byte[] prefixBytes, String storageFormat) {
+        super(forObject, storageFormat);
         this.prefixBytes = prefixBytes;
     }
 
-    public FDBStorageDescription(HasStorage forObject, FDBStorageDescription other) {
-        super(forObject, other);
+    public FDBStorageDescription(HasStorage forObject, FDBStorageDescription other, String storageFormat) {
+        super(forObject, other, storageFormat);
         this.prefixBytes = other.prefixBytes;
     }
 
     @Override
     public StorageDescription cloneForObject(HasStorage forObject) {
-        return new FDBStorageDescription(forObject, this);
+        return new FDBStorageDescription(forObject, this, storageFormat);
     }
 
     @Override

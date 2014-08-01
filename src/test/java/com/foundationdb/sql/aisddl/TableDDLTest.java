@@ -210,20 +210,20 @@ public class TableDDLTest {
     @Test
     public void createTableAs1() throws Exception {
         makeSeparateAIS();
-        String sql = "CREATE TABLE t1 (column1, column2, column3) AS (SELECT c1, c2, c3 FROM t2) WITH DATA";
+        String sql = "CREATE TABLE t1 (column1, column2, column3) AS (SELECT c1, c2, c3 FROM t2) WITH NO DATA";
         createTableAsColumnGenerateAIS();
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
         List<String> columnNames = Arrays.asList("c1", "c2", "c3");
         DataTypeDescriptor d = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
         List<DataTypeDescriptor> descriptors = Arrays.asList(d,d,d);
-        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames, null);
     }
 
     @Test
     public void createTableAs2() throws Exception {
         makeSeparateAIS();
-        String sql = "CREATE TABLE t1 (column1, column2, column3) AS (SELECT * FROM t2) WITH DATA";
+        String sql = "CREATE TABLE t1 (column1, column2, column3) AS (SELECT * FROM t2) WITH NO DATA";
         createTableAsColumnGenerateAIS();
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
@@ -231,59 +231,59 @@ public class TableDDLTest {
         DataTypeDescriptor d = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
         List<DataTypeDescriptor> descriptors = Arrays.asList(d,d,d);
 
-        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames, null);
     }
 
     @Test
     public void createTableAs3() throws Exception {
         makeSeparateAIS();
-        String sql = "CREATE TABLE t1 AS (SELECT c1, c2, c3 FROM t2) WITH DATA";
+        String sql = "CREATE TABLE t1 AS (SELECT c1, c2, c3 FROM t2) WITH NO DATA";
         createTableAsCGenerateAIS();
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
         List<String> columnNames = Arrays.asList("c1", "c2", "c3");
         DataTypeDescriptor d = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
         List<DataTypeDescriptor> descriptors = Arrays.asList(d,d,d);
-        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames, null);
     }
 
     @Test
     public void createTableAs4() throws Exception {
         makeSeparateAIS();
-        String sql = "CREATE TABLE t1 AS (SELECT * FROM t2) WITH DATA";
+        String sql = "CREATE TABLE t1 AS (SELECT * FROM t2) WITH  NO DATA";
         createTableAsCGenerateAIS();
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
         List<String> columnNames = Arrays.asList("c1", "c2", "c3");
         DataTypeDescriptor d = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
         List<DataTypeDescriptor> descriptors = Arrays.asList(d,d,d);
-        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames, null);
     }
 
     @Test
     public void createTableAs5() throws Exception {
         makeSeparateAIS();
-        String sql = "CREATE TABLE t1 (c1, c2) AS (SELECT column1, column2, column3 FROM t2) WITH DATA";
+        String sql = "CREATE TABLE t1 (c1, c2) AS (SELECT column1, column2, column3 FROM t2) WITH NO DATA";
         createTableAsMixGenerateAIS();
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
         List<String> columnNames = Arrays.asList("column1", "column2", "column3");
         DataTypeDescriptor d = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
         List<DataTypeDescriptor> descriptors = Arrays.asList(d,d,d);
-        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames, null);
     }
 
     @Test (expected=InvalidCreateAsException.class)
     public void createTableAs6() throws Exception {
         makeSeparateAIS();
-        String sql = "CREATE TABLE t1 (c1, c2, c3) AS (SELECT column1, column2 FROM t2) WITH DATA";
+        String sql = "CREATE TABLE t1 (c1, c2, c3) AS (SELECT column1, column2 FROM t2) WITH NO DATA";
         createTableAsMixGenerateAIS();
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
         List<String> columnNames = Arrays.asList("column1", "column2");
         DataTypeDescriptor d = new DataTypeDescriptor(TypeId.INTEGER_ID, false);
         List<DataTypeDescriptor> descriptors = Arrays.asList(d,d);
-        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null, descriptors ,columnNames, null);
     }
 
     @Test
@@ -373,14 +373,6 @@ public class TableDDLTest {
         TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
     }
     
-    @Test (expected=DuplicateSequenceNameException.class)
-    public void duplicateSerialColumns() throws StandardException {
-        String sql = "CREATE TABLE t1 (c1 SERIAL, c2 SERIAL)";
-        StatementNode stmt = parser.parseStatement(sql);
-        assertTrue(stmt instanceof CreateTableNode);
-        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
-    }
-
     //bug1047037
     @Test (expected=DuplicateIndexException.class)
     public void namedPKConstraint() throws StandardException {
@@ -486,7 +478,21 @@ public class TableDDLTest {
         TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
     }
 
-    
+    @Test(expected=JoinToSelfException.class)
+    public void joinToSelf() throws StandardException {
+        String sql = "CREATE TABLE t(id1 INT PRIMARY KEY, id2 INT, GROUPING FOREIGN KEY(id2) REFERENCES t(id1))";
+        StatementNode stmt = parser.parseStatement(sql);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
+    }
+
+    @Test(expected=JoinToUnknownTableException.class)
+    public void joinToUnknown() throws StandardException {
+        String sql = "CREATE TABLE t(id1 INT PRIMARY KEY, xid INT, GROUPING FOREIGN KEY(xid) REFERENCES x(id))";
+        StatementNode stmt = parser.parseStatement(sql);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
+    }
+
+
     public static class DDLFunctionsMock extends DDLFunctionsMockBase {
         private final AkibanInformationSchema internalAIS;
         private final AkibanInformationSchema externalAIS;

@@ -1,0 +1,8 @@
+---
+- Statement: CREATE TABLE p(x INT NOT NULL, UNIQUE(x))
+---
+- Statement: INSERT INTO p VALUES (1), (2), (3)
+---
+- Statement: select * from p inner join (select y from (select x, x*2 from p) as v(x,y)) as p2(y) on p.x = p2.y
+- output: [[2, 2]]
+...

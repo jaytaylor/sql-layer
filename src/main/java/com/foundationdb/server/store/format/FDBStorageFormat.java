@@ -23,7 +23,7 @@ import com.foundationdb.ais.protobuf.FDBProtobuf;
 
 public class FDBStorageFormat extends StorageFormat<FDBStorageDescription>
 {
-    private final static String identifier = "rowdata";
+    public final static String identifier = "rowdata";
 
     private FDBStorageFormat() {
     }
@@ -34,7 +34,7 @@ public class FDBStorageFormat extends StorageFormat<FDBStorageDescription>
 
     public FDBStorageDescription readProtobuf(Storage pbStorage, HasStorage forObject, FDBStorageDescription storageDescription) {
         if (storageDescription == null) {
-            storageDescription = new FDBStorageDescription(forObject);
+            storageDescription = new FDBStorageDescription(forObject, identifier);
         }
         storageDescription.setPrefixBytes(pbStorage.getExtension(FDBProtobuf.prefixBytes).toByteArray());
         return storageDescription;

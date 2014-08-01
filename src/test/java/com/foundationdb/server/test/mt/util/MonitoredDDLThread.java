@@ -21,8 +21,10 @@ import com.foundationdb.server.rowdata.SchemaFactory;
 import com.foundationdb.server.service.dxl.OnlineDDLMonitor;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.test.mt.util.ThreadMonitor.Stage;
+import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import java.util.Collection;
+import java.util.List;
 
 public class MonitoredDDLThread extends MonitoredThread
 {
@@ -30,6 +32,30 @@ public class MonitoredDDLThread extends MonitoredThread
     private final Collection<OnlineDDLMonitor.Stage> onlineStageMarks;
     private final String schema;
     private final String ddl;
+    private final List<DataTypeDescriptor> descriptors;
+    private final List<String> columnNames;
+    private final OnlineCreateTableAsBase.TestSession server;
+
+    public MonitoredDDLThread(String name,
+                              ServiceHolder services,
+                              ThreadMonitor monitor,
+                              Collection<Stage> threadStageMarks,
+                              OnlineDDLMonitor onlineDDLMonitor,
+                              Collection<OnlineDDLMonitor.Stage> onlineStageMarks,
+                              String schema,
+                              String ddl,
+                              List<DataTypeDescriptor> descriptors,
+                              List<String> columnNames,
+                              OnlineCreateTableAsBase.TestSession server) {
+        super(name, services, monitor, threadStageMarks);
+        this.onlineDDLMonitor = new OnlineDDLMonitorShim(onlineDDLMonitor);
+        this.onlineStageMarks = onlineStageMarks;
+        this.schema = schema;
+        this.ddl = ddl;
+        this.descriptors = descriptors;
+        this.columnNames = columnNames;
+        this.server = server;
+    }
 
     public MonitoredDDLThread(String name,
                               ServiceHolder services,
@@ -39,11 +65,7 @@ public class MonitoredDDLThread extends MonitoredThread
                               Collection<OnlineDDLMonitor.Stage> onlineStageMarks,
                               String schema,
                               String ddl) {
-        super(name, services, monitor, threadStageMarks);
-        this.onlineDDLMonitor = new OnlineDDLMonitorShim(onlineDDLMonitor);
-        this.onlineStageMarks = onlineStageMarks;
-        this.schema = schema;
-        this.ddl = ddl;
+        this(name, services, monitor, threadStageMarks, onlineDDLMonitor, onlineStageMarks, schema, ddl, null, null, null);
     }
 
     //
@@ -65,7 +87,15 @@ public class MonitoredDDLThread extends MonitoredThread
         getServiceHolder().getDDLFunctions().setOnlineDDLMonitor(onlineDDLMonitor);
         try {
             SchemaFactory schemaFactory = new SchemaFactory(schema);
-            schemaFactory.ddl(getServiceHolder().getDDLFunctions(), session, ddl);
+            if(server != null) {
+                server.setSession(session);
+                schemaFactory.ddl(getServiceHolder().getDDLFunctions(), session, descriptors, columnNames, server, ddl);
+            } else {
+                schemaFactory.ddl(getServiceHolder().getDDLFunctions(), session, ddl);
+            }
+
+
+
         } finally {
             getServiceHolder().getDDLFunctions().setOnlineDDLMonitor(null);
         }

@@ -295,8 +295,8 @@ public final class DropTreesIT extends ITBase {
     public void pkLessRootWithData() throws Exception {
         int tid = createTable("s", "t", "i int");
         createIndex("s", "t", "i", "i");
-        writeRows(createNewRow(tid, 10L, 0L),
-                  createNewRow(tid, 20L, 0L));
+        writeRows(createNewRow(tid, 10L),
+                  createNewRow(tid, 20L));
         Table t = getTable(tid);
         expectTree(t);
         Index pk = t.getIndexIncludingInternal(Index.PRIMARY);
@@ -330,8 +330,8 @@ public final class DropTreesIT extends ITBase {
                   createNewRow(pid, 2L));
         Table p = getTable(pid);
         expectTree(p);
-        writeRows(createNewRow(cid, 10L, 1L, 0L),
-                  createNewRow(cid, 20L, 2L, 0L));
+        writeRows(createNewRow(cid, 10L, 1L),
+                  createNewRow(cid, 20L, 2L));
         Table c = getTable(cid);
         expectTree(c);
         Index pk = c.getIndexIncludingInternal(Index.PRIMARY);

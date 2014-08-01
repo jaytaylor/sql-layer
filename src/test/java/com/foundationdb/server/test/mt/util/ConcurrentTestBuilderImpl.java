@@ -18,7 +18,10 @@
 package com.foundationdb.server.test.mt.util;
 
 import com.foundationdb.server.service.dxl.OnlineDDLMonitor;
+import com.foundationdb.server.test.mt.OnlineCreateTableAsMT;
 import com.foundationdb.server.test.mt.util.ThreadMonitor.Stage;
+import com.foundationdb.sql.server.ServerSession;
+import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import org.slf4j.Logger;
@@ -71,7 +74,12 @@ public class ConcurrentTestBuilderImpl implements ConcurrentTestBuilder
     }
 
     @Override
-    public List<MonitoredThread> build(ServiceHolder serviceHolder) {
+    public List<MonitoredThread> build(ServiceHolder serviceHolder){
+        return build(serviceHolder, null, null, null);
+    }
+    @Override
+    public List<MonitoredThread> build(ServiceHolder serviceHolder, List<DataTypeDescriptor> descriptors,
+                                       List<String> columnNames, OnlineCreateTableAsBase.TestSession server) {
         LOG.debug("build {}", threadStateMap.keySet());
         Map<String,CyclicBarrier> barriers = new HashMap<>();
         for(Entry<String,Collection<String>> entry : syncToThreadState.asMap().entrySet()) {
@@ -100,7 +108,10 @@ public class ConcurrentTestBuilderImpl implements ConcurrentTestBuilder
                                                 monitor,
                                                 state.onlineStageMarks,
                                                 state.schema,
-                                                state.ddl);
+                                                state.ddl,
+                                                descriptors,
+                                                columnNames,
+                                                server);
             }
             threads.add(thread);
         }

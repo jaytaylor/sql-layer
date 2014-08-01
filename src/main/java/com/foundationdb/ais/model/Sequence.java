@@ -52,7 +52,7 @@ public class Sequence extends HasStorage {
         AISInvariants.checkNullName(schemaName, "Sequence", "schema name");
         AISInvariants.checkNullName(sequenceName, "Sequence", "table name");
         AISInvariants.checkDuplicateSequence(ais, schemaName, sequenceName);
-
+        
         this.ais = ais;
         this.sequenceName = new TableName (schemaName, sequenceName);
         this.startsWith = start;
@@ -60,7 +60,6 @@ public class Sequence extends HasStorage {
         this.minValue = minValue;
         this.maxValue = maxValue;
         this.cycle = cycle;
-        this.cacheSize = 20;
     }
 
     public final TableName getSequenceName() {
@@ -82,10 +81,10 @@ public class Sequence extends HasStorage {
     public final boolean isCycle() {
         return cycle;
     }
-    public final long getCacheSize() {
-        return cacheSize;
+
+    public final boolean isInternalSequence() {
+        return sequenceName.getTableName().contains(Column.ROW_ID_NAME);
     }
-    
     // State
     protected final AkibanInformationSchema ais;
     protected final TableName sequenceName;
@@ -95,7 +94,6 @@ public class Sequence extends HasStorage {
     private final long minValue;
     private final long maxValue;
     private final boolean cycle;
-    private final long cacheSize;
 
     // HasStorage implementation
 

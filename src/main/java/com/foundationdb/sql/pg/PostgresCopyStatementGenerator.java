@@ -43,7 +43,7 @@ public class PostgresCopyStatementGenerator extends PostgresBaseStatementGenerat
             case FROM_SUBQUERY:
                 return new PostgresCopyOutStatement(compiler);
             case TO_TABLE:
-                return new PostgresCopyInStatement();
+                return new PostgresCopyInStatement(compiler.getSchema());
             }
         }
         return null;

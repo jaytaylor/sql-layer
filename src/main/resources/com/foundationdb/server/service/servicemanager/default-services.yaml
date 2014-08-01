@@ -12,6 +12,7 @@
     com.foundationdb.sql.ui.SwingConsoleService : com.foundationdb.sql.ui.SwingConsoleServiceImpl
     com.foundationdb.server.service.is.ServerSchemaTablesService    : com.foundationdb.server.service.is.ServerSchemaTablesServiceImpl
     com.foundationdb.server.types.service.TypesRegistryService : com.foundationdb.server.types.service.TypesRegistryServiceImpl
+    com.foundationdb.server.types.service.TypesRegistrySchemaTablesService: com.foundationdb.server.types.service.TypesRegistrySchemaTablesServiceImpl
     com.foundationdb.server.service.routines.RoutineLoader : com.foundationdb.server.service.routines.RoutineLoaderImpl
     com.foundationdb.server.service.routines.ScriptEngineManagerProvider : com.foundationdb.server.service.routines.ScriptEngineManagerProviderImpl
     com.foundationdb.sql.embedded.EmbeddedJDBCService : com.foundationdb.sql.embedded.EmbeddedJDBCServiceImpl

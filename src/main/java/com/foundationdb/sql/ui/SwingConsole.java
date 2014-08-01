@@ -39,7 +39,7 @@ public class SwingConsole extends JFrame implements WindowListener
     private final ServiceManager serviceManager;
     private JTextArea textArea;
     private PrintStream printStream;
-    private  String[] RUN_PSQL_CMD;
+    private  String[] RUN_FDBSQLCLI_CMD;
     private boolean adjusted = false;
 
     public SwingConsole(ServiceManager serviceManager) {
@@ -125,7 +125,7 @@ public class SwingConsole extends JFrame implements WindowListener
             // Run menu
             JMenu run = new JMenu("Run");
             run.setMnemonic(KeyEvent.VK_W);
-            JMenuItem runPsql = run.add("Run PSQL client");
+            JMenuItem runPsql = run.add("Run FDB SQL client");
             runPsql.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F6,
                                                           shift));
 
@@ -140,27 +140,27 @@ public class SwingConsole extends JFrame implements WindowListener
                         int port = getPostgresPort();
 
                         if (macOSX)
-                            RUN_PSQL_CMD = new String[]
+                            RUN_FDBSQLCLI_CMD = new String[]
                             {
                                 "osascript",
                                 "-e",
-                                "tell application \"Terminal\"\n activate\n do script \"exec psql -h localhost -p" + port + "\"\n end tell"
+                                "tell application \"Terminal\"\n activate\n do script \"exec fdbsqlcli -h localhost -p " + port + "\"\n end tell"
                             };
                         else if (osName.startsWith("Window"))
-                            RUN_PSQL_CMD = new String[]
+                            RUN_FDBSQLCLI_CMD = new String[]
                             {
                                 "cmd.exe",
                                 "/c",
-                                "start psql -h localhost -p" + port
+                                "start fdbsqlcli -h localhost -p " + port
                             };
                         else // assuming unix-based system
-                            RUN_PSQL_CMD = new String[]
+                            RUN_FDBSQLCLI_CMD = new String[]
                             {
                                 new File("/etc/alternatives/x-terminal-emulator").exists()
                                     ? "x-terminal-emulator"
                                     : "xterm",
                                 "-e",
-                                "psql -h localhost -p" + port
+                                "fdbsqlcli -h localhost -p " + port
                             };
 
                         adjusted = true;
@@ -168,7 +168,7 @@ public class SwingConsole extends JFrame implements WindowListener
                         
                     try
                     {
-                        Runtime.getRuntime().exec(RUN_PSQL_CMD);
+                        Runtime.getRuntime().exec(RUN_FDBSQLCLI_CMD);
                     }
                     catch (IOException ex)
                     {

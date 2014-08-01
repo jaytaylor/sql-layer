@@ -61,6 +61,7 @@ import com.foundationdb.server.store.Store;
 
 import com.foundationdb.sql.server.ServerCallContextStack;
 import com.foundationdb.sql.server.ServerQueryContext;
+import com.foundationdb.util.Exceptions;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.search.Query;
 
@@ -573,7 +574,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             row.put(2, index.getIndexName().getName());
             row.put(3, index.getIndexId());
             row.put(4, Arrays.copyOf(hKey.getEncodedBytes(), hKey.getEncodedSize()));
-            store.writeRow(session, row.toRowData(), null, null);
+            store.writeNewRow(session, row);
         }
     }
 
@@ -639,7 +640,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 try {
                     runInternal();
                 } catch(Exception e) {
-                    if(!store.isRetryableException(e)) {
+                    if(!Exceptions.isRollbackException(e)) {
                         logger.error("Run failed with exception", getName(), e);
                     }
                 }
