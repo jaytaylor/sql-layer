@@ -814,7 +814,7 @@ public class API
 
     // hashTableLookup_Default
     public static Operator hashTableLookup_Default(List<AkCollator> collators,
-                                                   int outerComparisonFields[],
+                                                   List<TPreparedExpression> outerComparisonFields,
                                                    boolean outerLeftJoin,
                                                    int hashBindingPosition,
                                                    int rowBindingPosition,
@@ -834,7 +834,7 @@ public class API
     // using_HashTable
     public static Operator using_HashTable(Operator hashInput,
                                            RowType hashedRowType,
-                                           int comparisonFields[],
+                                           List<TPreparedExpression> comparisonFields,
                                            int filterBindingPosition,
                                            Operator joinedInput,
                                            List<AkCollator> collators)

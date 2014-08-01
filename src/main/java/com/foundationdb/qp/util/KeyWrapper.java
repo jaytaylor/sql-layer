@@ -19,6 +19,8 @@ package com.foundationdb.qp.util;
 
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 
@@ -45,11 +47,14 @@ public  class KeyWrapper{
         return true;
     }
 
-    public KeyWrapper(Row row, int comparisonFields[], List<AkCollator> collators){
-
-        for (int f = 0; f < comparisonFields.length; f++) {
-            ValueSource columnValue=row.value(comparisonFields[f]);
-            AkCollator collator = (collators != null) ? collators.get(f) : null;
+    public KeyWrapper(Row row, List<TPreparedExpression> comparisonExpressions, List<AkCollator> collators){
+        int i = 0;
+        for( TPreparedExpression expression : comparisonExpressions) {
+            TEvaluatableExpression evaluatableExpression= expression.build();
+            evaluatableExpression.with(row);
+            evaluatableExpression.evaluate();
+            ValueSource columnValue = evaluatableExpression.resultValue();
+            AkCollator collator = (collators != null) ? collators.get(i++) : null;
             hashKey = hashKey ^ ValueSources.hash(columnValue, collator);
             values.add(columnValue);
         }

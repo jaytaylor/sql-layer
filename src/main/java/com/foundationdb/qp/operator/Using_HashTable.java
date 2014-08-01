@@ -22,6 +22,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.util.KeyWrapper;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.explain.*;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
 import com.google.common.collect.ArrayListMultimap;
@@ -72,7 +73,7 @@ class Using_HashTable extends Operator
 
     public Using_HashTable(Operator hashInput,
                            RowType hashedRowType,
-                           int comparisonFields[],
+                           List<TPreparedExpression> comparisonFields,
                            int tableBindingPosition,
                            Operator joinedInput,
                            List<AkCollator> collators)
@@ -80,7 +81,8 @@ class Using_HashTable extends Operator
         ArgumentValidation.notNull("hashInput", hashInput);
         ArgumentValidation.notNull("hashedRowType", hashedRowType);
         ArgumentValidation.notNull("comparisonFields", comparisonFields);
-        ArgumentValidation.isGTE("comparisonFields", comparisonFields.length, 1);
+        ArgumentValidation.isGTE("comparisonFields", comparisonFields.size(), 1);
+        ArgumentValidation.isLTE("comparisonFields", comparisonFields.size(), hashedRowType.nFields());
         ArgumentValidation.notNull("joinedInput", joinedInput);
 
         this.hashInput = hashInput;
@@ -108,7 +110,7 @@ class Using_HashTable extends Operator
 
     private final Operator hashInput;
     private final RowType hashedRowType;
-    private final int comparisonFields[];
+    private final List<TPreparedExpression> comparisonFields;
     private final int tableBindingPosition;
     private final Operator joinedInput;
     private final List<AkCollator> collators;

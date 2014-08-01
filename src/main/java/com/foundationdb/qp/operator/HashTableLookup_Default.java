@@ -22,6 +22,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.util.KeyWrapper;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.explain.*;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
 import com.google.common.collect.ArrayListMultimap;
@@ -46,7 +47,7 @@ class HashTableLookup_Default extends Operator
     }
 
     public HashTableLookup_Default(List<AkCollator> collators,
-                                   int outerComparisonFields[],
+                                   List<TPreparedExpression> outerComparisonFields,
                                    boolean outerLeftJoin,
                                    int hashBindingPosition,
                                    int rowBindingPosition,
@@ -55,7 +56,8 @@ class HashTableLookup_Default extends Operator
     )
     {
         ArgumentValidation.notNull("outerComparisonFields", outerComparisonFields);
-        ArgumentValidation.isGTE("outerOrderingFields", outerComparisonFields.length, 1);
+        ArgumentValidation.isGTE("outerComparisonFields", outerComparisonFields.size(), 1);
+        ArgumentValidation.isLTE("outerComparisonFields", outerComparisonFields.size(), boundRowType.nFields());
         ArgumentValidation.isNotSame("hashBindingPosition", hashBindingPosition, "rowBindingPosition", rowBindingPosition);
         ArgumentValidation.notNull("boundRowType", boundRowType);
         ArgumentValidation.notNull("hashedRowType", hashedRowType);
@@ -77,7 +79,7 @@ class HashTableLookup_Default extends Operator
 
     // Object state
 
-    private final int outerComparisonFields[];
+    private final List<TPreparedExpression> outerComparisonFields;
     private final int hashBindingPosition;
     private final int rowBindingPosition;
     private final RowType boundRowType;

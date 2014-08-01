@@ -39,6 +39,8 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
     private int fullAddress;
     TableRowType fullAddressRowType;
     private RowType projectRowType;
+    List<TPreparedExpression> genericExpressionList;
+    List<TPreparedExpression> emptyExpressionList;
 
     @Override
     protected void setupCreateSchema() {
@@ -91,20 +93,21 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
         use(db);
         fullAddressRowType = schema.tableRowType(table(fullAddress));
         ciCollator = customerRowType.table().getColumn(1).getCollator();
+        genericExpressionList = new ArrayList<>();
+        genericExpressionList.add(new TPreparedField(customerRowType.typeAt(0), 0));
+        emptyExpressionList = new ArrayList<>();
     }
 
     /** Test argument HashJoinLookup_Default */
 
     @Test(expected = IllegalArgumentException.class)
     public void testHashJoinbindingsSame() {
-        int columnsToJoinOn[] = {1};
-        hashTableLookup_Default(null, columnsToJoinOn, false, ROW_BINDING_POSITION, ROW_BINDING_POSITION, customerRowType, customerRowType);
+        hashTableLookup_Default(null, genericExpressionList, false, ROW_BINDING_POSITION, ROW_BINDING_POSITION, customerRowType, customerRowType);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testHashJoinEmptyComparisonFields() {
-        int columnsToJoinOn[] = {};
-        hashTableLookup_Default(null, columnsToJoinOn, false, ROW_BINDING_POSITION, TABLE_BINDING_POSITION, customerRowType, customerRowType);
+        hashTableLookup_Default(null, emptyExpressionList, false, ROW_BINDING_POSITION, TABLE_BINDING_POSITION, customerRowType, customerRowType);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -116,26 +119,22 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
 
     @Test(expected = IllegalArgumentException.class)
     public void testUsingHashJoinRightInputNull() {
-        int columnsToJoinOn[] = {1};
-        using_HashTable(groupScan_Default(coi), customerRowType, columnsToJoinOn, TABLE_BINDING_POSITION, null, null);
+        using_HashTable(groupScan_Default(coi), customerRowType, genericExpressionList, TABLE_BINDING_POSITION, null, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testUsingHashJoinLeftInputNull() {
-        int columnsToJoinOn[] = {1};
-        using_HashTable(null, customerRowType, columnsToJoinOn, TABLE_BINDING_POSITION, groupScan_Default(coi), null);
+        using_HashTable(null, customerRowType, genericExpressionList, TABLE_BINDING_POSITION, groupScan_Default(coi), null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testUsingHashJoinBothInputsNull() {
-        int columnsToJoinOn[] = {1};
-        using_HashTable(null, customerRowType,columnsToJoinOn,  TABLE_BINDING_POSITION, null, null);
+        using_HashTable(null, customerRowType,genericExpressionList,  TABLE_BINDING_POSITION, null, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testUsingHashJoinEmptyComparisonFields() {
-        int columnsToJoinOn[] = {};
-        using_HashTable(groupScan_Default(coi), customerRowType, columnsToJoinOn, TABLE_BINDING_POSITION, groupScan_Default(coi), null);
+        using_HashTable(groupScan_Default(coi), customerRowType, emptyExpressionList, TABLE_BINDING_POSITION, groupScan_Default(coi), null);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -341,10 +340,19 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
             }
         }
 
+        List<TPreparedExpression> outerJoinExpressions = new ArrayList<>();
+        for(int i : outerJoinFields){
+            outerJoinExpressions.add(new TPreparedField(outerRowType.typeAt(i), i));
+        }
+        List<TPreparedExpression> innerJoinExpressions = new ArrayList<>();
+        for(int i : innerJoinFields){
+            innerJoinExpressions.add(new TPreparedField(innerRowType.typeAt(i), i));
+        }
+
         Operator project = project_Default(
                 hashTableLookup_Default(
                         collators,
-                        outerJoinFields,
+                        outerJoinExpressions,
                         leftOuterJoin,
                         TABLE_BINDING_POSITION,
                         ROW_BINDING_POSITION,
@@ -360,7 +368,7 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
         return using_HashTable(
                 innerStream,
                 innerRowType,
-                innerJoinFields,
+                innerJoinExpressions,
                 TABLE_BINDING_POSITION++,
                 map_NestedLoops(
                         outerStream,
