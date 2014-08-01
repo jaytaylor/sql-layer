@@ -1,1 +1,1 @@
-com.foundationdb.server.error.NoSuchTableException: NO_SUCH_TABLE: Cannot find the table `null`.`null`
+com.foundationdb.server.error.NoTableSpecifiedInQueryException: NO_TABLE_SPECIFIED: No table specified in query to expand `*` or `**`

@@ -23,6 +23,7 @@ import com.foundationdb.server.error.JoinNodeAdditionException;
 import com.foundationdb.server.error.NoSuchColumnException;
 import com.foundationdb.server.error.NoSuchFunctionException;
 import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.server.error.NoTableSpecifiedInQueryException;
 import com.foundationdb.server.error.ProcedureCalledAsFunctionException;
 import com.foundationdb.server.error.SQLParserInternalException;
 import com.foundationdb.server.error.SelectExistsErrorException;
@@ -31,11 +32,9 @@ import com.foundationdb.server.error.TableIsBadSubqueryException;
 import com.foundationdb.server.error.UnsupportedFullOuterJoinException;
 import com.foundationdb.server.error.ViewHasBadSubqueryException;
 import com.foundationdb.server.error.WholeGroupQueryException;
-
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.parser.*;
 import com.foundationdb.sql.views.ViewDefinition;
-
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Columnar;
@@ -955,7 +954,7 @@ public class AISBinder implements Visitor
         // Give an error if the qualification name did not match an exposed name.
         if (resultColumnList == null) {
             if (allTableName == null) {
-                throw new NoSuchTableException ("null", "null", null);
+                throw new NoTableSpecifiedInQueryException ();
             } else {
                 throw new NoSuchTableException(allTableName.getSchemaName(), allTableName.getTableName(), allTableName);
             }
