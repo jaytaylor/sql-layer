@@ -165,7 +165,7 @@ public class CheckParserUsagesDT {
         // using the methods
         // assertThat(unused, empty());
 
-        assertThat(unused.size(), equalTo(305));
+        assertThat(unused.size(), equalTo(304));
     }
 
     public void logHeaderInfo(StringBuilder sql, StringBuilder csv) {
