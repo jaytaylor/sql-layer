@@ -39,12 +39,8 @@ import java.util.regex.Pattern;
 import com.foundationdb.sql.optimizer.rule.cost.CostModelFactory;
 import com.foundationdb.sql.optimizer.rule.cost.RandomCostModelService;
 import org.joda.time.DateTimeZone;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.MethodRule;
-import org.junit.rules.TestWatchman;
 import org.junit.runner.RunWith;
-import org.junit.runners.model.FrameworkMethod;
 
 /**
  * Run tests specified as YAML files that end with the .yaml extension.  By
@@ -96,7 +92,6 @@ public class PostgresServerBuggifiedYamlDT extends PostgresServerYamlITBase
 
     @Test
     public void testYaml() throws Exception {
-        //((RandomCostModelService)serviceManager().getServiceByClass(CostModelFactory.class)).reSeed();
         boolean  success = false;
         try {
             testYaml(file, true);
