@@ -20,9 +20,10 @@ package com.foundationdb.qp.util;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
-import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
+import com.foundationdb.server.types.value.ValueTargets;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,16 +48,17 @@ public  class KeyWrapper{
         return true;
     }
 
-    public KeyWrapper(Row row, List<TPreparedExpression> comparisonExpressions, List<AkCollator> collators){
+    public KeyWrapper(Row row, List<TEvaluatableExpression> comparisonExpressions, List<AkCollator> collators){
         int i = 0;
-        for( TPreparedExpression expression : comparisonExpressions) {
-            TEvaluatableExpression evaluatableExpression= expression.build();
-            evaluatableExpression.with(row);
-            evaluatableExpression.evaluate();
-            ValueSource columnValue = evaluatableExpression.resultValue();
+        for( TEvaluatableExpression expression : comparisonExpressions) {
+            expression.with(row);
+            expression.evaluate();
+            ValueSource columnValue = expression.resultValue();
+            Value valueCopy = new Value(columnValue.getType());
+            ValueTargets.copyFrom(columnValue, valueCopy);
             AkCollator collator = (collators != null) ? collators.get(i++) : null;
-            hashKey = hashKey ^ ValueSources.hash(columnValue, collator);
-            values.add(columnValue);
+            hashKey = hashKey ^ ValueSources.hash(valueCopy, collator);
+            values.add(valueCopy);
         }
     }
 }

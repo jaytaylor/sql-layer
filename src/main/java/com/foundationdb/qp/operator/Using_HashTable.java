@@ -22,6 +22,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.util.KeyWrapper;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.explain.*;
+import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
@@ -29,6 +30,7 @@ import com.google.common.collect.ArrayListMultimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -87,10 +89,15 @@ class Using_HashTable extends Operator
 
         this.hashInput = hashInput;
         this.hashedRowType = hashedRowType;
-        this.comparisonFields = comparisonFields;
         this.tableBindingPosition = tableBindingPosition;
         this.joinedInput = joinedInput;
         this.collators = collators;
+
+        int i = 0;
+        for(TPreparedExpression comparisonField : comparisonFields){
+            evaluatableComparisonFields.add(comparisonField.build());
+            evaluatableComparisonFields.get(i++);
+        }
     }
 
     // For use by this class
@@ -110,10 +117,11 @@ class Using_HashTable extends Operator
 
     private final Operator hashInput;
     private final RowType hashedRowType;
-    private final List<TPreparedExpression> comparisonFields;
+    private final List<TEvaluatableExpression> evaluatableComparisonFields = new ArrayList<>();
     private final int tableBindingPosition;
     private final Operator joinedInput;
     private final List<AkCollator> collators;
+
 
 
     @Override
@@ -194,7 +202,7 @@ class Using_HashTable extends Operator
             KeyWrapper keyWrapper;
             while ((row = loadCursor.next()) != null) {
                 assert(row.rowType().equals(hashedRowType));
-                keyWrapper = new KeyWrapper(row, comparisonFields, collators);
+                keyWrapper = new KeyWrapper(row, evaluatableComparisonFields, collators);
                 hashTable.put(keyWrapper, row);
             }
             loadCursor.destroy();

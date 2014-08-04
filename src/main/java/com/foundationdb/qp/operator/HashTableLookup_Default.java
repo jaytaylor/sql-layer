@@ -22,6 +22,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.util.KeyWrapper;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.explain.*;
+import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
@@ -61,9 +62,13 @@ class HashTableLookup_Default extends Operator
         ArgumentValidation.isNotSame("hashBindingPosition", hashBindingPosition, "rowBindingPosition", rowBindingPosition);
         ArgumentValidation.notNull("boundRowType", boundRowType);
         ArgumentValidation.notNull("hashedRowType", hashedRowType);
+        int i = 0;
+        for(TPreparedExpression comparisonField : outerComparisonFields){
+            evaluatableComparisonFields.add(comparisonField.build());
+            evaluatableComparisonFields.get(i++);
+        }
 
         this.collators = collators;
-        this.outerComparisonFields = outerComparisonFields;
         this.outerLeftJoin = outerLeftJoin;
         this.hashBindingPosition = hashBindingPosition;
         this.rowBindingPosition = rowBindingPosition;
@@ -79,7 +84,6 @@ class HashTableLookup_Default extends Operator
 
     // Object state
 
-    private final List<TPreparedExpression> outerComparisonFields;
     private final int hashBindingPosition;
     private final int rowBindingPosition;
     private final RowType boundRowType;
@@ -87,6 +91,7 @@ class HashTableLookup_Default extends Operator
 
     private final List<AkCollator> collators;
     private final boolean outerLeftJoin;
+    private final List<TEvaluatableExpression> evaluatableComparisonFields = new ArrayList<>();
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
@@ -105,7 +110,7 @@ class HashTableLookup_Default extends Operator
             try {
                 CursorLifecycle.checkIdle(this);
                 hashTable = bindings.getHashTable(hashBindingPosition);
-                innerRowList = hashTable.get(new KeyWrapper(getOuterRow(), outerComparisonFields, collators));
+                innerRowList = hashTable.get(new KeyWrapper(getOuterRow(), evaluatableComparisonFields, collators));
                 innerRowListPosition = 0;
                 closed = false;
             } finally {
