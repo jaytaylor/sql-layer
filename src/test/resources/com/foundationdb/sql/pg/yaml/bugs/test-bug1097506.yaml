@@ -2,6 +2,9 @@
 # test bug 1097506 - No preptime value for internal index min/max
 #
 ---
+- Properties: random-cost
+- suppressed: true
+---
 - CreateTable: t1 (i INT)
 ---
 - CreateTable: t2 (i INT)
