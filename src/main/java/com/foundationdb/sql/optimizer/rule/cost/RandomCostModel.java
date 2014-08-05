@@ -27,10 +27,12 @@ public class RandomCostModel extends CostModel
     // TODO: Need some kind of external control of Random seed, so
     // that this is reproducible when problems are detected. Should it
     // reset every query?
-    private final Random random = new Random();
 
-    public RandomCostModel(Schema schema, TableRowCounts tableRowCounts) {
+    private final Random random;
+
+    public RandomCostModel(Schema schema, TableRowCounts tableRowCounts, long seed) {
         super(schema, tableRowCounts);
+        random = new Random(seed);
     }
 
     @Override
@@ -38,7 +40,7 @@ public class RandomCostModel extends CostModel
         return 10 + nRows * .5;
     }
 
-    public CostEstimate adjustCostEstimate(CostEstimate costEstimate) {
+    public synchronized CostEstimate adjustCostEstimate(CostEstimate costEstimate) {
         return new CostEstimate(costEstimate.getRowCount(),
                                 random.nextDouble() * costEstimate.getCost());
     }
