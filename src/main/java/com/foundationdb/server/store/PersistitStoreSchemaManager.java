@@ -210,8 +210,11 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
      * 1 - initial
      * 2 - type bundles
      * 3 - Online DDL error-ing
+     * 4 - ???
+     * 5 - ???
+     * 6 - hidden PK changed to Sequence/__row_id
      */
-    private static final long CURRENT_META_VERSION = 5;
+    private static final long CURRENT_META_VERSION = 6;
     private static final String S_K_META_VERSION = "metaVersion";
     private static final String S_K_DATA_VERSION = "dataVersion";
     private static final String S_K_DELAYED = "delayed";

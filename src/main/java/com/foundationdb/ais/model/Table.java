@@ -315,7 +315,7 @@ public class Table extends Columnar implements HasGroup, Visitable
     public Column getIdentityColumn() 
     {
         Column identity = null;
-        for (Column column : getColumns()) {
+        for (Column column : this.getColumnsIncludingInternal()) {
             if (column.getIdentityGenerator() != null) {
                 identity = column;
             }
@@ -431,7 +431,7 @@ public class Table extends Columnar implements HasGroup, Visitable
                     assert group.getRoot() != null : "Null root: " + group;
                     rootID = group.getRoot().getTableId();
                 }
-                primaryKeyIndex = createAkibanPrimaryKeyIndex(generator.generateIndexID(rootID));
+                primaryKeyIndex = createAkibanPrimaryKeyIndex(generator.generateIndexID(rootID), generator);
             }
             assert primaryKeyIndex != null : this;
             primaryKey = new PrimaryKey(primaryKeyIndex);
@@ -582,15 +582,25 @@ public class Table extends Columnar implements HasGroup, Visitable
         }
     }
 
-    private TableIndex createAkibanPrimaryKeyIndex(int indexID)
+    private TableIndex createAkibanPrimaryKeyIndex(int indexID, NameGenerator generator)
     {
         // Create a column for a PK
         Column pkColumn = Column.create(this,
-                                        Column.AKIBAN_PK_NAME,
+                                        Column.ROW_ID_NAME,
                                         getColumns().size(),
                                         InternalIndexTypes.LONG.instance(false)); // adds column to table
-        NameGenerator nameGenerator = new DefaultNameGenerator(ais);
-        TableName constraintName = nameGenerator.generatePKConstraintName(this.getName().getSchemaName(), this.getName().getTableName());
+        // Create a sequence for the PK
+        String schemaName = this.getName().getSchemaName();
+        // Generates same (temporary) sequence name as AISBuilder, 
+        // To catch (and reject) adding two sequences to the same table. 
+        TableName sequenceName = generator.generateIdentitySequenceName(ais, this.tableName, Column.ROW_ID_NAME);
+        Sequence identityGenerator = Sequence.create(ais, schemaName, sequenceName.getTableName(), 
+                1L, 1L, 0L, Long.MAX_VALUE, false);
+        // Set column as PK using sequence
+        pkColumn.setDefaultIdentity(false);
+        pkColumn.setIdentityGenerator(identityGenerator);
+        // Create Primary key
+        TableName constraintName = generator.generatePKConstraintName(schemaName, tableName.getTableName());
         TableIndex pkIndex = TableIndex.create(ais,
                                                this,
                                                Index.PRIMARY,

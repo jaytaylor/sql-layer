@@ -28,17 +28,17 @@ import com.foundationdb.server.error.StorageDescriptionInvalidException;
 
 public class UnknownStorageDescription extends StorageDescription
 {
-    public UnknownStorageDescription(HasStorage forObject) {
-        super(forObject);
+    public UnknownStorageDescription(HasStorage forObject, String storageFormat) {
+        super(forObject, storageFormat);
     }
 
-    public UnknownStorageDescription(HasStorage forObject, UnknownStorageDescription other) {
-        super(forObject, other);
+    public UnknownStorageDescription(HasStorage forObject, UnknownStorageDescription other, String storageFormat) {
+        super(forObject, other, storageFormat);
     }
 
     @Override
     public StorageDescription cloneForObject(HasStorage forObject) {
-        return new UnknownStorageDescription(forObject, this);
+        return new UnknownStorageDescription(forObject, this, storageFormat);
     }
 
     @Override

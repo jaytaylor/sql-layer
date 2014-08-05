@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.store.format.columnkeys;
 
-import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.FDBProtobuf;
@@ -27,25 +26,26 @@ import com.foundationdb.sql.parser.StorageFormatNode;
 
 public class ColumnKeysStorageFormat extends StorageFormat<ColumnKeysStorageDescription>
 {
+    public final static String storageFormat = "column_keys";
+
     private ColumnKeysStorageFormat() {
     }
 
     public static void register(StorageFormatRegistry registry) {
-        registry.registerStorageFormat(FDBProtobuf.columnKeys, "column_keys", ColumnKeysStorageDescription.class, new ColumnKeysStorageFormat());
+        registry.registerStorageFormat(FDBProtobuf.columnKeys, storageFormat, ColumnKeysStorageDescription.class, new ColumnKeysStorageFormat());
     }
 
     public ColumnKeysStorageDescription readProtobuf(Storage pbStorage, HasStorage forObject, ColumnKeysStorageDescription storageDescription) {
         if (storageDescription == null) {
-            storageDescription = new ColumnKeysStorageDescription(forObject);
+            storageDescription = new ColumnKeysStorageDescription(forObject, storageFormat);
         }
         // no options yet
         return storageDescription;
     }
 
     public ColumnKeysStorageDescription parseSQL(StorageFormatNode node, HasStorage forObject) {
-        ColumnKeysStorageDescription storageDescription = new ColumnKeysStorageDescription(forObject);
+        ColumnKeysStorageDescription storageDescription = new ColumnKeysStorageDescription(forObject, storageFormat);
         // no options yet
         return storageDescription;
     }
-
 }

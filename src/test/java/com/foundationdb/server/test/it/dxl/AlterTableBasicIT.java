@@ -44,8 +44,8 @@ import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.NoColumnsInTableException;
-import com.foundationdb.server.error.NoSuchColumnException;
 import com.foundationdb.server.error.NotNullViolationException;
+import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.sql.StandardException;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -1111,6 +1111,47 @@ public class AlterTableBasicIT extends AlterTableITBase {
         );
     }
 
+    @Test
+    public void overlappingFKThenGFK() {
+        overlappingFKAndGFK(true);
+    }
+
+    @Test
+    public void overlappingGFKThenFK() {
+        overlappingFKAndGFK(false);
+    }
+
+    private void overlappingFKAndGFK(boolean fkFirst) {
+        createTable(SCHEMA, "parent", "pid INT NOT NULL PRIMARY KEY");
+        createTable(SCHEMA, "child", "cid INT NOT NULL PRIMARY KEY, pid INT");
+
+        boolean doFK = fkFirst;
+        for(int i = 0; i < 2; ++i) {
+            if(doFK) {
+                runAlter(ChangeLevel.INDEX_CONSTRAINT, "ALTER TABLE child ADD FOREIGN KEY(pid) REFERENCES parent(pid)");
+            } else {
+                runAlter(ChangeLevel.GROUP, "ALTER TABLE child ADD GROUPING FOREIGN KEY(pid) REFERENCES parent(pid)");
+            }
+            doFK = !doFK;
+        }
+
+        Table p = ais().getTable(SCHEMA, "parent");
+        Table c = ais().getTable(SCHEMA, "child");
+        assertNotNull(p);
+        assertNotNull(c);
+        assertEquals(p.getGroup(), c.getGroup());
+        assertEquals(1, p.getReferencedForeignKeys().size());
+        assertEquals(1, c.getReferencingForeignKeys().size());
+    }
+
+    @Test(expected=UnsupportedSQLException.class)
+    public void addGroupIndex() {
+        createTable(SCHEMA, "parent", "pid INT PRIMARY KEY, x INT");
+        createTable(SCHEMA, "child", "cid INT PRIMARY KEY, pid INT, y INT, GROUPING FOREIGN KEY(pid) REFERENCES parent");
+        runAlter(ChangeLevel.INDEX, "ALTER TABLE child ADD INDEX g_i(parent.x, child.y) USING LEFT JOIN");
+    }
+
+
     public void changeColumnInGICommon(String table, Runnable alterRunnable) {
         String giName = "c1_o1_i1";
         createAndLoadCOI();
@@ -1274,8 +1315,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         runAlter(ChangeLevel.TABLE, "ALTER TABLE c ADD COLUMN n INT DEFAULT 0");
 
-        // the -1L is filler for the hidden key
-        writeRows(createNewRow(cid, "e", 3, -1L));
+        writeRows(createNewRow(cid, "e", 3));
 
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         TableRowType cType = schema.tableRowType(getTable(SCHEMA, C_TABLE));
@@ -1304,8 +1344,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         runAlter(ChangeLevel.GROUP, "ALTER TABLE c DROP COLUMN n");
 
-        // the -1L is filler for the hidden key
-        writeRows(createNewRow(cid, "e", -1L));
+        writeRows(createNewRow(cid, "e"));
 
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         TableRowType cType = schema.tableRowType(getTable(SCHEMA, C_TABLE));

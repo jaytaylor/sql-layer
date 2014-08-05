@@ -1348,6 +1348,9 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     // Conditions that might have a recognizable selectivity.
     protected SelectivityConditions selectivityConditions(Collection<ConditionExpression> conditions, Collection<TableSource> requiredTables) {
         SelectivityConditions result = new SelectivityConditions();
+        if (conditions == null) {
+            return result;
+        }
         for (ConditionExpression condition : conditions) {
             if (condition instanceof ComparisonCondition) {
                 ComparisonCondition ccond = (ComparisonCondition)condition;

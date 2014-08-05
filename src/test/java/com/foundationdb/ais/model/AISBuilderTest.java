@@ -1177,14 +1177,37 @@ public class AISBuilderTest
         assertNotNull (column.getDefaultIdentity());
         assertNotNull (column.getIdentityGenerator());
     }
+
+    @Test
+    public void validateIdentityNoPKFails() {
+        final AISBuilder builder = new AISBuilder();
+        builder.table("test", "t1");
+       
+        builder.column("test", "t1", "ident", 0, type("MCOMPAT", "int", false), false, null, null);
+        builder.sequence("test", "seq-1", 1, 1, 0, 1000, false);
+        builder.columnAsIdentity("test", "t1", "ident", "seq-1", true);
+        builder.basicSchemaIsComplete();
+        builder.createGroup("group", "test");
+        builder.addTableToGroup("group", "test", "t1");
+        builder.groupingIsComplete();
+        AISValidationResults vResults = builder.akibanInformationSchema().validate(AISValidations.BASIC_VALIDATIONS);
+        Assert.assertEquals(1, vResults.failures().size());
+        AISValidationFailure fail = vResults.failures().iterator().next();
+        Assert.assertEquals(ErrorCode.MULTIPLE_IDENTITY_COLUMNS, fail.errorCode());
+    }
+
     
     @Test
     public void validateIdentityGoodValues() {
         final AISBuilder builder = new AISBuilder();
         builder.table("test", "t1");
         builder.column("test", "t1", "id", 0, type("MCOMPAT", "int", false), false, null, null);
+        builder.index("test", "t1", Index.PRIMARY, true, true, TableName.create("test", Index.PRIMARY));
+        builder.indexColumn("test", "t1", Index.PRIMARY, "id", 0, true, null);
+        
+        builder.column("test", "t1", "ident", 1, type("MCOMPAT", "int", false), false, null, null);
         builder.sequence("test", "seq-1", 1, 1, 0, 1000, false);
-        builder.columnAsIdentity("test", "t1", "id", "seq-1", true);
+        builder.columnAsIdentity("test", "t1", "ident", "seq-1", true);
         builder.basicSchemaIsComplete();
         builder.createGroup("group", "test");
         builder.addTableToGroup("group", "test", "t1");
@@ -1199,8 +1222,12 @@ public class AISBuilderTest
         final AISBuilder builder = new AISBuilder();
         builder.table("test", "t1");
         builder.column("test", "t1", "id", 0, type("MCOMPAT", "int", false), false, null, null);
+        builder.index("test", "t1", Index.PRIMARY, true, true, TableName.create("test", Index.PRIMARY));
+        builder.indexColumn("test", "t1", Index.PRIMARY, "id", 0, true, null);
+        
+        builder.column("test", "t1", "ident", 1, type("MCOMPAT", "int", false), false, null, null);
         builder.sequence("test", "seq-1", 1, 0, 0, 1000, false);
-        builder.columnAsIdentity("test", "t1", "id", "seq-1", true);
+        builder.columnAsIdentity("test", "t1", "ident", "seq-1", true);
         builder.basicSchemaIsComplete();
         builder.createGroup("group", "test");
         builder.addTableToGroup("group", "test", "t1");
@@ -1217,8 +1244,12 @@ public class AISBuilderTest
         final AISBuilder builder = new AISBuilder();
         builder.table("test", "t1");
         builder.column("test", "t1", "id", 0, type("MCOMPAT", "int", false), false, null, null);
+        builder.index("test", "t1", Index.PRIMARY, true, true, TableName.create("test", Index.PRIMARY));
+        builder.indexColumn("test", "t1", Index.PRIMARY, "id", 0, true, null);
+
+        builder.column("test", "t1", "ident", 1, type("MCOMPAT", "int", false), false, null, null);
         builder.sequence("test", "seq-1", 1, 1, 1000, 0, false);
-        builder.columnAsIdentity("test", "t1", "id", "seq-1", true);
+        builder.columnAsIdentity("test", "t1", "ident", "seq-1", true);
         builder.basicSchemaIsComplete();
         builder.createGroup("group", "test");
         builder.addTableToGroup("group", "test", "t1");
@@ -1239,8 +1270,11 @@ public class AISBuilderTest
         final AISBuilder builder = new AISBuilder();
         builder.table("test", "t1");
         builder.column("test", "t1", "id", 0, type("MCOMPAT", "int", false), false, null, null);
+        builder.index("test", "t1", Index.PRIMARY, true, true, TableName.create("test", Index.PRIMARY));
+        builder.indexColumn("test", "t1", Index.PRIMARY, "id", 0, true, null);
+        builder.column("test", "t1", "ident", 1, type("MCOMPAT", "int", false), false, null, null);
         builder.sequence("test", "seq-1", 1000, 1, 1000, 1000, false);
-        builder.columnAsIdentity("test", "t1", "id", "seq-1", true);
+        builder.columnAsIdentity("test", "t1", "ident", "seq-1", true);
         builder.basicSchemaIsComplete();
         builder.createGroup("group", "test");
         builder.addTableToGroup("group", "test", "t1");
@@ -1256,9 +1290,12 @@ public class AISBuilderTest
     public void validateIdentityVarchar() {
         final AISBuilder builder = new AISBuilder();
         builder.table("test", "t1");
-        builder.column("test", "t1", "id", 0, type("MCOMPAT", "varchar", 32L, null, false), false, null, null);
+        builder.column("test", "t1", "id", 0, type("MCOMPAT", "int", false), false, null, null);
+        builder.index("test", "t1", Index.PRIMARY, true, true, TableName.create("test", Index.PRIMARY));
+        builder.indexColumn("test", "t1", Index.PRIMARY, "id", 0, true, null);
+        builder.column("test", "t1", "ident", 1, type("MCOMPAT", "varchar", 32L, null, false), false, null, null);
         builder.sequence("test", "seq-1", 1, 1, 1, 1000, false);
-        builder.columnAsIdentity("test", "t1", "id", "seq-1", true);
+        builder.columnAsIdentity("test", "t1", "ident", "seq-1", true);
         builder.basicSchemaIsComplete();
         builder.createGroup("group", "test");
         builder.addTableToGroup("group", "test", "t1");
@@ -1273,9 +1310,12 @@ public class AISBuilderTest
     public void validateIdentityDecimal() {
         final AISBuilder builder = new AISBuilder();
         builder.table("test", "t1");
-        builder.column("test", "t1", "id", 0, type("MCOMPAT", "decimal", false), false, null, null);
+        builder.column("test", "t1", "id", 0, type("MCOMPAT", "int", false), false, null, null);
+        builder.index("test", "t1", Index.PRIMARY, true, true, TableName.create("test", Index.PRIMARY));
+        builder.indexColumn("test", "t1", Index.PRIMARY, "id", 0, true, null);
+        builder.column("test", "t1", "ident", 1, type("MCOMPAT", "decimal", false), false, null, null);
         builder.sequence("test", "seq-1", 1, 1, 1, 1000, false);
-        builder.columnAsIdentity("test", "t1", "id", "seq-1", true);
+        builder.columnAsIdentity("test", "t1", "ident", "seq-1", true);
         builder.basicSchemaIsComplete();
         builder.createGroup("group", "test");
         builder.addTableToGroup("group", "test", "t1");

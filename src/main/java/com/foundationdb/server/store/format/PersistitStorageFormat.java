@@ -25,7 +25,7 @@ import java.io.File;
 
 public class PersistitStorageFormat extends StorageFormat<PersistitStorageDescription>
 {
-    private final static String identifier = "rowdata";
+    public final static String identifier = "rowdata";
 
     private PersistitStorageFormat() {
     }
@@ -36,7 +36,7 @@ public class PersistitStorageFormat extends StorageFormat<PersistitStorageDescri
 
     public PersistitStorageDescription readProtobuf(Storage pbStorage, HasStorage forObject, PersistitStorageDescription storageDescription) {
         if (storageDescription == null) {
-            storageDescription = new PersistitStorageDescription(forObject);
+            storageDescription = new PersistitStorageDescription(forObject, identifier);
         }
         storageDescription.setTreeName(pbStorage.getExtension(PersistitProtobuf.treeName));
         return storageDescription;

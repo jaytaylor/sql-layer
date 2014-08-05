@@ -368,12 +368,12 @@ public class AISTest
         Table table = ais.getTable("s", "t");
         // check columns
         checkColumns(table.getColumns(), "a", "b");
-        checkColumns(table.getColumnsIncludingInternal(), "a", "b", Column.AKIBAN_PK_NAME);
+        checkColumns(table.getColumnsIncludingInternal(), "a", "b", Column.ROW_ID_NAME);
         // check indexes
         assertTrue(table.getIndexes().isEmpty());
         assertEquals(1, table.getIndexesIncludingInternal().size());
         Index index = table.getIndexesIncludingInternal().iterator().next();
-        assertEquals(Column.AKIBAN_PK_NAME, index.getKeyColumns().get(0).getColumn().getName());
+        assertEquals(Column.ROW_ID_NAME, index.getKeyColumns().get(0).getColumn().getName());
         // check PK
         assertNull(table.getPrimaryKey());
         assertSame(table.getIndexesIncludingInternal().iterator().next(), table.getPrimaryKeyIncludingInternal().getIndex());

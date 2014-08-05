@@ -261,9 +261,9 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                 row = reader.nextRow();
                 logger.trace("Read row: {}", row);
                 if (row != null) {
+                    rowData = row.toRowData().copy();
                     if (rowDatas != null) {
                         // Make a copy now so that what we keep is compacter.
-                        rowData = row.toRowData().copy();
                         rowDatas.add(rowData);
                     }
                     total++;
@@ -286,12 +286,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                         retryHook(session, i, maxRetries, retryException);
                         if (i == 0) {
                             if (row != null) {
-                                if (rowDatas == null) {
-                                    dml.writeRow(session, row);
-                                }
-                                else {
-                                    store.writeRow(session, rowData);
-                                }
+                                store.writeRow(session, rowData);
                             }
                         }
                         else {

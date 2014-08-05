@@ -99,7 +99,6 @@ public class SequenceValue extends TScalarBase {
         if (parts[0].isEmpty()) {
             parts[0] = context.getCurrentSchema();
         }
-        logger.debug("Sequence loading : {}.{}", parts[0], parts[1]);
 
         TableName sequenceName = new TableName(parts[0], parts[1]);
         StoreAdapter store = context.getQueryContext().getStore();
@@ -107,6 +106,8 @@ public class SequenceValue extends TScalarBase {
         long value = nextValue ?
             store.sequenceNextValue(sequence) :
             store.sequenceCurrentValue(sequence);
+
+        logger.debug("Sequence loading : {} -> {}", sequenceName, value);
 
         output.putInt64(value);
     }

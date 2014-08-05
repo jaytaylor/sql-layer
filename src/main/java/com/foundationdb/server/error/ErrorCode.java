@@ -291,6 +291,7 @@ public enum ErrorCode {
     DEFAULT_OUTSIDE_INSERT  ("42", "521", Importance.DEBUG, DefaultOutsideInsertException.class),
     FOREIGN_KEY_NOT_DEFERRABLE ("42", "523", Importance.DEBUG, ForeignKeyNotDeferrableException.class),
     NO_AGGREGATE_WITH_GROUP_BY("42", "524", Importance.DEBUG, NoAggregateWithGroupByException.class),
+    NO_TABLE_SPECIFIED      ("42", "525", Importance.DEBUG, NoTableSpecifiedInQueryException.class),
     
     // Class 42/600 - JSON interface errors
     KEY_COLUMN_MISMATCH     ("42", "600", Importance.DEBUG, KeyColumnMismatchException.class),
@@ -328,7 +329,7 @@ public enum ErrorCode {
     UNSUPPORTED_COLUMN_DATA_TYPE   ("50", "008", Importance.DEBUG, UnsupportedColumnDataTypeException.class),
     JOIN_TO_MULTIPLE_PARENTS("50", "009", Importance.DEBUG, JoinToMultipleParentsException.class), 
     UNSUPPORTED_INDEX_DATA_TYPE("50", "00A", Importance.DEBUG, UnsupportedIndexDataTypeException.class),
-    //50,00B
+    MULTIPLE_IDENTITY_COLUMNS("50", "00B", Importance.DEBUG, MultipleIdentityColumnsException.class),
     DUPLICATE_COLUMN        ("50", "00C", Importance.DEBUG, DuplicateColumnNameException.class),
     DUPLICATE_GROUP         ("50", "00D", Importance.DEBUG, DuplicateGroupNameException.class), 
     REFERENCED_TABLE        ("50", "00E", Importance.DEBUG, ReferencedTableException.class),  

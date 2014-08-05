@@ -1,0 +1,40 @@
+
+---
+- CreateTable: Course (courseCode varchar(255) not null,
+    description varchar(255),
+    primary key (courseCode) )
+---
+- CreateTable:  Enrolment (studentId bigint not null,
+      courseCode varchar(255) not null,
+      semester smallint not null,
+      "year" smallint not null,
+      primary key (studentId, courseCode))
+---
+- CreateTable: Student (
+    studentId bigint not null,
+    name varchar(255) not null,
+    address_city varchar(255),
+    address_state varchar(255),
+    preferredCourseCode varchar(255),
+    primary key (studentId))
+---
+- Statement: ALTER TABLE Enrolment
+   add constraint FK_s55982mdkefctaksxcmyio1yw
+   foreign key (studentId) references Student
+---
+- Statement: ALTER TABLE Enrolment
+   add constraint FK_m8fgn7r06fjeog63oakb8xe3v
+   foreign key (courseCode) references Course;
+---
+# The test, this used to result in a NPE, now returns no results
+- Statement: select s1_.name as y0_, c2_.description as y1_ 
+      from Enrolment this_ inner join Student s1_ on this_.studentId=s1_.studentId 
+      inner join Course c2_ on this_.courseCode=c2_.courseCode 
+      where exists (select 1 from Enrolment where s1_.studentId=studentId)
+---
+- DropTable: Enrolment
+---
+- DropTable: Student
+---
+- DropTable: Course
+...

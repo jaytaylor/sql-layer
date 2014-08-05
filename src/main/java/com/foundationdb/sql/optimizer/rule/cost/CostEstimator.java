@@ -21,6 +21,7 @@ import com.foundationdb.server.PersistitKeyValueTarget;
 import com.foundationdb.server.store.statistics.Histogram;
 import com.foundationdb.server.store.statistics.HistogramEntry;
 import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.sql.optimizer.rule.SchemaRulesContext;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
@@ -519,6 +520,14 @@ public abstract class CostEstimator implements TableRowCounts
                 }
                 value = node.getPreptimeValue().value();
             }
+        }
+        else if (node instanceof ParameterExpression && ((ParameterExpression)node).isSet()) {
+            if (((ParameterExpression)node).getValue() == null) {
+                keyPTarget.putNull();
+                return true;
+            }
+            value = ValueSources.fromObject(((ParameterExpression)node).getValue(),
+                    node.getPreptimeValue().type()).value();
         }
         else if (node instanceof IsNullIndexKey) {
             keyPTarget.putNull();
@@ -1059,6 +1068,10 @@ public abstract class CostEstimator implements TableRowCounts
             cost += model.select(nrows);
         CostEstimate estimate = new CostEstimate(nrows, cost);
         return adjustCostEstimate(estimate);
+    }
+
+    public CostEstimate costBoundRow(){
+        return new CostEstimate(1,0);
     }
 
     public CostEstimate costBloomFilter(CostEstimate loaderCost,

@@ -30,8 +30,9 @@ import com.foundationdb.server.store.format.protobuf.PersistitProtobufStorageFor
 
 public class PersistitStorageFormatRegistry extends StorageFormatRegistry
 {
+
     public PersistitStorageFormatRegistry(ConfigurationService configService) {
-        super(configService);
+        super(configService, PersistitStorageFormat.identifier);
     }
 
     @Override
@@ -46,7 +47,7 @@ public class PersistitStorageFormatRegistry extends StorageFormatRegistry
 
     @Override
     public StorageDescription getDefaultStorageDescription(HasStorage object) {
-        return new PersistitStorageDescription(object);
+        return new PersistitStorageDescription(object, PersistitStorageFormat.identifier);
     }
 
     public boolean isDescriptionClassAllowed(Class<? extends StorageDescription> descriptionClass) {

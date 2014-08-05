@@ -4,7 +4,7 @@
     age int,
     name varchar(32) NOT NULL)
 ---
-- Statement: Create INDEX name ON people(name);
+- Statement: Create INDEX name ON people(name)
 ---
 - Statement: INSERT INTO people (cid, age, name) VALUES (1, 55, 'Jones'), (2, 24, 'Collins'), (3, 33, 'Brennen')
 ---

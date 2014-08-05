@@ -39,6 +39,7 @@ public class UnknownStorageFormatTest
 {
     private StorageFormatRegistry testFormatRegistry = DummyStorageFormatRegistry.create();
     private ByteBuffer bytes  = ByteBuffer.allocate(4096);
+    private final static String identifier = "unknown";
 
     @Before
     public void saveWithExtension() {
@@ -46,7 +47,7 @@ public class UnknownStorageFormatTest
 
         AISBuilder aisb = new AISBuilder();
         Sequence sequence = aisb.sequence("test", "seq", 0, 1, 0, 1000, true);
-        TestStorageDescriptionExtended storageDescription = new TestStorageDescriptionExtended(sequence);
+        TestStorageDescriptionExtended storageDescription = new TestStorageDescriptionExtended(sequence, identifier);
         storageDescription.setStorageKey("KEY");
         storageDescription.setExtension("PLUS");
         assertTrue(isFullDescription(storageDescription));

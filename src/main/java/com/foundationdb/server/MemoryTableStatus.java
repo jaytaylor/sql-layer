@@ -26,7 +26,6 @@ public class MemoryTableStatus implements TableStatus
     private final MemoryTableFactory factory;
     private long autoIncrement = 0;
     private long rowCount = 0;
-    private long uniqueID = 0;
 
     public MemoryTableStatus(int expectedID) {
         this(expectedID, null);
@@ -66,11 +65,6 @@ public class MemoryTableStatus implements TableStatus
     }
 
     @Override
-    public synchronized long getUniqueID(Session session) {
-        return uniqueID;
-    }
-
-    @Override
     public int getTableID() {
         return expectedID;
     }
@@ -98,15 +92,10 @@ public class MemoryTableStatus implements TableStatus
         this.autoIncrement = Math.max(this.autoIncrement, autoIncrement);
     }
 
-    @Override
-    public synchronized long createNewUniqueID(Session session) {
-        return ++uniqueID;
-    }
 
     @Override
     public synchronized void truncate(Session session) {
         autoIncrement = 0;
-        uniqueID = 0;
         rowCount = 0;
     }
 }

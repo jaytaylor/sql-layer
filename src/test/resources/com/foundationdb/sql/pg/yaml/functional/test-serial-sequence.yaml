@@ -1,5 +1,5 @@
 ---
-- CreateTable: t(s SERIAL, x INT)
+- CreateTable: t(s SERIAL PRIMARY KEY, x INT)
 ---
 - Statement: SELECT SERIAL_SEQUENCE('t.s')
 - output: [['"test"."t_s_seq"']]

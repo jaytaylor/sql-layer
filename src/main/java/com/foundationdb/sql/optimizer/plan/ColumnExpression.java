@@ -38,6 +38,12 @@ public class ColumnExpression extends BaseExpression
         this.column = column;
         this.position = column.getPosition();
     }
+
+    public ColumnExpression(ColumnExpression c, ColumnSource columnSource){
+        super(c.getSQLtype(), c.getSQLsource(), c.getType());
+        this.table = columnSource;
+        this.position = c.getPosition();
+    }
     
     public ColumnExpression(ColumnSource table, int position, 
                             DataTypeDescriptor sqlType, ValueNode sqlSource,

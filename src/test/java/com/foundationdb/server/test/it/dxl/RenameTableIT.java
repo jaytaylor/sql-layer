@@ -305,9 +305,9 @@ public class RenameTableIT extends ITBase {
 
         int initialTid = createTable(NAME1, COL_DEFS);
         writeRows(
-                createNewRow(initialTid, 1, -1L),
-                createNewRow(initialTid, 2, -1L),
-                createNewRow(initialTid, 3, -1L)
+                createNewRow(initialTid, 1),
+                createNewRow(initialTid, 2),
+                createNewRow(initialTid, 3)
         );
 
         for(int i = 1; i <= LOOPS; ++i) {
@@ -316,7 +316,7 @@ public class RenameTableIT extends ITBase {
             List<NewRow> pkRows = scanAllIndex(getTable(tableId(NAME1)).getPrimaryKeyIncludingInternal().getIndex());
             assertEquals("Row scanned from original on loop "+i, 3, pkRows.size());
             for(NewRow row : pkRows) {
-                writeRow(tid2, row.get(0), -1L);
+                writeRow(tid2, row.get(0));
             }
             // Rename both
             ddl().renameTable(session(), NAME1, NAME3);

@@ -19,9 +19,19 @@ package com.foundationdb.sql.aisddl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import com.foundationdb.ais.AISCloner;
+import com.foundationdb.ais.model.Columnar;
+import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.SQLJJar;
+import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.protobuf.ProtobufWriter.TableSelector;
 import com.foundationdb.sql.parser.IndexDefinitionNode;
+import com.foundationdb.sql.server.ServerSession;
+import com.foundationdb.sql.parser.TableElementList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.foundationdb.ais.model.AISBuilder;
@@ -174,6 +184,12 @@ public class TableDDL
         Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
         IndexNameGenerator namer = DefaultIndexNameGenerator.forTable(table);
 
+        cloneReferencedTables(defaultSchemaName,
+                              ddlFunctions.getAISCloner(),
+                              ais,
+                              builder.akibanInformationSchema(),
+                              createTable.getTableElementList());
+
         int colpos = 0;
         // first loop through table elements, add the columns
         for (TableElementNode tableElement : createTable.getTableElementList()) {
@@ -191,7 +207,6 @@ public class TableDDL
             if (tableElement instanceof FKConstraintDefinitionNode) {
                 FKConstraintDefinitionNode fkdn = (FKConstraintDefinitionNode)tableElement;
                 if (fkdn.isGrouping()) {
-                    addParentTable(builder, ddlFunctions.getAIS(session), fkdn, defaultSchemaName, schemaName, tableName);
                     addJoin (builder, fkdn, defaultSchemaName, schemaName, tableName);
                 } else {
                     addForeignKey(builder, ddlFunctions.getAIS(session), fkdn, defaultSchemaName, schemaName, tableName);
@@ -217,10 +232,11 @@ public class TableDDL
                                    CreateTableNode createTable,
                                    QueryContext context,
                                    List<DataTypeDescriptor>  descriptors,
-                                   List<String> columnNames) {
-        if (createTable.getQueryExpression() == null) {
+                                   List<String> columnNames,
+                                   ServerSession server) {
+
+        if (createTable.getQueryExpression() == null)
             throw new IllegalArgumentException("Expected queryExpression");
-        }
 
         TableName fullName = convertName(defaultSchemaName, createTable.getObjectName());
         String schemaName = fullName.getSchemaName();
@@ -262,7 +278,61 @@ public class TableDDL
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
         setTableStorage(ddlFunctions, createTable, builder, tableName, table, schemaName);
+        if(createTable.isWithData()) {
+            ddlFunctions.createTable(session, table, createTable.getCreateAsQuery().toLowerCase(), context, server);
+            return;
+        }
         ddlFunctions.createTable(session, table);
+    }
+
+    /** Copy groups of tables referenced from {@code nodes}. Ones already present in {@code targetAIS} are skipped. */
+    static void cloneReferencedTables(String defaultSchema,
+                                      AISCloner cloner,
+                                      AkibanInformationSchema curAIS,
+                                      final AkibanInformationSchema targetAIS,
+                                      TableElementList nodes) {
+        final Set<Group> groups = new HashSet<>();
+        for(TableElementNode elem : nodes) {
+            if(elem instanceof FKConstraintDefinitionNode) {
+                FKConstraintDefinitionNode fkdn = (FKConstraintDefinitionNode)elem;
+                if(fkdn.getRefTableName() != null) {
+                    TableName name = getReferencedName(defaultSchema, (FKConstraintDefinitionNode)elem);
+                    Table t = curAIS.getTable(name);
+                    if(t != null) {
+                        groups.add(t.getGroup());
+                    }
+                }
+            } // else if(elem instanceof IndexDefinitionNode)  { // when inline group indexes are supported
+        }
+
+        cloner.clone(targetAIS, curAIS, new TableSelector() {
+            @Override
+            public boolean isSelected(Columnar columnar) {
+                return (columnar instanceof Table) &&
+                       (targetAIS.getTable(columnar.getName()) == null) &&
+                       groups.contains(((Table)columnar).getGroup());
+            }
+
+            @Override
+            public boolean isSelected(Sequence sequence) {
+                return (targetAIS.getSequence(sequence.getSequenceName()) == null);
+            }
+
+            @Override
+            public boolean isSelected(Routine routine) {
+                return false;
+            }
+
+            @Override
+            public boolean isSelected(SQLJJar sqljJar) {
+                return false;
+            }
+
+            @Override
+            public boolean isSelected(ForeignKey foreignKey) {
+                return false;
+            }
+        });
     }
 
     private static void setTableStorage(DDLFunctions ddlFunctions, CreateTableNode createTable,
@@ -460,6 +530,9 @@ public class TableDDL
                                   String schemaName,
                                   String tableName,
                                   QueryContext context) {
+        if(idn.getJoinType() != null) {
+            throw new UnsupportedSQLException("CREATE TABLE containing group index");
+        }
         String indexName = idn.getName();
         Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
         return generateTableIndex(namer, builder, idn, indexName, table, context);
@@ -533,54 +606,6 @@ public class TableDDL
         }
         builder.addJoinToGroup(parentTable.getGroup().getName(), joinName, 0);
     }
-    
-    /**
-     * Add a minimal parent table (PK) with group to the builder based upon the AIS.
-     */
-    public static void addParentTable(AISBuilder builder,
-                                      AkibanInformationSchema ais,
-                                      FKConstraintDefinitionNode fkdn,
-                                      String defaultSchemaName,
-                                      String childSchemaName,
-                                      String childTableName) {
-
-        TableName parentName = getReferencedName(defaultSchemaName, fkdn);
-        // Check that we aren't joining to ourselves
-        if (parentName.equals(childSchemaName, childTableName)) {
-            throw new JoinToSelfException(childSchemaName, childTableName);
-        }
-        // Check parent table exists
-        Table parentTable = ais.getTable(parentName);
-        if (parentTable == null) {
-            throw new JoinToUnknownTableException(new TableName(childSchemaName, childTableName), parentName);
-        }
-
-        builder.table(parentName.getSchemaName(), parentName.getTableName());
-        
-        builder.index(parentName.getSchemaName(), parentName.getTableName(), Index.PRIMARY, true,
-                      true, new TableName(parentName.getSchemaName(), Index.PRIMARY));
-        int colpos = 0;
-        for (Column column : parentTable.getPrimaryKeyIncludingInternal().getColumns()) {
-            builder.column(parentName.getSchemaName(), parentName.getTableName(),
-                    column.getName(),
-                    colpos,
-                    column.getType(),
-                    false, //column.getInitialAutoIncrementValue() != 0,
-                    column.getCharsetName(),
-                    column.getCollationName());
-            builder.indexColumn(parentName.getSchemaName(), parentName.getTableName(), Index.PRIMARY,
-                    column.getName(), colpos++, true, null);
-        }
-        final TableName groupName;
-        if(parentTable.getGroup() == null) {
-            groupName = parentName;
-        } else {
-            groupName = parentTable.getGroup().getName();
-        }
-        builder.createGroup(groupName.getTableName(), groupName.getSchemaName());
-        builder.addTableToGroup(groupName, parentName.getSchemaName(), parentName.getTableName());
-    }
-
 
     private static String[] columnNamesFromListOrPK(ResultColumnList list, PrimaryKey pk) {
         String[] names = (list == null) ? null: list.getColumnNames();
@@ -679,31 +704,12 @@ public class TableDDL
             }
             referencedColumns.add(referencedColumn);
         }
-        // Make sure that there is enough of a referenced table for
-        // the builder to be able to make objects that serialize okay.
-        Table shadowTable = targetAIS.getTable(referencedName);
-        if (shadowTable == null) {
-            builder.table(referencedName.getSchemaName(), referencedName.getTableName());
-            shadowTable = targetAIS.getTable(referencedName);
-        }
         // Pick an index.
         TableIndex referencedIndex = ForeignKey.findReferencedIndex(referencedTable,
                                                                     referencedColumns);
         if (referencedIndex == null) {
             throw new ForeignKeyIndexRequiredException(constraintName, referencedName,
                                                        Arrays.toString(referencedColumnNames));
-        }
-        // Make sure that there is a shadow of referenced columns, too.
-        for (Column column : referencedColumns) {
-            if (shadowTable.getColumn(column.getName()) == null) {
-                builder.column(referencedName.getSchemaName(), referencedName.getTableName(),
-                               column.getName(),
-                               column.getPosition(),
-                               column.getType(),
-                               false,
-                               column.getCharsetName(),
-                               column.getCollationName());
-            }
         }
         builder.foreignKey(referencingSchemaName, referencingTableName,
                            Arrays.asList(referencingColumnNames),

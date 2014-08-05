@@ -24,6 +24,8 @@ import com.foundationdb.sql.parser.StorageFormatNode;
 
 public class TestPersistitStorageFormat extends StorageFormat<TestPersistitStorageDescription>
 {
+    private final static String identifier = "rowdata";
+
     private TestPersistitStorageFormat() {
     }
 
@@ -33,7 +35,7 @@ public class TestPersistitStorageFormat extends StorageFormat<TestPersistitStora
 
     public TestPersistitStorageDescription readProtobuf(Storage pbStorage, HasStorage forObject, TestPersistitStorageDescription storageDescription) {
         if (storageDescription == null) {
-            storageDescription = new TestPersistitStorageDescription(forObject);
+            storageDescription = new TestPersistitStorageDescription(forObject, identifier);
         }
         TestMessage testMessage = pbStorage.getExtension(TestMessage.msg);
         storageDescription.setName(testMessage.getName());
@@ -46,7 +48,7 @@ public class TestPersistitStorageFormat extends StorageFormat<TestPersistitStora
 
 
     public TestPersistitStorageDescription parseSQL(StorageFormatNode node, HasStorage forObject) {
-        TestPersistitStorageDescription storageDescription = new TestPersistitStorageDescription(forObject);
+        TestPersistitStorageDescription storageDescription = new TestPersistitStorageDescription(forObject, identifier);
         storageDescription.setName(node.getOptions().get("name"));
         storageDescription.setOption(node.getOptions().get("option"));
         return storageDescription;

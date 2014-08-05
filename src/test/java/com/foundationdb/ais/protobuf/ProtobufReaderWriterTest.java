@@ -60,6 +60,7 @@ import static org.junit.Assert.assertTrue;
 
 public class ProtobufReaderWriterTest {
     private final String SCHEMA = "test";
+    private final String identifier = "test";
 
     @Test
     public void empty() {
@@ -314,9 +315,9 @@ public class ProtobufReaderWriterTest {
 
         AkibanInformationSchema inAIS = builder.ais();
         Table inParent = inAIS.getTable(SCHEMA, "parent");
-        inParent.getGroup().setStorageDescription(new TestStorageDescription(inParent.getGroup(), GROUP_TREENAME));
-        inParent.getGroup().getIndex("v_cid").setStorageDescription(new TestStorageDescription(inParent.getGroup().getIndex("v_cid"), GROUP_INDEX_TREENAME));
-        inParent.getIndex("PRIMARY").setStorageDescription(new TestStorageDescription(inParent.getIndex("PRIMARY"), PARENT_PK_TREENAME));
+        inParent.getGroup().setStorageDescription(new TestStorageDescription(inParent.getGroup(), GROUP_TREENAME, identifier));
+        inParent.getGroup().getIndex("v_cid").setStorageDescription(new TestStorageDescription(inParent.getGroup().getIndex("v_cid"), GROUP_INDEX_TREENAME, identifier));
+        inParent.getIndex("PRIMARY").setStorageDescription(new TestStorageDescription(inParent.getIndex("PRIMARY"), PARENT_PK_TREENAME, identifier));
 
         AkibanInformationSchema outAIS = writeAndRead(inAIS);
         compareAndAssert(inAIS, outAIS, true);
@@ -391,7 +392,7 @@ public class ProtobufReaderWriterTest {
         builder.sequence("sequence-3", 42, -2, true);
         AkibanInformationSchema inAIS = builder.ais();
         Sequence inSeq = inAIS.getSequence(seqName);
-        inSeq.setStorageDescription(new TestStorageDescription(inSeq, "sequence-3.tree"));
+        inSeq.setStorageDescription(new TestStorageDescription(inSeq, "sequence-3.tree", identifier));
         
         AkibanInformationSchema outAIS = writeAndRead(inAIS);
         assertNotNull(outAIS.getSequence(seqName));

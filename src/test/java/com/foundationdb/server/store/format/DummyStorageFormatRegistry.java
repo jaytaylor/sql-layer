@@ -25,7 +25,6 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.StorageDescription;
-import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.types.service.TestTypesRegistry;
 
 import java.util.HashSet;
@@ -34,8 +33,10 @@ import java.util.Set;
 public class DummyStorageFormatRegistry extends StorageFormatRegistry
 {
     private final Set<String> generated;
+    private final static String identifier = "dummy";
 
     public DummyStorageFormatRegistry() {
+        super("dummy");
         this.generated = new HashSet<>();
     }
 
@@ -72,7 +73,7 @@ public class DummyStorageFormatRegistry extends StorageFormatRegistry
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
         super.finishStorageDescription(object, nameGenerator);
         if (object.getStorageDescription() == null) {
-            object.setStorageDescription(new TestStorageDescription(object, generateStorageKey(object)));
+            object.setStorageDescription(new TestStorageDescription(object, generateStorageKey(object), identifier));
         }
         assert object.getStorageDescription() != null;
     }
