@@ -54,9 +54,7 @@ public class ConditionColumnSourcesFinder implements PlanVisitor, ExpressionVisi
     public boolean visit(ExpressionNode n) {
         if (n instanceof ColumnExpression) {
             ColumnSource table = ((ColumnExpression)n).getTable();
-            if (table instanceof ColumnSource) {
-                referencedSources.add(table);
-            }
+            referencedSources.add(table);
         }
         return true;
     }
