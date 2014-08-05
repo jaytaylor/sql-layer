@@ -24,12 +24,6 @@ public class RandomCostModelService implements CostModelFactory, Service
 {
     @Override
     public CostModel newCostModel(Schema schema, TableRowCounts tableRowCounts) {
-        String seedStr = System.getProperty("fdbsql.test.seed");
-        if(seedStr == null) {
-            this.seed = System.currentTimeMillis();
-        } else {
-            this.seed = Long.parseLong(seedStr);
-        }
         return new RandomCostModel(schema, tableRowCounts, seed);
     }
 
@@ -50,5 +44,19 @@ public class RandomCostModelService implements CostModelFactory, Service
         return seed;
     }
 
+    public void reSeed() {
+        if (!isSpecifiedSeed) {
+            String seedStr = System.getProperty("fdbsql.test.seed");
+            if (seedStr == null) {
+                this.seed = System.currentTimeMillis();
+            } else {
+                this.seed = Long.parseLong(seedStr);
+                isSpecifiedSeed = true;
+            }
+        }
+    }
+
     private long seed;
+
+    private boolean isSpecifiedSeed = false;
 }

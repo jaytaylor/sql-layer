@@ -28,7 +28,7 @@ public class RandomCostModel extends CostModel
     // that this is reproducible when problems are detected. Should it
     // reset every query?
 
-    private Random random;
+    private final Random random;
 
     public RandomCostModel(Schema schema, TableRowCounts tableRowCounts, long seed) {
         super(schema, tableRowCounts);

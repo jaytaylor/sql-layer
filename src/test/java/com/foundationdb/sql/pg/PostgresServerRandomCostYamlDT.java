@@ -49,33 +49,16 @@ import org.junit.runner.RunWith;
  * Random Cost Model in order to cause alternative operator plans to test correctness
  */
 @RunWith(NamedParameterizedRunner.class)
-public class PostgresServerBuggifiedYamlDT extends PostgresServerYamlITBase
+public class PostgresServerRandomCostYamlDT extends PostgresServerMiscYamlIT
 {
-    private static final String CLASSNAME = PostgresServerBuggifiedYamlDT.class.getName();
-
-    /**
-     * A regular expression matching the names of the YAML files in the
-     * resource directory, not including the extension, to use for tests.
-     */
-    private static final String CASE_NAME_REGEXP = System.getProperty(CLASSNAME + ".CASE_NAME_REGEXP", "test-.*");
-
-    /** The directory containing the YAML files. */
-    private static final File RESOURCE_DIR;
-
-    static {
-        String s = System.getProperty(CLASSNAME + ".RESOURCE_DIR");
-        RESOURCE_DIR = (s != null) ? new File(s) : new File(PostgresServerITBase.RESOURCE_DIR, "yaml");
+    public PostgresServerRandomCostYamlDT(String caseName, File file) {
+        super(caseName, file);
     }
 
-    /** Whether to search the resource directory recursively for test files. */
-    private static final boolean RECURSIVE = Boolean.valueOf(System.getProperty(CLASSNAME + ".RECURSIVE", "true"));
-
-    private final File file;
-
-    public PostgresServerBuggifiedYamlDT(String caseName, File file) {
-        this.file = file;
+    @Override
+    protected boolean isRandomCost(){
+        return true;
     }
-
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
@@ -85,16 +68,12 @@ public class PostgresServerBuggifiedYamlDT extends PostgresServerYamlITBase
                 .bindAndRequire(CostModelFactory.class, RandomCostModelService.class);
         }
 
-    @Override
-    protected Map<String, String> startupConfigProperties() {
-        return uniqueStartupConfigProperties(getClass());
-    }
-
     @Test
     public void testYaml() throws Exception {
         boolean  success = false;
         try {
-            testYaml(file, true);
+            ((RandomCostModelService) serviceManager().getServiceByClass(CostModelFactory.class)).reSeed();
+            super.testYaml();
             success = true;
         } finally {
             if(success == false){
@@ -103,45 +82,6 @@ public class PostgresServerBuggifiedYamlDT extends PostgresServerYamlITBase
                 );
             }
         }
-
     }
 
-    @TestParameters
-    public static Collection<Parameterization> queries() throws Exception {
-        Collection<Object[]> params = new ArrayList<>();
-        collectParams(RESOURCE_DIR, Pattern.compile(CASE_NAME_REGEXP + "[.]yaml"), params);
-        return NamedParamsTestBase.namedCases(params);
-    }
-
-    static {
-        String timezone = "UTC";
-        DateTimeZone.setDefault(DateTimeZone.forID(timezone));
-        TimeZone.setDefault(TimeZone.getTimeZone(timezone));
-    }
-
-    /**
-     * Add files from the directory that match the pattern to params, recursing
-     * if appropriate.
-     */
-    private static void collectParams(File directory, final Pattern pattern, final Collection<Object[]> params) {
-        File[] files = directory.listFiles(
-                new FileFilter()
-                {
-                    public boolean accept(File file) {
-                        if(RECURSIVE && file.isDirectory()) {
-                            collectParams(file, pattern, params);
-                        } else {
-                            String name = file.getName();
-                            if(pattern.matcher(name).matches()) {
-                                params.add(new Object[]{ name.substring(0, name.length() - 5), file });
-                            }
-                        }
-                        return false;
-                    }
-                }
-        );
-        if(files == null) {
-            throw new RuntimeException("Problem accessing directory: " + directory);
-        }
-    }
 }
