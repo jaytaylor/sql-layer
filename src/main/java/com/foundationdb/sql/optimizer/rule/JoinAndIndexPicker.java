@@ -1293,7 +1293,7 @@ public class JoinAndIndexPicker extends BaseRule
                 // join plan, but that would be too disruptive, so
                 // only do it when need to make the comparison with
                 // the Bloom filter accurate.
-                // TODO: is this todo here because changing the cost for joins would change 100s of tests?
+                // Doing so would also make optimizing take longer
                 limit = Math.round(limit / selectivity);
                 joinPlan.redoCostWithLimit(limit);
             }
