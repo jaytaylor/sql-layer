@@ -35,7 +35,6 @@ import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.DuplicateKeyException;
-import com.foundationdb.server.error.FDBAdapterException;
 import com.foundationdb.server.error.FDBNotCommittedException;
 import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.rowdata.FieldDef;
@@ -55,7 +54,6 @@ import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.util.ReadWriteMap;
-import com.foundationdb.FDBException;
 import com.foundationdb.Range;
 import com.foundationdb.Transaction;
 import com.foundationdb.async.Function;
@@ -64,9 +62,6 @@ import com.google.inject.Inject;
 import com.persistit.Key;
 import com.persistit.Persistit;
 import com.persistit.Value;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -82,7 +77,6 @@ import java.util.TreeSet;
 import static com.foundationdb.server.store.FDBStoreDataHelper.*;
 
 public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDescription> implements Service {
-    private static final Logger LOG = LoggerFactory.getLogger(FDBStore.class);
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     private static final Session.MapKey<Object, SequenceCache> SEQ_UPDATES_KEY = Session.MapKey.mapNamed("SEQ_UPDATE");
 

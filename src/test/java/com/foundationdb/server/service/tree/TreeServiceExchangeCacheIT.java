@@ -44,6 +44,8 @@ public class TreeServiceExchangeCacheIT extends PersistitITBase
 
     private TreeServiceImpl treeService;
 
+    private static final String identifier = "test";
+
     @Before
     public void setTreeService() {
         treeService = (TreeServiceImpl)treeService();
@@ -134,7 +136,7 @@ public class TreeServiceExchangeCacheIT extends PersistitITBase
     }
 
     private PersistitStorageDescription createDescription(String treeName) {
-        PersistitStorageDescription desc = new PersistitStorageDescription(new TestStorage(ais(), "test", treeName), treeName);
+        PersistitStorageDescription desc = new PersistitStorageDescription(new TestStorage(ais(), "test", treeName), treeName, identifier);
         desc.getObject().setStorageDescription(desc);
         return desc;
     }

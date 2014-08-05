@@ -1,0 +1,1 @@
+com.foundationdb.server.error.NoTableSpecifiedInQueryException: NO_TABLE_SPECIFIED: No table specified in query to expand `*` or `**`

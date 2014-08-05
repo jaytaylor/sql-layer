@@ -113,7 +113,7 @@ public class DeleteGeneratorIT extends ITBase {
                 getExplain(delete, table.getSchemaName()),
                 "\n  Delete_Returning()\n"+
                 "    GroupLookup_Default(Index(c.PRIMARY) -> c)\n"+
-                "      IndexScan_Default(Index(c.PRIMARY), __akiban_pk = $1)");
+                "      IndexScan_Default(Index(c.PRIMARY), __row_id = $1)");
     }
 
     protected String getExplain (Operator plannable, String defaultSchemaName) {

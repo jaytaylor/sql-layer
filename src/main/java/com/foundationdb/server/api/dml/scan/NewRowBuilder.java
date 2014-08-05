@@ -90,7 +90,7 @@ public final class NewRowBuilder {
      * @return this builder
      */
     public NewRowBuilder check(Session session, DMLFunctions dml) {
-        final RowData rowData = dml.convertNewRow(row);
+        final RowData rowData = row.toRowData(); 
         final NewRow back = dml.convertRowData(session, rowData);
         if (!row.equals(back)) {
             throw new RuntimeException(String.format("%s != %s", row, back));

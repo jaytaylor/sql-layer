@@ -29,19 +29,19 @@ public class TestPersistitStorageDescription extends PersistitStorageDescription
 {
     private String name, option;
 
-    public TestPersistitStorageDescription(HasStorage forObject) {
-        super(forObject);
+    public TestPersistitStorageDescription(HasStorage forObject, String storageFormat) {
+        super(forObject, storageFormat);
     }
 
-    public TestPersistitStorageDescription(HasStorage forObject, TestPersistitStorageDescription other) {
-        super(forObject, other);
+    public TestPersistitStorageDescription(HasStorage forObject, TestPersistitStorageDescription other, String storageFormat) {
+        super(forObject, other, storageFormat);
         this.name = other.name;
         this.option = other.option;
     }
 
     @Override
     public StorageDescription cloneForObject(HasStorage forObject) {
-        return new TestPersistitStorageDescription(forObject, this);
+        return new TestPersistitStorageDescription(forObject, this, storageFormat);
     }
 
     public String getName() {

@@ -68,17 +68,18 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
 {
     protected static final byte[] FIRST_NUMERIC = { 0x0C };
 
-    public ColumnKeysStorageDescription(HasStorage forObject) {
-        super(forObject);
+    public ColumnKeysStorageDescription(HasStorage forObject, String storageFormat) {
+        super(forObject, storageFormat);
+
     }
 
-    public ColumnKeysStorageDescription(HasStorage forObject, ColumnKeysStorageDescription other) {
-        super(forObject, other);
+    public ColumnKeysStorageDescription(HasStorage forObject, ColumnKeysStorageDescription other, String storageFormat) {
+        super(forObject, other, storageFormat);
     }
 
     @Override
     public StorageDescription cloneForObject(HasStorage forObject) {
-        return new ColumnKeysStorageDescription(forObject, this);
+        return new ColumnKeysStorageDescription(forObject, this, storageFormat);
     }
 
     @Override

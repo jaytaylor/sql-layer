@@ -41,9 +41,6 @@ public interface TableStatus {
     /** Set the RowDef of a given table.*/
     void setRowDef(RowDef rowDef);
 
-    /** Create a brand new, unique ID for the given table. */
-    long createNewUniqueID(Session session);
-
     /**
      * @return Current auto-increment value of the associated table.
      */
@@ -59,15 +56,8 @@ public interface TableStatus {
      */
     long getApproximateRowCount(Session session);
 
-    /**
-     * @return The <b>last</b> unique value used for the associated table.
-     */
-    long getUniqueID(Session session);
-
     /** @return The table ID this status is for */
     int getTableID();
 
     void setRowCount(Session session, long rowCount);
-
-    //long getApproximateUniqueID();
 }

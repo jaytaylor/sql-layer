@@ -23,6 +23,8 @@ import com.foundationdb.ais.protobuf.TestProtobuf;
 
 public class TestStorageFormat extends StorageFormat<TestStorageDescription>
 {
+    private final static String identifier = "test";
+
     private TestStorageFormat() {
     }
 
@@ -32,7 +34,7 @@ public class TestStorageFormat extends StorageFormat<TestStorageDescription>
 
     public TestStorageDescription readProtobuf(Storage pbStorage, HasStorage forObject, TestStorageDescription storageDescription) {
         if (storageDescription == null) {
-            storageDescription = new TestStorageDescription(forObject);
+            storageDescription = new TestStorageDescription(forObject, identifier);
         }
         storageDescription.setStorageKey(pbStorage.getExtension(TestProtobuf.storageKey));
         return storageDescription;

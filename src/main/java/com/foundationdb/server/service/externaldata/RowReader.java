@@ -88,7 +88,7 @@ public abstract class RowReader
         }
         List<Column> defaultColumns = new ArrayList<>();
         List<Column> functionColumns = new ArrayList<>();
-        for (Column column : table.getColumns()) {
+        for (Column column : table.getColumnsIncludingInternal()) {
             if (columns.contains(column)) continue;
             if (column.getIdentityGenerator() != null) {
                 functionColumns.add(column);

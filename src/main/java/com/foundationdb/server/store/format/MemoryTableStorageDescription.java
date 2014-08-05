@@ -19,7 +19,6 @@ package com.foundationdb.server.store.format;
 
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.StorageDescription;
-import com.foundationdb.ais.model.validation.AISValidationFailure;
 import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.CommonProtobuf;
@@ -31,18 +30,18 @@ public class MemoryTableStorageDescription extends StorageDescription
 {
     MemoryTableFactory memoryTableFactory;
 
-    public MemoryTableStorageDescription(HasStorage forObject) {
-        super(forObject);
+    public MemoryTableStorageDescription(HasStorage forObject, String storageFormat) {
+        super(forObject, storageFormat);
     }
 
-    public MemoryTableStorageDescription(HasStorage forObject, MemoryTableFactory memoryTableFactory) {
-        super(forObject);
+    public MemoryTableStorageDescription(HasStorage forObject, MemoryTableFactory memoryTableFactory, String storageFormat) {
+        super(forObject, storageFormat);
         assert memoryTableFactory != null;
         this.memoryTableFactory = memoryTableFactory;
     }
 
-    public MemoryTableStorageDescription(HasStorage forObject, MemoryTableStorageDescription other) {
-        super(forObject, other);
+    public MemoryTableStorageDescription(HasStorage forObject, MemoryTableStorageDescription other, String storageFormat) {
+        super(forObject, other, storageFormat);
         this.memoryTableFactory = other.memoryTableFactory;
     }
 
@@ -56,7 +55,7 @@ public class MemoryTableStorageDescription extends StorageDescription
 
     @Override
     public StorageDescription cloneForObject(HasStorage forObject) {
-        return new MemoryTableStorageDescription(forObject, this);
+        return new MemoryTableStorageDescription(forObject, this, storageFormat);
     }
 
     @Override

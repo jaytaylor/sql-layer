@@ -167,13 +167,13 @@ public final class TruncateTableIT extends ITBase {
     public void tableWithNoPK() throws InvalidOperationException {
         int tableId = createTable("test", "t", "c1 CHAR(10) NOT NULL");
 
-        writeRows(createNewRow(tableId, "a", -1L),
-                  createNewRow(tableId, "aaa", -1L),
-                  createNewRow(tableId, "b", -1L),
-                  createNewRow(tableId, "b", -1L),
-                  createNewRow(tableId, "bb", -1L),
-                  createNewRow(tableId, "bbb", -1L),
-                  createNewRow(tableId, "c", -1L));
+        writeRows(createNewRow(tableId, "a"),
+                  createNewRow(tableId, "aaa"),
+                  createNewRow(tableId, "b"),
+                  createNewRow(tableId, "b"),
+                  createNewRow(tableId, "bb"),
+                  createNewRow(tableId, "bbb"),
+                  createNewRow(tableId, "c"));
         expectRowCount(tableId, 7);
 
         dml().truncateTable(session(), tableId);

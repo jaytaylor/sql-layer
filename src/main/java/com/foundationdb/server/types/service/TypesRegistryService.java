@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.types.service;
 
-import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TKeyComparable;
 import com.foundationdb.server.types.texpressions.TValidatedAggregator;
@@ -31,5 +30,4 @@ public interface TypesRegistryService {
     TKeyComparable getKeyComparable(TClass left, TClass right);
     enum FunctionKind { SCALAR, AGGREGATE };
     FunctionKind getFunctionKind(String name);
-    void registerSystemTables(SchemaManager schemaManager);
 }

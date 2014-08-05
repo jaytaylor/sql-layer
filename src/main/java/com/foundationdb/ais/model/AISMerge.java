@@ -177,7 +177,6 @@ public class AISMerge {
             // Copy tree names and IDs for pre-existing table and it's indexes
             Table oldTable = oldAIS.getTable(desc.getOldName());
             Table newTable = desc.getNewDefinition();
-
             // These don't affect final outcome and may be reset later. Needed by clone process.
             if((newTable != null) && (newTable.getGroup() != null)) {
                 newTable.setOrdinal(oldTable.getOrdinal());
@@ -239,12 +238,13 @@ public class AISMerge {
                 } else {
                     indexesToFix.put(newIndex.getIndexName(), new IndexInfo(null, null));
                 }
+                LOG.debug("Indexes to fix: {} -> {}", oldName,  newIndex.getIndexName() );
             }
 
             for(TableName name : desc.getDroppedSequences()) {
                 excludedSequences.add(oldAIS.getSequence(name));
             }
-
+            
             for(String name : desc.getIdentityAdded()) {
                 Column col = newTable.getColumn(name);
                 identityToFix.add(new IdentityInfo(desc.getNewName(), name, col.getDefaultIdentity(), col.getIdentityGenerator()));
@@ -437,30 +437,35 @@ public class AISMerge {
                 throw new JoinToUnknownTableException (sourceTable.getName(), new TableName(parentSchemaName, parentTableName));
             }
             targetGroup = parentTable.getGroup();
-        }
-
-        // Add the user table to the targetAIS
-        addTable (builder, sourceTable, targetGroup);
-
-        // Joins or group table?
-        if (sourceTable.getParentJoin() == null) {
-            LOG.debug("Table is root or lone table");
+        } else {
             StorageDescription storage = null;
             if (sourceTable.getGroup() != null) {
                 storage = sourceTable.getGroup().getStorageDescription();
             }
-            addNewGroup(builder, sourceTable, storage);
-        } else {
+            TableName groupName = sourceTable.getName();
+            builder.createGroup(groupName.getTableName(), groupName.getSchemaName(), 
+                                storage);
+            targetGroup = builder.akibanInformationSchema().getGroup(groupName);
+        }
+        // Add the user table to the targetAIS
+        addTable (builder, sourceTable, targetGroup.getName());
+
+
+        // Joins or group table?
+        if (sourceTable.getParentJoin() != null) {
             // Normally there should be only one candidate parent join.
             // But since the AIS supports multiples, so does the merge.
             // This gets flagged in JoinToOneParent validation.
             for (Join join : sourceTable.getCandidateParentJoins()) {
                 addJoin(builder, join, sourceTable);
             }
+        } else {
+            targetGroup.setRootTable(builder.akibanInformationSchema().getTable(sourceTable.getName()));
         }
 
-        if (sourceTable.getPrimaryKey() != null) {
-            TableIndex index = sourceTable.getPrimaryKey().getIndex();
+
+        if (sourceTable.getPrimaryKeyIncludingInternal() != null) {
+            TableIndex index = sourceTable.getPrimaryKeyIncludingInternal().getIndex();
             final int rootTableID = (targetGroup != null) ? 
                     targetGroup.getRoot().getTableId() : 
                         builder.akibanInformationSchema().getTable(sourceTable.getName()).getTableId();
@@ -516,6 +521,7 @@ public class AISMerge {
     }
 
     private void doModifyTableMerge() {
+        
         AISBuilder builder = new AISBuilder(targetAIS, nameGenerator,
                                             getStorageFormatRegistry());
 
@@ -550,6 +556,11 @@ public class AISMerge {
             }
         }
 
+        for(IdentityInfo info : identityToFix) {
+            addIdentitySequence(builder, info.tableName.getSchemaName(), info.tableName.getTableName(), info.columnName,
+                                info.defaultIdentity, info.sequence);
+        }
+
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
 
@@ -564,10 +575,6 @@ public class AISMerge {
             }
         }
 
-        for(IdentityInfo info : identityToFix) {
-            addIdentitySequence(builder, info.tableName.getSchemaName(), info.tableName.getTableName(), info.columnName,
-                                info.defaultIdentity, info.sequence);
-        }
 
         builder.akibanInformationSchema().validate(AISValidations.BASIC_VALIDATIONS).throwIfNecessary();
         builder.akibanInformationSchema().freeze();
@@ -581,17 +588,15 @@ public class AISMerge {
         builder.akibanInformationSchema().freeze();
     }
 
-    private void addTable(AISBuilder builder, final Table table, final Group targetGroup) {
+    private void addTable(AISBuilder builder, final Table table, final TableName groupName) {
         
         // I should use TableSubsetWriter(new AISTarget(targetAIS)) or AISCloner.clone()
         // but both assume the Table.getAIS() is complete and valid. 
         // i.e. has a group and group table, and the joins point to a valid table
         // which, given the use of AISMerge, is not true. 
         
-        
         final String schemaName = table.getName().getSchemaName();
         final String tableName = table.getName().getTableName();
-        
 
         builder.table(schemaName, tableName);
         Table targetTable = targetAIS.getTable(schemaName, tableName); 
@@ -599,20 +604,26 @@ public class AISMerge {
         targetTable.setPendingOSC(table.getPendingOSC());
         targetTable.setUuid(table.getUuid());
         
+        //Add the table to the group only if the root table (or single table)
+        // The join processing adds others to the group later. 
+        if (table.getParentJoin() == null) {
+            builder.addTableToGroup(groupName, schemaName, tableName);
+        }
+        
         // columns
-        for (Column column : table.getColumns()) {
+        for (Column column : table.getColumnsIncludingInternal()) {
             builder.column(schemaName, tableName, 
                     column.getName(), column.getPosition(), 
                     column.getType(), 
                     column.getInitialAutoIncrementValue() != null, 
                     column.getDefaultValue(), column.getDefaultFunction());
-            Column newColumn = targetTable.getColumn(column.getPosition());
+            Column newColumn = targetTable.getColumnsIncludingInternal().get(column.getPosition());
             newColumn.setUuid(column.getUuid());
             // if an auto-increment column, set the starting value. 
             if (column.getInitialAutoIncrementValue() != null) {
                 newColumn.setInitialAutoIncrementValue(column.getInitialAutoIncrementValue());
             }
-            if (column.getDefaultIdentity() != null) {
+            if (!table.hasMemoryTableFactory() && column.getDefaultIdentity() != null) {
                 addIdentitySequence(builder, schemaName, tableName, column.getName(),
                                     column.getDefaultIdentity(), column.getIdentityGenerator());
             }

@@ -133,7 +133,10 @@ public class HalloweenRecognizer extends BaseRule
                         break;
                     }
                     if((action != null) && checkForReferencing(stmt.getInput(), action, fk.getReferencingTable())) {
-                        throw new UnsupportedSQLException("DML on referenced table containing referencing table");
+                        throw new UnsupportedSQLException(
+                            String.format("DML includes both referenced and referencing table %s with FOREIGN KEY action %s",
+                                          fk.getReferencingTable().getName().toString(),
+                                          action.name()));
                     }
                 }
             }

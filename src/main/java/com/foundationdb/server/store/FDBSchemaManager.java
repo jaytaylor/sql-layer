@@ -138,8 +138,11 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
      * 2) Online metadata support
      * 3) Type bundles
      * 4) Online DDL error-ing
+     * 5) ????
+     * 6) ????
+     * 7) Hidden PK to Sequence/__row_id
      */
-    private static final long CURRENT_META_VERSION = 6;
+    private static final long CURRENT_META_VERSION = 7;
 
     private static final Session.Key<AkibanInformationSchema> SESSION_AIS_KEY = Session.Key.named("AIS_KEY");
     private static final AkibanInformationSchema SENTINEL_AIS = new AkibanInformationSchema(Integer.MIN_VALUE);
@@ -768,7 +771,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
 
         if(newAIS.getSchema(schema) != null) {
             Subspace blobDir = dir.createOrOpen(txn.getTransaction(), PathUtil.from(schema)).get();
-            BlobAsync blob = new BlobAsync(blobDir);
             buffer = serialize(buffer, newAIS, selector);
             byte[] newValue;
             if((buffer.position() == 0) && (buffer.limit() == buffer.capacity())) {
@@ -776,6 +778,8 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
             } else {
                 newValue = Arrays.copyOfRange(buffer.array(), buffer.position(), buffer.limit());
             }
+            BlobAsync blob = new BlobAsync(blobDir);
+            blob.truncate(txn.getTransaction(), 0).get();
             blob.write(txn.getTransaction(), 0, newValue).get();
         } else {
             dir.removeIfExists(txn.getTransaction(), PathUtil.from(schema)).get();
@@ -874,8 +878,10 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
             Subspace subDir = dir.open(txn.getTransaction(), PathUtil.from(subDirName)).get();
             BlobAsync blob = new BlobAsync(subDir);
             byte[] data = blob.read(txn.getTransaction()).get();
-            ByteBuffer buffer = ByteBuffer.wrap(data);
-            reader.loadBuffer(buffer);
+            if(data != null) {
+                ByteBuffer buffer = ByteBuffer.wrap(data);
+                reader.loadBuffer(buffer);
+            }
         }
     }
 
@@ -957,6 +963,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         for(Table table : reader.getAIS().getTables().values()) {
             // nameGenerator is only needed to generate hidden PK, which shouldn't happen here
             table.endTable(null);
+            
         }
         return reader.getAIS();
     }

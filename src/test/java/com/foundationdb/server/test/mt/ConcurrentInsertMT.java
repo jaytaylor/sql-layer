@@ -67,7 +67,7 @@ public class ConcurrentInsertMT extends MTBase
     private static OperatorCreator insertCreator(final RowType rowType, int startID, int count) {
         final Row[] rows = new Row[count];
         for(int i = 0; i < count; ++i) {
-            rows[i] = new TestRow(rowType, startID + i, -1L);
+            rows[i] = new TestRow(rowType, startID + i, startID + i);
         }
         return new OperatorCreator() {
             @Override
