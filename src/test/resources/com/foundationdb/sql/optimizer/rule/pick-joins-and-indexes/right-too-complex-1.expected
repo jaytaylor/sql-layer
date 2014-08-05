@@ -1,9 +1,9 @@
-SelectQuery@aa05b2e
-  ResultSet@25c22e75[name, order_date]
-    Project@6f7816b0[customers.name, orders.order_date]
-      Select@3519b5fc[]
-        JoinNode@3813806b(LEFT/NESTED_LOOPS)
-          TableGroupJoinTree@6fe46b7f(TableGroup@8540d90(customers), orders - SingleIndexScan@46466d35(Index(test.orders.order_date[IndexColumn(order_date)]), covering/NONE, UNIONs of [NULL < % < 1029665, 1029665 < % ], rows = 999, cost = 707.459))
-            TableSource@47ce029f(orders - TableGroup@8540d90(customers))
-          TableGroupJoinTree@7d4d983c(TableGroup@8540d90(customers), customers - GroupLoopScan@39abd69e(orders - customers, rows = 1, cost = 7.01160))
-            TableSource@260e398d(customers - TableGroup@8540d90(customers))
+SelectQuery@615e7597
+  ResultSet@7a3e72[name, order_date]
+    Project@5999ae9c[customers.name, orders.order_date]
+      Select@7896b1b8[]
+        JoinNode@6d6de4e1(LEFT/NESTED_LOOPS)
+          TableGroupJoinTree@1cf7cbd1(TableGroup@50661532(customers), orders - SingleIndexScan@13f3589(Index(test.orders.order_date[IndexColumn(order_date)]), covering/NONE, UNIONs of [NULL < % < 1029665, 1029665 < % ], rows = 999, cost = 707.459))
+            TableSource@3f0dbef1(orders - TableGroup@50661532(customers))
+          TableGroupJoinTree@5df9aeda(TableGroup@50661532(customers), customers - GroupLoopScan@37f22bf(orders - customers, rows = 1, cost = 7.01160))
+            TableSource@72b0f2b2(customers - TableGroup@50661532(customers))

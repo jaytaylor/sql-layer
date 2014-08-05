@@ -1,8 +1,8 @@
-SelectQuery@5fcb9d2f
-  ResultSet@30bca9cb[name]
-    Project@322f676c[customers.name]
-      Select@462efd31[]
-        MapJoin@77cacba7(INNER)
-          SingleIndexScan@23007e62(Index(test.customers.name[IndexColumn(name)]), covering/NONE, >M, rows = 53, cost = 41.8286)
-          Select@756965e1[addresses.state != customers.name]
-            SingleIndexScan@5a9fd2ff(Index(test.addresses.state[IndexColumn(state)]), covering/NONE, >M, rows = 57, cost = 154.052)
+SelectQuery@642726b2
+  ResultSet@465da37c[name]
+    Project@2d9845fb[customers.name]
+      Select@681a791f[]
+        MapJoin@315863e4(INNER)
+          SingleIndexScan@41ed54a0(Index(test.customers.name[IndexColumn(name)]), covering/NONE, >M, rows = 53, cost = 41.8286)
+          Select@2d9845fb[addresses.state != customers.name]
+            SingleIndexScan@2206270b(Index(test.addresses.state[IndexColumn(state)]), covering/NONE, >M, rows = 57, cost = 154.052)

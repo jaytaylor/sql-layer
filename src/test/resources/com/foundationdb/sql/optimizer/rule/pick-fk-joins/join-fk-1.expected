@@ -1,9 +1,9 @@
-SelectQuery@13ad8387
-  ResultSet@64961e28[description]
-    Project@3b9607af[animal.description]
-      Select@76d290b8[]
-        JoinNode@7f08ba01(INNER/NESTED_LOOPS[mammal.pregnant == 1])
-          TableGroupJoinTree@318bc0ab(TableGroup@15ebd8cf(animal), animal - GroupScan@2ee70947(Group(test.animal), rows = 1, cost = 1.00000))
-            TableSource@81d9016(animal - TableGroup@15ebd8cf(animal))
-          TableGroupJoinTree@4e1633f6(TableGroup@42122c5f(mammal), mammal - ExpressionsHKeyScan@371f32dc(TableSource@4cde9883(mammal - TableFKJoin@614425c9(Foreign Key fk_animal_m: test.mammal REFERENCES test.animal)), animal.id, rows = 1, cost = 9.29920))
-            TableSource@4cde9883(mammal - TableFKJoin@614425c9(Foreign Key fk_animal_m: test.mammal REFERENCES test.animal))
+SelectQuery@1c12377d
+  ResultSet@6ff8fdf0[description]
+    Project@43e7d0fe[animal.description]
+      Select@2849f686[]
+        JoinNode@63432ed6(INNER/NESTED_LOOPS[mammal.pregnant == 1])
+          TableGroupJoinTree@2a4f9402(TableGroup@4fb81683(animal), animal - GroupScan@3ece1b58(Group(test.animal), rows = 1, cost = 1.00000))
+            TableSource@2f1afab2(animal - TableGroup@4fb81683(animal))
+          TableGroupJoinTree@58d047f1(TableGroup@23058e5f(mammal), mammal - ExpressionsHKeyScan@41c610ef(TableSource@4eb8715e(mammal - TableFKJoin@3281dca5(Foreign Key fk_animal_m: test.mammal REFERENCES test.animal)), animal.id, rows = 1, cost = 9.29920))
+            TableSource@4eb8715e(mammal - TableFKJoin@3281dca5(Foreign Key fk_animal_m: test.mammal REFERENCES test.animal))

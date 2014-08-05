@@ -1,9 +1,9 @@
-SelectQuery@5863d544
-  ResultSet@24690b2[cid, name, id, name, state]
-    Project@66c59748[customers.cid, customers.name, parent.id, parent.name, parent.state]
-      Select@364f2cae[]
-        JoinNode@514146c4(INNER/NESTED_LOOPS[parent.name == X])
-          TableGroupJoinTree@76100254(TableGroup@148d1789(customers), customers - FullTextScan@3b042de9(customers - PARSE(customers.name, john)))
-            TableSource@78b9eb6f(customers - TableGroup@148d1789(customers))
-          TableGroupJoinTree@1509155a(TableGroup@f623a44(parent), parent - ExpressionsHKeyScan@79df4e3f(TableSource@7c6d7f32(parent - TableGroup@f623a44(parent)), customers.cid, rows = 1, cost = 9.82040))
-            TableSource@7c6d7f32(parent - TableGroup@f623a44(parent))
+SelectQuery@2582ebf
+  ResultSet@6b64fecc[cid, name, id, name, state]
+    Project@33943a29[customers.cid, customers.name, parent.id, parent.name, parent.state]
+      Select@48767433[]
+        JoinNode@69b09595(INNER/NESTED_LOOPS[parent.name == X])
+          TableGroupJoinTree@45777e6(TableGroup@482c9f68(customers), customers - FullTextScan@699589dc(customers - PARSE(customers.name, john)))
+            TableSource@7160b629(customers - TableGroup@482c9f68(customers))
+          TableGroupJoinTree@a809f44(TableGroup@588e00ab(parent), parent - ExpressionsHKeyScan@52ce07f8(TableSource@68a23569(parent - TableGroup@588e00ab(parent)), customers.cid, rows = 1, cost = 9.82040))
+            TableSource@68a23569(parent - TableGroup@588e00ab(parent))

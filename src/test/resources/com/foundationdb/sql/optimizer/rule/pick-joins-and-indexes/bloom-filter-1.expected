@@ -1,11 +1,11 @@
-SelectQuery@70bcabd3
-  ResultSet@72b4e377[sku]
-    Project@41c1d476[items.sku]
-      Select@1c63b0b4[]
-        HashJoinNode@6cfad7bb(SEMI/BLOOM_FILTER[categories.sku] = [items.sku])
-          TableGroupJoinTree@48696de2(TableGroup@1ad3592(categories), categories - SingleIndexScan@1298051a(Index(test.categories.cat_sku[IndexColumn(cat), IndexColumn(sku)]), covering/SORTED, =1, rows = 100, cost = 77.9500))
-            TableSource@56f24dfe(categories - TableGroup@1ad3592(categories))
-          TableGroupJoinTree@420f42a1(TableGroup@3a76f77f(customers), items - SingleIndexScan@5872d0d5(Index(test.items.sku[IndexColumn(sku)]), covering/SORTED, rows = 20000, cost = 15241.5))
-            TableSource@3dde8b4a(items - TableGroup@3a76f77f(customers))
-          TableGroupJoinTree@5d8ac701(TableGroup@1ad3592(categories), categories - SingleIndexScan@59ec7d50(Index(test.categories.cat_sku[IndexColumn(cat), IndexColumn(sku)]), covering/NONE, =1, =items.sku, rows = 1, cost = 85.1750))
-            TableSource@56f24dfe(categories - TableGroup@1ad3592(categories))
+SelectQuery@11f46b16
+  ResultSet@45a27a8f[sku]
+    Project@2e1c6600[items.sku]
+      Select@21e8bf76[]
+        HashJoinNode@47004b78(SEMI/BLOOM_FILTER[categories.sku] = [items.sku])
+          TableGroupJoinTree@645ad7b2(TableGroup@366412da(categories), categories - SingleIndexScan@22cf38a2(Index(test.categories.cat_sku[IndexColumn(cat), IndexColumn(sku)]), covering/SORTED, =1, rows = 100, cost = 77.9500))
+            TableSource@6b04d3c8(categories - TableGroup@366412da(categories))
+          TableGroupJoinTree@6411c21b(TableGroup@49deadf0(customers), items - SingleIndexScan@44585f2a(Index(test.items.sku[IndexColumn(sku)]), covering/SORTED, rows = 20000, cost = 15241.5))
+            TableSource@774943d6(items - TableGroup@49deadf0(customers))
+          TableGroupJoinTree@30e79eb3(TableGroup@366412da(categories), categories - SingleIndexScan@5cfe174(Index(test.categories.cat_sku[IndexColumn(cat), IndexColumn(sku)]), covering/NONE, =1, =items.sku, rows = 1, cost = 85.1750))
+            TableSource@6b04d3c8(categories - TableGroup@366412da(categories))

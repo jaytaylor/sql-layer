@@ -1,12 +1,12 @@
-SelectQuery@44d2c831
-  ResultSet@6a552c43[name, name, serial_number]
-    Project@7dcd193e[zoo.name, mother.name, animal.serial_number]
-      Select@243475f8[]
-        JoinNode@f15f5c4(INNER/NESTED_LOOPS[zoo.id == animal.zoo_id])
-          TableGroupJoinTree@1854e203(TableGroup@61fc7e0c(zoo), zoo - GroupScan@6aba1e98(Group(test.zoo), rows = 1, cost = 1.00000))
-            TableSource@13a98095(zoo - TableGroup@61fc7e0c(zoo))
-          JoinNode@612ec3e5(INNER/NESTED_LOOPS[animal.description == Lizard, mother.id == animal.mother_id])
-            TableGroupJoinTree@7b77816(TableGroup@6033b243(animal), animal - GroupScan@453f213b(Group(test.animal), rows = 1, cost = 1.82000))
-              TableSource@5d38c048(animal - TableGroup@6033b243(animal))
-            TableGroupJoinTree@1e2cf04f(TableGroup@6670719f(parent), mother - SingleIndexScan@339ecc01(Index(test.parent.name[IndexColumn(name)]), covering/NONE, rows = 1, cost = 8.81100))
-              TableSource@38d7e6c8(mother - TableGroup@6670719f(parent))
+SelectQuery@133c4539
+  ResultSet@59e4ab0c[name, name, serial_number]
+    Project@3399ceef[zoo.name, mother.name, animal.serial_number]
+      Select@36e0c760[]
+        JoinNode@3798d24d(INNER/NESTED_LOOPS[zoo.id == animal.zoo_id])
+          TableGroupJoinTree@309ac35b(TableGroup@39dc44b6(zoo), zoo - GroupScan@1216d9bf(Group(test.zoo), rows = 1, cost = 1.00000))
+            TableSource@616fc39b(zoo - TableGroup@39dc44b6(zoo))
+          JoinNode@6cacff32(INNER/NESTED_LOOPS[animal.description == Lizard, mother.id == animal.mother_id])
+            TableGroupJoinTree@68cefc31(TableGroup@4b3d2eb(animal), animal - GroupScan@51a6635b(Group(test.animal), rows = 1, cost = 1.82000))
+              TableSource@5eaeecf0(animal - TableGroup@7c29a8c3(animal))
+            TableGroupJoinTree@7e7eb4f6(TableGroup@6ca21395(parent), mother - SingleIndexScan@58f59add(Index(test.parent.name[IndexColumn(name)]), covering/NONE, rows = 1, cost = 8.81100))
+              TableSource@6156255c(mother - TableGroup@6ca21395(parent))

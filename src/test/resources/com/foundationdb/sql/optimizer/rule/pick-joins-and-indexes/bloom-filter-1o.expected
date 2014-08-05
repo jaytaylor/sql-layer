@@ -1,11 +1,11 @@
-SelectQuery@1aef6e18
-  ResultSet@5d24f778[sku]
-    Project@25f3170e[items.sku]
-      Select@7a6eab98[]
+SelectQuery@23245e75
+  ResultSet@28b56559[sku]
+    Project@1d10caf0[items.sku]
+      Select@533c2ac3[]
         HashJoinNode@563ab8f2(SEMI/BLOOM_FILTER[categories.sku] = [items.sku])
           TableGroupJoinTree@29444418(TableGroup@40d298d2(categories), categories - SingleIndexScan@422f243d(Index(test.categories.cat_sku[IndexColumn(cat), IndexColumn(sku)]), covering/NONE, =1, rows = 100, cost = 1641.95))
             TableSource@2a55b76b(categories - TableGroup@40d298d2(categories))
-          TableGroupJoinTree@617ce783(TableGroup@24f442bd(customers), items - SingleIndexScan@2049993f(Index(test.items.sku[IndexColumn(sku)]), covering/SORTED, rows = 20000, cost = 15241.5))
-            TableSource@62165d84(items - TableGroup@24f442bd(customers))
-          TableGroupJoinTree@4f437b75(TableGroup@40d298d2(categories), categories - SingleIndexScan@3fec07a8(Index(test.categories.cat_sku[IndexColumn(cat), IndexColumn(sku)]), covering/NONE, =1, =items.sku, rows = 1, cost = 85.1750))
-            TableSource@2a55b76b(categories - TableGroup@40d298d2(categories))
+          TableGroupJoinTree@45e4d960(TableGroup@337b5179(customers), items - SingleIndexScan@2f63e9a1(Index(test.items.sku[IndexColumn(sku)]), covering/SORTED, rows = 20000, cost = 15241.5))
+            TableSource@517c804b(items - TableGroup@337b5179(customers))
+          TableGroupJoinTree@6521f956(TableGroup@1978b0f9(categories), categories - SingleIndexScan@5cfe174(Index(test.categories.cat_sku[IndexColumn(cat), IndexColumn(sku)]), covering/NONE, =1, =items.sku, rows = 1, cost = 85.1750))
+            TableSource@44cae5b8(categories - TableGroup@1978b0f9(categories))

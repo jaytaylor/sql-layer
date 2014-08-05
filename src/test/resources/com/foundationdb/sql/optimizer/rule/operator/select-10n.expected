@@ -1,4 +1,4 @@
-PhysicalSelect@56922762[name, order_date, name]
+PhysicalSelect@2ffd46cc[name, order_date, name]
   Map_NestedLoops(0)
     Select_HKeyOrdered(Field(2) != 'Smith')
       Filter_Default(test.child)

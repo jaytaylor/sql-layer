@@ -1,12 +1,12 @@
-SelectQuery@7024af44
-  ResultSet@786ed2e0[name]
-    Project@33d6ade5[mammal.name]
-      Select@5332aff9[]
-        JoinNode@7a84999c(INNER/NESTED_LOOPS[mammal.animal == dog.mammal])
-          TableGroupJoinTree@7b33f285(TableGroup@e60e46a(dog), dog - SingleIndexScan@17810f9b(Index(test.dog.PRIMARY[IndexColumn(mammal)]), covering/NONE, rows = 1, cost = 5.89280))
-            TableSource@4b1524b2(dog - TableFKJoin@1a27952b(Foreign Key dog_fkey: test.dog REFERENCES test.domesticanimal))
-          JoinNode@1cb24777(INNER/NESTED_LOOPS[mammal.pregnant == 1])
-            TableGroupJoinTree@f7738f4(TableGroup@340a459f(domesticanimal), domesticanimal - SingleIndexScan@7c71e458(Index(test.domesticanimal.PRIMARY[IndexColumn(mammal)]), covering/NONE, rows = 1, cost = 5.89280))
-              TableSource@4fe42e14(domesticanimal - TableFKJoin@19468d3c(Foreign Key fk_mammal_d: test.domesticanimal REFERENCES test.mammal))
-            TableGroupJoinTree@5c3c231a(TableGroup@377a24dd(mammal), mammal - ExpressionsHKeyScan@66e26b1a(TableSource@591c48a0(mammal - TableFKJoin@1ae5acbb(Foreign Key fk_animal_m: test.mammal REFERENCES test.animal)), domesticanimal.mammal, rows = 1, cost = 9.29920))
-              TableSource@591c48a0(mammal - TableFKJoin@1ae5acbb(Foreign Key fk_animal_m: test.mammal REFERENCES test.animal))
+SelectQuery@2c3e866
+  ResultSet@bce81f5[name]
+    Project@22b601e1[mammal.name]
+      Select@5b356c94[]
+        JoinNode@155d2584(INNER/NESTED_LOOPS[mammal.animal == dog.mammal])
+          TableGroupJoinTree@30aadc4(TableGroup@41cee08e(dog), dog - SingleIndexScan@164a0811(Index(test.dog.PRIMARY[IndexColumn(mammal)]), covering/NONE, rows = 1, cost = 5.89280))
+            TableSource@5001ac39(dog - TableFKJoin@11e9c5a7(Foreign Key dog_fkey: test.dog REFERENCES test.domesticanimal))
+          JoinNode@aaf6021(INNER/NESTED_LOOPS[mammal.pregnant == 1])
+            TableGroupJoinTree@44ded648(TableGroup@777387a6(domesticanimal), domesticanimal - SingleIndexScan@7fd01c01(Index(test.domesticanimal.PRIMARY[IndexColumn(mammal)]), covering/NONE, rows = 1, cost = 5.89280))
+              TableSource@e2e30ea(domesticanimal - TableFKJoin@37dec735(Foreign Key fk_mammal_d: test.domesticanimal REFERENCES test.mammal))
+            TableGroupJoinTree@1c6344b(TableGroup@11fcf9cb(mammal), mammal - ExpressionsHKeyScan@2e8853b(TableSource@7a8d59eb(mammal - TableFKJoin@6f82e5fa(Foreign Key fk_animal_m: test.mammal REFERENCES test.animal)), domesticanimal.mammal, rows = 1, cost = 9.29920))
+              TableSource@7a8d59eb(mammal - TableFKJoin@6f82e5fa(Foreign Key fk_animal_m: test.mammal REFERENCES test.animal))
