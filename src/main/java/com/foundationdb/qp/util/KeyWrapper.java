@@ -17,6 +17,8 @@
 
 package com.foundationdb.qp.util;
 
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
@@ -49,9 +51,14 @@ public  class KeyWrapper{
     }
 
     public KeyWrapper(Row row, List<TEvaluatableExpression> comparisonExpressions, List<AkCollator> collators){
+        this(row,  comparisonExpressions, collators, null);
+    }
+
+    public KeyWrapper(Row row, List<TEvaluatableExpression> comparisonExpressions, List<AkCollator> collators, QueryBindings bindings){
         int i = 0;
         for( TEvaluatableExpression expression : comparisonExpressions) {
             expression.with(row);
+            expression.with(bindings);
             expression.evaluate();
             ValueSource columnValue = expression.resultValue();
             Value valueCopy = new Value(columnValue.getType());

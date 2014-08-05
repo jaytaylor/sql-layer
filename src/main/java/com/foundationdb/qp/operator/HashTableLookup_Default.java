@@ -23,7 +23,7 @@ import com.foundationdb.qp.util.KeyWrapper;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
-import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedBoundField;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
 import com.google.common.collect.ArrayListMultimap;
@@ -48,31 +48,26 @@ class HashTableLookup_Default extends Operator
     }
 
     public HashTableLookup_Default(List<AkCollator> collators,
-                                   List<TPreparedExpression> outerComparisonFields,
+                                   List<TPreparedBoundField> outerComparisonFields,
                                    boolean outerLeftJoin,
                                    int hashBindingPosition,
                                    int rowBindingPosition,
-                                   RowType boundRowType,
                                    RowType hashedRowType
     )
     {
         ArgumentValidation.notNull("outerComparisonFields", outerComparisonFields);
         ArgumentValidation.isGTE("outerComparisonFields", outerComparisonFields.size(), 1);
-        ArgumentValidation.isLTE("outerComparisonFields", outerComparisonFields.size(), boundRowType.nFields());
         ArgumentValidation.isNotSame("hashBindingPosition", hashBindingPosition, "rowBindingPosition", rowBindingPosition);
-        ArgumentValidation.notNull("boundRowType", boundRowType);
         ArgumentValidation.notNull("hashedRowType", hashedRowType);
-        int i = 0;
-        for(TPreparedExpression comparisonField : outerComparisonFields){
+
+        for(TPreparedBoundField comparisonField : outerComparisonFields){
             evaluatableComparisonFields.add(comparisonField.build());
-            evaluatableComparisonFields.get(i++);
         }
 
         this.collators = collators;
         this.outerLeftJoin = outerLeftJoin;
         this.hashBindingPosition = hashBindingPosition;
         this.rowBindingPosition = rowBindingPosition;
-        this.boundRowType = boundRowType;
         this.hashedRowType = hashedRowType;
     }
 
@@ -86,7 +81,6 @@ class HashTableLookup_Default extends Operator
 
     private final int hashBindingPosition;
     private final int rowBindingPosition;
-    private final RowType boundRowType;
     private final RowType hashedRowType;
 
     private final List<AkCollator> collators;
@@ -110,7 +104,7 @@ class HashTableLookup_Default extends Operator
             try {
                 CursorLifecycle.checkIdle(this);
                 hashTable = bindings.getHashTable(hashBindingPosition);
-                innerRowList = hashTable.get(new KeyWrapper(getOuterRow(), evaluatableComparisonFields, collators));
+                innerRowList = hashTable.get(new KeyWrapper(null, evaluatableComparisonFields, collators, bindings));
                 innerRowListPosition = 0;
                 closed = false;
             } finally {
@@ -133,7 +127,7 @@ class HashTableLookup_Default extends Operator
                     next = innerRowList.get(innerRowListPosition++);
                     assert(next.rowType().equals(hashedRowType));
                 } else if(outerLeftJoin && innerRowListPosition++ == 0){
-                    next = getOuterRow();
+                    next = bindings.getRow(rowBindingPosition);
                 }
                 if (LOG_EXECUTION) {
                     LOG.debug("HashJoin: yield {}", next);
@@ -199,17 +193,6 @@ class HashTableLookup_Default extends Operator
         @Override
         public void cancelBindings(QueryBindings bindings) {
             bindingsCursor.cancelBindings(bindings);
-        }
-
-
-        private Row getOuterRow()
-        {
-            Row row = bindings.getRow(rowBindingPosition);
-            assert(row.rowType().equals(boundRowType));
-            if (LOG_EXECUTION) {
-                LOG.debug("hash_join: outer {}", row);
-            }
-            return row;
         }
 
         Execution(QueryContext context, QueryBindingsCursor bindingsCursor)

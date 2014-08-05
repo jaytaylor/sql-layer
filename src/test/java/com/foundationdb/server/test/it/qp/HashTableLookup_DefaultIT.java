@@ -41,6 +41,7 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
     private RowType projectRowType;
     List<TPreparedExpression> genericExpressionList;
     List<TPreparedExpression> emptyExpressionList;
+    List<TPreparedBoundField> emptyBoundExpressionList;
 
     @Override
     protected void setupCreateSchema() {
@@ -96,23 +97,24 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
         genericExpressionList = new ArrayList<>();
         genericExpressionList.add(new TPreparedField(customerRowType.typeAt(0), 0));
         emptyExpressionList = new ArrayList<>();
+        emptyBoundExpressionList = new ArrayList<>();
     }
 
     /** Test argument HashJoinLookup_Default */
 
     @Test(expected = IllegalArgumentException.class)
     public void testHashJoinbindingsSame() {
-        hashTableLookup_Default(null, genericExpressionList, false, ROW_BINDING_POSITION, ROW_BINDING_POSITION, customerRowType, customerRowType);
+        hashTableLookup_Default(null, emptyBoundExpressionList, false, ROW_BINDING_POSITION, ROW_BINDING_POSITION, customerRowType);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testHashJoinEmptyComparisonFields() {
-        hashTableLookup_Default(null, emptyExpressionList, false, ROW_BINDING_POSITION, TABLE_BINDING_POSITION, customerRowType, customerRowType);
+        hashTableLookup_Default(null, emptyBoundExpressionList, false, ROW_BINDING_POSITION, TABLE_BINDING_POSITION, customerRowType);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testHashJoinNullComparisonFields() {
-        hashTableLookup_Default(null, null, false, ROW_BINDING_POSITION, TABLE_BINDING_POSITION, customerRowType, customerRowType);
+        hashTableLookup_Default(null, null, false, ROW_BINDING_POSITION, TABLE_BINDING_POSITION, customerRowType);
     }
 
     /** Test arguments using_HashTable  */
@@ -340,9 +342,9 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
             }
         }
 
-        List<TPreparedExpression> outerJoinExpressions = new ArrayList<>();
+        List<TPreparedBoundField> outerJoinExpressions = new ArrayList<>();
         for(int i : outerJoinFields){
-            outerJoinExpressions.add(new TPreparedField(outerRowType.typeAt(i), i));
+            outerJoinExpressions.add(new TPreparedBoundField(outerRowType, ROW_BINDING_POSITION, i));
         }
         List<TPreparedExpression> innerJoinExpressions = new ArrayList<>();
         for(int i : innerJoinFields){
@@ -356,7 +358,6 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
                         leftOuterJoin,
                         TABLE_BINDING_POSITION,
                         ROW_BINDING_POSITION,
-                        outerRowType,
                         innerRowType
                 ),
                 innerRowType,
