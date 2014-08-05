@@ -10,26 +10,23 @@
 ---
 - Statement: ALTER SERVER SET no_such_var TO 'yes'
 - error: [42513]
+
 ---
-- Statement: SET parserInfixLogical TO 'true'
+- Statement: SET OutputFormat TO 'json'
 ---
-- Statement: SELECT 1 || 2;
-- output: [['true']]
+- Statement: SELECT 1 AS c1
+- output: [['{"c1":1}']]
 ---
-- Statement: SET parserInfixLogical TO 'false'
+- Statement: SET OutputFormat TO DEFAULT
 ---
-- Statement: SELECT 1 || 2;
-- output: [['12']]
+- Statement: SELECT 1 AS c1
+- output: [[1]]
+
+# Should affect this session as well
 ---
-- Statement: ALTER SERVER SET parserInfixLogical TO 'true'
+- Statement: ALTER SERVER SET OutputFormat TO 'json'
 ---
-- Statement: SELECT 1 || 2;
-- output: [['12']]
+- Statement: SELECT 1 AS c1
+- output: [['{"c1":1}']]
 ---
-- Statement: SET parserInfixLogical TO DEFAULT
----
-- Statement: SELECT 1 || 2;
-- output: [['true']]
----
-- Statement: ALTER SERVER SET parserInfixLogical TO DEFAULT
-...
+- Statement: ALTER SERVER SET OutputFormat TO DEFAULT
