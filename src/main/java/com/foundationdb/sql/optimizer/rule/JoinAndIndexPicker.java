@@ -849,6 +849,11 @@ public class JoinAndIndexPicker extends BaseRule
         public Plan bestNestedPlan(PlanClass outerPlan, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
             return nestedPlan;
         }
+
+        @Override
+        public Plan bestPlan(Collection<JoinOperator> condJoins, Collection<JoinOperator> outsideJoins) {
+            return plan;
+        }
     }
 
     static class CreateAsPlan extends Plan {
@@ -865,8 +870,13 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Joinable install(boolean copy) {
-            return values;
+        public JoinableWithConditionsToRemove install(boolean copy) {
+            return new JoinableWithConditionsToRemove(values, null);
+        }
+
+        @Override
+        public Collection<? extends ConditionExpression> getConditions() {
+            return null;
         }
     }
 
