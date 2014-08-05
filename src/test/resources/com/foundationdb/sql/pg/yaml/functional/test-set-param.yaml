@@ -16,4 +16,5 @@
 # Make sure server still works
 - Statement: SELECT COUNT(*) FROM all_types
 - output: [[0]]
-...
+---
+- Statement: SET client_encoding TO DEFAULT
