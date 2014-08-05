@@ -45,18 +45,14 @@ public class RandomCostModelService implements CostModelFactory, Service
     }
 
     public void reSeed() {
-        if (!isSpecifiedSeed) {
-            String seedStr = System.getProperty("fdbsql.test.seed");
-            if (seedStr == null) {
-                this.seed = System.currentTimeMillis();
-            } else {
-                this.seed = Long.parseLong(seedStr);
-                isSpecifiedSeed = true;
-            }
+        String seedStr = System.getProperty("fdbsql.test.seed");
+        if (seedStr == null) {
+            this.seed = System.currentTimeMillis();
+        } else {
+            this.seed = Long.parseLong(seedStr);
         }
     }
 
     private long seed;
 
-    private boolean isSpecifiedSeed = false;
 }

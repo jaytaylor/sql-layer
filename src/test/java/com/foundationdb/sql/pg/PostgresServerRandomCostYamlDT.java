@@ -77,7 +77,7 @@ public class PostgresServerRandomCostYamlDT extends PostgresServerMiscYamlIT
             success = true;
         } finally {
             if(success == false){
-                System.err.printf("Failed when ran with random seed: %d \n",
+                System.err.printf("\nFailed when ran with random seed: %d \n",
                         ((RandomCostModelService) serviceManager().getServiceByClass(CostModelFactory.class)).getSeed()
                 );
             }

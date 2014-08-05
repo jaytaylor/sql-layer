@@ -46,7 +46,7 @@
 ---
 - Statement: ALTER TABLE t2 ALL UPDATE STATISTICS
 ---
-- Statement: SELECT id, r FROM t2
+- Statement: SELECT id, r FROM t2 ORDER BY id
 - output: [[1, -1.5],[3, 1.5],[2, 4.0],[4, 5.0]]
 ---
 - Statement: SELECT id, r FROM t2 WHERE r > 0
