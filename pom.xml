@@ -294,6 +294,7 @@
                     <!-- apparently this is backwards, false here means use incremental compilation
                          Maven issue for this: https://jira.codehaus.org/browse/MCOMPILER-209 -->
                     <useIncrementalCompilation>false</useIncrementalCompilation>
+                    <compilerArgument>-Xlint</compilerArgument>
                 </configuration>
             </plugin>
             <plugin>
