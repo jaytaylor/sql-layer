@@ -503,7 +503,7 @@
         </plugins>
     </build>
     
-        <profiles>
+    <profiles>
         <profile>
             <id>test-coverage</id>
             <build>
@@ -557,7 +557,6 @@
                 </plugins>
             </build>
         </profile>
-        
         <profile>
             <id>default</id>
             <activation>
