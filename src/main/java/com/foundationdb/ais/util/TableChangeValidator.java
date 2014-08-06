@@ -30,6 +30,7 @@ import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.store.format.columnkeys.ColumnKeysStorageDescription;
 import com.foundationdb.util.ArgumentValidation;
 import com.google.common.base.Objects;
 
@@ -579,6 +580,11 @@ public class TableChangeValidator {
 
     private static ChangeLevel compare(Column oldCol, Column newCol) {
         if(!oldCol.getType().equalsExcludingNullable(newCol.getType())) {
+            return ChangeLevel.TABLE;
+        }
+        if(oldCol.getName() != null && newCol.getName() != null && 
+                oldCol.getTable().getGroup().getStorageDescription() instanceof ColumnKeysStorageDescription &&
+                !oldCol.getName().equals(newCol.getName())) {
             return ChangeLevel.TABLE;
         }
         boolean oldNull = oldCol.getNullable();
