@@ -336,7 +336,7 @@
                         <fdbsql.port>${fdbsql.port}</fdbsql.port>
                         <fdbsql.postgres.port>${fdbsql.postgres.port}</fdbsql.postgres.port>
                     </systemPropertyVariables>
-                    <argLine>-Xmx512m ${fdbsql.test.extraJvmArgs} ${fdbsql.test.JmxJvmArgs} ${surefireArgLine}</argLine>
+                    <argLine>-Xmx512m ${fdbsql.test.extraJvmArgs} ${fdbsql.test.JmxJvmArgs} ${surefireJacocoArg}</argLine>
                     <includes>
                         <include>**/*Test.java</include>
                         <include>**/*Test?.java</include>
@@ -355,7 +355,7 @@
                         <fdbsql.port>${fdbsql.port}</fdbsql.port>
                         <fdbsql.postgres.port>${fdbsql.postgres.port}</fdbsql.postgres.port>
                     </systemPropertyVariables>
-                    <argLine>-Xmx512m ${fdbsql.test.extraJvmArgs} ${fdbsql.test.JmxJvmArgs} ${failsafeArgLine}</argLine>
+                    <argLine>-Xmx512m ${fdbsql.test.extraJvmArgs} ${fdbsql.test.JmxJvmArgs} ${failsafeJacocoArg}</argLine>
                 </configuration>
                 <executions>
                     <execution>
@@ -529,7 +529,7 @@
                                         Sets the name of the property containing the settings
                                         for JaCoCo runtime agent.
                                     -->
-                                    <propertyName>surefireArgLine</propertyName>
+                                    <propertyName>surefireJacocoArg</propertyName>
                                 </configuration>
                             </execution>
                             <!--
@@ -549,7 +549,7 @@
                                         Sets the name of the property containing the settings
                                         for JaCoCo runtime agent.
                                     -->
-                                    <propertyName>failsafeArgLine</propertyName>
+                                    <propertyName>failsafeJacocoArg</propertyName>
                                 </configuration>
                             </execution>
                         </executions>
@@ -564,8 +564,8 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <surefireArgLine></surefireArgLine>
-                <failsafeArgLine></failsafeArgLine>
+                <surefireJacocoArg></surefireJacocoArg>
+                <failsafeJacocoArg></failsafeJacocoArg>
             </properties>
         </profile>
     </profiles>
