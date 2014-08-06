@@ -1158,7 +1158,7 @@ public class JoinAndIndexPicker extends BaseRule
                     joinType, JoinNode.Implementation.NESTED_LOOPS,
                     joins, costEstimate);
 
-            if (joinType.isSemi() || rightPlan.semiJoinEquivalent()) {
+            if (joinType.isSemi() || (joinType.isInner() && rightPlan.semiJoinEquivalent())) {
                 Collection<JoinOperator> semiJoins = duplicateJoins(joins);
                 Plan loaderPlan = right.bestPlan(condJoins, outsideJoins);
                 cleanJoinConditions(semiJoins, loaderPlan, leftPlan);
