@@ -116,7 +116,7 @@ import org.yaml.snakeyaml.nodes.Tag;
      - params: [[<parameter value>, ...], ...]
      - param_types: [<column type>, ...]
      - output: [[<output value>, ...], ...]
-     - output_ordered: [[<output value>, ...], ...]
+     - output_already_ordered: [[<output value>, ...], ...]
      - row_count: <number of rows>
      - output_types: [<column type>, ...]
      - explain: <explain plan>
@@ -144,8 +144,7 @@ import org.yaml.snakeyaml.nodes.Tag;
      output, error codes, error messages, warnings, or explain output
    - The statement text should not create a table -- use the CreateTable
      command for that purpose
-   - output_ordered: does a sort on the expected and actual during comparison  
-   - output_ordered: does a sort on the expected and actual during comparison
+   - output: does a sort on the expected and actual during comparison
    - Warnings include statement warnings followed by result set warnings for
      each output row
    - The warning message is optional
@@ -199,12 +198,62 @@ class YamlTester
     private static final String RAND_COST_ENGINE = "random-cost";
 
     /** Compare toString values of arguments, ignoring case. */
-    private static final Comparator<? super Object> COMPARE_IGNORE_CASE = new Comparator<Object>()
+    private static final Comparator<List<?>> COMPARE_IGNORE_CASE = new Comparator<List<?>>()
     {
-        public int compare(Object x, Object y) {
-            return String.valueOf(x).compareToIgnoreCase(String.valueOf(y));
+        public int compare(List<?>x, List<?> y) {
+            for (int iInner = 0; iInner < x.size(); iInner++) {
+                Object xObject = x.get(iInner);
+                Object yObject = y.get(iInner);
+                if (yObject == null && xObject != null)
+                    return -1;
+                if (xObject == null && yObject != null)
+                    return 1;
+                if(xObject == null && yObject == null)
+                    continue;
+                if(!xObject.getClass().equals(yObject.getClass())){
+                    if(xObject instanceof Number && yObject instanceof Number){
+                        Double xValue = getDouble((Number)xObject);
+                        Double yValue = getDouble((Number)yObject);
+                        int cmp = ((Comparable) xValue).compareTo(yValue);
+                        if (cmp != 0)
+                            return cmp;
+                    }
+                } else if (xObject instanceof Comparable && yObject instanceof Comparable) {
+                     int cmp = ((Comparable) xObject).compareTo(yObject);
+                     if (cmp != 0)
+                         return cmp;
+                } else if (xObject instanceof byte[] && yObject instanceof byte[]) {
+                    byte[] xBytes = (byte[]) xObject;
+                    byte[] yBytes = (byte[]) yObject;
+                    int cmp = compareBytes(xBytes, yBytes);
+                    if (cmp != 0)
+                        return cmp;
+                }
+            }
+            return 0;
         }
     };
+
+    public static Double getDouble(Number num){
+        switch(num.getClass().getSimpleName() ){
+            case ("Double"): return (Double)num;
+            case ("Float"): return new Double((Float)num);
+            case ("Integer"): return new Double((Integer)num);
+            case ("Long"): return new Double((Long)num);
+            default: return null;
+        }
+    }
+
+    public static int compareBytes(byte[] left, byte[] right) {
+        for (int i = 0; i < left.length && i < right.length; i++) {
+            int a = (left[i] & 0xff);
+            int b = (right[i] & 0xff);
+            if (a != b) {
+                return a - b;
+            }
+        }
+        return left.length - right.length;
+    }
 
     private final String filename;
     private final Reader in;
@@ -625,10 +674,10 @@ class YamlTester
                     parseParams(attributeValue);
                 } else if("param_types".equals(attribute)) {
                     parseParamTypes(attributeValue);
-                } else if("output".equals(attribute)) {
+                } else if("output_already_ordered".equals(attribute)) {
                     this.sorted = false;
                     parseOutput(attributeValue);
-                } else if("output_ordered".equals(attribute)) {
+                } else if("output".equals(attribute)) {
                     this.sorted = true;
                     parseOutput(attributeValue);
                 } else if("row_count".equals(attribute)) {
@@ -703,6 +752,7 @@ class YamlTester
             }
             assertNull("The params attribute must not appear more than once", params);
             params = rows(value, "params value");
+            assert(params.size() == 1);
         }
 
         private void parseParamTypes(Object value) {

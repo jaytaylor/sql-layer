@@ -30,8 +30,12 @@
 - output: [[0], [1], [-1]]
 ---
 - Statement: SELECT bigint_field FROM all_types WHERE bigint_field IN (?)
-- params: [[1], [9223372036854775807]]
-- output: [[1], [9223372036854775807]]
+- params: [[1]]
+- output: [[1]]
+---
+- Statement: SELECT bigint_field FROM all_types WHERE bigint_field IN (?)
+- params: [[9223372036854775807]]
+- output: [[9223372036854775807]]
 ---
 - Statement: SELECT bigint_field IN (double_field) FROM all_types
 - output: [[null], [true], [true], [true], [false], [false]]
@@ -69,14 +73,19 @@
 ---
 - Statement: SELECT bigint_unsigned_field FROM all_types
     WHERE bigint_unsigned_field IN (?)
-- params: [[1], [9223372036854775807]]
-- output: [[1], [9223372036854775807]]
+- params: [[9223372036854775807]]
+- output: [[9223372036854775807]]
+---
+- Statement: SELECT bigint_unsigned_field FROM all_types
+    WHERE bigint_unsigned_field IN (?)
+- params: [[1]]
+- output: [[1]]
 ---
 - Statement: SELECT bigint_unsigned_field IN (bigint_field) FROM all_types
 - output: [[null], [true], [true], [false]]
 
 ---
-- Statement: DELETE FROM all_types
+- Statement: DELETE FROM all_types          byearayutil
 
 # blob
 ---
@@ -90,14 +99,18 @@
 ---
 - Statement: SELECT blob_field FROM all_types WHERE blob_field
     IN ('dead', 'beef')
-- output: [[!utf8-bytes 'dead'], [!utf8-bytes 'beef']]
+- output: [[!utf8-bytes 'beef'],[!utf8-bytes 'dead']]
 ---
 - Statement: SELECT blob_field FROM all_types WHERE blob_field IN (clob_field)
-- output: [[!!binary ''], [!utf8-bytes 'dead']]
+- output: [[!utf8-bytes 'dead'], [!!binary '']]
 ---
 - Statement: SELECT blob_field FROM all_types WHERE blob_field IN (?)
-- params: [[!utf8-bytes 'beef'], [!utf8-bytes 'dead']]
-- output: [[!utf8-bytes 'beef'], [!utf8-bytes 'dead']]
+- params: [[!utf8-bytes 'dead']]
+- output: [[!utf8-bytes 'dead']]
+---
+- Statement: SELECT blob_field FROM all_types WHERE blob_field IN (?)
+- params: [[!utf8-bytes 'beef']]
+- output: [[!utf8-bytes 'beef']]
 ---
 - Statement: SELECT blob_field IN (clob_field) FROM all_types
 - output: [[null], [true], [true], [false]]
@@ -124,8 +137,12 @@
 - output: [[''], ['c']]
 ---
 - Statement: SELECT char_field FROM all_types WHERE char_field IN (?)
-- params: [['d'], ['c']]
-- output: [['d'], ['c']]
+- params: [ ['c']]
+- output: [ ['c']]
+---
+- Statement: SELECT char_field FROM all_types WHERE char_field IN (?)
+- params: [['d']]
+- output: [['d']]
 ---
 - Statement: SELECT char_field IN (char_multi_field) FROM all_types
 - output: [[null], [true], [true], [false]]
@@ -154,8 +171,12 @@
 - output: [[''], ['cat']]
 ---
 - Statement: SELECT char_multi_field FROM all_types WHERE char_multi_field IN (?)
-- params: [['dog'], ['cat']]
-- output: [['dog'], ['cat']]
+- params: [['cat']]
+- output: [['cat']]
+---
+- Statement: SELECT char_multi_field FROM all_types WHERE char_multi_field IN (?)
+- params: [['dog']]
+- output: [['dog']]
 ---
 - Statement: SELECT char_multi_field IN (varchar_field) FROM all_types
 - output: [[null], [true], [true], [false]]
@@ -181,8 +202,12 @@
 - output: [[''], ['dead']]
 ---
 - Statement: SELECT clob_field FROM all_types WHERE clob_field IN (?)
-- params: [['beef'], ['dead']]
-- output: [['beef'], ['dead']]
+- params: [['beef']]
+- output: [['beef']]
+---
+- Statement: SELECT clob_field FROM all_types WHERE clob_field IN (?)
+- params: [['dead']]
+- output: [['dead']]
 ---
 - Statement: SELECT blob_field IN (clob_field) FROM all_types
 - output: [[null], [true], [true], [false]]
@@ -216,8 +241,12 @@
 - output: [[0], [1], [-1]]
 ---
 - Statement: SELECT decimal_field FROM all_types WHERE decimal_field IN (?)
-- params: [[-1.0], [1.0]]
-- output: [[-1], [1]]
+- params: [[-1.0]]
+- output: [[-1]]
+---
+- Statement: SELECT decimal_field FROM all_types WHERE decimal_field IN (?)
+- params: [[1.0]]
+- output: [[1]]
 ---
 - Statement: SELECT decimal_field IN (double_field) FROM all_types
 - output: [[null], [true], [true], [true], [false], [false]]
@@ -260,8 +289,12 @@
 - output: [[0.0], [1.0], [-1.0]]
 ---
 - Statement: SELECT double_field FROM all_types WHERE double_field IN (?)
-- params: [[-1.0], [1.0]]
-- output: [[-1.0], [1.0]]
+- params: [[1.0]]
+- output: [[1.0]]
+---
+- Statement: SELECT double_field FROM all_types WHERE double_field IN (?)
+- params: [[-1.0]]
+- output: [[-1.0]]
 ---
 - Statement: SELECT double_field IN (varchar_field) FROM all_types
 - output: [[null], [true], [true], [true], [false], [false], [false], [false],
@@ -303,8 +336,12 @@
 - output: [[0.0], [1.0], [-1.0]]
 ---
 - Statement: SELECT float_field FROM all_types WHERE float_field IN (?)
-- params: [[-1.0], [1.0]]
-- output: [[-1.0], [1.0]]
+- params: [[1.0]]
+- output: [[1.0]]
+---
+- Statement: SELECT float_field FROM all_types WHERE float_field IN (?)
+- params: [[-1.0]]
+- output: [[-1.0]]
 ---
 - Statement: SELECT float_field IN (double_field) FROM all_types
 - output: [[null], [true], [true], [true], [false], [false], [false], [false],
@@ -337,8 +374,12 @@
 - output: [[0], [1], [-1]]
 ---
 - Statement: SELECT integer_field FROM all_types WHERE integer_field IN (?)
-- params: [[1], [2147483647]]
-- output: [[1], [2147483647]]
+- params: [[2147483647]]
+- output: [[2147483647]]
+---
+- Statement: SELECT integer_field FROM all_types WHERE integer_field IN (?)
+- params: [[1]]
+- output: [[1]]
 ---
 - Statement: SELECT integer_field IN (double_field) FROM all_types
 - output: [[null], [true], [true], [true], [false], [false]]
@@ -372,8 +413,12 @@
 - output: [[0], [1], [-1]]
 ---
 - Statement: SELECT numeric_field FROM all_types WHERE numeric_field IN (?)
-- params: [[-1.0], [1.0]]
-- output: [[-1], [1]]
+- params: [[1.0]]
+- output: [[1]]
+---
+- Statement: SELECT numeric_field FROM all_types WHERE numeric_field IN (?)
+- params: [[-1.0]]
+- output: [[-1]]
 ---
 - Statement: SELECT numeric_field IN (double_field) FROM all_types
 - output: [[null], [true], [true], [true], [false], [false]]
@@ -413,8 +458,12 @@
 - output: [[0.0], [1.0], [-1.0]]
 ---
 - Statement: SELECT real_field FROM all_types WHERE real_field IN (?)
-- params: [[-1.0], [1.0]]
-- output: [[-1.0], [1.0]]
+- params: [[-1.0]]
+- output: [[-1.0]]
+---
+- Statement: SELECT real_field FROM all_types WHERE real_field IN (?)
+- params: [[1.0]]
+- output: [[1.0]]
 ---
 - Statement: SELECT real_field IN (float_field) FROM all_types
 - output: [[null], [true], [true], [true], [false], [false], [false], [false],
@@ -447,8 +496,12 @@
 - output: [[0], [1], [-1]]
 ---
 - Statement: SELECT smallint_field FROM all_types WHERE smallint_field IN (?)
-- params: [[1], [32767]]
-- output: [[1], [32767]]
+- params: [[1]]
+- output: [[1]]
+---
+- Statement: SELECT smallint_field FROM all_types WHERE smallint_field IN (?)
+- params: [[32767]]
+- output: [[32767]]
 ---
 - Statement: SELECT smallint_field IN (double_field) FROM all_types
 - output: [[null], [true], [true], [true], [false], [false]]
@@ -475,8 +528,12 @@
 - output: [['00:00:00'], ['08:30:00']]
 ---
 - Statement: SELECT time_field FROM all_types WHERE time_field IN (?)
-- params: [['12:34:56'], ['00:00:00']]
-- output: [['12:34:56'], ['00:00:00']]
+- params: [['12:34:56']]
+- output: [['12:34:56']]
+---
+- Statement: SELECT time_field FROM all_types WHERE time_field IN (?)
+- params: [['00:00:00']]
+- output: [['00:00:00']]
 ---
 - Statement: SELECT time_field IN (varchar_field) FROM all_types
 - output: [[null], [true], [true], [false]]
@@ -509,9 +566,12 @@
     [!re '1970-01-01 08:30:00([.]0)?']]
 ---
 - Statement: SELECT timestamp_field FROM all_types WHERE timestamp_field IN (?)
-- params: [['2001-02-03 12:34:56'], ['0001-01-01 00:00:01']]
-- output: [[!re '2001-02-03 12:34:56([.]0)?'],
-    [!re '0001-01-01 00:00:01([.]0)?']]
+- params: [['2001-02-03 12:34:56']]
+- output: [[!re '2001-02-03 12:34:56([.]0)?']]
+---
+- Statement: SELECT timestamp_field FROM all_types WHERE timestamp_field IN (?)
+- params: [['0001-01-01 00:00:01']]
+- output: [[!re '0001-01-01 00:00:01([.]0)?']]
 ---
 - Statement: SELECT timestamp_field IN (varchar_field) FROM all_types
 - output: [[null], [true], [true], [false]]

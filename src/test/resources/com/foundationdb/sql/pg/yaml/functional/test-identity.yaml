@@ -36,7 +36,7 @@
 - Statement: insert into t1 (c1) values (11), (DEFAULT), (12), (DEFAULT)
 ---
 - Statement: select * from t1 order by c1;
-- output: [[1], [2], [3], [4], [10], [11], [12]]
+- output_already_ordered: [[1], [2], [3], [4], [10], [11], [12]]
 ---
 - DropTable: t1
 ---
@@ -74,7 +74,7 @@
 - Statement: insert into t1 (c1) values (7)
 ---
 - Statement: select * from t1 order by c1
-- output: [[7], [10], [20]]
+- output_already_ordered: [[7], [10], [20]]
 ---
 - DropTable: t1
 ---
@@ -88,12 +88,12 @@
 - Statement: insert into t1 (c1) values (DEFAULT)
 ---
 - Statement: select * from t1 order by c1
-- output: [[-1], [0]]
+- output_already_ordered: [[-1], [0]]
 ---
 - Statement: insert into t1 (c1) values (7)
 ---
 - Statement: select * from t1 order by c1
-- output: [[-1], [0], [7]]
+- output_already_ordered: [[-1], [0], [7]]
 ---
 - DropTable: t1
 ---
@@ -107,12 +107,12 @@
 - Statement: insert into t1 (c1) values (DEFAULT)
 ---
 - Statement: select * from t1 order by c1
-- output: [[90], [100]]
+- output_already_ordered: [[90], [100]]
 ---
 - Statement: insert into t1 (c1) values (7)
 ---
 - Statement: select * from t1 order by c1
-- output: [[7], [90], [100]]
+- output_already_ordered: [[7], [90], [100]]
 ---
 - DropTable: t1
 ---
