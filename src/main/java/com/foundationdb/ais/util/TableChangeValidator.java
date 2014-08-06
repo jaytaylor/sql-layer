@@ -582,8 +582,7 @@ public class TableChangeValidator {
         if(!oldCol.getType().equalsExcludingNullable(newCol.getType())) {
             return ChangeLevel.TABLE;
         }
-        if(oldCol.getName() != null && newCol.getName() != null && 
-                oldCol.getTable().getGroup().getStorageDescription() instanceof ColumnKeysStorageDescription &&
+        if(oldCol.getTable().getGroup().getStorageDescription() instanceof ColumnKeysStorageDescription &&
                 !oldCol.getName().equals(newCol.getName())) {
             return ChangeLevel.TABLE;
         }
