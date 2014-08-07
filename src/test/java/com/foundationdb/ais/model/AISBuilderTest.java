@@ -286,7 +286,7 @@ public class AISBuilderTest
             Assert.assertEquals(3, ais.getTables().size());
             Assert.assertEquals(0, ais.getGroups().size());
             Assert.assertEquals(2, ais.getJoins().size());
-            Assert.assertNull( ais.getGroup("group") );
+            Assert.assertNull( ais.getGroup( new TableName("schema", "group")) );
         }
 
         // Step 3 -- regroup with different name
@@ -918,7 +918,7 @@ public class AISBuilderTest
         Assert.assertEquals(2, ais.getTables().size());
         Assert.assertEquals(1, ais.getGroups().size());
 
-        final Group group = ais.getGroup("coi");
+        final Group group = ais.getGroup(new TableName("test", "coi"));
         Assert.assertEquals(1, group.getIndexes().size());
         final Index index = group.getIndex("name_date");
         Assert.assertNotNull(index);
@@ -981,7 +981,7 @@ public class AISBuilderTest
         Assert.assertEquals(3, ais.getTables().size());
         Assert.assertEquals(1, ais.getGroups().size());
 
-        final Group group = ais.getGroup("coi");
+        final Group group = ais.getGroup( new TableName("test","coi"));
         Assert.assertEquals(1, group.getIndexes().size());
         final Index index = group.getIndex("name_sku");
         Assert.assertNotNull(index);
@@ -1051,7 +1051,7 @@ public class AISBuilderTest
         Assert.assertEquals(3, ais.getTables().size());
         Assert.assertEquals(1, ais.getGroups().size());
 
-        final Group group = ais.getGroup("coi");
+        final Group group = ais.getGroup(new TableName("test","coi"));
         Assert.assertEquals(1, group.getIndexes().size());
         final Index index = group.getIndex("name_date_sku");
         Assert.assertNotNull(index);

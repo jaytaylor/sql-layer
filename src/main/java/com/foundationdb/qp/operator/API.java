@@ -312,6 +312,7 @@ public class API
      * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
      */
     @Deprecated
+    @SuppressWarnings("deprecation")
     public static Operator indexScan_Default(IndexRowType indexType, boolean reverse, IndexKeyRange indexKeyRange)
     {
         if (indexKeyRange == null) {
@@ -330,6 +331,7 @@ public class API
      * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
      */
     @Deprecated
+    @SuppressWarnings("deprecation")
     public static Operator indexScan_Default(IndexRowType indexType,
                                              boolean reverse,
                                              IndexKeyRange indexKeyRange,
@@ -360,6 +362,7 @@ public class API
      * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
      */
     @Deprecated
+    @SuppressWarnings("deprecation")
     public static Operator indexScan_Default(IndexRowType indexType,
                                              boolean reverse,
                                              IndexKeyRange indexKeyRange,

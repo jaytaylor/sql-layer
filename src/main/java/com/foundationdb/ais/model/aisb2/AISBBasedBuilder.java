@@ -204,11 +204,6 @@ public class AISBBasedBuilder
         }
 
         @Override
-        public NewAISGroupIndexStarter groupIndex(String indexName) {
-            return groupIndex(indexName, null);
-        }
-
-        @Override
         public NewAISGroupIndexStarter groupIndex(String indexName, Index.JoinType joinType) {
             ActualGroupIndexBuilder actual  = new ActualGroupIndexBuilder(aisb, defaultSchema);
             return actual.groupIndex(indexName, joinType);
@@ -740,10 +735,6 @@ public class AISBBasedBuilder
         }
         // NewAISGroupIndexBuilder interface
 
-        @Override
-        public NewAISGroupIndexStarter groupIndex(String indexName) {
-            return groupIndex(indexName, null);
-        }
 
         @Override
         public NewAISGroupIndexStarter groupIndex(String indexName, Index.JoinType joinType) {

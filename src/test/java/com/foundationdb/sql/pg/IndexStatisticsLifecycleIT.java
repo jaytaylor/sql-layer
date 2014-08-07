@@ -117,7 +117,7 @@ public class IndexStatisticsLifecycleIT extends PostgresServerFilesITBase
         Integer parentNameCount = entries.get(parentName);
         assertNotNull("parent name was analyzed", parentNameCount);
         assertEquals("parent name two entries", 2, parentNameCount.intValue());
-        GroupIndex bothValue = ais.getGroup("parent").getIndex("value");
+        GroupIndex bothValue = ais.getGroup(new TableName(SCHEMA_NAME, "parent")).getIndex("value");
         Integer bothValueCount = entries.get(bothValue);
         assertNotNull("group index was analyzed", bothValueCount);
         assertEquals("group index two entries", 6, bothValueCount.intValue());
@@ -126,7 +126,7 @@ public class IndexStatisticsLifecycleIT extends PostgresServerFilesITBase
         entries = check();
         ais = ddl().getAIS(session());
         parentPK = ais.getTable(SCHEMA_NAME, "parent").getIndex("PRIMARY");
-        bothValue = ais.getGroup("parent").getIndex("value");
+        bothValue = ais.getGroup(new TableName(SCHEMA_NAME , "parent")).getIndex("value");
         parentPKCount = entries.get(parentPK);
         bothValueCount = entries.get(bothValue);
         assertEquals("parent PK intact after name drop", 2, parentPKCount.intValue());

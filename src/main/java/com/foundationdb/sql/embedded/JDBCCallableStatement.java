@@ -153,6 +153,8 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
         }
     }
 
+    @Deprecated // as in parent class
+    @SuppressWarnings("depricated")
     @Override
     public BigDecimal getBigDecimal(int parameterIndex, int scale) throws SQLException {
         return getBigDecimal(parameterIndex).setScale(scale);

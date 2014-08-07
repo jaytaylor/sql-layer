@@ -292,7 +292,7 @@ public class TableDDL
                                       final AkibanInformationSchema targetAIS,
                                       TableElementList nodes) {
         final Set<Group> groups = new HashSet<>();
-        for(TableElementNode elem : nodes) {
+        for(TableElementNode elem : nodes) { 
             if(elem instanceof FKConstraintDefinitionNode) {
                 FKConstraintDefinitionNode fkdn = (FKConstraintDefinitionNode)elem;
                 if(fkdn.getRefTableName() != null) {

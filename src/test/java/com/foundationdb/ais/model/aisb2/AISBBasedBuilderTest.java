@@ -71,8 +71,8 @@ public class AISBBasedBuilderTest {
                         .table("order").colInt("oid").colInt("c2").colInt("c_id").pk("oid", "c2").key("c_id", "c_id").joinTo("customer").on("c_id", "cid")
                         .table("item").colInt("iid").colInt("o_id").colInt("o_c2").key("o_id", "o_id", "o_c2").joinTo("order").on("o_id", "oid").and("o_c2", "c2")
                         .table("address").colInt("aid").colInt("c_id").key("c_id", "c_id").joinTo("customer").on("c_id", "cid")
-                .groupIndex("name_c2").on("customer", "name").and("order", "c2")
-                .groupIndex("iid_name_c2").on("item", "iid").and("customer", "name").and("order", "c2")
+                .groupIndex("name_c2", null).on("customer", "name").and("order", "c2")
+                .groupIndex("iid_name_c2", null).on("item", "iid").and("customer", "name").and("order", "c2")
                         .ais();
 
         Group cGroup = ais.getGroup(new TableName("sch", "customer"));
