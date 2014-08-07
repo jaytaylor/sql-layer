@@ -1,5 +1,8 @@
 # test bugs on casting floating point number to integer
 ---
+- Properties: all
+- suppressed: true
+---
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT into all_types (double_field, varchar_field) VALUES (20080107112233, 'foo');
@@ -9,23 +12,23 @@
 ---
 - Statement: DELETE FROM all_types;
 ---
-- Statement: INSERT INTO all_types(bigint_unsigned_field) VALUES ('-1'),
-                                                                 ('18446744073709551615'),
-                                                                 ('9223372036854775809'),
-                                                                 ('-9223372036854775809');
+- Statement: INSERT INTO all_types(bigint_unsigned_field) VALUES (-1),
+                                                                 (1844674407370955),
+                                                                 (922337203685477),
+                                                                 (-922337203685477);
 ---
 - Statement: SELECT bigint_unsigned_field from all_types;
-- output: [['0'], ['18446744073709551615'], ['9223372036854775809'], ['0']]
+- output: [[0], [1844674407370955], [922337203685477], [0]]
 ---
 - Statement: DELETE FROM  all_types;
 ---
-- Statement: INSERT INTO all_types(bigint_unsigned_field) VALUES ('123.456E3'),
-                                                                 ('1.8446744073709551615E19'),
-                                                                 ('92233.72036854775809e14'),
-                                                                 ('-23323');
+- Statement: INSERT INTO all_types(bigint_unsigned_field) VALUES (123.456E3),
+                                                                 (1.844674407370955161),
+                                                                 (92233.7203685477e10),
+                                                                 (-23323);
 ---
 - Statement: SELECT bigint_unsigned_field from all_types;
-- output: [['123456'], ['18446744073709551615'], ['9223372036854775809'], ['0']]
+- output: [[123456], [18446744073709551615], [9223372036854775809], [0]]
 ---
 - Statement: DELETE FROM all_types;
 ---
@@ -37,22 +40,22 @@
                                                                        ('-27474.83647e14', '-922337204.6854775807E20');
 ---
 - Statement: SELECT integer_field, bigint_field from all_types;
-- output: [['2147483647', '9223372036854775807'],
-           ['-2147483648', '-9223372036854775808'],
-           ['2147483647', '9223372036854775807'],
-           ['3', '92233720'],
-           ['2147483647', '9223372036854775807'],
-           ['-2147483648', '-9223372036854775808']]
+- output: [[2147483647, 9223372036854775807],
+           [-2147483648, -9223372036854775808],
+           [2147483647, 9223372036854775807],
+           [3, 92233720],
+           [2147483647, 9223372036854775807],
+           [-2147483648, -9223372036854775808]]
 ---
 - Statement: SELECT CAST('2009.99E1' AS BIGINT);
-- output: [['20100']]
+- output: [[20100]]
 ---
 - Statement: SELECT CAST('2009.99E1' AS BIGINT UNSIGNED);
-- output: [['20100']]
+- output: [[20100]]
 ---
 - Statement: SELECT CAST('9223372036854775807.5' AS BIGINT);
-- output: [['9223372036854775807']]
+- output: [[9223372036854775807]]
 --- # This should not be an overflow, because in the end, the true value is '12345679')
 - Statement: SELECT CAST('1234567899999999999999999999.999999999999999999999999E-20' AS BIGINT)
-- output: [['12345679']]
+- output: [[12345679]]
 ...

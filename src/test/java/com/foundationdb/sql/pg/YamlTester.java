@@ -35,6 +35,7 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -204,19 +205,29 @@ class YamlTester
             for (int iInner = 0; iInner < x.size(); iInner++) {
                 Object xObject = x.get(iInner);
                 Object yObject = y.get(iInner);
-                if (yObject == null && xObject != null)
-                    return -1;
-                if (xObject == null && yObject != null)
-                    return 1;
-                if(xObject == null && yObject == null)
-                    continue;
-                if(!xObject.getClass().equals(yObject.getClass())){
-                    if(xObject instanceof Number && yObject instanceof Number){
-                        Double xValue = getDouble((Number)xObject);
-                        Double yValue = getDouble((Number)yObject);
+                if(xObject == null || yObject == null) {
+                    if (yObject == null && xObject != null)
+                        return -1;
+                    if (xObject == null && yObject != null)
+                        return 1;
+                }else if(!xObject.getClass().equals(yObject.getClass())) {
+                    if ((xObject instanceof Double || xObject instanceof Float ) &&
+                        (yObject instanceof Double || xObject instanceof Float)) {
+                        Double xValue = getDouble(xObject);
+                        Double yValue = getDouble(yObject);
                         int cmp = ((Comparable) xValue).compareTo(yValue);
                         if (cmp != 0)
                             return cmp;
+                    } else if ((xObject instanceof Integer || xObject instanceof Long ) &&
+                            (yObject instanceof Integer || xObject instanceof Long)) {
+                        Long xValue = getLong(xObject);
+                        Long yValue = getLong(yObject);
+                        int cmp = ((Comparable) xValue).compareTo(yValue);
+                        if (cmp != 0)
+                            return cmp;
+                    } else {
+                        int cmp = xObject.getClass().toString().compareToIgnoreCase(yObject.getClass().toString());
+                        return cmp;
                     }
                 } else if (xObject instanceof Comparable && yObject instanceof Comparable) {
                      int cmp = ((Comparable) xObject).compareTo(yObject);
@@ -234,15 +245,23 @@ class YamlTester
         }
     };
 
-    public static Double getDouble(Number num){
+    public static Double getDouble(Object num){
         switch(num.getClass().getSimpleName() ){
             case ("Double"): return (Double)num;
             case ("Float"): return new Double((Float)num);
-            case ("Integer"): return new Double((Integer)num);
-            case ("Long"): return new Double((Long)num);
             default: return null;
         }
     }
+
+    public static Long getLong(Object num){
+        switch(num.getClass().getSimpleName() ){
+            case ("Integer"): return new Long((Integer)num);
+            case ("Long"): return (Long)num;
+            default: return null;
+        }
+    }
+
+
 
     public static int compareBytes(byte[] left, byte[] right) {
         for (int i = 0; i < left.length && i < right.length; i++) {

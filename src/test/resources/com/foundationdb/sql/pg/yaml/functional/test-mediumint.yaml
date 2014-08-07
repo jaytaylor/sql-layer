@@ -1,20 +1,23 @@
 # test create/insert to MEDIUMINT column
 ---
-- CreateTable: t (c mediumint);
+- Properties: all
+- suppressed: true
 ---
-- Statement: INSERT INTO t VALUES ('5'), ('500'), ('8388610'), ('8388607'), ('-8388607'), ('-8388608'), ('-8388610')
+- CreateTable: t (c mediumint, id int);
+---
+- Statement: INSERT INTO t VALUES (5,1), (500,2), (8388610,3), (8388607,4), (-8388607,5), (-8388608,6), (-8388610,7)
 ---
 - Statement: SELECT * FROM t;
-- output: [['5'], ['500'], ['8388607'], ['8388607'], ['-8388607'], ['-8388608'], ['-8388608']]
+- output: [[5,1], [500,2], [8388607,3], [8388607,4], [-8388607,5], [-8388608,6], [-8388608,7]]
 #- output_types: [MEDIUMINT] the type-id returnt by ResultSet object in YamlTester.java says this is a 
 # SMALLINT (id =7), but manual testing through psql shows it really is MEDIUMINT
 ---
 - CreateTable: u (c mediumint unsigned);
 ---
-- Statement: INSERT INTO u VALUES ('-400'), ('0'), ('8388610'), ('8388610'), ('16777215'), ('16777216');
+- Statement: INSERT INTO u VALUES (-400), (0), (8388610), (8388610), (16777215), (16777216);
 ---
 - Statement: SELECT * FROM u;
-- output: [['0'], ['0'], ['8388610'], ['8388610'], ['16777215'], ['16777215']]
+- output: [[0], [0], [8388610], [8388610], [16777215], [16777215]]
 ---
 - DropTable: t
 ---
