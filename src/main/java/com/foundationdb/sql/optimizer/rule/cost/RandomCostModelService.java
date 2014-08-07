@@ -24,7 +24,7 @@ public class RandomCostModelService implements CostModelFactory, Service
 {
     @Override
     public CostModel newCostModel(Schema schema, TableRowCounts tableRowCounts) {
-        return new RandomCostModel(schema, tableRowCounts);
+        return new RandomCostModel(schema, tableRowCounts, seed);
     }
 
     @Override
@@ -39,4 +39,20 @@ public class RandomCostModelService implements CostModelFactory, Service
     public void crash() {
         stop();
     }
+
+    public long getSeed(){
+        return seed;
+    }
+
+    public void reSeed() {
+        String seedStr = System.getProperty("fdbsql.test.seed");
+        if (seedStr == null) {
+            this.seed = System.currentTimeMillis();
+        } else {
+            this.seed = Long.parseLong(seedStr);
+        }
+    }
+
+    private long seed;
+
 }

@@ -291,6 +291,7 @@ public enum ErrorCode {
     DEFAULT_OUTSIDE_INSERT  ("42", "521", Importance.DEBUG, DefaultOutsideInsertException.class),
     FOREIGN_KEY_NOT_DEFERRABLE ("42", "523", Importance.DEBUG, ForeignKeyNotDeferrableException.class),
     NO_AGGREGATE_WITH_GROUP_BY("42", "524", Importance.DEBUG, NoAggregateWithGroupByException.class),
+    NO_TABLE_SPECIFIED      ("42", "525", Importance.DEBUG, NoTableSpecifiedInQueryException.class),
     
     // Class 42/600 - JSON interface errors
     KEY_COLUMN_MISMATCH     ("42", "600", Importance.DEBUG, KeyColumnMismatchException.class),
@@ -448,6 +449,8 @@ public enum ErrorCode {
     AIS_VALIDATION          ("53", "00E", Importance.ERROR, AISValidationException.class),
     PROTOBUF_BUILD          ("53", "00F", Importance.ERROR, ProtobufBuildException.class),
     NOT_ALLOWED_BY_CONFIG   ("53", "00G", Importance.ERROR, NotAllowedByConfigException.class),
+    JOIN_GRAPH_FAILURE      ("53", "00H", Importance.ERROR, FailedJoinGraphCreationException.class),
+    CORRUPTED_PLAN          ("53", "00I", Importance.ERROR, CorruptedPlanException.class),
     
     // Class 55 - Type conversion errors
     UNKNOWN_TYPE            ("55", "001", Importance.DEBUG, UnknownDataTypeException.class),

@@ -3,10 +3,10 @@ SelectQuery@2399a19d
     Project@402b803f[father.name, mother.name, animal.description]
       Select@67f0c902[]
         JoinNode@4d654e9e(INNER/NESTED_LOOPS[mother.id == animal.mother_id])
-          TableGroupJoinTree@76e1f7bf(TableGroup@2b4b2dd(parent), mother - SingleIndexScan@360c8ec4(Index(test.parent.name[IndexColumn(name)]), covering/NONE, rows = 1, cost = 7.99100))
+          TableGroupJoinTree@76e1f7bf(TableGroup@2b4b2dd(parent), mother - SingleIndexScan@360c8ec4(Index(test.parent.name[IndexColumn(name)]), covering/NONE, rows = 1, cost = 7.17100))
             TableSource@4c98bd99(mother - TableGroup@2b4b2dd(parent))
           JoinNode@3281dca5(INNER/NESTED_LOOPS[father.id == animal.father_id])
-            TableGroupJoinTree@986fff7(TableGroup@254acc8e(animal), animal - ExpressionsHKeyScan@6bbcee8a(TableSource@398f573b(animal - TableGroup@254acc8e(animal)), 42, rows = 1, cost = 9.89020))
-              TableSource@398f573b(animal - TableGroup@254acc8e(animal))
-            TableGroupJoinTree@5827384f(TableGroup@48a9c8a8(parent), father - SingleIndexScan@1d7d593b(Index(test.parent.name[IndexColumn(name)]), covering/NONE, rows = 1, cost = 8.81100))
+            TableGroupJoinTree@5827384f(TableGroup@48a9c8a8(parent), father - SingleIndexScan@1d7d593b(Index(test.parent.name[IndexColumn(name)]), covering/NONE, rows = 1, cost = 7.17100))
               TableSource@71a80002(father - TableGroup@48a9c8a8(parent))
+            TableGroupJoinTree@986fff7(TableGroup@254acc8e(animal), animal - ExpressionsHKeyScan@6bbcee8a(TableSource@398f573b(animal - TableGroup@254acc8e(animal)), 42, rows = 1, cost = 10.7102))
+              TableSource@398f573b(animal - TableGroup@254acc8e(animal))

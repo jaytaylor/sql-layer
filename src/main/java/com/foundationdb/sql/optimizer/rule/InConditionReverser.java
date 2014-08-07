@@ -198,8 +198,8 @@ public class InConditionReverser extends BaseRule
                                      ConditionList joinConditions, 
                                      JoinType semiType) {
         JoinNode join = new JoinNode(selectInput, semiInput, semiType);
-        join.setJoinConditions(joinConditions);
         select.getConditions().remove(selectElement);
+        join.setJoinConditions(joinConditions);
         select.replaceInput(selectInput, join);
     }
 

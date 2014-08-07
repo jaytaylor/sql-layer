@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -48,6 +49,11 @@ public class GroupLoopScan extends BaseScan
 
     public List<ComparisonCondition> getJoinConditions() {
         return joinConditions;
+    }
+
+    @Override
+    public Collection<? extends ConditionExpression> getConditions() {
+        return getJoinConditions();
     }
 
     public ColumnExpression getOutsideJoinColumn() {
@@ -82,5 +88,4 @@ public class GroupLoopScan extends BaseScan
         str.append(")");
         return str.toString();
     }
-
 }

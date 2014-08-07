@@ -36,12 +36,15 @@ public class PostgresServerYamlITBase extends PostgresServerITBase
     protected PostgresServerYamlITBase() {
     }
 
+    protected boolean isRandomCost(){
+        return false;
+    }
     /** Run a test with YAML input from the specified file. */
     protected void testYaml(File file) throws Exception {
         LOG.debug("File: {}", file);
         Throwable thrown = null;
         try(Reader in = new InputStreamReader(new FileInputStream(file), "UTF-8")) {
-            new YamlTester(file.toString(), in, getConnection()).test();
+            new YamlTester(file.toString(), in, getConnection(), isRandomCost()).test();
             LOG.debug("Test passed");
         } catch(Exception | AssertionError e) {
             thrown = e;

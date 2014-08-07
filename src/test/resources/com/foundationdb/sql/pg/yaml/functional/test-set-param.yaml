@@ -8,12 +8,7 @@
 - Statement: SET no_such_var TO 'yes'
 - error: [42513]
 ---
-- Statement: SET parserInfixBit TO 'true'
----
-- Statement: SET parserInfixBit TO DEFAULT
----
-- Statement: SET parserInfixBit TO 'maybe'
-- error: [22023]
+- Statement: SET client_encoding TO 'utf8'
 ---
 - Statement: SET client_encoding TO 'garbled'
 - error: [22023]
@@ -21,4 +16,5 @@
 # Make sure server still works
 - Statement: SELECT COUNT(*) FROM all_types
 - output: [[0]]
-...
+---
+- Statement: SET client_encoding TO DEFAULT

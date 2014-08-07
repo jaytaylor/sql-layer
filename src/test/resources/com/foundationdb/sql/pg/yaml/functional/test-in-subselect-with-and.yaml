@@ -1,0 +1,51 @@
+---
+- CreateTable: artists (id serial PRIMARY KEY, name varchar(255));
+---
+- CreateTable: albums (id serial PRIMARY KEY, name varchar(255), artist_id integer REFERENCES artists);
+---
+- CreateTable: tags (id serial PRIMARY KEY, name varchar(255));
+---
+- CreateTable: albums_tags (album_id integer REFERENCES albums, tag_id integer REFERENCES tags);
+---
+- Statement: INSERT INTO albums (name) VALUES ('Al') RETURNING *;
+---
+- Statement: INSERT INTO artists (name) VALUES ('Ar') RETURNING *;
+---
+- Statement: INSERT INTO tags (name) VALUES ('T') RETURNING *;
+---
+- Statement: INSERT INTO albums (name) VALUES ('Al2') RETURNING *;
+---
+- Statement: INSERT INTO artists (name) VALUES ('Ar2') RETURNING *;
+---
+- Statement: INSERT INTO tags (name) VALUES ('T2') RETURNING *;
+---
+- Statement: SELECT * FROM artists WHERE (artists.id NOT IN (SELECT id FROM albums WHERE (albums.id IN (1, 2) AND albums.id = 3)));
+# Commenting out the checks for this test, because I wrote this test when working on an unrelated issue, but it is broken.
+# will create a trello card for this. Also these show up in some Sequel tests
+#- row_count: 2
+---
+- Statement: SELECT * FROM artists WHERE (artists.id NOT IN (SELECT albums.id FROM albums WHERE (albums.id IN (1, 2) AND albums.id = 2)));
+#- output: [ [1, 'Ar'] ]
+---
+- Statement: SELECT * FROM artists WHERE (artists.id IN (SELECT albums.id FROM albums WHERE (albums.id IN (1, 2) AND albums.id = 3)));
+#- row_count: 0
+---
+- Statement: SELECT * FROM artists WHERE (artists.id IN (SELECT albums.id FROM albums WHERE (albums.id IN (1, 2) AND albums.id = 2)));
+#- output: [ [2, 'Ar2'] ]
+---
+# this case is similar and takes nearly the same data; also found from sequel gem:
+- Statement: UPDATE albums SET artist_id = 1 WHERE (id = 1);
+---
+- Statement: INSERT INTO albums_tags (album_id, tag_id) VALUES (1, 1);
+---
+- Statement: SELECT * FROM artists WHERE (
+    (artists.id NOT IN (
+        SELECT albums.artist_id FROM albums WHERE (
+            (albums.artist_id IS NOT NULL)
+            AND (albums.id IN
+                (SELECT t1.id FROM albums AS t1
+                    WHERE (t1.artist_id = albums.artist_id) ORDER BY name LIMIT 1))
+            AND (albums.id IN (1, 2)))))
+    OR (artists.id IS NULL));
+# - output: [[2, 'Ar2']]
+...

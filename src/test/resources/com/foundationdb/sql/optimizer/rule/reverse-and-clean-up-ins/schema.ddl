@@ -46,3 +46,10 @@ CREATE INDEX state ON addresses(state);
 
 CREATE INDEX cname_and_sku ON customers(customers.name, items.sku) USING LEFT JOIN;
 CREATE INDEX sku_and_date ON customers(items.sku, orders.order_date) USING LEFT JOIN;
+
+
+-- NOTE These Do not have GROUPING foreign keys
+CREATE TABLE artists (id serial PRIMARY KEY, name varchar(255));
+CREATE TABLE albums (id serial PRIMARY KEY, name varchar(255), artist_id integer REFERENCES artists);
+CREATE TABLE tags (id serial PRIMARY KEY, name varchar(255));
+CREATE TABLE albums_tags (album_id integer REFERENCES albums, tag_id integer REFERENCES tags);

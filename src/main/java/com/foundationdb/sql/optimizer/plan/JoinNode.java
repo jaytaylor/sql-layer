@@ -27,7 +27,7 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         LEFT,
         RIGHT,
         FULL_OUTER,
-        // These are beyond what flatten supports, used to represent EXISTS (sometimes).
+        // These are beyond what flatten supports, used to represent EXISTS or IN (sometimes).
         SEMI,
         ANTI,
         // These are intermediate to represent when a semi-join can be
