@@ -35,7 +35,6 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -263,15 +262,15 @@ class YamlTester
 
 
 
-    public static int compareBytes(byte[] left, byte[] right) {
-        for (int i = 0; i < left.length && i < right.length; i++) {
-            int a = (left[i] & 0xff);
-            int b = (right[i] & 0xff);
+    public static int compareBytes(byte[] array1, byte[] array2) {
+        for (int i = 0; i < array1.length && i < array2.length; i++) {
+            int a = (array1[i] & 0xff);
+            int b = (array2[i] & 0xff);
             if (a != b) {
                 return a - b;
             }
         }
-        return left.length - right.length;
+        return array1.length - array2.length;
     }
 
     private final String filename;

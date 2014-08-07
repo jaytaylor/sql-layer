@@ -55,7 +55,7 @@ public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase
      * A regular expression matching the names of the YAML files in the
      * resource directory, not including the extension, to use for tests.
      */
-    private static final String CASE_NAME_REGEXP = System.getProperty(CLASSNAME + ".CASE_NAME_REGEXP", "test-.*");
+    private static final String CASE_NAME_REGEXP = System.getProperty(CLASSNAME + ".CASE_NAME_REGEXP", "test-double-int-cast.*");
 
     /** The directory containing the YAML files. */
     private static final File RESOURCE_DIR;
