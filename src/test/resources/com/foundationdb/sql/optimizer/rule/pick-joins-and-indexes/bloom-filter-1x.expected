@@ -5,7 +5,7 @@ SelectQuery@11f46b16
         HashJoinNode@47004b78(SEMI/BLOOM_FILTER[categories.sku] = [items.sku])
           TableGroupJoinTree@645ad7b2(TableGroup@366412da(categories), categories - SingleIndexScan@22cf38a2(Index(test.categories.cat_sku[IndexColumn(cat), IndexColumn(sku)]), covering/SORTED, =1, rows = 100, cost = 77.9500))
             TableSource@6b04d3c8(categories - TableGroup@366412da(categories))
-          TableGroupJoinTree@6411c21b(TableGroup@49deadf0(customers), items - SingleIndexScan@44585f2a(Index(test.items.sku[IndexColumn(sku)]), covering/SORTED, rows = 20000, cost = 31641.5))
+          TableGroupJoinTree@6411c21b(TableGroup@49deadf0(customers), items - SingleIndexScan@44585f2a(Index(test.items.sku[IndexColumn(sku)]), covering/SORTED, rows = 20000, cost = 15241.5))
             TableSource@774943d6(items - TableGroup@49deadf0(customers))
           TableGroupJoinTree@30e79eb3(TableGroup@366412da(categories), categories - SingleIndexScan@5cfe174(Index(test.categories.cat_sku[IndexColumn(cat), IndexColumn(sku)]), covering/NONE, =1, =items.sku, rows = 1, cost = 85.1750))
             TableSource@6b04d3c8(categories - TableGroup@366412da(categories))

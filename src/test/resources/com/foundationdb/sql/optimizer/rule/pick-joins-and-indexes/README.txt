@@ -4,7 +4,7 @@ bloom-filter-1l: LIMIT adjusted when costing
 
 bloom-filter-1n: Extra columns means not semi-join
 
-bloom-filter-1o: Outer join
+bloom-filter-1o: Left outer join - should not create a bloom filter
 
 bloom-filter-1x: Written with EXISTS
 

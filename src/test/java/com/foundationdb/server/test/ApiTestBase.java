@@ -224,12 +224,6 @@ public class ApiTestBase {
 
     protected ApiTestBase(String suffix)
     {
-        final String name = this.getClass().getSimpleName();
-        if (!name.endsWith(suffix)) {
-            throw new RuntimeException(
-                    String.format("You must rename %s to something like Foo%s", name, suffix)
-            );
-        }
     }
 
     private static ServiceManager sm;

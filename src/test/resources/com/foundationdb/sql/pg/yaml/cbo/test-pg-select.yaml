@@ -126,7 +126,7 @@
 - output_ordered: [[null,'2010-01-01'],['Smith','2011-03-01'],['Jones','2011-03-03']]
 #- comment: ['select-26n']
 ---
-- Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid AND items.sku = '1234' 
+- Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid AND items.sku = '1234' ORDER BY customers.name DESC
 - output: [['Smith','2011-03-01','1234','100'],['Jones','2011-02-28','1234','99']]
 #- comment: ['select-2a: index equality condition on grandchild table']
 ---

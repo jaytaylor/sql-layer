@@ -6,14 +6,16 @@ SelectQuery@7bd349e2
 
 Subquery@61b59919
   MapJoin@1bb0889a()
-    Flatten@555d7e03(items)
-      Select@5084ebe8[items.sku == 1234]
-        BranchLookup@469bf5a4(orders -> items)
-          GroupLoopScan@291c0633(orders - items, rows = 1, cost = 40.4420)
-          TableSource@3e74f380(items - TableGroup@6edb135a(customers))
+    Select@175d246f[]
+      Flatten@555d7e03(items)
+        Select@5084ebe8[items.sku == 1234]
+          BranchLookup@469bf5a4(orders -> items)
+            GroupLoopScan@291c0633(orders - items, rows = 1, cost = 56.8420)
+            TableSource@3e74f380(items - TableGroup@6edb135a(customers))
     Select@14db38a4[]
-      Flatten@21453d72(child)
-        Select@2136bdda[child.name != Astro]
-          AncestorLookup@48c5186e(child -> [child])
-            SingleIndexScan@3a87d472(Index(test.child.PRIMARY[IndexColumn(id)]), NONE, =items.iid, rows = 1, cost = 16.0882)
-            TableSource@4df8b14(child - TableGroup@213c2d7f(parent))
+      Select@6402ff64[]
+        Flatten@21453d72(child)
+          Select@2136bdda[child.name != Astro]
+            AncestorLookup@48c5186e(child -> [child])
+              SingleIndexScan@3a87d472(Index(test.child.PRIMARY[IndexColumn(id)]), NONE, =items.iid, rows = 1, cost = 16.0882)
+              TableSource@4df8b14(child - TableGroup@213c2d7f(parent))

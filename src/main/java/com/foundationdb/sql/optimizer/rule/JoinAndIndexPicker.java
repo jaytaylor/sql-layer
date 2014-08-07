@@ -317,8 +317,10 @@ public class JoinAndIndexPicker extends BaseRule
 
         // If any semi-joins to VALUES are left over at the top, they
         // can be put into the Select and then possibly moved earlier.
-        protected Joinable moveInSemiJoins(Joinable joined) {
+        protected Joinable moveInSemiJoins(Plan.JoinableWithConditionsToRemove joinedWithConditions) {
+            Joinable joined = joinedWithConditions.getJoinable();
             if (queryGoal.getWhereConditions() != null) {
+
                 while (joined instanceof JoinNode) {
                     JoinNode join = (JoinNode)joined;
                     if (join.getJoinType() != JoinType.SEMI) 
@@ -378,7 +380,7 @@ public class JoinAndIndexPicker extends BaseRule
                 // In this block because we were not a JoinNode, query has no joins itself
                 List<JoinOperator> queryJoins = Collections.emptyList();
                 List<ConditionList> conditionSources = groupGoal.updateContext(subqueryBoundTables, queryJoins, subqueryJoins,
-                                                                               subqueryOutsideJoins, true, null);
+                        subqueryOutsideJoins, subqueryJoins, true, null);
                 BaseScan scan = groupGoal.pickBestScan();
                 CostEstimate costEstimate = scan.getCostEstimate();
                 return new GroupPlan(groupGoal, JoinableBitSet.of(0), scan, costEstimate, conditionSources, true, null);
@@ -409,7 +411,7 @@ public class JoinAndIndexPicker extends BaseRule
 
     }
 
-    static abstract class Plan implements Comparable<Plan> {
+    public static abstract class Plan implements Comparable<Plan> {
         CostEstimate costEstimate;
 
         protected Plan(CostEstimate costEstimate) {
@@ -420,7 +422,7 @@ public class JoinAndIndexPicker extends BaseRule
             return costEstimate.compareTo(other.costEstimate);
         }
 
-        public abstract Joinable install(boolean copy);
+        public abstract JoinableWithConditionsToRemove install(boolean copy);
 
         public void addDistinct() {
             throw new UnsupportedOperationException();
@@ -440,6 +442,26 @@ public class JoinAndIndexPicker extends BaseRule
 
         public void redoCostWithLimit(long limit) {
         }
+
+        public abstract Collection<? extends ConditionExpression> getConditions();
+
+        public static class JoinableWithConditionsToRemove {
+            public Joinable joinable;
+            public List<? extends ConditionExpression> conditions;
+
+            public JoinableWithConditionsToRemove(Joinable joinable, List<? extends ConditionExpression> conditions) {
+                this.joinable = joinable;
+                this.conditions = conditions;
+            }
+
+            public Joinable getJoinable() {
+                return joinable;
+            }
+
+            public List<? extends ConditionExpression> getConditions() {
+                return conditions;
+            }
+        }
     }
 
     static abstract class PlanClass {
@@ -456,6 +478,8 @@ public class JoinAndIndexPicker extends BaseRule
         public Plan bestNestedPlan(PlanClass outerPlan, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
             return bestPlan(outsideJoins); // By default, side doesn't matter.
         }
+
+        public abstract Plan bestPlan(Collection<JoinOperator> condJoins, Collection<JoinOperator> outsideJoins);
     }
     
     static class GroupPlan extends Plan {
@@ -487,7 +511,7 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Joinable install(boolean copy) {
+        public JoinableWithConditionsToRemove install(boolean copy) {
             if (extraConditions != null) {
                 // Move to WHERE clause or join condition so that any
                 // that survive indexing are preserved.
@@ -502,8 +526,7 @@ public class JoinAndIndexPicker extends BaseRule
             if (!((distinct.getInput() instanceof Project) &&
                   (scan instanceof IndexScan)))
                 return false;
-            return groupGoal.orderedForDistinct((Project)distinct.getInput(),
-                                                (IndexScan)scan);
+            return groupGoal.orderedForDistinct((Project) distinct.getInput(), (IndexScan) scan);
         }
 
         @Override
@@ -515,7 +538,7 @@ public class JoinAndIndexPicker extends BaseRule
         public boolean containsColumn(ColumnExpression column) {
             ColumnSource table = column.getTable();
             if (!(table instanceof TableSource)) return false;
-            return groupGoal.getTables().containsTable((TableSource)table);
+            return groupGoal.getTables().containsTable((TableSource) table);
         }
 
         @Override
@@ -531,6 +554,11 @@ public class JoinAndIndexPicker extends BaseRule
             if (scan instanceof IndexScan) {
                 costEstimate = groupGoal.estimateCost((IndexScan)scan, limit);
             }
+        }
+
+        @Override
+        public Collection<? extends ConditionExpression> getConditions() {
+            return scan.getConditions();
         }
     }
 
@@ -564,23 +592,49 @@ public class JoinAndIndexPicker extends BaseRule
             return bestPlan(outerPlan.bitset, joins, outsideJoins);
         }
 
+        @Override
+        public Plan bestPlan(Collection<JoinOperator> condJoins, Collection<JoinOperator> outsideJoins) {
+            return bestPlan(JoinableBitSet.empty(), Collections.<JoinOperator>emptyList(), condJoins, outsideJoins);
+        }
+
         protected ConditionList getExtraConditions() {
             return null;
         }
 
         protected GroupPlan bestPlan(long outerTables, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
+            return bestPlan(outerTables, joins, joins, outsideJoins);
+        }
+
+        protected GroupPlan bestPlan(long outerTables, Collection<JoinOperator> queryJoins, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
             for (GroupPlan groupPlan : bestPlans) {
                 if (groupPlan.outerTables == outerTables) {
                     return groupPlan;
                 }
             }
-            boolean sortAllowed = joins.isEmpty();
-            List<ConditionList> conditionSources = groupGoal.updateContext(enumerator.boundTables(outerTables), joins, joins, outsideJoins, sortAllowed, getExtraConditions());
+            boolean sortAllowed = queryJoins.isEmpty();
+            Collection<JoinOperator> requiredJoins = joins;
+            if (JoinableBitSet.isEmpty(outerTables)) {
+                // this is an outer plan
+                requiredJoins = new ArrayList<>();
+                joinsForOuterPlan(joins, bitset, requiredJoins);
+            }
+            List<ConditionList> conditionSources = groupGoal.updateContext(
+                    enumerator.boundTables(outerTables), queryJoins, joins, outsideJoins, requiredJoins,
+                    sortAllowed, getExtraConditions());
             BaseScan scan = groupGoal.pickBestScan();
             CostEstimate costEstimate = scan.getCostEstimate();
             GroupPlan groupPlan = new GroupPlan(groupGoal, outerTables, scan, costEstimate, conditionSources, sortAllowed, getExtraConditions());
             bestPlans.add(groupPlan);
             return groupPlan;
+        }
+
+        private void joinsForOuterPlan(Collection<JoinOperator> condJoins, long bitset,
+                                       Collection<JoinOperator> joinsForLeft) {
+            for (JoinOperator join : condJoins) {
+                if (JoinableBitSet.isSubset(join.getTables(), bitset)) {
+                    joinsForLeft.add(join);
+                }
+            }
         }
     }
 
@@ -638,9 +692,9 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Joinable install(boolean copy) {
+        public JoinableWithConditionsToRemove install(boolean copy) {
             picker.installPlan(rootPlan, copy);
-            return subquery;
+            return new JoinableWithConditionsToRemove(subquery, new ConditionList());
         }        
 
         @Override
@@ -653,6 +707,11 @@ public class JoinAndIndexPicker extends BaseRule
                 ((GroupPlan)rootPlan).orderedForDistinct(distinct)) {
                 distinct.setImplementation(Distinct.Implementation.PRESORTED);
             }
+        }
+
+        @Override
+        public Collection<? extends ConditionExpression> getConditions() {
+            return null;
         }
     }
 
@@ -681,6 +740,11 @@ public class JoinAndIndexPicker extends BaseRule
         @Override
         public Plan bestNestedPlan(PlanClass outerPlan, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
             return bestPlan(outerPlan.bitset, joins, outsideJoins);
+        }
+
+        @Override
+        public Plan bestPlan(Collection<JoinOperator> condJoins, Collection<JoinOperator> outsideJoins) {
+            return bestPlan(JoinableBitSet.empty(), condJoins, outsideJoins);
         }
 
         protected SubqueryPlan bestPlan(long outerTables, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
@@ -713,13 +777,18 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Joinable install(boolean copy) {
-            return values;
+        public JoinableWithConditionsToRemove install(boolean copy) {
+            return new JoinableWithConditionsToRemove(values, new ConditionList());
         }
 
         @Override
         public void addDistinct() {
             values.setDistinctState(ExpressionsSource.DistinctState.NEED_DISTINCT);
+        }
+
+        @Override
+        public Collection<? extends ConditionExpression> getConditions() {
+            return null;
         }
     }
 
@@ -749,6 +818,11 @@ public class JoinAndIndexPicker extends BaseRule
         public Plan bestNestedPlan(PlanClass outerPlan, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
             return nestedPlan;
         }
+
+        @Override
+        public Plan bestPlan(Collection<JoinOperator> condJoins, Collection<JoinOperator> outsideJoins) {
+            return plan;
+        }
     }
 
     static class CreateAsPlanClass extends PlanClass {
@@ -775,6 +849,11 @@ public class JoinAndIndexPicker extends BaseRule
         public Plan bestNestedPlan(PlanClass outerPlan, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
             return nestedPlan;
         }
+
+        @Override
+        public Plan bestPlan(Collection<JoinOperator> condJoins, Collection<JoinOperator> outsideJoins) {
+            return plan;
+        }
     }
 
     static class CreateAsPlan extends Plan {
@@ -791,8 +870,13 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Joinable install(boolean copy) {
-            return values;
+        public JoinableWithConditionsToRemove install(boolean copy) {
+            return new JoinableWithConditionsToRemove(values, null);
+        }
+
+        @Override
+        public Collection<? extends ConditionExpression> getConditions() {
+            return null;
         }
     }
 
@@ -833,18 +917,29 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Joinable install(boolean copy) {
+        public JoinableWithConditionsToRemove install(boolean copy) {
             if (needDistinct)
                 left.addDistinct();
-            Joinable leftJoinable = left.install(copy);
-            Joinable rightJoinable = right.install(copy);
+            JoinableWithConditionsToRemove leftJoinable = left.install(copy);
+            JoinableWithConditionsToRemove rightJoinable = right.install(copy);
+            ConditionList conditionsToRemove = new ConditionList();
+            if (leftJoinable.getConditions() != null) {
+                conditionsToRemove.addAll(leftJoinable.getConditions());
+            }
+            if (rightJoinable.getConditions() != null) {
+                conditionsToRemove.addAll(rightJoinable.getConditions());
+            }
             ConditionList joinConditions = mergeJoinConditions(joins);
-            JoinNode join = new JoinNode(leftJoinable, rightJoinable, joinType);
+            if (joinConditions != null) {
+                joinConditions.removeAll(conditionsToRemove);
+                conditionsToRemove.addAll(joinConditions);
+            }
+            JoinNode join = new JoinNode(leftJoinable.getJoinable(), rightJoinable.getJoinable(), joinType);
             join.setJoinConditions(joinConditions);
             join.setImplementation(joinImplementation);
             if (joinType == JoinType.SEMI)
-                InConditionReverser.cleanUpSemiJoin(join, rightJoinable);
-            return join;
+                InConditionReverser.cleanUpSemiJoin(join, rightJoinable.getJoinable());
+            return new JoinableWithConditionsToRemove(join, conditionsToRemove);
         }
 
         protected ConditionList mergeJoinConditions(Collection<JoinOperator> joins) {
@@ -872,6 +967,11 @@ public class JoinAndIndexPicker extends BaseRule
             left.redoCostWithLimit(limit);
             costEstimate = left.costEstimate.nest(right.costEstimate);
         }
+
+        @Override
+        public Collection<? extends ConditionExpression> getConditions() {
+            return null;
+        }
     }
 
     static class HashJoinPlan extends JoinPlan {
@@ -891,19 +991,34 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Joinable install(boolean copy) {
+        public JoinableWithConditionsToRemove install(boolean copy) {
             if (needDistinct)
                 left.addDistinct();
-            Joinable loaderJoinable = loader.install(true);
-            Joinable inputJoinable = left.install(copy);
-            Joinable checkJoinable = right.install(copy);
+            JoinableWithConditionsToRemove loaderJoinable = loader.install(true);
+            JoinableWithConditionsToRemove inputJoinable = left.install(copy);
+            JoinableWithConditionsToRemove checkJoinable = right.install(copy);
             ConditionList joinConditions = mergeJoinConditions(joins);
-            HashJoinNode join = new HashJoinNode(loaderJoinable, inputJoinable, checkJoinable, joinType, hashTable, hashColumns, matchColumns);
+            if (loaderJoinable.getConditions() != null) {
+                joinConditions.removeAll(loaderJoinable.getConditions());
+            }
+            if (inputJoinable.getConditions() != null) {
+                joinConditions.removeAll(inputJoinable.getConditions());
+            }
+            if (checkJoinable.getConditions() != null) {
+                joinConditions.removeAll(checkJoinable.getConditions());
+            }
+            // the output is different in the planString if joinConditions is null vs. empty
+            // so make it null here to make the tests happier
+            if (joinConditions.isEmpty()) {
+                joinConditions = null;
+            }
+            HashJoinNode join = new HashJoinNode(loaderJoinable.getJoinable(), inputJoinable.getJoinable(),
+                    checkJoinable.getJoinable(), joinType, hashTable, hashColumns, matchColumns);
             join.setJoinConditions(joinConditions);
             join.setImplementation(joinImplementation);
             if (joinType == JoinType.SEMI)
-                InConditionReverser.cleanUpSemiJoin(join, checkJoinable);
-            return join;
+                InConditionReverser.cleanUpSemiJoin(join, checkJoinable.getJoinable());
+            return new JoinableWithConditionsToRemove(join, new ConditionList());
         }
     }
 
@@ -922,6 +1037,11 @@ public class JoinAndIndexPicker extends BaseRule
 
         @Override
         public Plan bestPlan(Collection<JoinOperator> outsideJoins) {
+            return bestPlan;
+        }
+
+        @Override
+        public Plan bestPlan(Collection<JoinOperator> condJoins, Collection<JoinOperator> outsideJoins) {
             return bestPlan;
         }
 
@@ -1014,7 +1134,7 @@ public class JoinAndIndexPicker extends BaseRule
                     return planClass;
                 }
             }
-            joins = new ArrayList<>(joins);
+            joins = duplicateJoins(joins);
             Collection<JoinOperator> condJoins = joins; // Joins with conditions for indexing.
             if (subqueryJoins != null) {
                 // "Push down" joins into the subquery. Since these
@@ -1046,12 +1166,54 @@ public class JoinAndIndexPicker extends BaseRule
                 JoinPlan hashPlan2 = buildHashTableJoin(loaderPlan, joinPlan);
                 planClass.consider(hashPlan2);
             }
+            if (joinType.isSemi() || (joinType.isInner() && rightPlan.semiJoinEquivalent())) {
+                Collection<JoinOperator> semiJoins = duplicateJoins(joins);
+                Plan loaderPlan = right.bestPlan(condJoins, outsideJoins);
+                cleanJoinConditions(semiJoins, loaderPlan, leftPlan);
+                // buildBloomFilterSemiJoin modifies the joinPlan.
+                JoinPlan hashPlan = buildBloomFilterSemiJoin(loaderPlan, joinPlan, semiJoins);
+                if (hashPlan != null)
+                    planClass.consider(hashPlan);
+            }
+            cleanJoinConditions(joins, leftPlan, rightPlan);
             planClass.consider(joinPlan);
             return planClass;
         }
 
-        /**
-         * Get the tables that correspond to the given bitset, plus
+        private void joinsForOuterPlan(Collection<JoinOperator> condJoins, PlanClass left,
+                                       Collection<JoinOperator> joinsForLeft) {
+            for (JoinOperator join : condJoins) {
+                if (JoinableBitSet.isSubset(join.getTables(), left.bitset)) {
+                    joinsForLeft.add(join);
+                }
+            }
+        }
+
+        private void cleanJoinConditions(Collection<JoinOperator> joins, Plan leftPlan, Plan rightPlan) {
+            Collection<? extends ConditionExpression> leftConditions = leftPlan.getConditions();
+            Collection<? extends ConditionExpression> rightConditions = rightPlan.getConditions();
+            for (JoinOperator join : joins) {
+                if (join.getJoinConditions() != null) {
+                    if (leftConditions != null) {
+                        join.getJoinConditions().removeAll(leftConditions);
+                    }
+                    if (rightConditions != null) {
+                        join.getJoinConditions().removeAll(rightConditions);
+                    }
+                }
+            }
+        }
+
+        private Collection<JoinOperator> duplicateJoins(Collection<JoinOperator> joins) {
+            Collection<JoinOperator> retJoins = new ArrayList<>();
+            for (JoinOperator join : joins) {
+                retJoins.add(new JoinOperator(join));
+            }
+            return retJoins;
+        }
+
+        /** Get the tables that correspond to the given bitset, plus
+>>>>>>> master
          * any that are bound outside the subquery, either
          * syntactically or via joins to it.
          */
@@ -1083,10 +1245,11 @@ public class JoinAndIndexPicker extends BaseRule
 
         double BLOOM_FILTER_MAX_SELECTIVITY_DEFAULT = 0.05;
 
-        public JoinPlan buildBloomFilterSemiJoin(Plan loaderPlan, JoinPlan joinPlan) {
+        public JoinPlan buildBloomFilterSemiJoin(Plan loaderPlan, JoinPlan joinPlan,
+                                                 Collection<JoinOperator> joinOperators) {
             Plan inputPlan = joinPlan.left;
             Plan checkPlan = joinPlan.right;
-            Collection<JoinOperator> joins = joinPlan.joins;
+            Collection<JoinOperator> joins = joinOperators;
             if (checkPlan.costEstimate.getRowCount() > 1)
                 return null;    // Join not selective.
             double maxSelectivity;
@@ -1110,15 +1273,15 @@ public class JoinAndIndexPicker extends BaseRule
                         // complicated, provided still just use one
                         // side's tables.
                         if (!((left instanceof ColumnExpression) &&
-                              (right instanceof ColumnExpression)))
+                                (right instanceof ColumnExpression)))
                             return null;
                         if (inputPlan.containsColumn((ColumnExpression)left) &&
-                            checkPlan.containsColumn((ColumnExpression)right)) {
+                                checkPlan.containsColumn((ColumnExpression)right)) {
                             matchColumns.add(left);
                             hashColumns.add(right);
                         }
                         else if (inputPlan.containsColumn((ColumnExpression)right) &&
-                                 checkPlan.containsColumn((ColumnExpression)left)) {
+                                checkPlan.containsColumn((ColumnExpression)left)) {
                             matchColumns.add(right);
                             hashColumns.add(left);
                         }
@@ -1139,6 +1302,7 @@ public class JoinAndIndexPicker extends BaseRule
                 // join plan, but that would be too disruptive, so
                 // only do it when need to make the comparison with
                 // the Bloom filter accurate.
+                // Doing so would also make optimizing take longer
                 limit = Math.round(limit / selectivity);
                 joinPlan.redoCostWithLimit(limit);
             }
@@ -1149,6 +1313,7 @@ public class JoinAndIndexPicker extends BaseRule
                                     JoinType.SEMI, JoinNode.Implementation.BLOOM_FILTER,
                                     joins, costEstimate, bloomFilter, hashColumns, matchColumns);
         }
+
 
         public JoinPlan buildHashTableJoin(Plan loaderPlan, JoinPlan joinPlan) {
             Plan inputPlan = joinPlan.left;

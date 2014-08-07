@@ -1,0 +1,20 @@
+SelectQuery@159663c3
+  ResultSet@446fa247[id, name]
+    MapJoin@591ef23d()
+      Flatten@79e487cf(artists)
+        GroupScan@7eb1b080(Group(test.artists), rows = 1, cost = 1.00000)
+          TableSource@1f2e1596(artists - TableGroup@43bae47b(artists))
+      Project@7d07066a[artists.id, artists.name]
+        Select@58365946[]
+          OnlyIfEmpty@22ee69fa
+            MapJoin@526fae00()
+              Flatten@a90658e(albums_tags)
+                GroupScan@2208ac48(Group(test.albums_tags), rows = 1, cost = 0.00000)
+                  TableSource@2105b6d4(albums_tags - TableFKJoin@6766bc6c(Foreign Key albums_tags_fkey: test.albums_tags REFERENCES test.albums))
+              MapJoin@9dc8b7d()
+                Select@6f0981a6[albums_tags.album_id == albums.id, artists.id == albums.artist_id]
+                  SingleIndexScan@6e49c099(Index(test.albums.albums_fkey[IndexColumn(artist_id)]), covering/NONE, rows = 1, cost = 6.84560)
+                Select@dfb530d[]
+                  Limit@2c03b560(LIMIT 1)
+                    Select@2778c833[albums_tags.tag_id == VALUES[0]]
+                      ExpressionsSource@7b5d2130([[1], [2]])

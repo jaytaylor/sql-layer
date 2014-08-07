@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
+import java.util.Collection;
 import java.util.Set;
 
 public abstract class BaseScan extends BasePlanNode
@@ -40,5 +41,7 @@ public abstract class BaseScan extends BasePlanNode
     public void setCostEstimate(CostEstimate costEstimate) {
         this.costEstimate = costEstimate;
     }
+
+    public abstract Collection<? extends ConditionExpression> getConditions();
 
 }

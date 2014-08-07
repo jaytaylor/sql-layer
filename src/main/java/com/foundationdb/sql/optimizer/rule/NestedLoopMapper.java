@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
+import com.foundationdb.server.error.CorruptedPlanException;
 import com.foundationdb.sql.optimizer.plan.*;
 
 import org.slf4j.Logger;
@@ -92,8 +93,11 @@ public class NestedLoopMapper extends BaseRule
         for (JoinNode join : joins) {
             PlanNode outer = join.getLeft();
             PlanNode inner = join.getRight();
-            if (join.hasJoinConditions())
-                inner = new Select(inner, join.getJoinConditions());
+            if (join.hasJoinConditions()) {
+                outer = moveConditionsToOuterNode(outer, join.getJoinConditions(), getQuery(join).getOuterTables());
+                if (join.hasJoinConditions())
+                    inner = new Select(inner, join.getJoinConditions());
+            }
             PlanNode map;
             switch (join.getImplementation()) {
             case NESTED_LOOPS:
@@ -133,6 +137,89 @@ public class NestedLoopMapper extends BaseRule
                 map = join;
             }
             join.getOutput().replaceInput(join, map);
+        }
+    }
+
+    private BaseQuery getQuery(PlanNode node) {
+        PlanWithInput output = node.getOutput();
+        while (output != null) {
+            if (output instanceof BaseQuery) {
+                return (BaseQuery) output;
+            }
+            output = output.getOutput();
+        }
+        throw new CorruptedPlanException();
+    }
+
+
+    private PlanNode moveConditionsToOuterNode(PlanNode planNode, ConditionList conditions,
+                                               Set<ColumnSource> outerSources) {
+        ConditionList selectConditions = new ConditionList();
+        Iterator<ConditionExpression> iterator = conditions.iterator();
+        while (iterator.hasNext()) {
+            ConditionExpression condition = iterator.next();
+            Set<ColumnSource> columnSources = new ConditionColumnSourcesFinder().find(condition);
+            columnSources.removeAll(outerSources);
+            PlanNodeProvidesSourcesChecker checker = new PlanNodeProvidesSourcesChecker(columnSources, planNode);
+            if (checker.run()) {
+                selectConditions.add(condition);
+                iterator.remove();
+            }
+        }
+        return selectConditions.isEmpty() ? planNode : new Select(planNode, selectConditions);
+    }
+
+    private static class PlanNodeProvidesSourcesChecker implements PlanVisitor {
+
+        private final Set<ColumnSource> columnSources;
+        private final PlanNode planNode;
+
+        private PlanNodeProvidesSourcesChecker(Set<ColumnSource> columnSources, PlanNode node) {
+            this.columnSources = columnSources;
+            this.planNode = node;
+        }
+
+        public boolean run() {
+            planNode.accept(this);
+            return columnSources.isEmpty();
+        }
+
+        @Override
+        public boolean visitEnter(PlanNode n) {
+            if (columnSources.isEmpty()) {
+                return false;
+            }
+            if (n instanceof ColumnSource) {
+                columnSources.remove(n);
+                // We want to go inside, because if you have a Group Join, the inner groups are nested nodes within
+                // the outer table source
+                return true;
+            }
+            if (n instanceof Subquery) {
+                // subquery sources are the source you can see from outside, don't go into the inner subquery
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public boolean visitLeave(PlanNode n) {
+            return false;
+        }
+
+        @Override
+        public boolean visit(PlanNode n) {
+            if (columnSources.isEmpty()) {
+                return false;
+            }
+            if (n instanceof ColumnSource) {
+                columnSources.remove(n);
+                return true;
+            }
+            if (n instanceof Subquery) {
+                return false;
+            }
+            return true;
         }
     }
 

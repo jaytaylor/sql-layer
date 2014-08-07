@@ -33,13 +33,13 @@
 
 # Can set variables
 ---
-- Statement: SET parserInfixBit TO 'true'
+- Statement: SET optimizerDummySetting TO 'true'
 ---
-- Statement: SET parserInfixBit TO DEFAULT
+- Statement: SET optimizerDummySetting TO DEFAULT
 ---
-- Statement: ALTER SERVER SET parserInfixBit TO 'true'
+- Statement: ALTER SERVER SET optimizerDummySetting TO 'true'
 ---
-- Statement: ALTER SERVER SET parserInfixBit TO DEFAULT
+- Statement: ALTER SERVER SET optimizerDummySetting TO DEFAULT
 
 # Other ALTER SERVER also allowed, but disconnect/kill/shutdown to hard to test here
 
