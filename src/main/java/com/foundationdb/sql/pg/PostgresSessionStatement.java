@@ -63,8 +63,6 @@ public class PostgresSessionStatement implements PostgresStatement
     public static final Map<String,String> ALLOWED_CONFIGURATION = 
         new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     static { for (String key : new String[] {
-        // Parser.
-        "columnAsFunc",  "parserDoubleQuoted", "parserInfixBit", "parserInfixLogical",
         // Output.
         "OutputFormat", "maxNotificationLevel", "zeroDateTimeBehavior", "binary_output", "jsonbinary_output",
         // Optimization. (Dummy for testing of statement cache.)

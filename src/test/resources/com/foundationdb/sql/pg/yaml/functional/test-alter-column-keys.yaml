@@ -1,0 +1,12 @@
+# Since keys include column names in the column_keys storage format, need to check that keys
+# are being updated when the column name is altered.
+---
+- Statement: CREATE TABLE t(id INT NOT NULL PRIMARY KEY, c CHAR(10)) STORAGE_FORMAT column_keys;
+---
+- Statement: INSERT INTO t VALUES(1, 'hello');
+---
+- Statement: ALTER TABLE t RENAME COLUMN c TO d;
+---
+- Statement: SELECT * FROM t;
+- output: [[1, 'hello']]
+...
