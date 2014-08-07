@@ -457,6 +457,10 @@ public class OperatorAssembler extends BaseRule
                 return assembleUsingBloomFilter((UsingBloomFilter) node);
             else if (node instanceof BloomFilterFilter)
                 return assembleBloomFilterFilter((BloomFilterFilter) node);
+            else if (node instanceof UsingHashTable)
+                return assembleUsingHashTable((UsingHashTable)node);
+            else if (node instanceof HashTableLookup)
+                return assembleHashTableLookup((HashTableLookup)node);
             else if (node instanceof FullTextScan)
                 return assembleFullTextScan((FullTextScan) node);
             else if (node instanceof InsertStatement) 
@@ -1455,6 +1459,49 @@ public class OperatorAssembler extends BaseRule
             return stream;
         }
 
+        protected RowStream assembleUsingHashTable( UsingHashTable usingHashTable) {
+            HashTable hashTable = usingHashTable.getHashTable();
+            int pos = assignBindingPosition(hashTable);
+            RowStream lstream = assembleStream(usingHashTable.getLoader());
+            RowStream stream = assembleStream(usingHashTable.getInput());
+            List<AkCollator> collators = null;
+            List<TPreparedExpression> tFields = assembleExpressions(usingHashTable.getLookupExpressions(),
+                    stream.fieldOffsets);
+            if (usingHashTable.getLoader() instanceof IndexScan) {
+                collators = new ArrayList<>();
+                IndexScan indexScan = (IndexScan) usingHashTable.getLoader();
+                for (IndexColumn indexColumn : indexScan.getIndexColumns()) {
+                    collators.add(indexColumn.getColumn().getCollator());
+                }
+            }
+            stream.operator = API.using_HashTable(lstream.operator,
+                    lstream.rowType,
+                    tFields,
+                    pos,
+                    stream.operator,
+                    collators);
+            return stream;
+        }
+
+        protected RowStream assembleHashTableLookup(HashTableLookup hashTableLookup) {
+            HashTable hashTable = hashTableLookup.getHashTable();
+            int tablePos = getBindingPosition(hashTable);
+            int rowPos = hashTableLookup.getBoundRowPosition();
+            RowStream stream = new RowStream();
+            List<TPreparedExpression> tFields = assembleExpressions(hashTableLookup.getLookupExpressions(),
+                    stream.fieldOffsets);
+            List<AkCollator> collators = new ArrayList<>();
+            for (ExpressionNode expressionNode : hashTableLookup.getLookupExpressions()) {
+                collators.add(expressionNode.getCollator());
+            }
+            stream.operator = API.hashTableLookup_Default(
+                    collators,
+                    tFields,
+                    hashTableLookup.isOuterLeftJoin(),
+                    tablePos,
+                    rowPos)
+            return stream;
+        }
         protected RowStream assembleProject(Project project) {
             RowStream stream = assembleStream(project.getInput());
             List<? extends TPreparedExpression> pExpressions;
