@@ -1148,24 +1148,16 @@ public class JoinAndIndexPicker extends BaseRule
             }
             outsideJoins.addAll(joins); // Total set for outer; inner must subtract.
             // TODO: Divvy up sorting. Consider group joins. Consider merge joins.
-            Plan leftPlan = left.bestPlan(outsideJoins);
+            Collection<JoinOperator> joinsForLeft = new ArrayList<>();
+            joinsForOuterPlan(condJoins, left, joinsForLeft);
+
+            Plan leftPlan = left.bestPlan(condJoins, outsideJoins);
             Plan rightPlan = right.bestNestedPlan(left, condJoins, outsideJoins);
             CostEstimate costEstimate = leftPlan.costEstimate.nest(rightPlan.costEstimate);
             JoinPlan joinPlan = new JoinPlan(leftPlan, rightPlan,
                     joinType, JoinNode.Implementation.NESTED_LOOPS,
                     joins, costEstimate);
-            if (joinType.isSemi() || rightPlan.semiJoinEquivalent()) {
-                Plan loaderPlan = right.bestPlan(outsideJoins);
-                JoinPlan hashPlan = buildBloomFilterSemiJoin(loaderPlan, joinPlan);
-                if (hashPlan != null)
-                    planClass.consider(hashPlan);
-            }
-            //TODO if joinPlan can be achieved via a hash join
-            if ( joinType.isInner() ){
-                Plan loaderPlan = right.bestPlan(outsideJoins);
-                JoinPlan hashPlan2 = buildHashTableJoin(loaderPlan, joinPlan);
-                planClass.consider(hashPlan2);
-            }
+
             if (joinType.isSemi() || (joinType.isInner() && rightPlan.semiJoinEquivalent())) {
                 Collection<JoinOperator> semiJoins = duplicateJoins(joins);
                 Plan loaderPlan = right.bestPlan(condJoins, outsideJoins);
@@ -1174,6 +1166,12 @@ public class JoinAndIndexPicker extends BaseRule
                 JoinPlan hashPlan = buildBloomFilterSemiJoin(loaderPlan, joinPlan, semiJoins);
                 if (hashPlan != null)
                     planClass.consider(hashPlan);
+            }
+            //TODO if joinPlan can be achieved via a hash join
+            if ( joinType.isInner() ){
+                Plan loaderPlan = right.bestPlan(outsideJoins);
+                JoinPlan hashPlan2 = buildHashTableJoin(loaderPlan, joinPlan);
+                planClass.consider(hashPlan2);
             }
             cleanJoinConditions(joins, leftPlan, rightPlan);
             planClass.consider(joinPlan);
@@ -1213,13 +1211,12 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         /** Get the tables that correspond to the given bitset, plus
->>>>>>> master
          * any that are bound outside the subquery, either
          * syntactically or via joins to it.
          */
         public Set<ColumnSource> boundTables(long tables) {
             if (JoinableBitSet.isEmpty(tables) &&
-                    (subqueryBoundTables == null))
+                (subqueryBoundTables == null))
                 return picker.queryGoal.getQuery().getOuterTables();
             Set<ColumnSource> boundTables = new HashSet<>();
             boundTables.addAll(picker.queryGoal.getQuery().getOuterTables());
