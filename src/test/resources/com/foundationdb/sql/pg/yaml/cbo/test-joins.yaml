@@ -2,6 +2,9 @@
 - Properties: sys-mysql
 - suppressed: true
 ---  # based on files in server /src/test/resources/com/foundationdb/sql/pg/select
+- Properties: random-cost
+- suppressed: true
+---
 - Include: all-schema.yaml
 ---
 - Statement: SELECT c1.name, c2.name FROM customers c1, customers c2 ORDER BY c1.name, c2.name
