@@ -255,7 +255,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
     }
 
     @Deprecated
-    @SuppressWarnings("depricated")
+    @SuppressWarnings("deprecation")
     @Override
     public void setUnicodeStream(int parameterIndex, InputStream x, int length) throws SQLException {
         try {

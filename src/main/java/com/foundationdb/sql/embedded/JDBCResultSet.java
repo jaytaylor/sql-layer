@@ -241,7 +241,7 @@ public class JDBCResultSet implements DirectResultSet
     }
 
     @Deprecated // like java.sql.ResultSet
-    @SuppressWarnings("deprication")
+    @SuppressWarnings("deprecation")
     @Override
     public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
         return getBigDecimal(columnIndex).setScale(scale);
@@ -298,7 +298,7 @@ public class JDBCResultSet implements DirectResultSet
     }
 
     @Deprecated // like java.sql.ResultSet
-    @SuppressWarnings("deprication")
+    @SuppressWarnings("deprecation")
     @Override
     public InputStream getUnicodeStream(int columnIndex) throws SQLException {
         try {
@@ -360,7 +360,7 @@ public class JDBCResultSet implements DirectResultSet
     }
 
     @Deprecated // like java.sql.ResultSet
-    @SuppressWarnings("deprication")
+    @SuppressWarnings("deprecation")
     @Override
     public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException {
         return getBigDecimal(findColumn(columnLabel), scale);
@@ -392,7 +392,7 @@ public class JDBCResultSet implements DirectResultSet
     }
 
     @Deprecated // like java.sql.ResultSet#getBigDecimal(int, int)
-    @SuppressWarnings("deprication")
+    @SuppressWarnings("deprecation")
     @Override
     public InputStream getUnicodeStream(String columnLabel) throws SQLException {
         return getUnicodeStream(findColumn(columnLabel));
