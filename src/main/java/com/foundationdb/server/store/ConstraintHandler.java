@@ -448,6 +448,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
         return false;
     }
 
+    @SuppressWarnings("unchecked")
     protected void checkReferencing(Session session, RowData row, 
                                     ForeignKey foreignKey, List<Column> columns,
                                     String operation) {
@@ -511,6 +512,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
                                                           foreignKey.getReferencedTable().getName());
     }
 
+    @SuppressWarnings("unchecked")
     protected void checkNotReferenced(Session session, RowData row, 
                                       ForeignKey foreignKey, List<Column> columns,
                                       ForeignKey.Action action, String operation) {

@@ -115,6 +115,7 @@ public abstract class StorageFormatRegistry
         }
     }
 
+    @SuppressWarnings("unchecked")
     public <T extends StorageDescription> T getDefaultStorageDescription(HasStorage object) {
         try {
             return (T) defaultStorageConstructor.newInstance(object, defaultIdentifier);
@@ -184,6 +185,7 @@ public abstract class StorageFormatRegistry
         return storageDescription;
     }
 
+    @SuppressWarnings("unchecked")
     protected <T extends StorageDescription> T readProtobuf(Format<T> format, Storage pbStorage, HasStorage forObject, StorageDescription storageDescription) {
         if ((storageDescription != null) &&
                 !format.descriptionClass.isInstance(storageDescription)) {

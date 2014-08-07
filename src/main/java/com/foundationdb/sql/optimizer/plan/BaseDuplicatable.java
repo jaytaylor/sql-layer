@@ -55,6 +55,7 @@ public abstract class BaseDuplicatable implements Duplicatable, Cloneable
     protected void deepCopy(DuplicateMap map) {
     }
 
+    @SuppressWarnings("unchecked")
     protected static <T extends Duplicatable> List<T> duplicateList(List<T> list,
                                                                     DuplicateMap map) {
         List<T> copy = new ArrayList<>(list.size());
@@ -64,6 +65,7 @@ public abstract class BaseDuplicatable implements Duplicatable, Cloneable
         return copy;
     }
 
+    @SuppressWarnings("unchecked")
     protected static <T extends Duplicatable> Set<T> duplicateSet(Set<T> set,
                                                                   DuplicateMap map) {
         Set<T> copy = new HashSet<>(set.size());

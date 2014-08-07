@@ -756,6 +756,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T getObject(int parameterIndex, Class<T> type) throws SQLException {
         try {
             return (T)values.getObject(parameterIndex - 1, type);

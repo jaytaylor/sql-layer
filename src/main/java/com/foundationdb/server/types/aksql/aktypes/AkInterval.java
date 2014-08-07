@@ -659,6 +659,7 @@ public class AkInterval extends TClassBase {
      */
     static abstract class AkIntervalParser<U> {
 
+        @SuppressWarnings("unchecked")
         public long parse(String string) {
             // string could be a floating-point number
             

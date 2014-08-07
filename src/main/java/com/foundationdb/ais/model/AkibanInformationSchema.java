@@ -88,7 +88,7 @@ public class AkibanInformationSchema implements Visitable
         return buffer.toString();
     }
 
-    /** @deprecated Use the fully qualified version {@link #getGroup(TableName)} **/
+    /** deprecate? Use the fully qualified version {@link #getGroup(TableName)} **/
     public Group getGroup(final String groupName)
     {
         Group candidate = null;

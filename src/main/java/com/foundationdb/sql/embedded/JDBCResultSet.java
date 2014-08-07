@@ -111,6 +111,7 @@ public class JDBCResultSet implements DirectResultSet
     /* Wrapper */
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T unwrap(Class<T> iface) throws SQLException {
         if (iface == RowCursor.class)
             return (T)cursor;
@@ -1482,6 +1483,7 @@ public class JDBCResultSet implements DirectResultSet
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
         try {
             return (T)values.getObject(columnIndex - 1, type);
