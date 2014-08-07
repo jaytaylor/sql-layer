@@ -18,15 +18,13 @@
 package com.foundationdb.server.types.common.types;
 
 import com.foundationdb.server.types.TClass;
-import com.foundationdb.server.types.TName;
 import com.foundationdb.server.types.service.TypesRegistryServiceImpl;
 import com.foundationdb.server.types.service.TypesRegistry;
 
 import org.junit.Test;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 
 public class TypeValidatorTest

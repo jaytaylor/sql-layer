@@ -31,7 +31,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 
 import static com.foundationdb.server.test.it.keyupdate.Schema.*;
-import static junit.framework.Assert.*;
+import static org.junit.Assert.*;
 
 public abstract class KeyUpdateBase extends ITBase {
     @Before

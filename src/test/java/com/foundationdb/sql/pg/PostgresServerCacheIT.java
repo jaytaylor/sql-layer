@@ -21,7 +21,7 @@ import com.foundationdb.server.api.dml.scan.NewRow;
 
 import org.junit.Before;
 import org.junit.Test;
-import static junit.framework.Assert.*;
+import static org.junit.Assert.*;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

@@ -26,7 +26,7 @@ import org.junit.runners.model.FrameworkMethod;
 
 import java.util.*;
 
-import static junit.framework.Assert.*;
+import static org.junit.Assert.*;
 
 public final class NamedParameterizedRunnerTest
 {

@@ -29,7 +29,7 @@ import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.*;
 import static com.foundationdb.server.test.ExpressionGenerators.field;
-import static junit.framework.Assert.fail;
+import static org.junit.Assert.fail;
 
 // Single-branch testing. See MultiIndexCrossBranchIT for cross-branch testing.
 

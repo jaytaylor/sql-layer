@@ -17,11 +17,11 @@
 
 package com.foundationdb.server.rowdata;
 
-import static junit.framework.Assert.assertSame;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.*;
 
 import com.foundationdb.ais.model.*;
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.junit.Test;
 

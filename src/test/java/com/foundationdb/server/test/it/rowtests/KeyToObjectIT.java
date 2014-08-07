@@ -31,7 +31,7 @@ import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.WrappingByteSource;
 import com.persistit.Key;
 import com.persistit.Value;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.math.BigDecimal;

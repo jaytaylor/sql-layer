@@ -24,7 +24,7 @@ import com.foundationdb.server.store.statistics.IndexStatisticsYamlTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import static junit.framework.Assert.*;
+import static org.junit.Assert.*;
 
 import java.sql.*;
 import java.util.*;

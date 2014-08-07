@@ -18,10 +18,10 @@
 package com.foundationdb.server.rowdata;
 
 import com.foundationdb.ais.model.*;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Test;
 
-import static junit.framework.Assert.assertSame;
+import static org.junit.Assert.assertSame;
 
 public class PKLessTableRowDefBuilderTest
 {

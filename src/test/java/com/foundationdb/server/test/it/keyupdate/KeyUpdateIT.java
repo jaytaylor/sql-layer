@@ -25,7 +25,7 @@ import org.junit.Test;
 import java.util.List;
 
 import static com.foundationdb.server.test.it.keyupdate.Schema.*;
-import static junit.framework.Assert.*;
+import static org.junit.Assert.*;
 
 // This test uses a 4-level group: the COI schema with a Vendor table that is the parent of Customer.
 // hkey maintenance for the leaf of this group is unlike that of a 3-table group because part of the hkey
