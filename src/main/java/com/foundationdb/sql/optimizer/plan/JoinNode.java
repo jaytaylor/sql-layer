@@ -56,7 +56,8 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
     public static enum Implementation {
         GROUP,
         NESTED_LOOPS,
-        BLOOM_FILTER, 
+        BLOOM_FILTER,
+        HASH_TABLE,
         MERGE                   // TODO: Not implemented. Probably needs thought.
     }
     private Joinable left, right;
