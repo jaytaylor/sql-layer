@@ -62,6 +62,7 @@ public class NestedLoopMapper extends BaseRule
                 switch (j.getImplementation()) {
                 case NESTED_LOOPS:
                 case BLOOM_FILTER:
+                case HASH_TABLE:
                     result.add(j);
                 }
             }
@@ -107,6 +108,24 @@ public class NestedLoopMapper extends BaseRule
                     PlanNode loader = hjoin.getLoader();
                     loader = new Project(loader, hjoin.getHashColumns());
                     map = new UsingBloomFilter(bf, loader, map);
+                }
+                break;
+            case HASH_TABLE:
+                {
+                    HashJoinNode hjoin = (HashJoinNode)join;
+                    HashTable ht = (HashTable)hjoin.getHashTable();
+                    map = new HashTableLookup(ht,
+                                              hjoin.getMatchColumns(),
+                                              false);//TODO this should be real values not constants
+                    PlanNode pr = new Project(map,
+                                              hjoin.getHashColumns());
+                    PlanNode mnl = new MapJoin(join.getJoinType(),
+                                              hjoin.getInput(),
+                                              pr);
+                    map = new UsingHashTable(ht,
+                                             mnl,
+                                             hjoin.getInput(),
+                                             hjoin.getHashColumns());
                 }
                 break;
             default:

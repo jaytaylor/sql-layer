@@ -377,7 +377,8 @@ public class JoinAndIndexPicker extends BaseRule
                 GroupIndexGoal groupGoal = new GroupIndexGoal(queryGoal, tables, planContext);
                 // In this block because we were not a JoinNode, query has no joins itself
                 List<JoinOperator> queryJoins = Collections.emptyList();
-                List<ConditionList> conditionSources = groupGoal.updateContext(subqueryBoundTables, queryJoins, subqueryJoins, subqueryOutsideJoins, true, null);
+                List<ConditionList> conditionSources = groupGoal.updateContext(subqueryBoundTables, queryJoins, subqueryJoins,
+                                                                               subqueryOutsideJoins, true, null);
                 BaseScan scan = groupGoal.pickBestScan();
                 CostEstimate costEstimate = scan.getCostEstimate();
                 return new GroupPlan(groupGoal, JoinableBitSet.of(0), scan, costEstimate, conditionSources, true, null);
@@ -959,7 +960,7 @@ public class JoinAndIndexPicker extends BaseRule
         public PlanClass evaluateTable(long s, Joinable joinable) {
             // Seed with the right plan class to hold state / alternatives.
             if (joinable instanceof TableGroupJoinTree) {
-                GroupIndexGoal groupGoal = new GroupIndexGoal(picker.queryGoal, 
+                GroupIndexGoal groupGoal = new GroupIndexGoal(picker.queryGoal,
                                                               (TableGroupJoinTree)joinable, picker.getPlanContext());
                 return new GroupPlanClass(this, s, groupGoal);
             }
@@ -978,8 +979,8 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public PlanClass evaluateJoin(long leftBitset, PlanClass left, 
-                                      long rightBitset, PlanClass right, 
+        public PlanClass evaluateJoin(long leftBitset, PlanClass left,
+                                      long rightBitset, PlanClass right,
                                       long bitset, PlanClass existing,
                                       JoinType joinType, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
             JoinPlanClass planClass = (JoinPlanClass)existing;
@@ -1031,25 +1032,32 @@ public class JoinAndIndexPicker extends BaseRule
             Plan rightPlan = right.bestNestedPlan(left, condJoins, outsideJoins);
             CostEstimate costEstimate = leftPlan.costEstimate.nest(rightPlan.costEstimate);
             JoinPlan joinPlan = new JoinPlan(leftPlan, rightPlan,
-                                             joinType, JoinNode.Implementation.NESTED_LOOPS,
-                                             joins, costEstimate);
+                    joinType, JoinNode.Implementation.NESTED_LOOPS,
+                    joins, costEstimate);
             if (joinType.isSemi() || rightPlan.semiJoinEquivalent()) {
                 Plan loaderPlan = right.bestPlan(outsideJoins);
                 JoinPlan hashPlan = buildBloomFilterSemiJoin(loaderPlan, joinPlan);
                 if (hashPlan != null)
                     planClass.consider(hashPlan);
             }
+            //TODO if joinPlan can be achieved via a hash join
+            if ( joinType.isInner() ){
+                Plan loaderPlan = right.bestPlan(outsideJoins);
+                JoinPlan hashPlan2 = buildHashTableJoin(loaderPlan, joinPlan);
+                planClass.consider(hashPlan2);
+            }
             planClass.consider(joinPlan);
             return planClass;
         }
 
-        /** Get the tables that correspond to the given bitset, plus
+        /**
+         * Get the tables that correspond to the given bitset, plus
          * any that are bound outside the subquery, either
          * syntactically or via joins to it.
          */
         public Set<ColumnSource> boundTables(long tables) {
             if (JoinableBitSet.isEmpty(tables) &&
-                (subqueryBoundTables == null))
+                    (subqueryBoundTables == null))
                 return picker.queryGoal.getQuery().getOuterTables();
             Set<ColumnSource> boundTables = new HashSet<>();
             boundTables.addAll(picker.queryGoal.getQuery().getOuterTables());
@@ -1104,12 +1112,12 @@ public class JoinAndIndexPicker extends BaseRule
                         if (!((left instanceof ColumnExpression) &&
                               (right instanceof ColumnExpression)))
                             return null;
-                        if (inputPlan.containsColumn((ColumnExpression)left) && 
+                        if (inputPlan.containsColumn((ColumnExpression)left) &&
                             checkPlan.containsColumn((ColumnExpression)right)) {
                             matchColumns.add(left);
                             hashColumns.add(right);
                         }
-                        else if (inputPlan.containsColumn((ColumnExpression)right) && 
+                        else if (inputPlan.containsColumn((ColumnExpression)right) &&
                                  checkPlan.containsColumn((ColumnExpression)left)) {
                             matchColumns.add(right);
                             hashColumns.add(left);
@@ -1140,6 +1148,54 @@ public class JoinAndIndexPicker extends BaseRule
             return new HashJoinPlan(loaderPlan, inputPlan, checkPlan,
                                     JoinType.SEMI, JoinNode.Implementation.BLOOM_FILTER,
                                     joins, costEstimate, bloomFilter, hashColumns, matchColumns);
+        }
+
+        public JoinPlan buildHashTableJoin(Plan loaderPlan, JoinPlan joinPlan) {
+            Plan inputPlan = joinPlan.left;
+            Plan checkPlan = joinPlan.right;
+            Collection<JoinOperator> joins = joinPlan.joins;
+            if (checkPlan.costEstimate.getRowCount() > 1)
+                return null;    // Join not selective.
+            List<ExpressionNode> hashColumns = new ArrayList<>();
+            List<ExpressionNode> matchColumns = new ArrayList<>();
+            for (JoinOperator join : joins) {
+                if (join.getJoinConditions() != null) {
+                    for (ConditionExpression cond : join.getJoinConditions()) {
+                        if (!(cond instanceof ComparisonCondition)) return null;
+                        ComparisonCondition ccond = (ComparisonCondition) cond;
+                        if (ccond.getOperation() != Comparison.EQ) return null;
+                        ExpressionNode left = ccond.getLeft();
+                        ExpressionNode right = ccond.getRight();
+                        // TODO: Could allow somewhat more
+                        // complicated, provided still just use one
+                        // side's tables.
+                        if (!((left instanceof ColumnExpression) &&
+                                (right instanceof ColumnExpression)))
+                            return null;
+                        if (inputPlan.containsColumn((ColumnExpression) left) &&
+                                checkPlan.containsColumn((ColumnExpression) right)) {
+                            matchColumns.add(left);
+                            hashColumns.add(right);
+                        } else if (inputPlan.containsColumn((ColumnExpression) right) &&
+                                checkPlan.containsColumn((ColumnExpression) left)) {
+                            matchColumns.add(right);
+                            hashColumns.add(left);
+                        } else {
+                            return null;
+                        }
+                    }
+                }
+            }
+            long limit = picker.queryGoal.getLimit();
+            if (joinPlan.costEstimate.getRowCount() == limit) {
+                /** Possibly return null if the row count is greater than the possible row count**/
+            }
+            HashTable hashTable = new HashTable(loaderPlan.costEstimate.getRowCount(), 1);/**Does the hash table need these values*/
+            CostEstimate costEstimate = picker.getCostEstimator()
+                    .costHashJoin(loaderPlan.costEstimate, inputPlan.costEstimate, 6.6);//TODO Selectivity
+            return new HashJoinPlan(loaderPlan, inputPlan, checkPlan,
+                    JoinType.SEMI, JoinNode.Implementation.HASH_TABLE,
+                    joins, costEstimate, hashTable, hashColumns, matchColumns);
         }
     }
     
