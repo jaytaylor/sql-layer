@@ -1,8 +1,8 @@
 SelectQuery@dfe303
   ResultSet@b0ede5[_SQL_COL_1]
     Project@1d27069[Subquery@d22462]
-      Select@52d1a4[parent.id == c_outer.cid]
-        JoinNode@1417690(INNER)
+      Select@52d1a4[]
+        JoinNode@1417690(INNER[parent.id == c_outer.cid])
           TableGroupJoinTree@cef6f1(TableGroup@1b6634c(customers), c_outer)
             TableSource@1dfd90f(c_outer - TableGroup@1b6634c(customers))
           TableGroupJoinTree@1315415(TableGroup@1873eb2(parent), parent)
@@ -12,8 +12,8 @@ Subquery@d22462
   ResultSet@25491d[order_date]
     Limit@1e32382(LIMIT 1)
       Project@1304043[orders.order_date]
-        Select@cb07ef[parent.id == orders.cid, c_outer.cid == c_inner.cid]
-          JoinNode@176086d(INNER)
+        Select@cb07ef[]
+          JoinNode@176086d(INNER[parent.id == orders.cid, c_outer.cid == c_inner.cid])
             TableGroupJoinTree@234265(TableGroup@dc1f04(customers), c_inner)
               TableSource@19646fd(c_inner - TableGroup@dc1f04(customers))
             TableGroupJoinTree@1784427(TableGroup@c272bc(customers), orders)
