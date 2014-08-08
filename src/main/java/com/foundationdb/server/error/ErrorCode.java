@@ -449,6 +449,8 @@ public enum ErrorCode {
     AIS_VALIDATION          ("53", "00E", Importance.ERROR, AISValidationException.class),
     PROTOBUF_BUILD          ("53", "00F", Importance.ERROR, ProtobufBuildException.class),
     NOT_ALLOWED_BY_CONFIG   ("53", "00G", Importance.ERROR, NotAllowedByConfigException.class),
+    JOIN_GRAPH_FAILURE      ("53", "00H", Importance.ERROR, FailedJoinGraphCreationException.class),
+    CORRUPTED_PLAN          ("53", "00I", Importance.ERROR, CorruptedPlanException.class),
     
     // Class 55 - Type conversion errors
     UNKNOWN_TYPE            ("55", "001", Importance.DEBUG, UnknownDataTypeException.class),

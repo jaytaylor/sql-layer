@@ -3,7 +3,7 @@ SelectQuery@655b1b87
     Project@f308686[items.sku]
       Select@3acfcf34[]
         JoinNode@43f9d300(INNER/NESTED_LOOPS)
-          TableGroupJoinTree@47f0503a(TableGroup@468bc7dd(customers), items - SingleIndexScan@2eea25a(Index(test.items.sku[IndexColumn(sku)]), covering/SORTED, rows = 20000, cost = 31641.5))
+          TableGroupJoinTree@47f0503a(TableGroup@468bc7dd(customers), items - SingleIndexScan@2eea25a(Index(test.items.sku[IndexColumn(sku)]), covering/SORTED, rows = 20000, cost = 15241.5))
             TableSource@1a752f95(items - TableGroup@468bc7dd(customers))
           TableGroupJoinTree@20ce4c41(TableGroup@e4c437(categories), categories - SingleIndexScan@2b0df756(Index(test.categories.cat_sku[IndexColumn(cat), IndexColumn(sku)]), covering/NONE, =2, =items.sku, rows = 1, cost = 85.1750))
             TableSource@386ecc5(categories - TableGroup@e4c437(categories))

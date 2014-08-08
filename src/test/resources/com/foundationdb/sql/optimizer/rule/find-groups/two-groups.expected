@@ -1,8 +1,8 @@
 SelectQuery@4ae7b77
   ResultSet@5b2bc407[cid, name, oid, cid, order_date, id, name, state, id, pid, name]
     Project@1652d654[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date, parent.id, parent.name, parent.state, child.id, child.pid, child.name]
-      Select@1875303f[parent.name == customers.name]
-        JoinNode@35b284a4(INNER)
+      Select@1875303f[]
+        JoinNode@35b284a4(INNER[parent.name == customers.name])
           TableGroupJoinTree@5b224686(TableGroup@3afa43e8(customers), customers INNER orders)
             TableSource@1b5268d7(customers - TableGroup@3afa43e8(customers))
               TableSource@3f610944(orders - TableGroupJoin@27443628(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

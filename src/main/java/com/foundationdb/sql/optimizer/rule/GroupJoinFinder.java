@@ -37,7 +37,6 @@ import com.foundationdb.util.ListUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Array;
 import java.util.*;
 
 /** Use join conditions to identify which tables are part of the same group.
@@ -54,6 +53,8 @@ public class GroupJoinFinder extends BaseRule
     @Override
     public void apply(PlanContext plan) {
         List<JoinIsland> islands = new JoinIslandFinder().find(plan.getPlan());
+        // this sets outerTables on all subqueries
+        new SubqueryBoundTablesTracker(plan) {}.run();
         moveAndNormalizeWhereConditions(islands);
         findGroupJoins(islands);
         reorderJoins(islands);
@@ -127,6 +128,18 @@ public class GroupJoinFinder extends BaseRule
             this.fkEquivs = fkEquivs;
             if (output instanceof Select)
                 whereConditions = ((Select)output).getConditions();
+        }
+
+        public BaseQuery getQuery() {
+            PlanWithInput output = root.getOutput();
+            BaseQuery baseQuery = null;
+            while (output != null) {
+                if (output instanceof BaseQuery) {
+                    baseQuery = (BaseQuery) output;
+                }
+                output = output.getOutput();
+            }
+            return baseQuery;
         }
     }
 
@@ -929,7 +942,19 @@ public class GroupJoinFinder extends BaseRule
     protected void moveJoinConditions(List<JoinIsland> islands) {
         for (JoinIsland island : islands) {
             moveJoinConditions(island.root, island.whereConditions, island.whereJoins);
-        }        
+            if (island.whereConditions != null) {
+                Iterator<ConditionExpression> iterator = island.whereConditions.iterator();
+                while (iterator.hasNext()) {
+                    ConditionExpression condition = iterator.next();
+                    Set<ColumnSource> columnSources = new ConditionColumnSourcesFinder().find(condition);
+                    columnSources.removeAll(island.getQuery().getOuterTables());
+                    if (moveWhereCondition(columnSources, condition, island.root)) {
+                        iterator.remove();
+                    }
+                }
+            }
+
+        }
     }
 
     protected void moveJoinConditions(Joinable joinable,
@@ -958,6 +983,56 @@ public class GroupJoinFinder extends BaseRule
             moveJoinConditions(join.getLeft(), whereConditions, whereJoins);
             moveJoinConditions(join.getRight(), whereConditions, whereJoins);
         }
+    }
+    /**
+     * Moves the given condition as far down as possible, so long as the tableSources are visible
+     * @param tableSources the tableSources referenced by the condition. All sources that are declared in a nested
+     *                     join will be removed from the tableSources
+     * @return true if the condition was added to a joinConditions
+     */
+    private boolean moveWhereCondition(Set<ColumnSource> tableSources, ConditionExpression condition, Joinable joinable) {
+        // If we move Any/Exists Conditions down, the InConditionReverser won't be able to find them,
+        // so they get to stay in the where clause
+        if (condition instanceof AnyCondition || condition instanceof ExistsCondition) {
+            return false;
+        }
+        if (joinable instanceof TableGroupJoinTree) {
+            for (TableGroupJoinNode table : (TableGroupJoinTree)joinable) {
+                tableSources.remove(table.getTable());
+            }
+        } else if (joinable instanceof JoinNode)
+        {
+            JoinNode join = (JoinNode)joinable;
+            if (join.isInnerJoin()) {
+                Set<ColumnSource> forLeft = new HashSet<>(tableSources);
+                Set<ColumnSource> forRight = new HashSet<>(tableSources);
+                if (moveWhereCondition(forLeft, condition, join.getLeft())) {
+                    return true;
+                }
+                if (forLeft.isEmpty()) {
+                    tableSources.clear();
+                } else {
+                    if (moveWhereCondition(forRight, condition, join.getRight())) {
+                        return true;
+                    }
+                    tableSources.retainAll(forLeft);
+                    tableSources.retainAll(forRight);
+                }
+                if (tableSources.isEmpty()) {
+                    if (join.getJoinConditions() == null) {
+                        join.setJoinConditions(new ConditionList());
+                    }
+                    join.getJoinConditions().add(condition);
+                    return true;
+                }
+            }
+            return false;
+        } else if (joinable instanceof TableSource)
+        {
+            tableSources.remove(joinable);
+            return false;
+        }
+        return false;
     }
 
     static final Comparator<TableGroup> tableGroupComparator = new Comparator<TableGroup>() {
