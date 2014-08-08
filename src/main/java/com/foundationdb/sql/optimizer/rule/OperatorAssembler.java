@@ -1486,7 +1486,6 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleHashTableLookup(HashTableLookup hashTableLookup) {
             HashTable hashTable = hashTableLookup.getHashTable();
             int tablePos = getBindingPosition(hashTable);
-            int rowPos = hashTableLookup.getBoundRowPosition();
             RowStream stream = new RowStream();
             List<TPreparedExpression> tFields = assembleExpressions(hashTableLookup.getLookupExpressions(),
                     stream.fieldOffsets);
@@ -1497,11 +1496,10 @@ public class OperatorAssembler extends BaseRule
             stream.operator = API.hashTableLookup_Default(
                     collators,
                     tFields,
-                    hashTableLookup.isOuterLeftJoin(),
-                    tablePos,
-                    rowPos)
+                    tablePos);
             return stream;
         }
+
         protected RowStream assembleProject(Project project) {
             RowStream stream = assembleStream(project.getInput());
             List<? extends TPreparedExpression> pExpressions;

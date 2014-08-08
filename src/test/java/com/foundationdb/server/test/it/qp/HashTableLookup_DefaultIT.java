@@ -100,19 +100,15 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
 
     /** Test argument HashJoinLookup_Default */
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testHashJoinbindingsSame() {
-        hashTableLookup_Default(null, genericExpressionList, false, ROW_BINDING_POSITION, ROW_BINDING_POSITION, customerRowType, customerRowType);
-    }
 
     @Test(expected = IllegalArgumentException.class)
     public void testHashJoinEmptyComparisonFields() {
-        hashTableLookup_Default(null, emptyExpressionList, false, ROW_BINDING_POSITION, TABLE_BINDING_POSITION, customerRowType, customerRowType);
+        hashTableLookup_Default(null, emptyExpressionList,TABLE_BINDING_POSITION);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testHashJoinNullComparisonFields() {
-        hashTableLookup_Default(null, null, false, ROW_BINDING_POSITION, TABLE_BINDING_POSITION, customerRowType, customerRowType);
+        hashTableLookup_Default(null, null,  TABLE_BINDING_POSITION);
     }
 
     /** Test arguments using_HashTable  */
@@ -353,11 +349,7 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
                 hashTableLookup_Default(
                         collators,
                         outerJoinExpressions,
-                        leftOuterJoin,
-                        TABLE_BINDING_POSITION,
-                        ROW_BINDING_POSITION,
-                        outerRowType,
-                        innerRowType
+                        TABLE_BINDING_POSITION
                 ),
                 innerRowType,
                 expressions

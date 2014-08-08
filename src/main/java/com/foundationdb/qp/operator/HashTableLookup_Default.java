@@ -19,14 +19,13 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.*;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.util.KeyWrapper;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.util.ArgumentValidation;
+import com.foundationdb.util.HashTable;
 import com.foundationdb.util.tap.InOutTap;
-import com.google.common.collect.ArrayListMultimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,19 +48,11 @@ class HashTableLookup_Default extends Operator
 
     public HashTableLookup_Default(List<AkCollator> collators,
                                    List<TPreparedExpression> outerComparisonFields,
-                                   boolean outerLeftJoin,
-                                   int hashBindingPosition,
-                                   int rowBindingPosition,
-                                   RowType boundRowType,
-                                   RowType hashedRowType
+                                   int hashTableBindingPosition
     )
     {
         ArgumentValidation.notNull("outerComparisonFields", outerComparisonFields);
         ArgumentValidation.isGTE("outerComparisonFields", outerComparisonFields.size(), 1);
-        ArgumentValidation.isLTE("outerComparisonFields", outerComparisonFields.size(), boundRowType.nFields());
-        ArgumentValidation.isNotSame("hashBindingPosition", hashBindingPosition, "rowBindingPosition", rowBindingPosition);
-        ArgumentValidation.notNull("boundRowType", boundRowType);
-        ArgumentValidation.notNull("hashedRowType", hashedRowType);
         int i = 0;
         for(TPreparedExpression comparisonField : outerComparisonFields){
             evaluatableComparisonFields.add(comparisonField.build());
@@ -69,11 +60,7 @@ class HashTableLookup_Default extends Operator
         }
 
         this.collators = collators;
-        this.outerLeftJoin = outerLeftJoin;
-        this.hashBindingPosition = hashBindingPosition;
-        this.rowBindingPosition = rowBindingPosition;
-        this.boundRowType = boundRowType;
-        this.hashedRowType = hashedRowType;
+        this.hashTableBindingPosition = hashTableBindingPosition;
     }
 
     // Class state
@@ -84,13 +71,10 @@ class HashTableLookup_Default extends Operator
 
     // Object state
 
-    private final int hashBindingPosition;
-    private final int rowBindingPosition;
-    private final RowType boundRowType;
-    private final RowType hashedRowType;
+    private final int hashTableBindingPosition;
+    private RowType hashedRowType;
 
     private final List<AkCollator> collators;
-    private final boolean outerLeftJoin;
     private final List<TEvaluatableExpression> evaluatableComparisonFields = new ArrayList<>();
 
     @Override
@@ -109,8 +93,9 @@ class HashTableLookup_Default extends Operator
             TAP_OPEN.in();
             try {
                 CursorLifecycle.checkIdle(this);
-                hashTable = bindings.getHashTable(hashBindingPosition);
-                innerRowList = hashTable.get(new KeyWrapper(getOuterRow(), evaluatableComparisonFields, collators));
+                hashTable = bindings.getHashTable(hashTableBindingPosition);
+                hashedRowType = hashTable.getRowType();
+                innerRowList = hashTable.getMatchingRows(null, evaluatableComparisonFields, collators, context);
                 innerRowListPosition = 0;
                 closed = false;
             } finally {
@@ -132,8 +117,6 @@ class HashTableLookup_Default extends Operator
                 if(innerRowListPosition < innerRowList.size()) {
                     next = innerRowList.get(innerRowListPosition++);
                     assert(next.rowType().equals(hashedRowType));
-                } else if(outerLeftJoin && innerRowListPosition++ == 0){
-                    next = getOuterRow();
                 }
                 if (LOG_EXECUTION) {
                     LOG.debug("HashJoin: yield {}", next);
@@ -201,17 +184,6 @@ class HashTableLookup_Default extends Operator
             bindingsCursor.cancelBindings(bindings);
         }
 
-
-        private Row getOuterRow()
-        {
-            Row row = bindings.getRow(rowBindingPosition);
-            assert(row.rowType().equals(boundRowType));
-            if (LOG_EXECUTION) {
-                LOG.debug("hash_join: outer {}", row);
-            }
-            return row;
-        }
-
         Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
             super(context);
@@ -219,7 +191,7 @@ class HashTableLookup_Default extends Operator
             this.bindingsCursor = multiple;
         }
         // Cursor interface
-        protected ArrayListMultimap<KeyWrapper, Row> hashTable = ArrayListMultimap.create();
+        protected HashTable hashTable;
         private boolean closed = true;
         private final QueryBindingsCursor bindingsCursor;
         private List<Row> innerRowList;

@@ -26,14 +26,11 @@ public class HashTableLookup extends BasePlanNode
     private HashTable hashTable;
     private List<ExpressionNode> lookupExpressions;
     private PlanNode check;
-    private boolean isOuterLeftJoin;
 
     public HashTableLookup(HashTable hashTable,
-                           List<ExpressionNode> lookupExpressions,
-                           boolean isOuterLeftJoin){
+                           List<ExpressionNode> lookupExpressions){
         this.hashTable = hashTable;
         this.lookupExpressions = lookupExpressions;
-        this.isOuterLeftJoin = isOuterLeftJoin;
 
     }
 
@@ -45,9 +42,6 @@ public class HashTableLookup extends BasePlanNode
     }
     public PlanNode getCheck() {
         return check;
-    }
-    public boolean isOuterLeftJoin(){
-        return isOuterLeftJoin;
     }
 
     @Override

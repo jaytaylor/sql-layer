@@ -119,8 +119,7 @@ public class NestedLoopMapper extends BaseRule
                     HashJoinNode hjoin = (HashJoinNode)join;
                     HashTable ht = (HashTable)hjoin.getHashTable();
                     map = new HashTableLookup(ht,
-                                              hjoin.getMatchColumns(),
-                                              false);//TODO this should be real values not constants
+                                              hjoin.getMatchColumns());
                     PlanNode pr = new Project(map,
                                               hjoin.getHashColumns());
                     PlanNode mnl = new MapJoin(join.getJoinType(),

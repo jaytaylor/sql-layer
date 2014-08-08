@@ -815,31 +815,23 @@ public class API
     // hashTableLookup_Default
     public static Operator hashTableLookup_Default(List<AkCollator> collators,
                                                    List<TPreparedExpression> outerComparisonFields,
-                                                   boolean outerLeftJoin,
-                                                   int hashBindingPosition,
-                                                   int rowBindingPosition,
-                                                   RowType boundRowType,
-                                                   RowType hashedRowType)
+                                                   int hashTableBindingPosition)
     {
         return new HashTableLookup_Default(
                 collators,
                 outerComparisonFields,
-                outerLeftJoin,
-                hashBindingPosition,
-                rowBindingPosition,
-                boundRowType,
-                hashedRowType);
+                hashTableBindingPosition);
     }
 
     // using_HashTable
     public static Operator using_HashTable(Operator hashInput,
                                            RowType hashedRowType,
                                            List<TPreparedExpression> comparisonFields,
-                                           int filterBindingPosition,
+                                           int hashTableBindingPosition,
                                            Operator joinedInput,
                                            List<AkCollator> collators)
     {
-        return new Using_HashTable(hashInput, hashedRowType, comparisonFields, filterBindingPosition, joinedInput, collators);
+        return new Using_HashTable(hashInput, hashedRowType, comparisonFields, hashTableBindingPosition, joinedInput, collators);
     }
 
     // EmitBoundRow_Nested
