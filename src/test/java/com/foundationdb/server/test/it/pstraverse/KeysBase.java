@@ -81,6 +81,7 @@ public abstract class KeysBase extends ITBase {
     }
 
     @Test // (expected=IllegalArgumentException.class) @SuppressWarnings("unused") // junit will invoke
+    @SuppressWarnings("unchecked")
     public void traverseCustomersPK() throws Exception {
         traversePK(
                 customers(),
@@ -88,7 +89,7 @@ public abstract class KeysBase extends ITBase {
         );
     }
 
-    @Test @SuppressWarnings("unused") // junit will invoke
+    @Test @SuppressWarnings(value={"unused", "unchecked"}) // junit will invoke
     public void traverseOrdersPK() throws Exception {
         traversePK(
                 orders(),
@@ -97,7 +98,7 @@ public abstract class KeysBase extends ITBase {
         );
     }
 
-    @Test @SuppressWarnings("unused") // junit will invoke
+    @Test @SuppressWarnings(value={"unused", "unchecked"}) // junit will invoke
     public void traverseItemsPK() throws Exception {
         traversePK(
                 items(),
