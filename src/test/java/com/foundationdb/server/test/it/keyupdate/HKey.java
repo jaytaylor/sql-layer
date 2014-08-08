@@ -86,6 +86,7 @@ public class HKey implements Comparable<HKey>
     // Comparable interface
 
     @Override
+    @SuppressWarnings("unchecked")
     public int compareTo(HKey that)
     {
         int c = 0;
