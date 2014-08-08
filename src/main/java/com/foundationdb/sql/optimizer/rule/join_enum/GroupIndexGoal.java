@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule.join_enum;
 
+import com.foundationdb.server.error.CorruptedPlanException;
 import com.foundationdb.sql.optimizer.rule.EquivalenceFinder;
 import com.foundationdb.sql.optimizer.rule.JoinAndIndexPicker;
 import com.foundationdb.sql.optimizer.rule.PlanContext;
@@ -506,15 +507,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 }
                 OrderByExpression indexColumn = getIndexColumn(indexOrdering, idx);
                 if (indexColumn == null && idx < nequals) {
-                    // if we we're trying the union column, but that failed, try just treating it as equals
-                    idx++;
-                    indexColumn = getIndexColumn(indexOrdering, idx);
-                    if (indexColumn != null) {
-                        boolean matchingColumn = orderingExpressionMatches(indexColumn, targetExpression);
-                        if (matchingColumn) {
-                            index.setIncludeUnionAsEquality(true);
-                        }
-                    }
+                    throw new CorruptedPlanException("No index column expression for union comparison");
                 }
                 if (indexColumn != null) {
                     boolean matchingColumn = orderingExpressionMatches(indexColumn, targetExpression);
