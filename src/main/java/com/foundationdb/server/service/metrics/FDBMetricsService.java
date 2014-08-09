@@ -81,6 +81,8 @@ public class FDBMetricsService implements MetricsService, Service
     private final ConfigurationService configService;
     private final FDBHolder fdbService;
     private final ConcurrentHashMap<String,BaseMetricImpl<?>> metrics = new ConcurrentHashMap<>();
+    private final List<KeyValue> pendingWrites = new ArrayList<>();
+    private final Random random = new Random();
     // Effectively final, since set by start and so before service is
     // available to any client thread.
     private Database ownDatabase;
@@ -88,11 +90,10 @@ public class FDBMetricsService implements MetricsService, Service
     private long timebase;
     private String address;
     private long flushInterval;
-    private Random random;
     protected Thread backgroundThread;
     protected volatile boolean running, anyEnabled, confChanged, metricsConfChanged, metricsDataChanged, backgroundIdle;
     private volatile Map<List<String>,byte[]> conf;
-    private List<KeyValue> pendingWrites = new ArrayList<>();
+
     private BooleanMetric sqlLayerRunningMetric;
 
     @Inject
@@ -424,11 +425,11 @@ public class FDBMetricsService implements MetricsService, Service
             address = InetAddress.getLocalHost().getHostAddress();
         }
         catch (IOException ex) {
+            // Ignore
         }
         address = address + ":" + configService.getProperty("fdbsql.postgres.port");
         flushInterval = Long.parseLong(configService.getProperty(CONFIG_FLUSH_INTERVAL));
-        random = new Random();
-        
+
         backgroundThread = new Thread() {
                 @Override
                 public void run() {
@@ -453,10 +454,22 @@ public class FDBMetricsService implements MetricsService, Service
             backgroundThread.join(1000);
         }
         catch (InterruptedException ex) {
+            backgroundThread.interrupt();
         }
         if (ownDatabase != null) {
             ownDatabase.dispose();
         }
+
+        metrics.clear();
+        pendingWrites.clear();
+        conf.clear();
+
+        ownDatabase = null;
+        dataSubspace = confSubspace = confChangesSubspace = null;
+        timebase = flushInterval = 0;
+        address = null;
+        backgroundThread = null;
+        running = anyEnabled = confChanged = metricsConfChanged = metricsDataChanged = backgroundIdle = false;
     }
 
     @Override
