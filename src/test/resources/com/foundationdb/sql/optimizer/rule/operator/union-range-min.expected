@@ -1,0 +1,10 @@
+PhysicalSelect@46539568[_SQL_COL_1]
+  Project_Default(Field(0))
+    IfEmpty_Default(NULL)
+      Limit_Default(1)
+        Project_Default(Field(1))
+          Union_Ordered(all, skip 1, compare 1)
+            Union_Ordered(all, skip 1, compare 1)
+              IndexScan_Default(Index(test.customers.name), name = 'Adams', cid ASC)
+              IndexScan_Default(Index(test.customers.name), name = 'Jones', cid ASC)
+            IndexScan_Default(Index(test.customers.name), name = 'Smith', cid ASC)

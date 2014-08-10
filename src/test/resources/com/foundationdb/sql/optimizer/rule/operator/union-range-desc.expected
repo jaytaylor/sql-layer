@@ -1,0 +1,8 @@
+PhysicalSelect@5fc59667[oid, cid, order_date, iid, oid, sku, quan, price]
+  Project_Default(Field(0), Field(1), Field(2), Field(3), Field(4), Field(5), Field(6), Field(7))
+    Select_HKeyOrdered(Field(2) == DATE '2000-10-31')
+      Flatten_HKeyOrdered(test.orders INNER test.items)
+        GroupLookup_Default(Index(test.items.sku) -> test.orders, test.items)
+          Union_Ordered(all, skip 0, compare 4)
+            IndexScan_Default(Index(test.items.sku), sku = '1234', orders.cid DESC, oid, iid)
+            IndexScan_Default(Index(test.items.sku), sku = '9876', orders.cid DESC, oid, iid)
