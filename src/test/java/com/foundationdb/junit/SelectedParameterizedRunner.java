@@ -83,7 +83,7 @@ public final class SelectedParameterizedRunner extends Parameterized {
     
     @Override
     protected List<Runner> getChildren() {
-        List<Runner> children = super.getChildren();        
+        List<Runner> children = super.getChildren();
         
         if (override != null) {
             for (Iterator<Runner> iterator = children.iterator(); iterator.hasNext(); ) {
@@ -92,22 +92,21 @@ public final class SelectedParameterizedRunner extends Parameterized {
                     Field f;
                     try {
                         f = child.getClass().getDeclaredField("fName");
-                    }
-                    catch (NoSuchFieldException e) {
+                    } catch (NoSuchFieldException e) {
                         continue;
                     }
                     f.setAccessible(true);
-                    String fName = (String)f.get(child);
+                    String fName = (String) f.get(child);
                     if (fName.startsWith("[") && fName.endsWith("]")) {
                         fName = fName.substring(1, fName.length()-1);
                     }
                     if (overrideIsRegex && !paramNameMatchesRegex(fName, override)) {
                         iterator.remove();
                     }
-                    else if (!overrideIsRegex && !fName.equals(override))
+                    else if (!overrideIsRegex && !fName.equals(override)) {
                         iterator.remove();
                     }
-                catch (Exception e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
