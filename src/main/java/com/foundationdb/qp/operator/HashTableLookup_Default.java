@@ -22,6 +22,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
+import com.foundationdb.server.types.texpressions.TPreparedBoundField;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.HashTable;
@@ -95,7 +96,7 @@ class HashTableLookup_Default extends Operator
                 CursorLifecycle.checkIdle(this);
                 hashTable = bindings.getHashTable(hashTableBindingPosition);
                 hashedRowType = hashTable.getRowType();
-                innerRowList = hashTable.getMatchingRows(null, evaluatableComparisonFields, collators, context);
+                innerRowList = hashTable.getMatchingRows(null, evaluatableComparisonFields, collators, bindings);
                 innerRowListPosition = 0;
                 closed = false;
             } finally {

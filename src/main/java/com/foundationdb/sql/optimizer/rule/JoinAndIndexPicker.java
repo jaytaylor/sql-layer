@@ -1171,7 +1171,8 @@ public class JoinAndIndexPicker extends BaseRule
             if (joinType.isInner() || (joinType.isSemi() && rightPlan.semiJoinEquivalent()) || joinType == JoinType.LEFT) {
                 Plan loaderPlan = right.bestPlan(outsideJoins);
                 JoinPlan hashPlan2 = buildHashTableJoin(loaderPlan, joinPlan );
-                planClass.consider(hashPlan2);
+                if(hashPlan2 != null)
+                    planClass.consider(hashPlan2);
             }
             cleanJoinConditions(joins, leftPlan, rightPlan);
             planClass.consider(joinPlan);

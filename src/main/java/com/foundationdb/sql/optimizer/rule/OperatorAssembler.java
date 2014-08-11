@@ -18,6 +18,7 @@
 package com.foundationdb.sql.optimizer.rule;
 
 import com.foundationdb.qp.row.ValuesRow;
+import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.sql.optimizer.*;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.ExpressionsSource.DistinctState;
@@ -1464,16 +1465,17 @@ public class OperatorAssembler extends BaseRule
             int pos = assignBindingPosition(hashTable);
             RowStream lstream = assembleStream(usingHashTable.getLoader());
             RowStream stream = assembleStream(usingHashTable.getInput());
-            List<AkCollator> collators = null;
             List<TPreparedExpression> tFields = assembleExpressions(usingHashTable.getLookupExpressions(),
                     stream.fieldOffsets);
-            if (usingHashTable.getLoader() instanceof IndexScan) {
-                collators = new ArrayList<>();
-                IndexScan indexScan = (IndexScan) usingHashTable.getLoader();
-                for (IndexColumn indexColumn : indexScan.getIndexColumns()) {
-                    collators.add(indexColumn.getColumn().getCollator());
+            List<AkCollator> collators = new ArrayList<>();
+            RowType rt = lstream.rowType;
+            for(int i = 0; i < rt.nFields(); i++){
+                if(TInstance.tClass(rt.typeAt(i)) instanceof TString){
+                    collators.add(TString.getCollator(rt.typeAt(i)));
                 }
             }
+            if(collators.isEmpty())
+                collators = null;
             stream.operator = API.using_HashTable(lstream.operator,
                     lstream.rowType,
                     tFields,

@@ -1,6 +1,6 @@
 package com.foundationdb.util;
 
-import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.collation.AkCollator;
@@ -25,12 +25,12 @@ public class HashTable {
 
     private RowType hashedRowType;
 
-    public List<Row> getMatchingRows(Row row, List<TEvaluatableExpression> evaluatableComparisonFields, List<AkCollator> collators, QueryContext context){
-        return hashTable.get(new KeyWrapper(row, evaluatableComparisonFields, collators, context));
+    public List<Row> getMatchingRows(Row row, List<TEvaluatableExpression> evaluatableComparisonFields, List<AkCollator> collators, QueryBindings bindings){
+        return hashTable.get(new KeyWrapper(row, evaluatableComparisonFields, collators, bindings));
     }
 
-    public void put(Row row, List<TEvaluatableExpression> evaluatableComparisonFields, List<AkCollator> collators, QueryContext context){
-        hashTable.put(new KeyWrapper(row, evaluatableComparisonFields, collators, context), row);
+    public void put(Row row, List<TEvaluatableExpression> evaluatableComparisonFields, List<AkCollator> collators, QueryBindings bindings){
+        hashTable.put(new KeyWrapper(row, evaluatableComparisonFields, collators, bindings), row);
     }
 
     public RowType getRowType() {
@@ -61,13 +61,13 @@ public class HashTable {
             return true;
         }
 
-        public KeyWrapper(Row row, List<TEvaluatableExpression> comparisonExpressions, List<AkCollator> collators, QueryContext context){
+        public KeyWrapper(Row row, List<TEvaluatableExpression> comparisonExpressions, List<AkCollator> collators, QueryBindings bindings){
             int i = 0;
             for( TEvaluatableExpression expression : comparisonExpressions) {
                 if(row != null)
                     expression.with(row);
-                if(context != null)
-                    expression.with(context);
+                if(bindings != null)
+                    expression.with(bindings);
                 expression.evaluate();
                 ValueSource columnValue = expression.resultValue();
                 Value valueCopy = new Value(columnValue.getType());
