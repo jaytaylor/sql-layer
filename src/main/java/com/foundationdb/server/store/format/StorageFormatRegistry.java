@@ -90,7 +90,7 @@ public abstract class StorageFormatRegistry
 
     private final Collection<Format> formatsInOrder = new TreeSet<>();
     private final Map<Integer,Format> formatsByField = new TreeMap<>();
-    private final Map<String,Format> formatsByIdentifier = new TreeMap<>();
+    private final Map<String,Format<?>> formatsByIdentifier = new TreeMap<>();
     private Constructor<? extends StorageDescription> defaultStorageConstructor;
 
     // The MemoryTableFactory itself cannot be serialized, so remember
@@ -169,6 +169,7 @@ public abstract class StorageFormatRegistry
         memoryTableFactories.remove(name);
     }
 
+    @SuppressWarnings("unchecked")
     public StorageDescription readProtobuf(Storage pbStorage, HasStorage forObject) {
         StorageDescription storageDescription = null;
         for (Format format : formatsInOrder) {
