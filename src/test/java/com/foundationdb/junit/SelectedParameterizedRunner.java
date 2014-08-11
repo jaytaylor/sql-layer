@@ -73,15 +73,14 @@ public final class SelectedParameterizedRunner extends Parameterized {
      * @param paramRegex a string that starts and ends with '/', and between them has a needle.
      * @return whether the paramRegex is found in paramName
      */
-    static boolean paramNameMatchesRegex(String paramName, String paramRegex)
-    {
+    static boolean paramNameMatchesRegex(String paramName, String paramRegex) {
         assert paramRegex.charAt(0)=='/';
         assert paramRegex.charAt(paramRegex.length()-1)=='/';
         assert paramRegex.length() > 2;
         String regex = paramRegex.substring(1, paramRegex.length()-1);
         return Pattern.compile(regex).matcher(paramName).find();
     }
-
+    
     @Override
     protected List<Runner> getChildren() {
         List<Runner> children = super.getChildren();        
@@ -99,6 +98,9 @@ public final class SelectedParameterizedRunner extends Parameterized {
                     }
                     f.setAccessible(true);
                     String fName = (String)f.get(child);
+                    if (fName.startsWith("[") && fName.endsWith("]")) {
+                        fName = fName.substring(1, fName.length()-1);
+                    }
                     if (overrideIsRegex && !paramNameMatchesRegex(fName, override)) {
                         iterator.remove();
                     }
