@@ -20,7 +20,6 @@ package com.foundationdb.sql.pg;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
 import org.junit.Before;
 import org.junit.Test;
-
 import java.io.File;
 import java.sql.Connection;
 import java.util.HashMap;
@@ -30,18 +29,19 @@ import java.util.concurrent.Callable;
 /**
  * This test was created due to the multiple possible plans that were being created as the loader input of a Bloom Filter
  * Previously this was all done under the assumption of an indexScan being the only possible loader
- * For this specific instance a Project it placed on top of the index scan
- * Because of this we now depend on the rowtype of the input stream to create the collators
+ * Because of this we now depend on the rowtype of the input stream to create the collator
  *
+ * In order to guarantee the use of the Bloom Filter a stats.yaml file is loaded, the same used in operator/coi-index
+ * Also the optimizer.scaleIndexStatistics property has to be set to false in order to allow these stats to have an effect
+ * on the perceived row counts on each side of the join
  */
-public class PostgresServerBloomBugIT extends PostgresServerITBase{
+
+public class PostgresServerBloomFilterIT extends PostgresServerITBase{
 
     String DirectoryLocation = "src/test/resources/com/foundationdb/sql/optimizer/operator/coi-index/";
     String StatsFile = DirectoryLocation + "stats.yaml";
     String sql = "SELECT items.sku FROM items, categories WHERE items.sku = categories.sku AND categories.cat = 1 ORDER BY items.sku";
     Connection connection;
-
-
 
     String schemaSetup[] = {
     "CREATE TABLE customers(cid int NOT NULL,PRIMARY KEY(cid), name varchar(32) NOT NULL);",
@@ -58,11 +58,6 @@ public class PostgresServerBloomBugIT extends PostgresServerITBase{
     "INSERT INTO categories values(1,\'bug\'),(1,\'chair\'),(2,\'desk\'),(15,\'nothing\');"
     };
 
-    protected int rootTableId;
-
-    public void loadDatabase(File dir) throws Exception {
-        this.rootTableId = super.loadDatabase(SCHEMA_NAME, dir);
-    }
     @Override
     protected Map<String, String> startupConfigProperties() {
         Map<String,String> map = new HashMap<>(super.startupConfigProperties());
