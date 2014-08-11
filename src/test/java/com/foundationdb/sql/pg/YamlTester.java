@@ -206,8 +206,13 @@ class YamlTester
         public int compare(List<?> x, List<?> y) {
             assertEquals("list sizes", x.size(), y.size());
             for(int i = 0; i < x.size(); i++) {
-                String xString = objectToString(x.get(i));
-                String yString = objectToString(y.get(i));
+                Object xObj = x.get(i);
+                Object yObj = y.get(i);
+                // Regex, etc are not safe sortable with respect to the the final order
+                assertFalse("CompareExpected in unsorted -output: " + xObj, xObj instanceof CompareExpected);
+                assertFalse("CompareExpected in unsorted -output: " + yObj, yObj instanceof CompareExpected);
+                String xString = objectToString(xObj);
+                String yString = objectToString(yObj);
                 int cmp = xString.compareTo(yString);
                 if(cmp != 0) {
                     return cmp;
