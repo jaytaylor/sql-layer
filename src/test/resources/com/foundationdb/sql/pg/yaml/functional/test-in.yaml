@@ -85,7 +85,7 @@
 - output: [[null], [true], [true], [false]]
 
 ---
-- Statement: DELETE FROM all_types          byearayutil
+- Statement: DELETE FROM all_types
 
 # blob
 ---
@@ -99,10 +99,10 @@
 ---
 - Statement: SELECT blob_field FROM all_types WHERE blob_field
     IN ('dead', 'beef')
-- output: [[!utf8-bytes 'beef'],[!utf8-bytes 'dead']]
+- output: [[!utf8-bytes 'dead'], [!utf8-bytes 'beef']]
 ---
 - Statement: SELECT blob_field FROM all_types WHERE blob_field IN (clob_field)
-- output: [[!utf8-bytes 'dead'], [!!binary '']]
+- output: [[!!binary ''], [!utf8-bytes 'dead']]
 ---
 - Statement: SELECT blob_field FROM all_types WHERE blob_field IN (?)
 - params: [[!utf8-bytes 'dead']]
