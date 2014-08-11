@@ -197,81 +197,25 @@ class YamlTester
     /** Matches the Random Cost engine. */
     private static final String RAND_COST_ENGINE = "random-cost";
 
-    /** Compare toString values of arguments, ignoring case. */
-    private static final Comparator<List<?>> COMPARE_IGNORE_CASE = new Comparator<List<?>>()
+    /**
+     * Compare two Lists into a consistent, though not necessarily ordered, order.
+     * Actual contents are expected to be compared more strictly after using this.
+     */
+    private static final Comparator<List<?>> SIMPLE_LIST_COMPARATOR = new Comparator<List<?>>()
     {
-        public int compare(List<?>x, List<?> y) {
-            for (int iInner = 0; iInner < x.size(); iInner++) {
-                Object xObject = x.get(iInner);
-                Object yObject = y.get(iInner);
-                if(xObject == null || yObject == null) {
-                    if (yObject == null && xObject != null)
-                        return -1;
-                    if (xObject == null && yObject != null)
-                        return 1;
-                }else if(!xObject.getClass().equals(yObject.getClass())) {
-                    if ((xObject instanceof Double || xObject instanceof Float ) &&
-                        (yObject instanceof Double || xObject instanceof Float)) {
-                        Double xValue = getDouble(xObject);
-                        Double yValue = getDouble(yObject);
-                        int cmp = ((Comparable) xValue).compareTo(yValue);
-                        if (cmp != 0)
-                            return cmp;
-                    } else if ((xObject instanceof Integer || xObject instanceof Long ) &&
-                            (yObject instanceof Integer || xObject instanceof Long)) {
-                        Long xValue = getLong(xObject);
-                        Long yValue = getLong(yObject);
-                        int cmp = ((Comparable) xValue).compareTo(yValue);
-                        if (cmp != 0)
-                            return cmp;
-                    } else {
-                        int cmp = xObject.getClass().toString().compareToIgnoreCase(yObject.getClass().toString());
-                        return cmp;
-                    }
-                } else if (xObject instanceof Comparable && yObject instanceof Comparable) {
-                     int cmp = ((Comparable) xObject).compareTo(yObject);
-                     if (cmp != 0)
-                         return cmp;
-                } else if (xObject instanceof byte[] && yObject instanceof byte[]) {
-                    byte[] xBytes = (byte[]) xObject;
-                    byte[] yBytes = (byte[]) yObject;
-                    int cmp = compareBytes(xBytes, yBytes);
-                    if (cmp != 0)
-                        return cmp;
+        public int compare(List<?> x, List<?> y) {
+            assertEquals("list sizes", x.size(), y.size());
+            for(int i = 0; i < x.size(); i++) {
+                String xString = objectToString(x.get(i));
+                String yString = objectToString(y.get(i));
+                int cmp = xString.compareTo(yString);
+                if(cmp != 0) {
+                    return cmp;
                 }
             }
             return 0;
         }
     };
-
-    public static Double getDouble(Object num){
-        switch(num.getClass().getSimpleName() ){
-            case ("Double"): return (Double)num;
-            case ("Float"): return new Double((Float)num);
-            default: return null;
-        }
-    }
-
-    public static Long getLong(Object num){
-        switch(num.getClass().getSimpleName() ){
-            case ("Integer"): return new Long((Integer)num);
-            case ("Long"): return (Long)num;
-            default: return null;
-        }
-    }
-
-
-
-    public static int compareBytes(byte[] array1, byte[] array2) {
-        for (int i = 0; i < array1.length && i < array2.length; i++) {
-            int a = (array1[i] & 0xff);
-            int b = (array2[i] & 0xff);
-            if (a != b) {
-                return a - b;
-            }
-        }
-        return array1.length - array2.length;
-    }
 
     private final String filename;
     private final Reader in;
@@ -358,17 +302,6 @@ class YamlTester
         }
     }
 
-    private void executeSql(String sql) {
-        try {
-            try(Statement statement = connection.createStatement()) {
-                statement.execute(sql);
-            }
-        } catch(SQLException e) {
-            LOG.debug("SQL Failed on connection {} with message {}", connection, e.getMessage());
-            throw new ContextAssertionError(sql, e.toString(), e);
-        }
-    }
-
     private void includeCommand(Object value, List<?> sequence) {
         if(value == null) {
             return;
@@ -432,7 +365,7 @@ class YamlTester
         boolean errorSpecified;
         Object errorCode;
         Object errorMessage;
-        boolean sorted;
+        boolean doSortOutput;
         int retryCount = -1;
         int retriesPerformed = 0;
 
@@ -693,10 +626,10 @@ class YamlTester
                 } else if("param_types".equals(attribute)) {
                     parseParamTypes(attributeValue);
                 } else if("output_already_ordered".equals(attribute)) {
-                    this.sorted = false;
+                    this.doSortOutput = false;
                     parseOutput(attributeValue);
                 } else if("output".equals(attribute)) {
-                    this.sorted = true;
+                    this.doSortOutput = true;
                     parseOutput(attributeValue);
                 } else if("row_count".equals(attribute)) {
                     parseRowCount(attributeValue);
@@ -852,7 +785,7 @@ class YamlTester
                             }
                             return;
                         }
-                        checkSuccess(stmt, sorted);
+                        checkSuccess(stmt, doSortOutput);
                     }
                 } else {
                     try(PreparedStatement stmt = connection.prepareStatement(statement)) {
@@ -878,7 +811,7 @@ class YamlTester
                                 }
                                 continue;
                             }
-                            checkSuccess(stmt, sorted);
+                            checkSuccess(stmt, doSortOutput);
                             paramsRow++;
                         }
                         commandName = "Statement";
@@ -908,7 +841,7 @@ class YamlTester
             }
         }
 
-        private void checkSuccess(Statement stmt, boolean sorted) throws SQLException {
+        private void checkSuccess(Statement stmt, boolean doSortOutput) throws SQLException {
             assertFalse("Statement execution succeeded, but was expected" + " to generate an error", errorSpecified);
             ResultSet rs = stmt.getResultSet();
             if(rs == null) {
@@ -924,7 +857,7 @@ class YamlTester
                 collectWarnings(stmt.getWarnings(), reportedWarnings);
                 checkWarnings(reportedWarnings);
             } else {
-                checkResults(rs, sorted);
+                checkResults(rs, doSortOutput);
                 assertFalse("Multiple result sets not supported", stmt.getMoreResults());
             }
         }
@@ -985,7 +918,7 @@ class YamlTester
             }
         }
 
-        private void checkResults(ResultSet rs, boolean sorted) throws SQLException {
+        private void checkResults(ResultSet rs, boolean doSortOutput) throws SQLException {
             if(outputTypes != null && outputRow == 0) {
                 checkOutputTypes(rs);
             }
@@ -1018,9 +951,9 @@ class YamlTester
                     collectWarnings(rs.getWarnings(), reportedWarnings);
                     LOG.debug(arrayString(resultsRow));
                 }
-                if(sorted) {
-                    Collections.sort(output, COMPARE_IGNORE_CASE);
-                    Collections.sort(resultsList, COMPARE_IGNORE_CASE);
+                if(doSortOutput) {
+                    Collections.sort(output, SIMPLE_LIST_COMPARATOR);
+                    Collections.sort(resultsList, SIMPLE_LIST_COMPARATOR);
                 }
                 int i = 0;
                 for(; true; outputRow++, i++) {
@@ -1253,8 +1186,7 @@ class YamlTester
             } else if(objectClass == boolean[].class) {
                 return Arrays.toString((boolean[])object);
             } else {
-		        /* Another type of array -- shouldn't happen */
-                return object.toString();
+                return Arrays.toString((Object[])object);
             }
         }
     }
