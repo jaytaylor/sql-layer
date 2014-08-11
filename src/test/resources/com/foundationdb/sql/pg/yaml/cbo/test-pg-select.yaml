@@ -13,35 +13,35 @@
 #- comment: ['select-1: all fields of single table']
 ---
 - Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid AND items.sku = '1234' ORDER BY order_date 
-- output: [['Jones','2011-02-28','1234','99'],['Smith','2011-03-01','1234','100']]
+- output_already_ordered: [['Jones','2011-02-28','1234','99'],['Smith','2011-03-01','1234','100']]
 #- comment: ['select-10: group index for condition and ordering']
 ---
 - Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid AND items.sku = '1234' ORDER BY order_date DESC 
-- output: [['Smith','2011-03-01','1234','100'],['Jones','2011-02-28','1234','99']]
+- output_already_ordered: [['Smith','2011-03-01','1234','100'],['Jones','2011-02-28','1234','99']]
 #- comment: ['select-10r: reverse ordering']
 ---
 - Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid ORDER BY sku, order_date 
-- output: [['Jones','2011-02-28','1234','99'],['Smith','2011-03-01','1234','100'],['Smith','2011-03-01','4567','50'],['Jones','2011-03-03','9876','1']]
+- output_already_ordered: [['Jones','2011-02-28','1234','99'],['Smith','2011-03-01','1234','100'],['Smith','2011-03-01','4567','50'],['Jones','2011-03-03','9876','1']]
 #- comment: ['select-11: group index ordering only']
 ---
 - Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid ORDER BY sku DESC, order_date 
-- output: [['Jones','2011-03-03','9876','1'],['Smith','2011-03-01','4567','50'],['Jones','2011-02-28','1234','99'],['Smith','2011-03-01','1234','100']]
+- output_already_ordered: [['Jones','2011-03-03','9876','1'],['Smith','2011-03-01','4567','50'],['Jones','2011-02-28','1234','99'],['Smith','2011-03-01','1234','100']]
 #- comment: ['select-11m: mixed-mode ordering']
 ---
 - Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid ORDER BY sku DESC, order_date DESC 
-- output: [['Jones','2011-03-03','9876','1'],['Smith','2011-03-01','4567','50'],['Smith','2011-03-01','1234','100'],['Jones','2011-02-28','1234','99']]
+- output_already_ordered: [['Jones','2011-03-03','9876','1'],['Smith','2011-03-01','4567','50'],['Smith','2011-03-01','1234','100'],['Jones','2011-02-28','1234','99']]
 #- comment: ['select-11r: reverse ordering']
 ---
 - Statement: SELECT customers.name,order_date,sku,quan FROM customers INNER JOIN orders ON customers.cid = orders.cid INNER JOIN items ON orders.oid = items.oid ORDER BY order_date DESC, quan DESC LIMIT 100 
-- output: [['Jones','2011-03-03','9876','1'],['Smith','2011-03-01','1234','100'],['Smith','2011-03-01','4567','50'],['Jones','2011-02-28','1234','99']]
+- output_already_ordered: [['Jones','2011-03-03','9876','1'],['Smith','2011-03-01','1234','100'],['Smith','2011-03-01','4567','50'],['Jones','2011-02-28','1234','99']]
 #- comment: ['select-12: reverse sort multiple fields']
 ---
 - Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid ORDER BY quan DESC 
-- output: [['Smith','2011-03-01','1234','100'],['Jones','2011-02-28','1234','99'],['Smith','2011-03-01','4567','50'],['Jones','2011-03-03','9876','1']]
+- output_already_ordered: [['Smith','2011-03-01','1234','100'],['Jones','2011-02-28','1234','99'],['Smith','2011-03-01','4567','50'],['Jones','2011-03-03','9876','1']]
 #- comment: ['select-13: sorting without limit']
 ---
 - Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid ORDER BY quan DESC LIMIT 2 
-- output: [['Smith','2011-03-01','1234','100'],['Jones','2011-02-28','1234','99']]
+- output_already_ordered: [['Smith','2011-03-01','1234','100'],['Jones','2011-02-28','1234','99']]
 #- comment: ['select-13l: sorting with limit']
 ---
 - Statement: SELECT order_date, sku, quan FROM customers INNER JOIN orders ON customers.cid = orders.cid INNER JOIN items ON orders.oid = items.oid WHERE name = 'Smith' AND sku IN ('1234', '9876') 
@@ -53,7 +53,7 @@
 #- comment: ['select-14n: IN not using index']
 ---
 - Statement: SELECT name, MIN(order_date), MAX(order_date), COUNT(*) FROM customers INNER JOIN orders ON customers.cid = orders.cid GROUP BY name ORDER BY name 
-- output: [['Jones','2011-02-28','2011-03-03','2'],['Smith','2011-03-01','2011-03-02','2']]
+- output_already_ordered: [['Jones','2011-02-28','2011-03-03','2'],['Smith','2011-03-01','2011-03-02','2']]
 #- comment: ['select-15: aggregation with GROUP BY']
 ---
 - Statement: SELECT MIN(order_date), MAX(order_date), COUNT(*) FROM orders WHERE oid=999 GROUP BY cid 
@@ -65,7 +65,7 @@
 #- comment: ['select-17: aggregation matching no rows, no GROUP BY']
 ---
 - Statement: select name from customers WHERE 1 ORDER BY name 
-- output: [['Jones'],['Smith']]
+- output_already_ordered: [['Jones'],['Smith']]
 #- comment: ['select-18a: int (1) as boolean in WHERE']
 ---
 - Statement: select name from customers WHERE 0 ORDER BY name 
@@ -77,7 +77,7 @@
 #- comment: ['select-19: group index with one inequality']
 ---
 - Statement: SELECT name FROM customers ORDER BY name 
-- output: [['Jones'],['Smith']]
+- output_already_ordered: [['Jones'],['Smith']]
 #- comment: ['select-1c: sorted covering index']
 --- 
 - Statement: SELECT cid AS id, name as "Customer Name" FROM customers 
@@ -110,7 +110,7 @@
 #- comment: ['select-24: RIGHT join']
 --- 
 - Statement: SELECT customers.name,order_date,sku,quan FROM items INNER JOIN orders ON orders.oid = items.oid LEFT OUTER JOIN customers ON customers.cid = orders.cid WHERE order_date < '2011-03-01' ORDER BY order_date, name 
-- output: [[null,'2010-01-01','9999','888'],['Jones','2011-02-28','1234','99']]
+- output_already_ordered: [[null,'2010-01-01','9999','888'],['Jones','2011-02-28','1234','99']]
 #- comment: [''select-24g: RIGHT join group index]
 #--- bug #914780
 #- Statement: SELECT CURRENT_USER AS "schema", SESSION_USER AS "user" FROM items WHERE iid = ? 
@@ -127,7 +127,7 @@
 #- comment: ['select-26n']
 ---
 - Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid AND items.sku = '1234' ORDER BY customers.name DESC
-- output: [['Smith','2011-03-01','1234','100'],['Jones','2011-02-28','1234','99']]
+- output_already_ordered: [['Smith','2011-03-01','1234','100'],['Jones','2011-02-28','1234','99']]
 #- comment: ['select-2a: index equality condition on grandchild table']
 ---
 - Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid AND items.sku >= '0' AND items.sku < '8888' 
@@ -153,15 +153,15 @@
 #- comment: ['select-4: inequality on leaf']
 ---
 - Statement: SELECT order_date,sku FROM orders INNER JOIN items ON orders.oid = items.oid WHERE sku < '8888' ORDER BY sku,order_date 
-- output: [['2011-02-28','1234'],['2011-03-01','1234'],['2011-03-01','4567']]
+- output_already_ordered: [['2011-02-28','1234'],['2011-03-01','1234'],['2011-03-01','4567']]
 #- comment: ['select-4c: covering group index']
 ---
 - Statement: SELECT customers.name,order_date FROM customers,orders WHERE customers.cid = orders.cid ORDER BY order_date 
-- output: [['Jones','2011-02-28'],['Smith','2011-03-01'],['Smith','2011-03-02'],['Jones','2011-03-03']]
+- output_already_ordered: [['Jones','2011-02-28'],['Smith','2011-03-01'],['Smith','2011-03-02'],['Jones','2011-03-03']]
 #- comment: ['select-5: ordering with join']
 ---
 - Statement: SELECT customers.name,order_date FROM customers,orders WHERE customers.cid = orders.cid ORDER BY order_date DESC LIMIT 2 
-- output: [['Jones','2011-03-03'],['Smith','2011-03-02']]
+- output_already_ordered: [['Jones','2011-03-03'],['Smith','2011-03-02']]
 #- comment: ['select-5l: ordering with limit']
 ---
 - Statement: SELECT customers.name,order_date FROM customers,orders,addresses WHERE customers.cid = orders.cid AND customers.cid = addresses.cid AND addresses.state = 'MA' 
