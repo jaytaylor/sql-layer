@@ -703,7 +703,8 @@ class YamlTester
             }
             assertNull("The params attribute must not appear more than once", params);
             params = rows(value, "params value");
-            assert(params.size() == 1);
+            // TODO: -output needs to (optionally?) be another list nesting deep for clarity with multiple params
+            assertEquals("params size", 1, params.size());
         }
 
         private void parseParamTypes(Object value) {
