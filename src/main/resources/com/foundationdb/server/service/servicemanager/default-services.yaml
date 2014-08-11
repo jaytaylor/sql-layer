@@ -28,24 +28,24 @@
     ##
     ## Persistit
     ##
-    #com.foundationdb.server.service.tree.TreeService : com.foundationdb.server.service.tree.TreeServiceImpl
-    #com.foundationdb.server.store.SchemaManager : com.foundationdb.server.store.PersistitStoreSchemaManager
-    #com.foundationdb.server.store.Store : com.foundationdb.server.store.PersistitStore
-    #com.foundationdb.server.store.statistics.IndexStatisticsService : com.foundationdb.server.store.statistics.PersistitIndexStatisticsService
-    #com.foundationdb.server.service.transaction.TransactionService : com.foundationdb.server.store.PersistitTransactionService
-    #com.foundationdb.server.service.is.StorageSchemaTablesService   : com.foundationdb.server.service.is.StorageSchemaTablesServiceImpl
-    #com.foundationdb.server.service.metrics.MetricsService : com.foundationdb.server.service.metrics.DummyMetricsService
-    #com.foundationdb.sql.optimizer.rule.cost.CostModelFactory : com.foundationdb.sql.optimizer.rule.cost.PersistitCostModelService
-    #com.foundationdb.server.service.text.FullTextIndexService: com.foundationdb.server.service.text.FullTextIndexServiceImpl
+    com.foundationdb.server.service.tree.TreeService : com.foundationdb.server.service.tree.TreeServiceImpl
+    com.foundationdb.server.store.SchemaManager : com.foundationdb.server.store.PersistitStoreSchemaManager
+    com.foundationdb.server.store.Store : com.foundationdb.server.store.PersistitStore
+    com.foundationdb.server.store.statistics.IndexStatisticsService : com.foundationdb.server.store.statistics.PersistitIndexStatisticsService
+    com.foundationdb.server.service.transaction.TransactionService : com.foundationdb.server.store.PersistitTransactionService
+    com.foundationdb.server.service.is.StorageSchemaTablesService   : com.foundationdb.server.service.is.StorageSchemaTablesServiceImpl
+    com.foundationdb.server.service.metrics.MetricsService : com.foundationdb.server.service.metrics.DummyMetricsService
+    com.foundationdb.sql.optimizer.rule.cost.CostModelFactory : com.foundationdb.sql.optimizer.rule.cost.PersistitCostModelService
+    com.foundationdb.server.service.text.FullTextIndexService: com.foundationdb.server.service.text.FullTextIndexServiceImpl
     #
     #
     # FoundationDB
     #
-    com.foundationdb.server.store.FDBHolder : com.foundationdb.server.store.FDBHolderImpl
-    com.foundationdb.server.store.SchemaManager : com.foundationdb.server.store.FDBSchemaManager
-    com.foundationdb.server.store.Store : com.foundationdb.server.store.FDBStore
-    com.foundationdb.server.store.statistics.IndexStatisticsService : com.foundationdb.server.store.statistics.FDBIndexStatisticsService
-    com.foundationdb.server.service.transaction.TransactionService : com.foundationdb.server.store.FDBTransactionService
-    com.foundationdb.server.service.metrics.MetricsService : com.foundationdb.server.service.metrics.FDBMetricsService
-    com.foundationdb.sql.optimizer.rule.cost.CostModelFactory : com.foundationdb.sql.optimizer.rule.cost.PersistitCostModelService
-    com.foundationdb.server.service.text.FullTextIndexService: com.foundationdb.server.service.text.ThrowingFullTextService
+    #com.foundationdb.server.store.FDBHolder : com.foundationdb.server.store.FDBHolderImpl
+    #com.foundationdb.server.store.SchemaManager : com.foundationdb.server.store.FDBSchemaManager
+    #com.foundationdb.server.store.Store : com.foundationdb.server.store.FDBStore
+    #com.foundationdb.server.store.statistics.IndexStatisticsService : com.foundationdb.server.store.statistics.FDBIndexStatisticsService
+    #com.foundationdb.server.service.transaction.TransactionService : com.foundationdb.server.store.FDBTransactionService
+    #com.foundationdb.server.service.metrics.MetricsService : com.foundationdb.server.service.metrics.FDBMetricsService
+    #com.foundationdb.sql.optimizer.rule.cost.CostModelFactory : com.foundationdb.sql.optimizer.rule.cost.PersistitCostModelService
+    #com.foundationdb.server.service.text.FullTextIndexService: com.foundationdb.server.service.text.ThrowingFullTextService
