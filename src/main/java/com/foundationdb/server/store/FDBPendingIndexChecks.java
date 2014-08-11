@@ -185,6 +185,7 @@ public class FDBPendingIndexChecks
             this.ekey = ekey;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void query(Session session, TransactionState txn, Index index) {
             if(ekey == null) {
@@ -344,6 +345,7 @@ public class FDBPendingIndexChecks
             this.ekey = ekey;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void query(Session session, TransactionState txn, Index index) {
             if (ekey == null) {
