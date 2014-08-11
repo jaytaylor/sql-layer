@@ -11,7 +11,7 @@ SelectQuery@7ff4c1cd
                     JoinNode@634720f9(INNER/NESTED_LOOPS)
                       TableGroupJoinTree@20e6e67c(TableGroup@2e750d8d(parent), parent - SingleIndexScan@6ccbbcf(Index(test.parent.PRIMARY[IndexColumn(id)]), covering/NONE, >10, rows = 85, cost = 60.2240))
                         TableSource@ff11c0b(parent - TableGroup@2e750d8d(parent))
-                      TableGroupJoinTree@57094268(TableGroup@52c5ee5a(customers), c2 - ExpressionsHKeyScan@1463fb5c(TableSource@3fb3ffe7(c2 - TableGroup@736f5d81(customers)), parent.id, rows = 1, cost = 7.87160))
+                      TableGroupJoinTree@57094268(TableGroup@52c5ee5a(customers), c2 - ExpressionsHKeyScan@1463fb5c(TableSource@3fb3ffe7(c2 - TableGroup@736f5d81(customers)), parent.id, rows = 1, cost = 8.69160))
                         TableSource@43acf4a3(c2 - TableGroup@52c5ee5a(customers))
           TableGroupJoinTree@25fedf47(TableGroup@6b3e1685(customers), customers - SingleIndexScan@3938acc4(Index(test.customers.name[IndexColumn(name)]), covering/NONE, =ANY[0], rows = 1, cost = 6.04220))
             TableSource@45a0b64e(customers - TableGroup@6b3e1685(customers))

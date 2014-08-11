@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
+import java.util.Collection;
 import java.util.List;
 
 public class GroupScan extends BaseScan implements TableLoader
@@ -74,4 +75,8 @@ public class GroupScan extends BaseScan implements TableLoader
         return str.toString();
     }
 
+    @Override
+    public Collection<? extends ConditionExpression> getConditions() {
+        return null;
+    }
 }

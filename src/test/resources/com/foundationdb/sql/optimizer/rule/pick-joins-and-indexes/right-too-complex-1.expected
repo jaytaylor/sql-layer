@@ -2,8 +2,8 @@ SelectQuery@615e7597
   ResultSet@7a3e72[name, order_date]
     Project@5999ae9c[customers.name, orders.order_date]
       Select@7896b1b8[]
-        JoinNode@6d6de4e1(LEFT/NESTED_LOOPS[orders.order_date != 2011-01-01])
-          TableGroupJoinTree@1cf7cbd1(TableGroup@50661532(customers), orders - SingleIndexScan@13f3589(Index(test.orders.order_date[IndexColumn(order_date)]), covering/NONE, rows = 1000, cost = 702.778))
+        JoinNode@6d6de4e1(LEFT/NESTED_LOOPS)
+          TableGroupJoinTree@1cf7cbd1(TableGroup@50661532(customers), orders - SingleIndexScan@13f3589(Index(test.orders.order_date[IndexColumn(order_date)]), covering/NONE, UNIONs of [NULL < % < 1029665, 1029665 < % ], rows = 999, cost = 707.459))
             TableSource@3f0dbef1(orders - TableGroup@50661532(customers))
           TableGroupJoinTree@5df9aeda(TableGroup@50661532(customers), customers - GroupLoopScan@37f22bf(orders - customers, rows = 1, cost = 7.01160))
             TableSource@72b0f2b2(customers - TableGroup@50661532(customers))

@@ -6,13 +6,11 @@ SelectQuery@270cd144
         Select@6b94b8a5[]
           Limit@2f7708ec(LIMIT 1)
             MapJoin@e07fc0f()
-              Select@2e3543fb[customers.cid == orders.cid]
-                SingleIndexScan@2b022b70(Index(test.orders.PRIMARY[IndexColumn(oid)]), covering/NONE, rows = 1000, cost = 688.942)
-              Select@9a6f6ca[]
-                Limit@1b71dc1f(LIMIT 1)
-                  Select@b80fa71[]
-                    Flatten@457514c6(items)
-                      Select@502a854c[items.sku == 1234]
-                        AncestorLookup@179569b2(items -> [items])
-                          SingleIndexScan@524e3136(Index(test.items.__akiban_fk_1[IndexColumn(oid)]), NONE, =orders.oid, rows = 1, cost = 188.762)
-                          TableSource@b849d5c(items - TableGroup@b80fa71(customers))
+              SingleIndexScan@2b022b70(Index(test.orders.__akiban_fk_0[IndexColumn(cid)]), covering/NONE, =customers.cid, rows = 10, cost = 12.1780)
+              Limit@1b71dc1f(LIMIT 1)
+                Select@b80fa71[]
+                  Flatten@457514c6(items)
+                    Select@502a854c[items.sku == 1234]
+                      AncestorLookup@179569b2(items -> [items])
+                        SingleIndexScan@524e3136(Index(test.items.__akiban_fk_1[IndexColumn(oid)]), NONE, =orders.oid, rows = 1, cost = 188.762)
+                        TableSource@b849d5c(items - TableGroup@b80fa71(customers))

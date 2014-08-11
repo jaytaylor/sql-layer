@@ -8,7 +8,7 @@ SelectQuery@1f31cd12
               Select@45e6612c[]
                 Flatten@3f8f6434(c2)
                   AncestorLookup@911a011(orders -> [customers])
-                    SingleIndexScan@6423c0bd(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >2011-03-02, rows = 853, cost = 5881.70)
+                    SingleIndexScan@6423c0bd(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >2011-03-02, rows = 853, cost = 6581.16)
                     TableSource@6c22fde7(c2 - TableGroup@1ff19e50(customers))
       Project@377e9134[customers.cid, customers.name]
         Select@566f0962[]

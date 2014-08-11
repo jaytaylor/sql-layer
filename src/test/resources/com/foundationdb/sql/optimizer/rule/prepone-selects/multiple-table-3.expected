@@ -3,6 +3,6 @@ SelectQuery@642726b2
     Project@2d9845fb[customers.name]
       Select@681a791f[]
         MapJoin@315863e4(INNER)
-          SingleIndexScan@41ed54a0(Index(test.customers.name[IndexColumn(name)]), covering/NONE, >M, rows = 53, cost = 85.2886)
+          SingleIndexScan@41ed54a0(Index(test.customers.name[IndexColumn(name)]), covering/NONE, >M, rows = 53, cost = 41.8286)
           Select@2d9845fb[addresses.state != customers.name]
             SingleIndexScan@2206270b(Index(test.addresses.state[IndexColumn(state)]), covering/NONE, >M, rows = 57, cost = 154.052)

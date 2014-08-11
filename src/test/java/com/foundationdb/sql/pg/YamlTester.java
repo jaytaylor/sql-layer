@@ -195,6 +195,8 @@ class YamlTester
     private static final String ALL_ENGINE = "all";
     /** Matches the IT engine. */
     private static final String IT_ENGINE = "it";
+    /** Matches the Random Cost engine. */
+    private static final String RAND_COST_ENGINE = "random-cost";
 
     /** Compare toString values of arguments, ignoring case. */
     private static final Comparator<? super Object> COMPARE_IGNORE_CASE = new Comparator<Object>()
@@ -211,6 +213,7 @@ class YamlTester
     private int commandNumber = 0;
     private String commandName = null;
     private boolean suppressed = false;
+    protected boolean randomCost = false;
     private static final DateFormat DEFAULT_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
     private static final DateFormat DEFAULT_DATETIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S z");
     private static final int DEFAULT_RETRY_COUNT = 5;
@@ -226,6 +229,13 @@ class YamlTester
         this.filename = filename;
         this.in = in;
         this.connection = connection;
+    }
+
+    YamlTester(String filename, Reader in, Connection connection, Boolean randomCost) {
+        this.filename = filename;
+        this.in = in;
+        this.connection = connection;
+        this.randomCost = randomCost;
     }
 
     /** Test the input specified in the constructor. */
@@ -337,7 +347,8 @@ class YamlTester
 
     private void propertiesCommand(Object value, List<?> sequence) {
         String engine = string(value, "Properties framework engine");
-        if(ALL_ENGINE.equals(engine) || IT_ENGINE.equals(engine)) {
+        if(ALL_ENGINE.equals(engine) || IT_ENGINE.equals(engine)
+                || (randomCost && RAND_COST_ENGINE.equals(engine))) {
             for(Object elem : sequence) {
                 Entry<?,?> entry = onlyEntry(elem, "Properties entry");
                 if("suppressed".equals(entry.getKey())) {
