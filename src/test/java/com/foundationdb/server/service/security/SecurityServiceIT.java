@@ -30,11 +30,11 @@ import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.After;
@@ -111,12 +111,12 @@ public class SecurityServiceIT extends ITBase
 
     private int openRestURL(String request, String query, String userInfo)
             throws Exception {
-        HttpClient client = new DefaultHttpClient();
+        CloseableHttpClient client = HttpClientBuilder.create().build();
         HttpGet get = new HttpGet(getRestURL(request, query, userInfo));
         HttpResponse response = client.execute(get);
         int code = response.getStatusLine().getStatusCode();
         EntityUtils.consume(response.getEntity());
-        client.getConnectionManager().shutdown();
+        client.close();
         return code;
     }
 
@@ -175,7 +175,7 @@ public class SecurityServiceIT extends ITBase
     public void restAddDropUser() throws Exception {
         SecurityService securityService = securityService();
         assertNull(securityService.getUser("user3"));
-        HttpClient client = new DefaultHttpClient();
+        CloseableHttpClient client = HttpClientBuilder.create().build();
         HttpPost post = new HttpPost(getRestURL("/security/users", null, "akiban:topsecret"));
         post.setEntity(new StringEntity(ADD_USER, ContentType.APPLICATION_JSON));
         HttpResponse response = client.execute(post);
@@ -193,7 +193,7 @@ public class SecurityServiceIT extends ITBase
         response = client.execute(delete);
         code = response.getStatusLine().getStatusCode();
         EntityUtils.consume(response.getEntity());
-        client.getConnectionManager().shutdown();
+        client.close();
         assertEquals(HttpStatus.SC_OK, code);
         assertNull(securityService.getUser("user3"));
     }

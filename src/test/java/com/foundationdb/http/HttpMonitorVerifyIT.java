@@ -26,7 +26,8 @@ import java.util.Map;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -95,12 +96,11 @@ public class HttpMonitorVerifyIT extends ITBase {
     public void runTest () throws Exception {
         MonitorService monitor = monitorService();
         
-        HttpClient client = new DefaultHttpClient();
+        CloseableHttpClient client = HttpClientBuilder.create().build();
         openRestURL(client, "user1:password", httpConductor().getPort(), "/version");
-        
         assertEquals(monitor.getSessionMonitors().size(), 1);
         
-        client.getConnectionManager().shutdown();
+        client.close();
     }
 
 }
