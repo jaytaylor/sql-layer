@@ -3,6 +3,11 @@
 - Properties: random-context
 - suppressed: true
 
+# Cannot force child ordering for ** queries
+---
+- Properties: random-cost
+- suppressed: true
+
 ---
 - Include: all-schema.yaml
 ---
@@ -22,8 +27,8 @@
 - Statement: SELECT customers.*, (SELECT orders.*, (SELECT items.* FROM items WHERE items.oid = orders.oid ORDER BY sku) AS items FROM orders WHERE orders.cid = customers.cid ORDER BY order_date DESC) AS orders, (SELECT addresses.* FROM addresses WHERE addresses.cid = customers.cid ORDER BY state) AS addresses FROM customers ORDER BY name;
 - output_already_ordered: [['{"cid":2,"name":"Jones","orders":[{"oid":201,"cid":2,"order_date":"2011-03-03","items":[{"iid":2011,"oid":201,"sku":"9876","quan":1}]},{"oid":202,"cid":2,"order_date":"2011-02-28","items":[{"iid":2021,"oid":202,"sku":"1234","quan":99}]}],"addresses":[{"aid":201,"cid":2,"state":"NY","city":"New York"}]}'],['{"cid":1,"name":"Smith","orders":[{"oid":102,"cid":1,"order_date":"2011-03-02","items":[]},{"oid":101,"cid":1,"order_date":"2011-03-01","items":[{"iid":1011,"oid":101,"sku":"1234","quan":100},{"iid":1012,"oid":101,"sku":"4567","quan":50}]}],"addresses":[{"aid":101,"cid":1,"state":"MA","city":"Boston"}]}']]
 ---
-- Statement: SELECT ** FROM customers ORDER BY name;
-- output_already_ordered: [['{"cid":2,"name":"Jones","addresses":[{"aid":201,"cid":2,"state":"NY","city":"New York"}],"orders":[{"oid":201,"cid":2,"order_date":"2011-03-03","items":[{"iid":2011,"oid":201,"sku":"9876","quan":1}]},{"oid":202,"cid":2,"order_date":"2011-02-28","items":[{"iid":2021,"oid":202,"sku":"1234","quan":99}]}]}'],['{"cid":1,"name":"Smith","addresses":[{"aid":101,"cid":1,"state":"MA","city":"Boston"}],"orders":[{"oid":101,"cid":1,"order_date":"2011-03-01","items":[{"iid":1011,"oid":101,"sku":"1234","quan":100},{"iid":1012,"oid":101,"sku":"4567","quan":50}]},{"oid":102,"cid":1,"order_date":"2011-03-02","items":[]}]}']]
+- Statement: SELECT ** FROM customers ORDER BY name
+- output: [['{"cid":2,"name":"Jones","addresses":[{"aid":201,"cid":2,"state":"NY","city":"New York"}],"orders":[{"oid":201,"cid":2,"order_date":"2011-03-03","items":[{"iid":2011,"oid":201,"sku":"9876","quan":1}]},{"oid":202,"cid":2,"order_date":"2011-02-28","items":[{"iid":2021,"oid":202,"sku":"1234","quan":99}]}]}'],['{"cid":1,"name":"Smith","addresses":[{"aid":101,"cid":1,"state":"MA","city":"Boston"}],"orders":[{"oid":101,"cid":1,"order_date":"2011-03-01","items":[{"iid":1011,"oid":101,"sku":"1234","quan":100},{"iid":1012,"oid":101,"sku":"4567","quan":50}]},{"oid":102,"cid":1,"order_date":"2011-03-02","items":[]}]}']]
 ---
 - Statement: SELECT ** FROM customers WHERE cid = 1;
 - output: [['{"cid":1,"name":"Smith","addresses":[{"aid":101,"cid":1,"state":"MA","city":"Boston"}],"orders":[{"oid":101,"cid":1,"order_date":"2011-03-01","items":[{"iid":1011,"oid":101,"sku":"1234","quan":100},{"iid":1012,"oid":101,"sku":"4567","quan":50}]},{"oid":102,"cid":1,"order_date":"2011-03-02","items":[]}]}']]
