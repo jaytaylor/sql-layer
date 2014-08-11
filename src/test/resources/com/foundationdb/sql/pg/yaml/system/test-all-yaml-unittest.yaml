@@ -77,10 +77,6 @@
 - params: [[5]]
 - output_already_ordered: [[1, 'A'],[-4, 'abc']]
 ---
-- Statement: SELECT c1, c2 FROM test2 where c1 < ? order by c1 DESC, c2 ASC
-- params: [[5]]
-- output: [[-4, 'abc'],[1, 'A']]
----
 - CreateTable: bitwise_matrix (        id integer,        source1 bigint unsigned,        source2 bigint unsigned,        bitwise_and bigint,        bitwise_or bigint,        bitwise_xor bigint,        bitwise_rightshift varchar(255),        bitwise_leftshift varchar(255),        bitwise_invert int        )
 ---
 - Statement: insert into bitwise_matrix (id,source1,source2,bitwise_and,bitwise_or,bitwise_xor,bitwise_rightshift,bitwise_leftshift,bitwise_invert) values (1,6,3,2,7,5,'0','48',4 )
@@ -149,14 +145,6 @@
 ,[3, 3, 4, 0, 7, 7, 0, 48, 3],[6, 1, 4, 0, 5, 5, 0, 16, 1],[10, 4, 4, 4, 4, 0, 0, 64, 0],[20, 6, 4, 4, 6, 2, 0, 96, 2]
 ,[7, 7, 5, 5, 7, 2, 0, 224, 2],[11, 8, 5, 0, 13, 13, 0, 256, 8],[14, 7, 5, 5, 7, 2, 0, 224, 2],[22, 0, 5, 0, 5, 5, 0, 0, 0]
 ,[21, 6, 6, 6, 6, 0, 0, 384, 0],[23, 6, 6, 6, 6, 0, 0, 384, 0],[8, 2, 7, 2, 7, 5, 0, 256, 0],[18, 4, 9, 0, 13, 13, 0, 2048, 4]]
----
-- Statement: Select id,source1,source2,bitwise_and,bitwise_or,bitwise_xor,bitwise_rightshift,bitwise_leftshift,bitwise_invert from bitwise_matrix order by source2 
-- output: [[5, 6, 0, 0, 6, 6, 6, 6, 6],[9, 3, 0, 0, 3, 3, 3, 3, 3],[14, 7, 5, 5, 7, 2, 0, 224, 2],[16, 2, 0, 0, 2, 2, 2, 2, 2],[25, 7, 0, 0, 7, 7, 7, 7, 7],[17, 5, 1, 1, 5, 4, 2, 10, 4]
-,[19, 2, 1, 0, 3, 3, 1, 4, 2],[15, 1, 2, 0, 3, 3, 0, 4, 1],[24, 7, 2, 2, 7, 5, 1, 28, 5],[1, 6, 3, 2, 7, 5, 0, 48, 4]
-,[4, 3, 3, 3, 3, 0, 0, 24, 0],[18, 4, 9, 0, 13, 13, 0, 2048, 4],[12, 1, 3, 1, 3, 2, 0, 8, 0],[13, 7, 3, 3, 7, 4, 0, 56, 4],[2, 0, 4, 0, 4, 4, 0, 0, 0]
-,[3, 3, 4, 0, 7, 7, 0, 48, 3],[6, 1, 4, 0, 5, 5, 0, 16, 1],[10, 4, 4, 4, 4, 0, 0, 64, 0],[20, 6, 4, 4, 6, 2, 0, 96, 2]
-,[7, 7, 5, 5, 7, 2, 0, 224, 2],[11, 8, 5, 0, 13, 13, 0, 256, 8],[22, 0, 5, 0, 5, 5, 0, 0, 0]
-,[21, 6, 6, 6, 6, 0, 0, 384, 0],[23, 6, 6, 6, 6, 0, 0, 384, 0],[8, 2, 7, 2, 7, 5, 0, 256, 0]]
 ---
 - Statement: Select id,source1,source2,bitwise_and,bitwise_or,bitwise_xor,bitwise_rightshift,bitwise_leftshift,bitwise_invert from bitwise_matrix 
 - output: [[5, 6, 0, 0, 6, 6, 6, 6, 6],[9, 3, 0, 0, 3, 3, 3, 3, 3],[14, 7, 5, 5, 7, 2, 0, 224, 2],[16, 2, 0, 0, 2, 2, 2, 2, 2],[25, 7, 0, 0, 7, 7, 7, 7, 7],[17, 5, 1, 1, 5, 4, 2, 10, 4]

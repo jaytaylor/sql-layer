@@ -5,7 +5,7 @@
 - Statement: INSERT INTO t VALUES (1, null), (3, null), (2, null)
 ---
 - Statement: SELECT * FROM t WHERE s IS NULL ORDER BY id
-- output: [ [1, null], [2, null], [3, null] ]
+- output_already_ordered: [ [1, null], [2, null], [3, null] ]
 ---
 - Statement: TRUNCATE TABLE t
 
@@ -13,4 +13,4 @@
 - Statement: INSERT INTO t VALUES (1, 'foo'), (3, 'baz'), (2, 'bar')
 ---
 - Statement: SELECT * FROM t WHERE s = 'bar' ORDER BY id
-- output: [ [2, 'bar'] ]
+- output_already_ordered: [ [2, 'bar'] ]

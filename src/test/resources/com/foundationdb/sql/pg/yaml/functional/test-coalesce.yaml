@@ -193,8 +193,8 @@
 - Statement: INSERT INTO timestamps VALUES
      ('2003-03-03 17:18:19', '1962-02-02 11:55:00')
 ---
-- Statement: SELECT COALESCE(x, y) FROM timestamps
-- output: [[null], [!re '1961-01-01 08:30:00([.]0)?'],
+- Statement: SELECT COALESCE(x, y) FROM timestamps ORDER BY x
+- output_already_ordered: [[null], [!re '1961-01-01 08:30:00([.]0)?'],
     [!re '2002-02-02 14:20:22([.]0)?'],
     [!re '2003-03-03 17:18:19([.]0)?']]
 
