@@ -107,7 +107,9 @@ import com.foundationdb.server.service.session.Session;
 import org.junit.Rule;
 import org.junit.rules.MethodRule;
 import org.junit.rules.TestName;
-import org.junit.rules.TestWatchman;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
 
@@ -141,7 +143,7 @@ public class ApiTestBase {
         public void output(NewRow row) {
             rows.add(row);
         }
-
+        
         public List<NewRow> getRows() {
             return rowsUnmodifiable;
         }
@@ -298,9 +300,9 @@ public class ApiTestBase {
     }
 
     @Rule
-    public MethodRule exceptionCatchingRule = new TestWatchman() {
+    public TestRule exceptionCatchingRule = new TestWatcher() {
         @Override
-        public void failed(Throwable e, FrameworkMethod method)  {
+        public void failed(Throwable e, Description description)  {
             needServicesRestart = true;
         }
     };
