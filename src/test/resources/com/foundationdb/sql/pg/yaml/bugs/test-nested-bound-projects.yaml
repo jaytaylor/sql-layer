@@ -47,5 +47,5 @@
       LEFT OUTER JOIN comments ON comments.post_id = posts.id
       WHERE authors.name = 'Davey McDave'
       ORDER BY categories.name
-- output: [[1, 'Davey McDave', null, null, null, null, 1, null, 1, 1, null, null, null, 1, 1, 1, 1]]
+- output_already_ordered: [[1, 'Davey McDave', null, null, null, null, 1, null, 1, 1, null, null, null, 1, 1, 1, 1]]
 ...

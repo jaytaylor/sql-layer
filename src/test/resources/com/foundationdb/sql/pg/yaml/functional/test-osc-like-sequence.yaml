@@ -41,10 +41,10 @@
 - Statement: RENAME TABLE "_addresses_new" TO "addresses";
 
 ---
-- Statement: SELECT cid FROM "customers" ORDER BY cid;
+- Statement: SELECT cid FROM "customers"
 - output: [[1], [5]]
 ---
-- Statement: SELECT aid,cid FROM "addresses" ORDER BY aid;
+- Statement: SELECT aid,cid FROM "addresses"
 - output: [[10, 1], [50, 5]]
 
 ---

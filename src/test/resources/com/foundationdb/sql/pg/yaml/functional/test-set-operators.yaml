@@ -68,13 +68,13 @@
 - output: [[4, 'Smith']]
 ---
 - Statement: SELECT cid, name FROM customers1 INTERSECT SELECT cid, name FROM customers1 ORDER BY cid DESC
-- output: [[4, 'Smith'], [3, 'Smithson'], [2, 'Jones'], [1, 'Smith'] ]
+- output_already_ordered: [[4, 'Smith'], [3, 'Smithson'], [2, 'Jones'], [1, 'Smith'] ]
 ---
 - Statement: SELECT cid, name FROM customers1 INTERSECT SELECT cid, name FROM customers1 ORDER BY name
-- output: [[2, 'Jones'],[1, 'Smith'], [4, 'Smith'],  [3, 'Smithson']]
+- output_already_ordered: [[2, 'Jones'],[1, 'Smith'], [4, 'Smith'],  [3, 'Smithson']]
 ---
 - Statement: SELECT cid, name FROM customers1 INTERSECT SELECT cid, name FROM customers1 ORDER BY name DESC
-- output: [[3, 'Smithson'], [4, 'Smith'],[1, 'Smith'],[2, 'Jones']]
+- output_already_ordered: [[3, 'Smithson'], [4, 'Smith'],[1, 'Smith'],[2, 'Jones']]
 ---
 - Statement: SELECT cid, name FROM customers1 INTERSECT SELECT cid, name FROM customers1 LIMIT 2 OFFSET 1
 - output: [[2, 'Jones'], [3, 'Smithson']]

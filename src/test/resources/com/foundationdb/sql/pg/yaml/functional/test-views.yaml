@@ -5,22 +5,22 @@
 - Statement: INSERT INTO t VALUES(1, 'foo'),(2, 'bar')
 ---
 - Statement: SELECT * FROM t
-- output_ordered: [[1, 'foo'],[2, 'bar']]
+- output: [[1, 'foo'],[2, 'bar']]
 ---
 - Statement: CREATE VIEW v1 AS SELECT * FROM t
 ---
 - Statement: SELECT * FROM v1
-- output_ordered: [[1, 'foo'],[2, 'bar']]
+- output: [[1, 'foo'],[2, 'bar']]
 ---
 - Statement: CREATE VIEW v2(x,y) AS SELECT s,id FROM t ORDER BY s
 ---
 - Statement: SELECT * FROM v2
-- output: [['bar', 2],['foo', 1]]
+- output_already_ordered: [['bar', 2],['foo', 1]]
 ---
 - Statement: CREATE VIEW v3 AS SELECT s||x FROM v1 INNER JOIN v2 ON v1.id = v2.y
 ---
 - Statement: SELECT * FROM v3
-- output_ordered: [['barbar'],['foofoo']]
+- output: [['barbar'],['foofoo']]
 ---
 - Statement: CREATE VIEW v0(a,b) AS VALUES(1,10),(2,20),(3,30)
 ---
@@ -36,12 +36,12 @@
 - Statement: CREATE VIEW s AS SELECT DISTINCT n FROM test2.s
 ---
 - Statement: SELECT * FROM s
-- output_ordered: [[1],[2],[3],[9]]
+- output: [[1],[2],[3],[9]]
 ---
 - Statement: CREATE VIEW vn AS SELECT id,null,s FROM t
 ---
 - Statement: SELECT * FROM vn
-- output_ordered: [[1, null, 'foo'],[2, null, 'bar']]
+- output: [[1, null, 'foo'],[2, null, 'bar']]
 
 # Clean up views so table can be dropped
 ---

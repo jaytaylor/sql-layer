@@ -1,12 +1,13 @@
 # test create/insert to MEDIUMINT column
+# this test requires for inserted values to be strings as values out of range of the datatype will be wrapped if numbers, but clamped as strings
 ---
 - CreateTable: t (c mediumint);
 ---
 - Statement: INSERT INTO t VALUES ('5'), ('500'), ('8388610'), ('8388607'), ('-8388607'), ('-8388608'), ('-8388610')
 ---
 - Statement: SELECT * FROM t;
-- output: [['5'], ['500'], ['8388607'], ['8388607'], ['-8388607'], ['-8388608'], ['-8388608']]
-#- output_types: [MEDIUMINT] the type-id returnt by ResultSet object in YamlTester.java says this is a 
+- output: [[5], [500], [8388607], [8388607], [-8388607], [-8388608], [-8388608]]
+#- output_types: [MEDIUMINT] the type-id returned by ResultSet object in YamlTester.java says this is a
 # SMALLINT (id =7), but manual testing through psql shows it really is MEDIUMINT
 ---
 - CreateTable: u (c mediumint unsigned);
@@ -14,7 +15,7 @@
 - Statement: INSERT INTO u VALUES ('-400'), ('0'), ('8388610'), ('8388610'), ('16777215'), ('16777216');
 ---
 - Statement: SELECT * FROM u;
-- output: [['0'], ['0'], ['8388610'], ['8388610'], ['16777215'], ['16777215']]
+- output: [[0], [0], [8388610], [8388610], [16777215], [16777215]]
 ---
 - DropTable: t
 ---

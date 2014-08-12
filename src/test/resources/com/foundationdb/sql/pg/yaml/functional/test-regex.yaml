@@ -26,13 +26,13 @@
 ---
 - Statement: INSERT INTO str VALUES (1, 'foo'), (2, 'Foo'), (3, 'bar'), (4, 'Bar')
 ---
-- Statement: SELECT id,REGEX(s, s) FROM str ORDER BY id
+- Statement: SELECT id,REGEX(s, s) FROM str
 - output: [ [1, true], [2, true], [3, true], [4, true] ]
 ---
-- Statement: SELECT id FROM str WHERE REGEX(s, '[f]') ORDER BY id
+- Statement: SELECT id FROM str WHERE REGEX(s, '[f]')
 - output: [ [1] ]
 ---
-- Statement: SELECT id FROM str WHERE IREGEX(s, '[f]') ORDER BY id
+- Statement: SELECT id FROM str WHERE IREGEX(s, '[f]')
 - output: [ [1], [2] ]
 
 ---
@@ -40,7 +40,7 @@
 ---
 - Statement: INSERT INTO pat VALUES (1, 'foo|bar'), (2, 'F|B')
 ---
-- Statement: SELECT str.id,pat.id FROM str,pat WHERE REGEX(s, p) ORDER BY str.id,pat.id
+- Statement: SELECT str.id,pat.id FROM str,pat WHERE REGEX(s, p)
 - output: [ [1, 1], [2, 2], [3, 1], [4, 2] ]
 ---
 - Statement: explain verbose  select regex('abc123', cast(? as char(4)))

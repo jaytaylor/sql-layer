@@ -4,24 +4,24 @@
 - Statement: INSERT INTO t1 VALUES (1, 'foo')
 ---
 - Statement: SELECT s1, s2 FROM (SELECT id, CURRENT SCHEMA AS s1, CURRENT SCHEMA AS s2 FROM t1 LIMIT 5) AS x ORDER BY 1;
-- output: [['test', 'test']]
+- output_already_ordered: [['test', 'test']]
 ---
 - Statement: SELECT s1, s2 FROM (SELECT id, 1 AS s1, 1 AS s2 FROM t1 LIMIT 5) AS x ORDER BY 1;
-- output: [[1, 1]]
+- output_already_ordered: [[1, 1]]
 ---
 - Statement: SELECT d1, d2 FROM
              (SELECT id, CAST(1 AS DECIMAL(2,1)) AS d1, CAST(1 AS DECIMAL(2,1)) AS d2 FROM t1 LIMIT 5) AS x ORDER BY 1;
-- output: [[1.0, 1.0]]
+- output_already_ordered: [[1.0, 1.0]]
 ---
 - Statement: INSERT INTO t1 values (2, NULL)
 ---
 - Statement: SELECT id, name FROM t1 ORDER BY name LIMIT 5
-- output: [[2, null], [1, 'foo']]
+- output_already_ordered: [[2, null], [1, 'foo']]
 ---
 - Statement: SELECT id, name FROM t1 ORDER BY id LIMIT 5
-- output: [[1, 'foo'], [2, null]]
+- output_already_ordered: [[1, 'foo'], [2, null]]
 ---
 - Statement: SELECT id, name FROM t1 ORDER BY id LIMIT ?
 - params: [[1]]
-- output: [[1, 'foo']]
+- output_already_ordered: [[1, 'foo']]
 ...

@@ -5,5 +5,5 @@
                 VALUES (1, 'abc'), (2, X'0102'), (3, X'80'), (4, UNHEX('00FFFE01'))"
 ---
 - Statement: SELECT HEX(blob_field) FROM all_types ORDER BY bigint_field
-- output: [['616263'],['0102'],['80'],['00FFFE01']]
+- output_already_ordered: [['616263'],['0102'],['80'],['00FFFE01']]
 ...
