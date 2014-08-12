@@ -27,7 +27,6 @@ import org.junit.Test;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.server.api.DDLFunctions;
-import org.postgresql.util.PSQLException;
 
 public class PostgresServerSessionIT extends PostgresServerFilesITBase {
 
@@ -66,7 +65,7 @@ public class PostgresServerSessionIT extends PostgresServerFilesITBase {
         assertNotNull (ais.getTable("fake", "t1"));
     }
     
-    @Test (expected=PSQLException.class)
+    @Test (expected=SQLException.class)
     public void badUseSchema() throws Exception {
         String use = "SET SCHEMA BAD";
         getConnection().createStatement().execute(use);

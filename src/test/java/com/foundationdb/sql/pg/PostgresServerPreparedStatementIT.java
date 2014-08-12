@@ -21,7 +21,7 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.error.ErrorCode;
 import org.junit.Before;
 import org.junit.Test;
-import org.postgresql.PGStatement;
+import com.foundationdb.sql.jdbc.PGStatement;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
