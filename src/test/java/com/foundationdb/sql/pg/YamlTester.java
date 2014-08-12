@@ -256,7 +256,17 @@ class YamlTester
 
     /** Test the input specified in the constructor. */
     void test() {
-        test(in);
+        try {
+            test(in);
+        } catch (Throwable e) {
+            System.err.println("Failed Yaml test (note: line number probably not 1)");
+            // TODO at some point, get the actual line number from the yaml, instead of just using 1
+            System.err.println("  at " + filename.replace("src/test/resources/","").
+                    replaceFirst("/([^/]+.yaml$)", "($1:1)").replaceAll("/", "."));
+            // for those running from maven or elsewhere
+            System.err.println("  aka: " + filename);
+            throw e;
+        }
     }
 
     private void test(Reader in) {
