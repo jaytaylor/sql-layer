@@ -85,7 +85,7 @@
 - output: [[null], [true], [true], [false]]
 
 ---
-- Statement: DELETE FROM all_types          byearayutil
+- Statement: DELETE FROM all_types
 
 # blob
 ---
@@ -99,10 +99,10 @@
 ---
 - Statement: SELECT blob_field FROM all_types WHERE blob_field
     IN ('dead', 'beef')
-- output: [[!utf8-bytes 'beef'],[!utf8-bytes 'dead']]
+- output: [[!utf8-bytes 'dead'], [!utf8-bytes 'beef']]
 ---
 - Statement: SELECT blob_field FROM all_types WHERE blob_field IN (clob_field)
-- output: [[!utf8-bytes 'dead'], [!!binary '']]
+- output: [[!!binary ''], [!utf8-bytes 'dead']]
 ---
 - Statement: SELECT blob_field FROM all_types WHERE blob_field IN (?)
 - params: [[!utf8-bytes 'dead']]
@@ -553,25 +553,25 @@
 ---
 - Statement: SELECT timestamp_field FROM all_types
     WHERE timestamp_field IN ('0001-01-01 00:00:01')
-- output: [[!re '0001-01-01 00:00:01([.]0)?']]
+- output_already_ordered: [[!re '0001-01-01 00:00:01([.]0)?']]
 ---
 - Statement: SELECT timestamp_field FROM all_types
-    WHERE timestamp_field IN ('1970-01-01 08:30:00', '2001-02-03 12:34:56')
-- output: [[!re '1970-01-01 08:30:00([.]0)?'],
+    WHERE timestamp_field IN ('1970-01-01 08:30:00', '2001-02-03 12:34:56') ORDER BY timestamp_field
+- output_already_ordered: [[!re '1970-01-01 08:30:00([.]0)?'],
     [!re '2001-02-03 12:34:56([.]0)?']]
 ---
 - Statement: SELECT timestamp_field FROM all_types
-    WHERE timestamp_field IN (varchar_field)
-- output: [[!re '0001-01-01 00:00:01([.]0)?'],
+    WHERE timestamp_field IN (varchar_field) ORDER BY timestamp_field
+- output_already_ordered: [[!re '0001-01-01 00:00:01([.]0)?'],
     [!re '1970-01-01 08:30:00([.]0)?']]
 ---
 - Statement: SELECT timestamp_field FROM all_types WHERE timestamp_field IN (?)
 - params: [['2001-02-03 12:34:56']]
-- output: [[!re '2001-02-03 12:34:56([.]0)?']]
+- output_already_ordered: [[!re '2001-02-03 12:34:56([.]0)?']]
 ---
 - Statement: SELECT timestamp_field FROM all_types WHERE timestamp_field IN (?)
 - params: [['0001-01-01 00:00:01']]
-- output: [[!re '0001-01-01 00:00:01([.]0)?']]
+- output_already_ordered: [[!re '0001-01-01 00:00:01([.]0)?']]
 ---
 - Statement: SELECT timestamp_field IN (varchar_field) FROM all_types
 - output: [[null], [true], [true], [false]]
@@ -590,5 +590,5 @@
 - Statement: INSERT INTO a VALUES(20, 10)
 ---
 - Statement: SELECT * FROM a WHERE ((a, b) IN (SELECT "a", "b" FROM "a")) ORDER BY a
-- output: [[20, 10]]
+- output_already_ordered: [[20, 10]]
 ...

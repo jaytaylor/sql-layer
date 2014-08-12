@@ -69,7 +69,7 @@
 - error: ['0A50C'] # GROUP BY ROLLUP is temporarily not supported
 ---
 - Statement: select name from customers WHERE 1 ORDER BY name 
-- output: [['Jones'],['Smith']]
+- output_already_ordered: [['Jones'],['Smith']]
 #- comment: ['select-18a: int (1) as boolean in WHERE']
 ---
 - Statement: select name from customers WHERE 0 ORDER BY name 
@@ -81,7 +81,7 @@
 #- comment: ['select-19: group index with one inequality']
 ---
 - Statement: SELECT name FROM customers ORDER BY name 
-- output: [['Jones'],['Smith']]
+- output_already_ordered: [['Jones'],['Smith']]
 #- comment: ['select-1c: sorted covering index']
 --- 
 - Statement: SELECT cid AS id, name as "Customer Name" FROM customers 
@@ -114,7 +114,7 @@
 #- comment: ['select-24: RIGHT join']
 --- 
 - Statement: SELECT customers.name,order_date,sku,quan FROM items INNER JOIN orders ON orders.oid = items.oid LEFT OUTER JOIN customers ON customers.cid = orders.cid WHERE order_date < '2011-03-01' ORDER BY order_date, name 
-- output: [[null,'2010-01-01','9999','888'],['Jones','2011-02-28','1234','99']]
+- output_already_ordered: [[null,'2010-01-01','9999','888'],['Jones','2011-02-28','1234','99']]
 #- comment: [''select-24g: RIGHT join group index]
 #--- bug #914780
 #- Statement: SELECT CURRENT_USER AS "schema", SESSION_USER AS "user" FROM items WHERE iid = ? 

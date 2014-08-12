@@ -8,14 +8,14 @@
 ---
 - Statement: INSERT INTO t VALUES (DEFAULT), (DEFAULT), (DEFAULT)
 ---
-- Statement: SELECT * FROM t ORDER BY id
+- Statement: SELECT * FROM t
 - output: [ [1], [6], [11] ]
 ---
 - Statement: ALTER TABLE t ALTER COLUMN id RESTART WITH 42
 ---
 - Statement: INSERT INTO t VALUES (DEFAULT), (DEFAULT), (DEFAULT)
 ---
-- Statement: SELECT * FROM t ORDER BY id
+- Statement: SELECT * FROM t
 - output: [ [1], [6], [11], [42], [47], [52] ]
 
 ---
@@ -27,7 +27,7 @@
 ---
 - Statement: INSERT INTO t VALUES (DEFAULT)
 ---
-- Statement: SELECT * FROM t ORDER BY id
+- Statement: SELECT * FROM t
 - output: [ [1], [6], [11], [42], [47], [52], [100] ]
 
 ---
@@ -40,7 +40,7 @@
 ---
 - Statement: INSERT INTO t2 VALUES (DEFAULT)
 ---
-- Statement: SELECT * FROM t2 ORDER BY id
+- Statement: SELECT * FROM t2
 - output: [ [10] ]
 ---
 - Statement: ALTER TABLE t2 ALTER COLUMN id RESTART WITH 9
@@ -50,5 +50,5 @@
 ---
 - Statement: INSERT INTO t2 VALUES (DEFAULT)
 ---
-- Statement: SELECT * FROM t2 ORDER BY id
+- Statement: SELECT * FROM t2
 - output: [ [10], [11] ]

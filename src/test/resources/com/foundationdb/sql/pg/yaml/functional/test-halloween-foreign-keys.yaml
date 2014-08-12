@@ -23,13 +23,13 @@
 ---
 - Statement: UPDATE o SET cid=2 WHERE oid=10 AND cid=1
 ---
-- Statement: SELECT * FROM o ORDER BY oid
+- Statement: SELECT * FROM o
 - output: [ [10, 2, '2014-01-20'], [20, 2, '2014-01-01'] ]
 ---
 - Statement: UPDATE o SET cid=? WHERE oid=? AND cid=?
 - params: [ [1, 10, 2] ]
 ---
-- Statement: SELECT * FROM o ORDER BY oid
+- Statement: SELECT * FROM o
 - output: [ [10, 1, '2014-01-20'], [20, 2, '2014-01-01'] ]
 
 ---

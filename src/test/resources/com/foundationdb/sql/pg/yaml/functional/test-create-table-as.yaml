@@ -26,7 +26,7 @@
 ---
 - Statement: INSERT INTO people4 (cid, newName) VALUES (1, 'Jones'), (2, 'Collins')
 ---
-- Statement: SELECT * FROM people4 ORDER BY newName ASC
+- Statement: SELECT * FROM people4
 - output: [  [2, null, 'Collins'], [1, null, 'Jones'] ]
 ---
 - Statement: CREATE TABLE people5 (age, cid, name) AS (SELECT * FROM people) WITH NO DATA

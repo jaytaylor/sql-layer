@@ -12,12 +12,12 @@
 ---
 - Statement: ALTER TABLE t1 ALTER COLUMN c1 NULL
 ---
-- Statement: SELECT * FROM t1 ORDER BY id
+- Statement: SELECT * FROM t1
 - output: [[1, '10'], [2, '20'], [3, '30']]
 ---
 - Statement: INSERT INTO t1 VALUES (4, null)
 ---
-- Statement: SELECT * FROM t1 ORDER BY id
+- Statement: SELECT * FROM t1
 - output: [[1, '10'], [2, '20'], [3, '30'], [4, null]]
 ---
 - DropTable: t1
@@ -31,13 +31,13 @@
 ---
 - Statement: ALTER TABLE t1 ALTER COLUMN c1 NOT NULL
 ---
-- Statement: SELECT * FROM t1 ORDER BY id
+- Statement: SELECT * FROM t1
 - output: [[1, '10'], [2, '20'], [3, '30']]
 ---
 - Statement: INSERT INTO t1 VALUES (4, null)
 - error: ['23502']
 ---
-- Statement: SELECT * FROM t1 ORDER BY id
+- Statement: SELECT * FROM t1
 - output: [[1, '10'], [2, '20'], [3, '30']]
 ---
 - DropTable: t1
@@ -52,7 +52,7 @@
 - Statement: ALTER TABLE t1 ALTER COLUMN c1 NOT NULL
 - error: ['23502']
 ---
-- Statement: SELECT * FROM t1 ORDER BY id
+- Statement: SELECT * FROM t1
 - output: [[1, '10'], [2, '20'], [3, '30'], [4,null]]
 ---
 - DropTable: t1
@@ -67,7 +67,7 @@
 - Statement: ALTER TABLE t1 ALTER COLUMN id NULL
 - error: ['50012']
 ---
-- Statement: SELECT * FROM t1 ORDER BY id
+- Statement: SELECT * FROM t1
 - output: [[1], [2], [3]]
 ---
 - DropTable: t1
