@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.store.statistics.histograms;
 
-import com.foundationdb.util.Equality;
+import java.util.Objects;
 
 public final class Bucket<T> {
 
@@ -88,7 +88,7 @@ public final class Bucket<T> {
         return equalsCount == bucket.equalsCount
                 && ltCount == bucket.ltCount
                 && ltDistinctCount == bucket.ltDistinctCount
-                && Equality.areEqual(value, bucket.value);
+                && Objects.deepEquals(value, bucket.value);
 
     }
 
