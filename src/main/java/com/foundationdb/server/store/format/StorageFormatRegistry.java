@@ -115,10 +115,9 @@ public abstract class StorageFormatRegistry
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public <T extends StorageDescription> T getDefaultStorageDescription(HasStorage object) {
+    public StorageDescription getDefaultStorageDescription(HasStorage object) {
         try {
-            return (T) defaultStorageConstructor.newInstance(object, defaultIdentifier);
+            return defaultStorageConstructor.newInstance(object, defaultIdentifier);
         } catch (InstantiationException | IllegalAccessException
                 | IllegalArgumentException | InvocationTargetException e) {
             throw new RuntimeException(e);

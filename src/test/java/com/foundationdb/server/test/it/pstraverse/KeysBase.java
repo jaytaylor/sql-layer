@@ -81,7 +81,6 @@ public abstract class KeysBase extends ITBase {
     }
 
     @Test // (expected=IllegalArgumentException.class) @SuppressWarnings("unused") // junit will invoke
-    @SuppressWarnings("unchecked")
     public void traverseCustomersPK() throws Exception {
         traversePK(
                 customers(),
@@ -108,7 +107,7 @@ public abstract class KeysBase extends ITBase {
         );
     }
 
-    protected void traversePK(int rowDefId, List<? super Long>... expectedIndexes) throws Exception {
+    protected void traversePK(int rowDefId, List<?>... expectedIndexes) throws Exception {
         Index pkIndex = getRowDef(rowDefId).getPKIndex();
 
         try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {

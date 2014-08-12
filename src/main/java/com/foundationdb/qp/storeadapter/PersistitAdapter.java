@@ -96,7 +96,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
     }
 
     @Override
-    public HKey newHKey(com.foundationdb.ais.model.HKey hKeyMetadata)
+    public PersistitHKey newHKey(com.foundationdb.ais.model.HKey hKeyMetadata)
     {
         return new PersistitHKey(store.createKey(), hKeyMetadata);
     }

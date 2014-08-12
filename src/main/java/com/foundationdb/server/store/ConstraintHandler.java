@@ -535,6 +535,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
                                                RowData row, ForeignKey foreignKey, 
                                                boolean selfReference, ForeignKey.Action action, String operation);
     
+    @SuppressWarnings("unchecked")
     protected void stillReferenced(Session session, Index index, SDType storeData,
                                    RowData row, ForeignKey foreignKey, String operation) {
         String key;

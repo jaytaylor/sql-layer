@@ -101,7 +101,7 @@ public class KeyToObjectIT extends ITBase {
                         throw new RuntimeException("with type" + column.getTypeDescription(), e);
                     }
 
-                    // Work around for dropping of 0 value sigfigs from key.decode()
+                    // Work around for dropping of 0 value sigfigs from key.decode()    
                     int compareValue = 1;
                     if(objFromRow instanceof BigDecimal && lastConvertedValue instanceof BigDecimal) {
                         compareValue = ((BigDecimal)objFromRow).compareTo(((BigDecimal)lastConvertedValue));
