@@ -17,6 +17,8 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
+import static com.foundationdb.util.FileTestUtils.printClickableFile;
+
 import com.foundationdb.server.types.service.TypesRegistryServiceImpl;
 import com.foundationdb.sql.NamedParamsTestBase;
 import com.foundationdb.sql.TestBase;
@@ -153,7 +155,15 @@ public class RulesTest extends OptimizerTestBase
 
     @Test
     public void testRules() throws Exception {
-        generateAndCheckResult();
+        try {
+            generateAndCheckResult();
+        } catch (Throwable e) {
+            System.err.println("Failed Yaml test (note: line number is always 1)");
+            String filePathPrefix = RESOURCE_DIR + "/" + caseName;
+            printClickableFile(filePathPrefix, "sql", 1);
+            printClickableFile(filePathPrefix, "expected", 1);
+            throw e;
+        }
     }
 
     @Override
@@ -175,20 +185,7 @@ public class RulesTest extends OptimizerTestBase
 
     @Override
     public void checkResult(String result) throws IOException {
-        try {
-            assertEqualsWithoutHashes(caseName, expected, result);
-        } catch (Throwable e) {
-            System.err.println("Failed Yaml test (note: line number is always 1)");
-            String stackTracePrefix = RESOURCE_DIR.getPath().replace("src/test/resources/", "").replaceAll("/", ".")
-                    + "." + caseName.replace("/", ".").replace(".", "(");
-            System.err.println("  at " + stackTracePrefix + ".sql:1)");
-            System.err.println("  at " + stackTracePrefix + ".expected:1)");
-            // for those running from maven or elsewhere
-            String filePathPrefix = RESOURCE_DIR + "/" + caseName;
-            System.err.println("  aka: " + filePathPrefix + ".sql");
-            System.err.println("  aka: " + filePathPrefix + ".expected");
-            throw e;
-        }
+        assertEqualsWithoutHashes(caseName, expected, result);
     }
 
 }

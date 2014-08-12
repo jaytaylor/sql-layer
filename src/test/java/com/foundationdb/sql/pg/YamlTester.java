@@ -18,6 +18,7 @@
 package com.foundationdb.sql.pg;
 
 import static com.foundationdb.util.AssertUtils.assertCollectionEquals;
+import static com.foundationdb.util.FileTestUtils.printClickableFile;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.not;
@@ -262,10 +263,7 @@ class YamlTester
             test(in);
         } catch (Throwable e) {
             System.err.println("Failed Yaml test (note: line number points to start of document)");
-            System.err.println("  at " + filename.replace("src/test/resources/","").
-                    replaceFirst("/([^/]+.yaml$)", "($1:" + lineNumber + ")").replaceAll("/", "."));
-            // for those running from maven or elsewhere
-            System.err.println("  aka: " + filename + ":" + lineNumber);
+            printClickableFile(filename.substring(0,filename.length()-5), "yaml", lineNumber);
             throw e;
         }
     }
