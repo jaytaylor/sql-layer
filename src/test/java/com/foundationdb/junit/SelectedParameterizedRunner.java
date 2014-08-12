@@ -87,27 +87,16 @@ public final class SelectedParameterizedRunner extends Parameterized {
         
         if (override != null) {
             for (Iterator<Runner> iterator = children.iterator(); iterator.hasNext(); ) {
-                Object child = iterator.next();
-                try {
-                    Field f;
-                    try {
-                        f = child.getClass().getDeclaredField("fName");
-                    } catch (NoSuchFieldException e) {
-                        continue;
-                    }
-                    f.setAccessible(true);
-                    String fName = (String) f.get(child);
-                    if (fName.startsWith("[") && fName.endsWith("]")) {
-                        fName = fName.substring(1, fName.length()-1);
-                    }
-                    if (overrideIsRegex && !paramNameMatchesRegex(fName, override)) {
-                        iterator.remove();
-                    }
-                    else if (!overrideIsRegex && !fName.equals(override)) {
-                        iterator.remove();
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
+                Runner child = iterator.next();
+                String fName = child.getDescription().getDisplayName();
+                if (fName.startsWith("[") && fName.endsWith("]")) {
+                    fName = fName.substring(1, fName.length()-1);
+                }
+                if (overrideIsRegex && !paramNameMatchesRegex(fName, override)) {
+                    iterator.remove();
+                }
+                else if (!overrideIsRegex && !fName.equals(override)) {
+                    iterator.remove();
                 }
             }
         }        
