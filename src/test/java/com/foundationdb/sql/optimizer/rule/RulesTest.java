@@ -175,7 +175,16 @@ public class RulesTest extends OptimizerTestBase
 
     @Override
     public void checkResult(String result) throws IOException {
-        assertEqualsWithoutHashes(caseName, expected, result);
+        try {
+            assertEqualsWithoutHashes(caseName, expected, result);
+        } catch (Throwable e) {
+            System.err.println("Failed Yaml test (note: line number is always 1)");
+            System.err.println("  at " + RESOURCE_DIR.getPath().replace("src/test/resources/", "").replaceAll("/", ".")
+                    + "." + caseName.replace("/", ".").replace(".", "(") + ".expected:1)");
+            // for those running from maven or elsewhere
+            System.err.println("  aka: " + RESOURCE_DIR + "/" + caseName + ".expected");
+            throw e;
+        }
     }
 
 }
