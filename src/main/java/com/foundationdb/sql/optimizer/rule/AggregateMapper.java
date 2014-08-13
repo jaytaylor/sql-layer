@@ -154,6 +154,7 @@ public class AggregateMapper extends BaseRule
             }
         }
 
+        @SuppressWarnings("unchecked")
         protected <T extends ExpressionNode> void remap(List<T> exprs) {
             for (int i = 0; i < exprs.size(); i++) {
                 exprs.set(i, (T)exprs.get(i).accept(this));

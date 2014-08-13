@@ -164,6 +164,7 @@ public class ScriptBindingsRoutine extends ServerJavaRoutine
     /** In Rhino (1.7), internal Java object wrappers can leak out. 
      * TODO: Needed until completely migrated to Nashorn (Java 8).
      */
+    @SuppressWarnings("unchecked")
     static class Rhino17Interface {
         private final Class nativeJavaObject;
         private final java.lang.reflect.Method unwrap;

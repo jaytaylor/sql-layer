@@ -22,7 +22,7 @@ import com.foundationdb.server.error.ErrorCode;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import static junit.framework.Assert.*;
+import static org.junit.Assert.*;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.sql.Connection;

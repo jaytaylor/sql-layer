@@ -24,9 +24,9 @@ import com.foundationdb.server.test.it.ITBase;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -57,13 +57,13 @@ public class HttpThreadedLoginIT extends ITBase
     }
 
     private static int openRestURL(String userInfo, int port, String path) throws Exception {
-        HttpClient client = new DefaultHttpClient();
+        CloseableHttpClient client = HttpClientBuilder.create().build();
         URI uri = new URI("http", userInfo, "localhost", port, path, null, null);
         HttpGet get = new HttpGet(uri);
         HttpResponse response = client.execute(get);
         int code = response.getStatusLine().getStatusCode();
         EntityUtils.consume(response.getEntity());
-        client.getConnectionManager().shutdown();
+        client.close();
         return code;
     }
 

@@ -38,7 +38,7 @@ public interface IndexStatisticsService
     /** Get available statistics for the given index. */
     public IndexStatistics getIndexStatistics(Session session, Index index);
 
-    /** @deprecated Get old style table statistics */
+    /** deprecated? Get old style table statistics */
     TableStatistics getTableStatistics(Session session, Table table);
 
     /** Update statistics for the given indexes. */

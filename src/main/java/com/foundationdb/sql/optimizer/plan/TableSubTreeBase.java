@@ -90,10 +90,6 @@ public class TableSubTreeBase<T extends TableSubTreeBase.TableNodeBase<T>>
             this.nextSibling = nextSibling;
         }
 
-        public TableSubTreeBase<T> subtree() {
-            return new TableSubTreeBase(this);
-        }
-
         public String toString() {
             return table.getName().getTableName();
         }

@@ -63,6 +63,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
 
     private final ConfigurationService config;
     private final TreeService treeService;
+    private final TransactionService txnService;
     private final CheckTableVersions checkTableVersionsCallback;
 
     private boolean writeLockEnabled;
@@ -84,6 +85,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         this.treeService = treeService;
         this.config = config;
         this.checkTableVersionsCallback = new CheckTableVersions(schemaManager);
+        this.txnService = txnService;
     }
 
     @Override
@@ -424,10 +426,8 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
 
     @Override
     public <V extends IndexVisitor<Key,Value>> V traverse(Session session, Index index, V visitor, long scanTimeLimit, long sleepTime) {
-        Transaction xact = null;
         long nextCommitTime = 0;
         if (scanTimeLimit >= 0) {
-            xact = treeService.getTransaction(session);
             nextCommitTime = System.currentTimeMillis() + scanTimeLimit;
         }
         Exchange exchange = getExchange(session, index).append(Key.BEFORE);
@@ -436,8 +436,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
                 visitor.visit(exchange.getKey(), exchange.getValue());
                 if ((scanTimeLimit >= 0) &&
                     (System.currentTimeMillis() >= nextCommitTime)) {
-                    xact.commit();
-                    xact.end();
+                    txnService.commitTransaction(session);
                     if (sleepTime > 0) {
                         try {
                             Thread.sleep(sleepTime);
@@ -446,7 +445,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
                             throw new QueryCanceledException(session);
                         }
                     }
-                    xact.begin();
+                    txnService.beginTransaction(session);
                     nextCommitTime = System.currentTimeMillis() + scanTimeLimit;
                 }
             }

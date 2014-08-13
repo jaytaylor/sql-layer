@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.pg;
 
-import static junit.framework.Assert.assertNotNull;
+import static org.junit.Assert.assertNotNull;
 
 import java.sql.SQLException;
 

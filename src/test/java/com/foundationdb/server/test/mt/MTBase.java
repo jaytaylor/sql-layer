@@ -43,9 +43,9 @@ import com.foundationdb.server.test.mt.util.ConcurrentTestBuilderImpl;
 import com.foundationdb.server.test.mt.util.OperatorCreator;
 import com.foundationdb.server.test.mt.util.ServiceHolder;
 import org.junit.Rule;
-import org.junit.rules.MethodRule;
-import org.junit.rules.TestWatchman;
-import org.junit.runners.model.FrameworkMethod;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,9 +61,9 @@ import static com.foundationdb.qp.operator.API.valuesScan_Default;
 public abstract class MTBase extends ITBase implements ServiceHolder
 {
     @Rule
-    public final MethodRule FAILED_WATCHMAN = new TestWatchman() {
+    public final TestRule FAILED_WATCHMAN = new TestWatcher() {
         @Override
-        public void failed(Throwable e, FrameworkMethod method) {
+        public void failed(Throwable e, Description description) {
             System.err.printf("Ran with DELAY_BEFORE: %s, DELAY_DDL_STAGE: %s, DELAY_THREAD_STAGE: %s\n",
                               ConcurrentTestBuilderImpl.DELAY_BEFORE,
                               ConcurrentTestBuilderImpl.DELAY_DDL_STAGE,

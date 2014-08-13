@@ -27,6 +27,7 @@ import com.foundationdb.util.SparseArray;
 
 public class HKeyCache<HKEY extends HKey>
 {
+    @SuppressWarnings("unchecked")
     public HKEY hKey(Table table)
     {
         HKEY hKey;

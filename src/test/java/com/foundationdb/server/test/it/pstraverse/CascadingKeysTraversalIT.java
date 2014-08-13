@@ -33,7 +33,7 @@ public final class CascadingKeysTraversalIT extends KeysBase {
     }
 
     @Override
-    @Test @SuppressWarnings("unused") // junit will invoke
+    @Test @SuppressWarnings(value={"unused", "unchecked"}) // junit will invoke
     public void traverseOrdersPK() throws Exception {
         traversePK(
                 orders(),
@@ -43,7 +43,7 @@ public final class CascadingKeysTraversalIT extends KeysBase {
     }
 
     @Override
-    @Test @SuppressWarnings("unused") // junit will invoke
+    @Test @SuppressWarnings(value={"unused", "unchecked"}) // junit will invoke
     public void traverseItemsPK() throws Exception {
         traversePK(
                 items(),
