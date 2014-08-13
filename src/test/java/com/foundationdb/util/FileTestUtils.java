@@ -23,6 +23,6 @@ public class FileTestUtils {
         System.err.println("  at " + filename.replace("src/test/resources/","").
                 replaceFirst("/([^/]+.)$", "($1." + suffix + ":" + lineNumber + ")").replaceAll("/", "."));
         // for those running from maven or elsewhere
-        System.err.println("  aka: " + filename + ":" + lineNumber);
+        System.err.println("  aka: " + filename + "." + suffix + ":" + lineNumber);
     }
 }
