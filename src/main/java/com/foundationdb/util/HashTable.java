@@ -11,6 +11,8 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.server.types.value.ValueTargets;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +24,8 @@ public class HashTable {
     private ArrayListMultimap<KeyWrapper, Row> hashTable = ArrayListMultimap.create();
 
     private RowType hashedRowType;
+    private final HashFunction hashFunction = Hashing.goodFastHash(32); // Because we're returning longs
+
 
     public List<Row> getMatchingRows(Row row, List<TEvaluatableExpression> evaluatableComparisonFields, List<AkCollator> collators, QueryBindings bindings){
         return hashTable.get(new KeyWrapper(row, evaluatableComparisonFields, collators, bindings));
@@ -71,6 +75,7 @@ public class HashTable {
                 Value valueCopy = new Value(columnValue.getType());
                 ValueTargets.copyFrom(columnValue, valueCopy);
                 AkCollator collator = (collators != null) ? collators.get(i++) : null;
+                //hashKey ^= hashFunction.hashInt(ValueSources.hash(valueCopy, collator)).asInt();
                 hashKey ^= hash(ValueSources.hash(valueCopy, collator));
                 values.add(valueCopy);
             }
@@ -79,6 +84,7 @@ public class HashTable {
         /**
          *  Found on stack overflow:
          *  ttp://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
+         *  this appears to be faster than HashFunction.hashInt().asInt()
          **/
         public int hash( int x) {
             x = ((x >>> 16) ^ x) * 0x45d9f3b;
