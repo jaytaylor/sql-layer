@@ -19,6 +19,7 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.server.types.common.types.TypesTranslator;
@@ -153,7 +154,7 @@ public final class IndexScanSelectorTest {
                         .joinTo("orders").on("o_id", "oid")
                     .table("handling").colInt("hid").colInt("i_id").colString("description", 32)
                         .joinTo("items").on("i_id", "iid")
-                    .groupIndex("sku_priority_gi", null).on("items", "sku").and("orders", "priority")
+                    .groupIndex("sku_priority_gi", Index.JoinType.LEFT).on("items", "sku").and("orders", "priority")
                     .ais();
             c = ais.getTable("coih", "customers");
             o = ais.getTable("coih", "orders");
