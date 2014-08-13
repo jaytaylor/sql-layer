@@ -158,7 +158,7 @@ public class RulesTest extends OptimizerTestBase
         try {
             generateAndCheckResult();
         } catch (Throwable e) {
-            System.err.println("Failed Yaml test (note: line number is always 1)");
+            System.err.println("Failed Rules test (note: line number is always 1)");
             String filePathPrefix = RESOURCE_DIR + "/" + caseName;
             printClickableFile(filePathPrefix, "sql", 1);
             printClickableFile(filePathPrefix, "expected", 1);
