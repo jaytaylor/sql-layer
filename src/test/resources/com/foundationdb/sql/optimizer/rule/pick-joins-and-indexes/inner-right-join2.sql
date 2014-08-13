@@ -1,10 +1,11 @@
 -- This is a redo of an issue with Sequel schema parsing (which uses information_schema tables)
-SELECT items.sku, categories.cat
-FROM categories
-INNER JOIN sources
-  ON (sources.country = 'USA')
-  AND (sources.sku = categories.sku)
-RIGHT OUTER JOIN items
-  ON (items.sku = categories.sku)
-WHERE items.quan = 12
-  AND items.oid = 5
+SELECT t3.c1,t3.c2,t1.c3
+FROM t1
+INNER JOIN t2
+  ON (t1.c3 = 333)
+  AND (t1.c1 = t2.c2)
+  AND (t1.c2 = t2.c2)
+RIGHT OUTER JOIN t3
+  USING (c1, c2)
+WHERE t3.c1 = 111
+  AND t3.c2 = 222
