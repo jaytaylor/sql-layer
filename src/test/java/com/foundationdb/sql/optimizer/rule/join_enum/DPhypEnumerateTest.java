@@ -44,6 +44,8 @@ import com.foundationdb.junit.Parameterization;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import static com.foundationdb.util.FileTestUtils.printClickableFile;
 import static junit.framework.Assert.*;
 
 import java.util.ArrayList;
@@ -98,7 +100,15 @@ public class DPhypEnumerateTest extends OptimizerTestBase
 
     @Test
     public void testEnumerate() throws Exception {
-        generateAndCheckResult();
+        try {
+            generateAndCheckResult();
+        } catch (Throwable e) {
+            System.err.println("Failed DPHyp test (note: line number is always 1)");
+            String filePathPrefix = RESOURCE_DIR + "/" + caseName;
+            printClickableFile(filePathPrefix, "sql", 1);
+            printClickableFile(filePathPrefix, "expected", 1);
+            throw e;
+        }
     }
 
     @Override
