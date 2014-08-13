@@ -21,15 +21,10 @@ public class FileTestUtils {
 
     public static void printClickableFile(String filename, String suffix, int lineNumber) {
         if (filename != null) {
-            try {
-                System.err.println("  at " + filename.replace("src/test/resources/", "").
-                        replaceFirst("/([^/]+.)$", "($1." + suffix + ":" + lineNumber + ")").replaceAll("/", "."));
-                // for those running from maven or elsewhere
-                System.err.println("  aka: " + filename + "." + suffix + ":" + lineNumber);
-            } catch (Exception e) {
-                System.err.println("Tried to write filename but failed: " +
-                        filename + "." + suffix + ":" + lineNumber + " -- " + e.getMessage());
-            }
+            System.err.println("  at " + filename.replace("src/test/resources/", "").
+                    replaceFirst("/([^/]+.)$", "($1." + suffix + ":" + lineNumber + ")").replaceAll("/", "."));
+            // for those running from maven or elsewhere
+            System.err.println("  aka: " + filename + "." + suffix + ":" + lineNumber);
         } else {
             System.err.println("NULL filename");
         }
