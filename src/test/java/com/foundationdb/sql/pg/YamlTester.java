@@ -18,6 +18,7 @@
 package com.foundationdb.sql.pg;
 
 import static com.foundationdb.util.AssertUtils.assertCollectionEquals;
+import static com.foundationdb.util.FileTestUtils.printClickableFile;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.not;
@@ -66,6 +67,7 @@ import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
+import org.yaml.snakeyaml.error.Mark;
 import org.yaml.snakeyaml.nodes.MappingNode;
 import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.nodes.NodeTuple;
@@ -233,6 +235,7 @@ class YamlTester
     private static final DateFormat DEFAULT_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
     private static final DateFormat DEFAULT_DATETIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S z");
     private static final int DEFAULT_RETRY_COUNT = 5;
+    private int lineNumber = 1;
 
     /**
      * Creates an instance of this class.
@@ -256,14 +259,25 @@ class YamlTester
 
     /** Test the input specified in the constructor. */
     void test() {
-        test(in);
+        try {
+            test(in);
+        } catch (Throwable e) {
+            if (filename != null) {
+                System.err.println("Failed Yaml test (note: line number points to start of document)");
+                printClickableFile(filename.substring(0, filename.length() - 5), "yaml", lineNumber);
+            }
+            throw e;
+        }
     }
 
     private void test(Reader in) {
         List<?> sequence = null;
         try {
             Yaml yaml = new Yaml(new RegisterTags());
-            for(Object document : yaml.loadAll(in)) {
+            for(Object yamlObject : yaml.loadAll(in)) {
+                RegisterTags.LinedObject linedDocument = (RegisterTags.LinedObject) yamlObject;
+                Object document = linedDocument.getObject();
+                lineNumber = linedDocument.getStartMark().getLine();
                 ++commandNumber;
                 commandName = null;
                 sequence = nonEmptySequence(document, "command document");
@@ -1374,6 +1388,8 @@ class YamlTester
     /** A SnakeYAML constructor that converts dc tags to DontCare.INSTANCE and re tags to Regexp instances. */
     private static class RegisterTags extends SafeConstructor
     {
+        private boolean recursing;
+
         RegisterTags() {
             yamlConstructors.put(new Tag("!dc"), new ConstructDontCare());
             yamlConstructors.put(new Tag("!re"), new ConstructRegexp());
@@ -1383,6 +1399,36 @@ class YamlTester
             yamlConstructors.put(new Tag("!datetime"), new ConstructSystemDateTime());
             yamlConstructors.put(new Tag("!unicode"), new ConstructUnicode());
             yamlConstructors.put(new Tag("!utf8-bytes"), new ConstructUTF8Bytes());
+        }
+
+        @Override
+        protected Object constructObject(Node node) {
+            if (recursing)
+                return super.constructObject(node);
+            else {
+                recursing = true;
+                Object o = super.constructObject(node);
+                recursing = false;
+                return new LinedObject(o, node.getStartMark());
+            }
+        }
+
+        private class LinedObject {
+            private Object o;
+            private Mark startMark;
+
+            private LinedObject(Object o, Mark startMark) {
+                this.o = o;
+                this.startMark = startMark;
+            }
+
+            public Object getObject() {
+                return o;
+            }
+
+            public Mark getStartMark() {
+                return startMark;
+            }
         }
 
         private static class ConstructDontCare extends AbstractConstruct
@@ -1580,6 +1626,7 @@ class YamlTester
                 context.append(", ");
             }
             context.append("Command ").append(commandNumber);
+            context.append(" at line ").append(lineNumber);
             if(commandName != null) {
                 context.append(" (").append(commandName);
                 if(failedStatement != null) {

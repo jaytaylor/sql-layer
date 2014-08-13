@@ -17,6 +17,8 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
+import static com.foundationdb.util.FileTestUtils.printClickableFile;
+
 import com.foundationdb.server.types.service.TypesRegistryServiceImpl;
 import com.foundationdb.sql.NamedParamsTestBase;
 import com.foundationdb.sql.TestBase;
@@ -149,7 +151,15 @@ public class RulesTest extends OptimizerTestBase
 
     @Test
     public void testRules() throws Exception {
-        generateAndCheckResult();
+        try {
+            generateAndCheckResult();
+        } catch (Throwable e) {
+            System.err.println("Failed Rules test (note: line number is always 1)");
+            String filePathPrefix = RESOURCE_DIR + "/" + caseName;
+            printClickableFile(filePathPrefix, "sql", 1);
+            printClickableFile(filePathPrefix, "expected", 1);
+            throw e;
+        }
     }
 
     @Override
