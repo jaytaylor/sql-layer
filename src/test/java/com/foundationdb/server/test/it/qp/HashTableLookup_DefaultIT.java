@@ -305,7 +305,8 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
                      ),
                      filter_Default(
                             groupScan_Default(innerRowType.table().getGroup()),
-                            Collections.singleton(innerRowType)),
+                            Collections.singleton(innerRowType)
+                     ),
                      outerJoinFields,
                      innerJoinFields,
                      collators

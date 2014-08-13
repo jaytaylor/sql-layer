@@ -4,6 +4,7 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
@@ -14,9 +15,6 @@ import com.google.common.collect.ArrayListMultimap;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by jerett on 8/8/14.
- */
 public class HashTable {
 
 
@@ -73,9 +71,23 @@ public class HashTable {
                 Value valueCopy = new Value(columnValue.getType());
                 ValueTargets.copyFrom(columnValue, valueCopy);
                 AkCollator collator = (collators != null) ? collators.get(i++) : null;
-                hashKey = hashKey ^ ValueSources.hash(valueCopy, collator);
+                hashKey ^= hash(ValueSources.hash(valueCopy, collator));
                 values.add(valueCopy);
             }
         }
+
+        /**
+         *  Found on stack overflow:
+         *  ttp://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
+         **/
+        public int hash( int x) {
+            x = ((x >>> 16) ^ x) * 0x45d9f3b;
+            x = ((x >>> 16) ^ x) * 0x45d9f3b;
+            x = ((x >>> 16) ^ x);
+            return x;
+        }
+
+
+
     }
 }
