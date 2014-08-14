@@ -53,6 +53,7 @@ public class CheckParserUsagesDT {
     private static Logger logger = LoggerFactory.getLogger(CheckParserUsagesDT.class);
     private static Logger csvLogger = LoggerFactory.getLogger(CheckParserUsagesDT.class.getName() + ".csv");
     private static Logger sqlLogger = LoggerFactory.getLogger(CheckParserUsagesDT.class.getName() + ".sql");
+    private static Logger codeLogger = LoggerFactory.getLogger(CheckParserUsagesDT.class.getName() + ".code");
 
     private static Set<Class<? extends QueryTreeNode>> queryTreeNodes;
     private static Collection<String> sqlLayerClassPaths;
@@ -141,18 +142,22 @@ public class CheckParserUsagesDT {
         for (NodeClass nodeClass : finder.getNodes().values()) {
             if (nodeClass.isReferenced && nodeClass.isConcrete()) {
                 String name = nodeClass.getJavaName();
+                codeLogger.debug("finder.getNodes().get(\"{}\")",nodeClass.getName());
                 for (NodeClass.Field field : nodeClass.fields) {
                     if (!field.isReferenced) {
+                        codeLogger.debug(".removeField(\"{}\")", field.name);
                         unused.add(name + "." + field.name);
                     }
                     logMember(name, field, sql, csv);
                 }
                 for (NodeClass.Method method : nodeClass.methods) {
                     if (!method.isReferenced) {
+                        codeLogger.debug(".removeMethod(\"{}\",\"{}\")",method.name, method.descriptor);
                         unused.add(method.getJavaString(name) + " -- " + method.descriptor);
                     }
                     logMember(name, method, sql, csv);
                 }
+                codeLogger.debug(";");
             }
         }
         if (sqlLogger.isDebugEnabled()) {
