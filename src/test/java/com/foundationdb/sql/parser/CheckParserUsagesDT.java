@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -53,6 +54,7 @@ public class CheckParserUsagesDT {
     private static Logger logger = LoggerFactory.getLogger(CheckParserUsagesDT.class);
     private static Logger csvLogger = LoggerFactory.getLogger(CheckParserUsagesDT.class.getName() + ".csv");
     private static Logger sqlLogger = LoggerFactory.getLogger(CheckParserUsagesDT.class.getName() + ".sql");
+    private static Logger codeLogger = LoggerFactory.getLogger(CheckParserUsagesDT.class.getName() + ".code");
 
     private static Set<Class<? extends QueryTreeNode>> queryTreeNodes;
     private static Collection<String> sqlLayerClassPaths;
@@ -109,6 +111,411 @@ public class CheckParserUsagesDT {
                 .removeMethod("getFullName", "()Ljava/lang/String;");
         finder.finalizeState();
         // Remove any concrete class methods here, base class methods have already been propagated down
+        removeTemporarilyIgnoredUnused(finder);
+    }
+
+    /**
+     * After running this test for the first time we found a lot that were ignored.
+     * They look ok enough that we will table this until a later point in time.
+     * Ignoring them here means that we haven't checked them fully. Once we get
+     * a chance we should go through them and confirm and then either remove them
+     * or put them in a different method
+     * @param finder
+     */
+    private static void removeTemporarilyIgnoredUnused(PropertyFinder finder) {
+        finder.getNodes().get("com/foundationdb/sql/parser/CopyStatementNode")
+                .removeMethod("getSubquery","()Lcom/foundationdb/sql/parser/SubqueryNode;");
+        finder.getNodes().get("com/foundationdb/sql/parser/CallStatementNode")
+                .removeMethod("getResultSetNode","()Lcom/foundationdb/sql/parser/ResultSetNode;");
+        finder.getNodes().get("com/foundationdb/sql/parser/ResultColumnList")
+                .removeMethod("getOrderByColumn","(I)Lcom/foundationdb/sql/parser/ResultColumn;");
+        finder.getNodes().get("com/foundationdb/sql/parser/ResultColumn")
+                .removeMethod("getTableNameObject","()Lcom/foundationdb/sql/parser/TableName;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getVirtualColumnId","()I")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/AndNode")
+                .removeMethod("getOperator","()Ljava/lang/String;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getType","()Lcom/foundationdb/sql/types/DataTypeDescriptor;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getMethodName","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/SubqueryNode")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;");
+        finder.getNodes().get("com/foundationdb/sql/parser/SimpleCaseNode")
+                .removeMethod("getType","()Lcom/foundationdb/sql/types/DataTypeDescriptor;")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getCaseOperands","()Lcom/foundationdb/sql/parser/ValueNodeList;")
+                .removeMethod("getResultValues","()Lcom/foundationdb/sql/parser/ValueNodeList;")
+                .removeMethod("getTableName","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/ParameterNode")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getTableName","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/GroupByColumn")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getColumnPosition","()I");
+        finder.getNodes().get("com/foundationdb/sql/parser/CreateSequenceNode")
+                .removeMethod("getSequenceName","()Lcom/foundationdb/sql/parser/TableName;");
+        finder.getNodes().get("com/foundationdb/sql/parser/ConditionalNode")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;")
+                .removeMethod("getType","()Lcom/foundationdb/sql/types/DataTypeDescriptor;")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;")
+                .removeMethod("getThenElseList","()Lcom/foundationdb/sql/parser/ValueNodeList;");
+        finder.getNodes().get("com/foundationdb/sql/parser/AlterTableRenameNode")
+                .removeMethod("getName","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/CastNode")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getType","()Lcom/foundationdb/sql/types/DataTypeDescriptor;");
+        finder.getNodes().get("com/foundationdb/sql/parser/CursorNode")
+                .removeMethod("getScanIsolationLevel","()Lcom/foundationdb/sql/parser/IsolationLevel;")
+                .removeMethod("getUpdatableColumns","()Ljava/util/List;")
+                .removeMethod("getName","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/UpdateNode")
+                .removeMethod("getTargetTableName","()Lcom/foundationdb/sql/parser/TableName;");
+        finder.getNodes().get("com/foundationdb/sql/parser/ColumnDefinitionNode")
+                .removeMethod("getAutoinc_create_or_modify_Start_Increment","()J")
+                .removeMethod("getGenerationClauseNode","()Lcom/foundationdb/sql/parser/GenerationClauseNode;")
+                .removeMethod("getName","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/CurrentSequenceNode")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getType","()Lcom/foundationdb/sql/types/DataTypeDescriptor;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;")
+                .removeMethod("getColumnName","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/RowResultSetNode")
+                .removeMethod("getResultColumns","()Lcom/foundationdb/sql/parser/ResultColumnList;")
+                .removeMethod("getCorrelationName","()Ljava/lang/String;")
+                .removeMethod("getExposedName","()Ljava/lang/String;")
+                .removeMethod("getOrigTableName","()Lcom/foundationdb/sql/parser/TableName;")
+                .removeMethod("getTableName","()Lcom/foundationdb/sql/parser/TableName;");
+        finder.getNodes().get("com/foundationdb/sql/parser/HalfOuterJoinNode")
+                .removeMethod("getCorrelationName","()Ljava/lang/String;")
+                .removeMethod("getTableName","()Lcom/foundationdb/sql/parser/TableName;")
+                .removeMethod("getExposedName","()Ljava/lang/String;")
+                .removeMethod("getExposedName","()Ljava/lang/String;")
+                .removeMethod("getUsingClause","()Lcom/foundationdb/sql/parser/ResultColumnList;")
+                .removeMethod("getResultColumns","()Lcom/foundationdb/sql/parser/ResultColumnList;")
+                .removeMethod("getLeftmostResultSet","()Lcom/foundationdb/sql/parser/ResultSetNode;")
+                .removeMethod("getJoinClause","()Lcom/foundationdb/sql/parser/ValueNode;")
+                .removeMethod("getLogicalLeftResultSet","()Lcom/foundationdb/sql/parser/ResultSetNode;")
+                .removeMethod("getExposedName","()Ljava/lang/String;")
+                .removeMethod("getLeftmostResultSet","()Lcom/foundationdb/sql/parser/ResultSetNode;")
+                .removeMethod("getLogicalRightResultSet","()Lcom/foundationdb/sql/parser/ResultSetNode;")
+                .removeMethod("getOrigTableName","()Lcom/foundationdb/sql/parser/TableName;");
+        finder.getNodes().get("com/foundationdb/sql/parser/CoalesceFunctionNode")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getType","()Lcom/foundationdb/sql/types/DataTypeDescriptor;")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;");
+        finder.getNodes().get("com/foundationdb/sql/parser/ColumnReference")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;")
+                .removeMethod("getType","()Lcom/foundationdb/sql/types/DataTypeDescriptor;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/ModifyColumnNode")
+                .removeMethod("getName","()Ljava/lang/String;")
+                .removeMethod("getAutoincrementIncrement","()J")
+                .removeMethod("getGenerationClauseNode","()Lcom/foundationdb/sql/parser/GenerationClauseNode;")
+                .removeMethod("getDefaultNode","()Lcom/foundationdb/sql/parser/DefaultNode;");
+        finder.getNodes().get("com/foundationdb/sql/parser/DropTableNode")
+                .removeMethod("getDropBehavior","()I");
+        finder.getNodes().get("com/foundationdb/sql/parser/BooleanConstantNode")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getValue","()Ljava/lang/Object;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getColumnName","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/NextSequenceNode")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getType","()Lcom/foundationdb/sql/types/DataTypeDescriptor;")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;");
+        finder.getNodes().get("com/foundationdb/sql/parser/TableElementNode")
+                .removeMethod("getName","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/RowsResultSetNode")
+                .removeMethod("getResultColumns","()Lcom/foundationdb/sql/parser/ResultColumnList;")
+                .removeMethod("getOrigTableName","()Lcom/foundationdb/sql/parser/TableName;")
+                .removeMethod("getTableName","()Lcom/foundationdb/sql/parser/TableName;")
+                .removeMethod("getCorrelationName","()Ljava/lang/String;")
+                .removeMethod("getExposedName","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/InListOperatorNode")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;");
+        finder.getNodes().get("com/foundationdb/sql/parser/CreateIndexNode")
+                .removeMethod("getIndexName","()Lcom/foundationdb/sql/parser/TableName;")
+                .removeMethod("getProperties","()Ljava/util/Properties;")
+                .removeMethod("getJoinType","()Lcom/foundationdb/sql/parser/JoinNode$JoinType;");
+        finder.getNodes().get("com/foundationdb/sql/parser/UntypedNullConstantNode")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getValue","()Ljava/lang/Object;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getType","()Lcom/foundationdb/sql/types/DataTypeDescriptor;")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;");
+        finder.getNodes().get("com/foundationdb/sql/parser/BetweenOperatorNode")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;");
+        finder.getNodes().get("com/foundationdb/sql/parser/IsNode")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getMethodName","()Ljava/lang/String;")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;")
+                .removeMethod("getOperator","()Ljava/lang/String;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;");
+        finder.getNodes().get("com/foundationdb/sql/parser/DropSchemaNode")
+                .removeMethod("getObjectName","()Lcom/foundationdb/sql/parser/TableName;");
+        finder.getNodes().get("com/foundationdb/sql/parser/UnionNode")
+                .removeMethod("getCorrelationName","()Ljava/lang/String;")
+                .removeMethod("getExposedName","()Ljava/lang/String;")
+                .removeMethod("getLeftmostResultSet","()Lcom/foundationdb/sql/parser/ResultSetNode;")
+                .removeMethod("getResultColumns","()Lcom/foundationdb/sql/parser/ResultColumnList;")
+                .removeMethod("getLeftmostResultSet","()Lcom/foundationdb/sql/parser/ResultSetNode;")
+                .removeMethod("getExposedName","()Ljava/lang/String;")
+                .removeMethod("getOrigTableName","()Lcom/foundationdb/sql/parser/TableName;")
+                .removeMethod("getTableName","()Lcom/foundationdb/sql/parser/TableName;")
+                .removeMethod("getExposedName","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/OrderByList")
+                .removeMethod("get","(I)Lcom/foundationdb/sql/parser/QueryTreeNode;")
+                .removeMethod("getOrderByColumn","(I)Lcom/foundationdb/sql/parser/OrderByColumn;");
+        finder.getNodes().get("com/foundationdb/sql/parser/FKConstraintDefinitionNode")
+                .removeMethod("getVerifyType","()Lcom/foundationdb/sql/parser/ConstraintDefinitionNode$ConstraintType;")
+                .removeMethod("getProperties","()Ljava/util/Properties;");
+        finder.getNodes().get("com/foundationdb/sql/parser/AlterDropIndexNode")
+                .removeMethod("getName","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/CreateSchemaNode")
+                .removeMethod("getDefaultCharacterAttributes","()Lcom/foundationdb/sql/types/CharacterTypeAttributes;")
+                .removeMethod("getObjectName","()Lcom/foundationdb/sql/parser/TableName;")
+                .removeMethod("getAuthorizationID","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/CurrentDatetimeOperatorNode")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getType","()Lcom/foundationdb/sql/types/DataTypeDescriptor;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;");
+        finder.getNodes().get("com/foundationdb/sql/parser/IntersectOrExceptNode")
+                .removeMethod("getExposedName","()Ljava/lang/String;")
+                .removeMethod("getCorrelationName","()Ljava/lang/String;")
+                .removeMethod("getExposedName","()Ljava/lang/String;")
+                .removeMethod("getOrigTableName","()Lcom/foundationdb/sql/parser/TableName;")
+                .removeMethod("getLeftmostResultSet","()Lcom/foundationdb/sql/parser/ResultSetNode;")
+                .removeMethod("getResultColumns","()Lcom/foundationdb/sql/parser/ResultColumnList;")
+                .removeMethod("getOpType","()Lcom/foundationdb/sql/parser/IntersectOrExceptNode$OpType;")
+                .removeMethod("getLeftmostResultSet","()Lcom/foundationdb/sql/parser/ResultSetNode;")
+                .removeMethod("getTableName","()Lcom/foundationdb/sql/parser/TableName;")
+                .removeMethod("getExposedName","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/IndexDefinitionNode")
+                .removeMethod("getIndexColumnList","()Lcom/foundationdb/sql/parser/IndexColumnList;")
+                .removeMethod("getStorageFormat","()Lcom/foundationdb/sql/parser/StorageFormatNode;");
+        finder.getNodes().get("com/foundationdb/sql/parser/CreateViewNode")
+                .removeMethod("getOrderByList","()Lcom/foundationdb/sql/parser/OrderByList;")
+                .removeMethod("getOffset","()Lcom/foundationdb/sql/parser/ValueNode;")
+                .removeMethod("getResultColumns","()Lcom/foundationdb/sql/parser/ResultColumnList;")
+                .removeMethod("getCheckOption","()I")
+                .removeMethod("getFetchFirst","()Lcom/foundationdb/sql/parser/ValueNode;")
+                .removeMethod("getQueryExpression","()Ljava/lang/String;")
+                .removeMethod("getParsedQueryExpression","()Lcom/foundationdb/sql/parser/ResultSetNode;");
+        finder.getNodes().get("com/foundationdb/sql/parser/AllResultColumn")
+                .removeMethod("getColumnPosition","()I")
+                .removeMethod("getType","()Lcom/foundationdb/sql/types/DataTypeDescriptor;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getExpression","()Lcom/foundationdb/sql/parser/ValueNode;")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;")
+                .removeMethod("getName","()Ljava/lang/String;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getReference","()Lcom/foundationdb/sql/parser/ColumnReference;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getFullTableName","()Ljava/lang/String;")
+                .removeMethod("getVirtualColumnId","()I")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;");
+        finder.getNodes().get("com/foundationdb/sql/parser/GroupConcatNode")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getAggregateName","()Ljava/lang/String;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getType","()Lcom/foundationdb/sql/types/DataTypeDescriptor;")
+                .removeMethod("getOperand","()Lcom/foundationdb/sql/parser/ValueNode;")
+                .removeMethod("getOperator","()Ljava/lang/String;")
+                .removeMethod("getMethodName","()Ljava/lang/String;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;");
+        finder.getNodes().get("com/foundationdb/sql/parser/BinaryOperatorNode")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;")
+                .removeMethod("getOperator","()Ljava/lang/String;")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/FromBaseTable")
+                .removeMethod("getIndexHints","()Lcom/foundationdb/sql/parser/IndexHintList;")
+                .removeMethod("getExposedName","()Ljava/lang/String;")
+                .removeMethod("getResultColumns","()Lcom/foundationdb/sql/parser/ResultColumnList;")
+                .removeMethod("getExposedName","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/IsNullNode")
+                .removeMethod("getOperator","()Ljava/lang/String;")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;")
+                .removeMethod("getTableName","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/InsertNode")
+                .removeMethod("getTargetProperties","()Ljava/util/Properties;");
+        finder.getNodes().get("com/foundationdb/sql/parser/AlterTableNode")
+                .removeField("defragment")
+                .removeField("purge")
+                .removeField("compressTable")
+                .removeField("truncateEndOfTable")
+                .removeField("behavior")
+                .removeField("sequential")
+                .removeMethod("getBehavior","()I")
+                .removeMethod("getChangeType","()I");
+        finder.getNodes().get("com/foundationdb/sql/parser/DefaultNode")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getType","()Lcom/foundationdb/sql/types/DataTypeDescriptor;")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;");
+        finder.getNodes().get("com/foundationdb/sql/parser/StaticMethodCallNode")
+                .removeMethod("getType","()Lcom/foundationdb/sql/types/DataTypeDescriptor;")
+                .removeMethod("getJSQLType","()Lcom/foundationdb/sql/types/JSQLType;")
+                .removeMethod("getJavaClassName","()Ljava/lang/String;")
+                .removeMethod("getJavaTypeName","()Ljava/lang/String;")
+                .removeMethod("getPrimitiveTypeName","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/SpecialFunctionNode")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;")
+                .removeMethod("getType","()Lcom/foundationdb/sql/types/DataTypeDescriptor;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getColumnName","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/SelectNode")
+                .removeMethod("getWindows","()Lcom/foundationdb/sql/parser/WindowList;")
+                .removeMethod("getCacheHint","()Ljava/lang/Boolean;");
+        finder.getNodes().get("com/foundationdb/sql/parser/TernaryOperatorNode")
+                .removeMethod("getOperator","()Ljava/lang/String;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;");
+        finder.getNodes().get("com/foundationdb/sql/parser/DropSequenceNode")
+                .removeMethod("getDropBehavior","()I");
+        finder.getNodes().get("com/foundationdb/sql/parser/AggregateNode")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getType","()Lcom/foundationdb/sql/types/DataTypeDescriptor;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;")
+                .removeMethod("getMethodName","()Ljava/lang/String;")
+                .removeMethod("getOperator","()Ljava/lang/String;")
+                .removeMethod("getColumnName","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/ConstraintDefinitionNode")
+                .removeMethod("getProperties","()Ljava/util/Properties;");
+        finder.getNodes().get("com/foundationdb/sql/parser/OrderByColumn")
+                .removeMethod("getColumnPosition","()I");
+        finder.getNodes().get("com/foundationdb/sql/parser/RenameNode")
+                .removeMethod("getNewObjectName","()Ljava/lang/String;")
+                .removeMethod("getOldObjectName","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/DeleteNode")
+                .removeMethod("getTargetTableName","()Lcom/foundationdb/sql/parser/TableName;");
+        finder.getNodes().get("com/foundationdb/sql/parser/RowConstructorNode")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getType","()Lcom/foundationdb/sql/types/DataTypeDescriptor;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;")
+                .removeMethod("getDepth","()I")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;")
+                .removeMethod("getTableName","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/NumericConstantNode")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;")
+                .removeMethod("getType","()Lcom/foundationdb/sql/types/DataTypeDescriptor;");
+        finder.getNodes().get("com/foundationdb/sql/parser/UnaryOperatorNode")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getOperator","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/SQLToJavaValueNode")
+                .removeMethod("getJSQLType","()Lcom/foundationdb/sql/types/JSQLType;")
+                .removeMethod("getJavaTypeName","()Ljava/lang/String;")
+                .removeMethod("getPrimitiveTypeName","()Ljava/lang/String;")
+                .removeMethod("getType","()Lcom/foundationdb/sql/types/DataTypeDescriptor;")
+                .removeMethod("getType","()Lcom/foundationdb/sql/types/DataTypeDescriptor;");
+        finder.getNodes().get("com/foundationdb/sql/parser/JavaToSQLValueNode")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;")
+                .removeMethod("getType","()Lcom/foundationdb/sql/types/DataTypeDescriptor;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;");
+        finder.getNodes().get("com/foundationdb/sql/parser/GroupByList")
+                .removeMethod("get","(I)Lcom/foundationdb/sql/parser/QueryTreeNode;")
+                .removeMethod("getGroupByColumn","(I)Lcom/foundationdb/sql/parser/GroupByColumn;");
+        finder.getNodes().get("com/foundationdb/sql/parser/FromSubquery")
+                .removeMethod("getCorrelationName","()Ljava/lang/String;")
+                .removeMethod("getTableName","()Lcom/foundationdb/sql/parser/TableName;")
+                .removeMethod("getOrigTableName","()Lcom/foundationdb/sql/parser/TableName;");
+        finder.getNodes().get("com/foundationdb/sql/parser/JoinNode")
+                .removeMethod("getExposedName","()Ljava/lang/String;")
+                .removeMethod("getLeftmostResultSet","()Lcom/foundationdb/sql/parser/ResultSetNode;")
+                .removeMethod("getOrigTableName","()Lcom/foundationdb/sql/parser/TableName;")
+                .removeMethod("getExposedName","()Ljava/lang/String;")
+                .removeMethod("getCorrelationName","()Ljava/lang/String;")
+                .removeMethod("getExposedName","()Ljava/lang/String;")
+                .removeMethod("getLeftmostResultSet","()Lcom/foundationdb/sql/parser/ResultSetNode;")
+                .removeMethod("getTableName","()Lcom/foundationdb/sql/parser/TableName;")
+                .removeMethod("getResultColumns","()Lcom/foundationdb/sql/parser/ResultColumnList;");
+
     }
 
     @Test
@@ -141,18 +548,22 @@ public class CheckParserUsagesDT {
         for (NodeClass nodeClass : finder.getNodes().values()) {
             if (nodeClass.isReferenced && nodeClass.isConcrete()) {
                 String name = nodeClass.getJavaName();
+                codeLogger.debug("finder.getNodes().get(\"{}\")",nodeClass.getName());
                 for (NodeClass.Field field : nodeClass.fields) {
                     if (!field.isReferenced) {
+                        codeLogger.debug(".removeField(\"{}\")", field.name);
                         unused.add(name + "." + field.name);
                     }
                     logMember(name, field, sql, csv);
                 }
                 for (NodeClass.Method method : nodeClass.methods) {
                     if (!method.isReferenced) {
+                        codeLogger.debug(".removeMethod(\"{}\",\"{}\")",method.name, method.descriptor);
                         unused.add(method.getJavaString(name) + " -- " + method.descriptor);
                     }
                     logMember(name, method, sql, csv);
                 }
+                codeLogger.debug(";");
             }
         }
         if (sqlLogger.isDebugEnabled()) {
@@ -161,11 +572,7 @@ public class CheckParserUsagesDT {
         if (csvLogger.isDebugEnabled()) {
             csvLogger.debug(csv.toString());
         }
-        // TODO eventually we want the list to be empty, either by removing methods in initializeFinder, or actually
-        // using the methods
-        // assertThat(unused, empty());
-
-        assertThat(unused.size(), equalTo(304));
+        assertThat(unused, empty());
     }
 
     public void logHeaderInfo(StringBuilder sql, StringBuilder csv) {
@@ -464,6 +871,17 @@ public class CheckParserUsagesDT {
 
         public void reference() {
             isReferenced = true;
+        }
+
+        public NodeClass removeField(String fieldName) {
+            Iterator<Field> iterator = fields.iterator();
+            while (iterator.hasNext()) {
+                if (Objects.equals(iterator.next().name, fieldName)) {
+                    iterator.remove();
+                    break;
+                }
+            }
+            return this;
         }
 
         public NodeClass removeMethod(String name, String descriptor) {
