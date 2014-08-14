@@ -315,6 +315,8 @@ class YamlTester
             }
         } catch(ContextAssertionError e) {
             throw e;
+        } catch (FullOutputAssertionError e) {
+            throw e;
         } catch(Throwable e) {
             // Add context
             throw new ContextAssertionError(String.valueOf(sequence), e.toString(), e);
@@ -952,53 +954,47 @@ class YamlTester
                 Statement stmt = rs.getStatement();
                 assert stmt != null;
                 collectWarnings(stmt.getWarnings(), reportedWarnings);
-                for(int i = 0; true; i++) {
-                    if(!rs.next()) {
-                        resultsEmpty = true;
-                        break;
-                    } else if(i >= output.size()) {
-                        break;
+                while (rs.next()) {
+                    ArrayList<Object> actualRow = new ArrayList<>(metaData.getColumnCount());
+                    resultsList.add(actualRow);
+                    for (int i=0; i<metaData.getColumnCount(); i++) {
+                        actualRow.add(rs.getObject(i+1));
                     }
-                    List<?> row = output.get(i);
-                    if(i == 0) {
-                        assertEquals("Unexpected number of columns in output:", row.size(), numColumns);
-                    }
-                    List<Object> resultsRow = new ArrayList<>(row.size());
-                    for(int j = 1; j <= numColumns; j++) {
-                        resultsRow.add(rs.getObject(j));
-                    }
-                    resultsList.add(resultsRow);
-                    collectWarnings(rs.getWarnings(), reportedWarnings);
-                    LOG.debug(arrayString(resultsRow));
                 }
-                if(doSortOutput) {
-                    Collections.sort(output, SIMPLE_LIST_COMPARATOR);
-                    Collections.sort(resultsList, SIMPLE_LIST_COMPARATOR);
-                }
-                int i = 0;
-                for(; true; outputRow++, i++) {
-                    if(outputRow >= output.size()) {
-                        if(i < resultsList.size()) {
-                            resultsEmpty = false;
+                resultsEmpty = resultsList.isEmpty();
+                try {
+                    assertEquals("Unexpected number of columns in output:", output.get(0).size(), numColumns);
+                    if (doSortOutput) {
+                        Collections.sort(output, SIMPLE_LIST_COMPARATOR);
+                        Collections.sort(resultsList, SIMPLE_LIST_COMPARATOR);
+                    }
+                    int i = 0;
+                    for (; true; outputRow++, i++) {
+                        if (outputRow >= output.size()) {
+                            if (i < resultsList.size()) {
+                                resultsEmpty = false;
+                            }
+                            break;
+                        } else if (i >= resultsList.size()) {
+                            break;
                         }
-                        break;
-                    } else if(i >= resultsList.size()) {
-                        break;
+                        List<?> row = output.get(outputRow);
+                        List<?> resultsRow = resultsList.get(i);
+                        if (i >= resultsList.size()) {
+                            break;
+                        } else if (!rowsEqual(row, resultsRow)) {
+                            throw new ContextAssertionError(
+                                    statement,
+                                    "Unexpected output in row " + (outputRow + 1) + ":" +
+                                            " Expected: " + arrayString(row) + " got: " + arrayString(resultsRow)
+                            );
+                        }
                     }
-                    List<?> row = output.get(outputRow);
-                    List<?> resultsRow = resultsList.get(i);
-                    if(i >= resultsList.size()) {
-                        break;
-                    } else if(!rowsEqual(row, resultsRow)) {
-                        throw new ContextAssertionError(
-                            statement,
-                            "Unexpected output in row " + (outputRow + 1) + ":" + " Expected: " + arrayString(row) + " got: " + arrayString(
-                                resultsRow
-                            )
-                        );
-                    }
+                } catch (ContextAssertionError e) {
+                    throw new FullOutputAssertionError(resultsList, output, e);
+                } catch (AssertionError e) {
+                    throw new FullOutputAssertionError(resultsList, output, new ContextAssertionError(statement, e));
                 }
-                checkRowCount(output.size(), !resultsEmpty);
             } else {
                 Statement stmt = rs.getStatement();
                 assert stmt != null;
@@ -1606,6 +1602,18 @@ class YamlTester
             super(context(failedStatement) + message);
             initCause(cause);
         }
+
+        public ContextAssertionError(String statement, AssertionError e) {
+            super(context(statement) + e.getMessage());
+            initCause(e);
+        }
+    }
+
+    private class FullOutputAssertionError extends AssertionError {
+        FullOutputAssertionError(List<List<?>> actual, List<List<?>> expected, AssertionError e) {
+            super("Expected: \n    " + actual + "\n got:\n    " + expected + "\n" + e.getMessage(), e);
+        }
+
     }
 
     private String context(String failedStatement) {
