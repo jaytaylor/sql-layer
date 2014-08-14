@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -469,6 +470,17 @@ public class CheckParserUsagesDT {
 
         public void reference() {
             isReferenced = true;
+        }
+
+        public NodeClass removeField(String fieldName) {
+            Iterator<Field> iterator = fields.iterator();
+            while (iterator.hasNext()) {
+                if (Objects.equals(iterator.next().name, fieldName)) {
+                    iterator.remove();
+                    break;
+                }
+            }
+            return this;
         }
 
         public NodeClass removeMethod(String name, String descriptor) {
