@@ -1,0 +1,31 @@
+---
+- CreateTable: t1 (a INT PRIMARY KEY, b INT)
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t1')
+- output: [[t1, tuple]]
+---
+- Statement: INSERT INTO t1 VALUES (1, 10), (2, 20)
+---
+- Statement: ALTER TABLE t1 ADD COLUMN c INT
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE table_name='t1'
+- output: [[t1, tuple]]
+---
+- CreateTable: t2 (d INT PRIMARY KEY, e INT)
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t2')
+- output: [[t2, tuple]]
+---
+- Statement: INSERT INTO t2 VALUES (5, 50), (6, 60)
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.indexes WHERE (index_name='PRIMARY')
+- output: [[t2, tuple]]
+---
+- Statement: CREATE INDEX index_on_e ON t2(e);
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t2')
+- output: [[t2, tuple]]
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.indexes WHERE (index_name='index_on_e')
+- output: [[t2, tuple]]
+...
