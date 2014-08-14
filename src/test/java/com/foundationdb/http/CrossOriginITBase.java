@@ -28,9 +28,9 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpOptions;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -77,14 +77,14 @@ public abstract class CrossOriginITBase extends ITBase
     private int port;
     private String restContext;
     private HttpResponse response;
-    private HttpClient client;
+    private CloseableHttpClient client;
 
     @Before
     public final void setUp() {
         port = serviceManager().getServiceByClass(HttpConductor.class).getPort();
         restContext = serviceManager().getServiceByClass(RestService.class).getContextPath();
         createTable(SCHEMA, TABLE, "id int not null primary key");
-        client = new DefaultHttpClient();
+        client = HttpClientBuilder.create().build();
     }
 
     @After
@@ -93,7 +93,7 @@ public abstract class CrossOriginITBase extends ITBase
             EntityUtils.consume(response.getEntity());
         }
         if(client != null) {
-            client.getConnectionManager().shutdown();
+            client.close();
         }
     }
 

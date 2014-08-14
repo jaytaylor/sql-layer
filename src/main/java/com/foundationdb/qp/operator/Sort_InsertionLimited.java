@@ -356,7 +356,7 @@ class Sort_InsertionLimited extends Operator
     private class Holder implements Comparable<Holder> {
         private int index;
         private Row row;
-        private Comparable<Holder>[] values;
+        private Comparable[] values;
 
         public Holder(int index, Row arow, List<TEvaluatableExpression> evaluations) {
             this.index = index;
@@ -385,6 +385,7 @@ class Sort_InsertionLimited extends Operator
             }
         }
 
+        @SuppressWarnings("unchecked")
         public int compareTo(Holder other) {
             for (int i = 0; i < values.length; i++) {
                 Comparable v1 = values[i];

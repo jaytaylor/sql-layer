@@ -18,10 +18,7 @@
 package com.foundationdb.sql;
 
 import com.foundationdb.server.service.config.ConfigurationService;
-import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
-import com.foundationdb.server.service.session.SessionService;
-import com.foundationdb.server.store.Store;
 import com.foundationdb.util.GCMonitor;
 import com.foundationdb.util.LoggingStream;
 import com.foundationdb.util.OsUtils;
@@ -29,13 +26,11 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.foundationdb.server.error.TapBeanFailureException;
 import com.foundationdb.server.manage.ManageMXBean;
 import com.foundationdb.server.manage.ManageMXBeanImpl;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.jmx.JmxManageable;
-import com.foundationdb.util.tap.Tap;
 
 import javax.management.ObjectName;
 
@@ -96,11 +91,6 @@ public class Main implements Service, JmxManageable, LayerInfoInterface
             gcMonitor = new GCMonitor(interval, logThreshold);
             gcMonitor.start();
         }
-        try {
-            Tap.registerMXBean();
-        } catch (Exception e) {
-            throw new TapBeanFailureException (e.getMessage());
-        }
     }
 
     @Override
@@ -109,11 +99,6 @@ public class Main implements Service, JmxManageable, LayerInfoInterface
         if(gcMonitor != null) {
             gcMonitor.stopRunning();
             gcMonitor = null;
-        }
-        try {
-            Tap.unregisterMXBean();
-        } catch (Exception e) {
-            throw new TapBeanFailureException(e.getMessage());
         }
     }
     

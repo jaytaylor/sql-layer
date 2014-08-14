@@ -300,9 +300,11 @@ public final class ColumnRangesTest {
         );
     }
 
-    private <T> Set<T> set(T... args) {
-        Set<T> result = new HashSet<>();
-        Collections.addAll(result, args);
+    private Set<ConditionExpression> set(ConditionExpression... args) {
+        Set<ConditionExpression> result = new HashSet<>();
+        for (ConditionExpression object : args) {
+            result.add(object);
+        }
         return result;
     }
 }

@@ -450,7 +450,8 @@ public class OnlineHelper implements RowListener
             });
         }
     }
-
+    
+    @SuppressWarnings("unchecked")
     private void buildGroupIndexes(final Session session,
                                    QueryContext context,
                                    StoreAdapter adapter,

@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule.join_enum;
 
+import com.foundationdb.server.error.CorruptedPlanException;
 import com.foundationdb.sql.optimizer.rule.EquivalenceFinder;
 import com.foundationdb.sql.optimizer.rule.JoinAndIndexPicker;
 import com.foundationdb.sql.optimizer.rule.PlanContext;
@@ -475,13 +476,14 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         if (indexOrdering == null) return result;
         BitSet reverse = new BitSet(indexOrdering.size());
         int nequals = index.getNEquality();
+        int nunions = index.getNUnions();
         List<ExpressionNode> equalityColumns = null;
-        if (nequals > 0) {
-            equalityColumns = index.getColumns().subList(0, nequals);
+        if (nequals - nunions > 0) {
+            equalityColumns = index.getColumns().subList(0, nequals - nunions);
         }
         try_sorted:
         if (queryGoal.getOrdering() != null) {
-            int idx = nequals;
+            int idx = nequals-nunions;
             for (OrderByExpression targetColumn : queryGoal.getOrdering().getOrderBy()) {
                 // Get the expression by which this is ordering, recognizing the
                 // special cases where the Sort is fed by GROUP BY or feeds DISTINCT.
@@ -503,27 +505,41 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                         }
                     }
                 }
-                OrderByExpression indexColumn = null;
-                if (idx < indexOrdering.size()) {
-                    indexColumn = indexOrdering.get(idx);
-                    if (indexColumn.getExpression() == null)
-                        indexColumn = null; // Index sorts by unknown column.
+                OrderByExpression indexColumn = getIndexColumn(indexOrdering, idx);
+                if (indexColumn == null && idx < nequals) {
+                    throw new CorruptedPlanException("No index column expression for union comparison");
                 }
-                if ((indexColumn != null) && 
-                    orderingExpressionMatches(indexColumn, targetExpression)) {
-                    if (indexColumn.isAscending() != targetColumn.isAscending()) {
-                        // To avoid mixed mode as much as possible,
-                        // defer changing the index order until
-                        // certain it will be effective.
-                        reverse.set(idx, true);
-                        if (idx == nequals)
-                            // Likewise reverse the initial equals segment.
-                            reverse.set(0, nequals, true);
+                if (indexColumn != null) {
+                    boolean matchingColumn = orderingExpressionMatches(indexColumn, targetExpression);
+                    if (!matchingColumn && idx < nequals) {
+                        // if we we're trying the union column, but that failed, try just treating it as equals
+                        idx++;
+                        indexColumn = getIndexColumn(indexOrdering, idx);
+                        if (indexColumn != null) {
+                            matchingColumn = orderingExpressionMatches(indexColumn, targetExpression);
+                            if (matchingColumn) {
+                                index.setIncludeUnionAsEquality(true);
+                            }
+                        }
                     }
-                    if (idx >= index.getNKeyColumns())
-                        index.setUsesAllColumns(true);
-                    idx++;
-                    continue;
+                    if (matchingColumn) {
+                        if (idx < nequals) {
+                            index.setIncludeUnionAsEquality(false);
+                        }
+                        if (indexColumn.isAscending() != targetColumn.isAscending()) {
+                            // To avoid mixed mode as much as possible,
+                            // defer changing the index order until
+                            // certain it will be effective.
+                            reverse.set(idx, true);
+                            if (idx == nequals)
+                                // Likewise reverse the initial equals segment.
+                                reverse.set(0, nequals, true);
+                        }
+                        if (idx >= index.getNKeyColumns())
+                            index.setUsesAllColumns(true);
+                        idx++;
+                        continue;
+                    }
                 }
                 if (equalityColumns != null) {
                     // Another possibility is that target ordering is
@@ -591,6 +607,16 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             }
         }
         return result;
+    }
+
+    private OrderByExpression getIndexColumn(List<OrderByExpression> indexOrdering, int idx) {
+        OrderByExpression indexColumn = null;
+        if (idx < indexOrdering.size()) {
+            indexColumn = indexOrdering.get(idx);
+            if (indexColumn.getExpression() == null)
+                indexColumn = null; // Index sorts by unknown column.
+        }
+        return indexColumn;
     }
 
     /** For use with a Distinct that gets added later. */

@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.pg;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

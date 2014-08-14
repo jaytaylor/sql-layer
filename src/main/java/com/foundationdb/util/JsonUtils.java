@@ -39,11 +39,11 @@ import java.util.Arrays;
 public final class JsonUtils {
 
     public static JsonGenerator createJsonGenerator(Writer out) throws IOException {
-        return jsonFactory.createJsonGenerator(out);
+        return jsonFactory.createGenerator(out);
     }
 
     public static JsonGenerator createJsonGenerator(OutputStream stream, JsonEncoding encoding) throws IOException {
-        return jsonFactory.createJsonGenerator(stream, encoding);
+        return jsonFactory.createGenerator(stream, encoding);
     }
 
     public static JsonGenerator createPrettyJsonGenerator(Writer out) throws IOException {
@@ -59,7 +59,7 @@ public final class JsonUtils {
     }
 
     public static JsonParser jsonParser(String string) throws IOException {
-        return JsonUtils.jsonFactory.createJsonParser(string);
+        return JsonUtils.jsonFactory.createParser(string);
     }
 
     public static JsonNode readTree(String json) throws IOException {

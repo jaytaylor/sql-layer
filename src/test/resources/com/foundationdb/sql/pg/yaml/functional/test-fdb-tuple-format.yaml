@@ -21,7 +21,7 @@
 - output: [[3,'Pebbles', 1.5],[2,'Wilma', 4.0]]
 ---
 - Statement: SELECT * FROM t1 WHERE s >= 'M' ORDER BY s DESC
-- output: [[2,'Wilma', 4.0],[3,'Pebbles', 1.5]]
+- output_already_ordered: [[2,'Wilma', 4.0],[3,'Pebbles', 1.5]]
 ---
 - Statement: SELECT * FROM t1 WHERE id = 2
 - output: [[2,'Wilma', 4.0]]
@@ -30,7 +30,7 @@
 - output: [[3, 1.5],[2, 4.0],[4, 5.0]]
 ---
 - Statement: SELECT id, r FROM t1 WHERE r > 0 ORDER BY r DESC
-- output: [[4, 5.0],[2, 4.0],[3, 1.5]]
+- output_already_ordered: [[4, 5.0],[2, 4.0],[3, 1.5]]
 ---
 # Tests for FLOAT, DOUBLE
 - CreateTable: t2 (id INT PRIMARY KEY NOT NULL, r FLOAT(23), d DOUBLE) STORAGE_FORMAT tuple
@@ -53,13 +53,13 @@
 - output: [[3, 1.5],[2, 4.0],[4, 5.0]]
 ---
 - Statement: SELECT id, r FROM t2 WHERE r > 0 ORDER BY r DESC
-- output: [[4, 5.0], [2, 4.0], [3, 1.5]]
+- output_already_ordered: [[4, 5.0], [2, 4.0], [3, 1.5]]
 ---
 - Statement: SELECT * FROM t2 WHERE d > 0
 - output: [[2, 4.0, 1.5],[3, 1.5, 4.0],[1, -1.5, 5.0]]
 ---
 - Statement: SELECT * FROM t2 WHERE d > 0 ORDER BY d DESC
-- output: [[1, -1.5, 5.0],[3, 1.5, 4.0],[2, 4.0, 1.5]]
+- output_already_ordered: [[1, -1.5, 5.0],[3, 1.5, 4.0],[2, 4.0, 1.5]]
 ---
 # Tests for DECIMAL, NUMERIC
 - CreateTable: t5 (id INT PRIMARY KEY NOT NULL, r DECIMAL(5, 2), n NUMERIC(3)) STORAGE_FORMAT tuple
@@ -80,7 +80,7 @@
 - output: [[3, 1.11],[2, 4.44],[4, 5.55]]
 ---
 - Statement: SELECT id, r FROM t5 WHERE r > 0 ORDER BY r DESC
-- output: [[4, 5.55], [2, 4.44], [3, 1.11]]
+- output_already_ordered: [[4, 5.55], [2, 4.44], [3, 1.11]]
 ---
 - Statement: CREATE INDEX t5_n ON t5(n) STORAGE_FORMAT tuple
 ---
@@ -93,5 +93,5 @@
 - output: [[4, 0],[1, 123],[2, 234]]
 ---
 - Statement: SELECT id, n FROM t5 WHERE n >= 0 ORDER BY n DESC
-- output: [[2, 234],[1, 123],[4, 0]]
+- output_already_ordered: [[2, 234],[1, 123],[4, 0]]
 ...

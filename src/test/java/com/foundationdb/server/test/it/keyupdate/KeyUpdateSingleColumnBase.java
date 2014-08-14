@@ -22,7 +22,7 @@ import com.foundationdb.server.error.InvalidOperationException;
 import org.junit.Test;
 
 import static com.foundationdb.server.test.it.keyupdate.Schema.*;
-import static junit.framework.Assert.*;
+import static org.junit.Assert.*;
 
 public abstract class KeyUpdateSingleColumnBase extends KeyUpdateBase
 {

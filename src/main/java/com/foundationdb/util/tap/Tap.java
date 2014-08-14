@@ -280,57 +280,6 @@ public abstract class Tap
         return result;
     }
 
-    /**
-     * Register an MXBean to make methods of this class available remotely from
-     * JConsole or other JMX client. Does nothing if there already is a
-     * registered MXBean.
-     *
-     * @throws NullPointerException
-     * @throws MalformedObjectNameException
-     * @throws NotCompliantMBeanException
-     * @throws MBeanRegistrationException
-     * @throws InstanceAlreadyExistsException
-     * @throws Exception
-     */
-    public synchronized static void registerMXBean()
-        throws MalformedObjectNameException,
-               NullPointerException,
-               InstanceAlreadyExistsException,
-               MBeanRegistrationException,
-               NotCompliantMBeanException
-    {
-        if (!registered) {
-            ObjectName mxbeanName = new ObjectName("com.foundationdb:type=Tap");
-            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            mbs.registerMBean(new TapMXBeanImpl(), mxbeanName);
-            registered = true;
-        }
-    }
-
-    /**
-     * Unregister the MXBean created by {@link #registerMXBean()}. Does nothing
-     * if there is no registered MXBean.
-     *
-     * @throws NullPointerException
-     * @throws MalformedObjectNameException
-     * @throws InstanceNotFoundException
-     * @throws MBeanRegistrationException
-     * @throws Exception
-     */
-    public synchronized static void unregisterMXBean()
-        throws MalformedObjectNameException,
-               NullPointerException,
-               MBeanRegistrationException,
-               InstanceNotFoundException
-    {
-        if (registered) {
-            ObjectName mxbeanName = new ObjectName("com.foundationdb:type=Tap");
-            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            mbs.unregisterMBean(mxbeanName);
-            registered = false;
-        }
-    }
-    
     public synchronized static void registerBadNestingHandler(BadNestingHandler badNestingHandler)
     {
         Tap.badNestingHandler = badNestingHandler;

@@ -27,8 +27,8 @@ import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 // Inspired by bug 885697
 

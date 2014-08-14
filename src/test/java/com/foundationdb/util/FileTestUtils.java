@@ -17,15 +17,16 @@
 
 package com.foundationdb.util;
 
-import org.junit.Test;
+public class FileTestUtils {
 
-import static org.junit.Assert.assertTrue;
-
-public final class EqualityTest {
-    @Test
-    public void equalArrays() {
-        int[] intArrayOne = new int[] { 1, 2, 5 }; // 3, sir!
-        int[] intArrayTwo = new int[] { 1, 2, 5 };
-        assertTrue("int[] should have been equal", Equality.areEqual(intArrayOne, intArrayTwo));
+    public static void printClickableFile(String filename, String suffix, int lineNumber) {
+        if (filename != null) {
+            System.err.println("  at " + filename.replace("src/test/resources/", "").
+                    replaceFirst("/([^/]+.)$", "($1." + suffix + ":" + lineNumber + ")").replaceAll("/", "."));
+            // for those running from maven or elsewhere
+            System.err.println("  aka: " + filename + "." + suffix + ":" + lineNumber);
+        } else {
+            System.err.println("NULL filename");
+        }
     }
 }

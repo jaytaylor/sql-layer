@@ -79,6 +79,7 @@ public class PlanContext
      * than one rule, but not associated directly with any part of the
      * plan tree.
      */
+    @SuppressWarnings("unchecked")
     public <T> T getWhiteboard(WhiteboardMarker<T> marker) {
         return (T)whiteboard.get(marker);
     }

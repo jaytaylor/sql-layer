@@ -17,8 +17,8 @@
 
 package com.foundationdb.server.test;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
@@ -82,8 +82,8 @@ import com.foundationdb.util.Exceptions;
 import com.foundationdb.util.Strings;
 import com.foundationdb.util.tap.TapReport;
 import com.foundationdb.util.Undef;
-import junit.framework.Assert;
 
+import org.junit.Assert;
 import org.junit.After;
 import org.junit.Before;
 
@@ -107,7 +107,9 @@ import com.foundationdb.server.service.session.Session;
 import org.junit.Rule;
 import org.junit.rules.MethodRule;
 import org.junit.rules.TestName;
-import org.junit.rules.TestWatchman;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
 
@@ -141,7 +143,7 @@ public class ApiTestBase {
         public void output(NewRow row) {
             rows.add(row);
         }
-
+        
         public List<NewRow> getRows() {
             return rowsUnmodifiable;
         }
@@ -298,9 +300,9 @@ public class ApiTestBase {
     }
 
     @Rule
-    public MethodRule exceptionCatchingRule = new TestWatchman() {
+    public TestRule exceptionCatchingRule = new TestWatcher() {
         @Override
-        public void failed(Throwable e, FrameworkMethod method)  {
+        public void failed(Throwable e, Description description)  {
             needServicesRestart = true;
         }
     };

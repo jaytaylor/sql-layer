@@ -190,6 +190,7 @@ public class AlterTableITBase extends ITBase {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public int compare(NewRow o1, NewRow o2) {
             Object col1 = o1.get(colPos);
             Object col2 = o2.get(colPos);

@@ -88,7 +88,7 @@ public abstract class KeysBase extends ITBase {
         );
     }
 
-    @Test @SuppressWarnings("unused") // junit will invoke
+    @Test @SuppressWarnings(value={"unused", "unchecked"}) // junit will invoke
     public void traverseOrdersPK() throws Exception {
         traversePK(
                 orders(),
@@ -97,7 +97,7 @@ public abstract class KeysBase extends ITBase {
         );
     }
 
-    @Test @SuppressWarnings("unused") // junit will invoke
+    @Test @SuppressWarnings(value={"unused", "unchecked"}) // junit will invoke
     public void traverseItemsPK() throws Exception {
         traversePK(
                 items(),
@@ -107,7 +107,7 @@ public abstract class KeysBase extends ITBase {
         );
     }
 
-    protected void traversePK(int rowDefId, List<? super Long>... expectedIndexes) throws Exception {
+    protected void traversePK(int rowDefId, List<?>... expectedIndexes) throws Exception {
         Index pkIndex = getRowDef(rowDefId).getPKIndex();
 
         try(CloseableTransaction txn = txnService().beginCloseableTransaction(session())) {

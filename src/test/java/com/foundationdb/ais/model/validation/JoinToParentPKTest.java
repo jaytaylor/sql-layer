@@ -20,7 +20,7 @@ package com.foundationdb.ais.model.validation;
 import java.util.Collection;
 import java.util.LinkedList;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -29,7 +29,6 @@ import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
-import com.foundationdb.server.types.service.TestTypesRegistry;
 
 public class JoinToParentPKTest {
     private LinkedList<AISValidation>validations;

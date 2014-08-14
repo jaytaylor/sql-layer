@@ -9,16 +9,16 @@
 - Statement: SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY; 
 ---
 - Statement: SELECT name FROM customers;
-- output_ordered: [[Smith],[Jones]]
+- output: [[Smith],[Jones]]
 ---
 - Statement: select * from customers;
-- output_ordered: [[1,Smith],[2,Jones]]
+- output: [[1,Smith],[2,Jones]]
 ---
 - Statement: select * from orders 
-- output_ordered: [[101,1,'2011-03-01'],[102,1,'2011-03-02'],[201,2,'2011-03-03']]
+- output: [[101,1,'2011-03-01'],[102,1,'2011-03-02'],[201,2,'2011-03-03']]
 ---
 - Statement: select * from items 
-- output_ordered: [[1011,101,1234,100],[1012,101,4567,50],[2011,201,9876,1]]
+- output: [[1011,101,1234,100],[1012,101,4567,50],[2011,201,9876,1]]
 ---
 - Statement: SET SESSION CHARACTERISTICS AS TRANSACTION READ WRITE; 
 ...

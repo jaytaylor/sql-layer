@@ -20,6 +20,10 @@
 - output: [[1], [-1], [null]]
 ---
 - Statement: SELECT bigint_field FROM all_types WHERE NOT (bigint_field > ?)
-- params: [[1], [-1]]
-- output: [[1], [-1], [-1]]
+- params: [[1]]
+- output: [[1],[-1]]
+---
+- Statement: SELECT bigint_field FROM all_types WHERE NOT (bigint_field > ?)
+- params: [[-1]]
+- output: [[-1]]
 ...

@@ -25,8 +25,8 @@ import org.junit.Test;
 import java.util.List;
 
 import static com.foundationdb.server.test.it.keyupdate.Schema.*;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 // Like KeyUpdateIT, but with cascading keys
 

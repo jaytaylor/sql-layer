@@ -6,24 +6,24 @@
     VALUES (0, null), (1, 'alfa'), (2, 'charlie'), (3, 'BRAVO'), (4, '\u00c5ngstr\u00f6m'), (5, 'Zulu')"
 ---
 - Statement: SELECT id FROM t WHERE s > 'B'
-- output_ordered: [[2], [3], [4], [5]]
+- output: [[2], [3], [4], [5]]
 ---
 - Statement: SELECT id FROM t WHERE s = 'Charlie'
-- output_ordered: [[2]]
+- output: [[2]]
 ---
 - Statement: SELECT * FROM t ORDER BY s
-- output: [[0, null], [1, 'alfa'], [3, 'BRAVO'], [2, 'charlie'], [5, 'Zulu'], [4, !unicode "\u00c5ngstr\u00f6m"]]
+- output_already_ordered: [[0, null], [1, 'alfa'], [3, 'BRAVO'], [2, 'charlie'], [5, 'Zulu'], [4, !unicode "\u00c5ngstr\u00f6m"]]
 ---
 - Statement: CREATE INDEX t_s ON t(s)
 ---
 - Statement: SELECT id FROM t WHERE s > 'B'
-- output_ordered: [[2], [3], [4], [5]]
+- output: [[2], [3], [4], [5]]
 ---
 - Statement: SELECT id FROM t WHERE s = 'Charlie'
-- output_ordered: [[2]]
+- output: [[2]]
 ---
 - Statement: SELECT * FROM t ORDER BY s
-- output: [[0, null], [1, 'alfa'], [3, 'BRAVO'], [2, 'charlie'], [5, 'Zulu'], [4, !unicode "\u00c5ngstr\u00f6m"]]
+- output_already_ordered: [[0, null], [1, 'alfa'], [3, 'BRAVO'], [2, 'charlie'], [5, 'Zulu'], [4, !unicode "\u00c5ngstr\u00f6m"]]
 ---
 - Statement: DELETE FROM t
 ---
