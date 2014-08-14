@@ -59,14 +59,19 @@ public class AkInterval extends TClassBase {
         @Override
         public void format(TInstance type, ValueSource source, AkibanAppender out) {
             long months = source.getInt64();
-
+            boolean negative = false;
+            if(months < 0) {
+                negative = true;
+                months = -months;
+            }
             long years = months / 12;
-            if(years < 0) months = -months;
-            months -= (Math.abs(years) * 12);
-
-
+            months -= (years * 12);
             Formatter formatter = new Formatter(out.getAppendable());
-            formatter.format("INTERVAL '%d-%d'", years, months);
+            if(negative)
+                formatter.format("INTERVAL '-%d-%d'", years, months);
+            else
+                formatter.format("INTERVAL '%d-%d'", years, months);
+
         }
 
         @Override
