@@ -20,8 +20,10 @@ package com.foundationdb.sql.pg;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
 import org.junit.Before;
 import org.junit.Test;
+
 import java.io.File;
 import java.sql.Connection;
+import java.sql.ResultSetMetaData;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -38,12 +40,12 @@ import java.util.concurrent.Callable;
 
 public class PostgresServerBloomFilterIT extends PostgresServerITBase{
 
-    String DirectoryLocation = "src/test/resources/com/foundationdb/sql/optimizer/operator/coi-index/";
-    String StatsFile = DirectoryLocation + "stats.yaml";
-    String sql = "SELECT items.sku FROM items, categories WHERE items.sku = categories.sku AND categories.cat = 1 ORDER BY items.sku";
+    private static final String DIRECTORY_LOCATION = "src/test/resources/com/foundationdb/sql/optimizer/operator/coi-index/";
+    private static final String STATS_FILE = DIRECTORY_LOCATION + "stats.yaml";
+    private static final String SQL = "SELECT items.sku FROM items, categories WHERE items.sku = categories.sku AND categories.cat = 1 ORDER BY items.sku";
     Connection connection;
 
-    String schemaSetup[] = {
+    private static final String SCHEMA_SETUP[] = {
     "CREATE TABLE customers(cid int NOT NULL,PRIMARY KEY(cid), name varchar(32) NOT NULL);",
     "CREATE INDEX name ON customers(name);",
     "CREATE TABLE orders(oid int NOT NULL,PRIMARY KEY(oid),cid int NOT NULL,order_date date NOT NULL, GROUPING FOREIGN KEY (cid) REFERENCES customers(cid));",
@@ -68,13 +70,13 @@ public class PostgresServerBloomFilterIT extends PostgresServerITBase{
     @Before
     public void setup() throws Exception{
         connection = getConnection();
-        for(String sqlStatement : schemaSetup) {
+        for(String sqlStatement : SCHEMA_SETUP) {
             connection.createStatement().execute(sqlStatement);
         }
         txnService().run(session(), new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                File file = new File(StatsFile);
+                File file = new File(STATS_FILE);
                 if (file.exists()) {
                     IndexStatisticsService service = serviceManager().getServiceByClass(IndexStatisticsService.class);
                     service.loadIndexStatistics(session(), SCHEMA_NAME, file);
@@ -84,10 +86,17 @@ public class PostgresServerBloomFilterIT extends PostgresServerITBase{
         });
     }
 
-
     @Test
     public void test() throws Exception {
-        connection.createStatement().execute(sql);
-
+        java.sql.Statement statement  = connection.createStatement();
+        java.sql.ResultSet rs = statement.executeQuery("EXPLAIN " + SQL);
+        boolean found = false;
+        ResultSetMetaData md = rs.getMetaData();
+        while (!found && rs.next()) {
+            if (((String) rs.getObject(1)).contains("Using_BloomFilter"))
+                found = true;
+        }
+        statement.execute( SQL);
+        assert(found == true);
     }
 }
