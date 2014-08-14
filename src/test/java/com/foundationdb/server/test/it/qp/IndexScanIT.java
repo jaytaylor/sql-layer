@@ -31,7 +31,7 @@ import org.junit.Test;
 import static com.foundationdb.qp.operator.API.cursor;
 import static com.foundationdb.qp.operator.API.indexScan_Default;
 import static com.foundationdb.server.test.ExpressionGenerators.field;
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 public class IndexScanIT extends OperatorITBase
 {

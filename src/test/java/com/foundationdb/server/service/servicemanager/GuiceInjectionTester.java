@@ -48,12 +48,13 @@ public final class GuiceInjectionTester {
         return this;
     }
 
+    @SuppressWarnings("unchecked")
     public GuiceInjectionTester startAndStop(Class<?>... requiredClasses) {
         for (Class<?> requiredClass : requiredClasses) {
             configHandler.require(requiredClass.getName());
         }
         try {
-            guicer = Guicer.forServices((Class)serviceManagerInterfaceClass, serviceManager,
+            guicer = Guicer.forServices((Class<ServiceManagerBase>)serviceManagerInterfaceClass, serviceManager,
                                         configHandler.serviceBindings(true), configHandler.priorities(),
                                         Collections.<Module>emptyList());
         } catch (ClassNotFoundException e) {

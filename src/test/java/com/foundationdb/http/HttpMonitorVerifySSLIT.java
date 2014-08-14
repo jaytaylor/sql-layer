@@ -33,11 +33,14 @@ import javax.net.ssl.X509TrustManager;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.conn.ClientConnectionManager;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.HttpClientConnectionManager;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -143,14 +146,13 @@ public class HttpMonitorVerifySSLIT extends ITBase {
     public void runTest () throws Exception {
         MonitorService monitor = monitorService();
         
-        HttpClient client = new DefaultHttpClient();
-        client = wrapClient(client);
+        CloseableHttpClient client = createClient();
         
         openRestURL(client, "user1:password", httpConductor().getPort(), "/version");
         
         assertEquals(monitor.getSessionMonitors().size(), 1);
         
-        client.getConnectionManager().shutdown();
+        client.close();
     }
 
  
@@ -160,20 +162,23 @@ public class HttpMonitorVerifySSLIT extends ITBase {
      * signed, so we need ignore the problem. 
      * This code should not, under any circumstances, be allowed anywhere 
      * the production code. 
-     * @param base
      * @return
      */
-    private HttpClient wrapClient (HttpClient base) {
+    private CloseableHttpClient createClient () {
         try {
+            HttpClientBuilder builder = HttpClientBuilder.create();
             SSLContext ctx = SSLContext.getInstance("TLS");
-    
             ctx.init(null, new TrustManager[]{getTrustManager()}, null);
-            SSLSocketFactory ssf = new SSLSocketFactory(ctx);
-            ssf.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-            ClientConnectionManager ccm = base.getConnectionManager();
-            SchemeRegistry sr = ccm.getSchemeRegistry();
-            sr.register(new Scheme("https", ssf, 8091));
-            return new DefaultHttpClient(ccm, base.getParams());
+            SSLConnectionSocketFactory scsf = new SSLConnectionSocketFactory(ctx, SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+            builder.setSSLSocketFactory(scsf);
+            Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
+                    .register("https", scsf)
+                    .build();
+
+            HttpClientConnectionManager ccm = new BasicHttpClientConnectionManager(registry);
+
+            builder.setConnectionManager(ccm);
+            return builder.build();
         } catch (Exception ex) {
             ex.printStackTrace();
             return null;

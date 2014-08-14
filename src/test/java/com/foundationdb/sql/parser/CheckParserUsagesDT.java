@@ -343,6 +343,8 @@ public class CheckParserUsagesDT {
             }
 
             @Override
+            @Deprecated // just like parent method
+            @SuppressWarnings("deprecated")
             public void visitMethodInsn(int opcode, String owner, String name, String desc) {
                 this.visitMethodInsn(opcode, owner, name, desc, false);
             }

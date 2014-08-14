@@ -28,7 +28,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Iterator;
 
-import static junit.framework.Assert.*;
+import static org.junit.Assert.*;
 
 public class QueryCancelationIT extends PostgresServerITBase
 {

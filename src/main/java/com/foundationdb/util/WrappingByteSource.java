@@ -30,10 +30,7 @@ public final class WrappingByteSource implements ByteSource {
      * @return a WrappingByteSource that represents the same byte[] wrapping as the incoming ByteBuffer
      * @throws NullPointerException if byteBuffer is null
      * @throws IllegalArgumentException if {@code byteBuffer.hasArray() == false}
-     * @deprecated This method is intended to be used as a bridge while we convert the whole system to use
-     * the new conversions system. Once that conversion is in place, we shouldn't need this method.
      */
-    @Deprecated
     public static WrappingByteSource fromByteBuffer(ByteBuffer byteBuffer) {
         if (!byteBuffer.hasArray()) {
             throw new IllegalArgumentException("incoming ByteBuffer must have a backing array");

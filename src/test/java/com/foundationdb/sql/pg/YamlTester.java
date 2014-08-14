@@ -262,8 +262,10 @@ class YamlTester
         try {
             test(in);
         } catch (Throwable e) {
-            System.err.println("Failed Yaml test (note: line number points to start of document)");
-            printClickableFile(filename.substring(0,filename.length()-5), "yaml", lineNumber);
+            if (filename != null) {
+                System.err.println("Failed Yaml test (note: line number points to start of document)");
+                printClickableFile(filename.substring(0, filename.length() - 5), "yaml", lineNumber);
+            }
             throw e;
         }
     }

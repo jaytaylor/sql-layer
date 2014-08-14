@@ -176,6 +176,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void expandRowData(FDBStore store, Session session,
                               FDBStoreData storeData, RowData rowData) {
         Map<String,Object> value = (Map<String,Object>)storeData.otherValue;
@@ -193,6 +194,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void store(FDBStore store, Session session, FDBStoreData storeData) {
         TransactionState txn = store.getTransaction(session, storeData);
         // Erase all previous column values, in case not present in Map.

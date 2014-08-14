@@ -38,7 +38,7 @@ import org.junit.Test;
 
 import java.util.*;
 
-import static junit.framework.Assert.*;
+import static org.junit.Assert.*;
 
 public final class CBasicIT extends ITBase {
 
@@ -607,7 +607,7 @@ public final class CBasicIT extends ITBase {
         createTable("s2", "t1", "some_id int not null primary key, id int, grouping foreign key(id) references s1.t1(id)");
         createTable("s3", "t1", "some_id int not null primary key, id int, grouping foreign key(id) references s2.t1(some_id)");
         AkibanInformationSchema ais = ddl().getAIS(session());
-        Group group = ais.getGroup("t1");
+        Group group = ais.getGroup(new TableName("s1", "t1"));
         assertNotNull("Found group", group);
         List<TableName> tablesInGroup = new ArrayList<>();
         for(Table table : ais.getTables().values()) {

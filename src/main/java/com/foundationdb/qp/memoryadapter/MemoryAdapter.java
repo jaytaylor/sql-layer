@@ -75,7 +75,7 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
-    public <HKEY extends HKey> HKEY newHKey(
+    public HKey newHKey(
             com.foundationdb.ais.model.HKey hKeyMetadata) {
         throw new UnsupportedOperationException();
     }

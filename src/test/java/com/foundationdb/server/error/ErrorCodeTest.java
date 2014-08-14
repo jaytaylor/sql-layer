@@ -17,9 +17,9 @@
 
 package com.foundationdb.server.error;
 
-import static junit.framework.Assert.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import java.util.HashMap;
 import java.util.Map;

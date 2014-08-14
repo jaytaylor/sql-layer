@@ -74,6 +74,7 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T extends CursorBase> T startCursor(PostgresCursorGenerator<T> generator, QueryBindings bindings) {
         switch (state) {
         case NORMAL:
