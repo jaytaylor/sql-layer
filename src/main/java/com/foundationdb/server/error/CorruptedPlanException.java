@@ -19,7 +19,7 @@ package com.foundationdb.server.error;
 
 public class CorruptedPlanException extends InvalidOperationException
 {
-    public CorruptedPlanException() {
-        super(ErrorCode.CORRUPTED_PLAN);
+    public CorruptedPlanException(String desc) {
+        super(ErrorCode.CORRUPTED_PLAN, desc);
     }
 }

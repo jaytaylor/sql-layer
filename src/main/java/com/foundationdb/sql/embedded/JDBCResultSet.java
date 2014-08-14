@@ -111,6 +111,7 @@ public class JDBCResultSet implements DirectResultSet
     /* Wrapper */
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T unwrap(Class<T> iface) throws SQLException {
         if (iface == RowCursor.class)
             return (T)cursor;
@@ -240,6 +241,8 @@ public class JDBCResultSet implements DirectResultSet
         }
     }
 
+    @Deprecated // like java.sql.ResultSet
+    @SuppressWarnings("deprecation")
     @Override
     public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
         return getBigDecimal(columnIndex).setScale(scale);
@@ -295,6 +298,8 @@ public class JDBCResultSet implements DirectResultSet
         }
     }
 
+    @Deprecated // like java.sql.ResultSet
+    @SuppressWarnings("deprecation")
     @Override
     public InputStream getUnicodeStream(int columnIndex) throws SQLException {
         try {
@@ -355,6 +360,8 @@ public class JDBCResultSet implements DirectResultSet
         return getDouble(findColumn(columnLabel));
     }
 
+    @Deprecated // like java.sql.ResultSet
+    @SuppressWarnings("deprecation")
     @Override
     public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException {
         return getBigDecimal(findColumn(columnLabel), scale);
@@ -385,6 +392,8 @@ public class JDBCResultSet implements DirectResultSet
         return getAsciiStream(findColumn(columnLabel));
     }
 
+    @Deprecated // like java.sql.ResultSet#getBigDecimal(int, int)
+    @SuppressWarnings("deprecation")
     @Override
     public InputStream getUnicodeStream(String columnLabel) throws SQLException {
         return getUnicodeStream(findColumn(columnLabel));
@@ -1474,6 +1483,7 @@ public class JDBCResultSet implements DirectResultSet
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
         try {
             return (T)values.getObject(columnIndex - 1, type);

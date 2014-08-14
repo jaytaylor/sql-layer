@@ -17,15 +17,12 @@
 
 package com.foundationdb.sql.pg;
 
-import com.foundationdb.junit.NamedParameterizedRunner;
-import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
-import com.foundationdb.junit.Parameterization;
+import com.foundationdb.junit.SelectedParameterizedRunner;
 import com.foundationdb.server.service.is.BasicInfoSchemaTablesService;
 import com.foundationdb.server.service.is.BasicInfoSchemaTablesServiceImpl;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.text.FullTextIndexService;
 import com.foundationdb.server.service.text.FullTextIndexServiceImpl;
-import com.foundationdb.sql.NamedParamsTestBase;
 import com.foundationdb.sql.embedded.EmbeddedJDBCService;
 import com.foundationdb.sql.embedded.EmbeddedJDBCServiceImpl;
 
@@ -40,13 +37,14 @@ import java.util.regex.Pattern;
 import org.joda.time.DateTimeZone;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized.Parameters;
 
 /**
  * Run tests specified as YAML files that end with the .yaml extension.  By
  * default, searches for files recursively in the yaml resource directory,
  * running tests for files that start with 'test-'.
  */
-@RunWith(NamedParameterizedRunner.class)
+@RunWith(SelectedParameterizedRunner.class)
 public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase
 {
     private static final String CLASSNAME = PostgresServerMiscYamlIT.class.getName();
@@ -92,11 +90,11 @@ public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase
         testYaml(file);
     }
 
-    @TestParameters
-    public static Collection<Parameterization> queries() throws Exception {
+    @Parameters(name="{0}")
+    public static Iterable<Object[]> queries() throws Exception {
         Collection<Object[]> params = new ArrayList<>();
         collectParams(RESOURCE_DIR, Pattern.compile(CASE_NAME_REGEXP + "[.]yaml"), params);
-        return NamedParamsTestBase.namedCases(params);
+        return params;
     }
 
     static {

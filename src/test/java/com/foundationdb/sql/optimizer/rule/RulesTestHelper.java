@@ -36,18 +36,18 @@ public class RulesTestHelper
     public static List<BaseRule> loadRules(File file) throws Exception {
         Yaml yaml = new Yaml();
         FileInputStream istr = new FileInputStream(file);
-        List<Object> list = (List<Object>)yaml.load(istr);
+        List list = yaml.loadAs(istr, List.class );
         istr.close();
         return parseRules(list);
     }
 
     public static List<BaseRule> parseRules(String str) throws Exception {
         Yaml yaml = new Yaml();
-        List<Object> list = (List<Object>)yaml.load(str);
+        List list = yaml.loadAs(str, List.class);
         return parseRules(list);
     }
 
-    public static List<BaseRule> parseRules(List<Object> list) throws Exception {
+    public static List<BaseRule> parseRules(List list) throws Exception {
         List<BaseRule> result = new ArrayList<>();
         for (Object obj : list) {
             if (obj instanceof String) {

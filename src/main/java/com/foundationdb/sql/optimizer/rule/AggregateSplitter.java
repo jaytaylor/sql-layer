@@ -50,6 +50,7 @@ public class AggregateSplitter extends BaseRule
         }
     }
 
+    @SuppressWarnings("unchecked")
     protected void split(AggregateSource source) {
         assert !source.isProjectSplitOff();
         if (!source.hasGroupBy() && source.getAggregates().size() == 1) {

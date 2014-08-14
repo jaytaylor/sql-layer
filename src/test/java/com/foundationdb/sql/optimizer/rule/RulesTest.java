@@ -17,27 +17,25 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
+import static com.foundationdb.util.FileTestUtils.printClickableFile;
+
 import com.foundationdb.server.types.service.TypesRegistryServiceImpl;
 import com.foundationdb.sql.NamedParamsTestBase;
 import com.foundationdb.sql.TestBase;
-
 import com.foundationdb.sql.optimizer.FunctionsTypeComputer;
 import com.foundationdb.sql.optimizer.NestedResultSetTypeComputer;
 import com.foundationdb.sql.optimizer.OptimizerTestBase;
 import com.foundationdb.sql.optimizer.plan.AST;
-import com.foundationdb.sql.optimizer.plan.PlanToString;
-
 import com.foundationdb.sql.parser.DMLStatementNode;
 import com.foundationdb.sql.parser.StatementNode;
-
 import com.foundationdb.ais.model.AkibanInformationSchema;
-
-import com.foundationdb.junit.NamedParameterizedRunner;
-import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
+import com.foundationdb.junit.SelectedParameterizedRunner;
 import com.foundationdb.junit.Parameterization;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized.Parameters;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,7 +46,7 @@ import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-@RunWith(NamedParameterizedRunner.class)
+@RunWith(SelectedParameterizedRunner.class)
 public class RulesTest extends OptimizerTestBase
                        implements TestBase.GenerateAndCheckResult
 {
@@ -57,8 +55,8 @@ public class RulesTest extends OptimizerTestBase
 
     protected File rulesFile, schemaFile, indexFile, statsFile, propertiesFile, extraDDL;
 
-    @TestParameters
-    public static Collection<Parameterization> statements() throws Exception {
+    @Parameters(name="{0}")
+    public static Iterable<Object[]> statements() throws Exception {
         Collection<Object[]> result = new ArrayList<>();
         for (File subdir : RESOURCE_DIR.listFiles(new FileFilter() {
                 public boolean accept(File file) {
@@ -99,7 +97,7 @@ public class RulesTest extends OptimizerTestBase
                 }
             }
         }
-        return NamedParamsTestBase.namedCases(result);
+        return result;
     }
 
     public RulesTest(String caseName, 
@@ -153,7 +151,15 @@ public class RulesTest extends OptimizerTestBase
 
     @Test
     public void testRules() throws Exception {
-        generateAndCheckResult();
+        try {
+            generateAndCheckResult();
+        } catch (Throwable e) {
+            System.err.println("Failed Rules test (note: line number is always 1)");
+            String filePathPrefix = RESOURCE_DIR + "/" + caseName;
+            printClickableFile(filePathPrefix, "sql", 1);
+            printClickableFile(filePathPrefix, "expected", 1);
+            throw e;
+        }
     }
 
     @Override

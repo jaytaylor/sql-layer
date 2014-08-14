@@ -67,7 +67,7 @@ public abstract class StoreAdapter implements KeyCreator
                                              IndexScanSelector scanSelector,
                                              boolean openAllSubCursors);
 
-    public abstract <HKEY extends com.foundationdb.qp.row.HKey> HKEY newHKey(HKey hKeyMetadata);
+    public abstract com.foundationdb.qp.row.HKey newHKey(HKey hKeyMetadata);
 
     public final Schema schema()
     {

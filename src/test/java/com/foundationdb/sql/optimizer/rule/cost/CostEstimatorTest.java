@@ -30,7 +30,7 @@ import com.foundationdb.server.types.mcompat.mtypes.MString;
 
 import org.junit.Before;
 import org.junit.Test;
-import static junit.framework.Assert.*;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.util.*;

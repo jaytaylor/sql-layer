@@ -17,10 +17,9 @@
 
 package com.foundationdb.server.store.statistics.histograms;
 
-import com.foundationdb.util.Equality;
-
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 abstract class SplitHandler<T> implements SampleVisitor<T> {
 
@@ -101,7 +100,7 @@ abstract class SplitHandler<T> implements SampleVisitor<T> {
                 lastCount = 1;
                 last = segment;
             }
-            else if (Equality.areEqual(last, segment)) {
+            else if (Objects.deepEquals(last, segment)) {
                 // same segment, just update lastCount
                 ++lastCount;
                 count = 0;

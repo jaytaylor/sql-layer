@@ -26,7 +26,6 @@ import com.foundationdb.sql.parser.ValueNode;
 public interface ExpressionNode extends PlanElement
 {
     public DataTypeDescriptor getSQLtype();
-    @Deprecated
     public ValueNode getSQLsource();
     public AkCollator getCollator();
     public TPreptimeValue getPreptimeValue();

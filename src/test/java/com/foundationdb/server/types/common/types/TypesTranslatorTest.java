@@ -25,8 +25,8 @@ import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import org.junit.Ignore;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @Ignore
 public class TypesTranslatorTest

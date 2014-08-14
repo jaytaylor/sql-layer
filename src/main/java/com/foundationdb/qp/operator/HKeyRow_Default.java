@@ -197,7 +197,7 @@ class HKeyRow_Default extends Operator
 
         private HKeyRow buildHKeyRow() {
             StoreAdapter store = adapter(rowType.hKey().table());
-            PersistitHKey hkey = store.newHKey(rowType.hKey());
+            PersistitHKey hkey = (PersistitHKey)store.newHKey(rowType.hKey());
             target.attach(hkey.key());
             int index = 0;
             for (HKeySegment segment : rowType.hKey().segments()) {

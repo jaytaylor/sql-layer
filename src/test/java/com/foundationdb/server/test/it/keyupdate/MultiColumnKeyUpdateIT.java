@@ -26,7 +26,7 @@ import org.junit.Test;
 import java.util.List;
 
 import static com.foundationdb.server.test.it.keyupdate.Schema.*;
-import static junit.framework.Assert.*;
+import static org.junit.Assert.*;
 
 // Like KeyUpdateIT, but with multi-column keys
 

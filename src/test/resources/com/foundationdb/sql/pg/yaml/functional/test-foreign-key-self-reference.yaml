@@ -16,7 +16,7 @@
 - Statement: insert into master (master_key_column, otherMaster) values (21,24);
 ---
 - Statement: select master_key_column, otherMaster from master order by master_key_column;
-- output: [[21,24], [24,24]]
+- output_already_ordered: [[21,24], [24,24]]
 ---
 - Statement: DELETE FROM master where master_key_column = 24;
 - error:  [23504, "ERROR: Cannot delete from table `test`.`master` with master_key_column = 24 due to foreign key constraint `master_fkey` on `test`.`master`"]
@@ -53,7 +53,7 @@
 - error: [23503, "ERROR: Cannot update table `test`.`t1` with p2 = d and p1 = 4 due to foreign key constraint `t1_fkey` since no matching row exists in `test`.`t1`"]
 ---
 - Statement: select c1, c2, p2, p1 from t1 order by c1;
-- output: [[1,'a','a',1], [2, 'b','b',2], [3,'c','c',3]]
+- output_already_ordered: [[1,'a','a',1], [2, 'b','b',2], [3,'c','c',3]]
 ---
 - Statement: UPDATE t1 set p2 = 'c', p1 = 3 where c1 <= 2;
 ---

@@ -32,7 +32,7 @@
 - output: [[1], [2], [3], [1], [2], [3]]
 ---
 - Statement: select cid, name from customers UNION select cat, sku from categories order by 1 
-- output: [[1, 'Smith'], [1, 'Square'], [2, 'Circle'], [2, 'Jones'],[3, 'Hexagon'],[3, 'Smithson']]
+- output_already_ordered: [[1, 'Smith'], [1, 'Square'], [2, 'Circle'], [2, 'Jones'],[3, 'Hexagon'],[3, 'Smithson']]
 ---
 - Statement: select cid, name from customers UNION select cat, sku from categories UNION select cid, name from customers
 - output: [[1, 'Smith'], [1, 'Square'], [2, 'Circle'], [2, 'Jones'],[3, 'Hexagon'],[3, 'Smithson']]
@@ -77,5 +77,5 @@
 - Statement: insert into t1 select * from (select 2,2 UNION select 3,3) as t2
 ---
 - Statement: Select * from t1 order by n1
-- output: [[1,1],[2,2],[3,3]]
+- output_already_ordered: [[1,1],[2,2],[3,3]]
 ...

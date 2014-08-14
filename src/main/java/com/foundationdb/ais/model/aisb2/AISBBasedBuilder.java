@@ -29,6 +29,7 @@ import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.model.validation.AISInvariants;
 import com.foundationdb.ais.model.validation.AISValidationResults;
 import com.foundationdb.ais.model.validation.AISValidations;
+import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.error.InvalidSQLJJarURLException;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TypesTranslator;
@@ -204,13 +205,11 @@ public class AISBBasedBuilder
         }
 
         @Override
-        public NewAISGroupIndexStarter groupIndex(String indexName) {
-            return groupIndex(indexName, null);
-        }
-
-        @Override
         public NewAISGroupIndexStarter groupIndex(String indexName, Index.JoinType joinType) {
             ActualGroupIndexBuilder actual  = new ActualGroupIndexBuilder(aisb, defaultSchema);
+            if (joinType == null) {
+                throw new InvalidParameterValueException("JoinType cannot be null");
+            }
             return actual.groupIndex(indexName, joinType);
         }
 
@@ -740,10 +739,6 @@ public class AISBBasedBuilder
         }
         // NewAISGroupIndexBuilder interface
 
-        @Override
-        public NewAISGroupIndexStarter groupIndex(String indexName) {
-            return groupIndex(indexName, null);
-        }
 
         @Override
         public NewAISGroupIndexStarter groupIndex(String indexName, Index.JoinType joinType) {

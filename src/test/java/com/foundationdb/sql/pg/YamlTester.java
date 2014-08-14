@@ -18,6 +18,7 @@
 package com.foundationdb.sql.pg;
 
 import static com.foundationdb.util.AssertUtils.assertCollectionEquals;
+import static com.foundationdb.util.FileTestUtils.printClickableFile;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.not;
@@ -66,6 +67,7 @@ import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
+import org.yaml.snakeyaml.error.Mark;
 import org.yaml.snakeyaml.nodes.MappingNode;
 import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.nodes.NodeTuple;
@@ -116,7 +118,7 @@ import org.yaml.snakeyaml.nodes.Tag;
      - params: [[<parameter value>, ...], ...]
      - param_types: [<column type>, ...]
      - output: [[<output value>, ...], ...]
-     - output_ordered: [[<output value>, ...], ...]
+     - output_already_ordered: [[<output value>, ...], ...]
      - row_count: <number of rows>
      - output_types: [<column type>, ...]
      - explain: <explain plan>
@@ -144,8 +146,7 @@ import org.yaml.snakeyaml.nodes.Tag;
      output, error codes, error messages, warnings, or explain output
    - The statement text should not create a table -- use the CreateTable
      command for that purpose
-   - output_ordered: does a sort on the expected and actual during comparison  
-   - output_ordered: does a sort on the expected and actual during comparison
+   - output: does a sort on the expected and actual during comparison
    - Warnings include statement warnings followed by result set warnings for
      each output row
    - The warning message is optional
@@ -198,11 +199,28 @@ class YamlTester
     /** Matches the Random Cost engine. */
     private static final String RAND_COST_ENGINE = "random-cost";
 
-    /** Compare toString values of arguments, ignoring case. */
-    private static final Comparator<? super Object> COMPARE_IGNORE_CASE = new Comparator<Object>()
+    /**
+     * Compare two Lists into a consistent, though not necessarily ordered, order.
+     * Actual contents are expected to be compared more strictly after using this.
+     */
+    private static final Comparator<List<?>> SIMPLE_LIST_COMPARATOR = new Comparator<List<?>>()
     {
-        public int compare(Object x, Object y) {
-            return String.valueOf(x).compareToIgnoreCase(String.valueOf(y));
+        public int compare(List<?> x, List<?> y) {
+            assertEquals("list sizes", x.size(), y.size());
+            for(int i = 0; i < x.size(); i++) {
+                Object xObj = x.get(i);
+                Object yObj = y.get(i);
+                // Regex, etc are not safe sortable with respect to the the final order
+                assertFalse("CompareExpected in unsorted -output: " + xObj, xObj instanceof CompareExpected);
+                assertFalse("CompareExpected in unsorted -output: " + yObj, yObj instanceof CompareExpected);
+                String xString = objectToString(xObj);
+                String yString = objectToString(yObj);
+                int cmp = xString.compareTo(yString);
+                if(cmp != 0) {
+                    return cmp;
+                }
+            }
+            return 0;
         }
     };
 
@@ -217,6 +235,7 @@ class YamlTester
     private static final DateFormat DEFAULT_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
     private static final DateFormat DEFAULT_DATETIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S z");
     private static final int DEFAULT_RETRY_COUNT = 5;
+    private int lineNumber = 1;
 
     /**
      * Creates an instance of this class.
@@ -240,14 +259,25 @@ class YamlTester
 
     /** Test the input specified in the constructor. */
     void test() {
-        test(in);
+        try {
+            test(in);
+        } catch (Throwable e) {
+            if (filename != null) {
+                System.err.println("Failed Yaml test (note: line number points to start of document)");
+                printClickableFile(filename.substring(0, filename.length() - 5), "yaml", lineNumber);
+            }
+            throw e;
+        }
     }
 
     private void test(Reader in) {
         List<?> sequence = null;
         try {
             Yaml yaml = new Yaml(new RegisterTags());
-            for(Object document : yaml.loadAll(in)) {
+            for(Object yamlObject : yaml.loadAll(in)) {
+                RegisterTags.LinedObject linedDocument = (RegisterTags.LinedObject) yamlObject;
+                Object document = linedDocument.getObject();
+                lineNumber = linedDocument.getStartMark().getLine();
                 ++commandNumber;
                 commandName = null;
                 sequence = nonEmptySequence(document, "command document");
@@ -288,17 +318,6 @@ class YamlTester
         } catch(Throwable e) {
             // Add context
             throw new ContextAssertionError(String.valueOf(sequence), e.toString(), e);
-        }
-    }
-
-    private void executeSql(String sql) {
-        try {
-            try(Statement statement = connection.createStatement()) {
-                statement.execute(sql);
-            }
-        } catch(SQLException e) {
-            LOG.debug("SQL Failed on connection {} with message {}", connection, e.getMessage());
-            throw new ContextAssertionError(sql, e.toString(), e);
         }
     }
 
@@ -365,7 +384,7 @@ class YamlTester
         boolean errorSpecified;
         Object errorCode;
         Object errorMessage;
-        boolean sorted;
+        boolean doSortOutput;
         int retryCount = -1;
         int retriesPerformed = 0;
 
@@ -625,11 +644,11 @@ class YamlTester
                     parseParams(attributeValue);
                 } else if("param_types".equals(attribute)) {
                     parseParamTypes(attributeValue);
-                } else if("output".equals(attribute)) {
-                    this.sorted = false;
+                } else if("output_already_ordered".equals(attribute)) {
+                    this.doSortOutput = false;
                     parseOutput(attributeValue);
-                } else if("output_ordered".equals(attribute)) {
-                    this.sorted = true;
+                } else if("output".equals(attribute)) {
+                    this.doSortOutput = true;
                     parseOutput(attributeValue);
                 } else if("row_count".equals(attribute)) {
                     parseRowCount(attributeValue);
@@ -703,6 +722,8 @@ class YamlTester
             }
             assertNull("The params attribute must not appear more than once", params);
             params = rows(value, "params value");
+            // TODO: -output needs to (optionally?) be another list nesting deep for clarity with multiple params
+            assertEquals("params size", 1, params.size());
         }
 
         private void parseParamTypes(Object value) {
@@ -784,7 +805,7 @@ class YamlTester
                             }
                             return;
                         }
-                        checkSuccess(stmt, sorted);
+                        checkSuccess(stmt, doSortOutput);
                     }
                 } else {
                     try(PreparedStatement stmt = connection.prepareStatement(statement)) {
@@ -810,7 +831,7 @@ class YamlTester
                                 }
                                 continue;
                             }
-                            checkSuccess(stmt, sorted);
+                            checkSuccess(stmt, doSortOutput);
                             paramsRow++;
                         }
                         commandName = "Statement";
@@ -840,7 +861,7 @@ class YamlTester
             }
         }
 
-        private void checkSuccess(Statement stmt, boolean sorted) throws SQLException {
+        private void checkSuccess(Statement stmt, boolean doSortOutput) throws SQLException {
             assertFalse("Statement execution succeeded, but was expected" + " to generate an error", errorSpecified);
             ResultSet rs = stmt.getResultSet();
             if(rs == null) {
@@ -856,7 +877,7 @@ class YamlTester
                 collectWarnings(stmt.getWarnings(), reportedWarnings);
                 checkWarnings(reportedWarnings);
             } else {
-                checkResults(rs, sorted);
+                checkResults(rs, doSortOutput);
                 assertFalse("Multiple result sets not supported", stmt.getMoreResults());
             }
         }
@@ -917,7 +938,7 @@ class YamlTester
             }
         }
 
-        private void checkResults(ResultSet rs, boolean sorted) throws SQLException {
+        private void checkResults(ResultSet rs, boolean doSortOutput) throws SQLException {
             if(outputTypes != null && outputRow == 0) {
                 checkOutputTypes(rs);
             }
@@ -950,9 +971,9 @@ class YamlTester
                     collectWarnings(rs.getWarnings(), reportedWarnings);
                     LOG.debug(arrayString(resultsRow));
                 }
-                if(sorted) {
-                    Collections.sort(output, COMPARE_IGNORE_CASE);
-                    Collections.sort(resultsList, COMPARE_IGNORE_CASE);
+                if(doSortOutput) {
+                    Collections.sort(output, SIMPLE_LIST_COMPARATOR);
+                    Collections.sort(resultsList, SIMPLE_LIST_COMPARATOR);
                 }
                 int i = 0;
                 for(; true; outputRow++, i++) {
@@ -1185,8 +1206,7 @@ class YamlTester
             } else if(objectClass == boolean[].class) {
                 return Arrays.toString((boolean[])object);
             } else {
-		        /* Another type of array -- shouldn't happen */
-                return object.toString();
+                return Arrays.toString((Object[])object);
             }
         }
     }
@@ -1368,6 +1388,8 @@ class YamlTester
     /** A SnakeYAML constructor that converts dc tags to DontCare.INSTANCE and re tags to Regexp instances. */
     private static class RegisterTags extends SafeConstructor
     {
+        private boolean recursing;
+
         RegisterTags() {
             yamlConstructors.put(new Tag("!dc"), new ConstructDontCare());
             yamlConstructors.put(new Tag("!re"), new ConstructRegexp());
@@ -1377,6 +1399,36 @@ class YamlTester
             yamlConstructors.put(new Tag("!datetime"), new ConstructSystemDateTime());
             yamlConstructors.put(new Tag("!unicode"), new ConstructUnicode());
             yamlConstructors.put(new Tag("!utf8-bytes"), new ConstructUTF8Bytes());
+        }
+
+        @Override
+        protected Object constructObject(Node node) {
+            if (recursing)
+                return super.constructObject(node);
+            else {
+                recursing = true;
+                Object o = super.constructObject(node);
+                recursing = false;
+                return new LinedObject(o, node.getStartMark());
+            }
+        }
+
+        private class LinedObject {
+            private Object o;
+            private Mark startMark;
+
+            private LinedObject(Object o, Mark startMark) {
+                this.o = o;
+                this.startMark = startMark;
+            }
+
+            public Object getObject() {
+                return o;
+            }
+
+            public Mark getStartMark() {
+                return startMark;
+            }
         }
 
         private static class ConstructDontCare extends AbstractConstruct
@@ -1574,6 +1626,7 @@ class YamlTester
                 context.append(", ");
             }
             context.append("Command ").append(commandNumber);
+            context.append(" at line ").append(lineNumber);
             if(commandName != null) {
                 context.append(" (").append(commandName);
                 if(failedStatement != null) {

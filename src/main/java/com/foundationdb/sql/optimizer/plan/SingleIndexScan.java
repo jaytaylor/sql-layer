@@ -58,7 +58,8 @@ public final class SingleIndexScan extends IndexScan implements EqualityColumnsS
     // May need building of index keys in the expressions subsystem.
     private boolean lowInclusive, highInclusive;
     
-    private PlanContext context; 
+    private PlanContext context;
+    private boolean includeUnionsAsEquality = true;
 
     public SingleIndexScan(Index index, TableSource table, PlanContext context)
     {
@@ -303,9 +304,23 @@ public final class SingleIndexScan extends IndexScan implements EqualityColumnsS
         int nequals = 0;
         if (equalityComparands != null)
             nequals = equalityComparands.size();
-        if ((conditionRange != null) && conditionRange.isAllSingle())
-            nequals++;
+        if (includeUnionsAsEquality) {
+            nequals += getNUnions();
+        }
         return nequals;
+    }
+
+    @Override
+    public int getNUnions() {
+        if ((conditionRange != null) && conditionRange.isAllSingle())
+            return 1;
+        else
+            return 0;
+    }
+
+    @Override
+    public void setIncludeUnionAsEquality(boolean unionIsEquality) {
+        this.includeUnionsAsEquality = unionIsEquality;
     }
 
     @Override

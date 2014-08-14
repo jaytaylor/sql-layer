@@ -26,12 +26,12 @@
 - Statement: insert into t (c1, c2) values (next value for sequence1, 'GEORGE')
 ---
 - Statement: select c1, c2 from t order by c1
-- output: [[2, 'FRED'], [3, 'GEORGE']] 
+- output_already_ordered: [[2, 'FRED'], [3, 'GEORGE']] 
 ---
 - Statement: update t set c1 = next value for sequence1 where c2 = 'FRED'
 ---
 - Statement: select c1, c2 from t order by c1
-- output: [[3, 'GEORGE'], [4, 'FRED']] 
+- output_already_ordered: [[3, 'GEORGE'], [4, 'FRED']] 
 ---
 - Statement: select currval('sequence1')
 - output: [[4]]

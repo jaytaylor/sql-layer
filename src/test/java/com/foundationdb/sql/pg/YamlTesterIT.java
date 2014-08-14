@@ -891,7 +891,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "    INSERT INTO customers VALUES (1, 'Smith'), (2, 'Jones');\n" +
 	    "---\n" +
 	    "- Statement: SELECT * FROM customers\n" +
-	    "- output:\n" +
+	    "- output_already_ordered:\n" +
 	    "  - [!dc dc, Smith]\n" +
 	    "  - [2, !dc dc]");
     }
@@ -915,7 +915,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "    ('hubba-hubba'), ('abc123')\n" +
     	    "---\n" +
     	    "- Statement: SELECT * FROM t\n" +
-    	    "- output:\n" +
+    	    "- output_already_ordered:\n" +
     	    "  - [!re '([^-]*)-{1}']\n" +
     	    "  - [!re '[a-z]+[0-9]+']\n");
     }
@@ -948,7 +948,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "    ('abc'), ('123')\n" +
     	    "---\n" +
     	    "- Statement: SELECT * FROM t\n" +
-    	    "- output:\n" +
+    	    "- output_already_ordered:\n" +
 	    "    !select-engine\n" +
 	    "      it: [[!re '[a-z]+'], [!re '[0-9]+']]\n" +
 	    "      foo: bar\n");
@@ -976,19 +976,23 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 
     @Test
     public void testStatementOutputParamsRightResults() throws Exception {
-	testYaml(
-	    "---\n" +
-	    "- CreateTable: customers (cid int, name varchar(32))\n" +
-	    "---\n" +
-	    "- Statement:\n" +
-	    "    INSERT INTO customers VALUES (1, 'Smith'), (2, 'Jones');\n" +
-	    "---\n" +
-	    "- Statement: SELECT * FROM customers WHERE name = ?\n" +
-	    "- params: [[Jones], [Smith], [Smith]]\n" +
-	    "- output:\n" +
-	    "  - [2, Jones]\n" +
-	    "  - [1, Smith]\n" +
-	    "  - [1, Smith]");
+        testYaml(
+            "---\n" +
+            "- CreateTable: customers (cid int, name varchar(32))\n" +
+            "---\n" +
+            "- Statement:\n" +
+            "    INSERT INTO customers VALUES (1, 'Smith'), (2, 'Jones');\n");
+        testYaml(
+            "---\n" +
+            "- Statement: SELECT * FROM customers WHERE name = ?\n" +
+            "- params: [[Jones]]\n" +
+            "- output:\n" +
+            "  - [2, Jones]");
+        // Too many params
+        testYamlFail(
+            "---\n" +
+                "- Statement: SELECT * FROM customers WHERE name = ?\n" +
+                "- params: [[Jones], [Smith], [Smith]]\n");
     }
 
     @Test
@@ -1507,32 +1511,6 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "- Statement: SELECT * FR\n" +
 	    "- error: [!select-engine { it: 42000, all: 42 }]");
     }
-    
-    /* Test Statement sorted_output */
-
-    @Test
-    public void testSortedOutput() throws Exception {
-        testYamlFail(
-                "---\n" +
-                "- CreateTable: c (cid int, name varchar(32))\n" +
-                "---\n" +
-                "- Statement: INSERT INTO c VALUES (1, 'Smith'), (2, 'Jones'), (3, 'Zoolander'), (4, 'Adams') \n" +
-                "---\n" +
-                "- Statement: SELECT * FROM c\n" +
-                "- output: [[1, 'Smith'],[2, 'Jones'],[4, 'Adams'],[3, 'Zoolander']]");
-        testYaml("---\n" +
-                "- Statement: SELECT * FROM c\n" +
-                "- output_ordered: [[1, 'Smith'],[2, 'Jones'],[4, 'Adams'],[3, 'Zoolander']]");
-        testYaml("---\n" +
-                "- Statement: SELECT * FROM c\n" +
-                "- output_ordered: [[3, 'Zoolander'],[1, 'Smith'],[2, 'Jones'],[4, 'Adams']]");
-        testYamlFail("---\n" +
-                "- Statement: SELECT * FROM c\n" +
-                "- output_ordered: [[3, 'Zoolander'],[1, 'Wendel'],[2, 'Jones'],[4, 'Adams']]");
-        testYamlFail("---\n" +
-                "- Statement: SELECT * FROM c order by cid desc \n" +
-                "- output: [[3, 'Zoolander'],[1, 'Smith'],[2, 'Jones'],[4, 'Adams']]");
-    }
 
     /* Test Statement warnings_count */
     @Test
@@ -1907,119 +1885,69 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
             "---\n" +
             "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
             "---\n" +
-            "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
-            "---\n" +
-            "- Statement: SELECT * from test2 order by c1\n" +
-            "- output: [[-4, 'abc'],[1, 'A'],[234,'Z']]");
-        
+            "- Statement: INSERT INTO test2 values (234, 'Z')\n"
+        );
+        // Expected matches output order
+        testYaml("---\n" +
+                     "- Statement: SELECT * from test2 order by c1\n" +
+                     "- output: [[-4, 'abc'],[1, 'A'],[234,'Z']]");
+        // Expected does not match actual order (OK)
+        testYaml("---\n" +
+                 "- Statement: SELECT * from test2 order by c1 desc\n" +
+                 "- output: [[-4, 'abc'],[1, 'A'],[234,'Z']]");
+        // Too many columns
         testYamlFail("---\n" +
-                "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
-                "---\n" +
-                "- Statement: INSERT INTO test2 values (1, 'A')\n" +
-                "---\n" +
-                "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
-                "---\n" +
-                "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
-                "---\n" +
-                "- Statement: SELECT * from test2 order by c1\n" +
-                "- output: [[-4, 'abc', 'fake'],[1, 'A'],[234,'Z']]");
-
+                 "- Statement: SELECT * from test2 order by c1\n" +
+                 "- output: [[-4, 'abc', 'fake'],[1, 'A'],[234,'Z']]");
+        // Too few columns
         testYamlFail("---\n" +
-                "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
-                "---\n" +
-                "- Statement: INSERT INTO test2 values (1, 'A')\n" +
-                "---\n" +
-                "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
-                "---\n" +
-                "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
-                "---\n" +
-                "- Statement: SELECT * from test2 order by c1\n" +
-                "- output: [[-4],[1, 'A'],[234,'Z']]");
-        
+                 "- Statement: SELECT * from test2 order by c1\n" +
+                 "- output: [[-4],[1, 'A'],[234,'Z']]");
+        // Too many rows
         testYamlFail("---\n" +
-                "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
-                "---\n" +
-                "- Statement: INSERT INTO test2 values (1, 'A')\n" +
-                "---\n" +
-                "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
-                "---\n" +
-                "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
-                "---\n" +
-                "- Statement: SELECT * from test2 order by c1\n" +
-                "- output: [[-4, 'abc'],[1, 'A'],[234,'Z'],[999,'abba']]");
+                 "- Statement: SELECT * from test2 order by c1\n" +
+                 "- output: [[-4, 'abc'],[1, 'A'],[234,'Z'],[999,'abba']]");
+        // Too few rows
         testYamlFail("---\n" +
-                "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
-                "---\n" +
-                "- Statement: INSERT INTO test2 values (1, 'A')\n" +
-                "---\n" +
-                "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
-                "---\n" +
-                "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
-                "---\n" +
                 "- Statement: SELECT * from test2 order by c1\n" +
                 "- output: [[-4, 'abc'],[1, 'A']]");
     }
     
     @Test
-    public void testOrderedOutput() throws Exception {
+    public void testOutputAlreadyOrdered() throws Exception {
         testYaml("---\n" +
-            "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
-            "---\n" +
-            "- Statement: INSERT INTO test2 values (1, 'A')\n" +
-            "---\n" +
-            "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
-            "---\n" +
-            "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
-            "---\n" +
-            "- Statement: SELECT * from test2 order by c1\n" +
-            "- output_ordered: [[-4, 'abc'],[1, 'A'],[234,'Z']]");
-        
+                     "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
+                     "---\n" +
+                     "- Statement: INSERT INTO test2 values (1, 'A')\n" +
+                     "---\n" +
+                     "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
+                     "---\n" +
+                     "- Statement: INSERT INTO test2 values (234, 'Z')\n"
+        );
+        // Expected matches output order
+        testYaml("---\n" +
+                 "- Statement: SELECT * from test2 order by c1\n" +
+                 "- output: [[-4, 'abc'],[1, 'A'],[234,'Z']]");
+        // Expected does not match actual order
         testYamlFail("---\n" +
-                "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
-                "---\n" +
-                "- Statement: INSERT INTO test2 values (1, 'A')\n" +
-                "---\n" +
-                "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
-                "---\n" +
-                "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
-                "---\n" +
-                "- Statement: SELECT * from test2 order by c1\n" +
-                "- output_ordered: [[-4, 'abc', 'fake'],[1, 'A'],[234,'Z']]");
-
+                     "- Statement: SELECT * from test2 order by c1 desc\n" +
+                     "- output_already_ordered: [[-4, 'abc'],[1, 'A'],[234,'Z']]");
+        // Too many columns
         testYamlFail("---\n" +
-                "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
-                "---\n" +
-                "- Statement: INSERT INTO test2 values (1, 'A')\n" +
-                "---\n" +
-                "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
-                "---\n" +
-                "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
-                "---\n" +
-                "- Statement: SELECT * from test2 order by c1\n" +
-                "- output_ordered: [[-4],[1, 'A'],[234,'Z']]");
-        
+                     "- Statement: SELECT * from test2 order by c1\n" +
+                     "- output_already_ordered: [[-4, 'abc', 'fake'],[1, 'A'],[234,'Z']]");
+        // Too few columns
         testYamlFail("---\n" +
-                "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
-                "---\n" +
-                "- Statement: INSERT INTO test2 values (1, 'A')\n" +
-                "---\n" +
-                "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
-                "---\n" +
-                "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
-                "---\n" +
-                "- Statement: SELECT * from test2 order by c1\n" +
-                "- output_ordered: [[-4, 'abc'],[1, 'A'],[234,'Z'],[999,'abba']]");
+                     "- Statement: SELECT * from test2 order by c1\n" +
+                     "- output_already_ordered: [[-4],[1, 'A'],[234,'Z']]");
+        // Too many rows
         testYamlFail("---\n" +
-                "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
-                "---\n" +
-                "- Statement: INSERT INTO test2 values (1, 'A')\n" +
-                "---\n" +
-                "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
-                "---\n" +
-                "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
-                "---\n" +
-                "- Statement: SELECT * from test2 order by c1\n" +
-                "- output_ordered: [[-4, 'abc'],[1, 'A']]");
+                          "- Statement: SELECT * from test2 order by c1\n" +
+                     "- output_already_ordered: [[-4, 'abc'],[1, 'A'],[234,'Z'],[999,'abba']]");
+        // Too few rows
+        testYamlFail("---\n" +
+                     "- Statement: SELECT * from test2 order by c1\n" +
+                     "- output_already_ordered: [[-4, 'abc'],[1, 'A']]");
     }
     
     
