@@ -70,7 +70,7 @@ public class ServerJavaMethod extends ServerJavaRoutine
     @Override
     public void setInParameter(Parameter parameter, ServerJavaValues values, int index) {
         Class<?> clazz = parameterTypes[index];
-        if (clazz.isArray()) {
+        if (clazz.isArray() && clazz != byte[].class) {
             Array.set(methodArgs[index], 0, 
                       values.getObject(index, clazz.getComponentType()));
         }
