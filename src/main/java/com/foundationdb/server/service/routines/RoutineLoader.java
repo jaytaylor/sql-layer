@@ -23,12 +23,15 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.loadableplan.LoadablePlan;
 import com.foundationdb.server.service.session.Session;
 import java.lang.reflect.Method;
+import java.io.IOException;
+import java.util.jar.JarFile;
 
 public interface RoutineLoader
 {
     public ClassLoader loadSQLJJar(Session session, TableName jarName);
     public void checkUnloadSQLJJar(Session session, TableName jarName);
     public void registerSystemSQLJJar(SQLJJar sqljJar, ClassLoader classLoader);
+    public JarFile openSQLJJarFile(Session session, TableName jarName) throws IOException;
 
     public LoadablePlan<?> loadLoadablePlan(Session session, TableName routineName);
     public Method loadJavaMethod(Session session, TableName routineName);
