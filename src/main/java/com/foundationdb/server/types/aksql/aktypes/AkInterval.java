@@ -61,7 +61,9 @@ public class AkInterval extends TClassBase {
             long months = source.getInt64();
 
             long years = months / 12;
-            months -= (years * 12);
+            if(years < 0) months = -months;
+            months -= (Math.abs(years) * 12);
+
 
             Formatter formatter = new Formatter(out.getAppendable());
             formatter.format("INTERVAL '%d-%d'", years, months);
@@ -119,15 +121,19 @@ public class AkInterval extends TClassBase {
 
             long days = secondsIntervalAs(micros, TimeUnit.DAYS);
             micros -= TimeUnit.DAYS.toMicros(days);
+            if(days < 0) micros = -micros;
 
             long hours = secondsIntervalAs(micros, TimeUnit.HOURS);
             micros -= TimeUnit.HOURS.toMicros(hours);
+            if(hours < 0) micros = -micros;
 
             long minutes = secondsIntervalAs(micros, TimeUnit.MINUTES);
             micros -= TimeUnit.MINUTES.toMicros(minutes);
+            if(minutes < 0) micros = -micros;
 
             long seconds = secondsIntervalAs(micros, TimeUnit.SECONDS);
             micros -= TimeUnit.SECONDS.toMicros(seconds);
+            if(seconds < 0) micros = -micros;
 
             Formatter formatter = new Formatter(out.getAppendable());
             formatter.format("INTERVAL '%d %d:%d:%d.%05d'", days, hours, minutes, seconds, micros);

@@ -1,0 +1,4 @@
+---
+- Statement: select cast('-25:01:02.3456' as interval hour to second);
+- output: [['hi']]
+...
