@@ -130,7 +130,7 @@ public class FDBTransactionService implements TransactionService {
             this.session = session;
         }
 
-        protected Transaction getTransaction() {
+        public Transaction getTransaction() {
             return transaction;
         }
 
