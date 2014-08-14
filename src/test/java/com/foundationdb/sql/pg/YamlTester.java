@@ -62,6 +62,8 @@ import java.util.Stack;
 import java.util.regex.Pattern;
 
 import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.util.Strings;
+import junit.framework.ComparisonFailure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -1609,9 +1611,9 @@ class YamlTester
         }
     }
 
-    private class FullOutputAssertionError extends AssertionError {
-        FullOutputAssertionError(List<List<?>> actual, List<List<?>> expected, AssertionError e) {
-            super("Expected: \n    " + actual + "\n got:\n    " + expected + "\n" + e.getMessage(), e);
+    private class FullOutputAssertionError extends ComparisonFailure {
+        FullOutputAssertionError(List<List<?>> expected, List<List<?>> actual, AssertionError e) {
+            super(e.getMessage(), Strings.join(expected,"\n"), Strings.join(actual,"\n"));
         }
 
     }
