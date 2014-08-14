@@ -75,25 +75,9 @@ public class HashTable {
                 Value valueCopy = new Value(columnValue.getType());
                 ValueTargets.copyFrom(columnValue, valueCopy);
                 AkCollator collator = (collators != null) ? collators.get(i++) : null;
-                //hashKey ^= hashFunction.hashInt(ValueSources.hash(valueCopy, collator)).asInt();
-                hashKey ^= hash(ValueSources.hash(valueCopy, collator));
+                hashKey ^= ValueSources.hash(valueCopy, collator);
                 values.add(valueCopy);
             }
         }
-
-        /**
-         *  Found on stack overflow:
-         *  ttp://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
-         *  this appears to be faster than HashFunction.hashInt().asInt()
-         **/
-        public int hash( int x) {
-            x = ((x >>> 16) ^ x) * 0x45d9f3b;
-            x = ((x >>> 16) ^ x) * 0x45d9f3b;
-            x = ((x >>> 16) ^ x);
-            return x;
-        }
-
-
-
     }
 }
