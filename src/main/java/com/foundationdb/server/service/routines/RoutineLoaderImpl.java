@@ -42,11 +42,14 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.io.IOException;
+import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.jar.JarFile;
 
 @Singleton
 public final class RoutineLoaderImpl implements RoutineLoader, Service {
@@ -138,6 +141,15 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
                 classLoaders.put(jarName, entry);
             }
         }
+    }
+
+    @Override
+    public JarFile openSQLJJarFile(Session session, TableName jarName) throws IOException {
+        SQLJJar sqljJar = ais(session).getSQLJJar(jarName);
+        if (sqljJar == null)
+            throw new NoSuchSQLJJarException(jarName);
+        URL jarURL = new URL("jar:" + sqljJar.getURL() + "!/");
+        return ((JarURLConnection)jarURL.openConnection()).getJarFile();
     }
 
     @Override
