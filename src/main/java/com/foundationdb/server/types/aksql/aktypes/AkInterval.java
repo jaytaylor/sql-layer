@@ -117,26 +117,28 @@ public class AkInterval extends TClassBase {
     private static TClassFormatter secondsFormatter = new TClassFormatter() {
         @Override
         public void format(TInstance type, ValueSource source, AkibanAppender out) {
-            long micros = secondsIntervalAs(source, TimeUnit.MICROSECONDS);
 
+            boolean negative = false;
+            long micros = secondsIntervalAs(source, TimeUnit.MICROSECONDS);
+            if(micros < 0) {
+                negative = true;
+                micros = -micros;
+            }
             long days = secondsIntervalAs(micros, TimeUnit.DAYS);
             micros -= TimeUnit.DAYS.toMicros(days);
-            if(days < 0) micros = -micros;
-
             long hours = secondsIntervalAs(micros, TimeUnit.HOURS);
             micros -= TimeUnit.HOURS.toMicros(hours);
-            if(hours < 0) micros = -micros;
-
             long minutes = secondsIntervalAs(micros, TimeUnit.MINUTES);
             micros -= TimeUnit.MINUTES.toMicros(minutes);
-            if(minutes < 0) micros = -micros;
-
             long seconds = secondsIntervalAs(micros, TimeUnit.SECONDS);
             micros -= TimeUnit.SECONDS.toMicros(seconds);
-            if(seconds < 0) micros = -micros;
 
             Formatter formatter = new Formatter(out.getAppendable());
-            formatter.format("INTERVAL '%d %d:%d:%d.%05d'", days, hours, minutes, seconds, micros);
+            if(negative)
+                formatter.format("INTERVAL '-%d %d:%d:%d.%05d'", days, hours, minutes, seconds, micros);
+            else
+                formatter.format("INTERVAL '%d %d:%d:%d.%05d'", days, hours, minutes, seconds, micros);
+
         }
 
         @Override
