@@ -23,7 +23,8 @@ import org.junit.Test;
 
 import java.io.File;
 import java.sql.Connection;
-import java.sql.ResultSetMetaData;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -88,10 +89,9 @@ public class PostgresServerBloomFilterIT extends PostgresServerITBase{
 
     @Test
     public void test() throws Exception {
-        java.sql.Statement statement  = connection.createStatement();
-        java.sql.ResultSet rs = statement.executeQuery("EXPLAIN " + SQL);
+        Statement statement  = connection.createStatement();
+        ResultSet rs = statement.executeQuery("EXPLAIN " + SQL);
         boolean found = false;
-        ResultSetMetaData md = rs.getMetaData();
         while (!found && rs.next()) {
             if (((String) rs.getObject(1)).contains("Using_BloomFilter"))
                 found = true;
