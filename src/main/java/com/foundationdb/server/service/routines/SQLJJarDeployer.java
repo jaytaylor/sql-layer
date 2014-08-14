@@ -107,7 +107,7 @@ public class SQLJJarDeployer
         catch (IOException ex) {
             throw new InvalidSQLJDeploymentDescriptorException(jarName, ex);
         }
-        if (!Pattern.compile(DESCRIPTOR_FILE).matcher(contents).matches())
+        if (!Pattern.compile(DESCRIPTOR_FILE, Pattern.DOTALL).matcher(contents).matches())
             throw new InvalidSQLJDeploymentDescriptorException(jarName, "Incorrect file format");
         String header, footer;
         if (undeploy) {
