@@ -22,7 +22,7 @@
 - output: [["1", "300"]]
 ---
 - Statement: SELECT id_t1, col2_t4 FROM t1 LEFT OUTER JOIN (SELECT * FROM t2 WHERE id_t2=1) AS t2_sub ON (t1.id_t1 = t2_sub.id_t2) LEFT OUTER JOIN t3 ON t3.id_t3 = t2_sub.id_t2 LEFT OUTER JOIN "t4" ON (t3.id_t3 = t4.id_t4) ORDER BY "t1"."id_t1" 
-- output: [["1", "400"]]
+- output_already_ordered: [["1", "400"]]
 ---
 - Statement: SELECT id_t1, col2_t3 FROM t1 LEFT OUTER JOIN (SELECT * FROM t2 WHERE id_t2=1) AS t2_sub ON (t1.id_t1 = t2_sub.id_t2) RIGHT OUTER JOIN t3 ON t3.id_t3 = t2_sub.id_t2
 - output: [["1", "300"]]

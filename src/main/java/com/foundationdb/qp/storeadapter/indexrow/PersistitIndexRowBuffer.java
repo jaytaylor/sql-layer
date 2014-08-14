@@ -356,6 +356,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
 
     // For use by this class
 
+    @SuppressWarnings("unchecked")
     private <S> SortKeyTarget<S> pKeyTarget()
     {
         if (pKeyAppends < pKeyFields) {

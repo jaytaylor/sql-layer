@@ -111,7 +111,7 @@ public class FDBMetricsServiceIT extends FDBITBase
     }
 
     private <T> void checkValues(List<FDBMetric.Value<T>> values,
-                                 T... expected) {
+                                 Object... expected) {
         assertEquals("number of values", expected.length, values.size());
         long maxTime = System.currentTimeMillis() * 1000000;
         long minTime = maxTime - 5 * 1000 * 1000000;

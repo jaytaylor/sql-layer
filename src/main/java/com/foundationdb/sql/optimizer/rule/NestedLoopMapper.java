@@ -147,7 +147,7 @@ public class NestedLoopMapper extends BaseRule
             }
             output = output.getOutput();
         }
-        throw new CorruptedPlanException();
+        throw new CorruptedPlanException("PlanNode did not have BaseQuery");
     }
 
 

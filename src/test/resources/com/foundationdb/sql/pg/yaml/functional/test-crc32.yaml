@@ -4,17 +4,17 @@
 ##Test with literals
 ---
 - Statement: SELECT CRC32(X'616B6962616E');
-- output: [['1192856190']]
+- output: [[1192856190]]
 ---
 - Statement: SELECT CRC32('');
-- output: [['0']]
+- output: [[0]]
 ---
 - Statement: SELECT CRC32(null);
 - output: [[null]]
 ---
 - Statement: select crc32('hello, world');
 - output_types: [BIGINT]
-- output: [['4289425978']]
+- output: [[4289425978]]
 ---
 - Statement: SELECT CRC32(1) = CRC32('1');
 - output: [[true]]
@@ -22,7 +22,7 @@
 - Statement: INSERT INTO all_types(varchar_field) values ('akserver'), ('mysql'), (null);
 ---
 - Statement: SELECT CRC32(varchar_field) from all_types;
-- output: [['461181702'], ['2501908538'], [null]]
+- output: [[461181702], [2501908538], [null]]
 
 ---
 - CreateTable: t (id INT PRIMARY KEY NOT NULL, s1 VARCHAR(16) CHARACTER SET latin1, s2 VARCHAR(16) CHARACTER SET utf8)
@@ -30,5 +30,5 @@
 - Statement: "INSERT INTO t VALUES(1, 'Az\u00BF\u00FF', 'Az\u00BF\u00FF')"
 ---
 - Statement: SELECT CRC32(s1), CRC32(s2), CRC32(s1||s2) FROM t
-- output: [['366301240', '1877685556', '3677621597']]
+- output: [[366301240, 1877685556, 3677621597]]
 ...

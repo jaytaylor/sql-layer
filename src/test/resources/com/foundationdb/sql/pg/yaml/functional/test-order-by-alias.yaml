@@ -5,10 +5,10 @@
 - Statement: INSERT INTO t1 VALUES(1,1,2),(2,2,1)
 ---
 - Statement: SELECT n1 AS n2, n2 AS n1 FROM t1 ORDER BY n1
-- output: [[2,1],[1,2]]
+- output_already_ordered: [[2,1],[1,2]]
 ---
 - Statement: SELECT n1 AS n2, n2 AS n1 FROM t1 ORDER BY n1+0
-- output: [[1,2],[2,1]]
+- output_already_ordered: [[1,2],[2,1]]
 ---
 - Statement: SELECT n1 AS n2, n2 AS n3 FROM t1 ORDER BY n3+0
 - error: ['50018', "ERROR: Unknown column: `n3`\n  Position: 44"]

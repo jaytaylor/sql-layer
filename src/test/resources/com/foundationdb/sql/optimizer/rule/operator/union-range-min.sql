@@ -1,0 +1,1 @@
+SELECT MIN(cid) FROM customers WHERE name = 'Smith' OR name = 'Jones' OR name = 'Adams'

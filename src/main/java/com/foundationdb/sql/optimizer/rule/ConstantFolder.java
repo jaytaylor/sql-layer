@@ -1196,6 +1196,7 @@ public class ConstantFolder extends BaseRule
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public int compare(List<ExpressionNode> r1, List<ExpressionNode> r2) {
             for (int i = 0; i < r1.size(); i++) {
                 Comparable o1 = asComparable(r1.get(i));

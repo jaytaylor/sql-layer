@@ -39,7 +39,7 @@ import com.foundationdb.junit.Parameterization;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import static com.foundationdb.sql.TestBase.*;
-import static junit.framework.Assert.fail;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.util.ArrayList;

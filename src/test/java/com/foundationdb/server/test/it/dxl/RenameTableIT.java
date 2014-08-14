@@ -25,7 +25,7 @@ import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.ProtectedTableDDLException;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.test.it.ITBase;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;

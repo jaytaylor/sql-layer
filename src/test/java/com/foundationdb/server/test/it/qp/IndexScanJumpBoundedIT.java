@@ -974,7 +974,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         
         for (long expectedAr[] : expectedsAr)
         {
-            List<Long> expected = new ArrayList();
+            List<Long> expected = new ArrayList<>();
             for (long val : expectedAr)
                 expected.add(val);
             expecteds.add(expected);

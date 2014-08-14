@@ -17,8 +17,8 @@
 
 package com.foundationdb.sql.aisddl;
 
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
 import org.junit.Test;
 import org.junit.Before;
 

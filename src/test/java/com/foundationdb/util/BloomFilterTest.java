@@ -62,6 +62,7 @@ public class BloomFilterTest
         assertTrue(actualErrorRate <= maxAcceptableErrorRate);
     }
 
+    @SuppressWarnings("unchecked")
     private List denseLongs(int start, int end)
     {
         List keys = new ArrayList(end - start);
@@ -71,6 +72,7 @@ public class BloomFilterTest
         return keys;
     }
 
+    @SuppressWarnings("unchecked")
     private List sparseLongs(int start, int end)
     {
         List keys = new ArrayList(end - start);
@@ -81,6 +83,7 @@ public class BloomFilterTest
         return keys;
     }
 
+    @SuppressWarnings("unchecked")
     private List patternedStrings(int start, int end)
     {
         List keys = new ArrayList(end - start);
@@ -91,6 +94,7 @@ public class BloomFilterTest
         return keys;
     }
 
+    @SuppressWarnings("unchecked")
     private List randomStrings(int start, int end)
     {
         List keys = new ArrayList(end - start);

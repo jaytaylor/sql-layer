@@ -1,0 +1,17 @@
+---
+- CreateTable: t(id INT NOT NULL PRIMARY KEY, title VARCHAR(255));
+---
+- Statement: INSERT INTO t VALUES (1, 'Welcome to the weblog'), (2, 'So I was thinking'), (3, 'I don''t have any comments');
+---
+- Statement: SELECT * FROM t WHERE t.id IN (1, 3) ORDER BY t.id ASC;
+- output: [[1, 'Welcome to the weblog'],[3, "I don't have any comments"]]
+---
+- Statement: SELECT * FROM t WHERE t.id > 1 ORDER BY t.id DESC;
+- output: [[3, "I don't have any comments"], [2, 'So I was thinking']]
+---
+- Statement: SELECT * FROM t WHERE t.id != 1 ORDER BY t.id DESC;
+- output: [[3, "I don't have any comments"], [2, 'So I was thinking']]
+---
+- Statement: SELECT * FROM t WHERE t.id IN (1, 3) ORDER BY t.id DESC;
+- output: [[3, "I don't have any comments"],[1, 'Welcome to the weblog']]
+...

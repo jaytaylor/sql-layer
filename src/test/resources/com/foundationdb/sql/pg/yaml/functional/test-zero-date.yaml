@@ -52,7 +52,7 @@
 - Statement: update all_types set timestamp_field = '0000-00-00 00:00:00' where bigint_field = 3
 ---
 - Statement: Select bigint_field from all_types where timestamp_field = '0000-00-00 00:00:00'
-- output_ordered: [[2],[4],[5],[3]]
+- output: [[2],[4],[5],[3]]
 
 ---
 - Statement: update all_types set datetime_field = '0000-00-00 00:00:00' where bigint_field = 1
@@ -94,6 +94,6 @@
 # bug 913922
 ---
 - Statement: SELECT varchar_field FROM all_types WHERE YEAR(varchar_field) > YEAR('0100-01-01')
-- output_ordered: [['0300-03-30'], ['1961-01-11'], ['2001-09-11'], ['3210-04-04'], ['9999-01-01']]
+- output: [['0300-03-30'], ['1961-01-11'], ['2001-09-11'], ['3210-04-04'], ['9999-01-01']]
 
 ...

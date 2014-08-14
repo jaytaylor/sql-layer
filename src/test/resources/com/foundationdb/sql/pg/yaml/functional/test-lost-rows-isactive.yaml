@@ -72,7 +72,7 @@
                     ON (a.content_type_id = d.id)
                 WHERE a.content_type_id IN (5)
                 ORDER BY d.app_label ASC, d.model ASC, a.codename ASC
-- output: [ [5, 'add_contenttype'], [5, 'change_contenttype'], [5, 'delete_contenttype'] ]
+- output_already_ordered: [ [5, 'add_contenttype'], [5, 'change_contenttype'], [5, 'delete_contenttype'] ]
 
 # Returned first of expected rows
 ---
@@ -81,4 +81,4 @@
                     ON (a.content_type_id = d.id)
                 WHERE a.content_type_id IN (5)
                 ORDER BY d.app_label ASC, d.model ASC
-- output: [ [5, 'add_contenttype'], [5, 'change_contenttype'], [5, 'delete_contenttype'] ]
+- output_already_ordered: [ [5, 'add_contenttype'], [5, 'change_contenttype'], [5, 'delete_contenttype'] ]
