@@ -17,34 +17,15 @@
 
 package com.foundationdb.server.store;
 
-import com.foundationdb.ais.model.AbstractVisitor;
-import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.GroupIndex;
-import com.foundationdb.ais.model.HasStorage;
-import com.foundationdb.ais.model.HKeyColumn;
-import com.foundationdb.ais.model.HKeySegment;
-import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.ais.model.IndexRowComposition;
-import com.foundationdb.ais.model.IndexToHKey;
-import com.foundationdb.ais.model.Sequence;
-import com.foundationdb.ais.model.Table;
-import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.qp.operator.API;
-import com.foundationdb.qp.operator.Cursor;
-import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.operator.QueryBindings;
-import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.qp.operator.SimpleQueryContext;
-import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.ais.model.*;
+import com.foundationdb.qp.operator.*;
 import com.foundationdb.qp.row.AbstractRow;
-import com.foundationdb.qp.storeadapter.OperatorBasedRowCollector;
-import com.foundationdb.qp.storeadapter.RowDataCreator;
-import com.foundationdb.qp.storeadapter.PersistitHKey;
-import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.storeadapter.OperatorBasedRowCollector;
+import com.foundationdb.qp.storeadapter.PersistitHKey;
+import com.foundationdb.qp.storeadapter.RowDataCreator;
+import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
+import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.ConstantColumnSelector;
@@ -52,38 +33,24 @@ import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.api.dml.scan.ScanLimit;
-import com.foundationdb.server.error.CursorCloseBadException;
-import com.foundationdb.server.error.CursorIsUnknownException;
-import com.foundationdb.server.error.NoSuchRowException;
-import com.foundationdb.server.error.RowDefNotFoundException;
-import com.foundationdb.server.error.TableDefinitionMismatchException;
-import com.foundationdb.server.rowdata.FieldDef;
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDataExtractor;
-import com.foundationdb.server.rowdata.RowDataValueSource;
-import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.error.*;
+import com.foundationdb.server.rowdata.*;
 import com.foundationdb.server.rowdata.encoding.EncodingException;
-import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.RowListener;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.sql.optimizer.rule.PlanGenerator;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
 import com.persistit.Key;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType extends StoreStorageDescription<SType,SDType>> implements Store {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractStore.class);
@@ -780,7 +747,13 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         boolean bumpCount = false;
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
         for(TableIndex index : indexes) {
-            writeIndexRow(session, index, rowData, hKey, indexRow, false);
+            long zValue = -1;
+            SpatialColumnHandler spatialColumnHandler = null;
+            if (index.isSpatial()) {
+                spatialColumnHandler = new SpatialColumnHandler(index);
+                zValue = spatialColumnHandler.zValue(rowData);
+            }
+            writeIndexRow(session, index, rowData, hKey, indexRow, spatialColumnHandler, zValue, false);
             // Only bump row count if PK row is written (may not be written during an ALTER)
             // Bump row count *after* uniqueness checks. Avoids drift of TableStatus#getApproximateRowCount. See bug1112940.
             bumpCount |= index.isPrimaryKey();
@@ -844,7 +817,13 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         // Remove all indexes (before the group row is gone in-case listener needs it)
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
         for(TableIndex index : rowDef.getIndexes()) {
-            deleteIndexRow(session, index, rowData, hKey, indexRow, false);
+            long zValue = -1;
+            SpatialColumnHandler spatialColumnHandler = null;
+            if (index.isSpatial()) {
+                spatialColumnHandler = new SpatialColumnHandler(index);
+                zValue = spatialColumnHandler.zValue(rowData);
+            }
+            deleteIndexRow(session, index, rowData, hKey, indexRow, spatialColumnHandler, zValue, false);
         }
 
         // Remove the group row
@@ -968,7 +947,13 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                         clear(session, storeData);
                         table.rowDef().getTableStatus().rowDeleted(session);
                         for(TableIndex index : table.rowDef().getIndexes()) {
-                            deleteIndexRow(session, index, rowData, hKey, indexRowBuffer, false);
+                            long zValue = -1;
+                            SpatialColumnHandler spatialColumnHandler = null;
+                            if (index.isSpatial()) {
+                                spatialColumnHandler = new SpatialColumnHandler(index);
+                                zValue = spatialColumnHandler.zValue(rowData);
+                            }
+                            deleteIndexRow(session, index, rowData, hKey, indexRowBuffer, spatialColumnHandler, zValue, false);
                         }
                         if(!cascadeDelete) {
                             // Reinsert it, recomputing the hKey and maintaining indexes
@@ -1033,8 +1018,16 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         if(!fieldsEqual(oldRowDef, oldRow, newRowDef, newRow, nkeys, indexRowComposition)) {
             UPDATE_INDEX_TAP.in();
             try {
-                deleteIndexRow(session, index, oldRow, hKey, indexRowBuffer, false);
-                writeIndexRow(session, index, newRow, hKey, indexRowBuffer, false);
+                long oldZValue = -1;
+                long newZValue = -1;
+                SpatialColumnHandler spatialColumnHandler = null;
+                if (index.isSpatial()) {
+                    spatialColumnHandler = new SpatialColumnHandler(index);
+                    oldZValue = spatialColumnHandler.zValue(oldRow);
+                    newZValue = spatialColumnHandler.zValue(newRow);
+                }
+                deleteIndexRow(session, index, oldRow, hKey, indexRowBuffer, spatialColumnHandler, oldZValue, false);
+                writeIndexRow(session, index, newRow, hKey, indexRowBuffer, spatialColumnHandler, newZValue, false);
             } finally {
                 UPDATE_INDEX_TAP.out();
             }
