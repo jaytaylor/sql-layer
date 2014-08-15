@@ -1169,8 +1169,9 @@ public class JoinAndIndexPicker extends BaseRule
             }
             //TODO if joinPlan can be achieved via a hash join possibly inside previous if
             if (joinType.isInner() || (joinType.isSemi() && rightPlan.semiJoinEquivalent()) || joinType == JoinType.LEFT) {
+                Collection<JoinOperator> semiJoins = duplicateJoins(joins);
                 Plan loaderPlan = right.bestPlan(outsideJoins);
-                JoinPlan hashPlan2 = buildHashTableJoin(loaderPlan, joinPlan );
+                JoinPlan hashPlan2 = buildHashTableJoin(loaderPlan, joinPlan , semiJoins);
                 if(hashPlan2 != null)
                     planClass.consider(hashPlan2);
             }
@@ -1257,10 +1258,11 @@ public class JoinAndIndexPicker extends BaseRule
             else
                 maxSelectivity = BLOOM_FILTER_MAX_SELECTIVITY_DEFAULT;
             if (maxSelectivity <= 0.0) return null; // Feature turned off.
-            List<ExpressionNode> hashColumns = new ArrayList<>();
-            List<ExpressionNode> matchColumns = new ArrayList<>();
-            if (!buildExpressionColumns(joins, hashColumns, matchColumns, inputPlan, checkPlan))
+            List<List<ExpressionNode>> returning = buildExpressionColumns(joins, inputPlan, checkPlan);
+            if (returning == null)
                 return null;
+            List<ExpressionNode> hashColumns = returning.get(0);
+            List<ExpressionNode> matchColumns = returning.get(1);
             double selectivity = checkPlan.joinSelectivity();
             if (selectivity > maxSelectivity)
                 return null;
@@ -1285,41 +1287,43 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
 
-        public JoinPlan buildHashTableJoin(Plan loaderPlan, JoinPlan joinPlan) {
+        public JoinPlan buildHashTableJoin(Plan loaderPlan, JoinPlan joinPlan,
+                                           Collection<JoinOperator> joinOperators){
             Plan inputPlan = joinPlan.left;
             Plan checkPlan = joinPlan.right;
-            if (checkPlan.costEstimate.getRowCount() > 1)
-                return null;    // Join not selective.
-            Collection<JoinOperator> joins = joinPlan.joins;
-            List<ExpressionNode> hashColumns = new ArrayList<>();
-            List<ExpressionNode> matchColumns = new ArrayList<>();
-            if (!buildExpressionColumns(joins, hashColumns, matchColumns, inputPlan, checkPlan))
+            Collection<JoinOperator> joins = joinOperators;
+            List<List<ExpressionNode>> returning = buildExpressionColumns(joins, inputPlan, checkPlan);
+            if (returning == null)
                 return null;
+            List<ExpressionNode> hashColumns = returning.get(0);
+            List<ExpressionNode> matchColumns = returning.get(1);
             long limit = picker.queryGoal.getLimit();
             if (joinPlan.costEstimate.getRowCount() == limit) {
                 /** Possibly return null if the row count is greater than the possible row count**/
             }
             HashTable hashTable = new HashTable(loaderPlan.costEstimate.getRowCount(), 1);/**Does the hash table need these values*/
             CostEstimate costEstimate = picker.getCostEstimator()
-                    .costHashJoin(loaderPlan.costEstimate, inputPlan.costEstimate, 6.6);//TODO Selectivity
+                    .costHashJoin(loaderPlan.costEstimate, inputPlan.costEstimate, hashColumns.size());
             return new HashJoinPlan(loaderPlan, inputPlan, checkPlan,
                     JoinType.SEMI, JoinNode.Implementation.HASH_TABLE,
                     joins, costEstimate, hashTable, hashColumns, matchColumns);
         }
 
-        public boolean buildExpressionColumns(Collection<JoinOperator> joins, List<ExpressionNode> hashColumns,
-                                              List<ExpressionNode> matchColumns, Plan inputPlan, Plan checkPlan) {
+        public List<List<ExpressionNode>> buildExpressionColumns(Collection<JoinOperator> joins, Plan inputPlan, Plan checkPlan) {
+            List<ExpressionNode> matchColumns = new ArrayList<>();
+            List<ExpressionNode> hashColumns = new ArrayList<>();
+
             for (JoinOperator join : joins) {
                 if (join.getJoinConditions() != null) {
                     for (ConditionExpression cond : join.getJoinConditions()) {
-                        if (!(cond instanceof ComparisonCondition)) return false;
+                        if (!(cond instanceof ComparisonCondition)) return null;
                         ComparisonCondition ccond = (ComparisonCondition) cond;
-                        if (ccond.getOperation() != Comparison.EQ) return false;
+                        if (ccond.getOperation() != Comparison.EQ) return null;
                         ExpressionNode left = ccond.getLeft();
                         ExpressionNode right = ccond.getRight();
                         if (!((left instanceof ColumnExpression) &&
                                 (right instanceof ColumnExpression)))
-                            return false;
+                            return null;
                         if (inputPlan.containsColumn((ColumnExpression) left) &&
                                 checkPlan.containsColumn((ColumnExpression) right)) {
                             matchColumns.add(left);
@@ -1329,16 +1333,15 @@ public class JoinAndIndexPicker extends BaseRule
                             matchColumns.add(right);
                             hashColumns.add(left);
                         } else {
-                            return false;
+                            return null;
                         }
                     }
                 }
             }
-            //List<List<ExpressionNode>> returningExpressions = new ArrayList<>();
-            //returningExpressions.add(hashColumns);
-            //returningExpressions.add(matchColumns);
-            //return returningExpressions;
-            return true;
+            List<List<ExpressionNode>> returningExpressions = new ArrayList<>();
+            returningExpressions.add(hashColumns);
+            returningExpressions.add(matchColumns);
+            return returningExpressions;
         }
     }
     // Find top-level joins and note what query they come from; 
