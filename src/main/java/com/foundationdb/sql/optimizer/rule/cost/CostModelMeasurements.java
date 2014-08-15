@@ -52,8 +52,9 @@ public interface CostModelMeasurements
     final double BLOOM_FILTER_SCAN_PER_ROW = 0.39;
     final double BLOOM_FILTER_SCAN_SELECTIVITY_COEFFICIENT = 7.41;
     // From Select_HashTable
-    final double HASH_TABLE_LOAD_PER_ROW = 0.24;
-    final double HASH_TABLE_SCAN_PER_ROW = 0.39;
-    final double HASH_TABLE_SCAN_SELECTIVITY_COEFFICIENT = 7.41;
+    final double HASH_TABLE_LOAD_PER_ROW = .26 ;
+    final double HASH_TABLE_SCAN_PER_ROW =  .18;
+    final double HASH_TABLE_DIFF_PER_JOIN = .144;
+    final double HASH_TABLE_COLUMN_COUNT_OFFSET = .001;
 
 }
