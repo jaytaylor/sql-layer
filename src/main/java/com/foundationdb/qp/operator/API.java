@@ -30,7 +30,6 @@ import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.types.TAggregator;
 import com.foundationdb.server.types.TComparison;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.texpressions.TPreparedBoundField;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.texpressions.TPreparedField;
 
@@ -809,7 +808,6 @@ public class API
 
     // hashTableLookup_Default
     public static Operator hashTableLookup_Default(List<AkCollator> collators,
-
                                                    List<TPreparedExpression> outerComparisonFields,
                                                    int hashTableBindingPosition)
     {
