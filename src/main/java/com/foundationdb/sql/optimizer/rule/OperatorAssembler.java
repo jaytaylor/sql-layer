@@ -18,6 +18,7 @@
 package com.foundationdb.sql.optimizer.rule;
 
 import com.foundationdb.qp.row.ValuesRow;
+import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.sql.optimizer.*;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.ExpressionsSource.DistinctState;
@@ -1412,14 +1413,7 @@ public class OperatorAssembler extends BaseRule
             int pos = assignBindingPosition(bloomFilter);
             RowStream lstream = assembleStream(usingBloomFilter.getLoader());
             RowStream stream = assembleStream(usingBloomFilter.getInput());
-            List<AkCollator> collators = null;
-            if (usingBloomFilter.getLoader() instanceof IndexScan) {
-                collators = new ArrayList<>();
-                IndexScan indexScan = (IndexScan) usingBloomFilter.getLoader();
-                for (IndexColumn indexColumn : indexScan.getIndexColumns()) {
-                    collators.add(indexColumn.getColumn().getCollator());
-                }
-            }
+            List<AkCollator> collators = findCollators(usingBloomFilter.getLoader());
             stream.operator = API.using_BloomFilter(lstream.operator,
                                                     lstream.rowType,
                                                     bloomFilter.getEstimatedSize(),
