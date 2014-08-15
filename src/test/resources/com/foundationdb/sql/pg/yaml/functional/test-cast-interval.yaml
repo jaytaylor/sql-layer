@@ -1,4 +1,7 @@
 ---
+- Statement: select cast('-12-4' as interval year to month);
+- output: [["INTERVAL '-12-4'"]]
+---
 - Statement: select cast('-25:01:02.3456' as interval hour to second);
 - output: [["INTERVAL '-1 1:1:2.345600'"]]
 ...
