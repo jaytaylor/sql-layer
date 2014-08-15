@@ -904,6 +904,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return nrows;
     }
 
+    @SuppressWarnings("unchecked")
     private Columnar getTableById(PostgresServerSession server, String group) {
         AkibanInformationSchema ais = server.getAIS();
         int id = Integer.parseInt(group);

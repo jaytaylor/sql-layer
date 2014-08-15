@@ -280,10 +280,8 @@ public class API
      * tableType
      * @param indexType the index to scan
      * @return the scan operator
-     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
      */
-    @Deprecated
-    @SuppressWarnings("deprecation")
+    // deprecate for use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
     public static Operator indexScan_Default(IndexRowType indexType)
     {
         return indexScan_Default(indexType, false, IndexKeyRange.unbounded(indexType));
@@ -295,10 +293,9 @@ public class API
      * @param indexType the index to scan
      * @param reverse whether to scan in reverse order
      * @return the scan operator
-     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
      */
-    @Deprecated
-    @SuppressWarnings("deprecation")
+
+    // deprecate for use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
     public static Operator indexScan_Default(IndexRowType indexType, boolean reverse)
     {
         return indexScan_Default(indexType, reverse, IndexKeyRange.unbounded(indexType));
@@ -310,9 +307,8 @@ public class API
      * @param reverse whether to scan in reverse order
      * @param indexKeyRange the scan range
      * @return the scan operator
-     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
      */
-    @Deprecated
+    // deprecate for use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
     public static Operator indexScan_Default(IndexRowType indexType, boolean reverse, IndexKeyRange indexKeyRange)
     {
         if (indexKeyRange == null) {
@@ -328,9 +324,8 @@ public class API
      * @param indexKeyRange the scan range
      * @param innerJoinUntilRowType the table after which the scan should start using LEFT JOIN GI semantics.
      * @return the scan operator
-     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
      */
-    @Deprecated
+    // deprecate for use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
     public static Operator indexScan_Default(IndexRowType indexType,
                                              boolean reverse,
                                              IndexKeyRange indexKeyRange,
@@ -358,9 +353,8 @@ public class API
      * @param indexKeyRange the scan range
      * @param indexScanSelector
      * @return the scan operator
-     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
      */
-    @Deprecated
+    // deprecate for use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
     public static Operator indexScan_Default(IndexRowType indexType,
                                              boolean reverse,
                                              IndexKeyRange indexKeyRange,
@@ -815,30 +809,25 @@ public class API
 
     // hashTableLookup_Default
     public static Operator hashTableLookup_Default(List<AkCollator> collators,
-                                                   List<TPreparedBoundField> outerComparisonFields,
-                                                   boolean outerLeftJoin,
-                                                   int hashBindingPosition,
-                                                   int rowBindingPosition,
-                                                   RowType hashedRowType)
+
+                                                   List<TPreparedExpression> outerComparisonFields,
+                                                   int hashTableBindingPosition)
     {
         return new HashTableLookup_Default(
                 collators,
                 outerComparisonFields,
-                outerLeftJoin,
-                hashBindingPosition,
-                rowBindingPosition,
-                hashedRowType);
+                hashTableBindingPosition);
     }
 
     // using_HashTable
     public static Operator using_HashTable(Operator hashInput,
                                            RowType hashedRowType,
                                            List<TPreparedExpression> comparisonFields,
-                                           int filterBindingPosition,
+                                           int hashTableBindingPosition,
                                            Operator joinedInput,
                                            List<AkCollator> collators)
     {
-        return new Using_HashTable(hashInput, hashedRowType, comparisonFields, filterBindingPosition, joinedInput, collators);
+        return new Using_HashTable(hashInput, hashedRowType, comparisonFields, hashTableBindingPosition, joinedInput, collators);
     }
 
     // EmitBoundRow_Nested

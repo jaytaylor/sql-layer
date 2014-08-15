@@ -15,23 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.util.tap;
+package com.foundationdb.util;
 
-public interface TapMXBean
-{
-    public void enableAll();
+public class FileTestUtils {
 
-    public void disableAll();
-
-    public void enableInitial();
-
-    public void setEnabled(String regExPattern, boolean on);
-
-    public void reset(String regExPattern);
-
-    public void resetAll();
-
-    public String getReport();
-
-    public TapReport[] getReports(String regExPattern);
+    public static void printClickableFile(String filename, String suffix, int lineNumber) {
+        if (filename != null) {
+            System.err.println("  at " + filename.replace("src/test/resources/", "").
+                    replaceFirst("/([^/]+.)$", "($1." + suffix + ":" + lineNumber + ")").replaceAll("/", "."));
+            // for those running from maven or elsewhere
+            System.err.println("  aka: " + filename + "." + suffix + ":" + lineNumber);
+        } else {
+            System.err.println("NULL filename");
+        }
+    }
 }

@@ -120,6 +120,7 @@ public class AkResultSet extends TClassBase {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     protected DataTypeDescriptor dataTypeDescriptor(TInstance type) {
         List<Column> columns = (List<Column>) type.getMetaData();
         String[] columnNames = new String[columns.size()];

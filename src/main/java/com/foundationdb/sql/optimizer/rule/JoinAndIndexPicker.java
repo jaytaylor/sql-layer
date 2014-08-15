@@ -1080,7 +1080,7 @@ public class JoinAndIndexPicker extends BaseRule
         public PlanClass evaluateTable(long s, Joinable joinable) {
             // Seed with the right plan class to hold state / alternatives.
             if (joinable instanceof TableGroupJoinTree) {
-                GroupIndexGoal groupGoal = new GroupIndexGoal(picker.queryGoal, 
+                GroupIndexGoal groupGoal = new GroupIndexGoal(picker.queryGoal,
                                                               (TableGroupJoinTree)joinable, picker.getPlanContext());
                 return new GroupPlanClass(this, s, groupGoal);
             }
@@ -1099,8 +1099,8 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public PlanClass evaluateJoin(long leftBitset, PlanClass left, 
-                                      long rightBitset, PlanClass right, 
+        public PlanClass evaluateJoin(long leftBitset, PlanClass left,
+                                      long rightBitset, PlanClass right,
                                       long bitset, PlanClass existing,
                                       JoinType joinType, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
             JoinPlanClass planClass = (JoinPlanClass)existing;
@@ -1166,6 +1166,13 @@ public class JoinAndIndexPicker extends BaseRule
                 JoinPlan hashPlan = buildBloomFilterSemiJoin(loaderPlan, joinPlan, semiJoins);
                 if (hashPlan != null)
                     planClass.consider(hashPlan);
+            }
+            //TODO if joinPlan can be achieved via a hash join possibly inside previous if
+            if (joinType.isInner() || (joinType.isSemi() && rightPlan.semiJoinEquivalent()) || joinType == JoinType.LEFT) {
+                Plan loaderPlan = right.bestPlan(outsideJoins);
+                JoinPlan hashPlan2 = buildHashTableJoin(loaderPlan, joinPlan );
+                if(hashPlan2 != null)
+                    planClass.consider(hashPlan2);
             }
             cleanJoinConditions(joins, leftPlan, rightPlan);
             planClass.consider(joinPlan);
@@ -1252,36 +1259,8 @@ public class JoinAndIndexPicker extends BaseRule
             if (maxSelectivity <= 0.0) return null; // Feature turned off.
             List<ExpressionNode> hashColumns = new ArrayList<>();
             List<ExpressionNode> matchColumns = new ArrayList<>();
-            for (JoinOperator join : joins) {
-                if (join.getJoinConditions() != null) {
-                    for (ConditionExpression cond : join.getJoinConditions()) {
-                        if (!(cond instanceof ComparisonCondition)) return null;
-                        ComparisonCondition ccond = (ComparisonCondition)cond;
-                        if (ccond.getOperation() != Comparison.EQ) return null;
-                        ExpressionNode left = ccond.getLeft();
-                        ExpressionNode right = ccond.getRight();
-                        // TODO: Could allow somewhat more
-                        // complicated, provided still just use one
-                        // side's tables.
-                        if (!((left instanceof ColumnExpression) &&
-                                (right instanceof ColumnExpression)))
-                            return null;
-                        if (inputPlan.containsColumn((ColumnExpression)left) &&
-                                checkPlan.containsColumn((ColumnExpression)right)) {
-                            matchColumns.add(left);
-                            hashColumns.add(right);
-                        }
-                        else if (inputPlan.containsColumn((ColumnExpression)right) &&
-                                checkPlan.containsColumn((ColumnExpression)left)) {
-                            matchColumns.add(right);
-                            hashColumns.add(left);
-                        }
-                        else {
-                            return null;
-                        }
-                    }
-                }
-            }
+            if (!buildExpressionColumns(joins, hashColumns, matchColumns, inputPlan, checkPlan))
+                return null;
             double selectivity = checkPlan.joinSelectivity();
             if (selectivity > maxSelectivity)
                 return null;
@@ -1304,8 +1283,64 @@ public class JoinAndIndexPicker extends BaseRule
                                     JoinType.SEMI, JoinNode.Implementation.BLOOM_FILTER,
                                     joins, costEstimate, bloomFilter, hashColumns, matchColumns);
         }
+
+
+        public JoinPlan buildHashTableJoin(Plan loaderPlan, JoinPlan joinPlan) {
+            Plan inputPlan = joinPlan.left;
+            Plan checkPlan = joinPlan.right;
+            if (checkPlan.costEstimate.getRowCount() > 1)
+                return null;    // Join not selective.
+            Collection<JoinOperator> joins = joinPlan.joins;
+            List<ExpressionNode> hashColumns = new ArrayList<>();
+            List<ExpressionNode> matchColumns = new ArrayList<>();
+            if (!buildExpressionColumns(joins, hashColumns, matchColumns, inputPlan, checkPlan))
+                return null;
+            long limit = picker.queryGoal.getLimit();
+            if (joinPlan.costEstimate.getRowCount() == limit) {
+                /** Possibly return null if the row count is greater than the possible row count**/
+            }
+            HashTable hashTable = new HashTable(loaderPlan.costEstimate.getRowCount(), 1);/**Does the hash table need these values*/
+            CostEstimate costEstimate = picker.getCostEstimator()
+                    .costHashJoin(loaderPlan.costEstimate, inputPlan.costEstimate, 6.6);//TODO Selectivity
+            return new HashJoinPlan(loaderPlan, inputPlan, checkPlan,
+                    JoinType.SEMI, JoinNode.Implementation.HASH_TABLE,
+                    joins, costEstimate, hashTable, hashColumns, matchColumns);
+        }
+
+        public boolean buildExpressionColumns(Collection<JoinOperator> joins, List<ExpressionNode> hashColumns,
+                                              List<ExpressionNode> matchColumns, Plan inputPlan, Plan checkPlan) {
+            for (JoinOperator join : joins) {
+                if (join.getJoinConditions() != null) {
+                    for (ConditionExpression cond : join.getJoinConditions()) {
+                        if (!(cond instanceof ComparisonCondition)) return false;
+                        ComparisonCondition ccond = (ComparisonCondition) cond;
+                        if (ccond.getOperation() != Comparison.EQ) return false;
+                        ExpressionNode left = ccond.getLeft();
+                        ExpressionNode right = ccond.getRight();
+                        if (!((left instanceof ColumnExpression) &&
+                                (right instanceof ColumnExpression)))
+                            return false;
+                        if (inputPlan.containsColumn((ColumnExpression) left) &&
+                                checkPlan.containsColumn((ColumnExpression) right)) {
+                            matchColumns.add(left);
+                            hashColumns.add(right);
+                        } else if (inputPlan.containsColumn((ColumnExpression) right) &&
+                                checkPlan.containsColumn((ColumnExpression) left)) {
+                            matchColumns.add(right);
+                            hashColumns.add(left);
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+            }
+            //List<List<ExpressionNode>> returningExpressions = new ArrayList<>();
+            //returningExpressions.add(hashColumns);
+            //returningExpressions.add(matchColumns);
+            //return returningExpressions;
+            return true;
+        }
     }
-    
     // Find top-level joins and note what query they come from; 
     // Top-level queries and those used in expressions are returned directly.
     // Derived tables are deferred, since they need to be planned in

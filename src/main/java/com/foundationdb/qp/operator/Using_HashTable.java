@@ -19,14 +19,13 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.util.KeyWrapper;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.util.ArgumentValidation;
+import com.foundationdb.util.HashTable;
 import com.foundationdb.util.tap.InOutTap;
-import com.google.common.collect.ArrayListMultimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -145,7 +144,7 @@ class Using_HashTable extends Operator
         {
             TAP_OPEN.in();
             try {
-                ArrayListMultimap<KeyWrapper, Row> hashTable = buildHashTable();
+                HashTable hashTable = buildHashTable();
                 bindings.setHashTable(tableBindingPosition, hashTable);
                 input.open();
             } finally {
@@ -193,17 +192,16 @@ class Using_HashTable extends Operator
 
 
 
-        private ArrayListMultimap<KeyWrapper, Row>  buildHashTable() {
+        private HashTable  buildHashTable() {
             QueryBindingsCursor bindingsCursor = new SingletonQueryBindingsCursor(bindings);
             Cursor loadCursor = hashInput.cursor(context, bindingsCursor);
             loadCursor.openTopLevel();
-            ArrayListMultimap<KeyWrapper, Row> hashTable = ArrayListMultimap.create();
             Row row;
-            KeyWrapper keyWrapper;
+            HashTable hashTable= new HashTable();
+            hashTable.setRowType(hashedRowType);
             while ((row = loadCursor.next()) != null) {
                 assert(row.rowType().equals(hashedRowType));
-                keyWrapper = new KeyWrapper(row, evaluatableComparisonFields, collators);
-                hashTable.put(keyWrapper, row);
+                hashTable.put(row, evaluatableComparisonFields, collators, null);
             }
             loadCursor.destroy();
             return hashTable;

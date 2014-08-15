@@ -15,17 +15,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.util;
+package com.foundationdb.sql.optimizer.plan;
 
-import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
+/** A Bloom filter. */
+public class HashTable extends BaseHashTable
+{
+    private long estimatedSize;
+    private double selectivity;
 
-public final class EqualityTest {
-    @Test
-    public void equalArrays() {
-        int[] intArrayOne = new int[] { 1, 2, 5 }; // 3, sir!
-        int[] intArrayTwo = new int[] { 1, 2, 5 };
-        assertTrue("int[] should have been equal", Equality.areEqual(intArrayOne, intArrayTwo));
+    public HashTable(long estimatedSize, double selectivity) {
+        this.estimatedSize = estimatedSize;
+        this.selectivity = selectivity;
     }
+
+    public long getEstimatedSize() {
+        return estimatedSize;
+    }
+    public double getSelectivity() {
+        return selectivity;
+    }
+
 }

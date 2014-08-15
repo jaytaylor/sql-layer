@@ -63,6 +63,7 @@ public class NestedLoopMapper extends BaseRule
                 switch (j.getImplementation()) {
                 case NESTED_LOOPS:
                 case BLOOM_FILTER:
+                case HASH_TABLE:
                     result.add(j);
                 }
             }
@@ -113,6 +114,23 @@ public class NestedLoopMapper extends BaseRule
                     map = new UsingBloomFilter(bf, loader, map);
                 }
                 break;
+            case HASH_TABLE:
+                {
+                    HashJoinNode hjoin = (HashJoinNode)join;
+                    HashTable ht = (HashTable)hjoin.getHashTable();
+                    map = new HashTableLookup(ht,
+                                              hjoin.getMatchColumns());
+                    PlanNode pr = new Project(map,
+                                              hjoin.getHashColumns());
+                    PlanNode mnl = new MapJoin(join.getJoinType(),
+                                              hjoin.getInput(),
+                                              pr);
+                    map = new UsingHashTable(ht,
+                                             mnl,
+                                             hjoin.getInput(),
+                                             hjoin.getHashColumns());
+                }
+                break;
             default:
                 assert false : join;
                 map = join;
@@ -129,7 +147,7 @@ public class NestedLoopMapper extends BaseRule
             }
             output = output.getOutput();
         }
-        throw new CorruptedPlanException();
+        throw new CorruptedPlanException("PlanNode did not have BaseQuery");
     }
 
 

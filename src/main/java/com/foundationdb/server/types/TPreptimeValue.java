@@ -23,7 +23,8 @@ import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
-import com.foundationdb.util.Equality;
+
+import java.util.Objects;
 
 public final class TPreptimeValue {
 
@@ -82,7 +83,7 @@ public final class TPreptimeValue {
 
         TPreptimeValue that = (TPreptimeValue) o;
         
-        if (!Equality.areEqual(type, that.type))
+        if (!Objects.deepEquals(type, that.type))
             return false;
         if (value == null)
             return that.value == null;

@@ -169,7 +169,7 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public <HKEY extends HKey> HKEY newHKey(com.foundationdb.ais.model.HKey hKeyMetadata)
+        public HKey newHKey(com.foundationdb.ais.model.HKey hKeyMetadata)
         {
             throw new UnsupportedOperationException();
         }

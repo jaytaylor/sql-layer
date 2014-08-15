@@ -1,0 +1,7 @@
+PhysicalSelect@4203529d[sku]
+  Project_Default(Field(1))
+    Union_Ordered(all, skip 1, compare 4)
+      Union_Ordered(all, skip 1, compare 4)
+        IndexScan_Default(Index(test.customers.cname_and_sku), customers.name = 'Adams', items.sku ASC, customers.cid, orders.oid, items.iid)
+        IndexScan_Default(Index(test.customers.cname_and_sku), customers.name = 'Jones', items.sku ASC, customers.cid, orders.oid, items.iid)
+      IndexScan_Default(Index(test.customers.cname_and_sku), customers.name = 'Smith', items.sku ASC, customers.cid, orders.oid, items.iid)

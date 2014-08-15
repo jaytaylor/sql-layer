@@ -24,8 +24,8 @@ import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
-import static junit.framework.Assert.fail;
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.junit.Assert.assertEquals;
 
 public class CreateRowIT extends ITBase
 {

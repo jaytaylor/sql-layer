@@ -21,9 +21,12 @@
 
 ---
 - Statement: SELECT CONCAT(x, ?, y) FROM t
-- params: [[cat], [dog]]
-- output: [[null], [null], [null], [a1cat1], [a2cat2],
-           [null], [null], [null], [a1dog1], [a2dog2]]
+- params: [[cat]]
+- output: [[null], [null], [null], [a1cat1], [a2cat2]]
+---
+- Statement: SELECT CONCAT(x, ?, y) FROM t
+- params: [[dog]]
+- output: [[null], [null], [null], [a1dog1], [a2dog2]]
 ---
 - Statement: explain VERBOSE select CONCAT( CAST(? AS CHAR(1)), 'abc%' )
 - output: [['Project_Default(CAST($1 AS VARCHAR(1)) || ''abc%'')'],

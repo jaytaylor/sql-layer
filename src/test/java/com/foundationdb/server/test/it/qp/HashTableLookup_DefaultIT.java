@@ -103,18 +103,13 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
     /** Test argument HashJoinLookup_Default */
 
     @Test(expected = IllegalArgumentException.class)
-    public void testHashJoinbindingsSame() {
-        hashTableLookup_Default(null, emptyBoundExpressionList, false, ROW_BINDING_POSITION, ROW_BINDING_POSITION, customerRowType);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
     public void testHashJoinEmptyComparisonFields() {
-        hashTableLookup_Default(null, emptyBoundExpressionList, false, ROW_BINDING_POSITION, TABLE_BINDING_POSITION, customerRowType);
+        hashTableLookup_Default(null, emptyExpressionList,TABLE_BINDING_POSITION);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testHashJoinNullComparisonFields() {
-        hashTableLookup_Default(null, null, false, ROW_BINDING_POSITION, TABLE_BINDING_POSITION, customerRowType);
+        hashTableLookup_Default(null, null,  TABLE_BINDING_POSITION);
     }
 
     /** Test arguments using_HashTable  */
@@ -150,7 +145,7 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
     public void testSingleColumnJoin() {
         int orderFieldsToCompare[] = {1};
         int customerFieldsToCompare[] = {0};
-        Operator plan = hashJoinPlan(orderRowType, customerRowType,  orderFieldsToCompare,customerFieldsToCompare, null, false);
+        Operator plan = hashJoinPlan(orderRowType, customerRowType,  orderFieldsToCompare,customerFieldsToCompare, null);
         Row[] expected = new Row[]{
                 row(projectRowType, 100L, 1L, "ori","northbridge"),
                 row(projectRowType, 101L, 1L, "ori", "northbridge"),
@@ -167,7 +162,7 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
     public void testMultiColumnNestedJoin() {
         int orderFieldsToCompare[] = {1};
         int customerFieldsToCompare[] = {0};
-        Operator firstPlan = hashJoinPlan( orderRowType,customerRowType,  orderFieldsToCompare,customerFieldsToCompare, null, false);
+        Operator firstPlan = hashJoinPlan( orderRowType,customerRowType,  orderFieldsToCompare,customerFieldsToCompare, null);
         int secondHashFieldsToCompare[] = {1,2};
         List<AkCollator> secondCollators = Arrays.asList(null, ciCollator);
         Operator plan = hashJoinPlan(projectRowType,
@@ -179,9 +174,8 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
                                      ),
                                      secondHashFieldsToCompare,
                                      secondHashFieldsToCompare,
-                                     secondCollators,
-                                     false
-                        );
+                                     secondCollators
+                                     );
         Row[] expected = new Row[]{
                 row(projectRowType, 100L, 1L, "ori", "northbridge", 100L),
                 row(projectRowType, 100L, 1L, "ori", "northbridge", 101L),
@@ -209,8 +203,7 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
                                          customerRowType,
                                          addressFieldsToCompare,
                                          customerFieldsToCompare,
-                                         collators,
-                                         false);
+                                         collators);
         Row[] expected = new Row[]{
                 row(fullAddressRowType, 1000L, 1L, "111 1000 st", "northbridge"),
                 row(fullAddressRowType, 1001L, 1L, "111 1001 st", "northbridge"),
@@ -227,7 +220,7 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
     public void testAllMatch() {
         int orderFieldsToCompare[] = {0,1,2};
         List<AkCollator> collators = Arrays.asList(null,null,ciCollator);
-        Operator plan = hashJoinPlan(orderRowType, orderRowType,  orderFieldsToCompare,orderFieldsToCompare, collators, false);
+        Operator plan = hashJoinPlan(orderRowType, orderRowType,  orderFieldsToCompare,orderFieldsToCompare, collators);
         Row[] expected = new Row[]{
                 row(projectRowType, 100L, 1L, "ori"),
                 row(projectRowType, 101L, 1L, "ori"),
@@ -243,7 +236,7 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
     @Test
     public void testNoMatch() {
         int orderFieldsToCompare[] = {0};
-        Operator plan = hashJoinPlan(orderRowType, customerRowType,  orderFieldsToCompare,orderFieldsToCompare, null, false);
+        Operator plan = hashJoinPlan(orderRowType, customerRowType,  orderFieldsToCompare,orderFieldsToCompare, null);
         Row[] expected = new Row[]{
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
@@ -253,7 +246,7 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
     public void testLeftOuterJoin() {
         int customerFieldsToCompare[] = {0};
         int orderFieldsToCompare[] = {1};
-        Operator plan = hashJoinPlan(customerRowType, orderRowType,  customerFieldsToCompare,orderFieldsToCompare, null, true);
+        Operator plan = hashJoinPlan(customerRowType, orderRowType,  customerFieldsToCompare,orderFieldsToCompare, null);
         Row[] expected = new Row[]{
                 row(projectRowType, 1L, "northbridge", 100L, "ori"),
                 row(projectRowType, 1L, "northbridge", 101L, "ori"),
@@ -262,8 +255,9 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
                 row(projectRowType, 3L, "matrix", 300L, "tom"),
                 row(projectRowType, 4L, "atlas",  400L, "jack"),
                 row(projectRowType, 4L, "atlas",  401L, "jack"),
-                row(customerRowType, 5L, "highland"),
-                row(customerRowType, 6L, "flybridge")
+                //row(customerRowType, 5L, "highland"),
+                //row(customerRowType, 6L, "flybridge")
+                //Left outer joins are taken care of in optimizer and not by these immedietly operators
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
@@ -271,7 +265,7 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
     @Test
     public void testNullColumns() {
         int FieldsToCompare[] = {1};
-        Operator plan = hashJoinPlan(itemRowType, itemRowType,  FieldsToCompare,FieldsToCompare, null, false);
+        Operator plan = hashJoinPlan(itemRowType, itemRowType,  FieldsToCompare,FieldsToCompare, null);
         Row[] expected = new Row[]{
                 row(projectRowType, 111L, null, 111L),
                 row(projectRowType, 111L, null, 112L),
@@ -303,8 +297,7 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
                                    RowType innerRowType,
                                    int outerJoinFields[],
                                    int innerJoinFields[],
-                                   List<AkCollator> collators,
-                                   boolean leftOuterJoin) {
+                                   List<AkCollator> collators) {
         return hashJoinPlan(outerRowType,
                      innerRowType,
                      filter_Default(
@@ -313,11 +306,11 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
                      ),
                      filter_Default(
                             groupScan_Default(innerRowType.table().getGroup()),
-                            Collections.singleton(innerRowType)),
+                            Collections.singleton(innerRowType)
+                     ),
                      outerJoinFields,
                      innerJoinFields,
-                     collators,
-                     leftOuterJoin
+                     collators
         );
     }
 
@@ -327,8 +320,7 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
                                    Operator innerStream,
                                    int outerJoinFields[],
                                    int innerJoinFields[],
-                                   List<AkCollator> collators,
-                                   boolean leftOuterJoin) {
+                                   List<AkCollator> collators) {
 
         List<TPreparedExpression> expressions = new ArrayList<>();
         for( int i = 0; i < outerRowType.nFields(); i++){
@@ -342,23 +334,21 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
             }
         }
 
-        List<TPreparedBoundField> outerJoinExpressions = new ArrayList<>();
-        for(int i : outerJoinFields){
-            outerJoinExpressions.add(new TPreparedBoundField(outerRowType, ROW_BINDING_POSITION, i));
+
+        List<TPreparedExpression> outerExpressions = new ArrayList<>();
+        for (int i : outerJoinFields){
+            outerExpressions.add(new TPreparedBoundField(outerRowType, ROW_BINDING_POSITION, i));
         }
-        List<TPreparedExpression> innerJoinExpressions = new ArrayList<>();
+        List<TPreparedExpression> innerExpressions = new ArrayList<>();
         for(int i : innerJoinFields){
-            innerJoinExpressions.add(new TPreparedField(innerRowType.typeAt(i), i));
+            innerExpressions.add(new TPreparedField(innerRowType.typeAt(i), i));
         }
 
         Operator project = project_Default(
                 hashTableLookup_Default(
                         collators,
-                        outerJoinExpressions,
-                        leftOuterJoin,
-                        TABLE_BINDING_POSITION,
-                        ROW_BINDING_POSITION,
-                        innerRowType
+                        outerExpressions,
+                        TABLE_BINDING_POSITION
                 ),
                 innerRowType,
                 expressions
@@ -369,7 +359,7 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
         return using_HashTable(
                 innerStream,
                 innerRowType,
-                innerJoinExpressions,
+                innerExpressions,
                 TABLE_BINDING_POSITION++,
                 map_NestedLoops(
                         outerStream,

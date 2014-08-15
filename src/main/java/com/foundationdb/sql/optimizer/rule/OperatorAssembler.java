@@ -18,6 +18,7 @@
 package com.foundationdb.sql.optimizer.rule;
 
 import com.foundationdb.qp.row.ValuesRow;
+import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.sql.optimizer.*;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.ExpressionsSource.DistinctState;
@@ -457,6 +458,10 @@ public class OperatorAssembler extends BaseRule
                 return assembleUsingBloomFilter((UsingBloomFilter) node);
             else if (node instanceof BloomFilterFilter)
                 return assembleBloomFilterFilter((BloomFilterFilter) node);
+            else if (node instanceof UsingHashTable)
+                return assembleUsingHashTable((UsingHashTable)node);
+            else if (node instanceof HashTableLookup)
+                return assembleHashTableLookup((HashTableLookup)node);
             else if (node instanceof FullTextScan)
                 return assembleFullTextScan((FullTextScan) node);
             else if (node instanceof InsertStatement) 
@@ -1452,6 +1457,48 @@ public class OperatorAssembler extends BaseRule
                                                      rulesContext.getPipelineConfiguration().isSelectBloomFilterEnabled(),
                                                      nestedBindingsDepth);
             nestedBindingsDepth--;
+            return stream;
+        }
+
+        protected RowStream assembleUsingHashTable( UsingHashTable usingHashTable) {
+            HashTable hashTable = usingHashTable.getHashTable();
+            int pos = assignBindingPosition(hashTable);
+            RowStream lstream = assembleStream(usingHashTable.getLoader());
+            RowStream stream = assembleStream(usingHashTable.getInput());
+            List<TPreparedExpression> tFields = assembleExpressions(usingHashTable.getLookupExpressions(),
+                    stream.fieldOffsets);
+            List<AkCollator> collators = new ArrayList<>();
+            RowType rt = lstream.rowType;
+            for(int i = 0; i < rt.nFields(); i++){
+                if(TInstance.tClass(rt.typeAt(i)) instanceof TString){
+                    collators.add(TString.getCollator(rt.typeAt(i)));
+                }
+            }
+            if(collators.isEmpty())
+                collators = null;
+            stream.operator = API.using_HashTable(lstream.operator,
+                    lstream.rowType,
+                    tFields,
+                    pos,
+                    stream.operator,
+                    collators);
+            return stream;
+        }
+
+        protected RowStream assembleHashTableLookup(HashTableLookup hashTableLookup) {
+            HashTable hashTable = hashTableLookup.getHashTable();
+            int tablePos = getBindingPosition(hashTable);
+            RowStream stream = new RowStream();
+            List<TPreparedExpression> tFields = assembleExpressions(hashTableLookup.getLookupExpressions(),
+                    stream.fieldOffsets);
+            List<AkCollator> collators = new ArrayList<>();
+            for (ExpressionNode expressionNode : hashTableLookup.getLookupExpressions()) {
+                collators.add(expressionNode.getCollator());
+            }
+            stream.operator = API.hashTableLookup_Default(
+                    collators,
+                    tFields,
+                    tablePos);
             return stream;
         }
 

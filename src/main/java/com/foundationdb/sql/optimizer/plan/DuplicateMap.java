@@ -30,6 +30,7 @@ public class DuplicateMap
         trees = new HashMap<>();
     }
 
+    @SuppressWarnings("unchecked")
     public <T extends Duplicatable> T get(T duplicatable) {
         return (T)map.get(duplicatable);
     }

@@ -146,6 +146,13 @@ public abstract class CostModel
             inputRows * (BLOOM_FILTER_SCAN_PER_ROW + selectivity * BLOOM_FILTER_SCAN_SELECTIVITY_COEFFICIENT);
     }
 
+    public double selectWithHashTable(int hashedRows, int inputRows, double selectivity)
+    {
+        return
+                hashedRows * HASH_TABLE_LOAD_PER_ROW +
+                        inputRows * (HASH_TABLE_SCAN_PER_ROW + selectivity * HASH_TABLE_SCAN_SELECTIVITY_COEFFICIENT);
+    }
+
     private double hKeyBoundGroupScanSingleRow(TableRowType rootTableRowType)
     {
         TreeStatistics treeStatistics = treeStatistics(rootTableRowType);

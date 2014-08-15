@@ -31,7 +31,7 @@ class InstanceFinderBuilder implements InstanceFinder {
         return (Collection<? extends T>) resultWild;
     }
 
-    public <T> void put(Class<T> cls, T... objects) {
+    public <T> void put(Class<T> cls, Object... objects) {
         for (Object obj : objects) {
             instances.put(cls, cls.cast(obj));
         }

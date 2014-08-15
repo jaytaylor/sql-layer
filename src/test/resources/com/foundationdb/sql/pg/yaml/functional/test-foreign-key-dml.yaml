@@ -29,7 +29,7 @@
 ---
 - Statement: INSERT INTO c VALUES(20, 400),(30,NULL)
 ---
-- Statement: SELECT * FROM c ORDER BY id
+- Statement: SELECT * FROM c
 - output: [[10, 100],[20,400],[30,null],[40,200]]
 ---
 - Statement: ALTER TABLE c DROP FOREIGN KEY
@@ -38,7 +38,7 @@
 ---
 - Statement: DELETE FROM p WHERE id = 1
 ---
-- Statement: SELECT * FROM c ORDER BY id
+- Statement: SELECT * FROM c
 - output: [[10, null],[20,400],[30,null],[40,200]]
 ---
 - Statement: ALTER TABLE c DROP FOREIGN KEY
@@ -47,12 +47,12 @@
 ---
 - Statement: DELETE FROM p WHERE id = 2
 ---
-- Statement: SELECT * FROM c ORDER BY id
+- Statement: SELECT * FROM c
 - output: [[10, null],[20,400],[30,null]]
 ---
 - Statement: TRUNCATE TABLE p
 ---
-- Statement: SELECT * FROM c ORDER BY id
+- Statement: SELECT * FROM c
 - output: [[10, null],[30,null]]
 ---
 - Statement: DROP TABLE c
@@ -65,19 +65,19 @@
 ---
 - Statement: INSERT INTO c(id) VALUES(10)
 ---
-- Statement: SELECT * FROM c ORDER BY id
+- Statement: SELECT * FROM c
 - output: [[10, 100],[20,100],[30,300],[40,400]]
 ---
 - Statement: DELETE FROM p WHERE id = 3
 ---
-- Statement: SELECT * FROM c ORDER BY id
+- Statement: SELECT * FROM c
 - output: [[10, 100],[20,100],[30,100],[40,400]]
 ---
 - Statement: DELETE FROM c WHERE m = 100
 ---
 - Statement: DELETE FROM p WHERE id = 1
 ---
-- Statement: SELECT * FROM c ORDER BY id
+- Statement: SELECT * FROM c
 - output: [[40,400]]
 ---
 - Statement: DELETE FROM p WHERE id = 4
@@ -95,7 +95,7 @@
 ---
 - Statement: UPDATE p SET n = 301 WHERE id = 3
 ---
-- Statement: SELECT * FROM c ORDER BY id
+- Statement: SELECT * FROM c
 - output: [[10, 100],[30,null],[40,400]]
 ---
 - Statement: ALTER TABLE c DROP FOREIGN KEY
@@ -104,7 +104,7 @@
 ---
 - Statement: UPDATE p SET n = 401 WHERE id = 4
 ---
-- Statement: SELECT * FROM c ORDER BY id
+- Statement: SELECT * FROM c
 - output: [[10, 100],[30,null],[40,401]]
 ---
 - DropTable: c
@@ -150,10 +150,10 @@
 ---
 - Statement: UPDATE a SET aid=100 WHERE aid=1;
 ---
-- Statement: SELECT * FROM c1 ORDER BY c1id
+- Statement: SELECT * FROM c1
 - output: [[10, 100]]
 ---
-- Statement: SELECT * FROM c2 ORDER BY c2id
+- Statement: SELECT * FROM c2
 - output: [[20, null]]
 ---
 - DropTable: c2

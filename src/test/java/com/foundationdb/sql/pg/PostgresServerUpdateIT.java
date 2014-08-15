@@ -26,7 +26,7 @@ import com.foundationdb.junit.Parameterization;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import static junit.framework.Assert.*;
+import static org.junit.Assert.*;
 
 import java.sql.PreparedStatement;
 

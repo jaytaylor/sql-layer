@@ -59,7 +59,7 @@
 - output: [[2],[3]]
 ---
 - Statement: Select * from t1 order by n1 DESC
-- output: [[3,3],[2,2],[1,1]]
+- output_already_ordered: [[3,3],[2,2],[1,1]]
 ---
 - CreateTable: t2(n1 tinyint, n2 bigint)
 ---

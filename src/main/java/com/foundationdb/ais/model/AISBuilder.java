@@ -181,7 +181,7 @@ public class AISBuilder {
         finishStorageDescription(index);
     }
 
-    /** @deprecated */
+    // deprecate?
     public void groupIndex(String groupName, String indexName, Boolean unique, Index.JoinType joinType)
     {
         groupIndex(findFullGroupName(groupName), indexName, unique, joinType);
@@ -215,7 +215,7 @@ public class AISBuilder {
         IndexColumn.create(index, column, position, ascending, indexedLength);
     }
 
-    /** @deprecated **/
+    // deprecate?
     public void groupIndexColumn(String groupName, String indexName, String schemaName, String tableName,
                                  String columnName, Integer position) {
         groupIndexColumn(findFullGroupName(groupName), indexName, schemaName, tableName, columnName, position);
@@ -452,7 +452,7 @@ public class AISBuilder {
         finishStorageDescription(group, copyStorage);
     }
 
-    /** @deprecated **/
+    // deprecate?
     public void deleteGroup(String groupName) {
         deleteGroup(findFullGroupName(groupName));
     }
@@ -474,7 +474,7 @@ public class AISBuilder {
         }
     }
 
-    /** @deprecated **/
+    // deprecate?
     public void addTableToGroup(String groupName, String schemaName,
             String tableName) {
         addTableToGroup(findFullGroupName(groupName), schemaName, tableName);
@@ -501,7 +501,7 @@ public class AISBuilder {
     // DOES NOT WORK for addJoinToGroup,
     // because there could be multiple candidate joins between a pair of tables.
 
-    /** @deprecated  **/
+    // deprecate?
     public void addJoinToGroup(String groupName, String joinName, Integer weight) {
         addJoinToGroup(findFullGroupName(groupName), joinName, weight);
     }
@@ -564,7 +564,7 @@ public class AISBuilder {
         setTablesGroup(table, null);
     }
 
-    /** @deprecated **/
+    // deprecate?
     public void removeJoinFromGroup(String groupName, String joinName) {
         removeJoinFromGroup(findFullGroupName(groupName), joinName);
     }
@@ -607,7 +607,7 @@ public class AISBuilder {
         }
     }
 
-    /** @deprecated **/
+    // deprecate?
     public void moveTreeToGroup(String schemaName, String tableName,
             String groupName, String joinName) {
         moveTreeToGroup(schemaName, tableName, findFullGroupName(groupName), joinName);

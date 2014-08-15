@@ -21,7 +21,7 @@ import java.sql.Types;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.postgresql.PGStatement;
+import com.foundationdb.sql.jdbc.PGStatement;
 
 import com.foundationdb.ais.model.TableName;
 
@@ -54,7 +54,7 @@ public class PostgresServerStatementCachePreparedStatementIT extends
         pstmt.executeUpdate();
 
         // valid: setObject() with partial type info and a typed "null object instance"
-        org.postgresql.util.PGobject dummy = new org.postgresql.util.PGobject();
+        com.foundationdb.sql.jdbc.util.PGobject dummy = new com.foundationdb.sql.jdbc.util.PGobject();
         dummy.setType("text");
         dummy.setValue(null);
         pstmt.setObject(1, dummy, Types.OTHER);

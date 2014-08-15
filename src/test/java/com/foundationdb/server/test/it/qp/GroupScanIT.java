@@ -30,7 +30,7 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import static com.foundationdb.qp.operator.API.*;
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
 /*

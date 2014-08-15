@@ -31,7 +31,7 @@ import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.WrappingByteSource;
 import com.persistit.Key;
 import com.persistit.Value;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.math.BigDecimal;
@@ -101,7 +101,7 @@ public class KeyToObjectIT extends ITBase {
                         throw new RuntimeException("with type" + column.getTypeDescription(), e);
                     }
 
-                    // Work around for dropping of 0 value sigfigs from key.decode()
+                    // Work around for dropping of 0 value sigfigs from key.decode()    
                     int compareValue = 1;
                     if(objFromRow instanceof BigDecimal && lastConvertedValue instanceof BigDecimal) {
                         compareValue = ((BigDecimal)objFromRow).compareTo(((BigDecimal)lastConvertedValue));

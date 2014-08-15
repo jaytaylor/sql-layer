@@ -34,6 +34,7 @@ import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.server.store.PersistitStore;
@@ -95,7 +96,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
     }
 
     @Override
-    public HKey newHKey(com.foundationdb.ais.model.HKey hKeyMetadata)
+    public PersistitHKey newHKey(com.foundationdb.ais.model.HKey hKeyMetadata)
     {
         return new PersistitHKey(store.createKey(), hKeyMetadata);
     }
