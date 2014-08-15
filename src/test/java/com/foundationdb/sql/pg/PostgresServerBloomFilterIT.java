@@ -90,13 +90,15 @@ public class PostgresServerBloomFilterIT extends PostgresServerITBase{
     @Test
     public void test() throws Exception {
         Statement statement  = connection.createStatement();
-        ResultSet rs = statement.executeQuery("EXPLAIN " + SQL);
+        ResultSet planRS = statement.executeQuery("EXPLAIN " + SQL);
         boolean found = false;
-        while (!found && rs.next()) {
-            if (((String) rs.getObject(1)).contains("Using_BloomFilter"))
+        while (!found && planRS.next()) {
+            if (((String) planRS.getObject(1)).contains("Using_BloomFilter"))
                 found = true;
         }
-        statement.execute( SQL);
-        assert(found == true);
+        ResultSet outputRS = statement.executeQuery( SQL);
+        outputRS.next();
+        assert(outputRS.getObject(1).equals("chair"));
+        assert(!outputRS.next());
     }
 }
