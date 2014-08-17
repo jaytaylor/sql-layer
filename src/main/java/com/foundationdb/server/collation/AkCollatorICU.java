@@ -32,8 +32,6 @@ public class AkCollatorICU extends AkCollator {
         }
     };
 
-    private final boolean useKeyCoder;
-
     /**
      * Create an AkCollator which may be used in across multiple threads. Each
      * instance of AkCollator has a ThreadLocal which optionally contains a
@@ -45,9 +43,9 @@ public class AkCollatorICU extends AkCollator {
      *            Formatted string containing Locale name, and collation string
      *            strength.
      */
-    AkCollatorICU(final String name, final String scheme, final int collationId, final boolean useKeyCoder) {
-        super(name, scheme, collationId);
-        this.useKeyCoder = useKeyCoder;
+    AkCollatorICU(final String scheme, final int collationId) {
+        super(scheme, collationId);
+        collator.get(); // force the collator to initialize (to test scheme)
     }
 
     @Override
@@ -59,14 +57,11 @@ public class AkCollatorICU extends AkCollator {
     public void append(Key key, String value) {
         if (value == null) {
             key.append(null);
-        } else if (useKeyCoder) {
-            key.append(new CString(value, getCollationId()));
         } else {
             key.append(encodeSortKeyBytes(value));
         }
     }
 
-   
     @Override
     public String decode(Key key) {
         throw new UnsupportedOperationException("Unable to decode a collator sort key");

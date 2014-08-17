@@ -26,8 +26,6 @@ import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.*;
 import com.foundationdb.server.AccumulatorAdapter.AccumInfo;
-import com.foundationdb.server.collation.CString;
-import com.foundationdb.server.collation.CStringKeyCoder;
 import com.foundationdb.server.error.*;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.rowdata.*;

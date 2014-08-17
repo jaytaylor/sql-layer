@@ -21,7 +21,7 @@ import com.persistit.Key;
 public class AkCollatorBinary extends AkCollator {
 
     public AkCollatorBinary() {
-        super(AkCollatorFactory.UCS_BINARY, AkCollatorFactory.UCS_BINARY, 0);
+        super(AkCollatorFactory.UCS_BINARY, 0);
     }
     
     @Override
@@ -65,7 +65,7 @@ public class AkCollatorBinary extends AkCollator {
 
     @Override
     public String toString() {
-        return getName();
+        return getScheme();
     }
 
     @Override

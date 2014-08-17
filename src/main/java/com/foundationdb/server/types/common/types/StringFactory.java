@@ -75,7 +75,7 @@ public class StringFactory
     }
 
     public static String collationIdToName(int id) {
-        return (id == NULL_COLLATION_ID) ? null : AkCollatorFactory.getAkCollator(id).getName();
+        return (id == NULL_COLLATION_ID) ? null : AkCollatorFactory.getAkCollator(id).getScheme();
     }
 
     //------------------------------Default values------------------------------

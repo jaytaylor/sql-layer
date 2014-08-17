@@ -41,14 +41,11 @@ public abstract class AkCollator {
         throw new AssertionError("no value");
     }
 
-    private final String collatorName;
-
     private final String collatorScheme;
 
     private final int collationId;
 
-    protected AkCollator(final String collatorName, final String collatorScheme, final int collationId) {
-        this.collatorName = collatorName;
+    protected AkCollator(final String collatorScheme, final int collationId) {
         this.collatorScheme = collatorScheme;
         this.collationId = collationId;
     }
@@ -120,15 +117,11 @@ public abstract class AkCollator {
 
     @Override
     public String toString() {
-        return collatorName + "(" + collatorScheme + ")";
+        return collatorScheme;
     }
 
     public int getCollationId() {
         return collationId;
-    }
-
-    public String getName() {
-        return collatorName;
     }
 
     public String getScheme() {

@@ -270,7 +270,7 @@ public abstract class TString extends TClass
                 }
             }
             else {
-                output.append(collator.getName());
+                output.append(collator.getScheme());
             }
             break;
         }
@@ -303,7 +303,7 @@ public abstract class TString extends TClass
                 }
             }
             else {
-                return collator.getName();
+                return collator.getScheme();
             }
         default:
             throw new IllegalArgumentException("illegal attribute index: " + attributeIndex);

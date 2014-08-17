@@ -34,7 +34,7 @@ import com.persistit.Key;
 import com.persistit.KeyState;
 import com.persistit.Persistit;
 
-public class AkCollatorMySqlIT extends ITBase {
+public class AkCollatorIcuIT extends ITBase {
 
     /**
      * Sequences generated from MySQL on InnoDB engine using a script like this:
@@ -112,14 +112,14 @@ public class AkCollatorMySqlIT extends ITBase {
         assertTrue("First key should be less", key1.compareTo(key2) > 0);
     }
 
-    @Ignore("Requires CString registered to Key")
+    /*@Ignore("Requires CString registered to Key")
     @Test
     public void keyDecoding() throws Exception {
         final AkCollator collator = AkCollatorFactory.getAkCollator("latin1_swedish_ci");
         final Key key = store().createKey();
         key.append(new CString("aBcDe123!@#$%^&*(()", collator.getCollationId()));
         assertEquals("Incorrect display form", "{(com.foundationdb.server.collation.CString)ABCDE123!@#$%^&*(()}", key.toString());
-    }
+    }*/
 
     @Test
     public void keyEncodingMatchesMySQL() throws Exception {

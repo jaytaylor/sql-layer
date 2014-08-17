@@ -282,7 +282,7 @@ public class Column implements ColumnContainer, Visitable
     public String getCollationName() {
         AkCollator collator = getCollator();
         if (collator != null) {
-            return collator.getName();
+            return collator.getScheme();
         }
         else {
             return null;

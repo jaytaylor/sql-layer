@@ -17,14 +17,11 @@
 
 package com.foundationdb.server.collation;
 
-import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.foundationdb.server.error.UnsupportedCollationException;
 import com.ibm.icu.text.Collator;
@@ -39,27 +36,19 @@ import com.ibm.icu.util.ULocale;
  */
 public class AkCollatorFactory {
 
-    private final static Pattern SCHEMA_PATTERN = Pattern.compile("(\\d+):(\\w+(?:,\\d+)?)");
-
-    public final static int MAX_COLLATION_ID = 126;
-
     public final static String UCS_BINARY = "UCS_BINARY";
 
-    public final static String MYSQL = "mysql_";
-
     public final static AkCollator UCS_BINARY_COLLATOR = new AkCollatorBinary();
+
+    private static int collation_id_count = 1;
 
     private final static Map<String, Collator> sourceMap = new HashMap<>();
 
     private final static Map<String, SoftReference<AkCollator>> collatorMap = new ConcurrentHashMap<>();
 
     private final static Map<Integer, SoftReference<AkCollator>> collationIdMap = new ConcurrentHashMap<>();
-
-    private final static String DEFAULT_PROPERTIES_FILE_NAME = "collation_data.properties";
-
-    private final static String COLLATION_PROPERTIES_FILE_NAME_PROPERTY = "foundationdb.collation.properties";
-
-    private final static Properties collationNameProperties = new Properties();
+    
+    private final static Map<String, Integer> schemeToIdMap = new ConcurrentHashMap<>();
 
     private volatile static Mode mode = Mode.STRICT;
 
@@ -72,17 +61,6 @@ public class AkCollatorFactory {
 
     public enum Mode {
         STRICT, LOOSE, DISABLED
-    }
-
-    static {
-        try {
-            final String resourceName = System.getProperty(COLLATION_PROPERTIES_FILE_NAME_PROPERTY,
-                    DEFAULT_PROPERTIES_FILE_NAME);
-            collationNameProperties.clear();
-            collationNameProperties.load(AkCollatorFactory.class.getResourceAsStream(resourceName));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     /**
@@ -122,15 +100,15 @@ public class AkCollatorFactory {
     }
 
     /**
-     * @param name
+     * @param scheme
      * @return an AkCollator
      */
-    public static AkCollator getAkCollator(final String name) {
-        if (mode == Mode.DISABLED || name == null) {
+    public static AkCollator getAkCollator(final String scheme) {
+        if (mode == Mode.DISABLED || scheme == null) {
             return UCS_BINARY_COLLATOR;
         }
 
-        SoftReference<AkCollator> ref = collatorMap.get(name);
+        SoftReference<AkCollator> ref = collatorMap.get(scheme);
         if (ref != null) {
             AkCollator akCollator = ref.get();
             if (akCollator != null) {
@@ -139,61 +117,56 @@ public class AkCollatorFactory {
             }
         }
 
-        final String idAndScheme = schemeForName(name);
-        if (idAndScheme == null) {
-            if (mode == Mode.LOOSE) {
-                return mapToBinary(name);
-            } else {
-                throw new UnsupportedCollationException(name);
-            }
-        }
-
-        final Matcher matcher = SCHEMA_PATTERN.matcher(idAndScheme);
-        if (!matcher.matches()) {
-            throw new IllegalStateException("collation name " + name + " has malformed value " + idAndScheme);
-        }
-        final String scheme = matcher.group(2);
-        if (scheme.startsWith(UCS_BINARY)) {
-            return mapToBinary(name);
+        if (scheme.toUpperCase().startsWith(UCS_BINARY)) {
+            return mapToBinary(scheme);
         }
 
         synchronized (collatorMap) {
+            
             final int collationId;
-            try {
-                collationId = Integer.parseInt(matcher.group(1));
-                if (collationId < 0 || collationId > MAX_COLLATION_ID) {
-                    throw new IllegalStateException("collation name " + name + " has invalid ID " + collationId);
-                }
-            } catch (Exception e) {
-                throw new IllegalStateException("collation name " + name + " has malformed value " + idAndScheme);
+            if (schemeToIdMap.containsKey(scheme)) {
+                collationId = schemeToIdMap.get(scheme);
+            } else {
+                collationId = collation_id_count;
+                collation_id_count++;
             }
 
             final AkCollator akCollator;
-            if (scheme.startsWith(MYSQL)) {
-                akCollator = new AkCollatorMySQL(name, scheme, collationId, collationNameProperties.getProperty(scheme), useKeyCoder);
-            } else {
-                akCollator = new AkCollatorICU(name, scheme, collationId, useKeyCoder);
+            try {
+                akCollator = new AkCollatorICU(scheme, collationId);
+            } catch (Exception e) {
+                if (mode == Mode.LOOSE) {
+                    return mapToBinary(scheme);
+                } else {
+                    throw new UnsupportedCollationException(scheme);
+                }
             }
 
             ref = new SoftReference<>(akCollator);
-            collatorMap.put(name, ref);
+            collatorMap.put(scheme, ref);
             collationIdMap.put(collationId, ref);
+            schemeToIdMap.put(scheme, collationId);
+
             return akCollator;
         }
     }
     
     public static AkCollator getAkCollator(final int collatorId) {
+        if (collatorId < 0) {
+            System.out.println("adlkjadfsljkadfsjl");
+        }
         final SoftReference<AkCollator> ref = collationIdMap.get(collatorId);
         AkCollator collator = (ref == null ? null : ref.get());
         if (collator == null) {
             if (collatorId == 0) {
                 return UCS_BINARY_COLLATOR;
             }
-            for (Map.Entry<Object, Object> entry : collationNameProperties.entrySet()) {
-                final Matcher matcher = SCHEMA_PATTERN.matcher(entry.getValue().toString());
-                if (matcher.matches() && matcher.group(1).equals(Integer.toString(collatorId))) {
-                    return getAkCollator(entry.getKey().toString());
+            else {
+                String scheme = getKeyByValue(schemeToIdMap, collatorId);
+                if (scheme == null) {
+                    throw new IllegalStateException("No collator exists for collator id " + collatorId);
                 }
+                return getAkCollator(scheme);
             }
         } else {
             cacheHits++;
@@ -201,46 +174,47 @@ public class AkCollatorFactory {
         return collator;
     }
 
+    public static <T, E> T getKeyByValue(Map<T, E> map, E value) {
+        for (Entry<T, E> entry : map.entrySet()) {
+            if (value.equals(entry.getValue())) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+    
     /**
-     * Construct an actual ICU Collator given a collation scheme name. The
+     * Construct an actual ICU Collator given a collation scheme. The
      * result is a Collator that must be use in a thread-private manner.
-     * 
-     * Collation scheme names must be defined in a properties file, for which
-     * the default location is
-     * 
-     * <pre>
-     * <code>
-     * com.foundationdb.server.collation.collation_names.properties
-     * </code>
-     * </pre>
-     * 
-     * This location can be overridden with the system property named
-     * 
-     * <pre>
-     * <code>
-     * foundationdb.collation.properties
-     * </code>
-     * </pre>
-     * 
+     *
      * @param scheme
      * @return
      */
     static synchronized Collator forScheme(final String scheme) {
         Collator collator = sourceMap.get(scheme);
         if (collator == null) {
-            final String locale;
-            final int strength;
-
-            try {
-                String[] pieces = scheme.split(",");
-                locale = pieces[0];
-                strength = Integer.parseInt(pieces[1]);
-            } catch (Exception e) {
-                throw new IllegalStateException("Malformed property for name " + scheme + ": " + e);
+            String[] pieces = scheme.split("_");
+            if (pieces.length < 2 ) {
+                throw new IllegalStateException("Malformed collation scheme: " + scheme);
+            }
+            ULocale locale = new ULocale(pieces[0], pieces[1]);
+            if (locale.getCountry() == null || locale.getCountry().isEmpty() ||
+                    locale.getLanguage() == null || locale.getLanguage().isEmpty()) { 
+                throw new UnsupportedCollationException(scheme);
             }
 
-            collator = Collator.getInstance(new ULocale(locale));
-            collator.setStrength(strength);
+            collator = Collator.getInstance(new ULocale(pieces[0], pieces[1]));
+            if (pieces.length == 3) {
+                if (pieces[2].equals("cs")) {
+                    collator.setStrength(Collator.PRIMARY);
+                }
+                else if (pieces[2].equals("ci")) {
+                    collator.setStrength(Collator.SECONDARY);
+                }
+                else {
+                    throw new IllegalStateException("Malformed collation scheme: " + scheme);
+                }
+            }
             sourceMap.put(scheme, collator);
         }
         collator = collator.cloneAsThawed();
@@ -250,12 +224,6 @@ public class AkCollatorFactory {
     private static AkCollator mapToBinary(final String name) {
         collatorMap.put(name, new SoftReference<>(UCS_BINARY_COLLATOR));
         return UCS_BINARY_COLLATOR;
-    }
-
-    private synchronized static String schemeForName(final String name) {
-        final String lcname = name.toLowerCase();
-        String scheme = collationNameProperties.getProperty(lcname);
-        return scheme;
     }
 
     /**
