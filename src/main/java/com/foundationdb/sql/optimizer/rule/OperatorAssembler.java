@@ -1466,7 +1466,7 @@ public class OperatorAssembler extends BaseRule
             RowStream lstream = assembleStream(usingHashTable.getLoader());
             RowStream stream = assembleStream(usingHashTable.getInput());
             List<TPreparedExpression> tFields = assembleExpressions(usingHashTable.getLookupExpressions(),
-                    stream.fieldOffsets);
+                    lstream.fieldOffsets);
             List<AkCollator> collators = new ArrayList<>();
             RowType rt = lstream.rowType;
             for(int i = 0; i < rt.nFields(); i++){
@@ -1488,7 +1488,7 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleHashTableLookup(HashTableLookup hashTableLookup) {
             HashTable hashTable = hashTableLookup.getHashTable();
             int tablePos = getBindingPosition(hashTable);
-            RowStream stream = new RowStream();
+            RowStream stream = assembleStream(hashTableLookup.getInput());
             List<TPreparedExpression> tFields = assembleExpressions(hashTableLookup.getLookupExpressions(),
                     stream.fieldOffsets);
             List<AkCollator> collators = new ArrayList<>();

@@ -1009,7 +1009,7 @@ public class JoinAndIndexPicker extends BaseRule
             }
             // the output is different in the planString if joinConditions is null vs. empty
             // so make it null here to make the tests happier
-            if (joinConditions.isEmpty()) {
+            if (joinConditions == null || joinConditions.isEmpty()) {
                 joinConditions = null;
             }
             HashJoinNode join = new HashJoinNode(loaderJoinable.getJoinable(), inputJoinable.getJoinable(),
@@ -1305,9 +1305,9 @@ public class JoinAndIndexPicker extends BaseRule
             CostEstimate costEstimate = picker.getCostEstimator()
                     .costHashJoin(loaderPlan.costEstimate, inputPlan.costEstimate, hashColumns.size());
             return new HashJoinPlan(loaderPlan, inputPlan, checkPlan,
-                    JoinType.SEMI, JoinNode.Implementation.HASH_TABLE,
+                    JoinType.INNER, JoinNode.Implementation.HASH_TABLE,
                     joins, costEstimate, hashTable, hashColumns, matchColumns);
-        }
+        }//TODO not always SEMI/Inner
 
         public List<List<ExpressionNode>> buildExpressionColumns(Collection<JoinOperator> joins, Plan inputPlan, Plan checkPlan) {
             List<ExpressionNode> matchColumns = new ArrayList<>();
@@ -1338,6 +1338,8 @@ public class JoinAndIndexPicker extends BaseRule
                     }
                 }
             }
+            if(hashColumns.isEmpty() || matchColumns.isEmpty())
+                    return null;
             List<List<ExpressionNode>> returningExpressions = new ArrayList<>();
             returningExpressions.add(hashColumns);
             returningExpressions.add(matchColumns);

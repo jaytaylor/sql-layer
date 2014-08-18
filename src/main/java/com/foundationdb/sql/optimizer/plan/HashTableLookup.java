@@ -21,45 +21,30 @@ import java.util.List;
 
 
 /** Application of a Hash Table. */
-public class HashTableLookup extends BasePlanNode
+public class HashTableLookup extends BasePlanWithInput
 {
     private HashTable hashTable;
     private List<ExpressionNode> lookupExpressions;
     private PlanNode check;
 
     public HashTableLookup(HashTable hashTable,
+                           PlanNode input,
                            List<ExpressionNode> lookupExpressions){
+        super(input);
         this.hashTable = hashTable;
         this.lookupExpressions = lookupExpressions;
-
     }
 
     public HashTable getHashTable() {
         return hashTable;
     }
+
     public List<ExpressionNode> getLookupExpressions() {
         return lookupExpressions;
     }
+
     public PlanNode getCheck() {
         return check;
-    }
-
-    @Override
-    public boolean accept(PlanVisitor v) {
-        if (v.visitEnter(this)){
-                if (v instanceof ExpressionRewriteVisitor) {
-                    for (int i = 0; i < lookupExpressions.size(); i++) {
-                        lookupExpressions.set(i, lookupExpressions.get(i).accept((ExpressionRewriteVisitor)v));
-                    }
-                }
-                else if (v instanceof ExpressionVisitor) {
-                    for (ExpressionNode expr : lookupExpressions) {
-                        if (!expr.accept((ExpressionVisitor)v))
-                            break;
-                    }
-                }
-        }
-        return v.visitLeave(this);
     }
 
     @Override
