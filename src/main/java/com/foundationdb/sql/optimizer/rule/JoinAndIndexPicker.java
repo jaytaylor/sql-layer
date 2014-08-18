@@ -1301,11 +1301,11 @@ public class JoinAndIndexPicker extends BaseRule
             if (joinPlan.costEstimate.getRowCount() == limit) {
                 /** Possibly return null if the row count is greater than the possible row count**/
             }
-            HashTable hashTable = new HashTable(loaderPlan.costEstimate.getRowCount(), 1);/**Does the hash table need these values*/
+            HashTable hashTable = new HashTable(loaderPlan.costEstimate.getRowCount());/**Does the hash table need these values*/
             CostEstimate costEstimate = picker.getCostEstimator()
                     .costHashJoin(loaderPlan.costEstimate, inputPlan.costEstimate, hashColumns.size());
             return new HashJoinPlan(loaderPlan, inputPlan, checkPlan,
-                    JoinType.INNER, JoinNode.Implementation.HASH_TABLE,
+                    joinPlan.joinType, JoinNode.Implementation.HASH_TABLE,
                     joins, costEstimate, hashTable, hashColumns, matchColumns);
         }//TODO not always SEMI/Inner
 

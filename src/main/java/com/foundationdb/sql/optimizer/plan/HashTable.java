@@ -22,18 +22,13 @@ package com.foundationdb.sql.optimizer.plan;
 public class HashTable extends BaseHashTable
 {
     private long estimatedSize;
-    private double selectivity;
 
-    public HashTable(long estimatedSize, double selectivity) {
+    public HashTable(long estimatedSize) {
         this.estimatedSize = estimatedSize;
-        this.selectivity = selectivity;
     }
 
     public long getEstimatedSize() {
         return estimatedSize;
-    }
-    public double getSelectivity() {
-        return selectivity;
     }
 
 }
