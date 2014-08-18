@@ -1438,10 +1438,7 @@ public class OperatorAssembler extends BaseRule
             boundRows.pop();
             List<TPreparedExpression> tFields = assembleExpressions(bloomFilterFilter.getLookupExpressions(),
                     stream.fieldOffsets);
-            List<AkCollator> collators = new ArrayList<>();
-            for (ExpressionNode expressionNode : bloomFilterFilter.getLookupExpressions()) {
-                collators.add(expressionNode.getCollator());
-            }
+            List<AkCollator> collators = findCollators(bloomFilterFilter.getInput());
             stream.operator = API.select_BloomFilter(stream.operator,
                                                      cstream.operator,
                                                      tFields,
@@ -1460,15 +1457,7 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = assembleStream(usingHashTable.getInput());
             List<TPreparedExpression> tFields = assembleExpressions(usingHashTable.getLookupExpressions(),
                     lstream.fieldOffsets);
-            List<AkCollator> collators = new ArrayList<>();
-            RowType rt = lstream.rowType;
-            for(int i = 0; i < rt.nFields(); i++){
-                if(TInstance.tClass(rt.typeAt(i)) instanceof TString){
-                    collators.add(TString.getCollator(rt.typeAt(i)));
-                }
-            }
-            if(collators.isEmpty())
-                collators = null;
+            List<AkCollator> collators = findCollators(usingHashTable.getLoader());
             stream.operator = API.using_HashTable(lstream.operator,
                     lstream.rowType,
                     tFields,
@@ -1484,10 +1473,7 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = assembleStream(hashTableLookup.getInput());
             List<TPreparedExpression> tFields = assembleExpressions(hashTableLookup.getLookupExpressions(),
                     stream.fieldOffsets);
-            List<AkCollator> collators = new ArrayList<>();
-            for (ExpressionNode expressionNode : hashTableLookup.getLookupExpressions()) {
-                collators.add(expressionNode.getCollator());
-            }
+            List<AkCollator> collators = findCollators(hashTableLookup.getInput());
             stream.operator = API.hashTableLookup_Default(
                     collators,
                     tFields,
