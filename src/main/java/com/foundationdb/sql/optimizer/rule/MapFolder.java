@@ -184,9 +184,13 @@ public class MapFolder extends BaseRule
     protected void fold(MapJoin map, List<MapJoinProject> mapJoinProjects) {
         PlanWithInput parent = map;
         PlanNode child;
+        UsingHashTable usingHashTable = null;
+
         do {
             child = parent;
             parent = child.getOutput();
+            if(parent instanceof UsingHashTable)
+                usingHashTable = (UsingHashTable)parent;
         } while (!((parent instanceof MapJoin) ||
                    // These need to be outside.
                    (parent instanceof Subquery) ||
@@ -240,9 +244,21 @@ public class MapFolder extends BaseRule
                                        nested, mapJoinProjects);
                 }
             }
-            map.getOutput().replaceInput(map, inner);
-            parent.replaceInput(child, map);
-            map.setInner(child);
+            if (usingHashTable != null){
+                usingHashTable.getOutput().replaceInput(usingHashTable, usingHashTable.getInput());
+                //remove using_hashTable from plan
+                parent.replaceInput(child, usingHashTable);
+                //now put it on very top
+                map.getOutput().replaceInput(map, inner);
+                //remove map from plan
+                usingHashTable.replaceInput(usingHashTable.getInput(), map);
+                //place map below using
+                map.setInner(child);
+            } else {
+                map.getOutput().replaceInput(map, inner);
+                parent.replaceInput(child, map);
+                map.setInner(child);
+            }
         }
     }
 

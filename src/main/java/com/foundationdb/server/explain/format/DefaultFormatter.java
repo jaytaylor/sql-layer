@@ -264,6 +264,9 @@ public class DefaultFormatter
         case BLOOM_FILTER:
             appendBloomFilterOperator(name, atts);
             break;
+        case HASH_JOIN:
+            appendHashTableOperator(name, atts);
+            break;
         case DISTINCT:
             appendDistinctOperator(name, atts);
             break;
@@ -753,6 +756,24 @@ public class DefaultFormatter
                 }
                 if(levelOfDetail != LevelOfDetail.NORMAL && (Boolean)atts.getValue(Label.PIPELINE)){
                     sb.append("Pipelining");
+                } else if (atts.containsKey(Label.EXPRESSIONS) && atts.get(Label.EXPRESSIONS).size() > 0){
+                    sb.setLength(sb.length() - 2);
+                }
+            }
+        }
+    }
+
+    protected void appendHashTableOperator(String name, Attributes atts) {
+        if (levelOfDetail != LevelOfDetail.BRIEF) {
+            if (name.equals("Using_HashTable")) {
+                appendProjectColumns(atts, -1);
+            }
+            else if (name.equals("HashTableLookup_Default")) {
+                if (atts.containsKey(Label.EXPRESSIONS)) {
+                    for (Explainer ex : atts.get(Label.EXPRESSIONS)) {
+                        append(ex);
+                        sb.append(", ");
+                    }
                 } else if (atts.containsKey(Label.EXPRESSIONS) && atts.get(Label.EXPRESSIONS).size() > 0){
                     sb.setLength(sb.length() - 2);
                 }
