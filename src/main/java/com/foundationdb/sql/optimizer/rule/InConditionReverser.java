@@ -259,7 +259,8 @@ public class InConditionReverser extends BaseRule
                     if (!(cond instanceof ComparisonCondition))
                         return;
                     ComparisonCondition ccond = (ComparisonCondition)cond;
-                    ccond.setRight(project.getFields().get(i));
+                    ccond.setRight(project.getFields().get(
+                            ((ColumnExpression)ccond.getRight()).getPosition()));
                 }
                 if (select != null)
                     conds.addAll(select.getConditions());
