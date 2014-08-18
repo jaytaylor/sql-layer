@@ -968,7 +968,7 @@ class YamlTester
                         Collections.sort(output, SIMPLE_LIST_COMPARATOR);
                         Collections.sort(resultsList, SIMPLE_LIST_COMPARATOR);
                     }
-                    for (int i=0; outputRow < output.size() || i < resultsList.size(); outputRow++, i++) {
+                    for (int i=0; outputRow < output.size() && i < resultsList.size(); outputRow++, i++) {
                         List<?> row = output.get(outputRow);
                         List<?> resultsRow = resultsList.get(i);
                         if (!rowsEqual(row, resultsRow)) {
