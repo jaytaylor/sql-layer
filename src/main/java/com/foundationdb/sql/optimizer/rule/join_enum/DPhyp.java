@@ -272,8 +272,13 @@ public abstract class DPhyp<P>
     }
 
     public boolean isEvaluateOperator(long s1, long s2, int e) {
-        return JoinableBitSet.isSubset(edges[e], s1) &&
+        if (JoinableBitSet.isEmpty(edges[e]) || JoinableBitSet.isEmpty(edges[e^1]))
+        {
+            return false;
+        } else {
+            return JoinableBitSet.isSubset(edges[e], s1) &&
                     JoinableBitSet.isSubset(edges[e ^ 1], s2);
+        }
     }
 
     /** Return the best plan for the one-table initial state. */

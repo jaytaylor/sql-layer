@@ -48,6 +48,12 @@ in-subquery-indexed: IN that is indexed.
 
 in-subquery-distinct: IN with cross-group subquery with DISTINCT
 
+inner-right-join: (INNER) RIGHT where the inner ON clause has a comparison with constant
+
+inner-right-join2: (INNER) RIGHT where the inner ON clause has a comparison with constant without indexes
+
+inner-left-join: (INNER) LEFT where the inner ON clause has a comparison with constant
+
 join-across-subquery: group join in subquery expression
 
 join-cond-too-complex: A join condition that will not work with a group join.
