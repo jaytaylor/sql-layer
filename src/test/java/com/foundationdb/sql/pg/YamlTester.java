@@ -971,9 +971,7 @@ class YamlTester
                     for (int i=0; outputRow < output.size() || i < resultsList.size(); outputRow++, i++) {
                         List<?> row = output.get(outputRow);
                         List<?> resultsRow = resultsList.get(i);
-                        if (i >= resultsList.size()) {
-                            break;
-                        } else if (!rowsEqual(row, resultsRow)) {
+                        if (!rowsEqual(row, resultsRow)) {
                             throw new ContextAssertionError(
                                     statement,
                                     "Unexpected output in row " + (outputRow + 1) + ":" +
