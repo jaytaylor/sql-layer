@@ -979,8 +979,7 @@ class YamlTester
                             );
                         }
                     }
-                    assertEquals("Expected " + output.size() + " rows but got " + resultsList.size() + " rows.",
-                            output.size(), resultsList.size());
+                    assertEquals("Unexpected number of rows", output.size(), resultsList.size());
                 } catch (ContextAssertionError e) {
                     throw new FullOutputAssertionError(resultsList, output, e);
                 } catch (AssertionError e) {
