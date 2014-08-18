@@ -951,7 +951,6 @@ class YamlTester
             if(output != null) {
                 ResultSetMetaData metaData = rs.getMetaData();
                 int numColumns = metaData.getColumnCount();
-                boolean resultsEmpty = false;
                 List<List<?>> resultsList = new ArrayList<>();
                 Statement stmt = rs.getStatement();
                 assert stmt != null;
@@ -963,23 +962,13 @@ class YamlTester
                         actualRow.add(rs.getObject(i+1));
                     }
                 }
-                resultsEmpty = resultsList.isEmpty();
                 try {
                     assertEquals("Unexpected number of columns in output:", output.get(0).size(), numColumns);
                     if (doSortOutput) {
                         Collections.sort(output, SIMPLE_LIST_COMPARATOR);
                         Collections.sort(resultsList, SIMPLE_LIST_COMPARATOR);
                     }
-                    int i = 0;
-                    for (; true; outputRow++, i++) {
-                        if (outputRow >= output.size()) {
-                            if (i < resultsList.size()) {
-                                resultsEmpty = false;
-                            }
-                            break;
-                        } else if (i >= resultsList.size()) {
-                            break;
-                        }
+                    for (int i=0; outputRow < output.size() || i < resultsList.size(); outputRow++, i++) {
                         List<?> row = output.get(outputRow);
                         List<?> resultsRow = resultsList.get(i);
                         if (i >= resultsList.size()) {
@@ -992,6 +981,8 @@ class YamlTester
                             );
                         }
                     }
+                    assertEquals("Expected " + output.size() + " rows but got " + resultsList.size() + " rows.",
+                            output.size(), resultsList.size());
                 } catch (ContextAssertionError e) {
                     throw new FullOutputAssertionError(resultsList, output, e);
                 } catch (AssertionError e) {
