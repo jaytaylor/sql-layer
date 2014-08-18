@@ -981,9 +981,9 @@ class YamlTester
                     }
                     assertEquals("Unexpected number of rows", output.size(), resultsList.size());
                 } catch (ContextAssertionError e) {
-                    throw new FullOutputAssertionError(resultsList, output, e);
+                    throw new FullOutputAssertionError(output, resultsList, e);
                 } catch (AssertionError e) {
-                    throw new FullOutputAssertionError(resultsList, output, new ContextAssertionError(statement, e));
+                    throw new FullOutputAssertionError(output, resultsList, new ContextAssertionError(statement, e));
                 }
             } else {
                 Statement stmt = rs.getStatement();
