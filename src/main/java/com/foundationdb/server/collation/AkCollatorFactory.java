@@ -24,7 +24,9 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.foundationdb.server.error.UnsupportedCollationException;
+import com.foundationdb.server.types.common.types.StringFactory;
 import com.ibm.icu.text.Collator;
+import com.ibm.icu.text.RuleBasedCollator;
 import com.ibm.icu.util.ULocale;
 
 /**
@@ -56,8 +58,6 @@ public class AkCollatorFactory {
      * Note: used only in a single-threaded unit test.
      */
     private static int cacheHits;
-
-    private volatile static boolean useKeyCoder = true;
 
     public enum Mode {
         STRICT, LOOSE, DISABLED
@@ -160,6 +160,7 @@ public class AkCollatorFactory {
             }
             else {
                 String scheme = getKeyByValue(schemeToIdMap, collatorId);
+                if (scheme == null) return null;
                 return getAkCollator(scheme);
             }
         } else {
@@ -185,34 +186,61 @@ public class AkCollatorFactory {
      * @return
      */
     static synchronized Collator forScheme(final String scheme) {
-        Collator collator = sourceMap.get(scheme);
+        RuleBasedCollator collator = (RuleBasedCollator) sourceMap.get(scheme);
         if (collator == null) {
             String[] pieces = scheme.split("_");
-            if (pieces.length < 2 ) {
+            if (pieces.length < 2 || pieces.length > 4 ) {
                 throw new IllegalStateException("Malformed collation scheme: " + scheme);
             }
+            
             ULocale locale = new ULocale(pieces[0], pieces[1]);
             if (locale.getCountry() == null || locale.getCountry().isEmpty() ||
                     locale.getLanguage() == null || locale.getLanguage().isEmpty()) { 
                 throw new UnsupportedCollationException(scheme);
             }
 
-            collator = Collator.getInstance(new ULocale(pieces[0], pieces[1]));
-            if (pieces.length == 3) {
-                if (pieces[2].equals("cs")) {
-                    collator.setStrength(Collator.PRIMARY);
-                }
-                else if (pieces[2].equals("ci")) {
-                    collator.setStrength(Collator.SECONDARY);
-                }
-                else {
-                    throw new IllegalStateException("Malformed collation scheme: " + scheme);
-                }
-            }
+            collator = (RuleBasedCollator) RuleBasedCollator.getInstance(new ULocale(pieces[0], pieces[1]));
+            setCollatorStrength(collator, pieces, scheme);            
             sourceMap.put(scheme, collator);
         }
         collator = collator.cloneAsThawed();
         return collator;
+    }
+
+    private static void setCollatorStrength(RuleBasedCollator collator,
+            String[] pieces, String scheme) {
+        if (pieces.length == 3) {
+            if (pieces[2].toLowerCase().equals("cs")) {
+                collator.setStrength(Collator.TERTIARY);
+            }
+            else if (pieces[2].toLowerCase().equals("ci")) {
+                collator.setStrength(Collator.SECONDARY);
+            }
+            else {
+                throw new IllegalStateException("Malformed collation scheme: " + pieces);
+            }
+        }
+        else if (pieces.length == 4) {
+            if (pieces[2].toLowerCase().equals("cs") && pieces[3].toLowerCase().equals("co")) {
+                collator.setStrength(Collator.TERTIARY);
+                collator.setCaseLevel(false);
+            }
+            else if (pieces[2].toLowerCase().equals("cs") && pieces[3].toLowerCase().equals("cx")) {
+                collator.setStrength(Collator.PRIMARY);
+                collator.setCaseLevel(true);
+            }
+            else if (pieces[2].toLowerCase().equals("ci") && pieces[3].toLowerCase().equals("co")) {
+                collator.setStrength(Collator.SECONDARY);
+                collator.setCaseLevel(false);
+            }
+            else if (pieces[2].toLowerCase().equals("ci") && pieces[3].toLowerCase().equals("cx")) {
+                collator.setStrength(Collator.PRIMARY);
+                collator.setCaseLevel(false);
+            }
+            else {
+                throw new IllegalStateException("Malformed collation scheme: " + scheme);
+            }
+        }        
     }
 
     private static AkCollator mapToBinary(final String name) {
@@ -228,13 +256,5 @@ public class AkCollatorFactory {
      */
     static int getCacheHits() {
         return cacheHits;
-    }
-
-    public static boolean isUseKeyCoder() {
-        return useKeyCoder;
-    }
-
-    public static void setUseKeyCoder(boolean x) {
-        useKeyCoder = x;
     }
 }

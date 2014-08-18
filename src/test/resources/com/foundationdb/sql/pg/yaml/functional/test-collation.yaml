@@ -1,80 +1,11 @@
 # Test collation (other than UCS_BINARY)
 ---
-- CreateTable: t (id INT PRIMARY KEY NOT NULL, s VARCHAR(32) CHARACTER SET latin1 COLLATE latin1_swedish_ci)
----
-- Statement: "INSERT INTO t(id, s)
-    VALUES (0, null), (1, 'alfa'), (2, 'charlie'), (3, 'BRAVO'), (4, '\u00c5ngstr\u00f6m'), (5, 'Zulu')"
----
-- Statement: SELECT id FROM t WHERE s > 'B'
-- output: [[2], [3], [4], [5]]
----
-- Statement: SELECT id FROM t WHERE s = 'Charlie'
-- output: [[2]]
----
-- Statement: SELECT * FROM t ORDER BY s
-- output_already_ordered: [[0, null], [1, 'alfa'], [3, 'BRAVO'], [2, 'charlie'], [5, 'Zulu'], [4, !unicode "\u00c5ngstr\u00f6m"]]
----
-- Statement: CREATE INDEX t_s ON t(s)
----
-- Statement: SELECT id FROM t WHERE s > 'B'
-- output: [[2], [3], [4], [5]]
----
-- Statement: SELECT id FROM t WHERE s = 'Charlie'
-- output: [[2]]
----
-- Statement: SELECT * FROM t ORDER BY s
-- output_already_ordered: [[0, null], [1, 'alfa'], [3, 'BRAVO'], [2, 'charlie'], [5, 'Zulu'], [4, !unicode "\u00c5ngstr\u00f6m"]]
----
-- Statement: DELETE FROM t
----
-- Statement: INSERT INTO t(id, s)
-    VALUES (1, 'aaa'), (2, 'aaa'), (3, 'bbb'), (4, 'BBB'), (5, 'AAA')
----
-- Statement: SELECT COUNT(DISTINCT s) FROM t
-- output: [[2]]
----
-- CreateTable: parent (name VARCHAR(10) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL PRIMARY KEY, i INT)
----
-- CreateTable: child (name VARCHAR(12) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL PRIMARY KEY, GROUPING FOREIGN KEY(name) REFERENCES parent(name), j INT)
----
-- Statement: INSERT INTO parent(name, i)
-    VALUES ('alfa', 1), ('charlie', 3), ('delta', 4)
----
-- Statement: INSERT INTO child(name, j)
-    VALUES ('alfa', 100), ('bravo', 200), ('Delta', 400)
----
-- Statement: EXPLAIN SELECT i, j FROM parent INNER JOIN child USING (name)
-- output: [['Project_Default(parent.i, child.j)'],
-           ['  Filter_Default(parent - child)'],
-           ['    Flatten_HKeyOrdered(parent INNER child)'],
-           ['      GroupScan_Default(parent)']]
----
-- Statement: SELECT i, j FROM parent INNER JOIN child USING (name)
-- output: [[1, 100],[4,400]]
----
-- Statement: SELECT i, j FROM parent LEFT JOIN child USING (name)
-- output: [[1, 100],[3,null],[4,400]]
----
-- Statement: SELECT i, j FROM parent RIGHT JOIN child USING (name)
-- output: [[1, 100],[null,200],[4,400]]
----
-- CreateTable: t1 (id INT PRIMARY KEY NOT NULL, s VARCHAR(32) COLLATE utf8_bin)
----
-- Statement: INSERT INTO t1(id, s)
-    VALUES (1, 'alfa'), (2, 'charlie'), (3, 'BRAVO'), (4, 'Delta'), (5, 'echo')
----
 - CreateTable: t2 (id INT PRIMARY KEY NOT NULL, s VARCHAR(32) COLLATE en_us_ci)
 ---
 - Statement: INSERT INTO t2(id, s)
     VALUES (1, 'alfa'), (2, 'charlie'), (3, 'BRAVO'), (4, 'Delta'), (5, 'echo')
 ---
-- Statement: SELECT id FROM t1 WHERE s LIKE '%a%'
-- output: [[1],[2],[4]]
----
 - Statement: SELECT id FROM t2 WHERE s LIKE '%a%'
-- output: [[1],[2],[3],[4]]
----
-- Statement: SELECT id FROM t1 WHERE s COLLATE "en_us_ci" LIKE '%a%'
 - output: [[1],[2],[3],[4]]
 ---
 - Statement: SELECT id FROM t2 WHERE s COLLATE UCS_BINARY LIKE '%a%'
@@ -84,6 +15,23 @@
 - error: [2H000]
 ---
 - CreateTable: t3 (id INT, c CHAR(5) CHARACTER SET foo)
+- error: [2C000]
+---
+- CreateTable: t4 (id INT PRIMARY KEY NOT NULL, s VARCHAR(32) COLLATE en_us_cs)
+---
+- Statement: INSERT INTO t4(id, s)
+    VALUES (1, 'alfa'), (2, 'charlie'), (3, 'BRAVO'), (4, 'Delta'), (5, 'echo')
+---
+- Statement: SELECT id FROM t4 WHERE s LIKE '%a%'
+- output: [[1],[2],[4]]
+---
+- Statement: SELECT id FROM t4 WHERE s COLLATE UCS_BINARY LIKE '%a%'
+- output: [[1],[2],[4]]
+---
+- CreateTable: t5 (id INT, c CHAR(5) COLLATE foo)
+- error: [2H000]
+---
+- CreateTable: t5 (id INT, c CHAR(5) CHARACTER SET foo)
 - error: [2C000]
 # NOTE if adding more tests, make sure to use lower case for en_us_ci
 ...

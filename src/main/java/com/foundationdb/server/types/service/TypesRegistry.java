@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.types.service;
 
+import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.server.error.UnsupportedColumnDataTypeException;
 import com.foundationdb.server.types.TBundleID;
 import com.foundationdb.server.types.TClass;
@@ -177,7 +178,7 @@ public class TypesRegistry
             throw new UnsupportedColumnDataTypeException(tableSchema, tableName, columnName,
                                                          typeName);
         }
-        return getType(typeClass, typeParameter1, typeParameter2, charset, collation, StringFactory.DEFAULT_CHARSET_ID, StringFactory.DEFAULT_COLLATION_ID,
+        return getType(typeClass, typeParameter1, typeParameter2, charset, collation, StringFactory.DEFAULT_CHARSET_ID, StringFactory.DEFAULT_CHARSET_ID,
                        nullable, tableSchema, tableName, columnName);
     }
 

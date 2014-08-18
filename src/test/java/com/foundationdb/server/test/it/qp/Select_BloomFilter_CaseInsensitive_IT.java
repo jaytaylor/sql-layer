@@ -32,7 +32,6 @@ import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.collation.AkCollatorFactory;
-import com.foundationdb.server.collation.AkCollatorMySQL;
 import com.foundationdb.server.test.ExpressionGenerators;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSources;
@@ -54,7 +53,6 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     @Override
     protected void setupCreateSchema()
     {
-        AkCollatorMySQL.useForTesting();
         // Tables are Driving (D) and Filtering (F). Find Filtering rows with a given test id, yielding
         // a set of (a, b) rows. Then find Driving rows matching a and b.
         d = createTable(
