@@ -23,6 +23,7 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.loadableplan.LoadablePlan;
 import com.foundationdb.server.service.session.Session;
 import java.lang.reflect.Method;
+import java.util.jar.JarFile;
 
 /** All this does is say that every language is a script language. */
 public class MockRoutineLoader implements RoutineLoader
@@ -39,6 +40,11 @@ public class MockRoutineLoader implements RoutineLoader
 
     @Override
     public void registerSystemSQLJJar(SQLJJar sqljJar, ClassLoader classLoader) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public JarFile openSQLJJarFile(Session session, TableName jarName) {
         throw new UnsupportedOperationException();
     }
 

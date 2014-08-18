@@ -91,6 +91,13 @@ public abstract class AkCollator {
         } else if (persistit2) {
             return -((PersistitKeyValueSource) value2).compare(this, getString(value1, this));
         } else {
+            String sValue1 = getString(value1, this);
+            String sValue2 = getString(value2, this);
+            if(sValue1 == null || sValue2 == null){
+                if(sValue1 == sValue2)
+                    return 0;
+                return (sValue1 == null)? -1: 1;
+            }
             return compare(getString(value1, this), getString(value2, this));
         }
     }

@@ -40,6 +40,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.jar.Attributes;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.regex.Pattern;
 
@@ -71,43 +73,35 @@ public class SQLJJarDeployer
     }
 
     private void loadDeploymentDescriptor(boolean undeploy) {
-        ClassLoader classLoader = server.getRoutineLoader().loadSQLJJar(context.getSession(), jarName);
-        InputStream mstr = classLoader.getResourceAsStream("META-INF/MANIFEST.MF");
-        if (mstr == null) return;
-        Manifest manifest;
-        try {
-            manifest = new Manifest(mstr);
-        }
-        catch (IOException ex) {
-            throw new InvalidSQLJDeploymentDescriptorException(jarName, ex);
-        }
-        for (Map.Entry<String,Attributes> entry : manifest.getEntries().entrySet()) {
-            String val = entry.getValue().getValue(MANIFEST_ATTRIBUTE);
-            if ((val != null) && Boolean.parseBoolean(val)) {
-                InputStream istr = classLoader.getResourceAsStream(entry.getKey());
-                if (istr != null) {
-                    loadDeploymentDescriptor(istr, undeploy);
-                    break;
+        if (jarName == null) return;
+        try (JarFile jarFile = server.getRoutineLoader().openSQLJJarFile(context.getSession(), jarName)) {
+            Manifest manifest = jarFile.getManifest();
+            for (Map.Entry<String,Attributes> entry : manifest.getEntries().entrySet()) {
+                String val = entry.getValue().getValue(MANIFEST_ATTRIBUTE);
+                if ((val != null) && Boolean.parseBoolean(val)) {
+                    JarEntry jarEntry = jarFile.getJarEntry(entry.getKey());
+                    if (jarEntry != null) {
+                        InputStream istr = jarFile.getInputStream(jarEntry);
+                        loadDeploymentDescriptor(istr, undeploy);
+                        break;
+                    }
                 }
             }
         }
-    }
-
-    private void loadDeploymentDescriptor(InputStream istr, boolean undeploy) {
-        StringBuilder contents = new StringBuilder();
-        try {
-            BufferedReader reader = 
-                new BufferedReader(new InputStreamReader(istr, "UTF-8"));
-            while (true) {
-                String line = reader.readLine();
-                if (line == null) break;
-                contents.append(line).append('\n');
-            }
-        }
         catch (IOException ex) {
             throw new InvalidSQLJDeploymentDescriptorException(jarName, ex);
         }
-        if (!Pattern.compile(DESCRIPTOR_FILE).matcher(contents).matches())
+    }
+
+    private void loadDeploymentDescriptor(InputStream istr, boolean undeploy) throws IOException {
+        StringBuilder contents = new StringBuilder();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(istr, "UTF-8"));
+        while (true) {
+            String line = reader.readLine();
+            if (line == null) break;
+            contents.append(line).append('\n');
+        }
+        if (!Pattern.compile(DESCRIPTOR_FILE, Pattern.DOTALL).matcher(contents).matches())
             throw new InvalidSQLJDeploymentDescriptorException(jarName, "Incorrect file format");
         String header, footer;
         if (undeploy) {
