@@ -152,9 +152,6 @@ public class AkCollatorFactory {
     }
     
     public static AkCollator getAkCollator(final int collatorId) {
-        if (collatorId < 0) {
-            System.out.println("adlkjadfsljkadfsjl");
-        }
         final SoftReference<AkCollator> ref = collationIdMap.get(collatorId);
         AkCollator collator = (ref == null ? null : ref.get());
         if (collator == null) {
@@ -163,9 +160,6 @@ public class AkCollatorFactory {
             }
             else {
                 String scheme = getKeyByValue(schemeToIdMap, collatorId);
-                if (scheme == null) {
-                    throw new IllegalStateException("No collator exists for collator id " + collatorId);
-                }
                 return getAkCollator(scheme);
             }
         } else {

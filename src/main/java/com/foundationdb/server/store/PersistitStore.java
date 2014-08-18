@@ -89,7 +89,6 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     @Override
     public synchronized void start() {
         CoderManager cm = getDb().getCoderManager();
-        cm.registerKeyCoder(CString.class, new CStringKeyCoder());
         cm.registerValueCoder(RowData.class, rowDataValueCoder = new RowDataValueCoder());
         cm.registerValueCoder(PersistitProtobufRow.class, protobufValueCoder = new PersistitProtobufValueCoder(this));
         boolean withConcurrentDML = false;
@@ -115,7 +114,6 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     @Override
     public synchronized void stop() {
         getDb().getCoderManager().unregisterValueCoder(RowData.class);
-        getDb().getCoderManager().unregisterKeyCoder(CString.class);
     }
 
     @Override
