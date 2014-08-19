@@ -1172,7 +1172,6 @@ public class JoinAndIndexPicker extends BaseRule
                 if (hashPlan != null)
                     planClass.consider(hashPlan);
             }
-            //TODO if joinPlan can be achieved via a hash join possibly inside previous if
             if (joinType.isInner() || (joinType.isSemi() && rightPlan.semiJoinEquivalent()) || joinType == JoinType.LEFT) {
                 Collection<JoinOperator> semiJoins = duplicateJoins(joins);
                 Plan loaderPlan = right.bestPlan(outsideJoins);
@@ -1306,7 +1305,7 @@ public class JoinAndIndexPicker extends BaseRule
             if (joinPlan.costEstimate.getRowCount() == limit) {
                 /** Possibly return null if the row count is greater than the possible row count**/
             }
-            HashTable hashTable = new HashTable(loaderPlan.costEstimate.getRowCount());/**Does the hash table need these values*/
+            HashTable hashTable = new HashTable(loaderPlan.costEstimate.getRowCount());
             CostEstimate costEstimate = picker.getCostEstimator()
                     .costHashJoin(loaderPlan.costEstimate, inputPlan.costEstimate, hashColumns.size());
             List<TKeyComparable> tKeyComparables = new ArrayList<>();
