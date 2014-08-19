@@ -1,0 +1,41 @@
+---
+- CreateTable: T1 (C1 INT, C2 CHAR(100), notNull INT NOT NULL);
+---
+- Statement: INSERT INTO t1 VALUES (null,null,0);
+---
+- Statement: INSERT INTO t1 VALUES (1,'',1);
+---
+- Statement: INSERT INTO t1 VALUES (2,'abcde',2);
+---
+- Statement: INSERT INTO t1 VALUES (100,'abcdefghij',100);
+---
+- CreateTable: T2 (C1 INT, notNull INT NOT NULL);
+---
+- Statement: INSERT INTO t2 VALUES (null, 0);
+---
+- Statement: INSERT INTO t2 VALUES (2, 2);
+---
+- Statement: INSERT INTO t2 VALUES (100, 100);
+---
+- Statement: SELECT c1 FROM t1 WHERE c1 IN (1);
+- output: [[1]]
+#---
+## WHAT why is this not throwing an error, there is no c2
+#- Statement: SELECT c1 FROM t1 WHERE c1 IN (SELECT c2 FROM t2);
+#- output: [[1]] # actual
+---
+- Statement: SELECT c1 FROM t1 WHERE c1 IN (1,NULL,100);
+- output: [[1],[100]]
+---
+# both sides nullable
+- Statement: SELECT c1 FROM t1 WHERE c1 IN (SELECT c1 FROM t2);
+- output: [[100],[2]]
+---
+# left side nullable
+- Statement: SELECT c1 FROM t1 WHERE c1 IN (SELECT notNull FROM t2);
+- output: [[100],[2]]
+---
+# right side nullable
+- Statement: SELECT notNull FROM t1 WHERE notNull IN (SELECT c1 FROM t2);
+- output: [[100],[2]]
+...
