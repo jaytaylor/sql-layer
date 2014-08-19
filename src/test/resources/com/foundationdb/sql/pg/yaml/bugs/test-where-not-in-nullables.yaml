@@ -22,18 +22,18 @@
 ---
 - Statement: SELECT c1 FROM t1 WHERE c1 NOT IN (1,NULL,34);
 - row_count: 0
-#---
-## both sides nullable
-#- Statement: SELECT c1 FROM t1 WHERE c1 NOT IN (SELECT c1 FROM t2);
-#- row_count: 0 # actual [[1],[null]]
-#---
-## WAT why is this not throwing an error, there is no c2
-#- Statement: SELECT c1 FROM t1 WHERE c1 NOT IN (SELECT c2 FROM t2);
-#- output: [[1]] # actual []
-#---
-## left side nullable
-#- Statement: SELECT c1 FROM t1 WHERE c1 NOT IN (SELECT notNull FROM t2);
-#- output: [[1]] # actual [[1],[null]]
+---
+# neither side nullable
+- Statement: SELECT notNull FROM t1 WHERE notNull NOT IN (SELECT notNull FROM t2);
+- output: [[1]] # actual [[1],[null]]
+---
+# both sides nullable
+- Statement: SELECT c1 FROM t1 WHERE c1 NOT IN (SELECT c1 FROM t2);
+- row_count: 0 # actual [[1],[null]]
+---
+# left side nullable
+- Statement: SELECT c1 FROM t1 WHERE c1 NOT IN (SELECT notNull FROM t2);
+- output: [[1]] # actual [[1],[null]]
 ---
 # right side nullable
 - Statement: SELECT notNull FROM t1 WHERE notNull NOT IN (SELECT c1 FROM t2);
