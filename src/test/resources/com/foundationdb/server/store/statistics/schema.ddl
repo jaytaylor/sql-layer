@@ -1,8 +1,8 @@
 CREATE TABLE parent
 (
   id INT NOT NULL, PRIMARY KEY(id), 
-  name VARCHAR(256) NOT NULL,
-  name_sv VARCHAR(32) COLLATE latin1_swedish_ci
+  name VARCHAR(256) NOT NULL COLLATE UCS_BINARY,
+  name_sv VARCHAR(32) COLLATE UCS_BINARY
 );
 CREATE INDEX name ON parent(name);
 CREATE INDEX name_sv ON parent(name_sv);

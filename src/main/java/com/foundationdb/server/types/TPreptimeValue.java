@@ -95,8 +95,7 @@ public final class TPreptimeValue {
         int result = type != null ? type.hashCode() : 0;
         AkCollator collator;
         if (type != null && type.typeClass() instanceof TString) {
-            int charsetId = type.attribute(StringAttribute.CHARSET);
-            collator = AkCollatorFactory.getAkCollator(charsetId);
+            collator = AkCollatorFactory.getAkCollator(type.attribute(StringAttribute.COLLATION));
         }
         else {
             collator = null;

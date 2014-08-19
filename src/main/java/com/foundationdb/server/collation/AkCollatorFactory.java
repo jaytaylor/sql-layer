@@ -42,7 +42,7 @@ public class AkCollatorFactory {
 
     public final static AkCollator UCS_BINARY_COLLATOR = new AkCollatorBinary();
 
-    private static int collation_id_count = 1;
+    private static Integer collation_id_count = 1;
 
     private final static Map<String, Collator> sourceMap = new HashMap<>();
 
@@ -166,6 +166,7 @@ public class AkCollatorFactory {
         } else {
             cacheHits++;
         }
+
         return collator;
     }
 
@@ -243,8 +244,8 @@ public class AkCollatorFactory {
         }        
     }
 
-    private static AkCollator mapToBinary(final String name) {
-        collatorMap.put(name, new SoftReference<>(UCS_BINARY_COLLATOR));
+    private static AkCollator mapToBinary(final String scheme) {
+        collatorMap.put(scheme, new SoftReference<>(UCS_BINARY_COLLATOR));
         return UCS_BINARY_COLLATOR;
     }
 
