@@ -245,15 +245,26 @@ public class MapFolder extends BaseRule
                 }
             }
             if (usingHashTable != null){
-                usingHashTable.getOutput().replaceInput(usingHashTable, usingHashTable.getInput());
-                //remove using_hashTable from plan
-                parent.replaceInput(child, usingHashTable);
-                //now put it on very top
-                map.getOutput().replaceInput(map, inner);
-                //remove map from plan
-                usingHashTable.replaceInput(usingHashTable.getInput(), map);
-                //place map below using
-                map.setInner(child);
+                if(usingHashTable == child){
+                    if(!(usingHashTable.getInput() == map)) {
+                        //PlanNode usingChild = usingHashTable.getInput();
+                        map.getOutput().replaceInput(map, inner);
+                        usingHashTable.replaceInput(usingHashTable.getInput(), map);
+                    } else {
+                        inner.setOutput(map);
+                        map.setInner(inner);
+                    }
+                } else {
+                    usingHashTable.getOutput().replaceInput(usingHashTable, usingHashTable.getInput());
+                    //remove using_hashTable from plan
+                    parent.replaceInput(child, usingHashTable);
+                    //now put it on very top
+                    map.getOutput().replaceInput(map, inner);
+                    //remove map from plan
+                    usingHashTable.replaceInput(usingHashTable.getInput(), map);
+                    //place map below using
+                    map.setInner(child);
+                }
             } else {
                 map.getOutput().replaceInput(map, inner);
                 parent.replaceInput(child, map);
