@@ -30,6 +30,7 @@ import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.types.TAggregator;
 import com.foundationdb.server.types.TComparison;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TKeyComparable;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.texpressions.TPreparedField;
 
@@ -825,7 +826,19 @@ public class API
                                            Operator joinedInput,
                                            List<AkCollator> collators)
     {
-        return new Using_HashTable(hashInput, hashedRowType, comparisonFields, hashTableBindingPosition, joinedInput, collators);
+        return new Using_HashTable(hashInput, hashedRowType, comparisonFields, hashTableBindingPosition, joinedInput, collators, null);
+    }
+
+    // using_HashTable
+    public static Operator using_HashTable(Operator hashInput,
+                                           RowType hashedRowType,
+                                           List<TPreparedExpression> comparisonFields,
+                                           int hashTableBindingPosition,
+                                           Operator joinedInput,
+                                           List<AkCollator> collators,
+                                           List<TKeyComparable> tKeyComparables)
+    {
+        return new Using_HashTable(hashInput, hashedRowType, comparisonFields, hashTableBindingPosition, joinedInput, collators, tKeyComparables);
     }
 
     // EmitBoundRow_Nested

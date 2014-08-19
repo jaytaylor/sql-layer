@@ -5,6 +5,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TKeyComparable;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
@@ -24,8 +25,7 @@ public class HashTable {
     private ArrayListMultimap<KeyWrapper, Row> hashTable = ArrayListMultimap.create();
 
     private RowType hashedRowType;
-    private final HashFunction hashFunction = Hashing.goodFastHash(32); // Because we're returning longs
-
+    private List<TKeyComparable> tKeyComparables;
 
     public List<Row> getMatchingRows(Row row, List<TEvaluatableExpression> evaluatableComparisonFields, List<AkCollator> collators, QueryBindings bindings){
         return hashTable.get(new KeyWrapper(row, evaluatableComparisonFields, collators, bindings));
@@ -43,6 +43,10 @@ public class HashTable {
         hashedRowType = rowType;
     }
 
+    public void settKeyComparables(List<TKeyComparable> tKeyComparables){
+        this.tKeyComparables =  tKeyComparables;
+    }
+
     public  class KeyWrapper{
         List<ValueSource> values = new ArrayList<>();
         Integer hashKey = 0;
@@ -56,8 +60,13 @@ public class HashTable {
         public boolean equals(Object x) {
             if ( !(x instanceof KeyWrapper) ||  ((KeyWrapper)x).values.size() != values.size() )
                 return false;
+            KeyWrapper other = (KeyWrapper)x;
             for (int i = 0; i < values.size(); i++) {
-                if(!ValueSources.areEqual(((KeyWrapper) x).values.get(i), values.get(i), values.get(i).getType()))
+                if(tKeyComparables  != null && tKeyComparables.get(i) != null){
+                    if(tKeyComparables.get(i).getComparison().compare(values.get(i).getType(),values.get(i), other.values.get(i).getType(),  other.values.get(i)) !=0)
+                        return false;
+                }
+                else if(!ValueSources.areEqual(((KeyWrapper) x).values.get(i), values.get(i), values.get(i).getType()))
                     return false;
             }
             return true;

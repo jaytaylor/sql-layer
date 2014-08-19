@@ -128,7 +128,8 @@ public class NestedLoopMapper extends BaseRule
                     map = new UsingHashTable(ht,
                                              loader,
                                              mnl,
-                                             hjoin.getHashColumns());
+                                             hjoin.getHashColumns(),
+                                             hjoin.getTKeyComparables());
                 }
                 break;
             default:

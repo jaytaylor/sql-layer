@@ -95,7 +95,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
 import java.util.*;
 
 public class OperatorAssembler extends BaseRule
@@ -1451,6 +1454,12 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected RowStream assembleUsingHashTable( UsingHashTable usingHashTable) {
+            try {
+                Writer output = new BufferedWriter(new FileWriter("/Users/jerett/Desktop/HashJoin", true));
+                output.write("1");
+                output.close();
+            }
+            catch(IOException e){}
             HashTable hashTable = usingHashTable.getHashTable();
             int pos = assignBindingPosition(hashTable);
             RowStream lstream = assembleStream(usingHashTable.getLoader());
@@ -1463,9 +1472,10 @@ public class OperatorAssembler extends BaseRule
                     tFields,
                     pos,
                     stream.operator,
-                    collators);
+                    collators,
+                    usingHashTable.getTKeyComparables());
             return stream;
-        }
+            }
 
         protected RowStream assembleHashTableLookup(HashTableLookup hashTableLookup) {
             HashTable hashTable = hashTableLookup.getHashTable();

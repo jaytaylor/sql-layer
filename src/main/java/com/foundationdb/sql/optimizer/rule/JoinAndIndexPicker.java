@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
+import com.foundationdb.server.types.TKeyComparable;
 import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
 import com.foundationdb.sql.optimizer.rule.join_enum.*;
 import com.foundationdb.sql.optimizer.rule.join_enum.DPhyp.ExpressionTables;
@@ -886,7 +887,7 @@ public class JoinAndIndexPicker extends BaseRule
         JoinNode.Implementation joinImplementation;
         Collection<JoinOperator> joins;
         boolean needDistinct;
-        
+
         public JoinPlan(Plan left, Plan right, 
                         JoinType joinType, JoinNode.Implementation joinImplementation,
                         Collection<JoinOperator> joins, CostEstimate costEstimate) {
@@ -978,16 +979,20 @@ public class JoinAndIndexPicker extends BaseRule
         Plan loader;
         BaseHashTable hashTable;
         List<ExpressionNode> hashColumns, matchColumns;
+        List<TKeyComparable> tKeyComparables ;
         
         public HashJoinPlan(Plan loader, Plan input, Plan check,
                             JoinType joinType, JoinNode.Implementation joinImplementation,
                             Collection<JoinOperator> joins, CostEstimate costEstimate,
-                            BaseHashTable hashTable, List<ExpressionNode> hashColumns, List<ExpressionNode> matchColumns) {
+                            BaseHashTable hashTable, List<ExpressionNode> hashColumns, List<ExpressionNode> matchColumns,
+                            List<TKeyComparable> tKeyComparables
+        ) {
             super(input, check, joinType, joinImplementation, joins, costEstimate);
             this.loader = loader;
             this.hashTable = hashTable;
             this.hashColumns = hashColumns;
             this.matchColumns = matchColumns;
+            this.tKeyComparables = tKeyComparables;
         }
 
         @Override
@@ -1013,7 +1018,7 @@ public class JoinAndIndexPicker extends BaseRule
                 joinConditions = null;
             }
             HashJoinNode join = new HashJoinNode(loaderJoinable.getJoinable(), inputJoinable.getJoinable(),
-                    checkJoinable.getJoinable(), joinType, hashTable, hashColumns, matchColumns);
+                    checkJoinable.getJoinable(), joinType, hashTable, hashColumns, matchColumns, tKeyComparables);
             join.setJoinConditions(joinConditions);
             join.setImplementation(joinImplementation);
             if (joinType == JoinType.SEMI)
@@ -1283,7 +1288,7 @@ public class JoinAndIndexPicker extends BaseRule
                 .costBloomFilter(loaderPlan.costEstimate, inputPlan.costEstimate, checkPlan.costEstimate, selectivity);
             return new HashJoinPlan(loaderPlan, inputPlan, checkPlan,
                                     JoinType.SEMI, JoinNode.Implementation.BLOOM_FILTER,
-                                    joins, costEstimate, bloomFilter, hashColumns, matchColumns);
+                                    joins, costEstimate, bloomFilter, hashColumns, matchColumns, null);
         }
 
 
@@ -1304,10 +1309,26 @@ public class JoinAndIndexPicker extends BaseRule
             HashTable hashTable = new HashTable(loaderPlan.costEstimate.getRowCount());/**Does the hash table need these values*/
             CostEstimate costEstimate = picker.getCostEstimator()
                     .costHashJoin(loaderPlan.costEstimate, inputPlan.costEstimate, hashColumns.size());
+            List<TKeyComparable> tKeyComparables = new ArrayList<>();
+            for(JoinOperator joinOperator : joinOperators){
+                if(joinOperator.getJoin() != null && joinOperator.getJoin().hasJoinConditions()) {
+                    for (ConditionExpression conditionExpression : joinOperator.getJoin().getJoinConditions())
+                        if (conditionExpression instanceof ComparisonCondition)
+                            tKeyComparables.add(((ComparisonCondition) conditionExpression).getKeyComparable());
+                }
+            }
+            boolean allNull = true;
+            for(TKeyComparable tKeyComparable: tKeyComparables){
+                if( tKeyComparable != null)
+                    allNull = false;
+            }
+            if(tKeyComparables.isEmpty() || allNull)
+                tKeyComparables = null;
+
             return new HashJoinPlan(loaderPlan, inputPlan, checkPlan,
                     joinPlan.joinType, JoinNode.Implementation.HASH_TABLE,
-                    joins, costEstimate, hashTable, hashColumns, matchColumns);
-        }//TODO not always SEMI/Inner
+                    joins, costEstimate, hashTable, hashColumns, matchColumns, tKeyComparables);
+        }
 
         public List<List<ExpressionNode>> buildExpressionColumns(Collection<JoinOperator> joins, Plan inputPlan, Plan checkPlan) {
             List<ExpressionNode> matchColumns = new ArrayList<>();

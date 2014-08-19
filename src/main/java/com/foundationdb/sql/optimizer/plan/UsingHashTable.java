@@ -17,6 +17,8 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
+import com.foundationdb.server.types.TKeyComparable;
+
 import java.util.List;
 
 /** A context with a Bloom filter. */
@@ -24,12 +26,15 @@ public class UsingHashTable extends UsingLoaderBase
 {
     private HashTable hashTable;
     private List<ExpressionNode> lookupExpressions;
+    private List<TKeyComparable> tKeyComparables;
 
 
-    public UsingHashTable(HashTable hashTable, PlanNode loader, PlanNode input, List<ExpressionNode> lookupExpressions) {
+    public UsingHashTable(HashTable hashTable, PlanNode loader, PlanNode input,
+                          List<ExpressionNode> lookupExpressions, List<TKeyComparable> tKeyComparables) {
         super(loader, input);
         this.hashTable = hashTable;
         this.lookupExpressions = lookupExpressions;
+        this.tKeyComparables = tKeyComparables;
 
     }
 
@@ -41,6 +46,8 @@ public class UsingHashTable extends UsingLoaderBase
     public HashTable getHashTable() {
         return hashTable;
     }
+    public List<TKeyComparable> getTKeyComparables() {return tKeyComparables;}
+
 
     @Override
     public String summaryString() {
