@@ -63,3 +63,8 @@ CREATE INDEX sku_and_date ON customers(items.sku, orders.order_date) USING LEFT 
 CREATE INDEX state_and_name ON customers(addresses.state, customers.name) USING RIGHT JOIN;
 
 CREATE INDEX cust_ft ON customers(FULL_TEXT(name, items.sku, addresses.state));
+
+-- NO Indexes or groups or anything
+CREATE TABLE t1(c1 INT, c2 INT, c3 INT);
+CREATE TABLE t2(c1 INT, c2 INT, c3 INT);
+CREATE TABLE t3(c1 INT, c2 INT, c3 INT);
