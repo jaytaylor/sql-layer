@@ -62,6 +62,14 @@ public class AkCollatorFactory {
     public enum Mode {
         STRICT, LOOSE, DISABLED
     }
+    
+    /*
+     * Indices for specification of collation
+     */
+    private final static int LANGUAGE_NDX = 0;
+    private final static int REGION_NDX = 1;
+    private final static int CASE_NDX = 2;
+    private final static int ACCENT_NDX = 3;
 
     /**
      * Set factory to one of three modes specified by case-insensitive string:
@@ -187,61 +195,66 @@ public class AkCollatorFactory {
      * @return
      */
     static synchronized Collator forScheme(final String scheme) {
-        RuleBasedCollator collator = (RuleBasedCollator) sourceMap.get(scheme);
+        RuleBasedCollator collator = (RuleBasedCollator) sourceMap.get(scheme); 
         if (collator == null) {
-            String[] pieces = scheme.split("_");
-            if (pieces.length < 2 || pieces.length > 4 ) {
+            String[] pieces = scheme.toLowerCase().split("_");
+            if (pieces.length < REGION_NDX + 1) {
                 throw new IllegalStateException("Malformed collation scheme: " + scheme);
             }
             
-            ULocale locale = new ULocale(pieces[0], pieces[1]);
+            ULocale locale = new ULocale(pieces[LANGUAGE_NDX], pieces[REGION_NDX]);
+            
+            // only way to validate the locale
             if (locale.getCountry() == null || locale.getCountry().isEmpty() ||
                     locale.getLanguage() == null || locale.getLanguage().isEmpty()) { 
                 throw new UnsupportedCollationException(scheme);
             }
 
-            collator = (RuleBasedCollator) RuleBasedCollator.getInstance(new ULocale(pieces[0], pieces[1]));
-            setCollatorStrength(collator, pieces, scheme);            
+            collator = (RuleBasedCollator) RuleBasedCollator.getInstance(locale);
+            setCollatorStrength(collator, scheme);            
             sourceMap.put(scheme, collator);
         }
         collator = collator.cloneAsThawed();
         return collator;
     }
 
-    private static void setCollatorStrength(RuleBasedCollator collator,
-            String[] pieces, String scheme) {
-        if (pieces.length == 3) {
-            if (pieces[2].toLowerCase().equals("cs")) {
+    private static void setCollatorStrength(RuleBasedCollator collator, String scheme) {
+        String[] pieces = scheme.toLowerCase().split("_");
+        if (pieces.length == CASE_NDX + 1) {
+            if (pieces[CASE_NDX].equals("cs")) {
                 collator.setStrength(Collator.TERTIARY);
             }
-            else if (pieces[2].toLowerCase().equals("ci")) {
+            else if (pieces[CASE_NDX].equals("ci")) {
                 collator.setStrength(Collator.SECONDARY);
             }
             else {
                 throw new IllegalStateException("Malformed collation scheme: " + pieces);
             }
         }
-        else if (pieces.length == 4) {
-            if (pieces[2].toLowerCase().equals("cs") && pieces[3].toLowerCase().equals("co")) {
+        else if (pieces.length == ACCENT_NDX + 1) {
+            if (pieces[CASE_NDX].equals("cs") && pieces[ACCENT_NDX].equals("co")) {
                 collator.setStrength(Collator.TERTIARY);
                 collator.setCaseLevel(false);
             }
-            else if (pieces[2].toLowerCase().equals("cs") && pieces[3].toLowerCase().equals("cx")) {
+            else if (pieces[CASE_NDX].equals("cs") && pieces[ACCENT_NDX].equals("cx")) {
                 collator.setStrength(Collator.PRIMARY);
                 collator.setCaseLevel(true);
             }
-            else if (pieces[2].toLowerCase().equals("ci") && pieces[3].toLowerCase().equals("co")) {
+            else if (pieces[CASE_NDX].equals("ci") && pieces[ACCENT_NDX].equals("co")) {
                 collator.setStrength(Collator.SECONDARY);
                 collator.setCaseLevel(false);
             }
-            else if (pieces[2].toLowerCase().equals("ci") && pieces[3].toLowerCase().equals("cx")) {
+            else if (pieces[CASE_NDX].equals("ci") && pieces[ACCENT_NDX].equals("cx")) {
                 collator.setStrength(Collator.PRIMARY);
                 collator.setCaseLevel(false);
             }
             else {
                 throw new IllegalStateException("Malformed collation scheme: " + scheme);
             }
-        }        
+        }
+        else if (pieces.length > ACCENT_NDX + 1) {
+            throw new IllegalStateException("Malformed collation scheme: " + scheme);
+        }
     }
 
     private static AkCollator mapToBinary(final String scheme) {
