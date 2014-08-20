@@ -81,6 +81,11 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
     public StorageDescription cloneForObject(HasStorage forObject) {
         return new ColumnKeysStorageDescription(forObject, this, storageFormat);
     }
+    
+    @Override
+    public StorageDescription cloneForObjectWithoutState(HasStorage forObject) {
+        return new ColumnKeysStorageDescription(forObject, storageFormat);
+    }
 
     @Override
     public void writeProtobuf(Storage.Builder builder) {

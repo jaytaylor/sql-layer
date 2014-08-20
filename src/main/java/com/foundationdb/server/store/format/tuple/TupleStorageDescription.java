@@ -58,10 +58,17 @@ public class TupleStorageDescription extends FDBStorageDescription
         super(forObject, other, storageFormat);
         this.usage = other.usage;
     }
-
+    
     @Override
     public StorageDescription cloneForObject(HasStorage forObject) {
         return new TupleStorageDescription(forObject, this, storageFormat);
+    }
+    
+    @Override
+    public StorageDescription cloneForObjectWithoutState(HasStorage forObject) {
+        TupleStorageDescription sd = new TupleStorageDescription(forObject, storageFormat);
+        sd.setUsage(this.getUsage());
+        return sd;
     }
 
     public TupleUsage getUsage() {

@@ -71,6 +71,11 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
     public StorageDescription cloneForObject(HasStorage forObject) {
         return new FDBStorageDescription(forObject, this, storageFormat);
     }
+    
+    @Override
+    public StorageDescription cloneForObjectWithoutState(HasStorage forObject) {
+        return new FDBStorageDescription(forObject, storageFormat);
+    }
 
     @Override
     public void writeProtobuf(Storage.Builder builder) {

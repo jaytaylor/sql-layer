@@ -17,7 +17,13 @@
 
 package com.foundationdb.server.store.format;
 
-import com.foundationdb.ais.model.*;
+import com.foundationdb.ais.model.FullTextIndex;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.HasStorage;
+import com.foundationdb.ais.model.NameGenerator;
+import com.foundationdb.ais.model.StorageDescription;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.FDBProtobuf;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
