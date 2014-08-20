@@ -655,6 +655,7 @@ public class OnlineHelper implements RowListener
             boolean done = false;
             Row lastCommitted = null;
             boolean checkOnlineError = true;
+            long rowCount = 0;
             while(!done) {
                 Row row = cursor.next();
                 boolean didCommit = false;
@@ -665,6 +666,7 @@ public class OnlineHelper implements RowListener
                     checkOnlineError = false;
                 }
                 if(row != null) {
+                    rowCount++;
                     RowType rowType = row.rowType();
                     // No way to pre-populate this map as Operator#rowType() is optional and insufficient.
                     HKeyChecker checker = checkers.get(rowType);
@@ -702,7 +704,7 @@ public class OnlineHelper implements RowListener
                     }
                 }
                 if(didCommit) {
-                    LOG.debug("Committed up to row: {}", row);
+                    LOG.debug("Committed up to row: {}: {} rows", row, rowCount);
                     checkOnlineError = true;
                     lastCommitted = row;
                     checkers.clear();

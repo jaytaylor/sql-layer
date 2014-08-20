@@ -648,6 +648,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     }
 
     @Override
+    @Deprecated
     public long getRowCount(Session session, boolean exact, RowData start, RowData end, byte[] columnBitMap) {
         // TODO: Compute a reasonable value. The value 2 is special because it is not 0 or 1 but will
         // still induce MySQL to use an index rather than a full table scan.
