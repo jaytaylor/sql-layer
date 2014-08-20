@@ -17,14 +17,11 @@
 
 package com.foundationdb.server.store.format;
 
-import com.foundationdb.ais.model.FullTextIndex;
-import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.HasStorage;
-import com.foundationdb.ais.model.NameGenerator;
-import com.foundationdb.ais.model.StorageDescription;
-import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
+import com.foundationdb.ais.protobuf.FDBProtobuf;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
 import com.foundationdb.sql.parser.StorageFormatNode;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -203,7 +200,7 @@ public abstract class StorageFormatRegistry
     }
 
 
-        public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
+    public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
         if (object.getStorageDescription() == null) {
             if (object instanceof Group) {
                 MemoryTableFactory factory = memoryTableFactories.get(((Group)object).getName());
@@ -212,14 +209,26 @@ public abstract class StorageFormatRegistry
                 }
                 else {
                     object.setStorageDescription(getDefaultStorageDescription(object));
+                    if (object.getStorageDescription() instanceof TupleStorageDescription) {
+                        TupleStorageDescription tsd = (TupleStorageDescription) object.getStorageDescription();
+                        tsd.setUsage(FDBProtobuf.TupleUsage.KEY_AND_ROW);
+                    }
                 }
             }
             else if (object instanceof FullTextIndex) {
                 File path = new File(nameGenerator.generateFullTextIndexPath((FullTextIndex)object));
                 object.setStorageDescription(new FullTextIndexFileStorageDescription(object, path, defaultIdentifier));
             }
-            else {
+            else if (object instanceof Index) {               
                 object.setStorageDescription(getDefaultStorageDescription(object));
+                if (object.getStorageDescription() instanceof TupleStorageDescription) {
+                    TupleStorageDescription tsd = (TupleStorageDescription) object.getStorageDescription();
+                    tsd.setUsage(FDBProtobuf.TupleUsage.KEY_ONLY);
+                }
+            }
+            // sequence 
+            else {
+                object.setStorageDescription(getDefaultStorageDescription(object));                
             }
         }
     }

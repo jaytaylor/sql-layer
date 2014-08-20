@@ -35,7 +35,7 @@ public class FDBStorageFormatRegistry extends StorageFormatRegistry
 {
 
     public FDBStorageFormatRegistry(ConfigurationService configService) {
-        super(configService, FDBStorageFormat.identifier);
+        super(configService, TupleStorageFormat.identifier);
     }
 
     @Override
@@ -50,11 +50,6 @@ public class FDBStorageFormatRegistry extends StorageFormatRegistry
     public boolean isDescriptionClassAllowed(Class<? extends StorageDescription> descriptionClass) {
         return (super.isDescriptionClassAllowed(descriptionClass) ||
                 FDBStorageDescription.class.isAssignableFrom(descriptionClass));
-    }
-
-    // The old tree name field was the prefix bytes Base64 encoded.
-    public StorageDescription convertTreeName(String treeName, HasStorage forObject) {
-        return new FDBStorageDescription(forObject, Strings.fromBase64(treeName), FDBStorageFormat.identifier);
     }
 
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
