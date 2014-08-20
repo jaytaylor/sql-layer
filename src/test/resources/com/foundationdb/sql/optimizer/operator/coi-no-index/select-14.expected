@@ -1,6 +1,0 @@
-    Project_Default(customers.name, orders.order_date)
-      Filter_Default(customers - orders - items)
-        Flatten_HKeyOrdered(customers - orders INNER items)
-          Flatten_HKeyOrdered(customers INNER orders)
-            GroupScan_Default(customers)
-            HIHIHIHIHIH
