@@ -144,7 +144,7 @@
 - Statement: ALTER TABLE t6 DROP GROUPING FOREIGN KEY
 ---
 - Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t6')
-#- output: [[t6, protobuf]]
+- output: [[t6, protobuf]]
 ---
 - Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t3')
 - output: [[t3, protobuf]]
