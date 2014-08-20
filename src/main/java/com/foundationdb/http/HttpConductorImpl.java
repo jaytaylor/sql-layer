@@ -371,6 +371,11 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         }
 
         @Override
+        public String getLocalHost() {
+            return connector.getHost();
+        }
+
+        @Override
         public long getStartTimeMillis() {
             return _statsStartedAt.get();
         }

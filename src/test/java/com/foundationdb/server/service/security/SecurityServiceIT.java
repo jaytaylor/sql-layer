@@ -201,7 +201,8 @@ public class SecurityServiceIT extends ITBase
     private Connection openPostgresConnection(String user, String password) 
             throws Exception {
         int port = serviceManager().getServiceByClass(PostgresService.class).getPort();
-        String url = String.format("jdbc:fdbsql://localhost:%d/%s", port, user);
+        String host = serviceManager().getServiceByClass(PostgresService.class).getHost();
+        String url = String.format("jdbc:fdbsql://%s:%d/%s", host, port, user);
         return DriverManager.getConnection(url, user, password);
     }
 

@@ -138,20 +138,21 @@ public class SwingConsole extends JFrame implements WindowListener
                     if (!adjusted)
                     {
                         int port = getPostgresPort();
+                        String host = getPostgresHost();
 
                         if (macOSX)
                             RUN_FDBSQLCLI_CMD = new String[]
                             {
                                 "osascript",
                                 "-e",
-                                "tell application \"Terminal\"\n activate\n do script \"exec fdbsqlcli -h localhost -p " + port + "\"\n end tell"
+                                "tell application \"Terminal\"\n activate\n do script \"exec fdbsqlcli -h " + host + " -p " + port + "\"\n end tell"
                             };
                         else if (osName.startsWith("Window"))
                             RUN_FDBSQLCLI_CMD = new String[]
                             {
                                 "cmd.exe",
                                 "/c",
-                                "start fdbsqlcli -h localhost -p " + port
+                                "start fdbsqlcli -h " + host + " -p " + port
                             };
                         else // assuming unix-based system
                             RUN_FDBSQLCLI_CMD = new String[]
@@ -160,7 +161,7 @@ public class SwingConsole extends JFrame implements WindowListener
                                     ? "x-terminal-emulator"
                                     : "xterm",
                                 "-e",
-                                "fdbsqlcli -h localhost -p " + port
+                                "fdbsqlcli -h " + host + " -p " + port
                             };
 
                         adjusted = true;
@@ -296,6 +297,20 @@ public class SwingConsole extends JFrame implements WindowListener
             }
         }
         return 15432;
+    }
+
+    // Note that this needs to work even if services didn't start properly.
+    protected String getPostgresHost() {
+        MonitorService service = serviceManager.getMonitorService();
+        if (service != null) {
+            ServerMonitor monitor = service.getServerMonitors().get("Postgres");
+            if (monitor != null) {
+                String host = monitor.getLocalHost();
+                if (host != null)
+                    return host;
+            }
+        }
+        return "localhost";
     }
 
 }
