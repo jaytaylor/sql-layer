@@ -19,11 +19,12 @@ package com.foundationdb.sql.aisddl;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
+
+import com.foundationdb.server.error.ReferencedSchemaException;
 import org.junit.Test;
 import org.junit.Before;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.TestAISBuilder;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.sql.parser.SQLParser;
@@ -31,7 +32,6 @@ import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.sql.parser.CreateSchemaNode;
 import com.foundationdb.sql.parser.DropSchemaNode;
 import com.foundationdb.server.error.DuplicateSchemaException;
-import com.foundationdb.server.error.DropSchemaNotAllowedException;
 import com.foundationdb.server.error.NoSuchSchemaException;
 import com.foundationdb.server.types.service.TestTypesRegistry;
 import com.foundationdb.server.types.service.TypesRegistry;
@@ -140,7 +140,7 @@ public class SchemaDDLTest {
         SchemaDDL.dropSchema(ddlFunctions, null, (DropSchemaNode)stmt, null);
     }
 
-    @Test(expected=DropSchemaNotAllowedException.class)
+    @Test(expected=ReferencedSchemaException.class)
     public void dropSchemaUsed() throws Exception
     {
         String sql = "DROP SCHEMA S RESTRICT";
