@@ -27,25 +27,25 @@ import com.foundationdb.sql.parser.StorageFormatNode;
 
 public class TupleStorageFormat extends StorageFormat<TupleStorageDescription>
 {
-    private final static String storageFormat = "tuple";
+    public final static String identifier = "tuple";
 
     private TupleStorageFormat() {
     }
 
     public static void register(StorageFormatRegistry registry) {
-        registry.registerStorageFormat(FDBProtobuf.tupleUsage, storageFormat, TupleStorageDescription.class, new TupleStorageFormat());
+        registry.registerStorageFormat(FDBProtobuf.tupleUsage, identifier, TupleStorageDescription.class, new TupleStorageFormat());
     }
 
     public TupleStorageDescription readProtobuf(Storage pbStorage, HasStorage forObject, TupleStorageDescription storageDescription) {
         if (storageDescription == null) {
-            storageDescription = new TupleStorageDescription(forObject, storageFormat);
+            storageDescription = new TupleStorageDescription(forObject, identifier);
         }
         storageDescription.setUsage(pbStorage.getExtension(FDBProtobuf.tupleUsage));
         return storageDescription;
     }
 
     public TupleStorageDescription parseSQL(StorageFormatNode node, HasStorage forObject) {
-        TupleStorageDescription storageDescription = new TupleStorageDescription(forObject, storageFormat);
+        TupleStorageDescription storageDescription = new TupleStorageDescription(forObject, identifier);
         boolean keyOnly = true;
         if (forObject instanceof Group) {
             String keyOnlyOption = node.getOptions().get("key_only");
