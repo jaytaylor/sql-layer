@@ -34,4 +34,20 @@
 # right side nullable
 - Statement: SELECT notNull FROM t1 WHERE notNull IN (SELECT c1 FROM t2);
 - output: [[100],[2]]
+---
+# left1 nullable
+- Statement: SELECT c1 FROM t1 WHERE (c1, notNull) IN (SELECT notNull, notNull FROM t2)
+- output: [[2],[100]]
+---
+# left2 nullable
+- Statement: SELECT c1 FROM t1 WHERE (notNull, c1) IN (SELECT notNull, notNull FROM t2)
+- output: [[2],[100]]
+---
+# right1 nullable
+- Statement: SELECT notNull FROM t1 WHERE (notNull, notNull) IN (SELECT c1, notNull FROM t2)
+- output: [[2],[100]]
+---
+# right2 nullable
+- Statement: SELECT notNull FROM t1 WHERE (notNull, notNull) IN (SELECT notNull, c1 FROM t2)
+- output: [[2],[100]]
 ...
