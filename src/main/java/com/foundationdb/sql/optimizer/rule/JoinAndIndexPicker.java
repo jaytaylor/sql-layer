@@ -1173,9 +1173,10 @@ public class JoinAndIndexPicker extends BaseRule
                     planClass.consider(hashPlan);
             }
             if (joinType.isInner() || (joinType.isSemi() && rightPlan.semiJoinEquivalent()) || joinType == JoinType.LEFT) {
-                Collection<JoinOperator> semiJoins = duplicateJoins(joins);
-                Plan loaderPlan = right.bestPlan(outsideJoins);
-                JoinPlan hashPlan2 = buildHashTableJoin(loaderPlan, joinPlan , semiJoins);
+                Collection<JoinOperator> joinOperators = duplicateJoins(joins);
+                Plan loaderPlan = right.bestPlan(condJoins, outsideJoins);
+                cleanJoinConditions(joinOperators, loaderPlan, leftPlan);
+                JoinPlan hashPlan2 = buildHashTableJoin(loaderPlan, joinPlan , joinOperators);
                 if(hashPlan2 != null)
                     planClass.consider(hashPlan2);
             }
@@ -1289,7 +1290,7 @@ public class JoinAndIndexPicker extends BaseRule
                                     JoinType.SEMI, JoinNode.Implementation.BLOOM_FILTER,
                                     joins, costEstimate, bloomFilter, hashColumns, matchColumns, null);
         }
-
+        int MAX_ROWS_X_JOIN_COLS_FOR_TABLE = 5000;
 
         public JoinPlan buildHashTableJoin(Plan loaderPlan, JoinPlan joinPlan,
                                            Collection<JoinOperator> joinOperators){
@@ -1301,13 +1302,14 @@ public class JoinAndIndexPicker extends BaseRule
                 return null;
             List<ExpressionNode> hashColumns = returning.get(0);
             List<ExpressionNode> matchColumns = returning.get(1);
+            if(loaderPlan.costEstimate.getRowCount() * hashColumns.size() > MAX_ROWS_X_JOIN_COLS_FOR_TABLE)
+                return null;
             long limit = picker.queryGoal.getLimit();
             if (joinPlan.costEstimate.getRowCount() == limit) {
                 /** Possibly return null if the row count is greater than the possible row count**/
             }
             HashTable hashTable = new HashTable(loaderPlan.costEstimate.getRowCount());
-            CostEstimate costEstimate = picker.getCostEstimator()
-                    .costHashJoin(loaderPlan.costEstimate, inputPlan.costEstimate, hashColumns.size());
+
             List<TKeyComparable> tKeyComparables = new ArrayList<>();
             for(JoinOperator joinOperator : joinOperators){
                 if(joinOperator.getJoin() != null && joinOperator.getJoin().hasJoinConditions()) {
@@ -1323,7 +1325,8 @@ public class JoinAndIndexPicker extends BaseRule
             }
             if(tKeyComparables.isEmpty() || allNull)
                 tKeyComparables = null;
-
+            CostEstimate costEstimate = picker.getCostEstimator()
+                    .costHashJoin(loaderPlan.costEstimate, inputPlan.costEstimate, checkPlan.costEstimate, hashColumns.size());
             return new HashJoinPlan(loaderPlan, inputPlan, checkPlan,
                     joinPlan.joinType, JoinNode.Implementation.HASH_TABLE,
                     joins, costEstimate, hashTable, hashColumns, matchColumns, tKeyComparables);

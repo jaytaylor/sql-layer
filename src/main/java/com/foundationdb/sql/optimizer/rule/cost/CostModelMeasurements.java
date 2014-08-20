@@ -55,6 +55,5 @@ public interface CostModelMeasurements
     final double HASH_TABLE_LOAD_PER_ROW = .26 ;
     final double HASH_TABLE_SCAN_PER_ROW =  .18;
     final double HASH_TABLE_DIFF_PER_JOIN = .144;
-    final double HASH_TABLE_COLUMN_COUNT_OFFSET = .001;
 
 }
