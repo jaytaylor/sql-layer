@@ -25,7 +25,6 @@ public class HashTableLookup extends BasePlanWithInput
 {
     private HashTable hashTable;
     private List<ExpressionNode> lookupExpressions;
-    private PlanNode check;
 
     public HashTableLookup(HashTable hashTable,
                            PlanNode input,
@@ -43,9 +42,6 @@ public class HashTableLookup extends BasePlanWithInput
         return lookupExpressions;
     }
 
-    public PlanNode getCheck() {
-        return check;
-    }
 
     @Override
     public String summaryString() {
@@ -58,9 +54,4 @@ public class HashTableLookup extends BasePlanWithInput
         return str.toString();
     }
 
-    @Override
-    protected void deepCopy(DuplicateMap map) {
-        super.deepCopy(map);
-        check = (PlanNode)check.duplicate(map);
-    }
 }
