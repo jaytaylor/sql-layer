@@ -1,4 +1,4 @@
----
+--- # check if alter table changes format
 - CreateTable: t1 (a INT PRIMARY KEY, b INT)
 ---
 - Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t1')
@@ -10,22 +10,175 @@
 ---
 - Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE table_name='t1'
 - output: [[t1, tuple]]
----
+--- 
 - CreateTable: t2 (d INT PRIMARY KEY, e INT)
 ---
 - Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t2')
 - output: [[t2, tuple]]
 ---
 - Statement: INSERT INTO t2 VALUES (5, 50), (6, 60)
----
-- Statement: SELECT table_name, storage_format FROM information_schema.indexes WHERE (index_name='PRIMARY')
+
+--- # check format standard index
+- Statement: SELECT table_name, storage_format FROM information_schema.indexes WHERE (index_name='PRIMARY' AND table_name='t2')
 - output: [[t2, tuple]]
 ---
-- Statement: CREATE INDEX index_on_e ON t2(e);
+- Statement: CREATE INDEX index_on_e ON t2(e) STORAGE_FORMAT "tuple";
+
+--- # check format of added index, and stable storage format
+- Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t2')
+- output: [[t2, tuple]]
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.indexes WHERE (index_name='index_on_e' AND table_name='t2')
+- output: [[t2, tuple]]
+
+--- # check alternative storage types
+- CreateTable: t3 (f INT PRIMARY KEY, g INT) STORAGE_FORMAT "protobuf"
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t3')
+- output: [[t3, protobuf]]
+---
+- Statement: ALTER TABLE t3 ADD COLUMN z INT
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t3')
+- output: [[t3, protobuf]]
+--- 
+- CreateTable: t4 (h INT PRIMARY KEY, i INT) STORAGE_FORMAT "column_keys"
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t4' )
+- output: [[t4, column_keys]]
+---
+- Statement: ALTER TABLE t4 ADD COLUMN z INT
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t4')
+- output: [[t4, column_keys]]
+--- # drop statement
+- Statement: ALTER TABLE t4 DROP COLUMN z
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t4')
+- output: [[t4, column_keys]]
+
+--- # change names
+- Statement: ALTER TABLE t4 RENAME TO tx
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='tx')
+- output: [[tx, column_keys]]
+---
+- Statement: ALTER TABLE tx RENAME TO t4
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t4')
+- output: [[t4, column_keys]]
+---
+- Statement: ALTER TABLE t4 RENAME COLUMN i TO ii
+---
+- Statement: SELECT column_name FROM information_schema.columns WHERE (table_name='t4')
+- output: [[h], [ii]]
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t4')
+- output: [[t4, column_keys]]
+---
+- Statement: ALTER TABLE t4 RENAME COLUMN ii TO i
+
+---
+- Statement: CREATE INDEX index_on_i ON t4(i) STORAGE_FORMAT "tuple"
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.indexes WHERE (index_name='index_on_i')
+- output: [[t4, tuple]]
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t4')
+- output: [[t4, column_keys]]
+
+--- # only supported storage format is tuple for indexes
+- Statement: CREATE INDEX index_on_i_fail ON t4(i) STORAGE_FORMAT "protobuf" 
+- error: [5001Q]
+---
+- Statement: CREATE INDEX index_on_i_fail ON t4(i) STORAGE_FORMAT "column_keys" 
+- error: [5001Q]
+
+
+--- # combine two groups with GFK
+- Statement: ALTER TABLE t2 ADD CONSTRAINT gfk_t2 GROUPING FOREIGN KEY (e) REFERENCES t1(a)
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t1')
+- output: [[t1, tuple]]
 ---
 - Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t2')
 - output: [[t2, tuple]]
 ---
-- Statement: SELECT table_name, storage_format FROM information_schema.indexes WHERE (index_name='index_on_e')
+- Statement: SELECT table_name, storage_format FROM information_schema.indexes WHERE (index_name='PRIMARY' AND table_name='t1')
+- output: [[t1, tuple]]
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.indexes WHERE (index_name='PRIMARY' AND table_name='t2')
 - output: [[t2, tuple]]
+--- 
+- CreateTable: t5(x INT PRIMARY KEY, GROUPING FOREIGN KEY (x) REFERENCES t1(a)) 
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t5')
+- output: [[t5, tuple]]
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.indexes WHERE (index_name='PRIMARY' AND table_name='t5')
+- output: [[t5, tuple]]
+---
+- CreateTable: t6(x INT PRIMARY KEY, GROUPING FOREIGN KEY (x) REFERENCES t3(f)) 
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t6')
+- output: [[t6, protobuf]]
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t3')
+- output: [[t3, protobuf]]
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.indexes WHERE (index_name='PRIMARY' AND table_name='t3')
+- output: [[t3, tuple]]
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.indexes WHERE (index_name='PRIMARY' AND table_name='t6')
+- output: [[t6, tuple]]
+
+--- # split groups by dropping GFK
+- Statement: ALTER TABLE t2 DROP CONSTRAINT gfk_t2
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t1')
+- output: [[t1, tuple]]
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t2')
+- output: [[t2, tuple]]
+---
+- Statement: ALTER TABLE t6 DROP GROUPING FOREIGN KEY
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t6')
+#- output: [[t6, protobuf]]
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t3')
+- output: [[t3, protobuf]]
+
+
+
+
+--- # alter table uses a different path
+- CreateTable: t7 (j INT PRIMARY KEY, k INT) STORAGE_FORMAT "protobuf"
+---
+- Statement: ALTER TABLE t7 ADD INDEX (k) 
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.indexes WHERE (index_name='PRIMARY' AND table_name='t7')
+- output: [[t7, tuple]]
+---
+- Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t7')
+- output: [[t7, protobuf]]
+---
+- Statement: ALTER TABLE t7 ADD INDEX (k) STORAGE_FORMAT "protobuf"
+#- error: [5001Q]
+---
+- Statement: ALTER TABLE t7 ADD INDEX (k) STORAGE_FORMAT "column_keys"
+#- error: [5001Q]
+
+# create table with different formats
+# add GFK
+# check the format of the parent table
+# add indexes, ensure these remain the same format type during changes of the table format
+# 
+#---
+#- Statement: ALTER TABLE t2 ADD GROUPING FOREIGN KEY (e) REFERENCES t1(a)
+#---
+#- CreateTable: tx(x INT PRIMARY KEY, GROUPING FOREIGN KEY (x) REFERENCES t1(a)) 
+
+# grouping index
+# full text index
 ...
