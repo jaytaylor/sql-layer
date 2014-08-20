@@ -550,7 +550,7 @@ public class DefaultFormatter
                 append(table);
                 sb.append(", ");
             }
-            sb.setLength(sb.length()-2);
+            sb.setLength(sb.length() - 2);
         }
     }
 
@@ -766,16 +766,13 @@ public class DefaultFormatter
     protected void appendHashTableOperator(String name, Attributes atts) {
         if (levelOfDetail != LevelOfDetail.BRIEF) {
             if (name.equals("Using_HashTable")) {
-                appendProjectColumns(atts, -1);
+                for (Explainer ex : atts.get(Label.BINDING_POSITION)) {
+                    append(ex);
+                }
             }
             else if (name.equals("HashTableLookup_Default")) {
-                if (atts.containsKey(Label.EXPRESSIONS)) {
-                    for (Explainer ex : atts.get(Label.EXPRESSIONS)) {
-                        append(ex);
-                        sb.append(", ");
-                    }
-                } else if (atts.containsKey(Label.EXPRESSIONS) && atts.get(Label.EXPRESSIONS).size() > 0){
-                    sb.setLength(sb.length() - 2);
+                for (Explainer ex : atts.get(Label.BINDING_POSITION)) {
+                    append(ex);
                 }
             }
         }
