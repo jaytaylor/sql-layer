@@ -73,6 +73,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     private static final Logger logger = LoggerFactory.getLogger(HttpConductorImpl.class);
 
     private static final String CONFIG_HTTP_PREFIX = "fdbsql.http.";
+    private static final String CONFIG_HOST_PROPERTY = CONFIG_HTTP_PREFIX + "host";
     private static final String CONFIG_PORT_PROPERTY = CONFIG_HTTP_PREFIX + "port";
     private static final String CONFIG_SSL_PROPERTY = CONFIG_HTTP_PREFIX + "ssl";
     private static final String CONFIG_LOGIN_PROPERTY = CONFIG_HTTP_PREFIX + "login";
@@ -225,13 +226,14 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         String sslProperty = configurationService.getProperty(CONFIG_SSL_PROPERTY);
 
         int portLocal = safeParseInt(CONFIG_PORT_PROPERTY);
+        String hostLocal = configurationService.getProperty(CONFIG_HOST_PROPERTY);
         int loginCacheSeconds = safeParseInt(CONFIG_LOGIN_CACHE_SECONDS);
         AuthenticationType login = safeParseAuthentication(CONFIG_LOGIN_PROPERTY);
         boolean sslOn = Boolean.parseBoolean(sslProperty);
 
         boolean crossOriginOn = Boolean.parseBoolean(configurationService.getProperty(CONFIG_XORIGIN_ENABLED));
-        logger.info("Starting {} service on port {} with authentication {} and CORS {}",
-                    new Object[] { sslOn ? "HTTPS" : "HTTP", portLocal, login, crossOriginOn ? "on" : "off"});
+        logger.info("Starting {} service on {}:{} with authentication {} and CORS {}",
+                    new Object[] { sslOn ? "HTTPS" : "HTTP", hostLocal, portLocal, login, crossOriginOn ? "on" : "off"});
                     
         Server localServer = new Server();
         SelectChannelConnector connector;
@@ -244,6 +246,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
             sslFactory.setKeyStorePassword(System.getProperty("javax.net.ssl.keyStorePassword"));
             connector = new SslSelectChannelConnectorExtended(sslFactory);
         }
+        connector.setHost(hostLocal);
         connector.setPort(portLocal);
         connector.setThreadPool(new QueuedThreadPool(200));
         connector.setAcceptors(4);
