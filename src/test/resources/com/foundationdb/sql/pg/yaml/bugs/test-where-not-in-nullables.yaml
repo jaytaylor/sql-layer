@@ -39,6 +39,10 @@
 - Statement: SELECT notNull FROM t1 WHERE notNull NOT IN (SELECT c1 FROM t2);
 - row_count: 0
 ---
+# right side nullable with function
+- Statement: SELECT notNull FROM t1 WHERE notNull NOT IN (SELECT plus(c1,1) FROM t2);
+- row_count: 0
+---
 # left1 nullable
 - Statement: SELECT c1 FROM t1 WHERE (c1, notNull) NOT IN (SELECT notNull, notNull FROM t2)
 - output: [[1]]
