@@ -1291,6 +1291,7 @@ public class JoinAndIndexPicker extends BaseRule
                                     joins, costEstimate, bloomFilter, hashColumns, matchColumns, null);
         }
         int MAX_ROWS_X_JOIN_COLS_FOR_TABLE = 5000;
+        int DEFAULT_COLUMN_COUNT = 5;
 
         public JoinPlan buildHashTableJoin(Plan loaderPlan, JoinPlan joinPlan,
                                            Collection<JoinOperator> joinOperators){
@@ -1304,12 +1305,22 @@ public class JoinAndIndexPicker extends BaseRule
             List<ExpressionNode> matchColumns = returning.get(1);
             if(loaderPlan.costEstimate.getRowCount() * hashColumns.size() > MAX_ROWS_X_JOIN_COLS_FOR_TABLE)
                 return null;
-            long limit = picker.queryGoal.getLimit();
-            if (joinPlan.costEstimate.getRowCount() == limit) {
-                /** Possibly return null if the row count is greater than the possible row count**/
-            }
+            int outerColumnCount = -1;
             HashTable hashTable = new HashTable(loaderPlan.costEstimate.getRowCount());
+            for(ExpressionNode expression : matchColumns){
+                if(expression instanceof ColumnExpression){
+                    ColumnSource columnSource = ((ColumnExpression)expression).getTable();
+                    if(columnSource instanceof TableSource){
+                        TableNode table = ((TableSource)columnSource).getTable();
+                        outerColumnCount = table.getTable().rowDef().getFieldCount();
+                        break;
 
+                    }
+
+                }
+            }
+            if(outerColumnCount == -1)
+                outerColumnCount = DEFAULT_COLUMN_COUNT;
             List<TKeyComparable> tKeyComparables = new ArrayList<>();
             for(JoinOperator joinOperator : joinOperators){
                 if(joinOperator.getJoin() != null && joinOperator.getJoin().hasJoinConditions()) {
@@ -1326,7 +1337,7 @@ public class JoinAndIndexPicker extends BaseRule
             if(tKeyComparables.isEmpty() || allNull)
                 tKeyComparables = null;
             CostEstimate costEstimate = picker.getCostEstimator()
-                    .costHashJoin(loaderPlan.costEstimate, inputPlan.costEstimate, checkPlan.costEstimate, hashColumns.size());
+                    .costHashJoin(loaderPlan.costEstimate, inputPlan.costEstimate, checkPlan.costEstimate, hashColumns.size(), outerColumnCount);
             return new HashJoinPlan(loaderPlan, inputPlan, checkPlan,
                     joinPlan.joinType, JoinNode.Implementation.HASH_TABLE,
                     joins, costEstimate, hashTable, hashColumns, matchColumns, tKeyComparables);

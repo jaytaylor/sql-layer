@@ -1096,7 +1096,8 @@ public abstract class CostEstimator implements TableRowCounts
     public CostEstimate costHashJoin(CostEstimate loaderCost,
                                         CostEstimate inputCost,
                                         CostEstimate checkCost,
-                                        int joinColumns)  {
+                                        int joinColumns,
+                                        int outerColumnCount)  {
         long checkCount = Math.max(inputCost.getRowCount(),loaderCost.getRowCount());
         // Scan to load plus scan input plus check matching fraction
         // plus filter setup and use.
@@ -1106,7 +1107,7 @@ public abstract class CostEstimator implements TableRowCounts
                         inputCost.getCost() +
                         model.selectWithHashTable((int)inputCost.getRowCount(),
                                                   (int)loaderCost.getRowCount(),
-                                                  5,
+                                                  outerColumnCount,
                                                   joinColumns));
         return adjustCostEstimate(estimate);
     }
