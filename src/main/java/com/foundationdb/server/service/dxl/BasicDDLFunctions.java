@@ -1026,10 +1026,15 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
 
         // New parent's old group storage
+        // but only if the storage location is different - metadata changes may not move the group data
         Table newParent = newTable.getParentTable();
         if(newParent != null) {
             Table newParentOldTable = origAIS.getTable(newParent.getTableId());
-            storageToRemove.add(newParentOldTable.getGroup());
+            if (!newParent.getGroup().getStorageDescription().getUniqueKey().equals(
+                    newParentOldTable.getGroup().getStorageDescription().getUniqueKey()))
+            {
+                storageToRemove.add(newParentOldTable.getGroup());
+            }
         }
 
         store().deleteIndexes(session, indexesToDrop);
