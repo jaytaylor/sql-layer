@@ -23,7 +23,7 @@ import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTargets;
 import com.foundationdb.util.BloomFilter;
-import com.foundationdb.util.HashTable;
+import com.foundationdb.qp.util.HashTable;
 import com.foundationdb.util.SparseArray;
 
 public class SparseArrayQueryBindings implements QueryBindings

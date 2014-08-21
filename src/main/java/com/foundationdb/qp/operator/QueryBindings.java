@@ -21,7 +21,7 @@ import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.BloomFilter;
-import com.foundationdb.util.HashTable;
+import com.foundationdb.qp.util.HashTable;
 
 /** The bindings associated with the execution of a query.
  * This includes query parameters (? markers) as well as current values for iteration.

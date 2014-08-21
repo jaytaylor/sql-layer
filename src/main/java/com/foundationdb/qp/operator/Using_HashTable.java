@@ -25,7 +25,7 @@ import com.foundationdb.server.types.TKeyComparable;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.HashTable;
+import com.foundationdb.qp.util.HashTable;
 import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

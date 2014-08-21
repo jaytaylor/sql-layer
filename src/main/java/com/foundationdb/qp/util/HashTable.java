@@ -1,4 +1,4 @@
-package com.foundationdb.util;
+package com.foundationdb.qp.util;
 
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.row.Row;
