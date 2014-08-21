@@ -29,8 +29,14 @@ import java.util.Date;
 public class ServerTransaction
 {
     public static enum PeriodicallyCommit {
+        /** The system commits when you call commit **/
         OFF("false"),
+        /** The system commits periodically maintaining **/
         ON("true"),
+        /**
+         *  The system commits and closes the user-level transaction requiring the client to begin a new transaction.
+         *  For jdbc, and probably other drivers, it will create the new transaction automatically for the user.
+         */
         USER_LEVEL("userLevel");
 
         private String propertyName;

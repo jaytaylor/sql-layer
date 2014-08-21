@@ -359,10 +359,6 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
      */
     protected boolean beforeExecute(ServerStatement stmt) {
         ServerStatement.TransactionMode transactionMode = stmt.getTransactionMode();
-        if (transaction == null &&
-                transactionPeriodicallyCommit == ServerTransaction.PeriodicallyCommit.USER_LEVEL) {
-            //beginTransaction();
-        }
         boolean localTransaction = false;
         if(transaction != null && transactionMode == ServerStatement.TransactionMode.IMPLICIT_COMMIT_AND_NEW){
             warnClient(new ImplicitlyCommittedException());
