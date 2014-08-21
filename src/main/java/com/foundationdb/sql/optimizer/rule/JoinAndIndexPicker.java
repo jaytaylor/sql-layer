@@ -1162,7 +1162,13 @@ public class JoinAndIndexPicker extends BaseRule
             JoinPlan joinPlan = new JoinPlan(leftPlan, rightPlan,
                     joinType, JoinNode.Implementation.NESTED_LOOPS,
                     joins, costEstimate);
-
+            if (joinType.isInner() || (joinType.isSemi() && rightPlan.semiJoinEquivalent()) || joinType == JoinType.LEFT) {
+                Collection<JoinOperator> joinOperators = duplicateJoins(joins);
+                Plan loaderPlan = right.bestPlan(condJoins, outsideJoins);
+                JoinPlan hashPlan2 = buildHashTableJoin(loaderPlan, joinPlan , joinOperators);
+                if(hashPlan2 != null)
+                    planClass.consider(hashPlan2);
+            }
             if (joinType.isSemi() || (joinType.isInner() && rightPlan.semiJoinEquivalent())) {
                 Collection<JoinOperator> semiJoins = duplicateJoins(joins);
                 Plan loaderPlan = right.bestPlan(condJoins, outsideJoins);
@@ -1171,14 +1177,6 @@ public class JoinAndIndexPicker extends BaseRule
                 JoinPlan hashPlan = buildBloomFilterSemiJoin(loaderPlan, joinPlan, semiJoins);
                 if (hashPlan != null)
                     planClass.consider(hashPlan);
-            }
-            if (joinType.isInner() || (joinType.isSemi() && rightPlan.semiJoinEquivalent()) || joinType == JoinType.LEFT) {
-                Collection<JoinOperator> joinOperators = duplicateJoins(joins);
-                Plan loaderPlan = right.bestPlan(condJoins, outsideJoins);
-                cleanJoinConditions(joinOperators, loaderPlan, leftPlan);
-                JoinPlan hashPlan2 = buildHashTableJoin(loaderPlan, joinPlan , joinOperators);
-                if(hashPlan2 != null)
-                    planClass.consider(hashPlan2);
             }
             cleanJoinConditions(joins, leftPlan, rightPlan);
             planClass.consider(joinPlan);
@@ -1303,6 +1301,7 @@ public class JoinAndIndexPicker extends BaseRule
                 return null;
             List<ExpressionNode> hashColumns = returning.get(0);
             List<ExpressionNode> matchColumns = returning.get(1);
+            double selectivity = checkPlan.joinSelectivity();
             if(loaderPlan.costEstimate.getRowCount() * hashColumns.size() > MAX_ROWS_X_JOIN_COLS_FOR_TABLE)
                 return null;
             int outerColumnCount = -1;
@@ -1314,9 +1313,7 @@ public class JoinAndIndexPicker extends BaseRule
                         TableNode table = ((TableSource)columnSource).getTable();
                         outerColumnCount = table.getTable().rowDef().getFieldCount();
                         break;
-
                     }
-
                 }
             }
             if(outerColumnCount == -1)
@@ -1337,7 +1334,7 @@ public class JoinAndIndexPicker extends BaseRule
             if(tKeyComparables.isEmpty() || allNull)
                 tKeyComparables = null;
             CostEstimate costEstimate = picker.getCostEstimator()
-                    .costHashJoin(loaderPlan.costEstimate, inputPlan.costEstimate, checkPlan.costEstimate, hashColumns.size(), outerColumnCount);
+                    .costHashJoin(loaderPlan.costEstimate, inputPlan.costEstimate, checkPlan.costEstimate, hashColumns.size(), outerColumnCount, selectivity);
             return new HashJoinPlan(loaderPlan, inputPlan, checkPlan,
                     joinPlan.joinType, JoinNode.Implementation.HASH_TABLE,
                     joins, costEstimate, hashTable, hashColumns, matchColumns, tKeyComparables);

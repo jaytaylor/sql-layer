@@ -1097,8 +1097,10 @@ public abstract class CostEstimator implements TableRowCounts
                                         CostEstimate inputCost,
                                         CostEstimate checkCost,
                                         int joinColumns,
-                                        int outerColumnCount)  {
-        long checkCount = Math.max(inputCost.getRowCount(),loaderCost.getRowCount());
+                                        int outerColumnCount,
+                                        double selectivity
+    )  {
+        long checkCount = Math.max(Math.round(inputCost.getRowCount() * selectivity),1);
         // Scan to load plus scan input plus check matching fraction
         // plus filter setup and use.
         CostEstimate estimate =
