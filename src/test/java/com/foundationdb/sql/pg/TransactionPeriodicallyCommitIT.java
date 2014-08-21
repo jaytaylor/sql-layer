@@ -116,6 +116,7 @@ public class TransactionPeriodicallyCommitIT extends PostgresServerITBase {
                 rowIndex = insertRow(rowIndex);
                 transactionState = ((BaseConnection) getConnection()).getTransactionState();
                 if (transactionState == ProtocolConnection.TRANSACTION_IDLE) {
+                    rowIndex = insertRow(rowIndex);
                     break;
                 }
             }
