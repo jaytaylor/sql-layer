@@ -50,7 +50,6 @@
 # left2 nullable
 - Statement: SELECT c1 FROM t1 WHERE (notNull, c1) NOT IN (SELECT notNull, notNull FROM t2)
 - output: [[1]]
-# multiple columns don't respect nullability.
 ---
 # right1 nullable
 - Statement: SELECT notNull FROM t1 WHERE (notNull, notNull) NOT IN (SELECT c1, notNull FROM t2)
