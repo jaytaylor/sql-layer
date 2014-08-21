@@ -146,10 +146,10 @@ public abstract class CostModel
             inputRows * (BLOOM_FILTER_SCAN_PER_ROW + selectivity * BLOOM_FILTER_SCAN_SELECTIVITY_COEFFICIENT);
     }
 
-    public double selectWithHashTable(int outerRows, int innerRows, int totalOuterColumns, int joinColumns)
+    public double selectWithHashTable(int outerRows, int innerRows, int totalOuterColumns, int totalInnerColumns, int joinColumns)
     {
         return (
-                innerRows * (HASH_TABLE_LOAD_PER_ROW + (joinColumns - 1) * HASH_TABLE_DIFF_PER_JOIN) +
+                innerRows * ((totalInnerColumns * HASH_TABLE_COLUMN_COUNT_OFFSET) + HASH_TABLE_LOAD_PER_ROW + (joinColumns - 1) * HASH_TABLE_DIFF_PER_JOIN) +
                         outerRows *  (((totalOuterColumns / 2) * HASH_TABLE_SCAN_PER_ROW) + (HASH_TABLE_SCAN_PER_ROW * .05 * joinColumns)));
     }
 

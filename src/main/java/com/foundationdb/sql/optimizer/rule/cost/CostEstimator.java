@@ -1098,6 +1098,7 @@ public abstract class CostEstimator implements TableRowCounts
                                         CostEstimate checkCost,
                                         int joinColumns,
                                         int outerColumnCount,
+                                        int innerColumnCount,
                                         double selectivity
     )  {
         long checkCount = Math.max(Math.round(inputCost.getRowCount() * selectivity),1);
@@ -1110,6 +1111,7 @@ public abstract class CostEstimator implements TableRowCounts
                         model.selectWithHashTable((int)inputCost.getRowCount(),
                                                   (int)loaderCost.getRowCount(),
                                                   outerColumnCount,
+                                                  innerColumnCount,
                                                   joinColumns));
         return adjustCostEstimate(estimate);
     }

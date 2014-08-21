@@ -1304,7 +1304,8 @@ public class JoinAndIndexPicker extends BaseRule
             double selectivity = checkPlan.joinSelectivity();
             if(loaderPlan.costEstimate.getRowCount() * hashColumns.size() > MAX_ROWS_X_JOIN_COLS_FOR_TABLE)
                 return null;
-            int outerColumnCount = -1;
+            int outerColumnCount = DEFAULT_COLUMN_COUNT;
+            int innerColumnCount = DEFAULT_COLUMN_COUNT;
             HashTable hashTable = new HashTable(loaderPlan.costEstimate.getRowCount());
             for(ExpressionNode expression : matchColumns){
                 if(expression instanceof ColumnExpression){
@@ -1316,8 +1317,16 @@ public class JoinAndIndexPicker extends BaseRule
                     }
                 }
             }
-            if(outerColumnCount == -1)
-                outerColumnCount = DEFAULT_COLUMN_COUNT;
+            for(ExpressionNode expression : hashColumns){
+                if(expression instanceof ColumnExpression){
+                    ColumnSource columnSource = ((ColumnExpression)expression).getTable();
+                    if(columnSource instanceof TableSource){
+                        TableNode table = ((TableSource)columnSource).getTable();
+                        innerColumnCount = table.getTable().rowDef().getFieldCount();
+                        break;
+                    }
+                }
+            }
             List<TKeyComparable> tKeyComparables = new ArrayList<>();
             for(JoinOperator joinOperator : joinOperators){
                 if(joinOperator.getJoin() != null && joinOperator.getJoin().hasJoinConditions()) {
@@ -1334,7 +1343,7 @@ public class JoinAndIndexPicker extends BaseRule
             if(tKeyComparables.isEmpty() || allNull)
                 tKeyComparables = null;
             CostEstimate costEstimate = picker.getCostEstimator()
-                    .costHashJoin(loaderPlan.costEstimate, inputPlan.costEstimate, checkPlan.costEstimate, hashColumns.size(), outerColumnCount, selectivity);
+                    .costHashJoin(loaderPlan.costEstimate, inputPlan.costEstimate, checkPlan.costEstimate, hashColumns.size(), outerColumnCount, innerColumnCount, selectivity);
             return new HashJoinPlan(loaderPlan, inputPlan, checkPlan,
                     joinPlan.joinType, JoinNode.Implementation.HASH_TABLE,
                     joins, costEstimate, hashTable, hashColumns, matchColumns, tKeyComparables);
