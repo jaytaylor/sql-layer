@@ -234,7 +234,6 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
                               SpatialColumnHandler spatialColumnHandler,
                               long zValue,
                               boolean doLock) {
-        assert false; // zValue not used
         Exchange iEx = getExchange(session, index);
         try {
             if(doLock) {
@@ -299,7 +298,6 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
                                SpatialColumnHandler spatialColumnHandler,
                                long zValue,
                                boolean doLock) {
-        assert false; // zValue not used
         Exchange iEx = getExchange(session, index);
         try {
             if(doLock) {
