@@ -1,0 +1,183 @@
+/**
+ * Copyright (C) 2009-2014 FoundationDB, LLC
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package com.foundationdb.sql.pg;
+
+import com.foundationdb.sql.jdbc.core.BaseConnection;
+import com.foundationdb.sql.jdbc.core.ProtocolConnection;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.sql.ResultSet;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+public class TransactionPeriodicallyCommitIT extends PostgresServerITBase {
+
+    private static final int AFTER_BYTES = 200;
+    /** The number of commits it took to hit the number of bytes at which it should commit **/
+    private static final int NUMBER_OF_INSERTS = 4;
+    /** the number of rows per insert **/
+    private static final int NUMBER_OF_ROWS = 3;
+
+    @Before
+    public void createSimpleSchema() throws Exception {
+        String sqlCreate = "CREATE TABLE fake.T1 (c1 integer not null primary key)";
+        getConnection().createStatement().execute(sqlCreate);
+    }
+
+    @After
+    public void dontLeaveConnection() throws Exception {
+        // Tests change transaction periodically commit. Easiest not to reuse.
+        forgetConnection();
+    }
+
+    @Override
+    protected Map<String,String> startupConfigProperties() {
+        Map<String,String> config = new HashMap<>(super.startupConfigProperties());
+        config.put("fdbsql.fdb.periodically_commit.after_bytes", Integer.toString(AFTER_BYTES));
+        return config;
+    }
+
+    @Test
+    public void testOn() throws Exception {
+        getConnection().createStatement().execute("SET transactionPeriodicallyCommit TO 'true'");
+        getConnection().setAutoCommit(false);
+        int lastCount = -1;
+        int rowIndex = 0;
+        for (int i=0; i< NUMBER_OF_INSERTS * 2; i++) {
+            rowIndex = insertRows(rowIndex, i);
+            getConnection().rollback();
+            // 9 rows should definitely be less than 500 bytes (check that it's not committing after every statement
+            int count = getCount();
+            if (i < NUMBER_OF_INSERTS -1) {
+                assertEquals("Should not have committed anything after " + i + " statements", 0, count);
+            } else {
+                if (lastCount < 0) {
+                    if (count > 0) {
+                        lastCount = count;
+                    }
+                }
+                else if (count > lastCount) {
+                    // Make sure that we're approximately consistent, just to make the tests a little less brittle
+                    assertEquals(NUMBER_OF_INSERTS*NUMBER_OF_ROWS,lastCount,1);
+                    assertEquals("Should be committing the same amount each time", lastCount*2, count);
+                    return; // success, it committed twice during the transaction
+                }
+            }
+        }
+        if (lastCount < 0) {
+            fail("never committed");
+        } else {
+            fail("only committed once");
+        }
+    }
+
+    @Test
+    public void testDefaultOff() throws Exception {
+        testOffHelper();
+    }
+
+    @Test
+    public void testExplicitlyOff() throws Exception {
+        getConnection().createStatement().execute("SET transactionPeriodicallyCommit TO 'true'");
+        getConnection().createStatement().execute("SET transactionPeriodicallyCommit TO 'false'");
+        testOffHelper();
+    }
+
+    @Test
+    public void testUserLevel() throws Exception {
+        getConnection().createStatement().execute("SET transactionPeriodicallyCommit TO 'true'");
+        getConnection().setAutoCommit(false);
+        int lastCount = -1;
+        int rowIndex = 0;
+        for (int i=0; i< NUMBER_OF_INSERTS * 2; i++) {
+            rowIndex = insertRows(rowIndex, i);
+            getConnection().rollback();
+            // 9 rows should definitely be less than 500 bytes (check that it's not committing after every statement
+            int count = getCount();
+            if (i < NUMBER_OF_INSERTS -1) {
+                assertEquals("Should not have committed anything after " + i + " statements", 0, count);
+            } else {
+                if (lastCount < 0) {
+                    if (count > 0) {
+                        lastCount = count;
+                        assertEquals(ProtocolConnection.TRANSACTION_IDLE,
+                                ((BaseConnection) getConnection()).getTransactionState());
+                    } else {
+                        assertEquals(ProtocolConnection.TRANSACTION_OPEN,
+                                ((BaseConnection) getConnection()).getTransactionState());
+                    }
+                }
+                else if (count > lastCount) {
+                    // Make sure that we're approximately consistent, just because the test may be broken
+                    // if we're off by more than this.
+                    assertEquals(NUMBER_OF_INSERTS*NUMBER_OF_ROWS,lastCount,1);
+                    assertEquals("Should be committing the same amount each time", lastCount*2, count);
+                    assertEquals(ProtocolConnection.TRANSACTION_IDLE,
+                            ((BaseConnection) getConnection()).getTransactionState());
+                    return; // success, it committed twice during the transaction
+                } else {
+                    assertEquals(ProtocolConnection.TRANSACTION_OPEN,
+                            ((BaseConnection) getConnection()).getTransactionState());
+                }
+            }
+        }
+        if (lastCount < 0) {
+            fail("never committed");
+        } else {
+            fail("only committed once");
+        }
+    }
+
+    public int insertRows(int rowIndex, int i) throws Exception {
+        for (int j = 0; j < i; j++) {
+            int rowIndex1 = rowIndex;
+            getConnection().createStatement().execute(
+                    "insert into fake.T1 VALUES (" + rowIndex1++ + "),(" + rowIndex1++ + "),(" + rowIndex1++ + ")");
+            rowIndex = rowIndex1;
+        }
+        return rowIndex;
+    }
+
+    public void testOffHelper() throws Exception {
+        getConnection().setAutoCommit(false);
+        int rowIndex = 0;
+        int commitAt = NUMBER_OF_INSERTS * 2;
+        for (int i=0; i <= commitAt; i++) {
+            rowIndex = insertRows(rowIndex, i);
+            if (i < commitAt) {
+                getConnection().rollback();
+                assertEquals("Should not have committed anything before committing", 0, getCount());
+            } else {
+                getConnection().commit();
+                assertEquals("Should commit eventually", NUMBER_OF_ROWS * commitAt, getCount());
+            }
+        }
+    }
+
+    public int getCount() throws Exception {
+        ResultSet resultSet = getConnection().createStatement().executeQuery("SELECT COUNT(*) FROM fake.T1");
+        assertTrue(resultSet.next());
+        return resultSet.getInt(1);
+    }
+}
