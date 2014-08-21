@@ -1454,12 +1454,6 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected RowStream assembleUsingHashTable( UsingHashTable usingHashTable) {
-            try {
-                Writer output = new BufferedWriter(new FileWriter("/Users/jerett/Desktop/HashJoin", true));
-                output.write("1");
-                output.close();
-            }
-            catch(IOException e){}
             HashTable hashTable = usingHashTable.getHashTable();
             int pos = assignBindingPosition(hashTable);
             RowStream lstream = assembleStream(usingHashTable.getLoader());
