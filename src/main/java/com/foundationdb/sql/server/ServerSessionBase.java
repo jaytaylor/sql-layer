@@ -359,6 +359,10 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
      */
     protected boolean beforeExecute(ServerStatement stmt) {
         ServerStatement.TransactionMode transactionMode = stmt.getTransactionMode();
+        if (transaction == null &&
+                transactionPeriodicallyCommit == ServerTransaction.PeriodicallyCommit.USER_LEVEL) {
+            //beginTransaction();
+        }
         boolean localTransaction = false;
         if(transaction != null && transactionMode == ServerStatement.TransactionMode.IMPLICIT_COMMIT_AND_NEW){
             warnClient(new ImplicitlyCommittedException());
@@ -434,8 +438,13 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
                 transaction.afterUpdate();
                 break;
             }
-            // Give periodic commit a chance if enabled.
-            transaction.checkPeriodicallyCommit();
+            if (transactionPeriodicallyCommit == ServerTransaction.PeriodicallyCommit.USER_LEVEL &&
+                    transaction.shouldPeriodicallyCommit()) {
+                commitTransaction();
+            } else {
+                // Give periodic commit a chance if enabled.
+                transaction.checkPeriodicallyCommit();
+            }
         }
     }
 

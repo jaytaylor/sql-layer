@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -55,6 +56,8 @@ public class TransactionPeriodicallyCommitIT extends PostgresServerITBase {
     protected Map<String,String> startupConfigProperties() {
         Map<String,String> config = new HashMap<>(super.startupConfigProperties());
         config.put("fdbsql.fdb.periodically_commit.after_bytes", Integer.toString(AFTER_BYTES));
+        // TODO undo this
+        config.put("fdbsql.fdb.periodically_commit.after_millis", "1000000000");
         return config;
     }
 
@@ -106,12 +109,29 @@ public class TransactionPeriodicallyCommitIT extends PostgresServerITBase {
 
     @Test
     public void testUserLevel() throws Exception {
-        getConnection().createStatement().execute("SET transactionPeriodicallyCommit TO 'true'");
+        getConnection().createStatement().execute("SET transactionPeriodicallyCommit TO 'userLevel'");
         getConnection().setAutoCommit(false);
         int lastCount = -1;
         int rowIndex = 0;
-        for (int i=0; i< NUMBER_OF_INSERTS * 2; i++) {
-            rowIndex = insertRows(rowIndex, i);
+        for (int i=1; i< NUMBER_OF_INSERTS * 2; i++) {
+            System.out.println("Starting inserts " + i);
+            int transactionState = -1;
+            for (int j = 0; j < i; j++) {
+                System.out.println("Inserting " + rowIndex);
+                rowIndex = insertRow(rowIndex);
+                transactionState = ((BaseConnection) getConnection()).getTransactionState();
+                System.out.println(transactionState == ProtocolConnection.TRANSACTION_OPEN ? "Open" :
+                        transactionState == ProtocolConnection.TRANSACTION_IDLE ? "Idle" : "Failed");
+                if (transactionState == ProtocolConnection.TRANSACTION_IDLE) {
+                    break;
+                }
+                System.out.println("Inserted  " + rowIndex);
+            }
+            assertNotEquals(-1,transactionState);
+            System.out.println("Ending inserts " + i);
+            System.out.println("state: " + (
+                    transactionState == ProtocolConnection.TRANSACTION_OPEN ? "Open" :
+                            transactionState == ProtocolConnection.TRANSACTION_IDLE ? "Idle" : "Failed"));
             getConnection().rollback();
             // 9 rows should definitely be less than 500 bytes (check that it's not committing after every statement
             int count = getCount();
@@ -121,24 +141,22 @@ public class TransactionPeriodicallyCommitIT extends PostgresServerITBase {
                 if (lastCount < 0) {
                     if (count > 0) {
                         lastCount = count;
-                        assertEquals(ProtocolConnection.TRANSACTION_IDLE,
-                                ((BaseConnection) getConnection()).getTransactionState());
+                        assertEquals(ProtocolConnection.TRANSACTION_IDLE, transactionState);
                     } else {
-                        assertEquals(ProtocolConnection.TRANSACTION_OPEN,
-                                ((BaseConnection) getConnection()).getTransactionState());
+                        assertEquals(ProtocolConnection.TRANSACTION_OPEN, transactionState);
                     }
                 }
                 else if (count > lastCount) {
                     // Make sure that we're approximately consistent, just because the test may be broken
                     // if we're off by more than this.
-                    assertEquals(NUMBER_OF_INSERTS*NUMBER_OF_ROWS,lastCount,1);
+                    assertEquals(count + " rows inserted after " + lastCount + " rows",
+                            NUMBER_OF_INSERTS*NUMBER_OF_ROWS,lastCount,1);
                     assertEquals("Should be committing the same amount each time", lastCount*2, count);
-                    assertEquals(ProtocolConnection.TRANSACTION_IDLE,
-                            ((BaseConnection) getConnection()).getTransactionState());
+                    assertEquals(count + " rows inserted after " + lastCount + " rows, but state not idle",
+                            ProtocolConnection.TRANSACTION_IDLE, transactionState);
                     return; // success, it committed twice during the transaction
                 } else {
-                    assertEquals(ProtocolConnection.TRANSACTION_OPEN,
-                            ((BaseConnection) getConnection()).getTransactionState());
+                    assertEquals(ProtocolConnection.TRANSACTION_OPEN, transactionState);
                 }
             }
         }
@@ -151,11 +169,14 @@ public class TransactionPeriodicallyCommitIT extends PostgresServerITBase {
 
     public int insertRows(int rowIndex, int i) throws Exception {
         for (int j = 0; j < i; j++) {
-            int rowIndex1 = rowIndex;
-            getConnection().createStatement().execute(
-                    "insert into fake.T1 VALUES (" + rowIndex1++ + "),(" + rowIndex1++ + "),(" + rowIndex1++ + ")");
-            rowIndex = rowIndex1;
+            rowIndex = insertRow(rowIndex);
         }
+        return rowIndex;
+    }
+
+    public int insertRow(int rowIndex) throws Exception {
+        getConnection().createStatement().execute(
+                "insert into fake.T1 VALUES (" + rowIndex++ + "),(" + rowIndex++ + "),(" + rowIndex++ + ")");
         return rowIndex;
     }
 

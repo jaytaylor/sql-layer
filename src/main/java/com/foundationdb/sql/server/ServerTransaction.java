@@ -124,7 +124,12 @@ public class ServerTransaction
         return txnService.isRollbackPending(session);
     }
 
+    public boolean shouldPeriodicallyCommit() {
+        return txnService.shouldPeriodicallyCommit(session);
+    }
+
     public void checkPeriodicallyCommit() {
+        // USER_LEVEL is handled higher up
         if (periodicallyCommit == PeriodicallyCommit.ON) {
             txnService.periodicallyCommit(session);
         }
