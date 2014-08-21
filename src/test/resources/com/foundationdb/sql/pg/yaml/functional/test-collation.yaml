@@ -1,37 +1,64 @@
 # Test collation (other than UCS_BINARY)
 ---
-- CreateTable: t2 (id INT PRIMARY KEY NOT NULL, s VARCHAR(32) COLLATE en_us_ci)
+- CreateTable: t1 (id INT PRIMARY KEY NOT NULL, s VARCHAR(32) COLLATE en_us_ci)
 ---
-- Statement: INSERT INTO t2(id, s)
+- Statement: INSERT INTO t1(id, s)
     VALUES (1, 'alfa'), (2, 'charlie'), (3, 'BRAVO'), (4, 'Delta'), (5, 'echo')
 ---
-- Statement: SELECT id FROM t2 WHERE s LIKE '%a%'
+- Statement: SELECT id FROM t1 WHERE s LIKE '%a%'
 - output: [[1],[2],[3],[4]]
 ---
-- Statement: SELECT id FROM t2 WHERE s COLLATE UCS_BINARY LIKE '%a%'
+- Statement: SELECT id FROM t1 WHERE s COLLATE UCS_BINARY LIKE '%a%'
 - output: [[1],[2],[4]]
 ---
-- CreateTable: t3 (id INT, c CHAR(5) COLLATE foo)
+- CreateTable: t2 (id INT, c CHAR(5) COLLATE foo)
 - error: [2H000]
 ---
-- CreateTable: t3 (id INT, c CHAR(5) CHARACTER SET foo)
+- CreateTable: t2 (id INT, c CHAR(5) CHARACTER SET foo)
 - error: [2C000]
 ---
-- CreateTable: t4 (id INT PRIMARY KEY NOT NULL, s VARCHAR(32) COLLATE en_us_cs)
+- CreateTable: t3 (id INT PRIMARY KEY NOT NULL, s VARCHAR(32) COLLATE en_us_cs)
 ---
-- Statement: INSERT INTO t4(id, s)
+- Statement: INSERT INTO t3(id, s)
     VALUES (1, 'alfa'), (2, 'charlie'), (3, 'BRAVO'), (4, 'Delta'), (5, 'echo')
 ---
-- Statement: SELECT id FROM t4 WHERE s LIKE '%a%'
+- Statement: SELECT id FROM t3 WHERE s LIKE '%a%'
 - output: [[1],[2],[4]]
 ---
-- Statement: SELECT id FROM t4 WHERE s COLLATE UCS_BINARY LIKE '%a%'
+- Statement: SELECT id FROM t3 WHERE s COLLATE UCS_BINARY LIKE '%a%'
 - output: [[1],[2],[4]]
 ---
-- CreateTable: t5 (id INT, c CHAR(5) COLLATE foo)
+- CreateTable: t4 (id INT, c CHAR(5) COLLATE foo)
 - error: [2H000]
 ---
-- CreateTable: t5 (id INT, c CHAR(5) CHARACTER SET foo)
+- CreateTable: t4 (id INT, c CHAR(5) CHARACTER SET foo)
 - error: [2C000]
-# NOTE if adding more tests, make sure to use lower case for en_us_ci
+---
+- CreateTable: t5 (id INT, v VARCHAR(255) COLLATE en_us)
+---
+- Statement: INSERT INTO t5 VALUES(1, 'Öb'), (2, 'Oa'), (3, 'Oc')
+---
+- Statement: SELECT v FROM t5 ORDER BY v ASC
+- output: [['Oa'], ['Öb'], ['Oc']]
+---
+- CreateTable: t6 (id INT, v VARCHAR(255) COLLATE de_DE)
+---
+- Statement: INSERT INTO t6 VALUES(1, 'Öb'), (2, 'Oa'), (3, 'Oc')
+---
+- Statement: SELECT v FROM t6 ORDER BY v ASC
+- output: [['Oa'], ['Öb'], ['Oc']]
+---
+- CreateTable: t7 (id INT, v VARCHAR(255) COLLATE tr_TR)
+---
+- Statement: INSERT INTO t7 VALUES(1, 'P'), (2, 'Öb'), (3, 'Oz')
+---
+- Statement: SELECT v FROM t7 ORDER BY v ASC
+- output: [['Oz'], ['Öb'], ['P']]
+---
+- CreateTable: t8 (id INT, v VARCHAR(255) COLLATE sv_SE)
+---
+- Statement: INSERT INTO t8 VALUES(2, 'Öb'), (3, 'Z')
+---
+- Statement: SELECT v FROM t8 ORDER BY v ASC
+- output: [['Öb'], ['Z']]
 ...
