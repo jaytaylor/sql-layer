@@ -187,7 +187,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
             }
             sessionMonitor.enterStage(MonitorStage.OPTIMIZE);
             if (transaction == null) {
-                transaction = new ServerTransaction(this, true, false);
+                transaction = new ServerTransaction(this, true, ServerTransaction.PeriodicallyCommit.OFF);
                 localTransaction = true;
             }
             if ((sqlStmt instanceof DMLStatementNode) && 
@@ -228,7 +228,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
             }
             sessionMonitor.enterStage(MonitorStage.OPTIMIZE);
             if (transaction == null) {
-                transaction = new ServerTransaction(this, true, false);
+                transaction = new ServerTransaction(this, true, ServerTransaction.PeriodicallyCommit.OFF);
                 localTransaction = true;
             }
             ExplainPlanContext context = new ExplainPlanContext(compiler, new EmbeddedQueryContext(this));

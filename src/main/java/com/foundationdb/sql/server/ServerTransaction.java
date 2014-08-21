@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.server;
 
+import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.error.TransactionInProgressException;
 import com.foundationdb.server.error.TransactionReadOnlyException;
 import com.foundationdb.server.service.session.Session;
@@ -27,14 +28,37 @@ import java.util.Date;
 
 public class ServerTransaction
 {
+    public static enum PeriodicallyCommit {
+        OFF("false"),
+        ON("true"),
+        USER_LEVEL("userLevel");
+
+        private String propertyName;
+
+        PeriodicallyCommit(String propertyName) {
+            this.propertyName = propertyName;
+        }
+
+        public static PeriodicallyCommit fromProperty(String name) {
+            if (name == null) return OFF;
+            for (PeriodicallyCommit opt : values()) {
+                if (name.equals(opt.propertyName))
+                    return opt;
+            }
+            throw new InvalidParameterValueException(
+                    String.format("Invalid name: %s for TransactionPeriodicallyCommitOption", name));
+        }
+    }
+
     private final Session session;
     private final TransactionService txnService;
-    private boolean readOnly, periodicallyCommit;
+    private boolean readOnly;
+    private PeriodicallyCommit periodicallyCommit;
     private Date transactionTime;
     
     /** Begin a new transaction or signal an exception. */
     public ServerTransaction(ServerSession server, 
-                             boolean readOnly, boolean periodicallyCommit) {
+                             boolean readOnly, PeriodicallyCommit periodicallyCommit) {
         this.session = server.getSession();
         this.txnService = server.getTransactionService();
         this.readOnly = readOnly;
@@ -50,11 +74,11 @@ public class ServerTransaction
         this.readOnly = readOnly;
     }
 
-    public boolean isPeriodicallyCommit() {
+    public PeriodicallyCommit getPeriodicallyCommit() {
         return periodicallyCommit;
     }
 
-    public void setPeriodicallyCommit(boolean periodicallyCommit) {
+    public void setPeriodicallyCommit(PeriodicallyCommit periodicallyCommit) {
         this.periodicallyCommit = periodicallyCommit;
     }
 
@@ -101,7 +125,7 @@ public class ServerTransaction
     }
 
     public void checkPeriodicallyCommit() {
-        if (periodicallyCommit) {
+        if (periodicallyCommit == PeriodicallyCommit.ON) {
             txnService.periodicallyCommit(session);
         }
     }

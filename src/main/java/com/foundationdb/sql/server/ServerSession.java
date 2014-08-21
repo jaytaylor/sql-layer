@@ -25,9 +25,7 @@ import com.foundationdb.sql.parser.SQLParser;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.ForeignKey;
-import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.ServiceManager;
@@ -135,10 +133,11 @@ public interface ServerSession
     public void setTransactionDefaultReadOnly(boolean readOnly);
 
     /** Return whether to commit as determined by store. */
-    public boolean isTransactionPeriodicallyCommit();
+    public ServerTransaction.PeriodicallyCommit getTransactionPeriodicallyCommit();
 
-    /** Set following transaction to commit as determined by store. */
-    public void setTransactionPeriodicallyCommit(boolean periodicallyCommit);
+    /** Set following transaction to commit as determined by store.
+     * @param periodicallyCommit*/
+    public void setTransactionPeriodicallyCommit(ServerTransaction.PeriodicallyCommit periodicallyCommit);
 
     /** Get the server's idea of the current time. */
     public Date currentTime();

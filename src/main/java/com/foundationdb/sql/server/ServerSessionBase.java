@@ -18,10 +18,7 @@
 package com.foundationdb.sql.server;
 
 import com.foundationdb.ais.model.ForeignKey;
-import com.foundationdb.ais.model.Table;
-import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.operator.StoreAdapterHolder;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.AkibanInternalException;
@@ -67,7 +64,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     protected StoreAdapterHolder adapters = new StoreAdapterHolder();
     protected ServerTransaction transaction;
     protected boolean transactionDefaultReadOnly = false;
-    protected boolean transactionPeriodicallyCommit = false;
+    protected ServerTransaction.PeriodicallyCommit transactionPeriodicallyCommit = ServerTransaction.PeriodicallyCommit.OFF;
     protected ServerSessionMonitor sessionMonitor;
 
     protected Long queryTimeoutMilli = null;
@@ -144,10 +141,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             return true;
         }
         if ("transactionPeriodicallyCommit".equals(key)) {
-            boolean periodicallyCommit = (value != null) && Boolean.parseBoolean(value);
-            transactionPeriodicallyCommit = periodicallyCommit;
-            if (transaction != null)
-                transaction.setPeriodicallyCommit(periodicallyCommit);
+            transactionPeriodicallyCommit = ServerTransaction.PeriodicallyCommit.fromProperty(value);
             return true;
         }
         if ("constraintCheckTime".equals(key)) {
@@ -288,12 +282,12 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     @Override
-    public boolean isTransactionPeriodicallyCommit() {
+    public ServerTransaction.PeriodicallyCommit getTransactionPeriodicallyCommit() {
         return transactionPeriodicallyCommit;
     }
 
     @Override
-    public void setTransactionPeriodicallyCommit(boolean periodicallyCommit) {
+    public void setTransactionPeriodicallyCommit(ServerTransaction.PeriodicallyCommit periodicallyCommit) {
         this.transactionPeriodicallyCommit = periodicallyCommit;
     }
 
@@ -387,14 +381,14 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             case READ:
             case NEW:
             case IMPLICIT_COMMIT_AND_NEW:
-                transaction = new ServerTransaction(this, true, false);
+                transaction = new ServerTransaction(this, true, ServerTransaction.PeriodicallyCommit.OFF);
                 localTransaction = true;
                 break;
             case WRITE:
             case NEW_WRITE:
                 if (transactionDefaultReadOnly)
                     throw new TransactionReadOnlyException();
-                transaction = new ServerTransaction(this, false, false);
+                transaction = new ServerTransaction(this, false, ServerTransaction.PeriodicallyCommit.OFF);
                 transaction.beforeUpdate();
                 localTransaction = true;
                 break;
