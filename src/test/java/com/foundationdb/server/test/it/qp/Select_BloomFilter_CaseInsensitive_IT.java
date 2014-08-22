@@ -58,13 +58,13 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         d = createTable(
             "schema", "driving",
             "test_id int not null",
-            "a varchar(10) collate latin1_swedish_ci",
-            "b varchar(10) collate latin1_swedish_ci");
+            "a varchar(10) collate en_us_ci",
+            "b varchar(10) collate en_us_ci");
         f = createTable(
             "schema", "filtering",
             "test_id int not null",
-            "a varchar(10) collate latin1_swedish_ci",
-            "b varchar(10) collate latin1_swedish_ci");
+            "a varchar(10) collate en_us_ci",
+            "b varchar(10) collate en_us_ci");
         createIndex("schema", "driving", "idx_d", "test_id", "a", "b");
         createIndex("schema", "filtering", "idx_fab", "a", "b");
     }
@@ -123,7 +123,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     @Test
     public void testValueSourceHasher()
     {
-        AkCollator caseInsensitiveCollator = AkCollatorFactory.getAkCollator("latin1_swedish_ci");
+        AkCollator caseInsensitiveCollator = AkCollatorFactory.getAkCollator("en_us_ci");
         AkCollator binaryCollator = AkCollatorFactory.getAkCollator(AkCollatorFactory.UCS_BINARY);
         PersistitKeyValueSource source = new PersistitKeyValueSource(MString.VARCHAR.instance(true));
         long hash_AB;
