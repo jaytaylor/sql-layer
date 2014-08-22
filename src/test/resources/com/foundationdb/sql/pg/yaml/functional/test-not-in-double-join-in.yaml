@@ -65,6 +65,7 @@
 ---
 - Statement: INSERT INTO albums_artists (album_id, artist_id) VALUES (1,null);
 ---
+# inner select just returns null (see second WHERE clause)
 - Statement: SELECT * FROM artists WHERE (
              (artists.id NOT IN
                 (SELECT albums_artists.artist_id FROM albums_artists
@@ -72,5 +73,5 @@
                     INNER JOIN albums_artists AS albums_artists_0 ON (albums_artists_0.album_id = albums.id)
                     WHERE ((albums_artists_0.artist_id = 1) AND (albums_artists.artist_id IS NULL))))
              OR (artists.id IS NULL))
-- output: [[1,1],[2, 2],[3, 3],[4,4]]
+- row_count: 0
 ...
