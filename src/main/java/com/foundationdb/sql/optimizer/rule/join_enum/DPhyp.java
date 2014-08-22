@@ -255,13 +255,18 @@ public abstract class DPhyp<P>
      * would return true for t1.x=3 but not t1.y=t2.y
      */
     private boolean isRelevant(long s1, long s2, int e) {
-        if(JoinableBitSet.count(s1) == 1 && JoinableBitSet.count(s2) == 1
-           && (JoinableBitSet.isEmpty(edges[e]) || JoinableBitSet.isEmpty(edges[e ^ 1])))
-            return true;//if both sets contain only one table and both sides of edge are empty as to
-        //this is utilized so a operator that connects nothing is only added in the first iteration
-        if(JoinableBitSet.isSubset(edges[e] | edges[e ^1], s1) || JoinableBitSet.isSubset(edges[e] | edges[e ^1],s2))
-            return false;//if the edge connects a side  to itself it doesn not need to be done again
-        return JoinableBitSet.isSubset(edges[e] | edges[e ^1], s1 | s2);//if both sets contain all elements on both sides of edge then it is relevant
+        if ((JoinableBitSet.count(s1) == 1 && JoinableBitSet.count(s2) == 1) &&
+                (JoinableBitSet.isEmpty(edges[e]) && JoinableBitSet.isEmpty(edges[e ^ 1]))) {
+            return true;
+        }
+        if (JoinableBitSet.count(s1) == 1 && ((edges[e] | edges[e ^ 1]) == s1))
+            return true;
+        if (JoinableBitSet.count(s2) == 1 && ((edges[e] | edges[e ^ 1]) == s2))
+            return true;
+        if (JoinableBitSet.isSubset(edges[e] | edges[e ^ 1], s1) || JoinableBitSet.isSubset(edges[e] | edges[e ^ 1], s2)) {
+            return false;//if operator must already have been used
+        }
+        return JoinableBitSet.isSubset(edges[e] | edges[e ^ 1], s1 | s2);//if both side are connected by the edges
     }
 
     public boolean isEvaluateOperator(long s1, long s2, int e) {
