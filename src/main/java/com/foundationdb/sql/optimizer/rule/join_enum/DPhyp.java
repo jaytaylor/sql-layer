@@ -250,34 +250,46 @@ public abstract class DPhyp<P>
     }
 
     /**
-     * This covers any operators that only touch one side of the join operand, e.g.
-     * FROM t1 JOIN t2 ON t1.x = 3 AND t1.y = t2.y
-     * would return true for t1.x=3 but not t1.y=t2.y
+     * This checks if all tables necessary for an edge are available and that
+     * it is the edge's first time appearing
+     *
+     * EXPLAIN:
+     * cases:
+     * no sided edge gets true only on first join
+     * one sided edges are only added first time table is available
+     * if both sides of the edge exist on one side of the join already it must have already been added
+     * else if both sides connect both sets then true
      */
     private boolean isRelevant(long s1, long s2, int e) {
         if ((JoinableBitSet.count(s1) == 1 && JoinableBitSet.count(s2) == 1) &&
                 (JoinableBitSet.isEmpty(edges[e]) && JoinableBitSet.isEmpty(edges[e ^ 1]))) {
             return true;
         }
-        if (JoinableBitSet.count(s1) == 1 && ((edges[e] | edges[e ^ 1]) == s1))
+        if (JoinableBitSet.count(s1) == 1 && ((edges[e] | edges[e ^ 1]) == s1)) {
             return true;
+        }
         if (JoinableBitSet.count(s2) == 1 && ((edges[e] | edges[e ^ 1]) == s2))
             return true;
         if (JoinableBitSet.isSubset(edges[e] | edges[e ^ 1], s1) || JoinableBitSet.isSubset(edges[e] | edges[e ^ 1], s2)) {
-            return false;//if operator must already have been used
+            return false;
         }
-        return JoinableBitSet.isSubset(edges[e] | edges[e ^ 1], s1 | s2);//if both side are connected by the edges
+        return JoinableBitSet.isSubset(edges[e] | edges[e ^ 1], s1 | s2);
     }
 
+    /**
+     * This checks if the edge connects two unconnected sets
+     *
+     * EXPLAIN:
+     * cases false if either side of edge is empty since it cannot connect anything
+     * this must be done because the empty set is the subset of all sets
+     * if edge connects the two sides return true
+     */
     public boolean isEvaluateOperator(long s1, long s2, int e) {
-        if (JoinableBitSet.isEmpty(edges[e]) || JoinableBitSet.isEmpty(edges[e^1]))
-        {
-            return false;//if either sides of the edge is empty return false as it does not connect anything
-        } else {
-            return JoinableBitSet.isSubset(edges[e], s1) &&
-                    JoinableBitSet.isSubset(edges[e ^ 1], s2) || JoinableBitSet.isSubset(edges[e], s2) &&
-                    JoinableBitSet.isSubset(edges[e ^ 1], s1);
-        }//if  both sides of the edge connect with both sides sets
+        if (JoinableBitSet.isEmpty(edges[e]) || JoinableBitSet.isEmpty(edges[e ^ 1])) {
+            return false;
+        }
+        return JoinableBitSet.isSubset(edges[e], s1) && JoinableBitSet.isSubset(edges[e ^ 1], s2)   ||
+                JoinableBitSet.isSubset(edges[e], s2) && JoinableBitSet.isSubset(edges[e ^ 1], s1);
     }
 
     /** Return the best plan for the one-table initial state. */
