@@ -39,26 +39,26 @@
 - Statement: INSERT INTO t5 VALUES(1, 'Öb'), (2, 'Oa'), (3, 'Oc')
 ---
 - Statement: SELECT v FROM t5 ORDER BY v ASC
-- output: [['Oa'], ['Öb'], ['Oc']]
+- output_already_ordered: [['Oa'], ['Öb'], ['Oc']]
 ---
 - CreateTable: t6 (id INT, v VARCHAR(255) COLLATE de_DE)
 ---
 - Statement: INSERT INTO t6 VALUES(1, 'Öb'), (2, 'Oa'), (3, 'Oc')
 ---
 - Statement: SELECT v FROM t6 ORDER BY v ASC
-- output: [['Oa'], ['Öb'], ['Oc']]
+- output_already_ordered: [['Oa'], ['Öb'], ['Oc']]
 ---
 - CreateTable: t7 (id INT, v VARCHAR(255) COLLATE tr_TR)
 ---
 - Statement: INSERT INTO t7 VALUES(1, 'P'), (2, 'Öb'), (3, 'Oz')
 ---
 - Statement: SELECT v FROM t7 ORDER BY v ASC
-- output: [['Oz'], ['Öb'], ['P']]
+- output_already_ordered: [['Oz'], ['Öb'], ['P']]
 ---
 - CreateTable: t8 (id INT, v VARCHAR(255) COLLATE sv_SE)
 ---
 - Statement: INSERT INTO t8 VALUES(2, 'Öb'), (3, 'Z')
 ---
 - Statement: SELECT v FROM t8 ORDER BY v ASC
-- output: [['Öb'], ['Z']]
+- output_already_ordered: [['Z'], ['Öb']]
 ...
