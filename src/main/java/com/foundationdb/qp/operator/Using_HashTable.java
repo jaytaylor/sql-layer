@@ -21,7 +21,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.types.TKeyComparable;
+import com.foundationdb.server.types.TComparison;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.util.ArgumentValidation;
@@ -79,7 +79,7 @@ class Using_HashTable extends Operator
                            int tableBindingPosition,
                            Operator joinedInput,
                            List<AkCollator> collators,
-                           List<TKeyComparable> tKeyComparables)
+                           List<TComparison> tComparisons)
     {
         ArgumentValidation.notNull("hashInput", hashInput);
         ArgumentValidation.notNull("hashedRowType", hashedRowType);
@@ -93,7 +93,7 @@ class Using_HashTable extends Operator
         this.tableBindingPosition = tableBindingPosition;
         this.joinedInput = joinedInput;
         this.collators = collators;
-        this.tKeyComparables = tKeyComparables;
+        this.tComparisons = tComparisons;
 
         int i = 0;
         for(TPreparedExpression comparisonField : comparisonFields){
@@ -123,7 +123,7 @@ class Using_HashTable extends Operator
     private final int tableBindingPosition;
     private final Operator joinedInput;
     private final List<AkCollator> collators;
-    private final List<TKeyComparable> tKeyComparables;
+    private final List<TComparison> tComparisons;
 
 
 
@@ -204,7 +204,7 @@ class Using_HashTable extends Operator
             Row row;
             HashTable hashTable= new HashTable();
             hashTable.setRowType(hashedRowType);
-            hashTable.settKeyComparables(tKeyComparables);
+            hashTable.setTComparisons(tComparisons);
             while ((row = loadCursor.next()) != null) {
                 assert(row.rowType().equals(hashedRowType));
                 hashTable.put(row, evaluatableComparisonFields, collators, null);

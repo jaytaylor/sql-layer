@@ -18,6 +18,7 @@
 package com.foundationdb.sql.optimizer.rule;
 
 import com.foundationdb.qp.row.ValuesRow;
+import com.foundationdb.server.types.*;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.sql.optimizer.*;
 import com.foundationdb.sql.optimizer.plan.*;
@@ -47,11 +48,6 @@ import com.foundationdb.qp.operator.API.JoinType;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.types.service.TypesRegistryService;
-import com.foundationdb.server.types.TCast;
-import com.foundationdb.server.types.TClass;
-import com.foundationdb.server.types.TComparison;
-import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.texpressions.AnySubqueryTExpression;
 import com.foundationdb.server.types.texpressions.ExistsSubqueryTExpression;
@@ -1458,13 +1454,25 @@ public class OperatorAssembler extends BaseRule
             List<TPreparedExpression> tFields = assembleExpressions(usingHashTable.getLookupExpressions(),
                     lstream.fieldOffsets);
             List<AkCollator> collators = findCollators(usingHashTable.getLoader());
+            
+            List<TComparison> tComparisons = null;
+            if(usingHashTable.getTKeyComparables() != null) {
+                tComparisons = new ArrayList<>();
+                for (TKeyComparable comparable : usingHashTable.getTKeyComparables()) {
+                    if (comparable == null) {
+                        tComparisons.add(null);
+                    } else {
+                        tComparisons.add(comparable.getComparison());
+                    }
+                }
+            }
             stream.operator = API.using_HashTable(lstream.operator,
                     lstream.rowType,
                     tFields,
                     pos,
                     stream.operator,
                     collators,
-                    usingHashTable.getTKeyComparables());
+                    tComparisons);
             return stream;
             }
 
