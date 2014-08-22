@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -66,6 +67,7 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
 
     private final Properties properties;
     private final int port;
+    private final String host;
     private final ServerServiceRequirements reqs;
     private ServerSocket socket = null;
     private volatile boolean running = false;
@@ -97,6 +99,7 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
         port = Integer.parseInt(portString);
         if (port <= 0)
             throw new InvalidPortException(port);
+        host = properties.getProperty("host");
         
         String capacityString = properties.getProperty("statementCacheCapacity");
         statementCacheCapacity = Integer.parseInt(capacityString);
@@ -111,6 +114,10 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
 
     public int getPort() {
         return port;
+    }
+
+    public String getHost() {
+        return host;
     }
 
     /** Called from the (Main's) main thread to start a server
@@ -165,7 +172,7 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
 
     @Override
     public void run() {
-        logger.info("Postgres server listening on port {}", port);
+        logger.info("Postgres server listening on {}:{}", host, port);
         Random rand = new Random();
         LongMetric bytesInMetric = null, bytesOutMetric = null;
         try {
@@ -174,7 +181,8 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
             reqs.monitor().registerServerMonitor(this);
             synchronized(this) {
                 if (!running) return;
-                socket = new ServerSocket(port);
+                // 50 here was taken from the shorter new ServerSocket(port)
+                socket = new ServerSocket(port, 50, InetAddress.getByName(host));
                 listening = true;
             }
             while (running) {
@@ -430,6 +438,14 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
             return port;
         else
             return -1;
+    }
+
+    @Override
+    public String getLocalHost() {
+        if (listening)
+            return host;
+        else
+            return null;
     }
 
     @Override
