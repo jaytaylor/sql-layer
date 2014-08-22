@@ -94,12 +94,8 @@ class Using_HashTable extends Operator
         this.joinedInput = joinedInput;
         this.collators = collators;
         this.tComparisons = tComparisons;
+        this.comparisonFields = comparisonFields;
 
-        int i = 0;
-        for(TPreparedExpression comparisonField : comparisonFields){
-            evaluatableComparisonFields.add(comparisonField.build());
-            evaluatableComparisonFields.get(i++);
-        }
     }
 
     // For use by this class
@@ -119,11 +115,11 @@ class Using_HashTable extends Operator
 
     private final Operator hashInput;
     private final RowType hashedRowType;
-    private final List<TEvaluatableExpression> evaluatableComparisonFields = new ArrayList<>();
     private final int tableBindingPosition;
     private final Operator joinedInput;
     private final List<AkCollator> collators;
     private final List<TComparison> tComparisons;
+    List<TPreparedExpression> comparisonFields;
 
 
 
@@ -143,6 +139,7 @@ class Using_HashTable extends Operator
     private class Execution extends ChainedCursor
     {
         // Cursor interface
+        private final List<TEvaluatableExpression> evaluatableComparisonFields = new ArrayList<>();
 
         @Override
         public void open()
@@ -191,11 +188,12 @@ class Using_HashTable extends Operator
         Execution(QueryContext context, Cursor input)
         {
             super(context, input);
+            for(TPreparedExpression comparisonField : comparisonFields){
+                evaluatableComparisonFields.add(comparisonField.build());
+            }
         }
 
-        // For use by this classb
-
-
+        // For use by this class
 
         private HashTable  buildHashTable() {
             QueryBindingsCursor bindingsCursor = new SingletonQueryBindingsCursor(bindings);

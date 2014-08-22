@@ -53,14 +53,9 @@ class HashTableLookup_Default extends Operator
     {
         ArgumentValidation.notNull("outerComparisonFields", outerComparisonFields);
         ArgumentValidation.isGTE("outerComparisonFields", outerComparisonFields.size(), 1);
-        int i = 0;
-        for(TPreparedExpression comparisonField : outerComparisonFields){
-            evaluatableComparisonFields.add(comparisonField.build());
-        }
-
         this.collators = collators;
-
         this.hashTableBindingPosition = hashTableBindingPosition;
+        this.outerComparisonFields = outerComparisonFields;
     }
 
     // Class state
@@ -71,12 +66,10 @@ class HashTableLookup_Default extends Operator
 
     // Object state
 
-
     private final int hashTableBindingPosition;
     private RowType hashedRowType;
-
+    List<TPreparedExpression> outerComparisonFields;
     private final List<AkCollator> collators;
-    private final List<TEvaluatableExpression> evaluatableComparisonFields = new ArrayList<>();
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
@@ -192,6 +185,9 @@ class HashTableLookup_Default extends Operator
             super(context);
             MultipleQueryBindingsCursor multiple = new MultipleQueryBindingsCursor(bindingsCursor);
             this.bindingsCursor = multiple;
+            for (TPreparedExpression comparisonField : outerComparisonFields) {
+                evaluatableComparisonFields.add(comparisonField.build());
+            }
         }
         // Cursor interface
         protected HashTable hashTable;
@@ -201,5 +197,7 @@ class HashTableLookup_Default extends Operator
         private int innerRowListPosition = 0;
         private QueryBindings bindings;
         private boolean destroyed = false;
+        private final List<TEvaluatableExpression> evaluatableComparisonFields = new ArrayList<>();
+
     }
 }
