@@ -157,7 +157,7 @@ public abstract class DPhyp<P>
             long s2 = JoinableBitSet.of(i);
             if (JoinableBitSet.overlaps(neighborhood, s2)) {
                 boolean connected = false;
-                for (int e = 0; e < nedges; e++) {
+                for (int e = 0; e < nedges; e+=2) {
                     if (isEvaluateOperator(s1, s2, e)) {
                         connected = true;
                         break;
@@ -182,7 +182,7 @@ public abstract class DPhyp<P>
             long next = JoinableBitSet.union(s2, subset);
             if (getPlan(next) != null) {
                 boolean connected = false;
-                for (int e = 0; e < nedges; e++) {
+                for (int e = 0; e < nedges; e+=2) {
                     if (isEvaluateOperator(s1, next, e)) {
                         connected = true;
                         break;
@@ -213,9 +213,9 @@ public abstract class DPhyp<P>
         evaluateOperators.clear();
         oneSidedJoinOperators.clear();
         boolean connected = false;
-        for (int e = 0; e < nedges; e++) {
+        for (int e = 0; e < nedges; e +=2) {
             boolean isEvaluate = isEvaluateOperator(s1, s2, e);
-            boolean isOneSided = isOneSidedJoinOperator(s1, s2, e);
+            boolean isOneSided = isRelevant(s1, s2, e);
             connected |= isEvaluate;
             if (isEvaluate || isOneSided) {
                 // The one that produced this edge.
@@ -224,14 +224,9 @@ public abstract class DPhyp<P>
                 if (joinType != JoinType.INNER) {
                     join12 = joinType;
                     join21 = commuteJoinType(joinType);
-                    if ((e & 1) != 0) {
-                        join12 = join21;
-                        join21 = joinType;
-                    }
                 }
                 evaluateOperators.add(operator);
             }
-
         }
         if (!connected) {
             return;
@@ -259,26 +254,25 @@ public abstract class DPhyp<P>
      * FROM t1 JOIN t2 ON t1.x = 3 AND t1.y = t2.y
      * would return true for t1.x=3 but not t1.y=t2.y
      */
-    private boolean isOneSidedJoinOperator(long s1, long s2, int e) {
-        if (JoinableBitSet.isEmpty(edges[e]) && JoinableBitSet.isEmpty(edges[e^1])) {
-            return true;
-        } else if (edges[e] == 0) {
-            return edges[e^1] == s2;
-        } else if (edges[e^1] == 0) {
-            return edges[e] == s1;
-        } else {
-            return false;
-        }
+    private boolean isRelevant(long s1, long s2, int e) {
+        if(JoinableBitSet.count(s1) == 1 && JoinableBitSet.count(s2) == 1
+           && JoinableBitSet.isEmpty(edges[e]) && JoinableBitSet.isEmpty(edges[e ^ 1]))
+            return true;//if both sets contain only one table and both sides of edge are empty as to
+        //this is utilized so a operator that connects nothing is only added in the first iteration
+        if(JoinableBitSet.isSubset(edges[e] | edges[e ^1], s1) || JoinableBitSet.isSubset(edges[e] | edges[e ^1],s2))
+            return false;//if the edge connects a side  to itself it doesn not need to be done again
+        return JoinableBitSet.isSubset(edges[e] | edges[e ^1], s1 | s2);//if both sets contain all elements on both sides of edge then it is relevant
     }
 
     public boolean isEvaluateOperator(long s1, long s2, int e) {
         if (JoinableBitSet.isEmpty(edges[e]) || JoinableBitSet.isEmpty(edges[e^1]))
         {
-            return false;
+            return false;//if either sides of the edge is empty return false as it does not connect anything
         } else {
             return JoinableBitSet.isSubset(edges[e], s1) &&
-                    JoinableBitSet.isSubset(edges[e ^ 1], s2);
-        }
+                    JoinableBitSet.isSubset(edges[e ^ 1], s2) || JoinableBitSet.isSubset(edges[e], s2) &&
+                    JoinableBitSet.isSubset(edges[e ^ 1], s1);
+        }//if  both sides of the edge connect with both sides sets
     }
 
     /** Return the best plan for the one-table initial state. */

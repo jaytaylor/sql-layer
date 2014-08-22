@@ -42,6 +42,10 @@ public class JoinableBitSet
         return (1L << i);
     }
 
+    public static int count(long s) {
+        return Long.bitCount(s);
+    }
+
     /** Are these two sets equal (same members)? */
     public static boolean equals(long s1, long s2) {
         return (s1 == s2);
