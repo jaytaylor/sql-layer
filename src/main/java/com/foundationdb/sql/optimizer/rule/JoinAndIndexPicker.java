@@ -1108,6 +1108,7 @@ public class JoinAndIndexPicker extends BaseRule
                                       long rightBitset, PlanClass right,
                                       long bitset, PlanClass existing,
                                       JoinType joinType, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
+
             JoinPlanClass planClass = (JoinPlanClass)existing;
             if (planClass == null)
                 planClass = new JoinPlanClass(this, bitset);
@@ -1162,6 +1163,7 @@ public class JoinAndIndexPicker extends BaseRule
             JoinPlan joinPlan = new JoinPlan(leftPlan, rightPlan,
                     joinType, JoinNode.Implementation.NESTED_LOOPS,
                     joins, costEstimate);
+
             Collection<JoinOperator> joinOperators = duplicateJoins(joins);
             Plan hashLoaderPlan = right.bestPlan(condJoins, outsideJoins);
             JoinPlan hashPlan2 = buildHashTableJoin(hashLoaderPlan, joinPlan , joinOperators);
@@ -1287,7 +1289,8 @@ public class JoinAndIndexPicker extends BaseRule
                                     JoinType.SEMI, JoinNode.Implementation.BLOOM_FILTER,
                                     joins, costEstimate, bloomFilter, hashColumns, matchColumns, null);
         }
-        int MAX_ROWS_X_JOIN_COLS_FOR_TABLE = 5000;
+
+        int MAX_COL_COUNT = 5000;
         int DEFAULT_COLUMN_COUNT = 5;
 
         public JoinPlan buildHashTableJoin(Plan loaderPlan, JoinPlan joinPlan,
@@ -1301,7 +1304,13 @@ public class JoinAndIndexPicker extends BaseRule
             List<ExpressionNode> hashColumns = returning.get(0);
             List<ExpressionNode> matchColumns = returning.get(1);
             double selectivity = checkPlan.joinSelectivity();
-            if(loaderPlan.costEstimate.getRowCount() * hashColumns.size() > MAX_ROWS_X_JOIN_COLS_FOR_TABLE)
+            String prop = picker.rulesContext.getProperty("hashTableMaxRowCount");
+            int maxColumnCount;
+            if( prop != null)
+                maxColumnCount = Integer.getInteger(prop);
+            else
+                maxColumnCount = MAX_COL_COUNT;
+            if(loaderPlan.costEstimate.getRowCount() * hashColumns.size() > maxColumnCount)
                 return null;
             int outerColumnCount = DEFAULT_COLUMN_COUNT;
             int innerColumnCount = DEFAULT_COLUMN_COUNT;
