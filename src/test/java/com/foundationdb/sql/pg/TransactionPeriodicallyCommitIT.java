@@ -24,6 +24,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,6 +40,9 @@ public class TransactionPeriodicallyCommitIT extends PostgresServerITBase {
     private static final int NUMBER_OF_INSERTS = 4;
     /** the number of rows per insert **/
     private static final int NUMBER_OF_ROWS = 3;
+    /** a 100 byte lorem ipsum **/
+    private static final String SAMPLE_STRING =
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris auctor enim dui, eget egestas metus.";
 
     @Before
     public void createSimpleSchema() throws Exception {
@@ -155,6 +159,82 @@ public class TransactionPeriodicallyCommitIT extends PostgresServerITBase {
         } else {
             fail("only committed once");
         }
+    }
+
+    @Test
+    public void testFailPartWayThroughInsertStatementOn() throws Exception {
+        getConnection().createStatement().execute("SET transactionPeriodicallyCommit TO 'true'");
+        getConnection().setAutoCommit(false);
+        getConnection().createStatement().execute("DROP TABLE fake.T1");
+        getConnection().createStatement().execute("CREATE TABLE fake.T1 (c1 integer not null primary key, c2 varchar(100))");
+        try {
+            getConnection().createStatement().execute(
+                    "insert into fake.T1 VALUES (0, '" + SAMPLE_STRING + "'),(NULL, '" + SAMPLE_STRING + "');");
+            fail("Expected exception");
+        } catch (SQLException e) {}
+        getConnection().rollback();
+        assertEquals(0, getCount());
+    }
+
+    @Test
+    public void testFailPartWayThroughInsertStatementUserLevel() throws Exception {
+        getConnection().createStatement().execute("SET transactionPeriodicallyCommit TO 'userLevel'");
+        getConnection().setAutoCommit(false);
+        getConnection().createStatement().execute("DROP TABLE fake.T1");
+        getConnection().createStatement().execute("CREATE TABLE fake.T1 (c1 integer not null primary key, c2 varchar(100))");
+        try {
+            getConnection().createStatement().execute(
+                    "insert into fake.T1 VALUES (0, '" + SAMPLE_STRING + "'),(NULL, '" + SAMPLE_STRING + "');");
+            fail("Expected exception");
+        } catch (SQLException e) {}
+        getConnection().rollback();
+        assertEquals(0, getCount());
+    }
+
+    @Test
+    public void testFailWithConstraintCheckOn() throws Exception {
+        getConnection().createStatement().execute("SET transactionPeriodicallyCommit TO 'true'");
+        getConnection().createStatement().execute("SET constraintCheckTime TO 'DEFERRED_WITH_RANGE_CACHE'");
+        getConnection().setAutoCommit(false);
+        getConnection().createStatement().execute("DROP TABLE fake.T1");
+        getConnection().createStatement().execute("CREATE TABLE fake.T1 (c1 integer not null primary key, c2 varchar(100))");
+        String originalMessage = null;
+        try {
+            getConnection().createStatement().execute(
+                    "insert into fake.T1 VALUES (0, '" + SAMPLE_STRING + "'),(0, '" + SAMPLE_STRING + "');");
+            fail("Expected exception");
+        } catch (SQLException e) {
+            originalMessage = e.getMessage();
+        }
+        try {
+            getConnection().rollback();
+        } catch (SQLException e) {
+            assertEquals(originalMessage, e.getMessage());
+        }
+        assertEquals(0, getCount());
+    }
+
+    @Test
+    public void testFailWithConstraintCheckUserLevel() throws Exception {
+        getConnection().createStatement().execute("SET transactionPeriodicallyCommit TO 'userLevel'");
+        getConnection().createStatement().execute("SET constraintCheckTime TO 'DEFERRED_WITH_RANGE_CACHE'");
+        getConnection().setAutoCommit(false);
+        getConnection().createStatement().execute("DROP TABLE fake.T1");
+        getConnection().createStatement().execute("CREATE TABLE fake.T1 (c1 integer not null primary key, c2 varchar(100))");
+        String originalMessage = null;
+        try {
+            getConnection().createStatement().execute(
+                    "insert into fake.T1 VALUES (0, '" + SAMPLE_STRING + "'),(0, '" + SAMPLE_STRING + "');");
+            fail("Expected exception");
+        } catch (SQLException e) {
+            originalMessage = e.getMessage();
+        }
+        try {
+            getConnection().rollback();
+        } catch (SQLException e) {
+            assertEquals(originalMessage, e.getMessage());
+        }
+        assertEquals(0, getCount());
     }
 
     public int insertRows(int rowIndex, int i) throws Exception {
