@@ -50,6 +50,7 @@ import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.storeadapter.RowDataRow;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
+import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.ConcurrentViolationException;
 import com.foundationdb.server.error.ConstraintViolationException;
@@ -444,7 +445,14 @@ public class OnlineHelper implements RowListener
                     TableIndex[] indexes = transform.tableIndexes;
                     simpleCheckConstraints(session, transform, rowData);
                     for(TableIndex index : indexes) {
-                        store.writeIndexRow(session, index, rowData, ((PersistitHKey)row.hKey()).key(), buffer, true);
+                        long zValue = -1;
+                        SpatialColumnHandler spatialColumnHandler = null;
+                        if (index.isSpatial()) {
+                            spatialColumnHandler = new SpatialColumnHandler(index);
+                            zValue = spatialColumnHandler.zValue(rowData);
+                        }
+                        store.writeIndexRow(session, index, rowData, ((PersistitHKey)row.hKey()).key(), buffer,
+                                            spatialColumnHandler, zValue, true);
                     }
                 }
             });
@@ -493,11 +501,19 @@ public class OnlineHelper implements RowListener
                 if(transform.tableIndexes.length > 0) {
                     PersistitIndexRowBuffer buffer = new PersistitIndexRowBuffer(store);
                     for(TableIndex index : transform.tableIndexes) {
+                        long oldZValue = -1;
+                        long newZValue = -1;
+                        SpatialColumnHandler spatialColumnHandler = null;
+                        if (index.isSpatial()) {
+                            spatialColumnHandler = new SpatialColumnHandler(index);
+                            oldZValue = spatialColumnHandler.zValue(oldRowData);
+                            newZValue = spatialColumnHandler.zValue(newRowData);
+                        }
                         if(doDelete) {
-                            store.deleteIndexRow(session, index, oldRowData, hKey, buffer, false);
+                            store.deleteIndexRow(session, index, oldRowData, hKey, buffer, spatialColumnHandler, oldZValue, false);
                         }
                         if(doWrite) {
-                            store.writeIndexRow(session, index, newRowData, hKey, buffer, false);
+                            store.writeIndexRow(session, index, newRowData, hKey, buffer, spatialColumnHandler, newZValue, false);
                         }
                     }
                 }
