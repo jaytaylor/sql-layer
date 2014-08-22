@@ -256,7 +256,7 @@ public abstract class DPhyp<P>
      */
     private boolean isRelevant(long s1, long s2, int e) {
         if(JoinableBitSet.count(s1) == 1 && JoinableBitSet.count(s2) == 1
-           && JoinableBitSet.isEmpty(edges[e]) && JoinableBitSet.isEmpty(edges[e ^ 1]))
+           && (JoinableBitSet.isEmpty(edges[e]) || JoinableBitSet.isEmpty(edges[e ^ 1])))
             return true;//if both sets contain only one table and both sides of edge are empty as to
         //this is utilized so a operator that connects nothing is only added in the first iteration
         if(JoinableBitSet.isSubset(edges[e] | edges[e ^1], s1) || JoinableBitSet.isSubset(edges[e] | edges[e ^1],s2))
