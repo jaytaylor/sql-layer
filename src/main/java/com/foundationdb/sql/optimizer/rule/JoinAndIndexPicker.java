@@ -1162,13 +1162,12 @@ public class JoinAndIndexPicker extends BaseRule
             JoinPlan joinPlan = new JoinPlan(leftPlan, rightPlan,
                     joinType, JoinNode.Implementation.NESTED_LOOPS,
                     joins, costEstimate);
-            if (joinType.isInner() || (joinType.isSemi() && rightPlan.semiJoinEquivalent()) || joinType == JoinType.LEFT) {
-                Collection<JoinOperator> joinOperators = duplicateJoins(joins);
-                Plan loaderPlan = right.bestPlan(condJoins, outsideJoins);
-                JoinPlan hashPlan2 = buildHashTableJoin(loaderPlan, joinPlan , joinOperators);
-                if(hashPlan2 != null)
-                    planClass.consider(hashPlan2);
-            }
+            Collection<JoinOperator> joinOperators = duplicateJoins(joins);
+            Plan hashLoaderPlan = right.bestPlan(condJoins, outsideJoins);
+            JoinPlan hashPlan2 = buildHashTableJoin(hashLoaderPlan, joinPlan , joinOperators);
+            if(hashPlan2 != null)
+                planClass.consider(hashPlan2);
+
             if (joinType.isSemi() || (joinType.isInner() && rightPlan.semiJoinEquivalent())) {
                 Collection<JoinOperator> semiJoins = duplicateJoins(joins);
                 Plan loaderPlan = right.bestPlan(condJoins, outsideJoins);
