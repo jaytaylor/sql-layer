@@ -1,4 +1,4 @@
-# When pipelining is turned on, this tests that Map_NestedLoops doesn't use a mutable row and change the bindings. 
+# When pipelining is turned on, this tests that Map_NestedLoops freezes values which may depend on outer bindings. 
 ---
 - Statement: drop table if exists UCustomer;
 ---

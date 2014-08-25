@@ -197,7 +197,7 @@ class Map_NestedLoops extends Operator
                 Row row = nextInputRow();
                 if (row != null) {
                     if (row.isBindingsSensitive()) {
-                        // Freeze Project values which may depend on outer bindings.
+                        // Freeze values which may depend on outer bindings.
                         row = new ImmutableRow(row);
                     }
                     QueryBindings bindings = baseBindings.createBindings();

@@ -92,7 +92,7 @@ public abstract class AbstractRow implements Row
 
     @Override
     public boolean isBindingsSensitive() {
-        return true;
+        return false;
     }
 
     @Override

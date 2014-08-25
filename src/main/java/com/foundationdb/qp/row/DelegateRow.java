@@ -78,6 +78,6 @@ public class DelegateRow implements Row {
 
     @Override
     public boolean isBindingsSensitive() {
-        return true;
+        return false;
     }
 }
