@@ -1290,13 +1290,50 @@ public class JoinAndIndexPicker extends BaseRule
                                     joins, costEstimate, bloomFilter, hashColumns, matchColumns, null);
         }
 
+
+        private Collection<JoinOperator> cleanJoinOperators(Plan inputPlan, List<JoinOperator> joinOperators) {
+            if (inputPlan instanceof GroupPlan && ((GroupPlan) inputPlan).scan instanceof SingleIndexScan && ((GroupPlan)inputPlan).scan.getConditions() != null) {
+                SingleIndexScan scan = (SingleIndexScan) ((GroupPlan) inputPlan).scan;
+                for (ConditionExpression indexCond : scan.getConditions()) {
+                    if (indexCond instanceof ComparisonCondition) {
+                        for (int i = 0; i < joinOperators.size(); i++) {
+                            removeIfExists(indexCond, joinOperators.get(i).getJoinConditions());
+                            if(joinOperators.get(i).getJoin() != null)
+                                removeIfExists(indexCond, joinOperators.get(i).getJoin().getJoinConditions());
+
+
+                        }
+                    }
+                }
+            }
+             return joinOperators;
+        }
+
+        private void removeIfExists(ConditionExpression condToRemove, ConditionList conditionList){
+            if(conditionList == null || conditionList.isEmpty())
+                return;
+            for (int j = 0; j < conditionList.size(); j++) {
+                if (conditionList.get(j) instanceof ComparisonCondition) {
+                    ComparisonCondition compCondition = (ComparisonCondition) conditionList.get(j);
+                    if (compCondition.getRight() instanceof ColumnExpression && compCondition.getLeft() instanceof ColumnExpression)
+                        continue;
+                    if (conditionList.get(j).equals(condToRemove))
+                        conditionList.remove(j--);
+                }
+            }
+        }
+
+
         int MAX_COL_COUNT = 5000;
         int DEFAULT_COLUMN_COUNT = 5;
 
         public JoinPlan buildHashTableJoin(Plan loaderPlan, JoinPlan joinPlan,
                                            Collection<JoinOperator> joinOperators){
             Plan inputPlan = joinPlan.left;
+            joinOperators = cleanJoinOperators(inputPlan, (List)joinOperators);
             Plan checkPlan = joinPlan.right;
+            joinOperators = cleanJoinOperators(checkPlan, (List)joinOperators);
+
             Collection<JoinOperator> joins = joinOperators;
             List<List<ExpressionNode>> returning = buildExpressionColumns(joins, inputPlan, checkPlan);
             if (returning == null)
@@ -1338,9 +1375,10 @@ public class JoinAndIndexPicker extends BaseRule
             List<TKeyComparable> tKeyComparables = new ArrayList<>();
             for(JoinOperator joinOperator : joinOperators){
                 if(joinOperator.getJoin() != null && joinOperator.getJoin().hasJoinConditions()) {
-                    for (ConditionExpression conditionExpression : joinOperator.getJoin().getJoinConditions())
+                    for (ConditionExpression conditionExpression : joinOperator.getJoin().getJoinConditions()) {
                         if (conditionExpression instanceof ComparisonCondition)
                             tKeyComparables.add(((ComparisonCondition) conditionExpression).getKeyComparable());
+                    }
                 }
             }
             boolean allNull = true;
