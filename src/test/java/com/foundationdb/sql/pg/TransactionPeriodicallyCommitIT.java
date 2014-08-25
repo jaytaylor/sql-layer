@@ -66,7 +66,7 @@ public class TransactionPeriodicallyCommitIT extends PostgresServerITBase {
 
     @Test
     public void testOn() throws Exception {
-        getConnection().createStatement().execute("SET transactionPeriodicallyCommit TO 'true'");
+        getConnection().createStatement().execute("SET transactionPeriodicallyCommit TO 'on'");
         getConnection().setAutoCommit(false);
         int lastCount = -1;
         int rowIndex = 0;
@@ -104,8 +104,8 @@ public class TransactionPeriodicallyCommitIT extends PostgresServerITBase {
 
     @Test
     public void testExplicitlyOff() throws Exception {
-        getConnection().createStatement().execute("SET transactionPeriodicallyCommit TO 'true'");
-        getConnection().createStatement().execute("SET transactionPeriodicallyCommit TO 'false'");
+        getConnection().createStatement().execute("SET transactionPeriodicallyCommit TO 'on'");
+        getConnection().createStatement().execute("SET transactionPeriodicallyCommit TO 'off'");
         testOffHelper();
     }
 
@@ -164,7 +164,7 @@ public class TransactionPeriodicallyCommitIT extends PostgresServerITBase {
 
     @Test
     public void testFailPartWayThroughInsertStatementOn() throws Exception {
-        getConnection().createStatement().execute("SET transactionPeriodicallyCommit TO 'true'");
+        getConnection().createStatement().execute("SET transactionPeriodicallyCommit TO 'on'");
         getConnection().setAutoCommit(false);
         getConnection().createStatement().execute("DROP TABLE fake.T1");
         getConnection().createStatement().execute("CREATE TABLE fake.T1 (c1 integer not null primary key, c2 varchar(100))");
@@ -194,7 +194,7 @@ public class TransactionPeriodicallyCommitIT extends PostgresServerITBase {
 
     @Test
     public void testFailWithDeferredConstraintCheckOn() throws Exception {
-        getConnection().createStatement().execute("SET transactionPeriodicallyCommit TO 'true'");
+        getConnection().createStatement().execute("SET transactionPeriodicallyCommit TO 'on'");
         getConnection().createStatement().execute("SET constraintCheckTime TO 'DEFERRED_WITH_RANGE_CACHE'");
         getConnection().setAutoCommit(false);
         getConnection().createStatement().execute("DROP TABLE fake.T1");
@@ -210,7 +210,7 @@ public class TransactionPeriodicallyCommitIT extends PostgresServerITBase {
 
     @Test
     public void testFailWithConstraintCheckOn() throws Exception {
-        getConnection().createStatement().execute("SET transactionPeriodicallyCommit TO 'true'");
+        getConnection().createStatement().execute("SET transactionPeriodicallyCommit TO 'on'");
         getConnection().setAutoCommit(false);
         getConnection().createStatement().execute("DROP TABLE fake.T1");
         getConnection().createStatement().execute("CREATE TABLE fake.T1 (c1 integer not null primary key, c2 varchar(100))");

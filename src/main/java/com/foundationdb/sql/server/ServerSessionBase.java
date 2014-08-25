@@ -437,7 +437,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
                 break;
             }
             if (allowsPeriodicCommit && success && !transaction.isRollbackPending()) {
-                if (transactionPeriodicallyCommit == ServerTransaction.PeriodicallyCommit.USER_LEVEL &&
+                if (transactionPeriodicallyCommit == ServerTransaction.PeriodicallyCommit.USERLEVEL &&
                         transaction.shouldPeriodicallyCommit()) {
                     commitTransaction();
                 } else {

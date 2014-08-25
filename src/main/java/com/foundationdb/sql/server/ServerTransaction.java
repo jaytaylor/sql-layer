@@ -17,7 +17,6 @@
 
 package com.foundationdb.sql.server;
 
-import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.error.TransactionInProgressException;
 import com.foundationdb.server.error.TransactionReadOnlyException;
 import com.foundationdb.server.service.session.Session;
@@ -30,29 +29,18 @@ public class ServerTransaction
 {
     public static enum PeriodicallyCommit {
         /** The system commits when you call commit **/
-        OFF("false"),
-        /** The system commits periodically maintaining **/
-        ON("true"),
+        OFF,
+        /** The system commits periodically maintaining the same transaction **/
+        ON,
         /**
          *  The system commits and closes the user-level transaction requiring the client to begin a new transaction.
          *  For jdbc, and probably other drivers, it will create the new transaction automatically for the user.
          */
-        USER_LEVEL("userLevel");
-
-        private String propertyName;
-
-        PeriodicallyCommit(String propertyName) {
-            this.propertyName = propertyName;
-        }
+        USERLEVEL;
 
         public static PeriodicallyCommit fromProperty(String name) {
             if (name == null) return OFF;
-            for (PeriodicallyCommit opt : values()) {
-                if (name.equals(opt.propertyName))
-                    return opt;
-            }
-            throw new InvalidParameterValueException(
-                    String.format("Invalid name: %s for TransactionPeriodicallyCommitOption", name));
+            return valueOf(PeriodicallyCommit.class, name.toUpperCase());
         }
     }
 
