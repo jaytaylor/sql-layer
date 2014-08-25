@@ -59,12 +59,19 @@ public class AkInterval extends TClassBase {
         @Override
         public void format(TInstance type, ValueSource source, AkibanAppender out) {
             long months = source.getInt64();
-
+            boolean negative = false;
+            if(months < 0) {
+                negative = true;
+                months = -months;
+            }
             long years = months / 12;
             months -= (years * 12);
-
             Formatter formatter = new Formatter(out.getAppendable());
-            formatter.format("INTERVAL '%d-%d'", years, months);
+            if(negative)
+                formatter.format("INTERVAL '-%d-%d'", years, months);
+            else
+                formatter.format("INTERVAL '%d-%d'", years, months);
+
         }
 
         @Override
@@ -115,22 +122,28 @@ public class AkInterval extends TClassBase {
     private static TClassFormatter secondsFormatter = new TClassFormatter() {
         @Override
         public void format(TInstance type, ValueSource source, AkibanAppender out) {
-            long micros = secondsIntervalAs(source, TimeUnit.MICROSECONDS);
 
+            boolean negative = false;
+            long micros = secondsIntervalAs(source, TimeUnit.MICROSECONDS);
+            if(micros < 0) {
+                negative = true;
+                micros = -micros;
+            }
             long days = secondsIntervalAs(micros, TimeUnit.DAYS);
             micros -= TimeUnit.DAYS.toMicros(days);
-
             long hours = secondsIntervalAs(micros, TimeUnit.HOURS);
             micros -= TimeUnit.HOURS.toMicros(hours);
-
             long minutes = secondsIntervalAs(micros, TimeUnit.MINUTES);
             micros -= TimeUnit.MINUTES.toMicros(minutes);
-
             long seconds = secondsIntervalAs(micros, TimeUnit.SECONDS);
             micros -= TimeUnit.SECONDS.toMicros(seconds);
 
             Formatter formatter = new Formatter(out.getAppendable());
-            formatter.format("INTERVAL '%d %d:%d:%d.%05d'", days, hours, minutes, seconds, micros);
+            if(negative)
+                formatter.format("INTERVAL '-%d %d:%d:%d.%05d'", days, hours, minutes, seconds, micros);
+            else
+                formatter.format("INTERVAL '%d %d:%d:%d.%05d'", days, hours, minutes, seconds, micros);
+
         }
 
         @Override
