@@ -193,7 +193,6 @@ public class TransactionPeriodicallyCommitIT extends PostgresServerITBase {
     }
 
     @Test
-    @Ignore("the rollback throws a constraint violation")
     public void testFailWithDeferredConstraintCheckOn() throws Exception {
         getConnection().createStatement().execute("SET transactionPeriodicallyCommit TO 'true'");
         getConnection().createStatement().execute("SET constraintCheckTime TO 'DEFERRED_WITH_RANGE_CACHE'");
@@ -234,7 +233,7 @@ public class TransactionPeriodicallyCommitIT extends PostgresServerITBase {
             getConnection().createStatement().execute(
                     "insert into fake.T1 VALUES (0, '" + SAMPLE_STRING + "'),(0, '" + SAMPLE_STRING + "');");
             fail("Expected exception");
-        } catch (SQLException e) {
+        } catch (SQLException e) { }
         // Note: if the above code works correctly, we'll be in an idle state, which jdbc uses to turn this into noop
         getConnection().rollback();
         assertEquals(0, getCount());

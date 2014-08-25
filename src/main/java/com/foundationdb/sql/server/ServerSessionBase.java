@@ -410,10 +410,12 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
 
     /** Complete execute given statement.
      * @see #beforeExecute
+     * @param allowsPeriodicCommit Some places where this is called are after a parse or prepare statement, we don't want
+     *                         to commit in those instances, only when a user statement was actually executed.
      */
-    protected void afterExecute(ServerStatement stmt, 
+    protected void afterExecute(ServerStatement stmt,
                                 boolean localTransaction,
-                                boolean success) {
+                                boolean success, boolean allowsPeriodicCommit) {
         if (localTransaction) {
             if (success)
                 commitTransaction();
@@ -434,7 +436,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
                 transaction.afterUpdate();
                 break;
             }
-            if (success && !transaction.isRollbackPending()) {
+            if (allowsPeriodicCommit && success && !transaction.isRollbackPending()) {
                 if (transactionPeriodicallyCommit == ServerTransaction.PeriodicallyCommit.USER_LEVEL &&
                         transaction.shouldPeriodicallyCommit()) {
                     commitTransaction();
