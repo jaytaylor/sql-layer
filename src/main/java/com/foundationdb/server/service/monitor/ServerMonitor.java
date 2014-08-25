@@ -24,6 +24,9 @@ public interface ServerMonitor {
     /** The port in use, or <code>-1</code> if not listening or not applicable. */
     int getLocalPort();
 
+    /** The host in use, or <code>null</code> if not listening or not applicable. */
+    String getLocalHost();
+
     /** The system time at which this server started. */
     long getStartTimeMillis();
     

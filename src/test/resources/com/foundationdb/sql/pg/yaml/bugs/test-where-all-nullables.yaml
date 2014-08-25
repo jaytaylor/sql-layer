@@ -1,0 +1,34 @@
+---
+- CreateTable: T1 (C1 INT, C2 CHAR(100), notNull INT NOT NULL);
+---
+- Statement: INSERT INTO t1 VALUES (null,null,0);
+---
+- Statement: INSERT INTO t1 VALUES (1,'',1);
+---
+- Statement: INSERT INTO t1 VALUES (2,'abcde',2);
+---
+- Statement: INSERT INTO t1 VALUES (100,'abcdefghij',100);
+---
+- CreateTable: T2 (C1 INT, notNull INT NOT NULL);
+---
+- Statement: INSERT INTO t2 VALUES (null, 0);
+---
+- Statement: INSERT INTO t2 VALUES (2, 2);
+---
+- Statement: INSERT INTO t2 VALUES (100, 100);
+---
+- Statement: SELECT c1 FROM t1 WHERE c1 > ALL (SELECT c1 FROM t2);
+- row_count: 0
+---
+- Statement: SELECT c1 FROM t1 WHERE c1 >= ALL (SELECT c1 FROM t2);
+- row_count: 0
+---
+- Statement: SELECT c1 FROM t1 WHERE c1 = ALL (SELECT c1 FROM t2);
+- row_count: 0
+---
+- Statement: SELECT c1 FROM t1 WHERE c1 <= ALL (SELECT c1 FROM t2);
+- row_count: 0
+---
+- Statement: SELECT c1 FROM t1 WHERE c1 <> ALL  (SELECT c1 FROM t2);
+- row_count: 0
+...
