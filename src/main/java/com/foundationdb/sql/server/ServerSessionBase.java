@@ -439,7 +439,11 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             // could this potentially bypass our checking and commit the transaction anyways
             if (transactionPeriodicallyCommit == ServerTransaction.PeriodicallyCommit.USER_LEVEL &&
                     transaction.shouldPeriodicallyCommit()) {
-                commitTransaction();
+                if (transaction.isRollbackPending()) {
+                    rollbackTransaction();
+                } else {
+                    commitTransaction();
+                }
             } else {
                 // Give periodic commit a chance if enabled.
                 transaction.checkPeriodicallyCommit();
