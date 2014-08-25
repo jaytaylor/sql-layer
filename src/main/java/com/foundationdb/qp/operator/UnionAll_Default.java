@@ -272,7 +272,7 @@ final class UnionAll_Default extends SetOperatorBase {
             if (!inputRow.rowType().equals(currentInputRowType)) {
                 throw new WrongRowTypeException(inputRow, currentInputRowType);
             }
-            if (currentInputRowType.equals(rowType())) {
+            if (currentInputRowType == rowType()) {
                 return inputRow;
             }
             OverlayingRow row = new OverlayingRow(inputRow, rowType());
