@@ -434,19 +434,14 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
                 transaction.afterUpdate();
                 break;
             }
-            // TODO what if some bytes are written, but the execute failed. E.g.
-            // INSERT INTO table VALUES('a'),('b'),('violates constraint')
-            // could this potentially bypass our checking and commit the transaction anyways
-            if (transactionPeriodicallyCommit == ServerTransaction.PeriodicallyCommit.USER_LEVEL &&
-                    transaction.shouldPeriodicallyCommit()) {
-                if (transaction.isRollbackPending()) {
-                    rollbackTransaction();
-                } else {
+            if (success && !transaction.isRollbackPending()) {
+                if (transactionPeriodicallyCommit == ServerTransaction.PeriodicallyCommit.USER_LEVEL &&
+                        transaction.shouldPeriodicallyCommit()) {
                     commitTransaction();
+                } else {
+                    // Give periodic commit a chance if enabled.
+                    transaction.checkPeriodicallyCommit();
                 }
-            } else {
-                // Give periodic commit a chance if enabled.
-                transaction.checkPeriodicallyCommit();
             }
         }
     }
