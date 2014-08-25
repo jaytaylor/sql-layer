@@ -41,6 +41,23 @@ public abstract class AkCollator {
         throw new AssertionError("no value");
     }
 
+    public static int hashValue(ValueSource valueSource, AkCollator collator) {
+        if (valueSource.isNull())
+            return collator.hashCode((String)null);
+        else if (valueSource.canGetRawValue())
+            return collator.hashCode(valueSource.getString());
+        else if (valueSource.hasCacheValue()) {
+            Object obj = valueSource.getObject();
+            if (obj instanceof byte[]) {
+                byte[] bytes = (byte[])obj;
+                assert (collator != null) : "encoded as bytes without collator";
+                return ((AkCollatorICU)collator).hashCode(bytes);
+            }
+            return collator.hashCode((String) obj);
+        }
+        throw new AssertionError("no value");
+    }
+
     private final String collatorScheme;
 
     private final int collationId;
@@ -114,6 +131,8 @@ public abstract class AkCollator {
      *             if string is null
      */
     abstract public int hashCode(final String string);
+
+    abstract public int hashCode(final byte[] bytes);
 
     @Override
     public String toString() {

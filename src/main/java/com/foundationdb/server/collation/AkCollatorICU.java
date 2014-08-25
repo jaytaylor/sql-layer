@@ -112,6 +112,11 @@ public class AkCollatorICU extends AkCollator {
     @Override
     public int hashCode(String string) {
         byte[] bytes = collator.get().getCollationKey(string).toByteArray();
+        return hashCode(bytes);
+    }
+
+    @Override
+    public int hashCode(byte[] bytes) {
         return hashFunction.hashBytes(bytes, 0, bytes.length).asInt();
     }
 

@@ -394,8 +394,7 @@ public final class ValueSources {
             hash = Arrays.hashCode(source.getBytes());
             break;
         case STRING:
-            String stringVal = AkCollator.getString(source, collator);
-            hash = collator.hashCode(stringVal);
+            hash = AkCollator.hashValue(source, collator);
             break;
         default:
             throw new AssertionError(source.getType());
