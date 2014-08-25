@@ -196,10 +196,8 @@ class Map_NestedLoops extends Operator
             if (baseBindings != null) {
                 Row row = nextInputRow();
                 if (row != null) {
-                    if (row instanceof ProjectedRow) {
                         // Freeze Project values which may depend on outer bindings.
-                        row = new ImmutableRow((ProjectedRow)row);
-                    }
+                    row = new ImmutableRow(row);
                     QueryBindings bindings = baseBindings.createBindings();
                     assert (bindings.getDepth() == depth);
                     bindings.setRow(bindingPosition, row);

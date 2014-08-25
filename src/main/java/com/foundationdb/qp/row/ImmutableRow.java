@@ -20,16 +20,28 @@ package com.foundationdb.qp.row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.types.value.ValueSource;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 public final class ImmutableRow extends AbstractValuesHolderRow
 {
-    public ImmutableRow(ProjectedRow row)
+    public ImmutableRow(Row row)
     {
-        this(row.rowType(), row.getValueSources());
+        this(row.rowType(), getValueSources(row));
     }
+
     public ImmutableRow(RowType rowType, Iterator<? extends ValueSource> initialValues)
     {
         super(rowType, false, initialValues);
+    }
+
+    public static Iterator<ValueSource> getValueSources(Row row)
+    {
+        int size = row.rowType().nFields();
+        List<ValueSource> ret = new ArrayList<>(size);
+        for (int i = 0; i < size; ++i)
+            ret.add(row.value(i));
+        return ret.iterator();
     }
 }

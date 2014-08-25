@@ -78,7 +78,8 @@ class AbstractValuesHolderRow extends AbstractRow {
             ValueSource nextValue = initialValues.next();
             TInstance nextValueType = nextValue.getType();
             TInstance expectedTInst = rowType.typeAt(i);
-            if (TInstance.tClass(nextValueType) != TInstance.tClass(expectedTInst))
+            if (TInstance.tClass(nextValueType) != TInstance.tClass(expectedTInst) &&
+                    !(expectedTInst.nullability() && nextValueType == null))
                 throw new IllegalArgumentException(
                         "value at index " + i + " expected type " + rowType.typeAt(i)
                                 + ", but UnderlyingType was " + nextValueType + ": " + nextValue);
