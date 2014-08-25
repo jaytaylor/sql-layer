@@ -65,6 +65,11 @@ public class ProjectedRow extends AbstractRow
     }
 
     @Override
+    public boolean isBindingsSensitive() {
+        return true;
+    }
+
+    @Override
     public ValueSource value(int index) {
         TEvaluatableExpression evaluatableExpression = pEvaluatableExpressions.get(index);
         if (!evaluated[index]) {
