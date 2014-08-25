@@ -75,4 +75,9 @@ public class DelegateRow implements Row {
     public ValueSource value(int index) {
         return delegate.value(index);
     }
+
+    @Override
+    public boolean isBindingsSensitive() {
+        return true;
+    }
 }
