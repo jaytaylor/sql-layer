@@ -109,6 +109,11 @@ public class JDBCDriver implements Driver, ServerMonitor {
     }
 
     @Override
+    public String getLocalHost() {
+        return null;
+    }
+
+    @Override
     public long getStartTimeMillis() {
         return startTime;
     }

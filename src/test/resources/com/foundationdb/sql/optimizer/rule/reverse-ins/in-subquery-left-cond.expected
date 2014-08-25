@@ -1,12 +1,15 @@
 SelectQuery@cadc90b
   ResultSet@6569f7ad[name]
     Project@1003b2df[customers.name]
-      Select@62d456af[]
-        JoinNode@5f5fce8b(ANTI[customers.cid == orders.cid, isNull(child.id)])
-          TableGroupJoinTree@36ff6900(TableGroup@3a469b35(customers), customers)
-            TableSource@18d33418(customers - TableGroup@3a469b35(customers))
-          JoinNode@41f14ee4(LEFT[child.pid == orders.oid])
-            TableGroupJoinTree@7177d276(TableGroup@719a7b2c(customers), orders)
-              TableSource@49727c8e(orders - TableGroup@719a7b2c(customers))
-            TableGroupJoinTree@550cbff8(TableGroup@380f5e67(parent), child)
-              TableSource@7b4f744d(child - TableGroup@380f5e67(parent))
+      Select@62d456af[not(ANY(Subquery@63da650f))]
+        TableGroupJoinTree@36ff6900(TableGroup@3a469b35(customers), customers)
+          TableSource@18d33418(customers - TableGroup@3a469b35(customers))
+
+Subquery@63da650f
+  Project@46dccccb[customers.cid == orders.cid]
+    Select@3c51295b[isNull(child.id)]
+      JoinNode@41f14ee4(LEFT[child.pid == orders.oid])
+        TableGroupJoinTree@7177d276(TableGroup@719a7b2c(customers), orders)
+          TableSource@49727c8e(orders - TableGroup@719a7b2c(customers))
+        TableGroupJoinTree@550cbff8(TableGroup@380f5e67(parent), child)
+          TableSource@7b4f744d(child - TableGroup@380f5e67(parent))
