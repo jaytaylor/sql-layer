@@ -32,6 +32,7 @@ import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.externaldata.CsvFormat;
 import com.foundationdb.server.service.externaldata.ExternalDataService;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.sql.server.ServerTransaction;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.Tap;
 
@@ -129,9 +130,9 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
         }
         commitFrequency = copyStmt.getCommitFrequency();
         if (commitFrequency == 0) {
-            commitFrequency = server.isTransactionPeriodicallyCommit() ? 
-                ExternalDataService. COMMIT_FREQUENCY_PERIODICALLY : 
-                ExternalDataService.COMMIT_FREQUENCY_NEVER;
+            commitFrequency = server.getTransactionPeriodicallyCommit() == ServerTransaction.PeriodicallyCommit.OFF ?
+                    ExternalDataService.COMMIT_FREQUENCY_NEVER :
+                    ExternalDataService.COMMIT_FREQUENCY_PERIODICALLY;
         }
         maxRetries = copyStmt.getMaxRetries();
         return this;

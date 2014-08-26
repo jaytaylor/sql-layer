@@ -133,7 +133,7 @@ public class SQLOutputCursor extends GenericRowTracker implements RowCursor, Jso
             boolean begun = false;
             boolean savedCurrent = false;
             for(int col = 1; col <= metaData.getColumnCount(); ++col) {
-                String colName = metaData.getColumnName(col);
+                String colName = metaData.getColumnLabel(col);
                 if(metaData.getNestedResultSet(col) != null) {
                     if(!savedCurrent) {
                         holderStack.push(currentHolder);
