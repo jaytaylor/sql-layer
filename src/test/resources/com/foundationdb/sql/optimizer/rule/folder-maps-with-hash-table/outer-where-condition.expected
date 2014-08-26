@@ -1,0 +1,20 @@
+SelectQuery@9e7c5f9
+  ResultSet@4f766383[order_date, name]
+    UsingHashTable@35949b3d(HashTable@2f5bdd46)
+      Flatten@1fb3737b(parent INNER child)
+        GroupScan@381c36f4(Group(test.parent), rows = 1000, cost = 43093.0)
+          TableSource@17d7f1a1(parent - TableGroup@445be9f3(parent))
+          TableSource@1ec54522(child - TableGroupJoin@6e5c7394(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(test.parent))))
+      MapJoin@77a83226()
+        Flatten@3e62a07f(customers INNER orders)
+          GroupScan@43749a29(Group(test.customers), rows = 1000, cost = 60531.0)
+            TableSource@7c1e23df(customers - TableGroup@1c351c58(customers))
+            TableSource@293dcaf6(orders - TableGroupJoin@62d7e3df(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+        Project@657f5636[orders.order_date, child.name]
+          Select@af52749[or(customers.name != child.name,isNull(child.name))]
+            NullIfEmpty@4bb1782b
+              HashTableLookup@704875df(HashTable@2f5bdd46, [customers.name])
+                Flatten@3d1711d8(child)
+                  BranchLookup@2532bd10(parent -> parent)
+                    SingleIndexScan@261a7884(Index(test.parent.name[IndexColumn(name)]), NONE, =customers.name, rows = 10, cost = 426.731)
+                    TableSource@1ec54522(child - TableGroupJoin@6e5c7394(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(test.parent))))

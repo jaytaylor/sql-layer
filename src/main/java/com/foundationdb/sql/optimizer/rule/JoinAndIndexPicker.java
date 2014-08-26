@@ -1343,8 +1343,9 @@ public class JoinAndIndexPicker extends BaseRule
             double selectivity = checkPlan.joinSelectivity();
             String prop = picker.rulesContext.getProperty("hashTableMaxRowCount");
             int maxColumnCount;
-            if( prop != null)
-                maxColumnCount = Integer.getInteger(prop);
+            if( prop != null){
+                maxColumnCount = new Integer(prop);
+                if(maxColumnCount == 0) return null; }
             else
                 maxColumnCount = MAX_COL_COUNT;
             if(loaderPlan.costEstimate.getRowCount() * hashColumns.size() > maxColumnCount)

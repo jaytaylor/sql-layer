@@ -1,0 +1,23 @@
+SelectQuery@22b76a86
+  ResultSet@37b29538[id, s, id, s, id, s]
+    MapJoin@5efb2740()
+      Flatten@42184ff6(t3)
+        GroupScan@3ace0b77(Group(test.t3), rows = 1, cost = 0.00000)
+          TableSource@9427d55(t3 - TableGroup@2d52cfca(t3))
+      UsingHashTable@17c7ee05(HashTable@46db9675)
+        Flatten@4a29c160(t1)
+          GroupScan@7a72ffaa(Group(test.t1), rows = 1, cost = 0.00000)
+            TableSource@5e430e1c(t1 - TableGroup@13ef30b4(t1))
+        MapJoin@3c6683a5()
+          Flatten@7b56aba9(t2)
+            GroupScan@6e4ce49d(Group(test.t2), rows = 1, cost = 0.00000)
+              TableSource@6c325c32(t2 - TableGroup@7a3537fd(t2))
+          Project@2d62ac19[t1.id, t1.s, t2.id, t2.s, t3.id, t3.s]
+            Select@2910b496[]
+              Select@3bef01b9[t3.id == t2.id]
+                NullIfEmpty@485a376c
+                  HashTableLookup@1aecb890(HashTable@46db9675, [t2.id])
+                    Flatten@77202381(t1)
+                      AncestorLookup@2b4903bf(t1 -> [t1])
+                        ExpressionsHKeyScan@469506cc(TableSource@5e430e1c(t1 - TableGroup@13ef30b4(t1)), t2.id, rows = 1, cost = 6.95200)
+                        TableSource@5e430e1c(t1 - TableGroup@13ef30b4(t1))

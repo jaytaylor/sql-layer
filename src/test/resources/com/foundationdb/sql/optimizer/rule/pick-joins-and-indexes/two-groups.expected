@@ -1,11 +1,14 @@
-SelectQuery@31702b90
-  ResultSet@3b3c144b[order_date, name]
-    Project@6558664e[orders.order_date, child.name]
-      Select@ea4bedd[]
-        JoinNode@7b00da15(INNER/NESTED_LOOPS)
-          TableGroupJoinTree@55cae047(TableGroup@4f3ca424(customers), customers INNER orders - GroupScan@74edd7c9(Group(test.customers), rows = 1000, cost = 59711.0))
-            TableSource@60331a36(customers - TableGroup@4f3ca424(customers))
-              TableSource@3afe0091(orders - TableGroupJoin@2af20918(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
-          TableGroupJoinTree@7a4a8151(TableGroup@163c6020(parent), parent INNER child - SingleIndexScan@78331cae(Index(test.parent.name[IndexColumn(name)]), NONE, =customers.name, rows = 10, cost = 426.731))
-            TableSource@79d74dd8(parent - TableGroup@163c6020(parent))
-              TableSource@2637de66(child - TableGroupJoin@63a02128(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(test.parent))))
+SelectQuery@1b10f7a
+  ResultSet@f6f1374[order_date, name]
+    Project@45662c96[orders.order_date, child.name]
+      Select@36f94f72[]
+        HashJoinNode@4d3aca61(INNER/HASH_TABLE[customers.name] = [parent.name])
+          TableGroupJoinTree@4ebccde3(TableGroup@3a6e44b5(customers), customers INNER orders - GroupScan@4d711a77(Group(test.customers), rows = 1000, cost = 59711.0))
+            TableSource@225ae047(customers - TableGroup@3a6e44b5(customers))
+              TableSource@1d04be13(orders - TableGroupJoin@3c80a259(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+          TableGroupJoinTree@58e28d65(TableGroup@1d60e50b(parent), parent INNER child - GroupScan@2122a017(Group(test.parent), rows = 1000, cost = 42273.0))
+            TableSource@7c3a66ef(parent - TableGroup@1d60e50b(parent))
+              TableSource@5e3c14a0(child - TableGroupJoin@683c56ff(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(test.parent))))
+          TableGroupJoinTree@72155e4e(TableGroup@3a6e44b5(customers), customers INNER orders - SingleIndexScan@5173b4cf(Index(test.customers.name[IndexColumn(name)]), NONE, =parent.name, rows = 10, cost = 598.854))
+            TableSource@225ae047(customers - TableGroup@3a6e44b5(customers))
+              TableSource@1d04be13(orders - TableGroupJoin@3c80a259(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

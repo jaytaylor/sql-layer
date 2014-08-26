@@ -1,14 +1,22 @@
-SelectQuery@69236cd5
-  ResultSet@14be49e0[order_date, name]
-    Sort@552c8fa8[PROJECT[1]]
-      MapJoin@3d47358f()
-        Flatten@e0d5eb7(customers INNER orders)
-          GroupScan@fc54796(Group(test.customers), rows = 1000, cost = 59725.0)
-            TableSource@20e183e9(customers - TableGroup@14004204(customers))
-            TableSource@359b46dc(orders - TableGroupJoin@60ded0f0(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
-        Project@44676e3f[orders.order_date, child.name]
-          Select@67dacccc[]
-            Flatten@62770d2e(child)
-              BranchLookup@76027982(parent -> parent)
-                SingleIndexScan@1c778255(Index(test.parent.name[IndexColumn(name)]), NONE, =customers.name, rows = 10, cost = 640.731)
-                TableSource@2830ae41(child - TableGroupJoin@6a0da90c(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(test.parent))))
+SelectQuery@2c55f197
+  ResultSet@3e68073e[order_date, name]
+    Project@1fb39774[orders.order_date, child.name]
+      Sort@496a0398[child.name]
+        UsingHashTable@76f0165b(HashTable@c4bed5e)
+          Flatten@64dd807c(customers INNER orders)
+            GroupScan@4cccbca0(Group(test.customers), rows = 1000, cost = 59725.0)
+              TableSource@534d4477(customers - TableGroup@5681792d(customers))
+              TableSource@6933f9ae(orders - TableGroupJoin@1573d3c4(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+          MapJoin@6753f3dc()
+            Flatten@a1e80a0(parent INNER child)
+              GroupScan@38af2583(Group(test.parent), rows = 1000, cost = 42273.0)
+                TableSource@23af7e20(parent - TableGroup@4e3aa5b9(parent))
+                TableSource@75ca0b5a(child - TableGroupJoin@72c7d887(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(test.parent))))
+            Select@479c50ee[]
+              HashTableLookup@1e58c1f0(HashTable@c4bed5e, [parent.name])
+                Select@55248320[]
+                  Flatten@588e8d90(customers INNER orders)
+                    Select@501cd58b[parent.name == customers.name]
+                      GroupScan@1507c1c4(Group(test.customers), rows = 1000, cost = 60545.0)
+                        TableSource@534d4477(customers - TableGroup@5681792d(customers))
+                        TableSource@6933f9ae(orders - TableGroupJoin@1573d3c4(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

@@ -1,0 +1,15 @@
+SelectQuery@6ddaa877
+  ResultSet@2e6a54f9[order_date, name]
+    MapJoin@2f36d2ed()
+      Flatten@3851ddd2(customers INNER orders)
+        GroupScan@6ba22e1(Group(test.customers), rows = 1000, cost = 59711.0)
+          TableSource@284f2189(customers - TableGroup@2647e53a(customers))
+          TableSource@6322be0b(orders - TableGroupJoin@3a1a5678(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+      Project@46f0bf3d[orders.order_date, child.name]
+        Select@679b622d[]
+          NullIfEmpty@1722fe15
+            Select@7a572090[or(customers.name == parent.name,customers.name == concatenate(parent.name,child.name))]
+              Flatten@6e1b0caf(parent INNER child)
+                GroupScan@31ddeda2(Group(test.parent), rows = 1000, cost = 43093.0)
+                  TableSource@7deaf705(parent - TableGroup@611c4041(parent))
+                  TableSource@4cffa9d8(child - TableGroupJoin@5be9d36(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(test.parent))))

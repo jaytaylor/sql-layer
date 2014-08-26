@@ -1,0 +1,18 @@
+SelectQuery@54467983
+  ResultSet@5ed3b2ae[order_date, name]
+    MapJoin@5975148()
+      UsingHashTable@115950d6(HashTable@7eca1a7f)
+        SingleIndexScan@691c8e1(Index(test.parent.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 106.270)
+        MapJoin@4d1b2f25()
+          Flatten@28632707(customers LEFT orders)
+            GroupScan@33b44daf(Group(test.customers), rows = 1000, cost = 59711.0)
+              TableSource@1a29ea14(customers - TableGroup@25836ae(customers))
+              TableSource@35c6d477(orders - TableGroupJoin@6d6ddab5(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+          Project@4731d933[parent.name, orders.order_date]
+            NullIfEmpty@19aac7c9
+              HashTableLookup@1b226a49(HashTable@7eca1a7f, [customers.name])
+                SingleIndexScan@706fec89(Index(test.parent.name[IndexColumn(name)]), covering/NONE, =customers.name, rows = 1, cost = 7.17100)
+      Project@1c77ee25[orders.order_date, child.name]
+        Select@5b3cdbd[]
+          NullIfEmpty@4412500a
+            SingleIndexScan@e44e370(Index(test.child.name[IndexColumn(name)]), covering/NONE, =parent.name, rows = 850, cost = 888.396)

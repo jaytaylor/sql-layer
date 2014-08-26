@@ -1,17 +1,19 @@
-SelectQuery@7ff4c1cd
-  ResultSet@1ddfbb5c[cid]
-    Project@4b85a456[customers.cid]
-      Select@32e830d6[]
-        JoinNode@62151284(INNER/NESTED_LOOPS)
-          SubquerySource@461562a3(ANY)
-            Subquery@413caf33
-              Distinct@5572ca6a
-                Project@43f5eaf8[c2.name]
-                  Select@77125eba[]
-                    JoinNode@634720f9(INNER/NESTED_LOOPS)
-                      TableGroupJoinTree@20e6e67c(TableGroup@2e750d8d(parent), parent - SingleIndexScan@6ccbbcf(Index(test.parent.PRIMARY[IndexColumn(id)]), covering/NONE, >10, rows = 85, cost = 60.2240))
-                        TableSource@ff11c0b(parent - TableGroup@2e750d8d(parent))
-                      TableGroupJoinTree@57094268(TableGroup@52c5ee5a(customers), c2 - ExpressionsHKeyScan@1463fb5c(TableSource@3fb3ffe7(c2 - TableGroup@736f5d81(customers)), parent.id, rows = 1, cost = 8.69160))
-                        TableSource@43acf4a3(c2 - TableGroup@52c5ee5a(customers))
-          TableGroupJoinTree@25fedf47(TableGroup@6b3e1685(customers), customers - SingleIndexScan@3938acc4(Index(test.customers.name[IndexColumn(name)]), covering/NONE, =ANY[0], rows = 1, cost = 6.04220))
-            TableSource@45a0b64e(customers - TableGroup@6b3e1685(customers))
+SelectQuery@32f9286d
+  ResultSet@3cd2640[cid]
+    Project@118a35b3[customers.cid]
+      Select@8cb83c4[]
+        JoinNode@5268b5c8(INNER/NESTED_LOOPS)
+          SubquerySource@6a38397(ANY)
+            Subquery@4a719c49
+              Distinct@587687bc
+                Project@6e0cb17a[c2.name]
+                  Select@68cba2cd[]
+                    HashJoinNode@4dc97503(INNER/HASH_TABLE[c2.cid] = [parent.id])
+                      TableGroupJoinTree@65213fda(TableGroup@69e73514(customers), c2 - SingleIndexScan@4a4dea5d(Index(test.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 74.1740))
+                        TableSource@15d3768f(c2 - TableGroup@69e73514(customers))
+                      TableGroupJoinTree@35b8d685(TableGroup@4155a5c7(parent), parent - SingleIndexScan@5df6cd53(Index(test.parent.PRIMARY[IndexColumn(id)]), covering/NONE, rows = 100, cost = 69.9260))
+                        TableSource@349c9c35(parent - TableGroup@4155a5c7(parent))
+                      TableGroupJoinTree@3fbd8e0c(TableGroup@69e73514(customers), c2 - ExpressionsHKeyScan@76223456(TableSource@15d3768f(c2 - TableGroup@69e73514(customers)), parent.id, rows = 1, cost = 7.87160))
+                        TableSource@15d3768f(c2 - TableGroup@69e73514(customers))
+          TableGroupJoinTree@591431e8(TableGroup@3f9a36b1(customers), customers - SingleIndexScan@257cbf16(Index(test.customers.name[IndexColumn(name)]), covering/NONE, =ANY[0], rows = 1, cost = 6.04220))
+            TableSource@357f908(customers - TableGroup@3f9a36b1(customers))

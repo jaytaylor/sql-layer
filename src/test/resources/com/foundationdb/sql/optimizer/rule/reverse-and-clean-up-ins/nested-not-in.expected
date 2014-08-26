@@ -1,14 +1,16 @@
-SelectQuery@173d3c4c
-  ResultSet@3541ad7f[name]
-    MapJoin@6a58f699()
-      SingleIndexScan@76a5ed5a(Index(test.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 74.1740)
-      Project@6ae58829[customers.name]
-        Select@34e7293[]
-          OnlyIfEmpty@29662a39
-            MapJoin@781ec91()
-              Select@62d22770[customers.cid == orders.cid]
-                SingleIndexScan@531b5cbf(Index(test.orders.PRIMARY[IndexColumn(oid)]), covering/NONE, rows = 1000, cost = 688.942)
-              Select@7cc50827[]
-                OnlyIfEmpty@725e196a
-                  Select@6b9a786f[orders.oid == items.oid]
-                    SingleIndexScan@7fd6b8ce(Index(test.items.sku[IndexColumn(sku)]), covering/NONE, =1234, rows = 97, cost = 158.981)
+SelectQuery@6ed618e8
+  ResultSet@29fd6031[name]
+    MapJoin@421060d0()
+      SingleIndexScan@41441992(Index(test.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 74.1740)
+      Project@39b64680[customers.name]
+        Select@6dce9b19[]
+          OnlyIfEmpty@5deae1b7
+            UsingHashTable@6788e58c(HashTable@4c967f6e)
+              SingleIndexScan@2c88360a(Index(test.items.sku[IndexColumn(sku)]), covering/NONE, =1234, rows = 97, cost = 79.4406)
+              MapJoin@6d3175fc()
+                SingleIndexScan@4a392b65(Index(test.orders.PRIMARY[IndexColumn(oid)]), covering/NONE, rows = 1000, cost = 688.942)
+                Select@6f5019f4[customers.cid == orders.cid]
+                  OnlyIfEmpty@73d81b43
+                    HashTableLookup@70e6071f(HashTable@4c967f6e, [orders.oid])
+                      Select@dddbe21[orders.oid == items.oid]
+                        SingleIndexScan@58ed6fa3(Index(test.items.sku[IndexColumn(sku)]), covering/NONE, =1234, rows = 97, cost = 158.981)

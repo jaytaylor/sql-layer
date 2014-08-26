@@ -1,0 +1,25 @@
+SelectQuery@2b2593a7
+  ResultSet@3000cf12[id, s, id, s, id, s]
+    MapJoin@25e0d393()
+      UsingHashTable@4b626b52(HashTable@2a73fb28)
+        Flatten@de5d972(t1)
+          GroupScan@246e14de(Group(test.t1), rows = 1, cost = 0.00000)
+            TableSource@7225def(t1 - TableGroup@371c0d81(t1))
+        MapJoin@12baac6b()
+          Flatten@6d26d27e(t2)
+            GroupScan@1d8dae68(Group(test.t2), rows = 1, cost = 0.00000)
+              TableSource@13d50885(t2 - TableGroup@40b53d00(t2))
+          Project@3ab7ec30[t2.id, t1.id, t1.s, t2.s]
+            NullIfEmpty@f3616e
+              HashTableLookup@6a817d3e(HashTable@2a73fb28, [t2.id])
+                Flatten@fc5862e(t1)
+                  AncestorLookup@5b45a812(t1 -> [t1])
+                    ExpressionsHKeyScan@3a1d648e(TableSource@7225def(t1 - TableGroup@371c0d81(t1)), t2.id, rows = 1, cost = 6.95200)
+                    TableSource@7225def(t1 - TableGroup@371c0d81(t1))
+      Project@51abf5d[t1.id, t1.s, t2.id, t2.s, t3.id, t3.s]
+        Select@1f097549[]
+          NullIfEmpty@5fb4c470
+            Flatten@70ec3e18(t3)
+              AncestorLookup@54ccc626(t3 -> [t3])
+                ExpressionsHKeyScan@4fe51448(TableSource@4db89f18(t3 - TableGroup@4896abf2(t3)), t2.id, rows = 1, cost = 6.95200)
+                TableSource@4db89f18(t3 - TableGroup@4896abf2(t3))

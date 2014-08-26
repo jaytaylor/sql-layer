@@ -1,20 +1,26 @@
-SelectQuery@159663c3
-  ResultSet@446fa247[id, name]
-    MapJoin@591ef23d()
-      Flatten@79e487cf(artists)
-        GroupScan@7eb1b080(Group(test.artists), rows = 1, cost = 1.00000)
-          TableSource@1f2e1596(artists - TableGroup@43bae47b(artists))
-      Project@7d07066a[artists.id, artists.name]
-        Select@58365946[]
-          OnlyIfEmpty@22ee69fa
-            MapJoin@526fae00()
-              Flatten@a90658e(albums_tags)
-                GroupScan@2208ac48(Group(test.albums_tags), rows = 1, cost = 0.00000)
-                  TableSource@2105b6d4(albums_tags - TableFKJoin@6766bc6c(Foreign Key albums_tags_fkey: test.albums_tags REFERENCES test.albums))
-              MapJoin@9dc8b7d()
-                Select@6f0981a6[albums_tags.album_id == albums.id, artists.id == albums.artist_id]
-                  SingleIndexScan@6e49c099(Index(test.albums.albums_fkey[IndexColumn(artist_id)]), covering/NONE, rows = 1, cost = 6.84560)
-                Select@dfb530d[]
-                  Limit@2c03b560(LIMIT 1)
-                    Select@2778c833[albums_tags.tag_id == VALUES[0]]
-                      ExpressionsSource@7b5d2130([[1], [2]])
+SelectQuery@78d61716
+  ResultSet@2f85e354[id, name]
+    MapJoin@6f359a46()
+      Flatten@186bd87(artists)
+        GroupScan@2823a2b4(Group(test.artists), rows = 1, cost = 1.00000)
+          TableSource@658be452(artists - TableGroup@3b8eec02(artists))
+      Project@7f0fb82b[artists.id, artists.name]
+        Select@61045038[]
+          OnlyIfEmpty@242895da
+            MapJoin@64862dc1()
+              UsingHashTable@25260d76(HashTable@653dd107)
+                Flatten@3504ead9(albums_tags)
+                  GroupScan@3d66567e(Group(test.albums_tags), rows = 1, cost = 0.00000)
+                    TableSource@2ec0cbac(albums_tags - TableFKJoin@9b889b0(Foreign Key albums_tags_fkey: test.albums_tags REFERENCES test.albums))
+                MapJoin@325786cc()
+                  SingleIndexScan@1052d4e6(Index(test.albums.albums_fkey[IndexColumn(artist_id)]), covering/NONE, rows = 1, cost = 6.02560)
+                  Project@2e175069[albums_tags.tag_id, albums.artist_id]
+                    HashTableLookup@7ca03522(HashTable@653dd107, [albums.id])
+                      Flatten@55d667c0(albums_tags)
+                        AncestorLookup@7a008b19(albums_tags -> [albums_tags])
+                          SingleIndexScan@39ac54e2(Index(test.albums_tags.albums_tags_fkey[IndexColumn(album_id)]), NONE, =albums.id, rows = 1, cost = 12.3334)
+                          TableSource@2ec0cbac(albums_tags - TableFKJoin@9b889b0(Foreign Key albums_tags_fkey: test.albums_tags REFERENCES test.albums))
+              Select@60f8df02[artists.id == albums.artist_id]
+                Limit@72f92e0a(LIMIT 1)
+                  Select@453dcd7e[albums_tags.tag_id == VALUES[0]]
+                    ExpressionsSource@39930e3d([[1], [2]])

@@ -1,13 +1,15 @@
-SelectQuery@26114629
-  ResultSet@38154145[sku, _SQL_COL_1]
-    Project@7b7035c6[items.sku, COUNT(*)]
-      Select@4921a90[]
-        AggregateSource@140de648(PRESORTED,[items.sku],[])
-          Select@1c898b41[]
-            JoinNode@6deea96c(INNER/NESTED_LOOPS)
-              TableGroupJoinTree@5faecf45(TableGroup@64afb650(customers), customers INNER orders INNER items - SingleIndexScan@2f63e9a1(Index(test.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), covering/SORTED, =Smith, rows = 177, cost = 147.820))
-                TableSource@7a9d1714(customers - TableGroup@64afb650(customers))
-                  TableSource@5f5660ef(orders - TableGroupJoin@4da9ec16(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
-                    TableSource@569bc36d(items - TableGroupJoin@4ecac02f(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))
-              TableGroupJoinTree@610f7612(TableGroup@4bea71d4(parent), parent - SingleIndexScan@3b896429(Index(test.parent.PRIMARY[IndexColumn(id)]), covering/NONE, =orders.oid, rows = 1, cost = 85.7128))
-                TableSource@c3b5587(parent - TableGroup@4bea71d4(parent))
+SelectQuery@4839101d
+  ResultSet@1a5104f6[sku, _SQL_COL_1]
+    Project@3d1cbff9[items.sku, COUNT(*)]
+      Select@2a7f93c7[]
+        AggregateSource@1dbf039d(PRESORTED,[items.sku],[])
+          Select@678647ac[]
+            HashJoinNode@25c7f5b0(INNER/HASH_TABLE[parent.id] = [orders.oid])
+              TableGroupJoinTree@6ad30930(TableGroup@32aad42e(parent), parent - SingleIndexScan@4500651a(Index(test.parent.PRIMARY[IndexColumn(id)]), covering/NONE, rows = 100, cost = 1633.93))
+                TableSource@9a15dde(parent - TableGroup@32aad42e(parent))
+              TableGroupJoinTree@6d5031fe(TableGroup@53408c0d(customers), customers INNER orders INNER items - SingleIndexScan@1cedb15a(Index(test.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), covering/SORTED, =Smith, rows = 177, cost = 147.820))
+                TableSource@75d29149(customers - TableGroup@53408c0d(customers))
+                  TableSource@41199ec2(orders - TableGroupJoin@39169a8c(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+                    TableSource@7905f3f1(items - TableGroupJoin@7afc7a9b(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))
+              TableGroupJoinTree@2c0252c3(TableGroup@32aad42e(parent), parent - SingleIndexScan@55d59531(Index(test.parent.PRIMARY[IndexColumn(id)]), covering/NONE, =orders.oid, rows = 1, cost = 85.7128))
+                TableSource@9a15dde(parent - TableGroup@32aad42e(parent))
