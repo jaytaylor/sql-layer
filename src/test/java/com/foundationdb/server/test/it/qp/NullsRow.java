@@ -43,5 +43,10 @@ public final class NullsRow extends AbstractRow {
         this.rowType = rowType;
     }
 
+    @Override
+    public boolean isBindingsSensitive() {
+        return false;
+    }
+
     private final RowType rowType;
 }
