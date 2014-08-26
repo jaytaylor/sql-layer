@@ -80,6 +80,6 @@ public final class OverlayingRow extends AbstractRow {
 
     @Override
     public boolean isBindingsSensitive() {
-        return true;
+        return underlying.isBindingsSensitive();
     }
 }

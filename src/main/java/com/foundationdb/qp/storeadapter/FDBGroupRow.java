@@ -121,4 +121,9 @@ public class FDBGroupRow extends AbstractRow {
         }
         return valueSources.get(i);
     }
+
+    @Override
+    public boolean isBindingsSensitive() {
+        return false;
+    }
 }

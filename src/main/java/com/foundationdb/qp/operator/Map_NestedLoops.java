@@ -17,9 +17,16 @@
 
 package com.foundationdb.qp.operator;
 
+import com.foundationdb.qp.row.CompoundRow;
+import com.foundationdb.qp.row.FlattenedRow;
+import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.ImmutableRow;
+import com.foundationdb.qp.row.ProductRow;
 import com.foundationdb.qp.row.ProjectedRow;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.CompoundRowType;
+import com.foundationdb.qp.rowtype.FlattenedRowType;
+import com.foundationdb.qp.rowtype.ProductRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.api.dml.ColumnSelector;
@@ -170,6 +177,27 @@ class Map_NestedLoops extends Operator
         return ex;
     }
 
+    public static Row buildImmutableRow(Row row) {
+        if (!row.isBindingsSensitive()) {
+            return row;
+        }
+        if (row instanceof FlattenedRow) {
+            FlattenedRow fRow = (FlattenedRow) row;
+            return new FlattenedRow((FlattenedRowType)fRow.rowType(), buildImmutableRow(fRow.getFirstRow()), buildImmutableRow(fRow.getSecondRow()), fRow.hKey());
+        }
+        else if (row instanceof ProductRow) {
+            ProductRow pRow = (ProductRow) row;
+            return new ProductRow((ProductRowType)pRow.rowType(), buildImmutableRow(pRow.getFirstRow()), buildImmutableRow(pRow.getSecondRow()));
+        }
+        else if (row instanceof CompoundRow) {
+            CompoundRow cRow = (FlattenedRow) row;
+            return new CompoundRow((CompoundRowType)cRow.rowType(), buildImmutableRow(cRow.getFirstRow()), buildImmutableRow(cRow.getSecondRow()));
+        }
+        else {
+            return new ImmutableRow(row);
+        }
+    }
+
     // Inner classes
 
     // Pipeline execution: turn outer loop row stream into binding stream for inner loop.
@@ -198,7 +226,7 @@ class Map_NestedLoops extends Operator
                 if (row != null) {
                     if (row.isBindingsSensitive()) {
                         // Freeze values which may depend on outer bindings.
-                        row = new ImmutableRow(row);
+                        row = buildImmutableRow(row);
                     }
                     QueryBindings bindings = baseBindings.createBindings();
                     assert (bindings.getDepth() == depth);
@@ -530,10 +558,9 @@ class Map_NestedLoops extends Operator
                     outerRow = null;
                 } else {
                     outputRow = innerRow;
-                    if (outputRow instanceof ProjectedRow) {
-                        // Freeze Project values before they escape from loop
-                        // bindings, which might change.
-                        outputRow = new ImmutableRow((ProjectedRow)outputRow);
+                    if (outputRow.isBindingsSensitive()) {
+                        // Freeze values which may depend on outer bindings.
+                        outputRow = buildImmutableRow(outputRow);
                     }
                 }
             }
