@@ -85,4 +85,9 @@ public class ExpressionRow extends AbstractRow
         str.append(']');
         return str.toString();
     }
+
+   @Override
+   public boolean isBindingsSensitive() {
+       return false;
+   }
 }

@@ -103,6 +103,11 @@ class AbstractValuesHolderRow extends AbstractRow {
             throw new IllegalStateException("can't invoke method on an immutable AbstractValuesHolderRow");
     }
 
+    @Override
+    public boolean isBindingsSensitive() {
+        return false;
+    }
+
     private final RowType rowType;
     protected final List<Value> values;
     private final boolean isMutable;
