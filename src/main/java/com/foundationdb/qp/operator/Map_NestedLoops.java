@@ -17,16 +17,8 @@
 
 package com.foundationdb.qp.operator;
 
-import com.foundationdb.qp.row.CompoundRow;
-import com.foundationdb.qp.row.FlattenedRow;
-import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.ImmutableRow;
-import com.foundationdb.qp.row.ProductRow;
-import com.foundationdb.qp.row.ProjectedRow;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.rowtype.CompoundRowType;
-import com.foundationdb.qp.rowtype.FlattenedRowType;
-import com.foundationdb.qp.rowtype.ProductRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.api.dml.ColumnSelector;

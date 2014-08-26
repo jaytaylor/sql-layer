@@ -88,6 +88,6 @@ public class ExpressionRow extends AbstractRow
 
    @Override
    public boolean isBindingsSensitive() {
-       return false;
+       return true;
    }
 }

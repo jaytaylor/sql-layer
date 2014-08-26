@@ -381,7 +381,6 @@ class Sort_InsertionLimited extends Operator
         public void freeze() {
             if (row.isBindingsSensitive()) {
                 row = ImmutableRow.buildImmutableRow(row);
-                row = new ImmutableRow((ProjectedRow)row);
             }
         }
 
