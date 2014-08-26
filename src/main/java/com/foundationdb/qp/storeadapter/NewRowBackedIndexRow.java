@@ -99,6 +99,6 @@ public class NewRowBackedIndexRow implements Row
 
     @Override
     public boolean isBindingsSensitive() {
-        return true;
+        return false;
     }
 }
