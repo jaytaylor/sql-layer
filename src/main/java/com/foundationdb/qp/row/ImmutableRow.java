@@ -17,6 +17,9 @@
 
 package com.foundationdb.qp.row;
 
+import com.foundationdb.qp.rowtype.CompoundRowType;
+import com.foundationdb.qp.rowtype.FlattenedRowType;
+import com.foundationdb.qp.rowtype.ProductRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.types.value.ValueSource;
 
@@ -43,5 +46,26 @@ public final class ImmutableRow extends AbstractValuesHolderRow
         for (int i = 0; i < size; ++i)
             ret.add(row.value(i));
         return ret.iterator();
+    }
+
+    public static Row buildImmutableRow(Row row) {
+        if (!row.isBindingsSensitive()) {
+            return row;
+        }
+        if (row instanceof FlattenedRow) {
+            FlattenedRow fRow = (FlattenedRow) row;
+            return new FlattenedRow((FlattenedRowType)fRow.rowType(), buildImmutableRow(fRow.getFirstRow()), buildImmutableRow(fRow.getSecondRow()), fRow.hKey());
+        }
+        else if (row instanceof ProductRow) {
+            ProductRow pRow = (ProductRow) row;
+            return new ProductRow((ProductRowType)pRow.rowType(), buildImmutableRow(pRow.getFirstRow()), buildImmutableRow(pRow.getSecondRow()));
+        }
+        else if (row instanceof CompoundRow) {
+            CompoundRow cRow = (FlattenedRow) row;
+            return new CompoundRow((CompoundRowType)cRow.rowType(), buildImmutableRow(cRow.getFirstRow()), buildImmutableRow(cRow.getSecondRow()));
+        }
+        else {
+            return new ImmutableRow(row);
+        }
     }
 }

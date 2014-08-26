@@ -177,27 +177,6 @@ class Map_NestedLoops extends Operator
         return ex;
     }
 
-    public static Row buildImmutableRow(Row row) {
-        if (!row.isBindingsSensitive()) {
-            return row;
-        }
-        if (row instanceof FlattenedRow) {
-            FlattenedRow fRow = (FlattenedRow) row;
-            return new FlattenedRow((FlattenedRowType)fRow.rowType(), buildImmutableRow(fRow.getFirstRow()), buildImmutableRow(fRow.getSecondRow()), fRow.hKey());
-        }
-        else if (row instanceof ProductRow) {
-            ProductRow pRow = (ProductRow) row;
-            return new ProductRow((ProductRowType)pRow.rowType(), buildImmutableRow(pRow.getFirstRow()), buildImmutableRow(pRow.getSecondRow()));
-        }
-        else if (row instanceof CompoundRow) {
-            CompoundRow cRow = (FlattenedRow) row;
-            return new CompoundRow((CompoundRowType)cRow.rowType(), buildImmutableRow(cRow.getFirstRow()), buildImmutableRow(cRow.getSecondRow()));
-        }
-        else {
-            return new ImmutableRow(row);
-        }
-    }
-
     // Inner classes
 
     // Pipeline execution: turn outer loop row stream into binding stream for inner loop.
@@ -226,7 +205,7 @@ class Map_NestedLoops extends Operator
                 if (row != null) {
                     if (row.isBindingsSensitive()) {
                         // Freeze values which may depend on outer bindings.
-                        row = buildImmutableRow(row);
+                        row = ImmutableRow.buildImmutableRow(row);
                     }
                     QueryBindings bindings = baseBindings.createBindings();
                     assert (bindings.getDepth() == depth);
@@ -560,7 +539,7 @@ class Map_NestedLoops extends Operator
                     outputRow = innerRow;
                     if (outputRow.isBindingsSensitive()) {
                         // Freeze values which may depend on outer bindings.
-                        outputRow = buildImmutableRow(outputRow);
+                        outputRow = ImmutableRow.buildImmutableRow(outputRow);
                     }
                 }
             }
