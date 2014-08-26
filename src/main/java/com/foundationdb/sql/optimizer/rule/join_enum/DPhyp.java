@@ -215,9 +215,9 @@ public abstract class DPhyp<P>
         boolean connected = false;
         for (int e = 0; e < nedges; e +=2) {
             boolean isEvaluate = isEvaluateOperator(s1, s2, e);
-            boolean isOneSided = isRelevant(s1, s2, e);
+            boolean isRelevant = isRelevant(s1, s2, e);
             connected |= isEvaluate;
-            if (isEvaluate || isOneSided) {
+            if (isEvaluate || isRelevant) {
                 // The one that produced this edge.
                 JoinOperator operator = operators.get(e/2);
                 JoinType joinType = operator.getJoinType();
