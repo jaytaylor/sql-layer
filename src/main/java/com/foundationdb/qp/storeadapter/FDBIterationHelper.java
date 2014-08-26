@@ -27,6 +27,7 @@ import com.persistit.Key.Direction;
 import com.persistit.KeyShim;
 import com.persistit.Persistit;
 import com.persistit.Value;
+import com.persistit.KeyState;
 
 import static com.persistit.Key.Direction.EQ;
 import static com.persistit.Key.Direction.GT;
@@ -189,31 +190,44 @@ public class FDBIterationHelper implements IterationHelper
             final int saveSize = storeData.persistitKey.getEncodedSize();
             final boolean exact = dir == EQ || dir == GTEQ || dir == LTEQ;
             final boolean reverse = (dir == LT) || (dir == LTEQ);
+            KeyState saveState = null;
+            
+            assert storeData.nudged == null;
             if(!KeyShim.isSpecial(storeData.persistitKey)) {
                 if(exact) {
                     if(reverse && !deep) {
                         // exact, reverse, logical: want to see current key or a child
                         // Note: child won't be returned, but current key will be synthesized by advanceLogical()
+                        saveState = new KeyState(storeData.persistitKey);
                         KeyShim.nudgeRight(storeData.persistitKey);
+                        storeData.nudged = FDBStoreData.NudgeDir.RIGHT_NO_STRINC;
                     }
                 } else {
                     if(reverse) {
                         // Non-exact, reverse: do not want to see current key
                         KeyShim.nudgeLeft(storeData.persistitKey);
+                        storeData.nudged = FDBStoreData.NudgeDir.LEFT;
                     } else {
                         if(deep) {
                             // Non-exact, forward, deep: do not want to see current key
                             KeyShim.nudgeDeeper(storeData.persistitKey);
+                            storeData.nudged = FDBStoreData.NudgeDir.DEEPER;
                         } else {
                             // Non-exact, forward, logical: do not want to see current key or any children
+                            saveState = new KeyState(storeData.persistitKey);
                             KeyShim.nudgeRight(storeData.persistitKey);
+                            storeData.nudged = FDBStoreData.NudgeDir.RIGHT_STRINC;
                         }
                     }
                 }
             }
-
+            
             adapter.getUnderlyingStore().indexIterator(adapter.getSession(), storeData,
                                                        exact, reverse);
+            storeData.nudged = null;
+            if (saveState != null) {
+                saveState.copyTo(storeData.persistitKey);
+            }
             storeData.persistitKey.setEncodedSize(saveSize);
             lastKeyGen = storeData.persistitKey.getGeneration();
             itDir = dir;

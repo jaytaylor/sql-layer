@@ -116,7 +116,7 @@ public class TupleStorageDescription extends FDBStorageDescription
     }
 
     @Override
-    public byte[] getKeyBytes(Key key) {
+    public byte[] getKeyBytes(Key key, FDBStoreData.NudgeDir nudged) {
         if (usage != null) {
             // If the Key is encoded as a single component Tuple, you
             // need to apply the edge before encoding. But with
@@ -125,6 +125,18 @@ public class TupleStorageDescription extends FDBStorageDescription
             // 01258100FF00, strinc would be 01258100FF01, whereas
             // {1,{after}} would be 258100FE, so 01258100FFFE00.
             // So, take edge out and do below.
+
+            if (nudged != null) {
+                if (nudged == FDBStoreData.NudgeDir.DEEPER) {
+                    key.setEncodedSize(key.getEncodedSize() - 1 );
+                } else if (nudged == FDBStoreData.NudgeDir.LEFT ) {
+                    key.setEncodedSize(key.getEncodedSize() + 1 );
+                } else {
+                    key.getEncodedBytes()[key.getEncodedSize() - 1] = 0;
+                    key.setEncodedSize(key.getEncodedSize());
+                }
+             }
+            
             Key.EdgeValue edge = null;
             int nkeys = key.getDepth();
             if (KeyShim.isBefore(key)) {
@@ -134,7 +146,8 @@ public class TupleStorageDescription extends FDBStorageDescription
             else if (KeyShim.isAfter(key)) {
                 edge = Key.AFTER;
                 nkeys--;
-            }
+            } 
+            
             Object[] keys = new Object[nkeys];
             key.reset();
             for (int i = 0; i < nkeys; i++) {
@@ -153,6 +166,12 @@ public class TupleStorageDescription extends FDBStorageDescription
                 }
             }
             else {
+                if (nudged == FDBStoreData.NudgeDir.DEEPER) {
+                    return ByteArrayUtil.join(bytes, new byte[1]);
+                }
+                else if (nudged == FDBStoreData.NudgeDir.RIGHT_STRINC) {
+                    return ByteArrayUtil.strinc(bytes);
+                }
                 return bytes;
             }
         }

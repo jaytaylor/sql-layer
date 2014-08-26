@@ -65,7 +65,7 @@ public class FDBStoreDataHelper
 
     public static byte[] packKey(FDBStoreData storeData, Key.EdgeValue edge) {
         storeData.rawKey = packedTuple(storeData.storageDescription, 
-                                       storeData.persistitKey, edge);
+                                       storeData.persistitKey, edge, storeData.nudged);
         return storeData.rawKey;
     }
 
@@ -74,14 +74,14 @@ public class FDBStoreDataHelper
     }
 
     public static byte[] packedTuple(HasStorage object, Key key, Key.EdgeValue edge) {
-        return packedTuple((FDBStorageDescription)object.getStorageDescription(), key, edge);
+        return packedTuple((FDBStorageDescription)object.getStorageDescription(), key, edge, null);
     }
 
     public static byte[] packedTuple(FDBStorageDescription storageDescription, Key key) {
-        return packedTuple(storageDescription, key, null);
+        return packedTuple(storageDescription, key, null, null);
     }
 
-    public static byte[] packedTuple(FDBStorageDescription storageDescription, Key key, Key.EdgeValue edge) {
+    public static byte[] packedTuple(FDBStorageDescription storageDescription, Key key, Key.EdgeValue edge, FDBStoreData.NudgeDir nudged) {
         byte[] treeBytes = prefixBytes(storageDescription);
         if (edge != null) {
             // TODO: Could eliminate new key if callers didn't rely on key state outside getEncodedSize()
@@ -91,7 +91,7 @@ public class FDBStoreDataHelper
             key = nkey;
             key.append(edge);
         }
-        byte[] keyBytes = storageDescription.getKeyBytes(key);
+        byte[] keyBytes = storageDescription.getKeyBytes(key, nudged);
         return ByteArrayUtil.join(treeBytes, keyBytes);
     }
 

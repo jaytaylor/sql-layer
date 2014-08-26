@@ -16,6 +16,7 @@
  */
 package com.foundationdb.server.store;
 
+import com.fasterxml.jackson.databind.deser.std.NullifyingDeserializer;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.persistit.Key;
@@ -33,7 +34,9 @@ public class FDBStoreData {
     public Value persistitValue;
     public Object otherValue;
     public FDBStoreDataIterator iterator;
-
+    public enum NudgeDir {LEFT, RIGHT_NO_STRINC, RIGHT_STRINC, DEEPER };
+    public NudgeDir nudged;
+    
     public FDBStoreData(Session session, FDBStorageDescription storageDescription, Key persistitKey) {
         this.storageDescription = storageDescription;
         this.persistitKey = persistitKey;

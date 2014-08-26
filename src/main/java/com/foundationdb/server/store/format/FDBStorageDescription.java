@@ -149,10 +149,14 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
 
     /** Convert Persistit <code>Key</code> into raw key. */
     public byte[] getKeyBytes(Key key) {
-        byte[] keyBytes = Arrays.copyOf(key.getEncodedBytes(), key.getEncodedSize());
-        return Tuple2.from(keyBytes).pack();
+        return getKeyBytes(key, null);
     }
 
+    public byte[] getKeyBytes(Key key, FDBStoreData.NudgeDir nudged) {
+        byte[] keyBytes = Arrays.copyOf(key.getEncodedBytes(), key.getEncodedSize());
+        return Tuple2.from(keyBytes).pack();        
+    }
+    
     /** Converted decoded key <code>Tuple</code> into Persistit <code>Key</code>. */
     public void getTupleKey(Tuple2 t, Key key) {
         assert (t.size() == 1) : t;
