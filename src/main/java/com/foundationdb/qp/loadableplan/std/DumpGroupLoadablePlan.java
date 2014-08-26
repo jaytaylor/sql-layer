@@ -32,6 +32,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.sql.server.ServerTransaction;
 import com.foundationdb.util.AkibanAppender;
 import com.foundationdb.util.Strings;
 
@@ -103,7 +104,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             value = valueNotNull(3);
             if (value != null)
                 commitFrequency = value.getInt32();
-            else if (context.isTransactionPeriodicallyCommit())
+            else if (context.getTransactionPeriodicallyCommit() != ServerTransaction.PeriodicallyCommit.OFF)
                 commitFrequency = StoreAdapter.COMMIT_FREQUENCY_PERIODICALLY;
             else
                 commitFrequency = 0;

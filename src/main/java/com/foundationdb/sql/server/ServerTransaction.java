@@ -27,14 +27,32 @@ import java.util.Date;
 
 public class ServerTransaction
 {
+    public static enum PeriodicallyCommit {
+        /** The system commits when you call commit **/
+        OFF,
+        /** The system commits periodically maintaining the same transaction **/
+        ON,
+        /**
+         *  The system commits and closes the user-level transaction requiring the client to begin a new transaction.
+         *  For jdbc, and probably other drivers, it will create the new transaction automatically for the user.
+         */
+        USERLEVEL;
+
+        public static PeriodicallyCommit fromProperty(String name) {
+            if (name == null) return OFF;
+            return valueOf(PeriodicallyCommit.class, name.toUpperCase());
+        }
+    }
+
     private final Session session;
     private final TransactionService txnService;
-    private boolean readOnly, periodicallyCommit;
+    private boolean readOnly;
+    private PeriodicallyCommit periodicallyCommit;
     private Date transactionTime;
     
     /** Begin a new transaction or signal an exception. */
     public ServerTransaction(ServerSession server, 
-                             boolean readOnly, boolean periodicallyCommit) {
+                             boolean readOnly, PeriodicallyCommit periodicallyCommit) {
         this.session = server.getSession();
         this.txnService = server.getTransactionService();
         this.readOnly = readOnly;
@@ -50,11 +68,11 @@ public class ServerTransaction
         this.readOnly = readOnly;
     }
 
-    public boolean isPeriodicallyCommit() {
+    public PeriodicallyCommit getPeriodicallyCommit() {
         return periodicallyCommit;
     }
 
-    public void setPeriodicallyCommit(boolean periodicallyCommit) {
+    public void setPeriodicallyCommit(PeriodicallyCommit periodicallyCommit) {
         this.periodicallyCommit = periodicallyCommit;
     }
 
@@ -100,8 +118,13 @@ public class ServerTransaction
         return txnService.isRollbackPending(session);
     }
 
+    public boolean shouldPeriodicallyCommit() {
+        return txnService.shouldPeriodicallyCommit(session);
+    }
+
     public void checkPeriodicallyCommit() {
-        if (periodicallyCommit) {
+        // USER_LEVEL is handled higher up
+        if (periodicallyCommit == PeriodicallyCommit.ON) {
             txnService.periodicallyCommit(session);
         }
     }
