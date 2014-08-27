@@ -1,0 +1,33 @@
+# When pipelining is turned on, this tests that Map_NestedLoops freezes values which may depend on outer bindings. 
+---
+- Statement: create table UCustomer (person_id bigint not null,name varchar(255) not null,company varchar(255),region varchar(255),contactOwner bigint,primary key (person_id));
+---
+- Statement: create table UEmployee (person_id bigint not null,name varchar(255) not null,company varchar(255),region varchar(255),title varchar(255),dept varchar(255),mgr_id bigint,primary key (person_id));
+---
+- Statement: create table UPerson (person_id bigint not null,name varchar(255) not null,company varchar(255),region varchar(255),primary key (person_id));
+---
+- Statement: alter table UCustomer add constraint UK_iulmmo42sn39blpq6gb6wsoyn  unique (name);
+---
+- Statement: alter table UEmployee add constraint UK_74hci66waytk6o5nqu21361nn  unique (name);
+---
+- Statement: alter table UPerson add constraint UK_aeruqapl50t8k9vaymp5q4btm  unique (name);
+---
+- Statement: alter table UCustomer add constraint FK_87461c1s1jyd1adec6e027cqi foreign key (contactOwner) references UEmployee;
+---
+- Statement: alter table UEmployee add constraint FK_pqcylge98l1r0uoccs2ue1bym foreign key (mgr_id) references UEmployee;
+---
+- Statement: insert into UEmployee (name, company, region, title, dept, mgr_id, person_id) values ('John Doe', 'JBoss', 'US', 'hr guru', 'hr', null, 1);
+---
+- Statement: insert into UEmployee (name, company, region, title, dept, mgr_id, person_id) values ('Polli Wog', 'JBoss', 'US', 'hr novice', 'hr', 1, 2);
+---
+- Statement: insert into UEmployee (name, company, region, title, dept, mgr_id, person_id) values ('Suzie Q', 'JBoss', 'EMEA', 'hr novice', 'hr', 1, 3);
+---
+- Statement: insert into UCustomer (name, company, region, contactOwner, person_id) values ('John Q Public', 'Acme', 'US', 1, 4);
+---
+- Statement: insert into UPerson (name, company, region, person_id) values ('UPS guy', 'UPS', 'US', 5);
+---
+- Statement: SELECT person0_.person_id AS person_id1_2_0_, minions1_.person_id AS person_id1_2_1_, person0_.name AS name2_2_0_, person0_.company AS company3_2_0_, person0_.region AS region4_2_0_, person0_.title AS title1_1_0_, person0_.dept AS dept2_1_0_, person0_.mgr_id AS mgr_id3_1_0_, person0_.contactOwner AS contactOwner1_0_0_, person0_.clazz_ AS clazz_0_, minions1_.name AS name2_2_1_, minions1_.company AS company3_2_1_, minions1_.region AS region4_2_1_, minions1_.title AS title1_1_1_, minions1_.dept AS dept2_1_1_, minions1_.mgr_id AS mgr_id3_1_1_, minions1_.mgr_id AS mgr_id3_2_0__, minions1_.person_id AS person_id1_1_0__ FROM (SELECT person_id, name, company, region, NULL AS title, NULL AS dept, NULL AS mgr_id, NULL AS contactOwner, 0 AS clazz_ FROM UPerson UNION ALL SELECT person_id, name, company, region, title, dept, mgr_id, NULL AS contactOwner, 1 AS clazz_ FROM UEmployee UNION ALL SELECT person_id, name, company, region, NULL AS title, NULL AS dept, NULL AS mgr_id, contactOwner, 2 AS clazz_ FROM UCustomer) person0_ LEFT OUTER JOIN UEmployee minions1_ ON person0_.person_id=minions1_.mgr_id AND minions1_.region = 'US' WHERE person0_.region = 'US';
+- row_count: 4
+- output: [[5, null, 'UPS guy', 'UPS', 'US', null, null, null, null, 0, null, null, null, null, null, null, null, null], [1, 2, 'John Doe', 'JBoss', 'US', 'hr guru', 'hr', null, null, 1, 'Polli Wog', 'JBoss', 'US', 'hr novice', 'hr', 1, 1, 2], [2, null, 'Polli Wog', 'JBoss', 'US', 'hr novice', 'hr', 1, null, 1, null, null, null, null, null, null, null, null], [4, null, 'John Q Public', 'Acme', 'US', null, null, null, 1, 2, null, null, null, null, null, null, null, null]]
+...
+

@@ -56,6 +56,11 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     }
 
     @Override
+    public boolean isBindingsSensitive() {
+        return false;
+    }
+
+    @Override
     public final int compareTo(Row row, int thisStartIndex, int thatStartIndex, int fieldCount)
     {
         // The dependence on field positions and fieldCount is a problem for spatial indexes

@@ -138,6 +138,11 @@ public final class RowsBuilder {
             this.values = new ArrayList<>(values);
         }
 
+        @Override
+        public boolean isBindingsSensitive() {
+            return false;
+        }
+
         private final RowType rowType;
         private final List<ValueSource> values;
     }
