@@ -241,7 +241,7 @@ final class Limit_Default extends Operator
                         limitLeft = -1;
                         close();
                         if (LOG_EXECUTION) {
-                            LOG.debug("Limit_Default: yield null");
+                            LOG.debug("Limit_Default: skipLeft until complete yield null");
                         }
                         return null;
                     }
@@ -250,14 +250,14 @@ final class Limit_Default extends Operator
                 if (limitLeft < 0) {
                     close();
                     if (LOG_EXECUTION) {
-                        LOG.debug("Limit_Default: yield null");
+                        LOG.debug("Limit_Default: limitLeft < 0, yield null");
                     }
                     return null;
                 }
                 if (limitLeft == 0) {
                     close();
                     if (LOG_EXECUTION) {
-                        LOG.debug("Limit_Default: yield null");
+                        LOG.debug("Limit_Default: limitLeft == 0, yield null");
                     }
                     return null;
                 }

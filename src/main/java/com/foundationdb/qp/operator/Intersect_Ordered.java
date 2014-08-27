@@ -452,10 +452,21 @@ class Intersect_Ordered extends Operator
         @Override
         public QueryBindings nextBindings() {
             QueryBindings bindings = bindingsCursor.nextBindings();
-            QueryBindings other = leftInput.nextBindings();
-            assert (bindings == other);
-            other = rightInput.nextBindings();
-            assert (bindings == other);
+            QueryBindings left = leftInput.nextBindings();
+            QueryBindings right = rightInput.nextBindings();
+
+            assert (left == right) : "Intersect_Ordered left/right input bindings do not match";
+
+            // This occurs when look ahead is enabled and the input operators
+            // have moved the bindings forward, and the bindingCursor needs to catch up
+            while (bindings != left) {
+                bindings = bindingsCursor.nextBindings();
+                if (bindings == null) {
+                    break;
+                }
+            }
+            assert (bindings == left ) : "Output binding is not ancestor of left input";
+            assert (bindings == right) : "Output binding is not ancestor of right input";
             return bindings;
         }
 
@@ -471,6 +482,11 @@ class Intersect_Ordered extends Operator
             leftInput.cancelBindings(bindings);
             rightInput.cancelBindings(bindings);
             bindingsCursor.cancelBindings(bindings);
+            
+            // Close this cursor, but don't clear the state
+            // In look ahead cases the cursor will be reopened
+            // with state intact for further reading. 
+            closed = true;
         }
 
         // Execution interface
