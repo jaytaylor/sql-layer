@@ -50,7 +50,11 @@ public class ProjectedRow extends AbstractRow
             } else {
                 buffer.append(", ");
             }
-            type.format(evaluation, appender);
+            if (type != null) {
+                type.format(evaluation, appender);
+            } else {
+                buffer.append("NULL");
+            }
         }
         buffer.append(')');
         return buffer.toString();
