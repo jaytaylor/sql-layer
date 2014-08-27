@@ -49,6 +49,10 @@ public class MDateAndTimeTest
         doParseDateOrTime(TIME_ST, "-1 3:4:5", 0, 0, 0, -27, 4, 5);
         doParseDateOrTime(TIME_ST, "12:30:10", 0, 0, 0, 12, 30, 10);
         doParseDateOrTime(TIME_ST, "25:30:10", 0, 0, 0, 25, 30, 10);
+        doParseDateOrTime(TIME_ST, "25:30:10-0400", 0, 0, 0, 25, 30, 10);
+        doParseDateOrTime(TIME_ST, "25:30:10-04:00", 0, 0, 0, 25, 30, 10);
+        doParseDateOrTime(TIME_ST, "25:30:10-040000", 0, 0, 0, 25, 30, 10);
+        doParseDateOrTime(TIME_ST, "25:30:10-04:00:00", 0, 0, 0, 25, 30, 10);
         // DATE
         doParseDateOrTime(DATE_ST, "2002-12-30", 2002, 12, 30, 0, 0, 0);
         doParseDateOrTime(DATE_ST, "2002/12/30", 2002, 12, 30, 0, 0, 0);
@@ -56,6 +60,10 @@ public class MDateAndTimeTest
         doParseDateOrTime(DATE_ST, "02/12/30", 2002, 12, 30, 0, 0, 0);
         doParseDateOrTime(DATE_ST, "95-12-30", 1995, 12, 30, 0, 0, 0);
         doParseDateOrTime(DATE_ST, "95/12/30", 1995, 12, 30, 0, 0, 0);
+        doParseDateOrTime(DATE_ST, "2014-08-27-0400", 2014, 8, 27, 0, 0, 0);
+        doParseDateOrTime(DATE_ST, "2014-08-27-04:00", 2014, 8, 27, 0, 0, 0);
+        doParseDateOrTime(DATE_ST, "2014-08-27-040000", 2014, 8, 27, 0, 0, 0);
+        doParseDateOrTime(DATE_ST, "2014-08-27-04:00:00", 2014, 8, 27, 0, 0, 0);
         // DATE with zeros
         doParseDateOrTime(DATE_ST, "0000-00-00", 0, 0, 0, 0, 0, 0);
         doParseDateOrTime(DATE_ST, "0000-00-01", 0, 0, 1, 0, 0, 0);
@@ -70,6 +78,10 @@ public class MDateAndTimeTest
         doParseDateOrTime(DATETIME_ST, "2012-04-09T12:45:00", 2012, 4, 9, 12, 45, 0);
         doParseDateOrTime(DATETIME_ST, "2013-04-03T14:55:08.249Z-05:00", 2013, 4, 3, 14, 55, 8);
         doParseDateOrTime(DATETIME_ST, "2013/04/03 14.55.08", 2013, 4, 3, 14, 55, 8);
+        doParseDateOrTime(DATETIME_ST, "2014-05-21 16:00:35.091000-0400", 2014, 5, 21, 16, 0, 35);
+        doParseDateOrTime(DATETIME_ST, "2014-05-21 16:00:35.091000-04:00", 2014, 5, 21, 16, 0, 35);
+        doParseDateOrTime(DATETIME_ST, "2014-05-21 16:00:35.091000-040000", 2014, 5, 21, 16, 0, 35);
+        doParseDateOrTime(DATETIME_ST, "2014-05-21 16:00:35.091000-04:00:00", 2014, 5, 21, 16, 0, 35);
         // INVALID
         doParseDateOrTime(INVALID_TIME_ST, "", 0, 0, 0, 0, 0, 0);
         doParseDateOrTime(INVALID_DATE_ST, "01-01-02am", 2001, 1, 0, 0, 0, 0);
