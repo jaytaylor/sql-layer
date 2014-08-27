@@ -26,6 +26,8 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TInstanceAdjuster;
 import com.foundationdb.server.types.TInstanceBuilder;
 import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.common.types.StringFactory;
+import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.texpressions.TValidatedOverload;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 
@@ -187,8 +189,17 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                         resultInstance = inputInstance;
                     }
                 }
+                // no inputInstance = no type attributes
                 else {
-                    resultInstance = targetTClass.instance(inputTpv.isNullable());
+                    // TODO: Generalize to e.g. instance(nullable) -> unknownInstance(nullable) ?
+                    if(targetTClass instanceof TString) {
+                        resultInstance = targetTClass.instance(Integer.MAX_VALUE, // no length would be preferable
+                                                               StringFactory.DEFAULT_CHARSET_ID,
+                                                               StringFactory.NULL_COLLATION_ID,
+                                                               inputTpv.isNullable());
+                    } else {
+                        resultInstance = targetTClass.instance(inputTpv.isNullable());
+                    }
                 }
                 if (instances == null)
                     instances = new TInstance[size];

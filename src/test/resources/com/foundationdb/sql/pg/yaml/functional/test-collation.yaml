@@ -86,4 +86,13 @@
 - CreateTable: t3 (id INT, c CHAR(5) CHARACTER SET foo)
 - error: [2C000]
 # NOTE if adding more tests, make sure to use lower case for en_us_ci
-...
+
+# bug: parameter collation defaulted to ucs_binary
+---
+- Statement: SELECT 'asdf' COLLATE en_ci LIKE ?
+- params: [['AsDf']]
+- output: [ [true] ]
+---
+- Statement: SELECT ? LIKE 'AsDf' COLLATE en_ci
+- params: [['asdf']]
+- output: [ [true] ]
