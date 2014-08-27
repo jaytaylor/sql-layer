@@ -125,7 +125,6 @@ public class TupleStorageDescription extends FDBStorageDescription
             // 01258100FF00, strinc would be 01258100FF01, whereas
             // {1,{after}} would be 258100FE, so 01258100FFFE00.
             // So, take edge out and do below.
-
             if (nudged != null) {
                 if (nudged == FDBStoreData.NudgeDir.DEEPER) {
                     key.setEncodedSize(key.getEncodedSize() - 1 );
@@ -133,19 +132,22 @@ public class TupleStorageDescription extends FDBStorageDescription
                     key.setEncodedSize(key.getEncodedSize() + 1 );
                 } else {
                     key.getEncodedBytes()[key.getEncodedSize() - 1] = 0;
-                    key.setEncodedSize(key.getEncodedSize());
+                    
                 }
              }
+            // Persistit Key computes the depth incorrectly. It does not count for 
+            // Key.BEFORE or Key.AFTER, where it does increase the depth when
+            // Key#appendAfter() or Key#appendBefore() are called via Key#append(...).
             
+            // reset size to enforce recalculation of the depth
+            key.setEncodedSize(key.getEncodedSize());
             Key.EdgeValue edge = null;
             int nkeys = key.getDepth();
             if (KeyShim.isBefore(key)) {
                 edge = Key.BEFORE;
-                nkeys--;
             }
             else if (KeyShim.isAfter(key)) {
                 edge = Key.AFTER;
-                nkeys--;
             } 
             
             Object[] keys = new Object[nkeys];

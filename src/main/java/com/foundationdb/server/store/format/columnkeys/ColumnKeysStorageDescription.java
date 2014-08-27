@@ -108,16 +108,28 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
     }
 
     @Override
-    public byte[] getKeyBytes(Key key) {
+    public byte[] getKeyBytes(Key key, FDBStoreData.NudgeDir nudged) {
+        assert nudged == null;
+        return getKeyBytes(key);
+    }
+    
+    @Override
+    public byte[] getKeyBytes(Key key ) {
         Key.EdgeValue edge = null;
+
+        // Persistit Key computes the depth incorrectly. It does not count for 
+        // Key.BEFORE or Key.AFTER, where it does increase the depth when
+        // Key#appendAfter() or Key#appendBefore() are called via Key#append(...).
+
+        // reset size to enforce recalculation of the depth
+        key.setEncodedSize(key.getEncodedSize());
+        
         int nkeys = key.getDepth();
         if (KeyShim.isBefore(key)) {
             edge = Key.BEFORE;
-            nkeys--;
         }
         else if (KeyShim.isAfter(key)) {
             edge = Key.AFTER;
-            nkeys--;
         }
         // Get the base key prefix, all but column name.
         Object[] keys = new Object[nkeys];
