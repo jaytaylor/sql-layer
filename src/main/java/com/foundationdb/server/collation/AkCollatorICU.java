@@ -108,28 +108,17 @@ public class AkCollatorICU extends AkCollator {
         Util.bytesToHex(sb, bytes, index, length);
         return sb.toString();
     }
-
-    public static String byteArrayToHex(byte[] a) {
-        StringBuilder sb = new StringBuilder(a.length * 2);
-        for(byte b: a)
-           sb.append(String.format("%02x", b & 0xff));
-        return sb.toString();
-     }
     
     @Override
     public int hashCode(String string) {
         byte[] bytes = collator.get().getCollationKey(string).toByteArray();
         bytes = Arrays.copyOfRange(bytes, 0, bytes.length-1); // remove null terminating character
-        System.out.println("string: " + string);
         return hashCode(bytes);
     }
 
     @Override
     public int hashCode(byte[] bytes) {
-        int hash = hashFunction.hashBytes(bytes, 0, bytes.length).asInt();
-        System.out.println("bytes: " + byteArrayToHex(bytes));
-        System.out.println("hash: " + hash);
-        return hash;
+        return hashFunction.hashBytes(bytes, 0, bytes.length).asInt();
     }
 
     private final HashFunction hashFunction = Hashing.goodFastHash(32); // Because we're returning ints
