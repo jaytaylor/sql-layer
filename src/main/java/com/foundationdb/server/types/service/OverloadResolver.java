@@ -191,14 +191,15 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                 }
                 // no inputInstance = no type attributes
                 else {
+                    assert inputTpv.isNullable() : inputTpv;
                     // TODO: Generalize to e.g. instance(nullable) -> unknownInstance(nullable) ?
                     if(targetTClass instanceof TString) {
                         resultInstance = targetTClass.instance(Integer.MAX_VALUE, // no length would be preferable
                                                                StringFactory.DEFAULT_CHARSET_ID,
                                                                StringFactory.NULL_COLLATION_ID,
-                                                               inputTpv.isNullable());
+                                                               true);
                     } else {
-                        resultInstance = targetTClass.instance(inputTpv.isNullable());
+                        resultInstance = targetTClass.instance(true);
                     }
                 }
                 if (instances == null)
