@@ -19,8 +19,13 @@
 ---
 - CreateTable: t3 (id INT PRIMARY KEY NOT NULL, s VARCHAR(32) COLLATE en_us_cs)
 ---
+- Statement: CREATE INDEX t3_ndx ON t3(s);
+---
 - Statement: INSERT INTO t3(id, s)
     VALUES (1, 'alfa'), (2, 'charlie'), (3, 'BRAVO'), (4, 'Delta'), (5, 'echo')
+---
+- Statement: SELECT * FROM t3 WHERE s = 'charlie'
+- output: [[2, 'charlie']]
 ---
 - Statement: SELECT id FROM t3 WHERE s LIKE '%a%'
 - output: [[1],[2],[4]]

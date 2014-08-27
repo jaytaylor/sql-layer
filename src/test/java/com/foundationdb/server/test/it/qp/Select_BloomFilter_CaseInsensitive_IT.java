@@ -20,6 +20,7 @@ package com.foundationdb.server.test.it.qp;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.expression.RowBasedUnboundExpressions;
+import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
@@ -37,6 +38,7 @@ import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.server.types.texpressions.Comparison;
 import com.persistit.Key;
+
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -192,7 +194,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     {
         Operator plan = plan(4);
         Row[] expected = new Row[] {
-            row(outputRowType, 4L, "xy", "a"),
+            row(outputRowType, 2),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
     }
@@ -211,8 +213,8 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     {
         Operator plan = plan(6);
         Row[] expected = new Row[] {
-            row(outputRowType, 6L, "xy", "ab"),
-            row(outputRowType, 6L, "xy", "ac"),
+            row(outputRowType, 6),
+            row(outputRowType, 7),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
     }
@@ -245,8 +247,8 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
             public Row[] firstExpectedRows()
             {
                 return new Row[] {
-                    row(outputRowType, 6L, "xy", "ab"),
-                    row(outputRowType, 6L, "xy", "ac"),
+                    row(outputRowType, 6),
+                    row(outputRowType, 7),
                 };
             }
         };
@@ -321,10 +323,9 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
                     ),
                 dIndexRowType,
                 Arrays.asList(
-                    ExpressionGenerators.field(dIndexRowType, 0),   // test_id
-                    ExpressionGenerators.field(dIndexRowType, 1),   // a
-                    ExpressionGenerators.field(dIndexRowType, 2))); // b
+                    ExpressionGenerators.field(dIndexRowType, 3)));   // test_id
         outputRowType = plan.rowType();
+        
         return plan;
     }
 

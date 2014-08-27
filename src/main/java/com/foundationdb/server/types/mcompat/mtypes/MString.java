@@ -158,7 +158,12 @@ public class MString extends TString
         @Override
         public void writeCollating(ValueSource inValue, TInstance inInstance, ValueTarget out) {
             final AkCollator collator = getCollator(inInstance);
-            out.putString(AkCollator.getString(inValue, collator), collator);
+            if (inValue.getObject() instanceof byte[]) {
+                out.putBytes((byte[])inValue.getObject());
+            }
+            else {
+                out.putString(AkCollator.getString(inValue, collator), collator);
+            }
         }
 
         @Override
