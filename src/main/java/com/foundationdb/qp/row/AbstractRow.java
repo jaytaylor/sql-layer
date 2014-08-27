@@ -91,6 +91,11 @@ public abstract class AbstractRow implements Row
     }
 
     @Override
+    public boolean isBindingsSensitive() {
+        return true;
+    }
+
+    @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append(this.getClass().getSimpleName()).append('[');

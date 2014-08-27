@@ -18,7 +18,6 @@
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.ImmutableRow;
-import com.foundationdb.qp.row.ProjectedRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.*;
@@ -196,9 +195,9 @@ class Map_NestedLoops extends Operator
             if (baseBindings != null) {
                 Row row = nextInputRow();
                 if (row != null) {
-                    if (row instanceof ProjectedRow) {
-                        // Freeze Project values which may depend on outer bindings.
-                        row = new ImmutableRow((ProjectedRow)row);
+                    if (row.isBindingsSensitive()) {
+                        // Freeze values which may depend on outer bindings.
+                        row = ImmutableRow.buildImmutableRow(row);
                     }
                     QueryBindings bindings = baseBindings.createBindings();
                     assert (bindings.getDepth() == depth);
@@ -535,10 +534,9 @@ class Map_NestedLoops extends Operator
                     outerRow = null;
                 } else {
                     outputRow = innerRow;
-                    if (outputRow instanceof ProjectedRow) {
-                        // Freeze Project values before they escape from loop
-                        // bindings, which might change.
-                        outputRow = new ImmutableRow((ProjectedRow)outputRow);
+                    if (outputRow.isBindingsSensitive()) {
+                        // Freeze values which may depend on outer bindings.
+                        outputRow = ImmutableRow.buildImmutableRow(outputRow);
                     }
                 }
             }

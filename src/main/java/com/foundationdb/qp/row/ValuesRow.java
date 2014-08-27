@@ -41,6 +41,11 @@ public final class ValuesRow extends AbstractRow {
         return null;
     }
 
+    @Override
+    public boolean isBindingsSensitive() {
+        return false;
+    }
+
     public ValuesRow(RowType rowType, ValueSource... values) {
         this.rowType = rowType;
         this.values = values;

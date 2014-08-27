@@ -34,6 +34,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.FDBNotCommittedException;
 import com.foundationdb.server.error.QueryCanceledException;
@@ -304,10 +305,12 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                               RowData rowData,
                               Key hKey,
                               PersistitIndexRowBuffer indexRow,
+                              SpatialColumnHandler spatialColumnHandler,
+                              long zValue,
                               boolean doLock) {
         TransactionState txn = txnService.getTransaction(session);
         Key indexKey = createKey();
-        constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, true);
+        constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, spatialColumnHandler, zValue, true);
         checkUniqueness(session, txn, index, rowData, indexKey);
 
         byte[] packedKey = packedTuple(index, indexKey);
@@ -321,10 +324,12 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                                RowData rowData,
                                Key hKey,
                                PersistitIndexRowBuffer indexRow,
+                               SpatialColumnHandler spatialColumnHandler,
+                               long zValue,
                                boolean doLock) {
         TransactionState txn = txnService.getTransaction(session);
         Key indexKey = createKey();
-        constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, false);
+        constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, spatialColumnHandler, zValue, false);
         byte[] packed = packedTuple(index, indexKey);
         txn.clearKey(packed);
     }
@@ -704,10 +709,12 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                                    Index index,
                                    Key hKey,
                                    PersistitIndexRowBuffer indexRow,
+                                   SpatialColumnHandler spatialColumnHandler,
+                                   long zValue,
                                    boolean forInsert) {
         indexKey.clear();
         indexRow.resetForWrite(index, indexKey, null);
-        indexRow.initialize(rowData, hKey);
+        indexRow.initialize(rowData, hKey, spatialColumnHandler, zValue);
         indexRow.close(session, this, forInsert);
     }
 

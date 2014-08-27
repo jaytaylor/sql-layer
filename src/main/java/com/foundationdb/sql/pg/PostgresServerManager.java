@@ -94,7 +94,12 @@ public class PostgresServerManager implements PostgresService, Service, JmxManag
     public int getPort() {
         return server.getPort();
     }
-    
+
+    @Override
+    public String getHost() {
+        return server.getHost();
+    }
+
     @Override
     public PostgresServer getServer() {
         return server;

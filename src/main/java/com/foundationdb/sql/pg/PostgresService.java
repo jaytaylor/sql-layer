@@ -22,7 +22,9 @@ public interface PostgresService {
     /** Get the port on which the server is listening. */
     public int getPort();
 
+    /** Get the host on which the server is listening. */
+    public String getHost();
+
     /** Get the server itself. */
     public PostgresServer getServer();
-
 }

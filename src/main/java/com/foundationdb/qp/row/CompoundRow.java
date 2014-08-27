@@ -89,6 +89,25 @@ public class CompoundRow extends AbstractRow {
         return ValueSources.getNullSource(rowType.typeAt(i));
     }
 
+    @Override
+    public boolean isBindingsSensitive() {
+        if (firstRow != null && firstRow.isBindingsSensitive()) {
+            return true;
+        }
+        else if (secondRow != null && secondRow.isBindingsSensitive()) {
+            return true;
+        }
+        return false;
+    }
+
+    public Row getFirstRow() {
+        return firstRow;
+    }
+
+    public Row getSecondRow() {
+        return secondRow;
+    }
+
     // Object state
 
     private final CompoundRowType rowType;
