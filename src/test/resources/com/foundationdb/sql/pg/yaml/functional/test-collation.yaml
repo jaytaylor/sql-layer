@@ -89,10 +89,10 @@
 
 # bug: parameter collation defaulted to ucs_binary
 ---
-- Statement: SELECT 'asdf' COLLATE en_ci LIKE ?
+- Statement: SELECT 'asdf' COLLATE en_us_ci LIKE ?
 - params: [['AsDf']]
 - output: [ [true] ]
 ---
-- Statement: SELECT ? LIKE 'AsDf' COLLATE en_ci
+- Statement: SELECT ? LIKE 'AsDf' COLLATE en_us_ci
 - params: [['asdf']]
 - output: [ [true] ]
