@@ -108,7 +108,7 @@ public class AkCollatorICU extends AkCollator {
         Util.bytesToHex(sb, bytes, index, length);
         return sb.toString();
     }
-    
+
     @Override
     public int hashCode(String string) {
         byte[] bytes = collator.get().getCollationKey(string).toByteArray();
