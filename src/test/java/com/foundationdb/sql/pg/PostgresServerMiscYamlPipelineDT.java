@@ -35,11 +35,13 @@ public class PostgresServerMiscYamlPipelineDT extends PostgresServerMiscYamlIT {
     
     @Override
     protected Map<String, String> startupConfigProperties() {
-        Map<String, String> properties = super.startupConfigProperties();
+        Map<String, String> superProperties = super.startupConfigProperties();
+        Map<String, String> properties = new HashMap<String, String>();
         for (String property : PIPELINE_PROPERTIES) {
             String[] pieces = property.split("=");
             properties.put(pieces[0], pieces[1]);
         }
+        properties.putAll(superProperties);
         return properties;
     }
 }
