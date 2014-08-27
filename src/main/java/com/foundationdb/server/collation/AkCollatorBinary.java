@@ -72,4 +72,9 @@ public class AkCollatorBinary extends AkCollator {
     public int hashCode(String string) {
         return string.hashCode();
     }
+
+    @Override
+    public int hashCode(byte[] bytes) {
+        return bytes.hashCode();
+    }
 }
