@@ -52,7 +52,6 @@ public class AkGUIDTest {
     public void checkUUIDToBytes() {
         String uuidString = "384000008cf011bdb23e10b96e4ef00d";
         UUID uuid = UUID.fromString( "38400000-8cf0-11bd-b23e-10b96e4ef00d");
-        uuidString.replace("-","");
         byte[] bytes = AkGUID.uuidToBytes(uuid);
         String output = Hex.encodeHexString(bytes);
         assertEquals(output, uuidString);
