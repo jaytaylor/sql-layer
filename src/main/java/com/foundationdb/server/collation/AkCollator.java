@@ -108,6 +108,10 @@ public abstract class AkCollator {
             return ((PersistitKeyValueSource) value1).compare(this, getBytes(value2.getObject()));
         } else if (persistit2) {
             return -((PersistitKeyValueSource) value2).compare(this, getBytes(value1.getObject()));
+        } else if (value1.isNull()) {
+            return (value2.isNull()) ? 0 : -1;
+        } else if (value2.isNull()) {
+            return (value1.isNull()) ? 0 : 1;
         } else {
             byte[] bytes1 = getBytes(value1.getObject());
             byte[] bytes2 = getBytes(value2.getObject());
