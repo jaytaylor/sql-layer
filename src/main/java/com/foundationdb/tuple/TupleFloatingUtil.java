@@ -45,8 +45,8 @@ class TupleFloatingUtil {
 
     static final byte FLOAT_CODE = 0x20;
     static final byte DOUBLE_CODE = 0x21;
-    static final byte BIGINT_NEG_CODE = 0x1d;
-    static final byte BIGINT_POS_CODE = 0x1e;
+    static final byte BIGINT_NEG_CODE = 0x0b;
+    static final byte BIGINT_POS_CODE = 0x1d;
     static final byte BIGDEC_NEG_CODE = 0x23;
     static final byte BIGDEC_POS_CODE = 0x24;
     static final byte TRUE_CODE = 0x25;
@@ -137,22 +137,32 @@ class TupleFloatingUtil {
 
     static byte[] encode(BigInteger value) {
         byte[] bigIntBytes = encodeBigIntNoTypeCode(value);
-        byte[] typecode = {BIGINT_POS_CODE};
-        if (value.compareTo(BigInteger.ZERO) < 0) {
-        	typecode[0] = BIGINT_NEG_CODE;
+        byte[] length;
+        byte[] typecode = new byte[1];
+        if (value.compareTo(BigInteger.ZERO) >= 0) {
+            typecode[0] = BIGINT_POS_CODE;
+            length = encodeIntNoTypeCode(bigIntBytes.length);
         }
-        byte[] length = encodeIntNoTypeCode(bigIntBytes.length);
+        else {
+        	typecode[0] = BIGINT_NEG_CODE;
+        	length = encodeIntNoTypeCode(-bigIntBytes.length);
+        }
         return ByteArrayUtil.join(typecode, length, bigIntBytes);
     }
 
     static byte[] encode(BigDecimal value) {
         byte[] bigIntBytes = encodeBigIntNoTypeCode(value.unscaledValue());
         byte[] scaleBytes = encodeIntNoTypeCode(value.scale());
-        byte[] typecode = {BIGDEC_POS_CODE}; 
-        if (value.compareTo(BigDecimal.ZERO)< 0) {
-        	typecode[0] = BIGDEC_NEG_CODE;
+        byte[] typecode = new byte[1];
+        byte[] length;
+        if (value.compareTo(BigDecimal.ZERO) >= 0) {
+            typecode[0] = BIGDEC_POS_CODE;
+            length = encodeIntNoTypeCode(bigIntBytes.length);
         }
-        byte[] length = encodeIntNoTypeCode(bigIntBytes.length);
+        else {
+        	typecode[0] = BIGDEC_NEG_CODE;
+            length = encodeIntNoTypeCode(-bigIntBytes.length);
+        }
         return ByteArrayUtil.join(typecode, scaleBytes, length, bigIntBytes);
     }
 
@@ -197,14 +207,14 @@ class TupleFloatingUtil {
     }
 
     static byte[] encodeIntNoTypeCode(int i) {
-        return ByteBuffer.allocate(INT_LEN).order(ByteOrder.LITTLE_ENDIAN).putInt(i).array();
+        return ByteBuffer.allocate(INT_LEN).order(ByteOrder.BIG_ENDIAN).putInt(i).array();
     }
 
     static int decodeIntNoTypeCode(byte[] bytes) {
         if(bytes.length != INT_LEN) {
             throw new IllegalArgumentException("Source array must be of length "+String.valueOf((INT_LEN)));
         }
-        return ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getInt();
+        return ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN).getInt();
     }
     
     static List<Object> unpack(byte[] bytes, int start, int length) {
