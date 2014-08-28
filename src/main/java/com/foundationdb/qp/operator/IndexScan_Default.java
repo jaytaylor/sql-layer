@@ -312,7 +312,7 @@ class IndexScan_Default extends Operator
                     close();
                 }
                 if (LOG_EXECUTION) {
-                    LOG.debug(IndexScan_Default.this.toString() + ": yield {}", row);
+                    LOG.debug("IndexScan_default$Execution: yield {}", row);
                 }
                 return row;
             } finally {
