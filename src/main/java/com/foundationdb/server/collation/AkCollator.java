@@ -53,7 +53,7 @@ public abstract class AkCollator {
             if (obj instanceof byte[]) {
                 byte[] bytes = (byte[])obj;
                 assert (collator != null) : "encoded as bytes without collator";
-                return ((AkCollatorICU)collator).hashCode(bytes);
+                return collator.hashCode(bytes);
             }
             return collator.hashCode((String) obj);
         }
