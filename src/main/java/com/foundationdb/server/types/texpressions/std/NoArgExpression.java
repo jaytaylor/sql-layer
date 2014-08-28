@@ -56,7 +56,7 @@ public abstract class NoArgExpression extends TScalarBase
 
     @Override
     protected boolean neverConstant() {
-        return true;
+        return false;
     }
 
     @Override
