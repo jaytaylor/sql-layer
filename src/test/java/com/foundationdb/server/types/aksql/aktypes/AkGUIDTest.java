@@ -17,8 +17,11 @@
 
 package com.foundationdb.server.types.aksql.aktypes;
 
-import java.util.Arrays;
 import java.util.UUID;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+
 
 import org.apache.commons.codec.binary.Hex;
 import org.junit.Test;
@@ -30,7 +33,7 @@ public class AkGUIDTest {
         UUID randomUUID = UUID.randomUUID();
         byte[] byteArray = AkGUID.uuidToBytes(randomUUID);
         UUID outputUUID = AkGUID.bytesToUUID(byteArray, 0);
-        assert(randomUUID.equals(outputUUID));
+        assertEquals(randomUUID,outputUUID);
     }
 
     @Test
@@ -41,7 +44,7 @@ public class AkGUIDTest {
         }
         UUID tempUUID = AkGUID.bytesToUUID(byteArray, 0);
         byte[] outputByteArray = AkGUID.uuidToBytes(tempUUID);
-        assert(Arrays.equals(outputByteArray, byteArray));
+        assertArrayEquals(outputByteArray, byteArray);
 
     }
 
@@ -52,6 +55,6 @@ public class AkGUIDTest {
         uuidString.replace("-","");
         byte[] bytes = AkGUID.uuidToBytes(uuid);
         String output = Hex.encodeHexString(bytes);
-        assert(output.equals(uuidString));
+        assertEquals(output, uuidString);
     }
 }

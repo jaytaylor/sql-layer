@@ -56,11 +56,8 @@ public class AkGUID extends NoAttrTClass
             
             @Override
             public void cacheToValue(Object bdw, TInstance type, BasicValueTarget target) {
-                byte[] bb = new byte[16];
                 if (bdw instanceof UUID) {
-                    UUID guid = (UUID)bdw;
-                    AkServerUtil.putLong(bb, 0, guid.getMostSignificantBits());
-                    AkServerUtil.putLong(bb, 8 , guid.getLeastSignificantBits());
+                    byte[] bb = uuidToBytes((UUID)bdw);
                     target.putBytes(bb);                    
                 } else {
                     throw new InvalidParameterValueException("cannot perform UUID cast on Object");
