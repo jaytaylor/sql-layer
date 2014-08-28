@@ -67,7 +67,7 @@ public class AkGUID extends NoAttrTClass
             @Override
             public Object valueToCache(BasicValueSource value, TInstance type) {
                 byte[] bb = value.getBytes();
-                return new UUID(AkServerUtil.getLong(bb, 0), AkServerUtil.getLong(bb, 8));
+                return bytesToUUID(bb,0);
             }
 
             @Override
