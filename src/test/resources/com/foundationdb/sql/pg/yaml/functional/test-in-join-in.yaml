@@ -27,4 +27,12 @@
 ---
 - Statement: SELECT * FROM artists WHERE ((artists.id IN (SELECT albums.artist_id FROM albums INNER JOIN albums_tags ON (albums_tags.album_id = albums.id) WHERE ((albums_tags.tag_id IN (1, 2))))));
 - row_count: 0
+---
+- Statement: INSERT INTO albums_tags VALUES (1,1),(2,2);
+---
+- Statement: SELECT * FROM "albums" WHERE (("albums"."id" NOT IN
+                (SELECT "albums_tags"."album_id" FROM "tags" INNER JOIN "albums_tags" ON ("albums_tags"."tag_id" = "tags"."id") WHERE
+                (("name" = 'T') AND ("albums_tags"."album_id" IS NOT NULL) AND ("tags"."id" IN (SELECT "tags"."id" FROM "tags")))
+             )) OR ("albums"."id" IS NULL));
+- output: [[2, 'Al2', null]]
 ...

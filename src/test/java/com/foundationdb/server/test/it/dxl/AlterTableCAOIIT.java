@@ -24,12 +24,14 @@ import com.foundationdb.ais.model.TestAISBuilder;
 import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.server.error.NotNullViolationException;
 import com.foundationdb.server.error.PrimaryKeyNullColumnException;
+
 import org.junit.After;
 import org.junit.Test;
 
 import java.util.Arrays;
 
 import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
+
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
@@ -133,6 +135,13 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         groupsDiffer(C_NAME, A_NAME, O_NAME, I_NAME);
         groupsDiffer(A_NAME, O_NAME, I_NAME);
         groupsMatch(O_NAME, I_NAME);
+        compareRows(
+                new Object[][] {
+                   {"1", "1"},
+                   {"2", "2"},
+                   {"4", "4"},
+                },
+                ais().getTable(C_NAME));
     }
 
     @Test
@@ -140,6 +149,14 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         createAndLoadCAOI();
         runAlter("ALTER TABLE " + A_TABLE + " ALTER COLUMN id SET DATA TYPE varchar(32)");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+        compareRows(
+                new Object[][] {
+                   {"10", 1},
+                   {"40", 4},
+                   {"41", 4},
+                   {"50", 5},
+                },
+                ais().getTable(A_NAME).getIndex("PRIMARY"));
     }
 
     @Test
@@ -167,6 +184,14 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         runAlter("ALTER TABLE "+A_TABLE+" ALTER COLUMN cid SET DATA TYPE varchar(32)");
         groupsDiffer(C_NAME, A_NAME);
         groupsMatch(C_NAME, O_NAME, I_NAME);
+        compareRows(
+                new Object[][] {
+                   {10, "1", "11"},
+                   {40, "4", "44"},
+                   {41, "4", "45"},
+                   {50, "5", "55"},
+                },
+                ais().getTable(A_NAME));
     }
 
     @Test
@@ -243,6 +268,14 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         createAndLoadCAOI();
         runAlter(ChangeLevel.METADATA_CONSTRAINT, "ALTER TABLE " + A_TABLE + " ALTER COLUMN cid NOT NULL");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+        compareRows(
+                new Object[][] {
+                   {10, 1},
+                   {40, 4},
+                   {41, 4},
+                   {50, 5},
+                },
+                ais().getTable(A_NAME).getIndex("PRIMARY"));
     }
 
     @Test
@@ -311,6 +344,13 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         groupsDiffer(A_NAME, O_NAME, I_NAME);
         groupsMatch(O_NAME, I_NAME);
         checkIndexesInstead(C_NAME, "cc");
+        compareRows(
+                new Object[][] {
+                   {"1", 1},
+                   {"2", 2},
+                   {"4", 3},
+                },
+                ais().getTable(C_NAME));
     }
 
     @Test
@@ -319,6 +359,14 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         runAlter("ALTER TABLE "+A_TABLE+" DROP COLUMN id");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
         checkIndexesInstead(A_NAME, "cid", "aa");
+        compareRows(
+                new Object[][] {
+                   {1, "11", 1},
+                   {4, "44", 2},
+                   {4, "45", 3},
+                   {5, "55", 4},
+                },
+                ais().getTable(A_NAME));
     }
 
     @Test
@@ -349,6 +397,14 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         groupsDiffer(C_NAME, A_NAME);
         groupsMatch(C_NAME, O_NAME, I_NAME);
         checkIndexesInstead(A_NAME, "PRIMARY", "aa");
+        compareRows(
+                new Object[][] {
+                   {10, "11"},
+                   {40, "44"},
+                   {41, "45"},
+                   {50, "55"},
+                },
+                ais().getTable(A_NAME));
     }
 
     @Test
@@ -393,6 +449,13 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         groupsDiffer(A_NAME, O_NAME, I_NAME);
         groupsMatch(O_NAME, I_NAME);
         checkIndexesInstead(C_NAME, "cc");
+        compareRows(
+                new Object[][] {
+                   {1, "1", 1},
+                   {2, "2", 2},
+                   {4, "4", 3},
+                },
+                ais().getTable(C_NAME));
     }
 
     @Test
@@ -401,6 +464,14 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         runAlter("ALTER TABLE "+A_TABLE+" DROP PRIMARY KEY");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
         checkIndexesInstead(A_NAME, "cid", "aa");
+        compareRows(
+                new Object[][] {
+                   {10, 1, "11", 1},
+                   {40, 4, "44", 2},
+                   {41, 4, "45", 3},
+                   {50, 5, "55", 4},
+                },
+                ais().getTable(A_NAME));
     }
 
     @Test
@@ -495,15 +566,32 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     @Test
     public void renameTable_C_X() {
         createAndLoadCAOI();
-        runRenameTable(C_NAME, X_NAME);
+        //runRenameTable(C_NAME, X_NAME);
+        runAlter (ChangeLevel.METADATA, "ALTER TABLE " + C_NAME + " RENAME TO " + X_NAME);
         groupsMatch(X_NAME, A_NAME, O_NAME, I_NAME);
+        compareRows(
+                new Object[][] {
+                   {1, "1"},
+                   {2, "2"},
+                   {4, "4"},
+                },
+                ais().getTable(X_NAME));
     }
 
     @Test
     public void renameTable_A_X() {
         createAndLoadCAOI();
-        runRenameTable(A_NAME, X_NAME);
+        //runRenameTable(A_NAME, X_NAME);
+        runAlter(ChangeLevel.METADATA, "ALTER TABLE " + A_NAME + " RENAME TO " + X_NAME);
         groupsMatch(C_NAME, X_NAME, O_NAME, I_NAME);
+        compareRows(
+                new Object[][] {
+                   {10, 1, "11"},
+                   {40, 4, "44"},
+                   {41, 4, "45"},
+                   {50, 5, "55"},
+                },
+                ais().getTable(X_NAME));
     }
 
     @Test
@@ -527,15 +615,31 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     @Test
     public void renameColumn_C_id() {
         createAndLoadCAOI();
-        runRenameColumn(C_NAME, "id", "di");
+        runAlter(ChangeLevel.METADATA, "ALTER TABLE " + C_NAME + " RENAME COLUMN id TO di");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+        compareRows(
+                new Object[][] {
+                   {1, "1"},
+                   {2, "2"},
+                   {4, "4"},
+                },
+                ais().getTable(C_NAME));
     }
 
     @Test
     public void renameColumn_A_id() {
         createAndLoadCAOI();
-        runRenameColumn(A_NAME, "id", "di");
+        runAlter(ChangeLevel.METADATA, "ALTER TABLE " + A_NAME + " RENAME COLUMN id to di");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+        
+        compareRows(
+                new Object[][] {
+                   {10, 1, "11"},
+                   {40, 4, "44"},
+                   {41, 4, "45"},
+                   {50, 5, "55"},
+                },
+                ais().getTable(A_NAME));
     }
 
     @Test
@@ -559,8 +663,16 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     @Test
     public void renameColumn_A_cid() {
         createAndLoadCAOI();
-        runRenameColumn(A_NAME, "cid", "dic");
+        runAlter(ChangeLevel.METADATA, "ALTER TABLE " + A_NAME + " RENAME COLUMN cid to dic");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+        compareRows(
+                new Object[][] {
+                   {10, 1, "11"},
+                   {40, 4, "44"},
+                   {41, 4, "45"},
+                   {50, 5, "55"},
+                },
+                ais().getTable(A_NAME));
     }
 
     @Test
@@ -575,6 +687,38 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         createAndLoadCAOI();
         runRenameColumn(I_NAME, "oid", "dio");
         groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+    }
+    
+    //
+    // COLUMN DEFAULT 0
+    //
+    @Test
+    public void alterDefault_C_id() {
+        createAndLoadCAOI();
+        runAlter(ChangeLevel.METADATA, "ALTER TABLE " + C_NAME + " ALTER COLUMN id DEFAULT 0");
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+        compareRows(
+                new Object[][] {
+                   {1, "1"},
+                   {2, "2"},
+                   {4, "4"},
+                },
+                ais().getTable(C_NAME));
+    }
+    
+    @Test
+    public void alterDefault_A_id() {
+        createAndLoadCAOI();
+        runAlter(ChangeLevel.METADATA, "ALTER TABLE " + A_NAME + " ALTER COLUMN id DEFAULT 0");
+        groupsMatch(C_NAME, A_NAME, O_NAME, I_NAME);
+        compareRows(
+                new Object[][] {
+                   {10, 1, "11"},
+                   {40, 4, "44"},
+                   {41, 4, "45"},
+                   {50, 5, "55"},
+                },
+                ais().getTable(A_NAME));
     }
 
     //

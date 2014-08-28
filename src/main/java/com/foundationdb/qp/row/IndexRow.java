@@ -18,6 +18,7 @@
 package com.foundationdb.qp.row;
 
 import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
@@ -40,10 +41,14 @@ public abstract class IndexRow extends AbstractRow
 
     // IndexRow interface
 
-    public abstract void initialize(RowData rowData, Key hKey);
+    public abstract void initialize(RowData rowData, Key hKey, SpatialColumnHandler spatialColumnHandler, long zValue);
 
     public abstract <S> void append(S source, TInstance type);
 
     public abstract void close(Session session, Store store, boolean forInsert);
 
+    @Override
+    public boolean isBindingsSensitive() {
+        return false;
+    }
 }

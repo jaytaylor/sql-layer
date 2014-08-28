@@ -96,4 +96,9 @@ public class NewRowBackedIndexRow implements Row
     private final NewRow row;
     private final RowType rowType;
     private final TableIndex index;
+
+    @Override
+    public boolean isBindingsSensitive() {
+        return false;
+    }
 }

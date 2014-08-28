@@ -185,6 +185,11 @@ public class PersistitGroupRow extends AbstractRow
         return valueSources.get(i);
     }
 
+    @Override
+    public boolean isBindingsSensitive() {
+        return false;
+    }
+
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(PersistitGroupRow.class);

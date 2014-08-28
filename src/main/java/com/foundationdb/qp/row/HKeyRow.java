@@ -69,6 +69,11 @@ public class HKeyRow extends AbstractRow
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public boolean isBindingsSensitive() {
+        return false;
+    }
+
     // HKeyRow interface
 
     public HKeyRow(HKeyRowType rowType, HKey hKey, HKeyCache<HKey> hKeyCache)

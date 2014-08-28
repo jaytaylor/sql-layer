@@ -21,7 +21,7 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 
 import com.foundationdb.ais.model.Schema;
 import com.foundationdb.server.api.DDLFunctions;
-import com.foundationdb.server.error.DropSchemaNotAllowedException;
+import com.foundationdb.server.error.ReferencedSchemaException;
 import com.foundationdb.server.error.DuplicateSchemaException;
 import com.foundationdb.server.error.NoSuchSchemaException;
 import com.foundationdb.server.service.session.Session;
@@ -71,7 +71,7 @@ public class SchemaDDL {
         // 1 == RESTRICT, meaning no drop if the schema isn't empty
         if (dropSchema.getDropBehavior() == StatementType.DROP_RESTRICT ||
                 dropSchema.getDropBehavior() == StatementType.DROP_DEFAULT)
-            throw new DropSchemaNotAllowedException (schemaName);
+            throw new ReferencedSchemaException(schemaName);
         // If the schema isn't used by any existing tables, it has effectively
         // been dropped, so the drop "succeeds".
         else if (dropSchema.getDropBehavior() == StatementType.DROP_CASCADE)

@@ -108,8 +108,8 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
     }
 
     @Override
-    public boolean isTransactionPeriodicallyCommit() {
-        return server.isTransactionPeriodicallyCommit();
+    public ServerTransaction.PeriodicallyCommit getTransactionPeriodicallyCommit() {
+        return server.getTransactionPeriodicallyCommit();
     }
 
     public TypesTranslator getTypesTranslator() {

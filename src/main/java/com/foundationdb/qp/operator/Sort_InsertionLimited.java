@@ -379,9 +379,8 @@ class Sort_InsertionLimited extends Operator
 
         // Make sure the Row we save doesn't depend on bindings that may change.
         public void freeze() {
-            if (row instanceof ProjectedRow)
-            {
-                row = new ImmutableRow((ProjectedRow)row);
+            if (row.isBindingsSensitive()) {
+                row = ImmutableRow.buildImmutableRow(row);
             }
         }
 

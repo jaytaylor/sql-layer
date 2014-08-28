@@ -36,9 +36,7 @@ import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.SQLParserException;
 import com.foundationdb.sql.parser.StatementNode;
 
-import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.error.EmbeddedResourceLeakException;
 import com.foundationdb.server.error.ErrorCode;
@@ -48,7 +46,6 @@ import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.explain.Explainable;
 import com.foundationdb.server.explain.Explainer;
 import com.foundationdb.server.service.monitor.MonitorStage;
-import static com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -187,7 +184,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
             }
             sessionMonitor.enterStage(MonitorStage.OPTIMIZE);
             if (transaction == null) {
-                transaction = new ServerTransaction(this, true, false);
+                transaction = new ServerTransaction(this, true, ServerTransaction.PeriodicallyCommit.OFF);
                 localTransaction = true;
             }
             if ((sqlStmt instanceof DMLStatementNode) && 
@@ -228,7 +225,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
             }
             sessionMonitor.enterStage(MonitorStage.OPTIMIZE);
             if (transaction == null) {
-                transaction = new ServerTransaction(this, true, false);
+                transaction = new ServerTransaction(this, true, ServerTransaction.PeriodicallyCommit.OFF);
                 localTransaction = true;
             }
             ExplainPlanContext context = new ExplainPlanContext(compiler, new EmbeddedQueryContext(this));
@@ -288,7 +285,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
             deregisterSessionMonitor();
             logger.debug(success ? "Auto COMMIT TRANSACTION" : "Auto ROLLBACK TRANSACTION");
         }
-        super.afterExecute(stmt, localTransaction, success);
+        super.afterExecute(stmt, localTransaction, success, true);
     }
 
     protected void openingResultSet(JDBCResultSet resultSet) {

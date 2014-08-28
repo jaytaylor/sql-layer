@@ -17,8 +17,8 @@
 
 package com.foundationdb.server.error;
 
-public class DropSchemaNotAllowedException extends InvalidOperationException {
-    public DropSchemaNotAllowedException (String schemaName) {
-        super (ErrorCode.DROP_SCHEMA_NOT_ALLOWED, schemaName);
+public class ReferencedSchemaException extends InvalidOperationException {
+    public ReferencedSchemaException(String schemaName) {
+        super (ErrorCode.REFERENCED_SCHEMA, schemaName);
     }
 }

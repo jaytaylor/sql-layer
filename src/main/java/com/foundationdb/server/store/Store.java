@@ -29,6 +29,7 @@ import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
+import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.ScanLimit;
@@ -61,10 +62,12 @@ public interface Store extends KeyCreator {
     void updateRow(Session session, RowDef oldRowDef, RowData oldRow, RowDef newRowDef, RowData newRow, ColumnSelector selector);
 
     /** Save the TableIndex row for {@code rowData}. {@code hKey} must be populated. */
-    void writeIndexRow(Session session, TableIndex index, RowData rowData, Key hKey, PersistitIndexRowBuffer buffer, boolean doLock);
+    void writeIndexRow(Session session, TableIndex index, RowData rowData, Key hKey, PersistitIndexRowBuffer buffer,
+                       SpatialColumnHandler spatialColumnHandler, long zValue, boolean doLock);
 
     /** Clear the TableIndex row for {@code rowData]. {@code hKey} must be populated. */
-    void deleteIndexRow(Session session, TableIndex index, RowData rowData, Key hKey, PersistitIndexRowBuffer buffer, boolean doLock);
+    void deleteIndexRow(Session session, TableIndex index, RowData rowData, Key hKey, PersistitIndexRowBuffer buffer,
+                        SpatialColumnHandler spatialColumnHandler, long zValue, boolean doLock);
 
     /** Save the GroupIndex rows for {@code rowData}. Locking handed by StoreGIHandler. */
     void writeIndexRows(Session session, Table table, RowData rowData, Collection<GroupIndex> indexes);

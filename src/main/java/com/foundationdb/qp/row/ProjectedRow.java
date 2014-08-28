@@ -104,22 +104,6 @@ public class ProjectedRow extends AbstractRow
         this.types = types;
     }
 
-    public Iterator<ValueSource> getValueSources()
-    {
-        if (pEvaluatableExpressions == null)
-            return null;
-        else
-        {
-            int size = pEvaluatableExpressions.size();
-            List<ValueSource> ret = new ArrayList<>(size);
-            for (int i = 0; i < size; ++i)
-                ret.add(value(i));
-            return ret.iterator();
-        }
-    }
-    // For use by this class
-
-
     public static List<TEvaluatableExpression> createTEvaluatableExpressions
         (List<? extends TPreparedExpression> pExpressions)
     {
