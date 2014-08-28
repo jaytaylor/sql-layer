@@ -17,13 +17,15 @@
 
 package com.foundationdb.tuple;
 
+import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
+import java.util.UUID;
 
-import org.junit.Test;
 
-import static org.junit.Assert.*;
 
 public class TuplesTest {
 
@@ -45,6 +47,8 @@ public class TuplesTest {
         t = t.add(new BigDecimal("123456789.123456789"));
         t = t.add(new BigDecimal("-12345678912345.1234567891234"));
         t = t.add(new Boolean(false));
+        UUID uuid = UUID.randomUUID(); 
+        t = t.add(uuid);
         byte[] bytes = t.pack();
         List<Object> items = Tuple2.fromBytes(bytes).getItems();
         
@@ -56,6 +60,7 @@ public class TuplesTest {
         assertEquals((BigInteger) items.get(10), new BigInteger("123456789123456789"));
         assertEquals((BigDecimal) items.get(12), new BigDecimal("-12345678912345.1234567891234"));
         assertEquals((Boolean) items.get(13), new Boolean(false));
+        assertEquals((UUID) items.get(14), uuid);
     }
     
 }
