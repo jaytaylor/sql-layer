@@ -17,9 +17,11 @@
 package com.foundationdb.server.collation;
 
 import com.foundationdb.server.PersistitKeyValueSource;
+import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.WrappingByteSource;
 import com.persistit.Key;
+import com.google.common.primitives.UnsignedBytes;
 
 public abstract class AkCollator {
 
@@ -106,31 +108,23 @@ public abstract class AkCollator {
         } else if (persistit2) {
             return -((PersistitKeyValueSource) value2).compare(this, getString(value1, this));
         } else {
-            Object obj1 = value1.getObject();
-            Object obj2 = value2.getObject();
-            byte[] bytes1;
-            byte[] bytes2;
-            if (obj1 instanceof String) {
-                bytes1 = encodeSortKeyBytes((String)obj1);
-            }
-            else if (obj1 instanceof WrappingByteSource){
-                bytes1 = ((WrappingByteSource)obj1).byteArray();
-            }
-            else {
-                bytes1 = (byte[]) obj1;
-            }
-            if (obj2 instanceof String) {
-                bytes2 = encodeSortKeyBytes((String)obj2);
-            }
-            else if (obj2 instanceof WrappingByteSource){
-                bytes2 = ((WrappingByteSource)obj2).byteArray();
-            }
-            else {
-                bytes2 = (byte[]) obj2;
-            }
-            return com.google.common.primitives.UnsignedBytes.lexicographicalComparator().compare(bytes1, bytes2);
-            //return compare(getString(value1, this), getString(value2, this));
+            byte[] bytes1 = getBytes(this, value1.getObject());
+            byte[] bytes2 = getBytes(this, value2.getObject());
+            return UnsignedBytes.lexicographicalComparator().compare(bytes1, bytes2);
         }
+    }
+    
+    private static byte[] getBytes(AkCollator collator, Object obj) {
+        if (obj instanceof byte[]) {
+            return (byte[]) obj;
+        }
+        if (obj instanceof WrappingByteSource){
+            return ((WrappingByteSource)obj).byteArray();
+        }
+        if (obj instanceof String) {
+            return collator.encodeSortKeyBytes((String)obj);
+        }
+        throw new UnsupportedSQLException("Unexpected ValueSource object type: " + obj.getClass().getName());
     }
 
     /**
