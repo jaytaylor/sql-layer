@@ -9,15 +9,15 @@
 - Statement: insert into metadata (id, rid, name) values (1, 1, 'A'), (2, 1, 'AA'), (3, 2, 'B'), (4, 3, 'C');
 ---
 - Statement: select * from metadata;
-- row-count: 4
+- row_count: 4
 ---
 - Statement: alter table metadata add index metadata_name(name);
 ---
 - Statement: select * from metadata;
-- row-count: 4
+- row_count: 4
 ---
 - Statement: alter table metadata drop index metadata_name;
 ---
 - Statement: select * from metadata;
-- row-count: 4
+- row_count: 4
 ...
