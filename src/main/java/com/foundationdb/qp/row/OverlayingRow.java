@@ -77,4 +77,9 @@ public final class OverlayingRow extends AbstractRow {
     public HKey hKey() {
         return underlying.hKey();
     }
+
+    @Override
+    public boolean isBindingsSensitive() {
+        return underlying.isBindingsSensitive();
+    }
 }

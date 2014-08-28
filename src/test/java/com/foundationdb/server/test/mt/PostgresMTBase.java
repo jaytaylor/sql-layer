@@ -38,7 +38,7 @@ public class PostgresMTBase extends MTBase
     private static final Logger LOG = LoggerFactory.getLogger(PostgresMTBase.class);
 
     public static final String SCHEMA_NAME = "test";
-    public static final String CONNECTION_URL = "jdbc:fdbsql://localhost:%d/"+SCHEMA_NAME;
+    public static final String CONNECTION_URL = "jdbc:fdbsql://%s:%d/"+SCHEMA_NAME;
     public static final String USER_NAME = "auser";
     public static final String USER_PASSWORD = "apassword";
 
@@ -74,7 +74,7 @@ public class PostgresMTBase extends MTBase
         if(port <= 0) {
             throw new IllegalStateException("port not set.");
         }
-        String url = String.format(CONNECTION_URL, port);
+        String url = String.format(CONNECTION_URL, server.getHost(), port);
         return DriverManager.getConnection(url, USER_NAME, USER_PASSWORD);
     }
 

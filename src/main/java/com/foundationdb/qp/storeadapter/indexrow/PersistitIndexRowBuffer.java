@@ -25,17 +25,11 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.util.PersistitKey;
 import com.foundationdb.server.PersistitKeyValueSource;
-import com.foundationdb.server.geophile.Space;
-import com.foundationdb.server.geophile.SpaceLatLon;
 import com.foundationdb.server.rowdata.*;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.common.BigDecimalWrapper;
-import com.foundationdb.server.types.common.types.TBigDecimal;
-import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.ArgumentValidation;
 import com.persistit.Exchange;
@@ -59,6 +53,11 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     @Override
     public ValueSource value(int i) {
         return null;
+    }
+
+    @Override
+    public boolean isBindingsSensitive() {
+        return false;
     }
 
     @Override
@@ -138,7 +137,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     // IndexRow interface
 
     @Override
-    public void initialize(RowData rowData, Key hKey)
+    public void initialize(RowData rowData, Key hKey, SpatialColumnHandler spatialColumnHandler, long zValue)
     {
         pKeyAppends = 0;
         int indexField = 0;
@@ -147,7 +146,11 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         RowDataSource rowDataValueSource = new RowDataValueSource();
         while (indexField < indexRowComp.getLength()) {
             // handleSpatialColumn will increment pKeyAppends once for all spatial columns
-            if (spatialHandler == null || !spatialHandler.handleSpatialColumn(rowData, indexField)) {
+            if (spatialColumnHandler != null && spatialColumnHandler.handleSpatialColumn(this, indexField, zValue)) {
+                if (indexField == index.firstSpatialArgument()) {
+                    pKeyAppends++;
+                }
+            } else {
                 if (indexRowComp.isInRowData(indexField)) {
                     FieldDef fieldDef = fieldDefs[indexRowComp.getFieldPosition(indexField)];
                     Column column = fieldDef.column();
@@ -155,7 +158,8 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
                     pKeyTarget().append(rowDataValueSource,
                                         column.getType());
                 } else if (indexRowComp.isInHKey(indexField)) {
-                    PersistitKey.appendFieldFromKey(pKey(), hKey, indexRowComp.getHKeyPosition(indexField), index.getIndexName());
+                    PersistitKey.appendFieldFromKey(pKey(), hKey, indexRowComp.getHKeyPosition(indexField), index
+                        .getIndexName());
                 } else {
                     throw new IllegalStateException("Invalid IndexRowComposition: " + indexRowComp);
                 }
@@ -366,7 +370,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         return pValueTarget;
     }
 
-    private Key pKey()
+    Key pKey()
     {
         if (pKeyAppends < pKeyFields) {
             return pKey;
@@ -391,11 +395,9 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         if (index.isSpatial()) {
             this.nIndexFields = index.getAllColumns().size() - index.dimensions() + 1;
             this.pKeyFields = this.nIndexFields;
-            this.spatialHandler = new SpatialHandler();
         } else {
             this.nIndexFields = index.getAllColumns().size();
             this.pKeyFields = index.getAllColumns().size();
-            this.spatialHandler = null;
         }
         if (writable) {
             if (this.pKeyTarget == null) {
@@ -467,7 +469,6 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     private int pKeyFields;
     private Value value;
     private int pKeyAppends = 0;
-    private SpatialHandler spatialHandler;
     private final SortKeyAdapter SORT_KEY_ADAPTER = ValueSortKeyAdapter.INSTANCE;
     // Not currently instantiated, left in-case needed again
     private SortKeyTarget pValueTarget;
@@ -483,78 +484,4 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
 
     // Inner classes
 
-    private class SpatialHandler
-    {
-        public boolean handleSpatialColumn(RowData rowData, int indexField)
-        {
-            boolean handled = false;
-            if (indexField >= firstSpatialField && indexField <= lastSpatialField) {
-                if (indexField == firstSpatialField) {
-                    bind(rowData);
-                    pKey().append(zValue());
-                    pKeyAppends++;
-                }
-                handled = true;
-            }
-            return handled;
-        }
-
-        private void bind(RowData rowData)
-        {
-            for (int d = 0; d < dimensions; d++) {
-                rowDataSource.bind(fieldDefs[d], rowData);
-
-                RowDataValueSource rowDataValueSource = (RowDataValueSource)rowDataSource;
-                TClass tclass = tinstances[d].typeClass();
-                if (tclass == MNumeric.DECIMAL) {
-                    BigDecimalWrapper wrapper = TBigDecimal.getWrapper(rowDataValueSource, tinstances[d]);
-                    coords[d] =
-                        d == 0
-                        ? SpaceLatLon.scaleLat(wrapper.asBigDecimal())
-                        : SpaceLatLon.scaleLon(wrapper.asBigDecimal());
-                }
-                else if (tclass == MNumeric.BIGINT) {
-                    coords[d] = rowDataValueSource.getInt64();
-                }
-                else if (tclass == MNumeric.INT) {
-                    coords[d] = rowDataValueSource.getInt32();
-                }
-                else {
-                    assert false : fieldDefs[d].column();
-                }
-            }
-        }
-
-        private long zValue()
-        {
-            return space.shuffle(coords);
-        }
-
-        private final Space space;
-        private final int dimensions;
-        private final TInstance[] tinstances;
-        private final FieldDef[] fieldDefs;
-        private final long[] coords;
-        private final RowDataSource rowDataSource;
-        private final int firstSpatialField;
-        private final int lastSpatialField;
-
-        {
-            space = index.space();
-            dimensions = space.dimensions();
-            assert index.dimensions() == dimensions;
-            tinstances = new TInstance[dimensions];
-            fieldDefs = new FieldDef[dimensions];
-            coords = new long[dimensions];
-            rowDataSource = new RowDataValueSource();
-            firstSpatialField = index.firstSpatialArgument();
-            lastSpatialField = firstSpatialField + dimensions - 1;
-            for (int d = 0; d < dimensions; d++) {
-                IndexColumn indexColumn = index.getKeyColumns().get(firstSpatialField + d);
-                Column column = indexColumn.getColumn();
-                tinstances[d] = column.getType();
-                fieldDefs[d] = column.getFieldDef();
-            }
-        }
-    }
 }

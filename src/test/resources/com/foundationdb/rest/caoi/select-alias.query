@@ -1,0 +1,1 @@
+SELECT first_name AS given, last_name AS surname FROM test.customers

@@ -24,6 +24,7 @@ import com.foundationdb.qp.loadableplan.std.PersistitCLILoadablePlan;
 import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.server.*;
 import com.foundationdb.server.AccumulatorAdapter.AccumInfo;
 import com.foundationdb.server.error.*;
@@ -152,10 +153,12 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
                                    Index index,
                                    Key hKey,
                                    PersistitIndexRowBuffer indexRow,
+                                   SpatialColumnHandler spatialColumnHander,
+                                   long zValue,
                                    boolean forInsert) throws PersistitException
     {
         indexRow.resetForWrite(index, exchange.getKey(), exchange.getValue());
-        indexRow.initialize(rowData, hKey);
+        indexRow.initialize(rowData, hKey, spatialColumnHander, zValue);
         indexRow.close(session, this, forInsert);
     }
 
@@ -224,13 +227,15 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
                               RowData rowData,
                               Key hKey,
                               PersistitIndexRowBuffer indexRow,
+                              SpatialColumnHandler spatialColumnHandler,
+                              long zValue,
                               boolean doLock) {
         Exchange iEx = getExchange(session, index);
         try {
             if(doLock) {
                 lockKeysForIndex(session, index, rowData);
             }
-            constructIndexRow(session, iEx, rowData, index, hKey, indexRow, true);
+            constructIndexRow(session, iEx, rowData, index, hKey, indexRow, spatialColumnHandler, zValue, true);
             checkUniqueness(session, rowData, index, iEx);
             iEx.store();
         } catch(PersistitException | RollbackException e) {
@@ -269,10 +274,12 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
                                 Exchange exchange,
                                 RowData rowData,
                                 Key hKey,
-                                PersistitIndexRowBuffer indexRowBuffer)
+                                PersistitIndexRowBuffer indexRowBuffer,
+                                SpatialColumnHandler spatialColumnHandler,
+                                long zValue)
         throws PersistitException
     {
-        constructIndexRow(session, exchange, rowData, index, hKey, indexRowBuffer, false);
+        constructIndexRow(session, exchange, rowData, index, hKey, indexRowBuffer, spatialColumnHandler, zValue, false);
         if(!exchange.remove()) {
             LOG.debug("Index {} had no entry for hkey {}", index, hKey);
         }
@@ -284,13 +291,15 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
                                RowData rowData,
                                Key hKey,
                                PersistitIndexRowBuffer buffer,
+                               SpatialColumnHandler spatialColumnHandler,
+                               long zValue,
                                boolean doLock) {
         Exchange iEx = getExchange(session, index);
         try {
             if(doLock) {
                 lockKeysForIndex(session, index, rowData);
             }
-            deleteIndexRow(session, index, iEx, rowData, hKey, buffer);
+            deleteIndexRow(session, index, iEx, rowData, hKey, buffer, spatialColumnHandler, zValue);
         } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
         } finally {

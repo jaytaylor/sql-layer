@@ -1,0 +1,5 @@
+This one is failing because GroupJoinFinder is dropping the condition.
+
+But, that's a different issue, so this shall be added as a trello card.
+
+It may also be appropriate to move this to the GroupJoinFinder tests

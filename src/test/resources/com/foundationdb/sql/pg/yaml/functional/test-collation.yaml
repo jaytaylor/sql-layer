@@ -66,4 +66,13 @@
 ---
 - Statement: SELECT v FROM t8 ORDER BY v ASC
 - output_already_ordered: [['Z'], ['Öb']]
+---
+# bug: parameter collation defaulted to ucs_binary
+- Statement: SELECT 'asdf' COLLATE en_us_ci LIKE ?
+- params: [['AsDf']]
+- output: [ [true] ]
+---
+- Statement: SELECT ? LIKE 'AsDf' COLLATE en_us_ci
+- params: [['asdf']]
+- output: [ [true] ]
 ...

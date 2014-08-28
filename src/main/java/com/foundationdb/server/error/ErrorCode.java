@@ -342,7 +342,7 @@ public enum ErrorCode {
     UNDEFINED_VIEW          ("50", "00L", Importance.DEBUG, UndefinedViewException.class),
     SUBQUERY_ONE_COLUMN     ("50", "00M", Importance.DEBUG, SubqueryOneColumnException.class),
     DUPLICATE_SCHEMA        ("50", "00N", Importance.DEBUG, DuplicateSchemaException.class),
-    DROP_SCHEMA_NOT_ALLOWED ("50", "00O", Importance.DEBUG, DropSchemaNotAllowedException.class),
+    REFERENCED_SCHEMA       ("50", "00O", Importance.DEBUG, ReferencedSchemaException.class),
     WRONG_TABLE_FOR_INDEX   ("50", "00P", Importance.DEBUG, WrongTableForIndexException.class),
     MISSING_DDL_PARAMETERS  ("50", "00Q", Importance.DEBUG, MissingDDLParametersException.class),
     INDEX_COL_NOT_IN_GROUP  ("50", "00R", Importance.DEBUG, IndexColNotInGroupException.class),

@@ -26,8 +26,8 @@ import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.row.ImmutableRow;
 import com.foundationdb.qp.row.ProjectedRow;
 import com.foundationdb.qp.row.Row;
-
 import com.foundationdb.qp.rowtype.Schema;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -119,9 +119,9 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
 
         public void add(Row row) {
             assert (state == State.FILLING);
-            if (row instanceof ProjectedRow)
+            if (row.isBindingsSensitive())
                 // create a copy of this row, and hold it instead
-                row = new ImmutableRow((ProjectedRow)row);
+                row = ImmutableRow.buildImmutableRow(row);
             rows.add(row);
         }
 

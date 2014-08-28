@@ -16,6 +16,9 @@
 - Statement: SELECT * FROM t1 WHERE (a IN (SELECT d, c FROM t2 WHERE c=20 and d=10))
 - error: [0A500]
 ---
+- Statement: SELECT * FROM t1 WHERE ((a, b) IN (SELECT c, d FROM t2))
+- output: [[20, 10]]
+---
 - Statement: CREATE TABLE "artists" ("id1" integer, "id2" integer, "name" varchar(255), PRIMARY KEY ("id1", "id2"))
 ---
 - Statement: CREATE TABLE "albums" ("id1" integer, "id2" integer, "name" varchar(255), "artist_id1" integer, "artist_id2" integer, FOREIGN KEY ("artist_id1", "artist_id2") REFERENCES "artists", PRIMARY KEY ("id1", "id2"))

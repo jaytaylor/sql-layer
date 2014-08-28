@@ -29,6 +29,7 @@ public interface Row extends ValueRecord
     boolean ancestorOf(Row that);
     boolean containsRealRowOf(Table table);
     Row subRow(RowType subRowType);
+    boolean isBindingsSensitive();
 
     /**
      * Compares two rows and indicates if and where they differ.

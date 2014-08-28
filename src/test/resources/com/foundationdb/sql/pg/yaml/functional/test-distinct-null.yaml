@@ -1,0 +1,10 @@
+---
+- CreateTable: table1(id INT NOT NULL PRIMARY KEY, s varchar(32) COLLATE en_us_ci, value INT)
+---
+- Statement: INSERT INTO table1 VALUES(1,'string', null),(2,'string', null),(3,null, 1),(4,null, 1), (5, null, null), (6, 'String', 2)
+---
+- Statement: CREATE INDEX s_index ON table1(table1.s)
+---
+- Statement: SELECT count(*) FROM (SELECT DISTINCT t.s FROM table1 t) as a
+- output: [[2]]
+...
