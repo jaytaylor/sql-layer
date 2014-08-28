@@ -35,6 +35,15 @@ public class AkCollatorBinary extends AkCollator {
     }
 
     @Override
+    public void append(Key key, byte[] bytes) {
+        if (bytes == null) {
+            key.append(null);
+        } else {
+            key.append(bytes);
+        }
+    }
+
+    @Override
     public String decode(Key key) {
         return key.decodeString();
     }

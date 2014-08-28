@@ -178,6 +178,19 @@ public class PersistitKeyValueSource implements ValueSource {
         return compareOneKeySegment(thatKey.getEncodedBytes(), thatPosition, thatEnd);
     }
 
+    public int compare(AkCollator collator, byte[] bytes)
+    {
+        assert collator != null;
+        Key thatKey = new Key(key);
+        thatKey.clear();
+        collator.append(thatKey, bytes);
+        thatKey.indexTo(0);
+        int thatPosition = thatKey.getIndex();
+        thatKey.indexTo(1);
+        int thatEnd = thatKey.getIndex();
+        return compareOneKeySegment(thatKey.getEncodedBytes(), thatPosition, thatEnd);
+    }
+
     // for use by this class
     private ValueSource decode() {
         if (needsDecoding) {

@@ -84,6 +84,8 @@ public abstract class AkCollator {
      */
     abstract public void append(Key key, String value);
 
+    abstract public void append(Key key, byte[] bytes);
+
     /**
      * Decode a String from a Key segment
      * 
@@ -104,17 +106,17 @@ public abstract class AkCollator {
         if (persistit1 && persistit2) {
             return ((PersistitKeyValueSource) value1).compare((PersistitKeyValueSource) value2);
         } else if (persistit1) {
-            return ((PersistitKeyValueSource) value1).compare(this, getString(value2, this));
+            return ((PersistitKeyValueSource) value1).compare(this, getBytes(value2.getObject()));
         } else if (persistit2) {
-            return -((PersistitKeyValueSource) value2).compare(this, getString(value1, this));
+            return -((PersistitKeyValueSource) value2).compare(this, getBytes(value1.getObject()));
         } else {
-            byte[] bytes1 = getBytes(this, value1.getObject());
-            byte[] bytes2 = getBytes(this, value2.getObject());
+            byte[] bytes1 = getBytes(value1.getObject());
+            byte[] bytes2 = getBytes(value2.getObject());
             return UnsignedBytes.lexicographicalComparator().compare(bytes1, bytes2);
         }
     }
-    
-    private static byte[] getBytes(AkCollator collator, Object obj) {
+
+    private byte[] getBytes(Object obj) {
         if (obj instanceof byte[]) {
             return (byte[]) obj;
         }
@@ -122,7 +124,7 @@ public abstract class AkCollator {
             return ((WrappingByteSource)obj).byteArray();
         }
         if (obj instanceof String) {
-            return collator.encodeSortKeyBytes((String)obj);
+            return encodeSortKeyBytes((String)obj);
         }
         throw new UnsupportedSQLException("Unexpected ValueSource object type: " + obj.getClass().getName());
     }

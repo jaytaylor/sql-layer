@@ -63,6 +63,15 @@ public class AkCollatorICU extends AkCollator {
     }
 
     @Override
+    public void append(Key key, byte[] bytes) {
+        if (bytes == null) {
+            key.append(null);
+        } else {
+            key.append(bytes);
+        }
+    }
+
+    @Override
     public String decode(Key key) {
         throw new UnsupportedOperationException("Unable to decode a collator sort key");
     }
