@@ -1014,7 +1014,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
                 actualIds.add((long)row.value(3).getInt32());
             }
 
-            assertEquals(expecteds.get(start), actualIds);
+            assertEquals("On start = "+start, expecteds.get(start), actualIds);
         }
     }
 

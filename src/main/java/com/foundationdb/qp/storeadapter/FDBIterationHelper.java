@@ -200,7 +200,7 @@ public class FDBIterationHelper implements IterationHelper
                         // Note: child won't be returned, but current key will be synthesized by advanceLogical()
                         saveState = new KeyState(storeData.persistitKey);
                         KeyShim.nudgeRight(storeData.persistitKey);
-                        storeData.nudged = FDBStoreData.NudgeDir.RIGHT_NO_STRINC;
+                        storeData.nudged = FDBStoreData.NudgeDir.RIGHT_STRINC;
                     }
                 } else {
                     if(reverse) {
