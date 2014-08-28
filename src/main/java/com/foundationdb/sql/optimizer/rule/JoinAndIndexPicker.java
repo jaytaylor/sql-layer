@@ -1344,7 +1344,7 @@ public class JoinAndIndexPicker extends BaseRule
             String prop = picker.rulesContext.getProperty("hashTableMaxRowCount");
             int maxColumnCount;
             if( prop != null){
-                maxColumnCount = new Integer(prop);
+                maxColumnCount = Integer.parseInt(prop);
                 if(maxColumnCount == 0) return null; }
             else
                 maxColumnCount = MAX_COL_COUNT;
