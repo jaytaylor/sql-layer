@@ -102,21 +102,26 @@ public abstract class AkCollator {
     final public int compare(ValueSource value1, ValueSource value2) {
         boolean persistit1 = value1 instanceof PersistitKeyValueSource;
         boolean persistit2 = value2 instanceof PersistitKeyValueSource;
+
         if (persistit1 && persistit2) {
             return ((PersistitKeyValueSource) value1).compare((PersistitKeyValueSource) value2);
-        } else if (persistit1) {
+        } 
+        if (persistit1) {
             return ((PersistitKeyValueSource) value1).compare(this, getBytes(value2.getObject()));
-        } else if (persistit2) {
-            return -((PersistitKeyValueSource) value2).compare(this, getBytes(value1.getObject()));
-        } else if (value1.isNull()) {
-            return (value2.isNull()) ? 0 : -1;
-        } else if (value2.isNull()) {
-            return (value1.isNull()) ? 0 : 1;
-        } else {
-            byte[] bytes1 = getBytes(value1.getObject());
-            byte[] bytes2 = getBytes(value2.getObject());
-            return UnsignedBytes.lexicographicalComparator().compare(bytes1, bytes2);
         }
+        if (persistit2) {
+            return -((PersistitKeyValueSource) value2).compare(this, getBytes(value1.getObject()));
+        }
+        if (value1.isNull()) {
+            return (value2.isNull()) ? 0 : -1;
+        }
+        if (value2.isNull()) {
+            return (value1.isNull()) ? 0 : 1;
+        }
+
+        byte[] bytes1 = getBytes(value1.getObject());
+        byte[] bytes2 = getBytes(value2.getObject());
+        return UnsignedBytes.lexicographicalComparator().compare(bytes1, bytes2);
     }
 
     private byte[] getBytes(Object obj) {
