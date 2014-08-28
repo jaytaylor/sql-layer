@@ -1,0 +1,23 @@
+---
+- CreateTable: reports (id int not null primary key, name varchar(32));
+---
+- CreateTable: metadata (id int not null primary key, rid int not null, name varchar(32) not null,
+      grouping foreign key (rid) references reports(id));
+---
+- Statement: insert into reports (id, name) values (1, 'a'), (2, 'b'), (3, 'c');
+---
+- Statement: insert into metadata (id, rid, name) values (1, 1, 'A'), (2, 1, 'AA'), (3, 2, 'B'), (4, 3, 'C');
+---
+- Statement: select * from metadata;
+- row-count: 4
+---
+- Statement: alter table metadata add index metadata_name(name);
+---
+- Statement: select * from metadata;
+- row-count: 4
+---
+- Statement: alter table metadata drop index metadata_name;
+---
+- Statement: select * from metadata;
+- row-count: 4
+...
