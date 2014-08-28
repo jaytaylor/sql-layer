@@ -171,7 +171,7 @@ public class AISBuilder {
     public void index(String schemaName, String tableName, String indexName) {
         index(schemaName, tableName, indexName, false, false, null);
     }
-    
+
     public void index(String schemaName, String tableName, String indexName, Boolean unique, Boolean isPrimaryKey, TableName constraintName) {
         Table table = ais.getTable(schemaName, tableName);
         int indexID = nameGenerator.generateIndexID(getRooTableID(table));

@@ -78,6 +78,11 @@
 ---
 - CreateTable: o (id INT NOT NULL PRIMARY KEY, cid INT, GROUPING FOREIGN KEY(cid) REFERENCES c(id))
 ---
+- Statement: ALTER TABLE o ADD INDEX id_index(id) STORAGE_FORMAT rowdata
+---
+- Statement: select storage_format from information_schema.indexes where table_name = 'o' and index_name = 'id_index';
+- output: [['rowdata']]
+---
 - Statement: ALTER TABLE o DROP GROUPING FOREIGN KEY
 ---
 - DropTable: c
