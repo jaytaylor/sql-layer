@@ -14,9 +14,6 @@
 ---
 - Statement: SET application_name to 'foo';
 ---
-- Statement: SHOW application_name;
-- output: [['foo']]
----
 - Statement: SELECT current_setting('application_name');
 - output: [[foo]]
 ---
