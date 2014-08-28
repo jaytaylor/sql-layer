@@ -30,6 +30,7 @@ import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.server.AkServerUtil;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.UUID;
 
 import static com.foundationdb.sql.types.TypeId.getUserDefinedTypeId;
@@ -120,8 +121,8 @@ public class AkGUID extends NoAttrTClass
 
         public static UUID bytesToUUID(byte[] byteAr, int offset) {
             ByteBuffer bb = ByteBuffer.allocate(16);
-            bb.put(byteAr);
-            return new UUID(bb.getLong(offset), bb.getLong(offset + 8));
+            bb.put(Arrays.copyOfRange(byteAr, offset, offset+16));
+            return new UUID(bb.getLong(0), bb.getLong(8));
         }
     }
         
