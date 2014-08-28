@@ -29,6 +29,7 @@ import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.server.AkServerUtil;
 
+import java.nio.ByteBuffer;
 import java.util.UUID;
 
 import static com.foundationdb.sql.types.TypeId.getUserDefinedTypeId;
@@ -113,15 +114,17 @@ public class AkGUID extends NoAttrTClass
         };
         
         
-        private static byte[] uuidToBytes(UUID guid) {
-            byte[] bb = new byte[16];
-            AkServerUtil.putLong(bb, 0, guid.getMostSignificantBits());
-            AkServerUtil.putLong(bb, 8 , guid.getLeastSignificantBits());
-            return bb;
+        public static byte[] uuidToBytes(UUID guid) {
+            ByteBuffer bb = ByteBuffer.allocate(16);
+            bb.putLong(0, guid.getMostSignificantBits());
+            bb.putLong(8, guid.getLeastSignificantBits());
+            return bb.array();
         }
 
         public static UUID bytesToUUID(byte[] byteAr, int offset) {
-            return new UUID(AkServerUtil.getLong(byteAr, offset), AkServerUtil.getLong(byteAr, offset + 8));
+            ByteBuffer bb = ByteBuffer.allocate(16);
+            bb.put(byteAr);
+            return new UUID(bb.getLong(offset), bb.getLong(offset + 8));
         }
     }
         
