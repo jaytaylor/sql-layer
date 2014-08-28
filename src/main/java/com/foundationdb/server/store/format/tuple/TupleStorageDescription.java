@@ -156,16 +156,11 @@ public class TupleStorageDescription extends FDBStorageDescription
                 keys[i] = key.decode();
             }
             byte[] bytes = Tuple2.from(keys).pack();
-            if (edge == Key.BEFORE) {
+            if (edge == Key.BEFORE ) {
                 return ByteArrayUtil.join(bytes, new byte[1]);
             }
             else if (edge == Key.AFTER) {
-                if (nkeys == 0) {
-                    return new byte[] { (byte)0xFF };
-                }
-                else {
-                    return ByteArrayUtil.strinc(bytes);
-                }
+                return ByteArrayUtil.join(bytes, new byte[] {(byte)0xFF});
             }
             else {
                 if (nudged == FDBStoreData.NudgeDir.DEEPER) {
