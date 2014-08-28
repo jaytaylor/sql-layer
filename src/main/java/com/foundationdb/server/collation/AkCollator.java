@@ -17,7 +17,6 @@
 package com.foundationdb.server.collation;
 
 import com.foundationdb.server.PersistitKeyValueSource;
-import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.WrappingByteSource;
 import com.persistit.Key;
@@ -126,7 +125,7 @@ public abstract class AkCollator {
         if (obj instanceof String) {
             return encodeSortKeyBytes((String)obj);
         }
-        throw new UnsupportedSQLException("Unexpected ValueSource object type: " + obj.getClass().getName());
+        throw new AssertionError("Unexpected ValueSource object type: " + obj.getClass().getName());
     }
 
     /**
