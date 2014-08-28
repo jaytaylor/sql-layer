@@ -29,16 +29,6 @@
     (201,100), (202,100), (203,100), (204,100), (205,100), (206,100), (207,100), (208,100), (209,100), (210,100),
     (211,100), (212,100), (213,100), (214,100), (215,100), (216,100), (217,100), (218,100), (219,100), (220,100);
 ---
-# First pair of tests: no indexes, so we have to do a group scan on both tables with a select
-- Statement: EXPLAIN SELECT id_signed, s_value FROM t_signed JOIN t_unsigned ON id_signed = id_unsigned
-- output: [["Map_NestedLoops()"],
-           ["  Filter_Default(t_signed)"],
-           ["    GroupScan_Default(t_signed)"],
-           ["  Project_Default(t_signed.id_signed, t_signed.s_value)"],
-           ["    Filter_Default(t_unsigned)"],
-           ["      Select_HKeyOrdered(t_unsigned.id_unsigned == t_signed.id_signed)"],
-           ["        GroupScan_Default(t_unsigned)"]]
----
 - Statement: SELECT id_signed, s_value FROM t_signed JOIN t_unsigned ON id_signed = id_unsigned
 - output: [[0, 0], [1, 0], [2, 0]]
 ---
@@ -50,12 +40,6 @@
 - Statement: ALTER TABLE t_signed ALL UPDATE STATISTICS
 ---
 - Statement: ALTER TABLE t_unsigned ALL UPDATE STATISTICS
----
-- Statement: EXPLAIN SELECT id_signed, s_value FROM t_signed JOIN t_unsigned ON id_signed = id_unsigned WHERE s_value < 100
-- output: [["Map_NestedLoops()"],
-          ["  IndexScan_Default(Index(t_signed.s_idx), s_value < 100, id_signed)"],
-          ["  Project_Default(t_signed.id_signed, t_signed.s_value)"],
-          ["    IndexScan_Default(Index(t_unsigned.u_idx), id_unsigned = t_signed.id_signed)"]]
 ---
 - Statement: SELECT id_signed, s_value FROM t_signed JOIN t_unsigned ON id_signed = id_unsigned WHERE s_value < 100
 - output: [[0, 0], [1, 0], [2, 0]]
@@ -75,12 +59,6 @@
 ---
 - Statement: ALTER TABLE t_unsigned ALL UPDATE STATISTICS
 ---
-- Statement: EXPLAIN SELECT id_unsigned, u_value FROM t_signed JOIN t_unsigned ON id_signed = id_unsigned WHERE u_value < 100
-- output: [["Map_NestedLoops()"],
-           ["  IndexScan_Default(Index(t_unsigned.u_idx), u_value < 100, id_unsigned)"],
-           ["  Project_Default(t_unsigned.id_unsigned, t_unsigned.u_value)"],
-           ["    IndexScan_Default(Index(t_signed.s_idx), id_signed = t_unsigned.id_unsigned)"]]
----
 - Statement: SELECT id_unsigned, u_value FROM t_signed JOIN t_unsigned ON id_signed = id_unsigned WHERE u_value < 100
 - output: [[0, 0], [1, 0], [2, 0]]
 ---
@@ -95,4 +73,13 @@
 ---
 - Statement: SELECT * FROM customers FULL OUTER JOIN orders ON customers.cid = orders.cid;
 - error: ['0A50B'] # FULL OUTER JOIN is temporarily not supported
+---
+- CreateTable: newT(num INT , num2 INT)
+---
+- Statement: INSERT INTO newT VALUES (1,2),(3,4),(5,6);
+---
+- CreateTable: newT2(num INT , num2 INT)
+---
+- Statement: SELECT * FROM newT LEFT JOIN newT2 on TRUE
+- output: [[1,2,null, null],[3,4,null, null],[5,6,null, null]]
 ...
