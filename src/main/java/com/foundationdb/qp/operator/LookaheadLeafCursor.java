@@ -61,7 +61,6 @@ public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends
     @Override
     public Row next() {
         checkQueryCancelation();
-        assert (!currentCursor.isIdle()) : this + " current cursor " + currentCursor + " closed or never opened.";
         Row row = currentCursor.next();
         if (row == null) {
             currentCursor.close();
