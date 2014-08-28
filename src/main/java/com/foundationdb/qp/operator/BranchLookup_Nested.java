@@ -509,7 +509,7 @@ public class BranchLookup_Nested extends Operator
                 }
             }
             if (ExecutionBase.LOG_EXECUTION) {
-                LOG.debug("BranchLookup#BranchCursor yeild: {} ", row );
+                LOG.debug("BranchLookup#BranchCursor yield: {} ", row );
             }
             return row;
         }
