@@ -150,8 +150,6 @@
 - output: [[t3, protobuf]]
 
 
-
-
 --- # alter table uses a different path
 - CreateTable: t7 (j INT PRIMARY KEY, k INT) STORAGE_FORMAT "protobuf"
 ---
@@ -159,26 +157,5 @@
 ---
 - Statement: SELECT table_name, storage_format FROM information_schema.indexes WHERE (index_name='PRIMARY' AND table_name='t7')
 - output: [[t7, tuple]]
----
-- Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t7')
-- output: [[t7, protobuf]]
----
-- Statement: ALTER TABLE t7 ADD INDEX (k) STORAGE_FORMAT "protobuf"
-#- error: [5001Q]
----
-- Statement: ALTER TABLE t7 ADD INDEX (k) STORAGE_FORMAT "column_keys"
-#- error: [5001Q]
 
-# create table with different formats
-# add GFK
-# check the format of the parent table
-# add indexes, ensure these remain the same format type during changes of the table format
-# 
-#---
-#- Statement: ALTER TABLE t2 ADD GROUPING FOREIGN KEY (e) REFERENCES t1(a)
-#---
-#- CreateTable: tx(x INT PRIMARY KEY, GROUPING FOREIGN KEY (x) REFERENCES t1(a)) 
-
-# grouping index
-# full text index
 ...
