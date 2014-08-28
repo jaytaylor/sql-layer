@@ -482,7 +482,8 @@ public class AISMerge {
                     indexName.getName(), 
                     index.isUnique(), 
                     index.isPrimaryKey(),
-                    index.getConstraintName());
+                    index.getConstraintName(),
+                    index.getStorageDescription());
             for (IndexColumn col : index.getKeyColumns()) {
                     builder.indexColumn(sourceTable.getName().getSchemaName(), 
                             sourceTable.getName().getTableName(),
