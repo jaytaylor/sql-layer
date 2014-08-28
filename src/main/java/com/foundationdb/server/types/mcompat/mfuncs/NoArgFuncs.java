@@ -120,12 +120,6 @@ public class NoArgFuncs
         {
             target.putInt32(MDateAndTime.encodeDate(context.getCurrentDate(), context.getCurrentTimezone()));
         }
-
-        @Override
-        protected boolean neverConstant() {
-            return true;
-        }
-
     };
 
     public static final TScalar CUR_TIME = new NoArgExpression("CURRENT_TIME", true)
@@ -147,12 +141,6 @@ public class NoArgFuncs
         {
             target.putInt32(MDateAndTime.encodeTime(context.getCurrentDate(), context.getCurrentTimezone()));
         }
-
-        @Override
-        protected boolean neverConstant() {
-            return true;
-        }
-
     };
 
     public static final TScalar CUR_TIMESTAMP = new NoArgExpression("CURRENT_TIMESTAMP", true)
@@ -174,12 +162,6 @@ public class NoArgFuncs
         {
             target.putInt64(MDateAndTime.encodeDateTime(context.getCurrentDate(), context.getCurrentTimezone()));
         }
-
-        @Override
-        protected boolean neverConstant() {
-            return true;
-        }
-
     };
     
     public static final TScalar UNIX_TIMESTAMP = new NoArgExpression("UNIX_TIMESTAMP", true)
@@ -195,7 +177,7 @@ public class NoArgFuncs
         {
             return MDateAndTime.TIMESTAMP;
         }
-        
+
     };
     
     public static final TScalar SYSDATE = new NoArgExpression("SYSDATE", false)
@@ -229,12 +211,6 @@ public class NoArgFuncs
         public void evaluate(TExecutionContext context, ValueTarget target) {
             target.putString(context.getCurrentUser(), null);
         }
-
-        @Override
-        protected boolean neverConstant() {
-            return true;
-        }
-
     };
 
     public static final TScalar SESSION_USER = new NoArgExpression("SESSION_USER", true)
@@ -253,6 +229,11 @@ public class NoArgFuncs
         public void evaluate(TExecutionContext context, ValueTarget target)
         {
             target.putString(context.getSessionUser(), null);
+        }
+
+        @Override
+        protected boolean neverConstant() {
+            return false;
         }
     };
     
@@ -273,6 +254,11 @@ public class NoArgFuncs
         {
             target.putString(context.getSystemUser(), null);
         }
+
+        @Override
+        protected boolean neverConstant() {
+            return false;
+        }
     };
     
     public static final TScalar CURRENT_SCHEMA = new NoArgExpression("CURRENT_SCHEMA", true)
@@ -292,12 +278,6 @@ public class NoArgFuncs
         {
             target.putString(context.getCurrentSchema(), null);
         }
-
-        @Override
-        protected boolean neverConstant() {
-            return true;
-        }
-
     };
     
     public static final TScalar CURRENT_SESSION_ID = new NoArgExpression("CURRENT_SESSION_ID", true)
@@ -312,11 +292,5 @@ public class NoArgFuncs
         {
             target.putInt32(context.getSessionId());
         }
-
-        @Override
-        protected boolean neverConstant() {
-            return true;
-        }
-
     };
 }
