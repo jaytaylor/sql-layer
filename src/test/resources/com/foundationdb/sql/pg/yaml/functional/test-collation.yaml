@@ -96,8 +96,8 @@
 ---
 - Statement: INSERT INTO tUnion2 VALUES (1, 'jkl;'), (2, 'uiop')
 ---
-- Statement: Select * FROM (SELECT * FROM tUnion1 AS t1 UNION SELECT * FROM tUnion2 AS t2) as t3;
-- output: [[1, 'jkl;'], [2, 'qwer'], [1, 'asdf'], [2, 'uiop']]
+- Statement: Select t3.s FROM (SELECT s FROM tUnion1 AS t1 UNION SELECT s FROM tUnion2 AS t2) as t3;
+- output: [['jkl;'], ['qwer'], ['asdf'], ['uiop']]
 ---
 - CreateTable: tIntersect1(id INTEGER PRIMARY KEY, s VARCHAR(256) COLLATE en_us)
 ---
@@ -109,6 +109,6 @@
 ---
 - Statement: INSERT INTO tIntersect2 VALUES (1, 'jkl;'), (2, 'qwer')
 ---
-- Statement: Select * FROM (SELECT * FROM tIntersect1 AS t1 INTERSECT SELECT * FROM tIntersect2 AS t2) as t3;
-- output: [[2, 'qwer']]
+- Statement: Select t3.s FROM (SELECT s FROM tIntersect1 AS t1 INTERSECT SELECT s FROM tIntersect2 AS t2) as t3;
+- output: [['qwer']]
 ...
