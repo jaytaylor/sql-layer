@@ -55,9 +55,7 @@ public abstract class StorageDescription
      *  Acts similar as cloneForObject(), however for FDBStorageDescription it 
      *  does not carry over the prefix, for others it returns null
      */
-    public StorageDescription cloneForObjectWithoutState(HasStorage forObject){
-        return null;
-    }
+    public abstract StorageDescription cloneForObjectWithoutState(HasStorage forObject);
     
     /** Populate the extension fields of the <code>Storage</code>
      * field. */

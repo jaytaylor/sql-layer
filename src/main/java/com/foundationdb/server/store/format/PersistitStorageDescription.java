@@ -68,6 +68,11 @@ public class PersistitStorageDescription extends StoreStorageDescription<Persist
     }
 
     @Override
+    public StorageDescription cloneForObjectWithoutState(HasStorage forObject) {
+        return new PersistitStorageDescription(forObject, storageFormat);
+    }
+
+    @Override
     public void writeProtobuf(Storage.Builder builder) {
         builder.setExtension(PersistitProtobuf.treeName, treeName);
         writeUnknownFields(builder);

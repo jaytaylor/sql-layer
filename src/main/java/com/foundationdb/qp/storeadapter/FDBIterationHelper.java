@@ -199,8 +199,9 @@ public class FDBIterationHelper implements IterationHelper
                         // exact, reverse, logical: want to see current key or a child
                         // Note: child won't be returned, but current key will be synthesized by advanceLogical()
                         saveState = new KeyState(storeData.persistitKey);
+                        // nudgeRight changes the content of the key
                         KeyShim.nudgeRight(storeData.persistitKey);
-                        storeData.nudged = FDBStoreData.NudgeDir.RIGHT_STRINC;
+                        storeData.nudged = FDBStoreData.NudgeDir.RIGHT;
                     }
                 } else {
                     if(reverse) {
@@ -215,8 +216,9 @@ public class FDBIterationHelper implements IterationHelper
                         } else {
                             // Non-exact, forward, logical: do not want to see current key or any children
                             saveState = new KeyState(storeData.persistitKey);
+                            // nudgeRight changes the content of the key
                             KeyShim.nudgeRight(storeData.persistitKey);
-                            storeData.nudged = FDBStoreData.NudgeDir.RIGHT_STRINC;
+                            storeData.nudged = FDBStoreData.NudgeDir.RIGHT;
                         }
                     }
                 }

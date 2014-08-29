@@ -1,5 +1,5 @@
 --- # check if alter table changes format
-- CreateTable: t1 (a INT PRIMARY KEY, b INT)
+- CreateTable: t1 (a INT PRIMARY KEY, b INT) STORAGE_FORMAT "tuple"
 ---
 - Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t1')
 - output: [[t1, tuple]]
@@ -11,7 +11,7 @@
 - Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE table_name='t1'
 - output: [[t1, tuple]]
 --- 
-- CreateTable: t2 (d INT PRIMARY KEY, e INT)
+- CreateTable: t2 (d INT PRIMARY KEY, e INT) STORAGE_FORMAT "tuple"
 ---
 - Statement: SELECT table_name, storage_format FROM information_schema.tables WHERE (table_name='t2')
 - output: [[t2, tuple]]

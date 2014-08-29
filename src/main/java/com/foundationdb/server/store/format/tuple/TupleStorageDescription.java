@@ -118,62 +118,66 @@ public class TupleStorageDescription extends FDBStorageDescription
     @Override
     public byte[] getKeyBytes(Key key, FDBStoreData.NudgeDir nudged) {
         if (usage != null) {
-            // If the Key is encoded as a single component Tuple, you
-            // need to apply the edge before encoding. But with
-            // multiple components, it wants to do it after packing.
-            // For a Key {1}, whose bytes are 258100, and as a Tuple
-            // 01258100FF00, strinc would be 01258100FF01, whereas
-            // {1,{after}} would be 258100FE, so 01258100FFFE00.
-            // So, take edge out and do below.
-            if (nudged != null) {
-                if (nudged == FDBStoreData.NudgeDir.DEEPER) {
-                    key.setEncodedSize(key.getEncodedSize() - 1 );
-                } else if (nudged == FDBStoreData.NudgeDir.LEFT ) {
-                    key.setEncodedSize(key.getEncodedSize() + 1 );
-                } else {
-                    key.getEncodedBytes()[key.getEncodedSize() - 1] = 0;
-                    
-                }
-             }
-            // Persistit Key computes the depth incorrectly. It does not count for 
-            // Key.BEFORE or Key.AFTER, where it does increase the depth when
-            // Key#appendAfter() or Key#appendBefore() are called via Key#append(...).
-            
-            // reset size to enforce recalculation of the depth
-            key.setEncodedSize(key.getEncodedSize());
-            Key.EdgeValue edge = null;
-            int nkeys = key.getDepth();
-            if (KeyShim.isBefore(key)) {
-                edge = Key.BEFORE;
-            }
-            else if (KeyShim.isAfter(key)) {
-                edge = Key.AFTER;
-            } 
-            
-            Object[] keys = new Object[nkeys];
-            key.reset();
-            for (int i = 0; i < nkeys; i++) {
-                keys[i] = key.decode();
-            }
-            byte[] bytes = Tuple2.from(keys).pack();
-            if (edge == Key.BEFORE ) {
-                return ByteArrayUtil.join(bytes, new byte[1]);
-            }
-            else if (edge == Key.AFTER) {
-                return ByteArrayUtil.join(bytes, new byte[] {(byte)0xFF});
-            }
-            else {
-                if (nudged == FDBStoreData.NudgeDir.DEEPER) {
-                    return ByteArrayUtil.join(bytes, new byte[1]);
-                }
-                else if (nudged == FDBStoreData.NudgeDir.RIGHT_STRINC) {
-                    return ByteArrayUtil.strinc(bytes);
-                }
-                return bytes;
-            }
+            return getKeyBytesInternal(key, nudged, new byte[1]);            
         }
         else {
             return super.getKeyBytes(key);
+        }
+    }
+    
+public static byte[] getKeyBytesInternal(Key key, FDBStoreData.NudgeDir nudged, byte[] appendix ) {
+        // If the Key is encoded as a single component Tuple, you
+        // need to apply the edge before encoding. But with
+        // multiple components, it wants to do it after packing.
+        // For a Key {1}, whose bytes are 258100, and as a Tuple
+        // 01258100FF00, strinc would be 01258100FF01, whereas
+        // {1,{after}} would be 258100FE, so 01258100FFFE00.
+        // So, take edge out and do below.
+        if (nudged != null) {
+            if (nudged == FDBStoreData.NudgeDir.DEEPER) {
+                key.setEncodedSize(key.getEncodedSize() - 1 );
+            } else if (nudged == FDBStoreData.NudgeDir.LEFT ) {
+                key.setEncodedSize(key.getEncodedSize() + 1 );
+            } else {
+                key.getEncodedBytes()[key.getEncodedSize() - 1] = 0;
+                
+            }
+         }
+        // Persistit Key computes the depth incorrectly. It does not count for 
+        // Key.BEFORE or Key.AFTER, where it does increase the depth when
+        // Key#appendAfter() or Key#appendBefore() are called via Key#append(...).
+        
+        // reset size to enforce recalculation of the depth
+        key.setEncodedSize(key.getEncodedSize());
+        Key.EdgeValue edge = null;
+        int nkeys = key.getDepth();
+        if (KeyShim.isBefore(key)) {
+            edge = Key.BEFORE;
+        }
+        else if (KeyShim.isAfter(key)) {
+            edge = Key.AFTER;
+        } 
+        
+        Object[] keys = new Object[nkeys];
+        key.reset();
+        for (int i = 0; i < nkeys; i++) {
+            keys[i] = key.decode();
+        }
+        byte[] bytes = Tuple2.from(keys).pack();
+        if (edge == Key.BEFORE ) {
+            return ByteArrayUtil.join(bytes, appendix);
+        }
+        else if (edge == Key.AFTER) {
+            return ByteArrayUtil.join(bytes, new byte[] {(byte)0xFF});
+        }
+        else {
+            if (nudged == FDBStoreData.NudgeDir.DEEPER) {
+                return ByteArrayUtil.join(bytes, new byte[1]);
+            }
+            else if (nudged == FDBStoreData.NudgeDir.RIGHT) {
+                return ByteArrayUtil.strinc(bytes);
+            }
+            return bytes;
         }
     }
 

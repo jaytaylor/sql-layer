@@ -44,7 +44,7 @@ import com.foundationdb.server.store.format.tuple.TupleRowDataConverter;
 import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.tuple.ByteArrayUtil;
-import com.foundationdb.tuple.Tuple;
+import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
 import com.foundationdb.tuple.Tuple2;
 import com.persistit.Key;
 import com.persistit.KeyShim;
@@ -115,46 +115,9 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
     
     @Override
     public byte[] getKeyBytes(Key key ) {
-        Key.EdgeValue edge = null;
-
-        // Persistit Key computes the depth incorrectly. It does not count for 
-        // Key.BEFORE or Key.AFTER, where it does increase the depth when
-        // Key#appendAfter() or Key#appendBefore() are called via Key#append(...).
-
-        // reset size to enforce recalculation of the depth
-        key.setEncodedSize(key.getEncodedSize());
-        
-        int nkeys = key.getDepth();
-        if (KeyShim.isBefore(key)) {
-            edge = Key.BEFORE;
-        }
-        else if (KeyShim.isAfter(key)) {
-            edge = Key.AFTER;
-        }
-        // Get the base key prefix, all but column name.
-        Object[] keys = new Object[nkeys];
-        key.reset();
-        for (int i = 0; i < nkeys; i++) {
-            keys[i] = key.decode();
-        }
-        byte[] bytes = Tuple2.from(keys).pack();
-        if (edge == Key.BEFORE) {
-            // Meaning start with descendants.
-            return ByteArrayUtil.join(bytes, FIRST_NUMERIC);
-        }
-        else if (edge == Key.AFTER) {
-            if (nkeys == 0) {
-                return new byte[] { (byte)0xFF };
-            }
-            else {
-                return ByteArrayUtil.strinc(bytes);
-            }
-        }
-        else {
-            return bytes;
-        }
+        return TupleStorageDescription.getKeyBytesInternal(key, null, null);
     }
-
+        
     @Override
     public void getTupleKey(Tuple2 t, Key key) {
         key.clear();

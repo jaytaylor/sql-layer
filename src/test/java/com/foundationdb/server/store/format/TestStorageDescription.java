@@ -50,6 +50,11 @@ public class TestStorageDescription extends StorageDescription
     }
 
     @Override
+    public StorageDescription cloneForObjectWithoutState(HasStorage forObject) {
+        return new TestStorageDescription(forObject, storageFormat);
+    }
+
+    @Override
     public void writeProtobuf(Storage.Builder builder) {
         builder.setExtension(TestProtobuf.storageKey, storageKey);
         writeUnknownFields(builder);
@@ -79,5 +84,4 @@ public class TestStorageDescription extends StorageDescription
             output.reportFailure(new AISValidationFailure(new StorageDescriptionInvalidException(object, "is missing test storage_key")));
         }
     }
-
 }
