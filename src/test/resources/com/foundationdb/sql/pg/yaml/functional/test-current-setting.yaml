@@ -7,8 +7,6 @@
 - Statement: SELECT current_setting('application_name');
 - output: [[null]]
 ---
-- Statement: PREPARE foo AS SELECT current_setting('application_name');
----
 - Statement: EXECUTE foo();
 - output: [[null]]
 ---
