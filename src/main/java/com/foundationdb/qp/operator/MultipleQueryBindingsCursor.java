@@ -60,6 +60,7 @@ public class MultipleQueryBindingsCursor implements QueryBindingsCursor
 
     @Override
     public void cancelBindings(QueryBindings bindings) {
+        cursors.get(0).cancelBindings(bindings);
         input.cancelBindings(bindings);
     }
 
