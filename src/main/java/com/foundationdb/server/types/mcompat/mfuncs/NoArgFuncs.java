@@ -69,8 +69,14 @@ public class NoArgFuncs
 
         @Override
         protected int[] resultAttrs() {
-            return new int[] { VERSION_STR.length() };
+            return new int[]{VERSION_STR.length()};
         }
+
+        @Override
+        protected boolean neverConstant() {
+            return false;
+        }
+
     };
     
     public static final TScalar PI = new TScalarBase()
@@ -98,6 +104,11 @@ public class NoArgFuncs
         public TOverloadResult resultType()
         {
             return TOverloadResult.fixed(MApproximateNumber.DOUBLE);
+        }
+
+        @Override
+        protected boolean neverConstant() {
+            return false;
         }
     };
  
@@ -231,10 +242,6 @@ public class NoArgFuncs
             target.putString(context.getSessionUser(), null);
         }
 
-        @Override
-        protected boolean neverConstant() {
-            return false;
-        }
     };
     
     public static final TScalar SYSTEM_USER = new NoArgExpression("SYSTEM_USER", true)
