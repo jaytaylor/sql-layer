@@ -160,7 +160,7 @@ class TupleFloatingUtil {
             length = encodeIntNoTypeCode(bigIntBytes.length);
         }
         else {
-        	typecode[0] = BIGDEC_NEG_CODE;
+            typecode[0] = BIGDEC_NEG_CODE;
             length = encodeIntNoTypeCode(-bigIntBytes.length);
         }
         return ByteArrayUtil.join(typecode, scaleBytes, length, bigIntBytes);
