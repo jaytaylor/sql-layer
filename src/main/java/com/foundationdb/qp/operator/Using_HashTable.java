@@ -131,6 +131,9 @@ class Using_HashTable extends Operator
         atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(tableBindingPosition));
         atts.put(Label.INPUT_OPERATOR, hashInput.getExplainer(context));
         atts.put(Label.INPUT_OPERATOR, joinedInput.getExplainer(context));
+        for (TPreparedExpression field : comparisonFields) {
+            atts.put(Label.EXPRESSIONS, field.getExplainer(context));
+        }
         return new CompoundExplainer(Type.HASH_JOIN, atts);
     }
 

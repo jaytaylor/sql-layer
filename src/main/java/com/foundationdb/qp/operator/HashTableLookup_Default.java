@@ -77,6 +77,9 @@ class HashTableLookup_Default extends Operator
         Attributes atts = new Attributes();
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(hashTableBindingPosition));
+        for (TPreparedExpression field : outerComparisonFields) {
+            atts.put(Label.EXPRESSIONS, field.getExplainer(context));
+        }
         return new CompoundExplainer(Type.HASH_JOIN, atts);
     }
 

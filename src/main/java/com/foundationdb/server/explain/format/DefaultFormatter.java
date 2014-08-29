@@ -765,15 +765,18 @@ public class DefaultFormatter
 
     protected void appendHashTableOperator(String name, Attributes atts) {
         if (levelOfDetail != LevelOfDetail.BRIEF) {
-            if (name.equals("Using_HashTable")) {
+            if (levelOfDetail != LevelOfDetail.NORMAL) {
                 for (Explainer ex : atts.get(Label.BINDING_POSITION)) {
                     append(ex);
+                    sb.append(", ");
                 }
             }
-            else if (name.equals("HashTableLookup_Default")) {
-                for (Explainer ex : atts.get(Label.BINDING_POSITION)) {
+            if (atts.containsKey(Label.EXPRESSIONS)) {
+                for (Explainer ex : atts.get(Label.EXPRESSIONS)) {
                     append(ex);
+                    sb.append(", ");
                 }
+                sb.setLength(sb.length() - 2);
             }
         }
     }
