@@ -17,6 +17,7 @@
 package com.foundationdb.server.types.service;
 
 import com.foundationdb.server.error.NoSuchFunctionException;
+import com.foundationdb.server.error.OverloadException;
 import com.foundationdb.server.error.WrongExpressionArityException;
 import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TBundleID;
