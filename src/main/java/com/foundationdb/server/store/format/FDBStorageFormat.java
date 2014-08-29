@@ -20,6 +20,8 @@ package com.foundationdb.server.store.format;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.FDBProtobuf;
+import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
+import com.foundationdb.sql.parser.StorageFormatNode;
 
 public class FDBStorageFormat extends StorageFormat<FDBStorageDescription>
 {
@@ -39,4 +41,11 @@ public class FDBStorageFormat extends StorageFormat<FDBStorageDescription>
         storageDescription.setPrefixBytes(pbStorage.getExtension(FDBProtobuf.prefixBytes).toByteArray());
         return storageDescription;
     }
+
+    @Override
+    public  FDBStorageDescription parseSQL(StorageFormatNode node, HasStorage forObject) {
+        FDBStorageDescription storageDescription = new FDBStorageDescription(forObject, identifier);
+        return storageDescription;
+    }
+
 }

@@ -73,4 +73,13 @@
 ---
 - Statement: SELECT * FROM customers FULL OUTER JOIN orders ON customers.cid = orders.cid;
 - error: ['0A50B'] # FULL OUTER JOIN is temporarily not supported
+---
+- CreateTable: newT(num INT , num2 INT)
+---
+- Statement: INSERT INTO newT VALUES (1,2),(3,4),(5,6);
+---
+- CreateTable: newT2(num INT , num2 INT)
+---
+- Statement: SELECT * FROM newT LEFT JOIN newT2 on TRUE
+- output: [[1,2,null, null],[3,4,null, null],[5,6,null, null]]
 ...
