@@ -13,4 +13,4 @@ PhysicalSelect[_SQL_COL_1:bigint]
         Map_NestedLoops(3)
           IndexScan_Default(Index(customers.PRIMARY), cid = Bound(2, 0))
           IfEmpty_Default(NULL, NULL)
-            IndexScan_Default(Index(orders.PRIMARY), oid = Bound(2, 1))))
+            IndexScan_Default(Index(orders.PRIMARY), oid = Bound(2, 1))
