@@ -10,7 +10,8 @@
      c numeric(11, 7),
      d numeric(11, 7),
      e double,
-     f double)
+     f double,
+     g blob)
 ---
 - Statement: CREATE INDEX idx_ab ON t(z_order_lat_lon(a, b))
 ---
@@ -20,5 +21,7 @@
 - error: [5000V]
 ---
 - Statement: CREATE INDEX idx_a ON t(z_order_lat_lon(a))
-- error: [42000]
+- error: [5000V]
+---
+- Statement: CREATE INDEX idx_a ON t(z_order_lat_lon(g))
 ...
