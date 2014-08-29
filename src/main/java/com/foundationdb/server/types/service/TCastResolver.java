@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.types.service;
 
+import com.foundationdb.server.error.OverloadException;
 import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;

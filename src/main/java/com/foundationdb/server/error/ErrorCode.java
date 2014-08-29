@@ -182,6 +182,7 @@ public enum ErrorCode {
     EXTERNAL_ROW_READER_EXCEPTION ("22", "505", Importance.DEBUG, ExternalRowReaderException.class),
     SECURITY                ("22", "506", Importance.ERROR, SecurityException.class),
     STORAGE_KEY_SIZE_EXCEEDED("22", "507", Importance.ERROR, StorageKeySizeExceededException.class),
+    OVERLOAD_EXCEPTION("22", "508", Importance.ERROR, OverloadException.class),
 
     // Class 23 - integrity constraint violation
     DUPLICATE_KEY           ("23", "501", Importance.DEBUG, DuplicateKeyException.class),

@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.types.service;
+package com.foundationdb.server.error;
 
-// TODO replace with InvalidOperationExceptions
-class OverloadException extends RuntimeException {
-    OverloadException(String message) {
-        super(message);
+public class OverloadException extends InvalidOperationException
+{
+    public OverloadException(String message) {
+        super(ErrorCode.OVERLOAD_EXCEPTION,message);
     }
 }
