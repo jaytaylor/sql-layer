@@ -105,7 +105,7 @@ public abstract class AkCollator {
 
         if (persistit1 && persistit2) {
             return ((PersistitKeyValueSource) value1).compare((PersistitKeyValueSource) value2);
-        } 
+        }
         if (persistit1) {
             return ((PersistitKeyValueSource) value1).compare(this, getBytes(value2.getObject()));
         }

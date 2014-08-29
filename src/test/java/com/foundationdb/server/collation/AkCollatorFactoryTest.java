@@ -23,7 +23,9 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.foundationdb.server.error.InvalidCollationSchemeException;
 import com.foundationdb.server.error.UnsupportedCollationException;
+
 import org.junit.Test;
 
 import com.ibm.icu.text.Collator;
@@ -107,6 +109,11 @@ public class AkCollatorFactoryTest {
         } finally {
             AkCollatorFactory.setCollationMode(saveMode);
         }
+    }
+
+    @Test(expected = InvalidCollationSchemeException.class)
+    public void collationBadScheme() throws Exception {
+        AkCollatorFactory.forScheme("en_us_too_many_arguments");
     }
 
     @Test

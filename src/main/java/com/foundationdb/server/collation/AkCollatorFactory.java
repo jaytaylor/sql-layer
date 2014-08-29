@@ -126,7 +126,7 @@ public class AkCollatorFactory {
             }
         }
 
-        if (scheme.toUpperCase().startsWith(UCS_BINARY)) {
+        if (scheme.equalsIgnoreCase(UCS_BINARY)) {
             return mapToBinary(scheme);
         }
 

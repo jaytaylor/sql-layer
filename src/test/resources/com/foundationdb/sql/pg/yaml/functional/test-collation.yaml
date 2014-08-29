@@ -51,31 +51,31 @@
 ---
 - CreateTable: t5 (id INT, v VARCHAR(255) COLLATE en_us)
 ---
-- Statement: INSERT INTO t5 VALUES(1, 'Öb'), (2, 'Oa'), (3, 'Oc')
+- Statement: INSERT INTO t5 VALUES(1, E'\u00D6b'), (2, 'Oa'), (3, 'Oc')
 ---
-- Statement: SELECT v FROM t5 ORDER BY v ASC
-- output_already_ordered: [['Oa'], ['Öb'], ['Oc']]
+- Statement: SELECT id FROM t5 ORDER BY v ASC
+- output_already_ordered: [[2], [1], [3]]
 ---
 - CreateTable: t6 (id INT, v VARCHAR(255) COLLATE de_DE)
 ---
-- Statement: INSERT INTO t6 VALUES(1, 'Öb'), (2, 'Oa'), (3, 'Oc')
+- Statement: INSERT INTO t6 VALUES(1, E'\u00D6b'), (2, 'Oa'), (3, 'Oc')
 ---
-- Statement: SELECT v FROM t6 ORDER BY v ASC
-- output_already_ordered: [['Oa'], ['Öb'], ['Oc']]
+- Statement: SELECT id FROM t6 ORDER BY v ASC
+- output_already_ordered: [[2], [1], [3]]
 ---
 - CreateTable: t7 (id INT, v VARCHAR(255) COLLATE tr_TR)
 ---
-- Statement: INSERT INTO t7 VALUES(1, 'P'), (2, 'Öb'), (3, 'Oz')
+- Statement: INSERT INTO t7 VALUES(1, 'P'), (2, E'\u00D6b'), (3, 'Oz')
 ---
-- Statement: SELECT v FROM t7 ORDER BY v ASC
-- output_already_ordered: [['Oz'], ['Öb'], ['P']]
+- Statement: SELECT id FROM t7 ORDER BY v ASC
+- output_already_ordered: [[3], [2], [1]]
 ---
 - CreateTable: t8 (id INT, v VARCHAR(255) COLLATE sv_SE)
 ---
-- Statement: INSERT INTO t8 VALUES(2, 'Öb'), (3, 'Z')
+- Statement: INSERT INTO t8 VALUES(2, E'\u00D6b'), (3, 'Z')
 ---
-- Statement: SELECT v FROM t8 ORDER BY v ASC
-- output_already_ordered: [['Z'], ['Öb']]
+- Statement: SELECT id FROM t8 ORDER BY v ASC
+- output_already_ordered: [[3], [2]]
 ---
 # bug: parameter collation defaulted to ucs_binary
 - Statement: SELECT 'asdf' COLLATE en_us_ci LIKE ?
@@ -85,4 +85,30 @@
 - Statement: SELECT ? LIKE 'AsDf' COLLATE en_us_ci
 - params: [['asdf']]
 - output: [ [true] ]
+---
+- CreateTable: tUnion1(id INTEGER PRIMARY KEY, s VARCHAR(256) COLLATE en_us)
+---
+- Statement: CREATE INDEX tUnion1_ndx ON tUnion1(s)
+---
+- Statement: INSERT INTO tUnion1 VALUES (1, 'asdf'), (2, 'qwer')
+---
+- CreateTable: tUnion2(id INTEGER PRIMARY KEY, s VARCHAR(256) COLLATE sv_se)
+---
+- Statement: INSERT INTO tUnion2 VALUES (1, 'jkl;'), (2, 'uiop')
+---
+- Statement: Select * FROM (SELECT * FROM tUnion1 AS t1 UNION SELECT * FROM tUnion2 AS t2) as t3;
+- output: [[1, 'jkl;'], [2, 'qwer'], [1, 'asdf'], [2, 'uiop']]
+---
+- CreateTable: tIntersect1(id INTEGER PRIMARY KEY, s VARCHAR(256) COLLATE en_us)
+---
+- Statement: CREATE INDEX tIntersect1_ndx ON tIntersect1(s)
+---
+- Statement: INSERT INTO tIntersect1 VALUES (1, 'asdf'), (2, 'qwer')
+---
+- CreateTable: tIntersect2(id INTEGER PRIMARY KEY, s VARCHAR(256) COLLATE sv_se)
+---
+- Statement: INSERT INTO tIntersect2 VALUES (1, 'jkl;'), (2, 'qwer')
+---
+- Statement: Select * FROM (SELECT * FROM tIntersect1 AS t1 INTERSECT SELECT * FROM tIntersect2 AS t2) as t3;
+- output: [[2, 'qwer']]
 ...
