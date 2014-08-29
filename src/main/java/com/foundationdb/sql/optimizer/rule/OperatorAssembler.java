@@ -1451,9 +1451,13 @@ public class OperatorAssembler extends BaseRule
             int pos = assignBindingPosition(hashTable);
             RowStream lstream = assembleStream(usingHashTable.getLoader());
             RowStream stream = assembleStream(usingHashTable.getInput());
-            List<TPreparedExpression> tFields = assembleExpressions(usingHashTable.getLookupExpressions(),
-                    lstream.fieldOffsets);
-            List<AkCollator> collators = findCollators(usingHashTable.getLoader());
+            List<ExpressionNode> expressionNodes = usingHashTable.getLookupExpressions();
+            List<TPreparedExpression> tFields = assembleExpressions(expressionNodes,lstream.fieldOffsets);
+            List<AkCollator> collators = new ArrayList<>();
+            for(ExpressionNode en : expressionNodes){
+                collators.add(en.getCollator());
+            }
+
             
             List<TComparison> tComparisons = null;
             if(usingHashTable.getTKeyComparables() != null) {
@@ -1480,9 +1484,13 @@ public class OperatorAssembler extends BaseRule
             HashTable hashTable = hashTableLookup.getHashTable();
             int tablePos = getBindingPosition(hashTable);
             RowStream stream = assembleStream(hashTableLookup.getInput());
-            List<TPreparedExpression> tFields = assembleExpressions(hashTableLookup.getLookupExpressions(),
-                    stream.fieldOffsets);
-            List<AkCollator> collators = findCollators(hashTableLookup.getInput());
+            List<ExpressionNode> expressionNodes = hashTableLookup.getLookupExpressions();
+            List<TPreparedExpression> tFields = assembleExpressions(hashTableLookup.getLookupExpressions(), stream.fieldOffsets);
+            List<AkCollator> collators = new ArrayList<>();
+            for(ExpressionNode en : expressionNodes){
+                collators.add(en.getCollator());
+            }
+
             stream.operator = API.hashTableLookup_Default(
                     collators,
                     tFields,

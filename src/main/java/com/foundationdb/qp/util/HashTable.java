@@ -80,9 +80,10 @@ public class HashTable {
                 ValueSource columnValue = expression.resultValue();
                 Value valueCopy = new Value(columnValue.getType());
                 ValueTargets.copyFrom(columnValue, valueCopy);
-                AkCollator collator = (collators != null) ? collators.get(i++) : null;
+                AkCollator collator = (collators != null) ? collators.get(i) : null;
                 hashKey ^= ValueSources.hash(valueCopy, collator);
                 values.add(valueCopy);
+                i++;
             }
         }
     }
