@@ -430,18 +430,19 @@ public abstract class TString extends TClass
     private static class StringCacher implements ValueCacher {
         @Override
         public void cacheToValue(Object cached, TInstance type, BasicValueTarget target) {
-            String asString = getString((ByteSource) cached, type);
-            target.putString(asString, null);
+            String asString;
+            if (cached instanceof WrappingByteSource) {
+                asString = getString((ByteSource) cached, type);
+            }
+            else {
+                asString = (String)cached;
+            }
+            target.putString(asString, getCollator(type));
         }
 
         @Override
         public Object valueToCache(BasicValueSource value, TInstance type) {
-            String charsetName = StringAttribute.charsetName(type);
-            try {
-                return new WrappingByteSource(value.getString().getBytes(charsetName));
-            } catch (UnsupportedEncodingException e) {
-                throw new UnsupportedCharsetException(charsetName);
-            }
+            return value.getString();
         }
 
         @Override

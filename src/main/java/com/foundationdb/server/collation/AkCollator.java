@@ -27,18 +27,17 @@ public abstract class AkCollator {
     public static String getString(ValueSource valueSource, AkCollator collator) {
         if (valueSource.isNull())
             return null;
-        else if (valueSource.canGetRawValue())
-            return valueSource.getString();
-        else if (valueSource.hasCacheValue()) {
-            Object obj = valueSource.getObject();
-            if (obj instanceof byte[]) {
-                // Good enough for printing or encoding for hash comparison.
-                // TODO: See comment on CStringKeyCoder.decodeKeySegment().
+        Object obj = valueSource.getObject();
+        if (obj instanceof String) {
+            return (String)obj;
+        }
+        if (obj instanceof WrappingByteSource) {
+            obj = ((WrappingByteSource)obj).byteArray();
+        }
+        if (obj instanceof byte[]) {
                 byte[] bytes = (byte[])obj;
                 assert (collator != null) : "encoded as bytes without collator";
                 return collator.decodeSortKeyBytes(bytes, 0, bytes.length);
-            }
-            return (String) obj;
         }
         throw new AssertionError("no value");
     }
@@ -46,16 +45,17 @@ public abstract class AkCollator {
     public static int hashValue(ValueSource valueSource, AkCollator collator) {
         if (valueSource.isNull())
             return collator.hashCode((String)null);
-        else if (valueSource.canGetRawValue())
+        Object obj = valueSource.getObject();
+        if (obj instanceof String) {
             return collator.hashCode(valueSource.getString());
-        else if (valueSource.hasCacheValue()) {
-            Object obj = valueSource.getObject();
-            if (obj instanceof byte[]) {
-                byte[] bytes = (byte[])obj;
-                assert (collator != null) : "encoded as bytes without collator";
-                return collator.hashCode(bytes);
-            }
-            return collator.hashCode((String) obj);
+        }
+        if (obj instanceof WrappingByteSource) {
+            obj = ((WrappingByteSource)obj).byteArray();
+        }
+        if (obj instanceof byte[]) {
+            byte[] bytes = (byte[])obj;
+            assert (collator != null) : "encoded as bytes without collator";
+            return collator.hashCode(bytes);
         }
         throw new AssertionError("no value");
     }

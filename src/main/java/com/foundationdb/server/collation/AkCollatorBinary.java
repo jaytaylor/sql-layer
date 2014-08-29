@@ -16,6 +16,8 @@
  */
 package com.foundationdb.server.collation;
 
+import java.util.Arrays;
+
 import com.persistit.Key;
 
 public class AkCollatorBinary extends AkCollator {
@@ -52,14 +54,14 @@ public class AkCollatorBinary extends AkCollator {
      * Append the given value to the given key.
      */
     public byte[] encodeSortKeyBytes(String value) {
-        throw new UnsupportedOperationException("No sort key encoding for binary collation");
+        return value.getBytes();
     }
 
     /**
      * Recover the value or throw an unsupported exception.
      */
     public String decodeSortKeyBytes(byte[] bytes, int index, int length) {
-        throw new UnsupportedOperationException("No sort key encoding for binary collation");
+        return new String(Arrays.copyOfRange(bytes, index, length));
     }
 
     @Override

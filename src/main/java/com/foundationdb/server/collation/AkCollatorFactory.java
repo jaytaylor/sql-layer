@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.foundationdb.server.error.InvalidCollationSchemeException;
 import com.foundationdb.server.error.UnsupportedCollationException;
 import com.foundationdb.server.types.common.types.StringFactory;
 import com.ibm.icu.text.Collator;
@@ -199,7 +200,7 @@ public class AkCollatorFactory {
         if (collator == null) {
             String[] pieces = scheme.toLowerCase().split("_");
             if (pieces.length < REGION_NDX + 1) {
-                throw new IllegalStateException("Malformed collation scheme: " + scheme);
+                throw new InvalidCollationSchemeException(scheme);
             }
             
             ULocale locale = new ULocale(pieces[LANGUAGE_NDX], pieces[REGION_NDX]);
@@ -228,7 +229,7 @@ public class AkCollatorFactory {
                 collator.setStrength(Collator.SECONDARY);
             }
             else {
-                throw new IllegalStateException("Malformed collation scheme: " + pieces);
+                throw new InvalidCollationSchemeException(scheme);
             }
         }
         else if (pieces.length == ACCENT_NDX + 1) {
@@ -249,11 +250,11 @@ public class AkCollatorFactory {
                 collator.setCaseLevel(false);
             }
             else {
-                throw new IllegalStateException("Malformed collation scheme: " + scheme);
+                throw new InvalidCollationSchemeException(scheme);
             }
         }
         else if (pieces.length > ACCENT_NDX + 1) {
-            throw new IllegalStateException("Malformed collation scheme: " + scheme);
+            throw new InvalidCollationSchemeException(scheme);
         }
     }
 

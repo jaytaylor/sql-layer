@@ -31,6 +31,8 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.util.Strings;
+import com.foundationdb.util.WrappingByteSource;
+
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 

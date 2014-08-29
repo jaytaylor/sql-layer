@@ -27,6 +27,16 @@
 - Statement: SELECT * FROM t3 WHERE s = 'charlie'
 - output: [[2, 'charlie']]
 ---
+- CreateTable: asdf (id INT PRIMARY KEY NOT NULL, s VARCHAR(32) COLLATE en_us_ci)
+---
+- Statement: CREATE INDEX asdf_ndx ON asdf(s);
+---
+- Statement: INSERT INTO asdf(id, s)
+    VALUES (1, 'alfa'), (2, 'charlie'), (3, 'BRAVO'), (4, 'Charlie'), (5, 'echo')
+---
+- Statement: SELECT * FROM asdf WHERE s = 'Charlie'
+- output: [[2, 'charlie'], [4, 'Charlie']]
+---
 - Statement: SELECT id FROM t3 WHERE s LIKE '%a%'
 - output: [[1],[2],[4]]
 ---
