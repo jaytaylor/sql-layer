@@ -451,6 +451,7 @@ class Intersect_Ordered extends Operator
 
         @Override
         public QueryBindings nextBindings() {
+            
             QueryBindings bindings = bindingsCursor.nextBindings();
             QueryBindings other = leftInput.nextBindings();
             assert (bindings == other);
@@ -471,6 +472,11 @@ class Intersect_Ordered extends Operator
             leftInput.cancelBindings(bindings);
             rightInput.cancelBindings(bindings);
             bindingsCursor.cancelBindings(bindings);
+            
+            // Close this cursor, but don't clear the state
+            // In look ahead cases the cursor will be reopened
+            // with state intact for further reading. 
+            closed = true;
         }
 
         // Execution interface

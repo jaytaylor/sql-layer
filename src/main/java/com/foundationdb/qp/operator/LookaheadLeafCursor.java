@@ -21,7 +21,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.ColumnSelector;
 
 import java.util.ArrayDeque;
-import java.util.List;
 import java.util.Queue;
 
 /** An {@link OperatorCursor} that opens a single {@link BindingsAwareCursor}
@@ -127,6 +126,7 @@ public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends
     @Override
     public QueryBindings nextBindings() {
         if (currentCursor != null) {
+            currentCursor.close();
             cursorPool.add(currentCursor);
             currentCursor = null;
         }
@@ -139,11 +139,11 @@ public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends
         if (bandc != null) {
             currentBindings = bandc.bindings;
             pendingCursor = bandc.cursor;
-            return currentBindings;
-        }
-        currentBindings = bindingsCursor.nextBindings();
-        if (currentBindings == null) {
-            bindingsExhausted = true;
+        } else {
+            currentBindings = bindingsCursor.nextBindings();
+            if (currentBindings == null) {
+                bindingsExhausted = true;
+            }
         }
         return currentBindings;
     }

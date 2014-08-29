@@ -55,7 +55,7 @@ class PersistitIndexCursor implements BindingsAwareCursor
                 needAnother = false;
             }
         } while (needAnother);
-        assert (next == null) == idle;
+        assert (next == null) == idle : "next: " + next + " vs idle " + idle;
         return next;
     }
 

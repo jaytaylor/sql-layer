@@ -39,6 +39,13 @@ CREATE TABLE addresses
   GROUPING FOREIGN KEY (cid) REFERENCES customers(cid)
 );
 
+Create Table artists (id integer not null PRIMARY KEY, name varchar(255));
+
+Create Table albums (id integer not null PRIMARY KEY, name varchar(255));
+
+Create Table join_albums_artists (album_id integer REFERENCES albums, artist_id integer REFERENCES artists);
+
+
 CREATE INDEX cname_and_sku ON customers(customers.name, items.sku) USING LEFT JOIN;
 CREATE INDEX sku_and_date ON customers(items.sku, orders.order_date) USING LEFT JOIN;
 CREATE INDEX date_and_name ON customers(orders.order_date, customers.name) USING RIGHT JOIN;
