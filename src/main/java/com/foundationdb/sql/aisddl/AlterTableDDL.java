@@ -424,7 +424,7 @@ public class AlterTableDDL {
         }
 
         for(IndexDefinitionNode idn : indexDefNodes) {
-            String name = TableDDL.addIndex(indexNamer, builder, idn, newName.getSchemaName(), newName.getTableName(), context);
+            String name = TableDDL.addIndex(indexNamer, builder, idn, newName.getSchemaName(), newName.getTableName(), context, ddl);
             indexChanges.add(TableChange.createAdd(name));
         }
 

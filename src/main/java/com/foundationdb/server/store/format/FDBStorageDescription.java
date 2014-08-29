@@ -74,7 +74,9 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
 
     @Override
     public void writeProtobuf(Storage.Builder builder) {
-        builder.setExtension(FDBProtobuf.prefixBytes, ByteString.copyFrom(prefixBytes));
+        if(prefixBytes != null) {
+            builder.setExtension(FDBProtobuf.prefixBytes, ByteString.copyFrom(prefixBytes));
+        }
         writeUnknownFields(builder);
     }
 

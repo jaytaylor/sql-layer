@@ -29,6 +29,8 @@ import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.server.AkServerUtil;
 
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.UUID;
 
 import static com.foundationdb.sql.types.TypeId.getUserDefinedTypeId;
@@ -55,11 +57,8 @@ public class AkGUID extends NoAttrTClass
             
             @Override
             public void cacheToValue(Object bdw, TInstance type, BasicValueTarget target) {
-                byte[] bb = new byte[16];
                 if (bdw instanceof UUID) {
-                    UUID guid = (UUID)bdw;
-                    AkServerUtil.putLong(bb, 0, guid.getMostSignificantBits());
-                    AkServerUtil.putLong(bb, 8 , guid.getLeastSignificantBits());
+                    byte[] bb = uuidToBytes((UUID)bdw);
                     target.putBytes(bb);                    
                 } else {
                     throw new InvalidParameterValueException("cannot perform UUID cast on Object");
@@ -69,7 +68,7 @@ public class AkGUID extends NoAttrTClass
             @Override
             public Object valueToCache(BasicValueSource value, TInstance type) {
                 byte[] bb = value.getBytes();
-                return new UUID(AkServerUtil.getLong(bb, 0), AkServerUtil.getLong(bb, 8));
+                return bytesToUUID(bb,0);
             }
 
             @Override
@@ -113,15 +112,17 @@ public class AkGUID extends NoAttrTClass
         };
         
         
-        private static byte[] uuidToBytes(UUID guid) {
-            byte[] bb = new byte[16];
-            AkServerUtil.putLong(bb, 0, guid.getMostSignificantBits());
-            AkServerUtil.putLong(bb, 8 , guid.getLeastSignificantBits());
-            return bb;
+        public static byte[] uuidToBytes(UUID guid) {
+            ByteBuffer bb = ByteBuffer.allocate(16);
+            bb.putLong(0, guid.getMostSignificantBits());
+            bb.putLong(8, guid.getLeastSignificantBits());
+            return bb.array();
         }
 
         public static UUID bytesToUUID(byte[] byteAr, int offset) {
-            return new UUID(AkServerUtil.getLong(byteAr, offset), AkServerUtil.getLong(byteAr, offset + 8));
+            ByteBuffer bb = ByteBuffer.allocate(16);
+            bb.put(Arrays.copyOfRange(byteAr, offset, offset+16));
+            return new UUID(bb.getLong(0), bb.getLong(8));
         }
     }
         

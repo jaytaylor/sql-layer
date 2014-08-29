@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 import java.nio.charset.Charset;
 
 import com.foundationdb.tuple.TupleUtil.DecodeResult;
@@ -42,6 +43,7 @@ class TupleFloatingUtil {
     static final int FLOAT_LEN = 4;
     static final int DOUBLE_LEN = 8;
     static final int INT_LEN = 4;
+    static final int UUID_LEN = 16;
 
     static final byte FLOAT_CODE = 0x20;
     static final byte DOUBLE_CODE = 0x21;
@@ -51,6 +53,7 @@ class TupleFloatingUtil {
     static final byte BIGDEC_POS_CODE = 0x24;
     static final byte TRUE_CODE = 0x25;
     static final byte FALSE_CODE = 0x26;
+    static final byte UUID_CODE = 0x30;
 
     static byte[] floatingPointToByteArray (float value) {
         return ByteBuffer.allocate(FLOAT_LEN).putFloat(value).order(ByteOrder.BIG_ENDIAN).array();
@@ -100,6 +103,8 @@ class TupleFloatingUtil {
     static byte[] encode(Object t) {
         if(t == null)
             return new byte[] {nil};
+        if (t instanceof UUID)
+             return encode((UUID) t);
         if(t instanceof byte[])
             return TupleUtil.encode((byte[]) t);
         if(t instanceof WrappingByteSource)
@@ -135,6 +140,12 @@ class TupleFloatingUtil {
         return ByteArrayUtil.join(typecode, bytes);
     }
 
+    static byte[] encode(UUID value) {
+        return ByteBuffer.allocate(1+UUID_LEN).put(UUID_CODE).order(ByteOrder.BIG_ENDIAN)
+                 .putLong(value.getMostSignificantBits()).putLong(value.getLeastSignificantBits())
+                 .array();
+        }
+
     static byte[] encode(BigInteger value) {
         byte[] bigIntBytes = encodeBigIntNoTypeCode(value);
         byte[] typecode = {BIGINT_POS_CODE};
@@ -167,6 +178,13 @@ class TupleFloatingUtil {
         return new DecodeResult(end, byteArrayToFloat(bytes));
     }
 
+    static DecodeResult decodeUUID(byte[] bytes, int start) {
+            ByteBuffer bb = ByteBuffer.wrap(bytes, start, UUID_LEN).order(ByteOrder.BIG_ENDIAN);
+            long msb = bb.getLong();
+            long lsb = bb.getLong();
+            return new DecodeResult(start + UUID_LEN, new UUID(msb, lsb));
+        }    
+    
     static DecodeResult decodeDouble(byte[] bytes, int start) {
         int end = start + DOUBLE_LEN;
         bytes = floatingPointCoding(Arrays.copyOfRange(bytes, start, end), false);
@@ -242,6 +260,9 @@ class TupleFloatingUtil {
         int start = pos + 1;
         if(code >= 0x0 && code <= 0x2 || code >= 12 && code <= 28) {
             return TupleUtil.decode(rep, pos, last);
+        }
+        if (code == UUID_CODE) {
+            return decodeUUID(rep, start);
         }
         if (code == FLOAT_CODE) {
             return decodeFloat(rep, start);
