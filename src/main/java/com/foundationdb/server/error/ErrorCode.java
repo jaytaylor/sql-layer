@@ -17,7 +17,6 @@
  
 package com.foundationdb.server.error;
 
-import com.foundationdb.server.types.service.OverloadResolver;
 import org.slf4j.Logger;
 
 import java.util.ResourceBundle;
