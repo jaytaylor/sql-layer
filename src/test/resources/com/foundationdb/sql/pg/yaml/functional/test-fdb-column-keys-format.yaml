@@ -35,4 +35,17 @@
 ---
 - Statement: SELECT t1.name,t2.name FROM t1 INNER JOIN t2 ON t1.id = t2.pid WHERE t2.cid = 102
 - output: [['Wilma','Dino']]
+---
+- Statement: SELECT * FROM t2 WHERE cid >= 102 ORDER BY cid DESC
+- output: [[401,4,'Bam-bam'], [102,2,'Dino']]
+---
+- Statement: SELECT * FROM t2 WHERE cid >= 102 ORDER BY cid ASC, pid DESC
+#- output: [[102,2,'Dino'],[401,4,'Bam-bam']]
+---
+- CreateTable: t3 (id INT PRIMARY KEY, b INT) STORAGE_FORMAT column_keys
+---
+- Statement: INSERT INTO t3 VALUES (1,1), (2,2), (3,3), (4,4), (5,5)
+---
+- Statement: SELECT id FROM t3 WHERE id > 3
+- output: [[4], [5]]
 ...

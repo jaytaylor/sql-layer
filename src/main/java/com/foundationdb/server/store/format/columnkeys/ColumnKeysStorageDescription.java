@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.store.format.columnkeys;
 
-import com.foundationdb.Range;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Join;
@@ -44,10 +43,8 @@ import com.foundationdb.server.store.format.tuple.TupleRowDataConverter;
 import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.tuple.ByteArrayUtil;
-import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
 import com.foundationdb.tuple.Tuple2;
 import com.persistit.Key;
-import com.persistit.KeyShim;
 
 import java.util.HashMap;
 import java.util.List;
@@ -115,7 +112,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
     
     @Override
     public byte[] getKeyBytes(Key key ) {
-        return TupleStorageDescription.getKeyBytesInternal(key, null, null);
+        return TupleStorageDescription.getKeyBytesInternal(key, null, FIRST_NUMERIC);
     }
         
     @Override
