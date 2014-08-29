@@ -184,14 +184,14 @@ class TupleFloatingUtil {
     }
 
     static DecodeResult decodeBigInt(byte[] bytes, int start) {
-        int length = decodeIntNoTypeCode(Arrays.copyOfRange(bytes, start, start + INT_LEN));
+        int length = Math.abs(decodeIntNoTypeCode(Arrays.copyOfRange(bytes, start, start + INT_LEN)));
         BigInteger bigInt = decodeBigIntNoTypeCode(Arrays.copyOfRange(bytes, start + INT_LEN, start + INT_LEN + length));
         return new DecodeResult(start + INT_LEN + length, bigInt);
     }
 
     static DecodeResult decodeBigDecimal(byte[] bytes, int start) {
         int scale = decodeIntNoTypeCode(Arrays.copyOfRange(bytes, start, start + INT_LEN));
-        int length = decodeIntNoTypeCode(Arrays.copyOfRange(bytes, start + INT_LEN, start + INT_LEN * 2));
+        int length = Math.abs(decodeIntNoTypeCode(Arrays.copyOfRange(bytes, start + INT_LEN, start + INT_LEN * 2)));
         BigInteger bigInt = decodeBigIntNoTypeCode(Arrays.copyOfRange(bytes, start + INT_LEN * 2, start + INT_LEN * 2 + length));
         return new DecodeResult(start + INT_LEN * 2 + length, new BigDecimal(bigInt, scale));
     }
