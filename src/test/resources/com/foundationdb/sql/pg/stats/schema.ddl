@@ -2,7 +2,7 @@ CREATE TABLE parent
 (
   id INT NOT NULL, PRIMARY KEY(id), 
   name VARCHAR(256) NOT NULL,
-  name_sv VARCHAR(32) COLLATE en_us_ci
+  name_sv VARCHAR(32) COLLATE sv_se_ci
 );
 CREATE INDEX name ON parent(name);
 CREATE INDEX name_sv ON parent(name_sv);
