@@ -192,7 +192,7 @@ public class FDBIterationHelper implements IterationHelper
             final boolean reverse = (dir == LT) || (dir == LTEQ);
             KeyState saveState = null;
             
-            assert storeData.nudged == null;
+            assert storeData.nudgeDir == null;
             if(!KeyShim.isSpecial(storeData.persistitKey)) {
                 if(exact) {
                     if(reverse && !deep) {
@@ -201,32 +201,32 @@ public class FDBIterationHelper implements IterationHelper
                         saveState = new KeyState(storeData.persistitKey);
                         // nudgeRight changes the content of the key
                         KeyShim.nudgeRight(storeData.persistitKey);
-                        storeData.nudged = FDBStoreData.NudgeDir.RIGHT;
+                        storeData.nudgeDir = FDBStoreData.NudgeDir.RIGHT;
                     }
                 } else {
                     if(reverse) {
                         // Non-exact, reverse: do not want to see current key
                         KeyShim.nudgeLeft(storeData.persistitKey);
-                        storeData.nudged = FDBStoreData.NudgeDir.LEFT;
+                        storeData.nudgeDir = FDBStoreData.NudgeDir.LEFT;
                     } else {
                         if(deep) {
                             // Non-exact, forward, deep: do not want to see current key
                             KeyShim.nudgeDeeper(storeData.persistitKey);
-                            storeData.nudged = FDBStoreData.NudgeDir.DEEPER;
+                            storeData.nudgeDir = FDBStoreData.NudgeDir.DEEPER;
                         } else {
                             // Non-exact, forward, logical: do not want to see current key or any children
                             saveState = new KeyState(storeData.persistitKey);
                             // nudgeRight changes the content of the key
                             KeyShim.nudgeRight(storeData.persistitKey);
-                            storeData.nudged = FDBStoreData.NudgeDir.RIGHT;
+                            storeData.nudgeDir = FDBStoreData.NudgeDir.RIGHT;
                         }
                     }
                 }
             }
-            
+
             adapter.getUnderlyingStore().indexIterator(adapter.getSession(), storeData,
                                                        exact, reverse);
-            storeData.nudged = null;
+            storeData.nudgeDir = null;
             if (saveState != null) {
                 saveState.copyTo(storeData.persistitKey);
             }

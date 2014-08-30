@@ -65,7 +65,7 @@ public class FDBStoreDataHelper
 
     public static byte[] packKey(FDBStoreData storeData, Key.EdgeValue edge) {
         storeData.rawKey = packedTuple(storeData.storageDescription, 
-                                       storeData.persistitKey, edge, storeData.nudged);
+                                       storeData.persistitKey, edge, storeData.nudgeDir);
         return storeData.rawKey;
     }
 

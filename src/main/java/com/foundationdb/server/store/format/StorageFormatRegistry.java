@@ -23,11 +23,8 @@ import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
-import com.foundationdb.ais.protobuf.FDBProtobuf;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
-import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
 import com.foundationdb.sql.parser.StorageFormatNode;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -51,14 +48,13 @@ public abstract class StorageFormatRegistry
     private final ConfigurationService configService;
     private String defaultIdentifier;
 
-    public StorageFormatRegistry(String identifier) {
+    public StorageFormatRegistry(String defaultIdentifier) {
         this.configService = null;
-        this.defaultIdentifier = identifier;
+        this.defaultIdentifier = defaultIdentifier;
     }
 
-    public StorageFormatRegistry(ConfigurationService configService, String identifier) {
+    public StorageFormatRegistry(ConfigurationService configService) {
         this.configService = configService;
-        this.defaultIdentifier = identifier;
     }
 
     static class Format<T extends StorageDescription> implements Comparable<Format<?>> {
@@ -205,7 +201,6 @@ public abstract class StorageFormatRegistry
         return format.storageFormat.parseSQL(node, forObject);
     }
 
-
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
         if (object.getStorageDescription() == null) {
             if (object instanceof Group) {
@@ -215,26 +210,14 @@ public abstract class StorageFormatRegistry
                 }
                 else {
                     object.setStorageDescription(getDefaultStorageDescription(object));
-                    if (object.getStorageDescription() instanceof TupleStorageDescription) {
-                        TupleStorageDescription tsd = (TupleStorageDescription) object.getStorageDescription();
-                        tsd.setUsage(FDBProtobuf.TupleUsage.KEY_AND_ROW);
-                    }
                 }
             }
             else if (object instanceof FullTextIndex) {
                 File path = new File(nameGenerator.generateFullTextIndexPath((FullTextIndex)object));
                 object.setStorageDescription(new FullTextIndexFileStorageDescription(object, path, defaultIdentifier));
             }
-            else if (object instanceof Index) {               
+            else { // Index or Sequence
                 object.setStorageDescription(getDefaultStorageDescription(object));
-                if (object.getStorageDescription() instanceof TupleStorageDescription) {
-                    TupleStorageDescription tsd = (TupleStorageDescription) object.getStorageDescription();
-                    tsd.setUsage(FDBProtobuf.TupleUsage.KEY_ONLY);
-                }
-            }
-            // sequence 
-            else {
-                object.setStorageDescription(getDefaultStorageDescription(object));                
             }
         }
     }

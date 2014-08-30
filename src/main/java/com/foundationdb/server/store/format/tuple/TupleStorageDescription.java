@@ -21,6 +21,7 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.HasStorage;
+import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.validation.AISValidationFailure;
@@ -44,6 +45,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.persistit.Key;
 import com.persistit.KeyShim;
 
+import java.util.Collections;
 import java.util.List;
 
 public class TupleStorageDescription extends FDBStorageDescription
@@ -58,7 +60,7 @@ public class TupleStorageDescription extends FDBStorageDescription
         super(forObject, other, storageFormat);
         this.usage = other.usage;
     }
-    
+
     @Override
     public StorageDescription cloneForObject(HasStorage forObject) {
         return new TupleStorageDescription(forObject, this, storageFormat);
@@ -106,6 +108,10 @@ public class TupleStorageDescription extends FDBStorageDescription
         else if (object instanceof Index) {
             illegal = TupleRowDataConverter.checkTypes((Index)object, usage);
         }
+        else if (object instanceof Sequence) {
+            // No types to check
+            illegal = Collections.emptyList();
+        }
         else {
             output.reportFailure(new AISValidationFailure(new StorageDescriptionInvalidException(object, "is not a Group or Index and cannot use Tuples")));
             return;
@@ -133,22 +139,25 @@ public class TupleStorageDescription extends FDBStorageDescription
         // 01258100FF00, strinc would be 01258100FF01, whereas
         // {1,{after}} would be 258100FE, so 01258100FFFE00.
         // So, take edge out and do below.
+
+        // Un-nudge the key to allow decoding of original state
         if (nudged != null) {
             if (nudged == FDBStoreData.NudgeDir.DEEPER) {
-                key.setEncodedSize(key.getEncodedSize() - 1 );
+                key.setEncodedSize(key.getEncodedSize() - 1);
             } else if (nudged == FDBStoreData.NudgeDir.LEFT ) {
-                key.setEncodedSize(key.getEncodedSize() + 1 );
+                key.setEncodedSize(key.getEncodedSize() + 1);
             } else {
                 key.getEncodedBytes()[key.getEncodedSize() - 1] = 0;
                 
             }
-         }
-        // Persistit Key computes the depth incorrectly. It does not count for 
+        }
+
+        // Persistit Key computes the depth incorrectly. It does not count for
         // Key.BEFORE or Key.AFTER, where it does increase the depth when
         // Key#appendAfter() or Key#appendBefore() are called via Key#append(...).
-        
         // reset size to enforce recalculation of the depth
         key.setEncodedSize(key.getEncodedSize());
+
         Key.EdgeValue edge = null;
         int nkeys = key.getDepth();
         if (KeyShim.isBefore(key)) {

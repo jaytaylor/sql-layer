@@ -364,17 +364,7 @@ public class TableDDL
             object.setStorageDescription(ddlFunctions.getStorageFormatRegistry().parseSQL(storage, object));
             return;
         }
-        object.setStorageDescription(ddlFunctions.getStorageFormatRegistry().
-                getDefaultStorageDescription(object));
-        if (object.getStorageDescription() instanceof TupleStorageDescription) {
-            TupleStorageDescription tsd = (TupleStorageDescription) object.getStorageDescription();
-            if (object instanceof Group) {
-                tsd.setUsage(TupleUsage.KEY_AND_ROW);
-            }
-            else {
-                tsd.setUsage(TupleUsage.KEY_ONLY);
-            }
-        }
+        object.setStorageDescription(ddlFunctions.getStorageFormatRegistry().getDefaultStorageDescription(object));
     }
 
     static void addColumn (final AISBuilder builder, final TypesTranslator typesTranslator, final ColumnDefinitionNode cdn,

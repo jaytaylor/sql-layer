@@ -41,6 +41,7 @@ public class UnknownStorageDescription extends StorageDescription
     public StorageDescription cloneForObjectWithoutState(HasStorage forObject) {
         return new UnknownStorageDescription( forObject, storageFormat);
     }
+
     @Override
     public void writeProtobuf(Storage.Builder builder) {
         writeUnknownFields(builder);
@@ -59,4 +60,5 @@ public class UnknownStorageDescription extends StorageDescription
     @Override
     public void validate(AISValidationOutput output) {
     }
+
 }
