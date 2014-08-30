@@ -31,8 +31,6 @@ import com.foundationdb.server.error.NoSuchGroupException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.ProtectedIndexException;
 import com.foundationdb.server.error.TableNotInGroupException;
-import com.foundationdb.server.store.format.FDBStorageDescription;
-import com.foundationdb.server.store.format.PersistitStorageDescription;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
 
 import org.slf4j.Logger;
@@ -66,18 +64,18 @@ public class AISMerge {
         public final TableName newChildName;
         public final Map<String,String> childCols;
         public final boolean isNewGroup;
-        public final StorageDescription origSDCloneWithoutState;
+        public final StorageDescription storage;
         
         private JoinChange(Join join, TableName newParentName, Map<String, String> parentCols,
                            TableName newChildName, Map<String, String> childCols, boolean isNewGroup,
-                           StorageDescription origSDCloneWithoutState) {
+                           StorageDescription storage) {
             this.join = join;
             this.newParentName = newParentName;
             this.parentCols = parentCols;
             this.newChildName = newChildName;
             this.childCols = childCols;
             this.isNewGroup = isNewGroup;
-            this.origSDCloneWithoutState = origSDCloneWithoutState;
+            this.storage = storage;
         }
     }
 
@@ -223,8 +221,8 @@ public class AISMerge {
                     }
                     Group groupParent = oldTable.getGroup();
                     joinsToFix.add(new JoinChange(join, null, desc.getParentColNames(),
-                                                  desc.getNewName(), desc.getColNames(), true, 
-                            groupParent.getStorageDescription().cloneForObjectWithoutState(groupParent)));
+                                                  desc.getNewName(), desc.getColNames(), true,
+                                                  groupParent.getStorageDescription().cloneForObjectWithoutState(groupParent)));
                 } break;
                 default:
                     throw new IllegalStateException("Unhandled GroupChange: " + desc.getParentChange());
@@ -238,14 +236,17 @@ public class AISMerge {
             }
 
             for(Index newIndex : indexSearchTable.getIndexesIncludingInternal()) {
-                String oldName = desc.getPreserveIndexes().get(newIndex.getIndexName().getName());
+                String newName = newIndex.getIndexName().getName();
+                String oldName = desc.getPreserveIndexes().get(newName);
                 Index oldIndex = (oldName != null) ? oldTable.getIndexIncludingInternal(oldName) : null;
                 if(oldIndex != null) {
                     indexesToFix.put(newIndex.getIndexName(), new IndexInfo(oldIndex.getIndexId(), oldIndex.getStorageDescription()));
+                } else if(desc.getIndexesAdded().contains(newName)) {
+                    indexesToFix.put(newIndex.getIndexName(), new IndexInfo(null, newIndex.getStorageDescription()));
                 } else {
                     indexesToFix.put(newIndex.getIndexName(), new IndexInfo(null, null));
                 }
-                LOG.debug("Indexes to fix: {} -> {}", oldName,  newIndex.getIndexName() );
+                LOG.debug("Indexes to fix: {} -> {}", oldName,  newIndex.getIndexName());
             }
 
             for(TableName name : desc.getDroppedSequences()) {
@@ -537,7 +538,7 @@ public class AISMerge {
         for(JoinChange tnj : changedJoins) {
             final Table table = targetAIS.getTable(tnj.newChildName);
             if(tnj.isNewGroup) {
-                addNewGroup(builder, table, tnj.origSDCloneWithoutState );
+                addNewGroup(builder, table, tnj.storage);
             } else if(tnj.newParentName != null) {
                 addJoin(builder, tnj.newParentName, tnj.parentCols, tnj.join, tnj.childCols, table);
             }
@@ -578,11 +579,8 @@ public class AISMerge {
             Table table = targetAIS.getTable(name.getSchemaName(), name.getTableName());
             Index index = table.getIndexIncludingInternal(name.getName());
             index.setIndexId((info.id != null) ? info.id : newIndexID(table.getGroup()));
-            if(info.storage == null && !index.isPrimaryKey()) {
-                getStorageFormatRegistry().finishStorageDescription(index, nameGenerator);
-            }
+            getStorageFormatRegistry().finishStorageDescription(index, nameGenerator);
         }
-
 
         builder.akibanInformationSchema().validate(AISValidations.BASIC_VALIDATIONS).throwIfNecessary();
         builder.akibanInformationSchema().freeze();

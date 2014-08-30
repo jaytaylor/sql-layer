@@ -652,10 +652,9 @@ public class TableDDL
         if (indexIsSpatial && !Index.isSpatialCompatible(tableIndex)) {
             throw new BadSpatialIndexException(tableIndex.getIndexName().getTableName(), null);
         }
-        if(id != null) {
-            StorageFormatNode sfn = id.getStorageFormat();
-            if (sfn != null)
-                tableIndex.setStorageDescription(ddl.getStorageFormatRegistry().parseSQL(sfn, tableIndex));
+        StorageFormatNode sfn = id.getStorageFormat();
+        if (sfn != null) {
+            tableIndex.setStorageDescription(ddl.getStorageFormatRegistry().parseSQL(sfn, tableIndex));
         }
         return tableIndex.getIndexName().getName();
     }
