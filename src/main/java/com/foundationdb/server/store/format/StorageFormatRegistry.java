@@ -206,7 +206,7 @@ public abstract class StorageFormatRegistry
             if (object instanceof Group) {
                 MemoryTableFactory factory = memoryTableFactories.get(((Group)object).getName());
                 if (factory != null) {
-                    object.setStorageDescription(new MemoryTableStorageDescription(object, factory, defaultIdentifier));
+                    object.setStorageDescription(new MemoryTableStorageDescription(object, factory, MemoryTableStorageFormat.identifier));
                 }
                 else {
                     object.setStorageDescription(getDefaultStorageDescription(object));
@@ -214,7 +214,7 @@ public abstract class StorageFormatRegistry
             }
             else if (object instanceof FullTextIndex) {
                 File path = new File(nameGenerator.generateFullTextIndexPath((FullTextIndex)object));
-                object.setStorageDescription(new FullTextIndexFileStorageDescription(object, path, defaultIdentifier));
+                object.setStorageDescription(new FullTextIndexFileStorageDescription(object, path, FullTextIndexFileStorageFormat.identifier));
             }
             else { // Index or Sequence
                 object.setStorageDescription(getDefaultStorageDescription(object));
