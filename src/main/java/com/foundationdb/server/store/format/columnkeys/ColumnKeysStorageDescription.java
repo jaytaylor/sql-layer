@@ -59,7 +59,7 @@ import static com.foundationdb.server.store.FDBStoreDataHelper.*;
  * The value is a single <code>Tuple</code> element.
  * Child rows follow immediately after the last parent column, due to
  * the tuple encoding using 02 for column name strings and 0C-1C for
- * orginal integers.
+ * ordinal integers.
  */
 public class ColumnKeysStorageDescription extends FDBStorageDescription
 {
@@ -106,13 +106,13 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
 
     @Override
     public byte[] getKeyBytes(Key key, FDBStoreData.NudgeDir nudged) {
-        assert nudged == null;
+        assert nudged == null : "Nudge only expected during mixed mode index iteration";
         return getKeyBytes(key);
     }
     
     @Override
     public byte[] getKeyBytes(Key key ) {
-        return TupleStorageDescription.getKeyBytesInternal(key, null, FIRST_NUMERIC);
+        return TupleStorageDescription.getKeyBytesInternal(key, null);
     }
         
     @Override

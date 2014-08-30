@@ -118,14 +118,14 @@ public class TupleStorageDescription extends FDBStorageDescription
     @Override
     public byte[] getKeyBytes(Key key, FDBStoreData.NudgeDir nudged) {
         if (usage != null) {
-            return getKeyBytesInternal(key, nudged, new byte[1]);            
+            return getKeyBytesInternal(key, nudged);
         }
         else {
             return super.getKeyBytes(key);
         }
     }
     
-public static byte[] getKeyBytesInternal(Key key, FDBStoreData.NudgeDir nudged, byte[] appendix ) {
+    public static byte[] getKeyBytesInternal(Key key, FDBStoreData.NudgeDir nudged) {
         // If the Key is encoded as a single component Tuple, you
         // need to apply the edge before encoding. But with
         // multiple components, it wants to do it after packing.
@@ -165,7 +165,7 @@ public static byte[] getKeyBytesInternal(Key key, FDBStoreData.NudgeDir nudged, 
         }
         byte[] bytes = Tuple2.from(keys).pack();
         if (edge == Key.BEFORE ) {
-            return ByteArrayUtil.join(bytes, appendix);
+            return ByteArrayUtil.join(bytes, new byte[1]);
         }
         else if (edge == Key.AFTER) {
             return ByteArrayUtil.join(bytes, new byte[] {(byte)0xFF});
