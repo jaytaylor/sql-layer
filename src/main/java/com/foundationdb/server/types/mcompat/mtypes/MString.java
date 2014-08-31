@@ -162,8 +162,11 @@ public class MString extends TString
             if (inValue.getObject() instanceof byte[]) {
                 out.putBytes((byte[])inValue.getObject());
             }
+            else if (inValue.getObject() instanceof String || inValue.getObject() == null) {
+                out.putString((String)inValue.getObject(), collator);
+            }
             else {
-                out.putString(AkCollator.getString(inValue, collator), collator);
+                throw new UnsupportedOperationException("Unexpected inValue: " + inValue.getObject());
             }
         }
 

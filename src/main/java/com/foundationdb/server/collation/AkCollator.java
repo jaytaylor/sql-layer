@@ -24,7 +24,8 @@ import com.google.common.primitives.UnsignedBytes;
 
 public abstract class AkCollator {
 
-    public static String getString(ValueSource valueSource, AkCollator collator) {
+    /** Debug only: *cannot* be used for returning, converting, etc */
+    public static String getDebugString(ValueSource valueSource, AkCollator collator) {
         if (valueSource.isNull())
             return null;
         Object obj = valueSource.getObject();
@@ -37,7 +38,7 @@ public abstract class AkCollator {
         if (obj instanceof byte[]) {
                 byte[] bytes = (byte[])obj;
                 assert (collator != null) : "encoded as bytes without collator";
-                return collator.decodeSortKeyBytes(bytes, 0, bytes.length);
+                return collator.debugDecodeSortKeyBytes(bytes, 0, bytes.length);
         }
         throw new AssertionError("no value");
     }
@@ -75,26 +76,8 @@ public abstract class AkCollator {
      */
     abstract public boolean isRecoverable();
 
-    /**
-     * Append a String to a Key
-     * 
-     * @param key
-     * @param value
-     */
+    /** Append a String to a Key, encoding to bytes if appropriate. */
     abstract public void append(Key key, String value);
-
-    abstract public void append(Key key, byte[] bytes);
-
-    /**
-     * Decode a String from a Key segment
-     * 
-     * @param key
-     * @return the decoded String
-     * @throws UnsupportedOperationException
-     *             for collations in which a precise transformation is
-     *             impossible. See {@link #isRecoverable()}.
-     */
-    abstract public String decode(Key key);
 
     /**
      * Compare two string values: Comparable<ValueSource>
@@ -106,25 +89,29 @@ public abstract class AkCollator {
         if (persistit1 && persistit2) {
             return ((PersistitKeyValueSource) value1).compare((PersistitKeyValueSource) value2);
         }
-        if (persistit1) {
-            return ((PersistitKeyValueSource) value1).compare(this, getBytes(value2.getObject()));
-        }
-        if (persistit2) {
-            return -((PersistitKeyValueSource) value2).compare(this, getBytes(value1.getObject()));
-        }
         if (value1.isNull()) {
-            return (value2.isNull()) ? 0 : -1;
+            return value2.isNull() ? 0 : -1;
         }
         if (value2.isNull()) {
-            return (value1.isNull()) ? 0 : 1;
+            return 1;
         }
 
-        byte[] bytes1 = getBytes(value1.getObject());
-        byte[] bytes2 = getBytes(value2.getObject());
-        return UnsignedBytes.lexicographicalComparator().compare(bytes1, bytes2);
+        // Delicate: If one is a key source the other might not be.
+        // Need to normalize to bytes e.g. AkCollatorBinary appends a string directly (not sortKeyBytes)
+
+        Object o1 = value1.getObject();
+        Object o2 = value2.getObject();
+        if(isByteLike(o1) || isByteLike(o2)) {
+            return UnsignedBytes.lexicographicalComparator().compare(getBytes(o1), getBytes(o2));
+        } else {
+            assert o1 instanceof String : o1;
+            assert o2 instanceof String : o2;
+            return compare((String)o1, (String)o2);
+        }
     }
 
     private byte[] getBytes(Object obj) {
+        assert obj != null;
         if (obj instanceof byte[]) {
             return (byte[]) obj;
         }
@@ -135,6 +122,10 @@ public abstract class AkCollator {
             return encodeSortKeyBytes((String)obj);
         }
         throw new AssertionError("Unexpected ValueSource object type: " + obj.getClass().getName());
+    }
+
+    private boolean isByteLike(Object obj) {
+        return (obj instanceof byte[]) || (obj instanceof WrappingByteSource);
     }
 
     /**
@@ -175,32 +166,9 @@ public abstract class AkCollator {
         return collatorScheme;
     }
 
-    /**
-     * Construct the sort key bytes for the given String value. This method is
-     * intended for use only by {@link CStringKeyCoder} and is therefore
-     * package-private.
-     * 
-     * @param value
-     *            the String
-     * @return sort key bytes
-     */
-    abstract byte[] encodeSortKeyBytes(String value);
+    /** Construct the sort key bytes for the given String value. */
+    public abstract byte[] encodeSortKeyBytes(String value);
 
-    /**
-     * Recover a String value which may be approximate. For example The string
-     * may be spelled with incorrect case and not correctly represent some
-     * characters. This method is intended for use only by
-     * {@link CStringKeyCoder} and is therefore package-private.
-     * 
-     * @param bytes
-     *            the sort key bytes
-     * @param index
-     *            index within array of first sorted key byte
-     * @param length
-     *            number of sorted key bytes
-     * @return the decoded String value
-     * @throws UnsupportedOperationException
-     *             if unable to decode sort keys
-     */
-    abstract String decodeSortKeyBytes(byte[] bytes, int index, int length);
+    /** Recover a String value which may be approximate. */
+    abstract String debugDecodeSortKeyBytes(byte[] bytes, int index, int length);
 }

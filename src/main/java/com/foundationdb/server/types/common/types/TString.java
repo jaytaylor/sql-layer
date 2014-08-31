@@ -95,7 +95,7 @@ public abstract class TString extends TClass
                     }
                 }
                 AkCollator collator = getCollator(type);
-                out.append(AkCollator.getString(source, collator));
+                out.append(AkCollator.getDebugString(source, collator));
             }
 
             @Override
@@ -431,11 +431,12 @@ public abstract class TString extends TClass
         @Override
         public void cacheToValue(Object cached, TInstance type, BasicValueTarget target) {
             String asString;
-            if (cached instanceof WrappingByteSource) {
-                asString = getString((ByteSource) cached, type);
-            }
-            else {
+            if(cached instanceof String) {
                 asString = (String)cached;
+            } else if(cached instanceof WrappingByteSource) {
+                asString = getString((ByteSource) cached, type);
+            } else {
+                throw new IllegalStateException("Unexpected cache type: " + cached.getClass());
             }
             target.putString(asString, getCollator(type));
         }

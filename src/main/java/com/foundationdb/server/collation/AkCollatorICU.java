@@ -26,7 +26,7 @@ import java.util.Arrays;
 
 public class AkCollatorICU extends AkCollator {
 
-    ThreadLocal<Collator> collator = new ThreadLocal<Collator>() {
+    final ThreadLocal<Collator> collator = new ThreadLocal<Collator>() {
         protected Collator initialValue() {
             return AkCollatorFactory.forScheme(getScheme());
         }
@@ -63,20 +63,6 @@ public class AkCollatorICU extends AkCollator {
     }
 
     @Override
-    public void append(Key key, byte[] bytes) {
-        if (bytes == null) {
-            key.append(null);
-        } else {
-            key.append(bytes);
-        }
-    }
-
-    @Override
-    public String decode(Key key) {
-        throw new UnsupportedOperationException("Unable to decode a collator sort key");
-    }
-
-    @Override
     public int compare(String source, String target) {
         return collator.get().compare(source, target);
     }
@@ -94,25 +80,14 @@ public class AkCollatorICU extends AkCollator {
      * @return sort key bytes
      */
     @Override
-    byte[] encodeSortKeyBytes(String value) {
+    public byte[] encodeSortKeyBytes(String value) {
         byte[] bytes = collator.get().getCollationKey(value).toByteArray();
         return Arrays.copyOf(bytes, bytes.length - 1); // Remove terminating null.
     }
 
-    /**
-     * Decode the value to a string of hex digits. For ICU4J collations that's
-     * the best we can do. This method is used by the
-     * {@link CStringKeyCoder#displayKeySegment} method.
-     * 
-     * @param bytes
-     *            Bytes to decode
-     * @param index
-     *            starting index
-     * @param length
-     *            number of bytes to decode
-     */
+    /** Decode the value to a string of hex digits. */
     @Override
-    String decodeSortKeyBytes(byte[] bytes, int index, int length) {
+    String debugDecodeSortKeyBytes(byte[] bytes, int index, int length) {
         StringBuilder sb = new StringBuilder();
         Util.bytesToHex(sb, bytes, index, length);
         return sb.toString();
@@ -130,5 +105,5 @@ public class AkCollatorICU extends AkCollator {
         return hashFunction.hashBytes(bytes, 0, bytes.length).asInt();
     }
 
-    private final HashFunction hashFunction = Hashing.goodFastHash(32); // Because we're returning ints
+    private static final HashFunction hashFunction = Hashing.goodFastHash(32); // Because we're returning ints
 }
