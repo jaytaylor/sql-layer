@@ -22,10 +22,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.foundationdb.server.error.InvalidCollationSchemeException;
 import com.foundationdb.server.error.UnsupportedCollationException;
-import com.foundationdb.server.types.common.types.StringFactory;
 import com.ibm.icu.text.Collator;
 import com.ibm.icu.text.RuleBasedCollator;
 import com.ibm.icu.util.ULocale;
@@ -39,11 +39,11 @@ import com.ibm.icu.util.ULocale;
  */
 public class AkCollatorFactory {
 
+    public final static int UCS_BINARY_ID = 0;
+
     public final static String UCS_BINARY = "UCS_BINARY";
 
     public final static AkCollator UCS_BINARY_COLLATOR = new AkCollatorBinary();
-
-    private static Integer collation_id_count = 1;
 
     private final static Map<String, Collator> sourceMap = new HashMap<>();
 
@@ -52,6 +52,8 @@ public class AkCollatorFactory {
     private final static Map<Integer, SoftReference<AkCollator>> collationIdMap = new ConcurrentHashMap<>();
     
     private final static Map<String, Integer> schemeToIdMap = new ConcurrentHashMap<>();
+
+    private final static AtomicInteger collationIdGenerator = new AtomicInteger(UCS_BINARY_ID);
 
     private volatile static Mode mode = Mode.STRICT;
 
@@ -82,8 +84,6 @@ public class AkCollatorFactory {
      * <dt>loose</dt>
      * <dd>returns UCS_BINARY_COLLATOR for any unrecognized name</dd>
      * </dl
-     * 
-     * @param modeString
      */
     public static void setCollationMode(String modeString) {
         try {
@@ -108,10 +108,6 @@ public class AkCollatorFactory {
         return mode;
     }
 
-    /**
-     * @param scheme
-     * @return an AkCollator
-     */
     public static AkCollator getAkCollator(final String scheme) {
         if (mode == Mode.DISABLED || scheme == null) {
             return UCS_BINARY_COLLATOR;
@@ -132,18 +128,15 @@ public class AkCollatorFactory {
 
         synchronized (collatorMap) {
             
-            final int collationId;
-            if (schemeToIdMap.containsKey(scheme)) {
-                collationId = schemeToIdMap.get(scheme);
-            } else {
-                collationId = collation_id_count;
-                collation_id_count++;
+            Integer collationId = schemeToIdMap.get(scheme);
+            if (collationId == null) {
+                collationId = collationIdGenerator.incrementAndGet();
             }
 
             final AkCollator akCollator;
             try {
                 akCollator = new AkCollatorICU(scheme, collationId);
-            } catch (Exception e) {
+            } catch (InvalidCollationSchemeException | UnsupportedCollationException e) {
                 if (mode == Mode.LOOSE) {
                     return mapToBinary(scheme);
                 } else {
@@ -164,7 +157,7 @@ public class AkCollatorFactory {
         final SoftReference<AkCollator> ref = collationIdMap.get(collatorId);
         AkCollator collator = (ref == null ? null : ref.get());
         if (collator == null) {
-            if (collatorId == 0) {
+            if (collatorId == UCS_BINARY_ID) {
                 return UCS_BINARY_COLLATOR;
             }
             else {
@@ -191,9 +184,6 @@ public class AkCollatorFactory {
     /**
      * Construct an actual ICU Collator given a collation scheme. The
      * result is a Collator that must be use in a thread-private manner.
-     *
-     * @param scheme
-     * @return
      */
     static synchronized Collator forScheme(final String scheme) {
         RuleBasedCollator collator = (RuleBasedCollator) sourceMap.get(scheme); 
