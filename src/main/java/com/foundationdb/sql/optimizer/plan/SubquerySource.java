@@ -35,8 +35,10 @@ public class SubquerySource extends BaseJoinable implements ColumnSource, PlanWi
 
     @Override
     public void replaceInput(PlanNode oldInput, PlanNode newInput) {
-        if (subquery == oldInput)
+        if (subquery == oldInput) {
             subquery = (Subquery)newInput;
+            subquery.setOutput(this);
+        }
     }
 
     @Override
