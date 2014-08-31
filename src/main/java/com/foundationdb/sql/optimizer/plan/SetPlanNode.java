@@ -92,10 +92,14 @@ public class SetPlanNode extends BasePlanNode implements PlanWithInput, TypedPla
 
     @Override
     public void replaceInput(PlanNode oldInput, PlanNode newInput) {
-        if (left == oldInput)
+        if (left == oldInput) {
             left = newInput;
-        if (right == oldInput)
+            left.setOutput(this);
+        }
+        if (right == oldInput) {
             right = newInput;
+            right.setOutput(this);
+        }
     }
 
     @Override
