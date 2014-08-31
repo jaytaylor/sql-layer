@@ -159,7 +159,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         Operator plan = plan(0);
         Row[] expected = new Row[] {
         };
-        compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -168,7 +168,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         Operator plan = plan(1);
         Row[] expected = new Row[] {
         };
-        compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -177,7 +177,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         Operator plan = plan(2);
         Row[] expected = new Row[] {
         };
-        compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -186,7 +186,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         Operator plan = plan(3);
         Row[] expected = new Row[] {
         };
-        compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -196,7 +196,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         Row[] expected = new Row[] {
             row(outputRowType, 2),
         };
-        compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -205,7 +205,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         Operator plan = plan(5);
         Row[] expected = new Row[] {
         };
-        compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -216,7 +216,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
             row(outputRowType, 6),
             row(outputRowType, 7),
         };
-        compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -225,7 +225,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         Operator plan = plan(7);
         Row[] expected = new Row[] {
         };
-        compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test
@@ -234,7 +234,7 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         Operator plan = plan(8);
         Row[] expected = new Row[] {
         };
-        compareRows(expected, cursor(plan, queryContext, queryBindings), null, ciCollator, ciCollator);
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
 
     @Test

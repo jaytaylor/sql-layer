@@ -33,7 +33,6 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.test.ApiTestBase;
 import com.foundationdb.server.test.it.qp.TestRow;
@@ -132,15 +131,10 @@ public abstract class ITBase extends ApiTestBase {
 
     protected void compareRows(Row[] expected, RowCursor cursor)
     {
-        compareRows(expected, cursor, (cursor instanceof Cursor), null);
+        compareRows(expected, cursor, (cursor instanceof Cursor));
     }
 
-    protected void compareRows(Row[] expected, RowCursor cursor, AkCollator ... collators)
-    {
-        compareRows(expected, cursor, (cursor instanceof Cursor), collators);
-    }
-
-    protected void compareRows(Row[] expected, RowCursor cursor, boolean topLevel, AkCollator ... collators) {
+    protected void compareRows(Row[] expected, RowCursor cursor, boolean topLevel) {
         boolean began = false;
         if(!txnService().isTransactionActive(session())) {
             txnService().beginTransaction(session());
@@ -148,7 +142,7 @@ public abstract class ITBase extends ApiTestBase {
         }
         boolean success = false;
         try {
-            compareRowsInternal(expected, cursor, topLevel, collators);
+            compareRowsInternal(expected, cursor, topLevel);
             success = true;
         } finally {
             if(began) {
@@ -161,7 +155,7 @@ public abstract class ITBase extends ApiTestBase {
         }
     }
 
-    private void compareRowsInternal(Row[] expected, RowCursor cursor, boolean topLevel, AkCollator ... collators)
+    private void compareRowsInternal(Row[] expected, RowCursor cursor, boolean topLevel)
     {
         List<Row> actualRows = new ArrayList<>(); // So that result is viewable in debugger
         try {
@@ -173,7 +167,7 @@ public abstract class ITBase extends ApiTestBase {
             while ((actualRow = cursor.next()) != null) {
                 int count = actualRows.size();
                 assertTrue(String.format("failed test %d < %d (more rows than expected)", count, expected.length), count < expected.length);
-                compareTwoRows(expected[count], actualRow, count, collators);
+                compareTwoRows(expected[count], actualRow, count);
                 actualRows.add(actualRow);
             }
         } finally {
@@ -185,12 +179,12 @@ public abstract class ITBase extends ApiTestBase {
         assertEquals(expected.length, actualRows.size());
     }
 
-    private static void compareTwoRows(Row expected, Row actual, int rowNumber, AkCollator... collators) {
-        compareTwoRows(expected, actual, rowNumber, false, collators);
+    private static void compareTwoRows(Row expected, Row actual, int rowNumber) {
+        compareTwoRows(expected, actual, rowNumber, false);
     }
 
-    private static void compareTwoRows(Row expected, Row actual, int rowNumber, boolean skipInternalColumns, AkCollator... collators) {
-        if(!equal(expected, actual,skipInternalColumns, collators)) {
+    private static void compareTwoRows(Row expected, Row actual, int rowNumber, boolean skipInternalColumns) {
+        if(!equal(expected, actual,skipInternalColumns)) {
             assertEquals("row " + rowNumber, String.valueOf(expected), String.valueOf(actual));
         }
         if(expected instanceof TestRow) {
@@ -203,7 +197,7 @@ public abstract class ITBase extends ApiTestBase {
         }
     }
 
-    private static boolean equal(Row expected, Row actual, boolean skipInternalColumns, AkCollator... collators)
+    private static boolean equal(Row expected, Row actual, boolean skipInternalColumns)
     {
         int nFields;
         if(skipInternalColumns){
@@ -273,12 +267,5 @@ public abstract class ITBase extends ApiTestBase {
             }
         }
         return space;
-    }
-
-    private AkCollator collator(AkCollator[] collators, int i)
-    {
-        return
-            collators == null ? null :
-            collators.length == 0 ? null : collators[i];
     }
 }
