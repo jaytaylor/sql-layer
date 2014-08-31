@@ -115,8 +115,10 @@ public final class ValueSources {
                     value.putBytes(((ByteSource)object).toByteSubarray());
                 break;
             case STRING:
-                value.putString(object.toString(), null);
-                break;
+                // byte[].toString() is never correct, Integer is lazy, etc
+                throw new IllegalArgumentException("Unsafe toString(): " + object.getClass());
+                //value.putString(object.toString(), null);
+                //break;
             case BOOL:
                 if (object instanceof Boolean)
                     value.putBool((Boolean)object);
