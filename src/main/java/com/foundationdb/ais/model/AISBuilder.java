@@ -173,12 +173,16 @@ public class AISBuilder {
     }
 
     public void index(String schemaName, String tableName, String indexName, Boolean unique, Boolean isPrimaryKey, TableName constraintName) {
+        index(schemaName, tableName, indexName, unique, isPrimaryKey, constraintName, null);
+    }
+
+    public void index(String schemaName, String tableName, String indexName, Boolean unique, Boolean isPrimaryKey, TableName constraintName, StorageDescription copyStorage) {
         Table table = ais.getTable(schemaName, tableName);
         int indexID = nameGenerator.generateIndexID(getRooTableID(table));
         LOG.trace("index: " + schemaName + "." + tableName + "." + indexName);
         checkFound(table, "creating index", "table", concat(schemaName, tableName));
         Index index = TableIndex.create(ais, table, indexName, indexID, unique, isPrimaryKey, constraintName);
-        finishStorageDescription(index);
+        finishStorageDescription(index, copyStorage);
     }
 
     // deprecate?

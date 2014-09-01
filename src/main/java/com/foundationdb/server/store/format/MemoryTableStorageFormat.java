@@ -30,7 +30,7 @@ public class MemoryTableStorageFormat extends StorageFormat<MemoryTableStorageDe
 {
     private final Map<TableName,MemoryTableFactory> memoryTableFactories;
 
-    private final static String identifier = "memory";
+    final static String identifier = "memory";
 
     private MemoryTableStorageFormat(Map<TableName,MemoryTableFactory> memoryTableFactories) {
         this.memoryTableFactories = memoryTableFactories;

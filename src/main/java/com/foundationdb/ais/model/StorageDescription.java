@@ -51,6 +51,9 @@ public abstract class StorageDescription
      */
     public abstract StorageDescription cloneForObject(HasStorage forObject);
 
+    /** As {@link #cloneForObject(HasStorage)} but without internal state (e.g no tree name) **/
+    public abstract StorageDescription cloneForObjectWithoutState(HasStorage forObject);
+    
     /** Populate the extension fields of the <code>Storage</code>
      * field. */
     public abstract void writeProtobuf(Storage.Builder builder);

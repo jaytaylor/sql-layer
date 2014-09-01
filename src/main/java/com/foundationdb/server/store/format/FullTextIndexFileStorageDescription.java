@@ -68,6 +68,11 @@ public class FullTextIndexFileStorageDescription extends StorageDescription
     }
 
     @Override
+    public StorageDescription cloneForObjectWithoutState(HasStorage forObject) {
+        return new FullTextIndexFileStorageDescription(forObject, storageFormat);
+    }
+
+    @Override
     public void writeProtobuf(Storage.Builder builder) {
         builder.setExtension(CommonProtobuf.fullTextIndexPath, path.getPath());
         writeUnknownFields(builder);

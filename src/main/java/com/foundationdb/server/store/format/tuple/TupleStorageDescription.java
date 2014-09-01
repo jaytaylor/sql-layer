@@ -21,6 +21,7 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.HasStorage;
+import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.validation.AISValidationFailure;
@@ -44,6 +45,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.persistit.Key;
 import com.persistit.KeyShim;
 
+import java.util.Collections;
 import java.util.List;
 
 public class TupleStorageDescription extends FDBStorageDescription
@@ -62,6 +64,13 @@ public class TupleStorageDescription extends FDBStorageDescription
     @Override
     public StorageDescription cloneForObject(HasStorage forObject) {
         return new TupleStorageDescription(forObject, this, storageFormat);
+    }
+    
+    @Override
+    public StorageDescription cloneForObjectWithoutState(HasStorage forObject) {
+        TupleStorageDescription sd = new TupleStorageDescription(forObject, storageFormat);
+        sd.setUsage(this.getUsage());
+        return sd;
     }
 
     public TupleUsage getUsage() {
@@ -99,6 +108,10 @@ public class TupleStorageDescription extends FDBStorageDescription
         else if (object instanceof Index) {
             illegal = TupleRowDataConverter.checkTypes((Index)object, usage);
         }
+        else if (object instanceof Sequence) {
+            // No types to check
+            illegal = Collections.emptyList();
+        }
         else {
             output.reportFailure(new AISValidationFailure(new StorageDescriptionInvalidException(object, "is not a Group or Index and cannot use Tuples")));
             return;
@@ -109,48 +122,71 @@ public class TupleStorageDescription extends FDBStorageDescription
     }
 
     @Override
-    public byte[] getKeyBytes(Key key) {
+    public byte[] getKeyBytes(Key key, FDBStoreData.NudgeDir nudged) {
         if (usage != null) {
-            // If the Key is encoded as a single component Tuple, you
-            // need to apply the edge before encoding. But with
-            // multiple components, it wants to do it after packing.
-            // For a Key {1}, whose bytes are 258100, and as a Tuple
-            // 01258100FF00, strinc would be 01258100FF01, whereas
-            // {1,{after}} would be 258100FE, so 01258100FFFE00.
-            // So, take edge out and do below.
-            Key.EdgeValue edge = null;
-            int nkeys = key.getDepth();
-            if (KeyShim.isBefore(key)) {
-                edge = Key.BEFORE;
-                nkeys--;
-            }
-            else if (KeyShim.isAfter(key)) {
-                edge = Key.AFTER;
-                nkeys--;
-            }
-            Object[] keys = new Object[nkeys];
-            key.reset();
-            for (int i = 0; i < nkeys; i++) {
-                keys[i] = key.decode();
-            }
-            byte[] bytes = Tuple2.from(keys).pack();
-            if (edge == Key.BEFORE) {
-                return ByteArrayUtil.join(bytes, new byte[1]);
-            }
-            else if (edge == Key.AFTER) {
-                if (nkeys == 0) {
-                    return new byte[] { (byte)0xFF };
-                }
-                else {
-                    return ByteArrayUtil.strinc(bytes);
-                }
-            }
-            else {
-                return bytes;
-            }
+            return getKeyBytesInternal(key, nudged);
         }
         else {
             return super.getKeyBytes(key);
+        }
+    }
+    
+    public static byte[] getKeyBytesInternal(Key key, FDBStoreData.NudgeDir nudged) {
+        // If the Key is encoded as a single component Tuple, you
+        // need to apply the edge before encoding. But with
+        // multiple components, it wants to do it after packing.
+        // For a Key {1}, whose bytes are 258100, and as a Tuple
+        // 01258100FF00, strinc would be 01258100FF01, whereas
+        // {1,{after}} would be 258100FE, so 01258100FFFE00.
+        // So, take edge out and do below.
+
+        // Un-nudge the key to allow decoding of original state
+        if (nudged != null) {
+            if (nudged == FDBStoreData.NudgeDir.DEEPER) {
+                key.setEncodedSize(key.getEncodedSize() - 1);
+            } else if (nudged == FDBStoreData.NudgeDir.LEFT ) {
+                key.setEncodedSize(key.getEncodedSize() + 1);
+            } else {
+                key.getEncodedBytes()[key.getEncodedSize() - 1] = 0;
+                
+            }
+        }
+
+        // Persistit Key computes the depth incorrectly. It does not count for
+        // Key.BEFORE or Key.AFTER, where it does increase the depth when
+        // Key#appendAfter() or Key#appendBefore() are called via Key#append(...).
+        // reset size to enforce recalculation of the depth
+        key.setEncodedSize(key.getEncodedSize());
+
+        Key.EdgeValue edge = null;
+        int nkeys = key.getDepth();
+        if (KeyShim.isBefore(key)) {
+            edge = Key.BEFORE;
+        }
+        else if (KeyShim.isAfter(key)) {
+            edge = Key.AFTER;
+        } 
+        
+        Object[] keys = new Object[nkeys];
+        key.reset();
+        for (int i = 0; i < nkeys; i++) {
+            keys[i] = key.decode();
+        }
+        byte[] bytes = Tuple2.from(keys).pack();
+        if (edge == Key.BEFORE ) {
+            return ByteArrayUtil.join(bytes, new byte[1]);
+        }
+        else if (edge == Key.AFTER) {
+            return ByteArrayUtil.join(bytes, new byte[] {(byte)0xFF});
+        }
+        else {
+            if (nudged == FDBStoreData.NudgeDir.DEEPER) {
+                return ByteArrayUtil.join(bytes, new byte[1]);
+            }
+            else if (nudged == FDBStoreData.NudgeDir.RIGHT) {
+                return ByteArrayUtil.strinc(bytes);
+            }
+            return bytes;
         }
     }
 

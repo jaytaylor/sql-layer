@@ -59,6 +59,11 @@ public class MemoryTableStorageDescription extends StorageDescription
     }
 
     @Override
+    public StorageDescription cloneForObjectWithoutState(HasStorage forObject) {
+        return new MemoryTableStorageDescription(forObject, storageFormat);
+    }
+
+    @Override
     public void writeProtobuf(Storage.Builder builder) {
         builder.setExtension(CommonProtobuf.memoryTable, 
                              CommonProtobuf.MemoryTableType.MEMORY_TABLE_FACTORY);
