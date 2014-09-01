@@ -61,8 +61,8 @@ public class PostgresServerLargeSortKeysIT extends PostgresServerFilesITBase {
     @Before
     public void loadDatabase() throws Exception {
         createTable(SCHEMA_NAME, "t1", "id int NOT NULL", "PRIMARY KEY(id)",
-                "a varchar(65535) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL",
-                "b varchar(65535) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL",
+                "a varchar(65535) CHARACTER SET latin1 COLLATE en_us_ci NOT NULL",
+                "b varchar(65535) CHARACTER SET latin1 COLLATE en_us_ci NOT NULL",
                 "c varchar(65535) CHARACTER SET latin1 COLLATE utf8_bin NOT NULL",
                 "d varchar(65535) CHARACTER SET latin1 COLLATE utf8_bin NOT NULL");
 

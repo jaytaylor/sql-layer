@@ -413,7 +413,7 @@ public class MergeJoinSorter implements Sorter {
                     if (!src.isNull()) {
                         switch (TInstance.underlyingType(src.getType())) {
                         case STRING:
-                            size += AkCollator.getString(src, collators[i]).length() * 2 + 3;
+                            size += AkCollator.getDebugString(src, collators[i]).length() * 2 + 3;
                             break;
                         case BYTES:
                             size += src.getBytes().length;

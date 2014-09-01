@@ -95,7 +95,7 @@ public abstract class TString extends TClass
                     }
                 }
                 AkCollator collator = getCollator(type);
-                out.append(AkCollator.getString(source, collator));
+                out.append(AkCollator.getDebugString(source, collator));
             }
 
             @Override
@@ -270,7 +270,7 @@ public abstract class TString extends TClass
                 }
             }
             else {
-                output.append(collator.getName());
+                output.append(collator.getScheme());
             }
             break;
         }
@@ -303,7 +303,7 @@ public abstract class TString extends TClass
                 }
             }
             else {
-                return collator.getName();
+                return collator.getScheme();
             }
         default:
             throw new IllegalArgumentException("illegal attribute index: " + attributeIndex);
@@ -430,18 +430,20 @@ public abstract class TString extends TClass
     private static class StringCacher implements ValueCacher {
         @Override
         public void cacheToValue(Object cached, TInstance type, BasicValueTarget target) {
-            String asString = getString((ByteSource) cached, type);
-            target.putString(asString, null);
+            String asString;
+            if(cached instanceof String) {
+                asString = (String)cached;
+            } else if(cached instanceof WrappingByteSource) {
+                asString = getString((ByteSource) cached, type);
+            } else {
+                throw new IllegalStateException("Unexpected cache type: " + cached.getClass());
+            }
+            target.putString(asString, getCollator(type));
         }
 
         @Override
         public Object valueToCache(BasicValueSource value, TInstance type) {
-            String charsetName = StringAttribute.charsetName(type);
-            try {
-                return new WrappingByteSource(value.getString().getBytes(charsetName));
-            } catch (UnsupportedEncodingException e) {
-                throw new UnsupportedCharsetException(charsetName);
-            }
+            return value.getString();
         }
 
         @Override

@@ -117,6 +117,9 @@ public final class ValueSources {
                     value.putBytes(((ByteSource)object).toByteSubarray());
                 break;
             case STRING:
+                if(!(object instanceof CharSequence || object instanceof Number)) {
+                    throw new IllegalArgumentException("Unsafe toString(): " + object.getClass());
+                }
                 value.putString(object.toString(), null);
                 break;
             case BOOL:
@@ -404,8 +407,7 @@ public final class ValueSources {
             hash = Arrays.hashCode(source.getBytes());
             break;
         case STRING:
-            String stringVal = AkCollator.getString(source, collator);
-            hash = collator.hashCode(stringVal);
+            hash = AkCollator.hashValue(source, collator);
             break;
         default:
             throw new AssertionError(source.getType());
