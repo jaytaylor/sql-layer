@@ -57,5 +57,63 @@ public class TuplesTest {
         assertEquals((BigDecimal) items.get(12), new BigDecimal("-12345678912345.1234567891234"));
         assertEquals((Boolean) items.get(13), new Boolean(false));
     }
-    
+
+    @Test
+    public void compareIntsAndBigInts() {
+        // negative ints should always be less than positive BigInts
+        Tuple2 tInt = new Tuple2();
+        tInt = tInt.add(-1);
+        Tuple2 tBigInt = new Tuple2();
+        tBigInt = tBigInt.add(new BigInteger("1"));
+        assertEquals(-1, tInt.compareTo(tBigInt));
+
+        // positive ints should always be greater than negative BigInts
+        tInt = new Tuple2();
+        tInt = tInt.add(1);
+        tBigInt = new Tuple2();
+        tBigInt = tBigInt.add(new BigInteger("-1"));
+        assertEquals(1, tInt.compareTo(tBigInt));
+    }
+
+    @Test
+    public void bigDecOrdering() {
+        Tuple2 t1 = new Tuple2();
+        t1 = t1.add(new BigDecimal("-1.29"));
+        Tuple2 t2 = new Tuple2();
+        t2 = t2.add(new BigDecimal("-1.28"));
+        assertEquals(-1, t1.compareTo(t2));
+
+        t1 = new Tuple2();
+        t1 = t1.add(new BigDecimal("1.28"));
+        t2 = new Tuple2();
+        t2 = t2.add(new BigDecimal("1.27"));
+        assertEquals(1, t1.compareTo(t2));
+
+        t1 = new Tuple2();
+        t1 = t1.add(new BigDecimal("1.27"));
+        t2 = new Tuple2();
+        t2 = t2.add(new BigDecimal("-1.29"));
+        assertEquals(1, t1.compareTo(t2));
+    }
+
+    @Test
+    public void bigIntOrdering() {
+        Tuple2 t1 = new Tuple2();
+        t1 = t1.add(new BigInteger("-129"));
+        Tuple2 t2 = new Tuple2();
+        t2 = t2.add(new BigInteger("-128"));
+        assertEquals(-1, t1.compareTo(t2));
+
+        t1 = new Tuple2();
+        t1 = t1.add(new BigInteger("128"));
+        t2 = new Tuple2();
+        t2 = t2.add(new BigInteger("127"));
+        assertEquals(1, t1.compareTo(t2));
+
+        t1 = new Tuple2();
+        t1 = t1.add(new BigInteger("127"));
+        t2 = new Tuple2();
+        t2 = t2.add(new BigInteger("-129"));
+        assertEquals(1, t1.compareTo(t2));
+    }
 }
