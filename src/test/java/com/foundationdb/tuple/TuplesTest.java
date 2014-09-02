@@ -158,7 +158,6 @@ public class TuplesTest {
             bytes[i] = (byte) 0xff;
         }
         BigInteger d87 = new BigInteger(bytes);
-
         BigInteger d86 = d87.subtract(BigInteger.ONE);
         BigInteger d88 = d87.add(BigInteger.ONE);
 
@@ -172,6 +171,8 @@ public class TuplesTest {
 
     @Test
     public void bigBigDecimals() {
+        // ugly way to do the same check as in bigBigIntegers()
+        // BigDecimal constructor can't use a byte array
         BigDecimal d87 = new BigDecimal("6.311915248302931113420874353255849992"
                 + "274238802678805475025458091313409206810134940077578400688069"
                 + "035876702726742558206932445226396580258026384404762978180296"
