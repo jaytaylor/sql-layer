@@ -127,5 +127,46 @@ public class TuplesTest {
         t2 = new Tuple2();
         t2 = t2.add(new BigInteger("-128"));
         assertEquals(1, t1.compareTo(t2));
+
+        byte[] bytes = new byte[255];
+        bytes[0] = Byte.MAX_VALUE;
+        for (int i = 1; i < 255; i++) {
+            bytes[i] = (byte) 0xff;
+        }
+        BigInteger bigInteger = new BigInteger(bytes);
+        
+        bytes = new byte[255];
+        bytes[0] = Byte.MIN_VALUE;
+        for (int i = 1; i < 255; i++) {
+            bytes[i] = (byte) 0xff;
+        }
+        BigInteger negBigInteger = new BigInteger(bytes);
+        
+        t1 = new Tuple2();
+        t1 = t1.add(bigInteger);
+        
+        t2 = new Tuple2();
+        t2 = t2.add(negBigInteger);
+        assertEquals(1, t1.compareTo(t2));
+    }
+
+    @Test
+    public void bigBigIntegers() {
+        byte[] bytes = new byte[255];
+        bytes[0] = Byte.MAX_VALUE;
+        for (int i = 1; i < 255; i++) {
+            bytes[i] = (byte) 0xff;
+        }
+        BigInteger d87 = new BigInteger(bytes);
+
+        BigInteger d86 = d87.subtract(BigInteger.ONE);
+        BigInteger d88 = d87.add(BigInteger.ONE);
+
+        Tuple2 t86 = Tuple2.from(d86);
+        Tuple2 t87 = Tuple2.from(d87);
+        Tuple2 t88 = Tuple2.from(d88);
+
+        assertEquals(1, t87.compareTo(t86));
+        assertEquals(-1, t87.compareTo(t88));
     }
 }

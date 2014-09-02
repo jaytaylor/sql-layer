@@ -100,5 +100,5 @@
 - Statement: INSERT INTO td VALUES(1, -1.28), (2, -1.29)
 ---
 - Statement: SELECT * FROM td ORDER BY d
-- output: [[2, -1.29], [1, -1.28]]
+- output_already_ordered: [[2, -1.29], [1, -1.28]]
 ...
