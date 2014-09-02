@@ -94,6 +94,12 @@ public class TuplesTest {
         t2 = new Tuple2();
         t2 = t2.add(new BigDecimal("-1.29"));
         assertEquals(1, t1.compareTo(t2));
+
+        t1 = new Tuple2();
+        t1 = t1.add(new BigDecimal("1.28"));
+        t2 = new Tuple2();
+        t2 = t2.add(new BigDecimal("-1.27"));
+        assertEquals(1, t1.compareTo(t2));
     }
 
     @Test
@@ -114,6 +120,12 @@ public class TuplesTest {
         t1 = t1.add(new BigInteger("127"));
         t2 = new Tuple2();
         t2 = t2.add(new BigInteger("-129"));
+        assertEquals(1, t1.compareTo(t2));
+
+        t1 = new Tuple2();
+        t1 = t1.add(new BigInteger("128"));
+        t2 = new Tuple2();
+        t2 = t2.add(new BigInteger("-128"));
         assertEquals(1, t1.compareTo(t2));
     }
 }
