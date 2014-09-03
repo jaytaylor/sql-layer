@@ -85,11 +85,6 @@ public class IndexScanBoundedAllColumnsIT extends OperatorITBase
                 ordering(DESC, ASC, DESC, DESC),
                 1009, 1008, 1007
         );
-        test(range(INCLUSIVE, 5, 55, 555, 1007,
-                        INCLUSIVE, 5, 55, 555, null),
-                ordering(DESC, ASC, DESC, DESC),
-                1009, 1008, 1007
-        );
         test(range(EXCLUSIVE, 5, 55, 555, null,
                         EXCLUSIVE, 5, 55, 555, 1009),
                 ordering(DESC, ASC, DESC, DESC),
@@ -104,11 +99,6 @@ public class IndexScanBoundedAllColumnsIT extends OperatorITBase
         // DAAD
         test(range(INCLUSIVE, 5, 55, 555, null,
                         INCLUSIVE, 5, 55, 555, 1009),
-                ordering(DESC, ASC, ASC, DESC),
-                1009, 1008, 1007
-        );
-        test(range(INCLUSIVE, 5, 55, 555, 1007,
-                        INCLUSIVE, 5, 55, 555, null),
                 ordering(DESC, ASC, ASC, DESC),
                 1009, 1008, 1007
         );
