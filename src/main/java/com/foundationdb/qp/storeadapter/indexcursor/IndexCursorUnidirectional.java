@@ -63,12 +63,9 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                 // Guard against bug 1046053
                 assert next != startKey;
                 assert next != endKey;
-                // If we're scanning a unique key index, then the row format has the declared key in the
-                // Persistit key, and undeclared hkey columns in the Persistit value. An index scan may actually
-                // restrict the entire declared key and leading hkeys fields. If this happens, then the first
-                // row found by exchange.traverse may actually not qualify -- those values may be lower than
-                // startKey. This can happen at most once per scan. pastStart indicates whether we have gotten
-                // past the startKey.
+                // Two cases where traverse would return a row outside of bound:
+                // 1) Index row that contains columns in both key and value (traverse only handles key)
+                // 2) jump() put us outside of bound after traversing
                 if (!pastStart) {
                     while (beforeStart(next)) {
                         next = null;
@@ -330,9 +327,9 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     protected boolean beforeStart(Row row)
     {
         boolean beforeStart = false;
-        if (startKey != null && row != null) {
+        if (startKey != null && row != null && startBoundColumns != 0) {
             PersistitIndexRow current = (PersistitIndexRow) row;
-            int c = current.compareTo(startKey) * direction;
+            int c = current.compareTo(startKey, startBoundColumns) * direction;
             beforeStart = c < 0 || c == 0 && !startInclusive;
         }
         return beforeStart;
@@ -341,11 +338,11 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     protected boolean pastEnd(Row row)
     {
         boolean pastEnd;
-        if (endKey == null) {
+        if (endKey == null || endBoundColumns == 0) {
             pastEnd = false;
         } else {
             PersistitIndexRow current = (PersistitIndexRow) row;
-            int c = current.compareTo(endKey) * direction;
+            int c = current.compareTo(endKey, endBoundColumns) * direction;
             pastEnd = c > 0 || c == 0 && !endInclusive;
         }
         return pastEnd;
