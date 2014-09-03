@@ -284,7 +284,9 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                 localRootContextHandler.setSecurityHandler(sh);
             }
 
-            addCrossOriginFilter(localRootContextHandler);
+            if (crossOriginOn) {
+                addCrossOriginFilter(localRootContextHandler);
+            }
             localServer.setHandler(localRootContextHandler);
             localServer.start();
         }
