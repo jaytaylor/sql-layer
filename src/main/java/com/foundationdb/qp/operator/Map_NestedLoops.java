@@ -237,9 +237,6 @@ class Map_NestedLoops extends Operator
         }
 
         protected Row nextInputRow() {
-            if (input.isIdle()) {
-                input.open();
-            }
             return input.next();
         }
     }
@@ -290,9 +287,7 @@ class Map_NestedLoops extends Operator
                         break;
                     }
                     if (bindings.getDepth() == depth) {
-                        if (input.isIdle()) {
-                            input.open();
-                        }
+                        input.open();
                         inputOpenBindings = bindings;
                     }
                     else if (bindings.getDepth() < depth) {

@@ -453,10 +453,10 @@ class Intersect_Ordered extends Operator
         public QueryBindings nextBindings() {
             
             QueryBindings bindings = bindingsCursor.nextBindings();
-            QueryBindings other = leftInput.nextBindings();
-            assert (bindings == other);
-            other = rightInput.nextBindings();
-            assert (bindings == other);
+            QueryBindings left = leftInput.nextBindings();
+            assert (bindings == left);
+            QueryBindings right  = rightInput.nextBindings();
+            assert (bindings == right);
             return bindings;
         }
 
@@ -472,11 +472,6 @@ class Intersect_Ordered extends Operator
             leftInput.cancelBindings(bindings);
             rightInput.cancelBindings(bindings);
             bindingsCursor.cancelBindings(bindings);
-            
-            // Close this cursor, but don't clear the state
-            // In look ahead cases the cursor will be reopened
-            // with state intact for further reading. 
-            closed = true;
         }
 
         // Execution interface
