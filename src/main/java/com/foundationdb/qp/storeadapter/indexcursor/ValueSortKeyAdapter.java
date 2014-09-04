@@ -42,11 +42,6 @@ public class ValueSortKeyAdapter extends SortKeyAdapter<ValueSource, TPreparedEx
     public static final SortKeyAdapter<ValueSource, TPreparedExpression> INSTANCE = new ValueSortKeyAdapter();
 
     @Override
-    public AkCollator[] createAkCollators(int size) {
-        return null;
-    }
-
-    @Override
     public TInstance[] createTInstances(int size) {
         return new TInstance[size];
     }
