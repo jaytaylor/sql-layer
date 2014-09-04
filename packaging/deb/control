@@ -13,4 +13,6 @@ Architecture: all
 Depends: java7-runtime-headless | java8-runtime-headless, foundationdb-clients (>= 2.0.0), adduser, ${misc:Depends}
 Suggests: fdb-sql-layer-client-tools, foundationdb-server
 Description: FoundationDB SQL Layer
- SQL Layer for FoundationDB
+ The FoundationDB SQL Layer is a fault-tolerant and scalable open source RDBMS,
+ best suited for applications with high concurrency and short transactional
+ workloads.
