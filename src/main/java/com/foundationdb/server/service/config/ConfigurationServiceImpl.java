@@ -41,7 +41,7 @@ import com.foundationdb.util.tap.Tap;
 import com.google.inject.Inject;
 
 public class ConfigurationServiceImpl implements ConfigurationService,
-        ConfigurationServiceMXBean, JmxManageable,
+//        ConfigurationServiceMXBean, JmxManageable,
         Service {
     private final static String CONFIG_DEFAULTS_RESOURCE = "configuration-defaults.properties";
     private static final String INITIALLY_ENABLED_TAPS = "taps.initiallyenabled";
@@ -103,7 +103,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
         }
         return Collections.unmodifiableMap(results);
     }
-
+/*
     @Override
     public long getQueryTimeoutMilli()
     {
@@ -115,7 +115,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     {
         queryTimeoutMilli(queryTimeoutMilli);
     }
-
+*/
     @Override
     public Properties deriveProperties(String withPrefix) {
         Properties properties = new Properties();
@@ -157,13 +157,13 @@ public class ConfigurationServiceImpl implements ConfigurationService,
         // Note: do not call unloadProperties().
         properties = null;
     }
-
+/*
     @Override
     public final JmxObjectInfo getJmxObjectInfo() {
         return new JmxObjectInfo("Configuration", this,
                 ConfigurationServiceMXBean.class);
     }
-
+*/
     private Map<String, String> internalLoadProperties()
             throws ServiceStartupException {
         Map<String, String> ret = loadProperties();
@@ -183,7 +183,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
 
         return ret;
     }
-
+    
     /**
      * Load and return a set of configuration properties. Override this method
      * for customization in unit tests. For example, some unit tests create data
