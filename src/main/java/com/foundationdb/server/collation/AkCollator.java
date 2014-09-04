@@ -26,12 +26,14 @@ public abstract class AkCollator {
 
     /** Debug only: *cannot* be used for returning, converting, etc */
     public static String getDebugString(ValueSource valueSource, AkCollator collator) {
+        // The first two are actually safe (and the same as valueSource.getString())
         if (valueSource.isNull())
             return null;
         Object obj = valueSource.getObject();
         if (obj instanceof String) {
             return (String)obj;
         }
+        // The last two are are a (potentially) lossy conversion from the collated bytes
         if (obj instanceof WrappingByteSource) {
             obj = ((WrappingByteSource)obj).byteArray();
         }
