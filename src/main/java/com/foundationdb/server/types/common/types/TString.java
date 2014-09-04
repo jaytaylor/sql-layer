@@ -80,9 +80,12 @@ public abstract class TString extends TClass
         STRING {
             @Override
             public void format(TInstance type, ValueSource source, AkibanAppender out) {
-                if (source.hasCacheValue() && out.canAppendBytes()) {
+                if (source.hasCacheValue()) {
                     Object cached = source.getObject();
-                    if (cached instanceof ByteSource) {
+                    if (cached instanceof String) {
+                        out.append((String)cached);
+                        return;
+                    } else if (cached instanceof ByteSource && out.canAppendBytes()) {
                         String tInstanceCharset = StringAttribute.charsetName(type);
                         Charset appenderCharset = out.appendBytesAs();
                         if (Strings.equalCharsets(appenderCharset, tInstanceCharset)) {
@@ -90,12 +93,8 @@ public abstract class TString extends TClass
                             return;
                         }
                     }
-                    else {
-                        logger.warn("couldn't append TString directly; bad cached object. {}", source);
-                    }
                 }
-                AkCollator collator = getCollator(type);
-                out.append(AkCollator.getDebugString(source, collator));
+                out.append(source.getString());
             }
 
             @Override
