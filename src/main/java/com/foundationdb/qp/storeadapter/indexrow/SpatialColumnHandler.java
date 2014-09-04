@@ -20,8 +20,6 @@ package com.foundationdb.qp.storeadapter.indexrow;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.server.geophile.Space;
-import com.foundationdb.server.geophile.SpaceLatLon;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDataSource;
@@ -31,6 +29,8 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.spatial.Spatial;
+import com.geophile.z.Space;
 
 public class SpatialColumnHandler
 {
@@ -41,7 +41,7 @@ public class SpatialColumnHandler
         assert index.dimensions() == dimensions;
         tinstances = new TInstance[dimensions];
         fieldDefs = new FieldDef[dimensions];
-        coords = new long[dimensions];
+        coords = new double[dimensions];
         rowDataSource = new RowDataValueSource();
         firstSpatialField = index.firstSpatialArgument();
         lastSpatialField = index.lastSpatialArgument();
@@ -66,7 +66,7 @@ public class SpatialColumnHandler
     public long zValue(RowData rowData)
     {
         bind(rowData);
-        return space.shuffle(coords);
+        return Spatial.shuffle(space, coords[0], coords[1]);
     }
 
     private void bind(RowData rowData)
@@ -78,10 +78,7 @@ public class SpatialColumnHandler
             TClass tclass = tinstances[d].typeClass();
             if (tclass == MNumeric.DECIMAL) {
                 BigDecimalWrapper wrapper = TBigDecimal.getWrapper(rowDataValueSource, tinstances[d]);
-                coords[d] =
-                    d == 0
-                    ? SpaceLatLon.scaleLat(wrapper.asBigDecimal())
-                    : SpaceLatLon.scaleLon(wrapper.asBigDecimal());
+                coords[d] = wrapper.asBigDecimal().doubleValue();
             }
             else if (tclass == MNumeric.BIGINT) {
                 coords[d] = rowDataValueSource.getInt64();
@@ -99,7 +96,7 @@ public class SpatialColumnHandler
     private final int dimensions;
     private final TInstance[] tinstances;
     private final FieldDef[] fieldDefs;
-    private final long[] coords;
+    private final double[] coords;
     private final RowDataSource rowDataSource;
     private final int firstSpatialField;
     private final int lastSpatialField;
