@@ -31,7 +31,7 @@ import static org.junit.Assert.assertEquals;
 
 
 @RunWith(SelectedParameterizedRunner.class)
-public class IndexScanBoundedMixedOrderIT extends IndexScanUnboundedMixedOrderIT {
+public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT {
 
     static final Integer MAX_VALUE = 100;
     static final Integer MIN_VALUE = 0;
@@ -46,7 +46,7 @@ public class IndexScanBoundedMixedOrderIT extends IndexScanUnboundedMixedOrderIT
     private boolean[] skipped = new boolean[]{false, false, false, false};
 
 
-    public IndexScanBoundedMixedOrderIT(String[] orderings, Integer[] loBounds, Integer[] hiBounds,
+    public IndexScanBoundedMixedOrderDT(String[] orderings, Integer[] loBounds, Integer[] hiBounds,
             Boolean[] loInclusive, Boolean[] hiInclusive) {
         super(orderings[0], orderings[1], orderings[2], orderings[3]);
         this.lower_bounds = loBounds;

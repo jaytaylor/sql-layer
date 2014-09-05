@@ -35,7 +35,7 @@ import org.junit.runners.Parameterized.Parameters;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(SelectedParameterizedRunner.class)
-public class IndexScanUnboundedMixedOrderIT extends PostgresServerITBase {
+public class IndexScanUnboundedMixedOrderDT extends PostgresServerITBase {
 
     static final Integer TOTAL_ROWS = 100;
     static final Integer TOTAL_COLS = 4;
@@ -53,7 +53,7 @@ public class IndexScanUnboundedMixedOrderIT extends PostgresServerITBase {
     static final long seed = System.currentTimeMillis();
     static final Random r = new Random(seed);
 
-    public IndexScanUnboundedMixedOrderIT(String t0, String t1, String t2, String t3) {
+    public IndexScanUnboundedMixedOrderDT(String t0, String t1, String t2, String t3) {
         orderings = new String[]{t0, t1, t2, t3};
         buildDB();
     }
