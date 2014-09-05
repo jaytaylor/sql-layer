@@ -28,6 +28,7 @@ import com.foundationdb.server.error.InvalidCollationSchemeException;
 import com.foundationdb.server.error.UnsupportedCollationException;
 import com.ibm.icu.text.Collator;
 import com.ibm.icu.text.RuleBasedCollator;
+import com.ibm.icu.util.IllformedLocaleException;
 import com.ibm.icu.util.ULocale;
 
 /**
@@ -140,7 +141,7 @@ public class AkCollatorFactory {
                 if (mode == Mode.LOOSE) {
                     return mapToBinary(scheme);
                 } else {
-                    throw new UnsupportedCollationException(scheme);
+                    throw e;
                 }
             }
 
@@ -192,17 +193,34 @@ public class AkCollatorFactory {
             if (pieces.length < REGION_NDX + 1) {
                 throw new InvalidCollationSchemeException(scheme);
             }
-            
-            ULocale locale = new ULocale(pieces[LANGUAGE_NDX], pieces[REGION_NDX]);
-            
-            // only way to validate the locale
-            if (locale.getCountry() == null || locale.getCountry().isEmpty() ||
-                    locale.getLanguage() == null || locale.getLanguage().isEmpty()) { 
+
+            ULocale locale = null;
+            Boolean setStrength = true;
+            try {
+                ULocale.Builder builder = new ULocale.Builder();
+                builder.setLanguage(pieces[LANGUAGE_NDX]);
+                builder.setRegion(pieces[REGION_NDX]);
+                if (pieces.length == REGION_NDX + 2) {
+                    try {
+                        builder.setVariant(pieces[REGION_NDX+1]);
+                        setStrength = false;
+                    } catch (IllformedLocaleException e) {
+                        if (pieces[REGION_NDX].isEmpty()) {
+                            throw new InvalidCollationSchemeException(scheme);
+                        }
+                        // could still be strength settings, so no need to throw an error here
+                        // as long as there's a region
+                    }
+                }
+                locale = builder.build();
+            } catch (IllformedLocaleException e) {
                 throw new UnsupportedCollationException(scheme);
             }
 
             collator = (RuleBasedCollator) RuleBasedCollator.getInstance(locale);
-            setCollatorStrength(collator, scheme);            
+            if (setStrength) {
+                setCollatorStrength(collator, scheme);
+            }
             sourceMap.put(scheme, collator);
         }
         collator = collator.cloneAsThawed();

@@ -83,7 +83,7 @@
 - output: [['b'], ['bbc']]
 # Case sensitivity
 ---
-- CreateTable: t (cs varchar(32) CHARACTER SET latin1 COLLATE latin1_bin)
+- CreateTable: t (cs varchar(32) CHARACTER SET latin1 COLLATE UCS_BINARY)
 ---
 - Statement: INSERT INTO t VALUES ('abc'), ('Abc'), ('ABC')
 ---
