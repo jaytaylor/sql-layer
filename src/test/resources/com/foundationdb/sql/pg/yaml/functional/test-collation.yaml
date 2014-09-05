@@ -12,7 +12,7 @@
 - output: [[1],[2],[4]]
 ---
 - CreateTable: t2 (id INT, c CHAR(5) COLLATE foo)
-- error: [2H000]
+- error: [2H001]
 ---
 - CreateTable: t2 (id INT, c CHAR(5) CHARACTER SET foo)
 - error: [2C000]
@@ -42,9 +42,6 @@
 ---
 - Statement: SELECT id FROM t3 WHERE s COLLATE UCS_BINARY LIKE '%a%'
 - output: [[1],[2],[4]]
----
-- CreateTable: t4 (id INT, c CHAR(5) COLLATE foo)
-- error: [2H000]
 ---
 - CreateTable: t4 (id INT, c CHAR(5) CHARACTER SET foo)
 - error: [2C000]
@@ -114,4 +111,10 @@
 ---
 - CreateTable: t(c char(5) COLLATE utf8_bin)
 - error: [2H000]
+---
+- CreateTable: noRegion(c char(5) COLLATE zh__pinyin_ci)
+- error: [2H001]
+---
+# make sure this doesn't throw an error
+- CreateTable: noRegion(c char(5) COLLATE zh__pinyin)
 ...
