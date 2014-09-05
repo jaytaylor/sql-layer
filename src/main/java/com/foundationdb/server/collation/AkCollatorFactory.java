@@ -208,6 +208,8 @@ public class AkCollatorFactory {
                         if (pieces[REGION_NDX].isEmpty()) {
                             throw new InvalidCollationSchemeException(scheme);
                         }
+                        // could still be strength settings, so no need to throw an error here
+                        // as long as there's a region
                     }
                 }
                 locale = builder.build();
