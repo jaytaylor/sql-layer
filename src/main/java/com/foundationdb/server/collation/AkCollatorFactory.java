@@ -236,7 +236,7 @@ public class AkCollatorFactory {
             else if (pieces[CASE_NDX].equals("ci")) {
                 collator.setStrength(Collator.SECONDARY);
             }
-            else if (!pieces[CASE_NDX].isEmpty()){
+            else {
                 throw new InvalidCollationSchemeException(scheme);
             }
         }
@@ -257,7 +257,7 @@ public class AkCollatorFactory {
                 collator.setStrength(Collator.PRIMARY);
                 collator.setCaseLevel(false);
             }
-            else if (!pieces[CASE_NDX].isEmpty() || !pieces[ACCENT_NDX].isEmpty()){
+            else {
                 throw new InvalidCollationSchemeException(scheme);
             }
         }
