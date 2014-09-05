@@ -192,12 +192,14 @@ public class AkCollatorFactory {
             if (pieces.length < REGION_NDX + 1) {
                 throw new InvalidCollationSchemeException(scheme);
             }
-            
-            ULocale locale = new ULocale(pieces[LANGUAGE_NDX], pieces[REGION_NDX]);
-            
-            // only way to validate the locale
-            if (locale.getCountry() == null || locale.getCountry().isEmpty() ||
-                    locale.getLanguage() == null || locale.getLanguage().isEmpty()) { 
+
+            ULocale locale = null;
+            try {
+                ULocale.Builder builder = new ULocale.Builder();
+                builder.setLanguage(pieces[LANGUAGE_NDX]);
+                builder.setRegion(pieces[REGION_NDX]);
+                locale = builder.build();
+            } catch (Exception e) {
                 throw new UnsupportedCollationException(scheme);
             }
 

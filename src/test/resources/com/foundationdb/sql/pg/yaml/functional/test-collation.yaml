@@ -111,4 +111,7 @@
 ---
 - Statement: Select t3.s FROM (SELECT s FROM tIntersect1 AS t1 INTERSECT SELECT s FROM tIntersect2 AS t2) as t3;
 - output: [['qwer']]
+---
+- CreateTable: t(c char(5) COLLATE utf8_bin)
+- error: [2H000]
 ...
