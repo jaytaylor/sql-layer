@@ -204,7 +204,6 @@ class Map_NestedLoops extends Operator
                     bindings.setRow(bindingPosition, row);
                     return bindings;
                 }
-                LOG.info("input: {}, being closed for baseBindings {}", input, baseBindings);
                 baseBindings = null;
                 input.close();
             }
@@ -213,7 +212,6 @@ class Map_NestedLoops extends Operator
                 // Outer context: start outer loop.
                 baseBindings = bindings;
                 input.open();
-                LOG.info("input: {}, being opened for baseBindings {}", input, baseBindings);
             }
             return bindings;
         }
@@ -229,30 +227,18 @@ class Map_NestedLoops extends Operator
 
         @Override
         public void cancelBindings(QueryBindings bindings) {
-            boolean inputClosed = false;
-            LOG.info("cancelBindings base {} vs bindings {}", baseBindings != null ? baseBindings : "NULL", bindings);
             if ((baseBindings != null) && baseBindings.isAncestor(bindings)) {
                 baseBindings = null;
                 input.close();
-                inputClosed = true; 
-            } else {
-                LOG.info("cancelBindings input not closed: {}", input);
             }
-            LOG.info("cancelBindings depth: {} vs {}", bindings.getDepth(), depth);
             if (bindings.getDepth() < depth) {
                 input.cancelBindings(bindings);
-//                if (input.isIdle() && !inputClosed) {
-//                    input.open();
-//                }
             }
         }
 
         protected Row nextInputRow() {
             assert input.isActive() : "RowToBindingsCursor reading from idle cursor";
-            LOG.info("input:" + input + ", idle {}, using bindings {}", input.isIdle(), baseBindings);
             Row row = input.next();
-            LOG.info("yielding row: {}", row);
-            
             return row;
         }
     }
