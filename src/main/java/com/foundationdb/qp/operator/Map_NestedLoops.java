@@ -237,7 +237,9 @@ class Map_NestedLoops extends Operator
         }
 
         protected Row nextInputRow() {
-            return input.next();
+            assert input.isActive() : "RowToBindingsCursor reading from idle cursor";
+            Row row = input.next();
+            return row;
         }
     }
 
