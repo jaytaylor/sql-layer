@@ -43,9 +43,6 @@
 - Statement: SELECT id FROM t3 WHERE s COLLATE UCS_BINARY LIKE '%a%'
 - output: [[1],[2],[4]]
 ---
-- CreateTable: t4 (id INT, c CHAR(5) CHARACTER SET foo)
-- error: [2C000]
----
 - CreateTable: t5 (id INT, v VARCHAR(255) COLLATE en_us)
 ---
 - Statement: INSERT INTO t5 VALUES(1, E'\u00D6b'), (2, 'Oa'), (3, 'Oc')
