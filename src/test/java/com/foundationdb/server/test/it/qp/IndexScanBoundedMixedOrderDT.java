@@ -18,6 +18,7 @@
 package com.foundationdb.server.test.it.qp;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
@@ -157,16 +158,24 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
 
     @Parameters
     public static List<Object[]> params() throws Exception {
-        OrderByOptions[] orderByOpts = OrderByOptions.values();
+        Collection<List<OrderByOptions>> orderByPerms = IndexScanUnboundedMixedOrderDT.orderByPermutations();
         List<Object[]> params = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
-            List<OrderByOptions> ordering = getPermutation(orderByOpts, R.nextInt(TOTAL_PERMS));
-            Integer[] loBound = getLowerBounds(MIN_VALUE, MAX_VALUE, TOTAL_COLS, R);
-            Integer[] hiBound = getUpperBounds(MIN_VALUE, MAX_VALUE, TOTAL_COLS, loBound, R);
-            Boolean[] loInclusive = getInclusive(TOTAL_COLS, R);
-            Boolean[] hiInclusive = getInclusive(TOTAL_COLS, R);
-            Object[] param = new Object[] { ordering, loBound, hiBound, loInclusive, hiInclusive };
-            params.add(param);
+        for(List<OrderByOptions> ordering : orderByPerms) {
+            boolean nonEmpty = false;
+            for(OrderByOptions o : ordering) {
+                if(o.getOrderingString() != null) {
+                    nonEmpty = true;
+                    break;
+                }
+            }
+            if(nonEmpty) {
+                Integer[] loBound = getLowerBounds(MIN_VALUE, MAX_VALUE, TOTAL_COLS, R);
+                Integer[] hiBound = getUpperBounds(MIN_VALUE, MAX_VALUE, TOTAL_COLS, loBound, R);
+                Boolean[] loInclusive = getInclusive(TOTAL_COLS, R);
+                Boolean[] hiInclusive = getInclusive(TOTAL_COLS, R);
+                Object[] param = new Object[]{ ordering, loBound, hiBound, loInclusive, hiInclusive };
+                params.add(param);
+            }
         }
         return params;
     }
@@ -199,17 +208,5 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
             bounds[i] = r.nextBoolean();
         }
         return bounds;
-    }
-
-    static List<OrderByOptions> getPermutation(OrderByOptions[] options, int ndx) {
-        List<OrderByOptions> nextRow = new ArrayList<>();
-        boolean end = true;
-        for(int i = 0; i < TOTAL_COLS; i++) {
-            OrderByOptions next = options[ndx / ((int)Math.pow(options.length, i)) % options.length];
-            nextRow.add(next);
-            if(next.getOrderingString() != null) end = false;
-        }
-        if(end) nextRow.set(0, OrderByOptions.ASC); // prevent case with no orderings
-        return nextRow;
     }
 }

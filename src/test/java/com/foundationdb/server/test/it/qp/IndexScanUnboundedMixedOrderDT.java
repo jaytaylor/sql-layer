@@ -19,6 +19,7 @@ package com.foundationdb.server.test.it.qp;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -248,14 +249,18 @@ public class IndexScanUnboundedMixedOrderDT extends PostgresServerITBase
         return sorted;
     }
 
-    @Parameters(name="{0}")
-    public static List<Object[]> orderings() throws Exception {
+    public static Collection<List<OrderByOptions>> orderByPermutations() {
         List<Set<OrderByOptions>> optSets = new ArrayList<>();
         for(int i = 0; i < TOTAL_COLS; ++i) {
             optSets.add(new HashSet<>(Arrays.asList(OrderByOptions.values())));
         }
+        return Sets.cartesianProduct(optSets);
+    }
+
+    @Parameters(name="{0}")
+    public static List<Object[]> orderings() throws Exception {
         List<Object[]> params = new ArrayList<>();
-        for(List<OrderByOptions> p : Sets.cartesianProduct(optSets)) {
+        for(List<OrderByOptions> p : orderByPermutations()) {
             String name = makeTestName(p);
             params.add(new Object[]{ name, p });
         }
