@@ -19,152 +19,264 @@ package com.foundationdb.server.test.it.qp;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import com.foundationdb.junit.SelectedParameterizedRunner;
 import com.foundationdb.sql.pg.PostgresServerITBase;
 
+import com.foundationdb.util.Strings;
+import com.google.common.collect.Sets;
 import org.junit.Before;
+import org.junit.ComparisonFailure;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameters;
 
-import static org.junit.Assert.assertEquals;
-
 @RunWith(SelectedParameterizedRunner.class)
-public class IndexScanUnboundedMixedOrderDT extends PostgresServerITBase {
+public class IndexScanUnboundedMixedOrderDT extends PostgresServerITBase
+{
+    protected static final String TABLE_NAME ="t";
+    protected static final String INDEX_NAME = "idx";
+    protected static final List<String> COLUMNS = Arrays.asList("t0", "t1", "t2", "t3");
+    protected static final Integer TOTAL_ROWS = 100;
+    protected static final Integer TOTAL_COLS = COLUMNS.size();
 
-    static final Integer TOTAL_ROWS = 100;
-    static final Integer TOTAL_COLS = 4;
-    static final Integer TOTAL_PERMS = 64;
+    @SuppressWarnings("unchecked")
+    static final Comparator ASC_COMPARATOR = new Comparator()
+    {
+        @Override
+        public int compare(Object o1, Object o2) {
+            if(o1 == null) {
+                return (o2 == null) ? 0 : -1;
+            }
+            if(o2 == null) {
+                return 1;
+            }
+            return ((Comparable)o1).compareTo(o2);
+        }
+    };
 
-    static final String QUERY_BASE = "SELECT * FROM test.t ";
-    static final String[] COLUMNS = {"t0", "t1", "t2", "t3"};
-    static final String[] OPTIONS = {"", "ASC", "DESC"};
+    static final Comparator DESC_COMPARATOR = new Comparator()
+    {
+        @Override
+        public int compare(Object o1, Object o2) {
+            return - ASC_COMPARATOR.compare(o1, o2);
+        }
+    };
 
-    String[] orderings;
-    String query = null;
-    
-    Integer[][] DB;
 
-    static final long seed = System.currentTimeMillis();
-    static final Random r = new Random(seed);
+    static enum OrderByOptions {
+        NONE,
+        ASC,
+        DESC
+        ;
 
-    public IndexScanUnboundedMixedOrderDT(String t0, String t1, String t2, String t3) {
-        orderings = new String[]{t0, t1, t2, t3};
-        buildDB();
-    }
-
-    void buildDB() {
-        DB = new Integer[TOTAL_ROWS][TOTAL_COLS + 1];
-        for (int i = 0; i < TOTAL_ROWS; i++) {
-            DB[i][0] = i + 1;
-            for (int j = 1; j < TOTAL_COLS + 1; j++) {
-                int next = r.nextInt(110);
-                DB[i][j] = next > 100 ? null : next;
+        @SuppressWarnings("unchecked")
+        public <T> Comparator<T> getComparator(Class<T> clazz) {
+            switch(this) {
+                case NONE: return null;
+                case ASC: return ASC_COMPARATOR;
+                case DESC: return DESC_COMPARATOR;
+                default: throw new IllegalStateException(this.name());
             }
         }
+
+        public String getOrderingString() {
+            switch(this) {
+                case NONE: return null;
+                default: return name();
+            }
+        }
+    }
+
+    static class IndexComparison<T> {
+        private final int index;
+        private final Comparator<T> comp;
+
+        public IndexComparison(int index, Comparator<T> comp) {
+            this.index = index;
+            this.comp = comp;
+        }
+    }
+
+    static class ListComparator<T> implements Comparator<List<T>>
+    {
+        public final List<IndexComparison<T>> comps;
+
+        public ListComparator(List<IndexComparison<T>> comps) {
+            this.comps = comps;
+        }
+
+        @Override
+        public int compare(List<T> a, List<T> b) {
+            assert a.size() == b.size();
+            for(IndexComparison<T> c : comps) {
+                int i = c.index;
+                int r = c.comp.compare(a.get(i), b.get(i));
+                if(r != 0) {
+                    return r;
+                }
+            }
+            return 0;
+        }
+    }
+
+    @Rule
+    public final TestRule FAILED_WATCHER = new TestWatcher() {
+        @Override
+        public void failed(Throwable e, Description description) {
+            System.err.printf("Query failed with seed %d: %s\n", SEED, IndexScanUnboundedMixedOrderDT.this.query);
+        }
+    };
+
+
+    protected static final long SEED = System.currentTimeMillis();
+    protected static final Random R = new Random(SEED);
+
+    protected final List<OrderByOptions> orderings;
+    protected final List<List<Integer>> DB;
+    protected final ListComparator<Integer> rowComparator;
+    protected String query;
+
+    public IndexScanUnboundedMixedOrderDT(String name, List<OrderByOptions> orderings) {
+        // Reset to ensure DB is consistent
+        R.setSeed(SEED);
+        this.orderings = orderings;
+        this.rowComparator = buildListComparator(orderings);
+        this.DB = buildDB(R);
+    }
+
+    private static ListComparator<Integer> buildListComparator(List<OrderByOptions> orderings) {
+        List<IndexComparison<Integer>> comps = new ArrayList<>();
+        for(int i = 0; i < orderings.size(); ++i) {
+            Comparator<Integer> comp = orderings.get(i).getComparator(Integer.class);
+            if(comp != null) {
+                comps.add(new IndexComparison<>(i, comp));
+            }
+        }
+        return new ListComparator<>(comps);
+    }
+
+    private static List<List<Integer>> buildDB(Random r) {
+        List<List<Integer>> db = new ArrayList<>();
+        for (int i = 0; i < TOTAL_ROWS; i++) {
+            List<Integer> row = new ArrayList<>();
+            for (int j = 0; j < TOTAL_COLS; j++) {
+                int next = r.nextInt(110);
+                row.add(next > 100 ? null : next);
+            }
+            db.add(row);
+        }
+        return db;
     }
 
     @Before
     public void setup() {
-        sql("CREATE TABLE t(id INT NOT NULL PRIMARY KEY, t0 INT, t1 INT, t2 INT, t3 INT)");
-        sql("CREATE INDEX t_ndx ON t(t0, t1, t2, t3, id)");
-        String insertStmt = "INSERT INTO t VALUES ";
-        for (int i = 0; i < DB.length; i++) {
-            insertStmt = insertStmt + "(";
-            for (int j = 0; j < DB[i].length; j++) {
-                if (DB[i][j] == null) insertStmt = insertStmt + "null";
-                else insertStmt = insertStmt + DB[i][j].toString();
-                if (j != DB[i].length - 1) insertStmt = insertStmt + ","; 
+        sql("CREATE TABLE " + TABLE_NAME + "(id SERIAL PRIMARY KEY, t0 INT, t1 INT, t2 INT, t3 INT)");
+        sql("CREATE INDEX " + INDEX_NAME + " ON t(t0, t1, t2, t3)");
+        StringBuilder sb = new StringBuilder("INSERT INTO " + TABLE_NAME + "(t0,t1,t2,t3) VALUES ");
+        for(int i = 0; i < DB.size(); ++i) {
+            if(i > 0) {
+                sb.append(", ");
             }
-            insertStmt = insertStmt + "),";
+            sb.append('(').append(Strings.join(DB.get(i), ",")).append(')');
         }
-        insertStmt = insertStmt.substring(0, insertStmt.length()-1);
-        sql(insertStmt);
+        sql(sb.toString());
     }
 
     @Test
-    public void testUnboundedExhaustive() {
-        query = createQuery();
+    public void testQuery() {
+        this.query = createQuery();
         List<List<?>> results = sql(query);
         compare(expectedRows(), results);
     }
 
-    void compare(Integer[][] expectedResults,
-            List<List<?>> results) {
-        assertEquals("Failed with seed " + Long.toString(seed) + " and query: " + query, expectedResults.length, results.size());
-        for (int i = 0; i < expectedResults.length; i++) {
-            List resultRow = results.get(i);
-            assertEquals("Failed with seed " + Long.toString(seed) + " and query: " + query, expectedResults[i].length, resultRow.size());
-            for (int j = 1; j < resultRow.size(); j++) {
-                if (!orderings[j-1].equals("")) {
-                    assertEquals("Failed with seed " + Long.toString(seed) + " and query: " + query, expectedResults[i][j], resultRow.get(j));
-                }
-            }
+    @SuppressWarnings("unchecked")
+    protected void compare(List<List<Integer>> expectedResults, List<List<?>> results) {
+        int eSize = expectedResults.size();
+        int aSize = results.size();
+        boolean match = true;
+        for(int i = 0; match && i < Math.min(eSize, aSize); ++i) {
+            match = rowComparator.compare(expectedResults.get(i), (List<Integer>)results.get(i)) == 0;
+        }
+        if(!match || (eSize != aSize)) {
+            throw new ComparisonFailure("row mismatch", Strings.join(expectedResults), Strings.join(results));
         }
     }
 
-    String createQuery() {
-        String query = QUERY_BASE + " ORDER BY ";
-        for (int i = 0; i < orderings.length; i++) {
-            if (!orderings[i].equals("")) {
-                query = query + COLUMNS[i] + " " + orderings[i] + ", ";
+    protected String createQuery() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("SELECT ");
+        for(int i = 0; i < TOTAL_COLS; ++i) {
+            if(i > 0) {
+                sb.append(", ");
+            }
+            sb.append(COLUMNS.get(i));
+        }
+        sb.append(" FROM ");
+        sb.append(TABLE_NAME);
+        boolean first = true;
+        for(int i = 0; i < orderings.size(); i++) {
+            String oStr = orderings.get(i).getOrderingString();
+            if(oStr != null) {
+                if(first) {
+                    first = false;
+                    sb.append(" ORDER BY ");
+                } else {
+                    sb.append(", ");
+                }
+                sb.append(COLUMNS.get(i));
+                sb.append(" ");
+                sb.append(oStr);
             }
         }
-        return query.substring(0, query.length()-2) + ";";
+        return sb.toString();
     }
 
-    Integer[][] expectedRows() {
-        return sortRows();
-    }
-
-    Integer[][] sortRows() {
-        Integer[][] sorted = DB.clone();
-        Arrays.sort(sorted, new Comparator<Integer[]>() {
-            public int compare(Integer[] o1, Integer[] o2) {
-                // first pass, only pay attention to ordered
-                for (int i = 0; i < orderings.length; i++) {
-                    if (orderings[i].isEmpty()) continue;
-                    if (o1[i+1] == null && o2[i+1] == null) continue;
-                    else if (o1[i+1] == null) return orderings[i].equals("ASC") ? -1 : 1;
-                    else if (o2[i+1] == null) return orderings[i].equals("ASC") ? 1 : -1;
-                    if (((int)o1[i+1]) < ((int)o2[i+1])) {
-                        return orderings[i].equals("ASC") ? -1 : 1;
-                    }
-                    if (((int)o1[i+1]) > ((int)o2[i+1])) {
-                        return orderings[i].equals("ASC") ? 1 : -1;
-                    }
-                }
-                return 0;
-            }
-        });
+    protected List<List<Integer>> expectedRows() {
+        List<List<Integer>> sorted = new ArrayList<>(DB);
+        Collections.sort(sorted, rowComparator);
         return sorted;
     }
 
-    @Parameters
-    public static Iterable<Object[]> orderings() throws Exception {
-        Collection<Object[]> params = new ArrayList<>();
-        String[] list;
-        for (int i = 1; i < TOTAL_PERMS; i++) {
-            list = getPermutation(OPTIONS, i);
-            params.add(list);
+    @Parameters(name="{0}")
+    public static List<Object[]> orderings() throws Exception {
+        List<Set<OrderByOptions>> optSets = new ArrayList<>();
+        for(int i = 0; i < TOTAL_COLS; ++i) {
+            optSets.add(new HashSet<>(Arrays.asList(OrderByOptions.values())));
+        }
+        List<Object[]> params = new ArrayList<>();
+        for(List<OrderByOptions> p : Sets.cartesianProduct(optSets)) {
+            String name = makeTestName(p);
+            params.add(new Object[]{ name, p });
         }
         return params;
     }
 
-    static String[] getPermutation(String[] options, int ndx) {
-        String[] nextRow = new String[TOTAL_COLS];
-        boolean end = true;
-        for (int i = 0; i < TOTAL_COLS; i++) {
-            String next = options[ndx / ((int) Math.pow(options.length, i)) % options.length];
-            nextRow[i] = next;
-            if (next.compareTo("") != 0) end = false; 
+    private static String makeTestName(List<OrderByOptions> orderings) {
+        StringBuilder sb = new StringBuilder();
+        for(int i = 0; i < orderings.size(); ++i) {
+            String oStr = orderings.get(i).getOrderingString();
+            if(oStr != null) {
+                if(sb.length() > 0) {
+                    sb.append('_');
+                }
+                sb.append(COLUMNS.get(i));
+                sb.append('_').append(oStr);
+            }
         }
-        if (end) nextRow[0] = "ASC"; // prevent case with no orderings
-        return nextRow;
+        if(sb.length() == 0) {
+            sb.append("no_order");
+        }
+        return sb.toString();
     }
 }
