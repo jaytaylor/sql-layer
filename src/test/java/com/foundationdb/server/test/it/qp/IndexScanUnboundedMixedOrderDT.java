@@ -29,9 +29,9 @@ import java.util.Set;
 
 import com.foundationdb.junit.SelectedParameterizedRunner;
 import com.foundationdb.sql.pg.PostgresServerITBase;
-
 import com.foundationdb.util.Strings;
 import com.google.common.collect.Sets;
+
 import org.junit.Before;
 import org.junit.ComparisonFailure;
 import org.junit.Rule;
@@ -50,6 +50,9 @@ public class IndexScanUnboundedMixedOrderDT extends PostgresServerITBase
     protected static final List<String> COLUMNS = Arrays.asList("t0", "t1", "t2", "t3");
     protected static final Integer TOTAL_ROWS = 100;
     protected static final Integer TOTAL_COLS = COLUMNS.size();
+    static final Integer MAX_VALUE = 100;
+    static final Integer MIN_VALUE = 0;
+
 
     @SuppressWarnings("unchecked")
     static final Comparator ASC_COMPARATOR = new Comparator()
@@ -172,8 +175,8 @@ public class IndexScanUnboundedMixedOrderDT extends PostgresServerITBase
         for (int i = 0; i < TOTAL_ROWS; i++) {
             List<Integer> row = new ArrayList<>();
             for (int j = 0; j < TOTAL_COLS; j++) {
-                int next = r.nextInt(110);
-                row.add(next > 100 ? null : next);
+                int next = r.nextInt(MAX_VALUE + 10);
+                row.add(next > MAX_VALUE ? null : next);
             }
             db.add(row);
         }

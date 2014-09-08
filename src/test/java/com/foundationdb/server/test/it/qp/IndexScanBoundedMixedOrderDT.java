@@ -20,7 +20,6 @@ package com.foundationdb.server.test.it.qp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.Random;
 
 import com.foundationdb.junit.SelectedParameterizedRunner;
@@ -30,13 +29,9 @@ import org.junit.ComparisonFailure;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameters;
 
-import static org.junit.Assert.assertEquals;
 
 @RunWith(SelectedParameterizedRunner.class)
 public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT {
-
-    static final Integer MAX_VALUE = 100;
-    static final Integer MIN_VALUE = 0;
 
     private List<Integer> loBounds;
     private List<Integer> hiBounds;
