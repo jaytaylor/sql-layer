@@ -267,7 +267,7 @@ public class IndexScanUnboundedMixedOrderDT extends PostgresServerITBase
         return params;
     }
 
-    private static String makeTestName(List<OrderByOptions> orderings) {
+    protected static String makeTestName(List<OrderByOptions> orderings) {
         StringBuilder sb = new StringBuilder();
         for(int i = 0; i < orderings.size(); ++i) {
             String oStr = orderings.get(i).getOrderingString();

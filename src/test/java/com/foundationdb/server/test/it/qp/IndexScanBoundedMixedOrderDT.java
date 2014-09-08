@@ -24,8 +24,8 @@ import java.util.Objects;
 import java.util.Random;
 
 import com.foundationdb.junit.SelectedParameterizedRunner;
-
 import com.foundationdb.util.Strings;
+
 import org.junit.ComparisonFailure;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameters;
@@ -37,88 +37,102 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
 
     static final Integer MAX_VALUE = 100;
     static final Integer MIN_VALUE = 0;
-    static final Integer TOTAL_PERMS = 64;
 
-    private Integer[] lower_bounds;
-    private Integer[] upper_bounds;
-    private Boolean[] lower_inclusive;
-    private Boolean[] upper_inclusive;
+    private List<Integer> loBounds;
+    private List<Integer> hiBounds;
+    private List<Boolean> loInclusive;
+    private List<Boolean> hiInclusive;
 
-    private boolean[] skipped = new boolean[]{false, false, false, false};
+    private Boolean[] skipped = new Boolean[]{false, false, false, false};
 
 
-    public IndexScanBoundedMixedOrderDT(List<OrderByOptions> orderings, Integer[] loBounds, Integer[] hiBounds,
-                                        Boolean[] loInclusive, Boolean[] hiInclusive) {
-        super(null /*name*/, orderings);
-        this.lower_bounds = loBounds;
-        this.upper_bounds = hiBounds;
-        this.lower_inclusive = loInclusive;
-        this.upper_inclusive = hiInclusive;
+    public IndexScanBoundedMixedOrderDT(String name, List<OrderByOptions> orderings, List<Integer> loBounds, List<Integer> hiBounds,
+                                        List<Boolean> loInclusive, List<Boolean> hiInclusive) {
+        super(name, orderings);
+        this.loBounds = loBounds;
+        this.hiBounds = hiBounds;
+        this.loInclusive = loInclusive;
+        this.hiInclusive = hiInclusive;
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     protected void compare(List<List<Integer>> expectedResults, List<List<?>> results) {
-        if(expectedResults.size() != results.size()) {
-            throw new ComparisonFailure("result size", Strings.join(expectedResults), Strings.join(results));
+        int eSize = expectedResults.size();
+        int aSize = results.size();
+        boolean match = true;
+        boolean bounds = true;
+        for(int i = 0; match && bounds && i < Math.min(eSize, aSize); ++i) {
+            match = rowComparator.compare(expectedResults.get(i), (List<Integer>)results.get(i)) == 0;
+            bounds = withinBounds(results.get(i), loBounds, loInclusive, hiBounds, hiInclusive, skipped);
         }
-        for (int i = 0; i < expectedResults.size(); i++) {
-            List resultRow = results.get(i);
-            if(expectedResults.get(i).size() != resultRow.size()) {
-                throw new ComparisonFailure("row size", Strings.join(expectedResults), Strings.join(results));
-            }
-            for (int j = 0; j < resultRow.size(); j++) {
-                if (orderings.get(j) != OrderByOptions.NONE) {
-                    if(!Objects.equals(expectedResults.get(i).get(j), resultRow.get(j))) {
-                        throw new ComparisonFailure("order of row "+i+" col "+j, Strings.join(expectedResults), Strings.join(results));
-                    }
-                }
-                if (!skipped[j] && (!withinBounds((Integer)resultRow.get(j), lower_bounds[j], lower_inclusive[j], true) ||
-                        !withinBounds((Integer)resultRow.get(j), upper_bounds[j], upper_inclusive[j], false))) {
-                    throw new ComparisonFailure("bounds of row "+i+" col "+j, Strings.join(expectedResults), Strings.join(results));
-                }
-            }
+        if(!match || !bounds || (eSize != aSize)) {
+            throw new ComparisonFailure("row mismatch", Strings.join(expectedResults), Strings.join(results));
         }
     }
 
     @Override
     protected String createQuery() {
-        String query = "SELECT " + Strings.join(COLUMNS, ",") + " FROM " + TABLE_NAME;
-        String conditions = "";
-        boolean hasConditions = false;
-        for (int i = 0; i < lower_bounds.length; i++) {
-            if (R.nextBoolean()) {
-                String lower_bound, upper_bound;
-                if (lower_bounds[i] == null) lower_bound = "null";
-                else lower_bound = Integer.toString(lower_bounds[i]);
-                if (upper_bounds[i] == null) upper_bound = "null";
-                else upper_bound = Integer.toString(upper_bounds[i]);
+        StringBuilder queryBuilder = new StringBuilder();
+        queryBuilder.append("SELECT ");
+        for(int i = 0; i < TOTAL_COLS; ++i) {
+            if(i > 0) {
+                queryBuilder.append(", ");
+            }
+            queryBuilder.append(COLUMNS.get(i));
+        }
+        queryBuilder.append(" FROM ");
+        queryBuilder.append(TABLE_NAME);
 
-                if (lower_inclusive[i]) {
-                    conditions = conditions + COLUMNS.get(i) + " >= " + lower_bound + " AND ";
+        StringBuilder conditionsBuilder = new StringBuilder();
+        boolean hasConditions = false;
+        for (int i = 0; i < loBounds.size(); i++) {
+            if (R.nextBoolean()) {
+                if (hasConditions) {
+                    conditionsBuilder.append(" AND ");
                 } else {
-                    conditions = conditions + COLUMNS.get(i) + " > " + lower_bound + " AND ";
+                    conditionsBuilder.append(" WHERE ");
+                    hasConditions = true;
                 }
-                if (upper_inclusive[i]) {
-                    conditions = conditions + COLUMNS.get(i) + " <= " + upper_bound + " AND ";
+
+                if (loBounds.get(i) == null || hiBounds.get(i) == null) {
+                    conditionsBuilder.append(COLUMNS.get(i) + " IS NULL");
+                    continue;
+                }                
+
+                String lower_bound, upper_bound;
+                lower_bound = Integer.toString(loBounds.get(i));
+                upper_bound = Integer.toString(hiBounds.get(i));
+
+                if (loInclusive.get(i)) {
+                    conditionsBuilder.append(COLUMNS.get(i) + " >= " + lower_bound + " AND ");
                 } else {
-                    conditions = conditions + COLUMNS.get(i) + " < " + upper_bound + " AND ";
+                    conditionsBuilder.append(COLUMNS.get(i) + " > " + lower_bound + " AND ");
                 }
-                hasConditions = true;
+                if (hiInclusive.get(i)) {
+                    conditionsBuilder.append(COLUMNS.get(i) + " <= " + upper_bound);
+                } else {
+                    conditionsBuilder.append(COLUMNS.get(i) + " < " + upper_bound);
+                }
             } else {
                 skipped[i] = true;
             }
         }
 
-        if (hasConditions) query = query +  " WHERE " + conditions.substring(0, conditions.length() - 5);
-
-        query = query + " ORDER BY ";
+        queryBuilder.append(conditionsBuilder);
+        queryBuilder.append(" ORDER BY ");
+        boolean firstOrdering = true;
         for (int i = 0; i < orderings.size(); i++) {
             String oStr = orderings.get(i).getOrderingString();
-            if (oStr != null) {
-                query = query + COLUMNS.get(i) + " " + oStr + ", ";
+            if (oStr != null && firstOrdering) {
+                queryBuilder.append(COLUMNS.get(i) + " " + oStr);
+                firstOrdering = false;
+            }
+            else if (oStr != null) {
+                queryBuilder.append(", " + COLUMNS.get(i) + " " + oStr);
             }
         }
-        return query.substring(0, query.length() - 2) + ";";
+        return queryBuilder.toString();
     }
 
     @Override
@@ -130,33 +144,48 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
     protected List<List<Integer>> filterRows(List<List<Integer>> newRows) {
         List<List<Integer>> expected = new ArrayList<>();
         for(List<Integer> row : newRows) {
-            boolean add = true;
-            for (int j = 0; j < lower_bounds.length; j++) {
-                if (skipped[j]) continue;
-                if (!withinBounds(row.get(j), lower_bounds[j], lower_inclusive[j], true)) {
-                    add = false;
-                }
-                if (!withinBounds(row.get(j), upper_bounds[j], upper_inclusive[j], false)) {
-                    add = false;
-                }
+            if (withinBounds(row, loBounds, loInclusive, hiBounds, hiInclusive, skipped)) {
+                expected.add(row);
             }
-            if (add) expected.add(row);
         }
         return expected;
     }
 
-    static Boolean withinBounds(Integer value, Integer bound, Boolean inclusive, Boolean lower) {
-        if (value == null || bound == null) return false;
-        if (value < bound) {
-            return !lower;
+    protected static Boolean withinBounds(List<?> values, List<Integer> loBounds, List<Boolean> loInclusive,
+            List<Integer> hiBounds, List<Boolean> hiInclusive, Boolean[] skipped) {
+        for (int i = 0; i < values.size(); i++) {
+            if (!skipped[i] && !(withinBounds((Integer)values.get(i), loBounds.get(i), loInclusive.get(i), 
+                    hiBounds.get(i), hiInclusive.get(i)))) {
+                return false;
+            }
         }
-        if (value > bound) {
-            return lower;
-        }
-        return inclusive;
+        return true;
     }
 
-    @Parameters
+    static Boolean withinBounds(Integer value, Integer loBound, Boolean loInclusive, Integer hiBound,
+            Boolean hiInclusive) {
+        if (value == null && (loBound == null || hiBound == null)) {
+            return true;
+        }
+        if (value == null || loBound == null || hiBound == null) {
+            return false;
+        }
+        if (value < loBound) {
+            return false;
+        }
+        if (value > hiBound) {
+            return false;
+        }
+        if (value == hiBound) {
+            return hiInclusive;
+        }
+        if (value == loBound) {
+            return loInclusive;
+        }
+        return true;
+    }
+
+    @Parameters(name="{0}")
     public static List<Object[]> params() throws Exception {
         Collection<List<OrderByOptions>> orderByPerms = IndexScanUnboundedMixedOrderDT.orderByPermutations();
         List<Object[]> params = new ArrayList<>();
@@ -169,43 +198,48 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
                 }
             }
             if(nonEmpty) {
-                Integer[] loBound = getLowerBounds(MIN_VALUE, MAX_VALUE, TOTAL_COLS, R);
-                Integer[] hiBound = getUpperBounds(MIN_VALUE, MAX_VALUE, TOTAL_COLS, loBound, R);
-                Boolean[] loInclusive = getInclusive(TOTAL_COLS, R);
-                Boolean[] hiInclusive = getInclusive(TOTAL_COLS, R);
-                Object[] param = new Object[]{ ordering, loBound, hiBound, loInclusive, hiInclusive };
+                String name = makeTestName(ordering);
+                List<Integer> loBounds = getLowerBounds(MIN_VALUE, MAX_VALUE, TOTAL_COLS, R);
+                List<Integer> hiBounds = getUpperBounds(MIN_VALUE, MAX_VALUE, TOTAL_COLS, loBounds, R);
+                List<Boolean> loInclusive = getInclusive(TOTAL_COLS, R);
+                List<Boolean> hiInclusive = getInclusive(TOTAL_COLS, R);
+                Object[] param = new Object[]{ name, ordering, loBounds, hiBounds, loInclusive, hiInclusive };
                 params.add(param);
             }
         }
         return params;
     }
 
-    public static Integer[] getLowerBounds(int min, int max, int cols, Random r) {
-        Integer[] bounds = new Integer[cols];
+    public static List<Integer> getLowerBounds(int min, int max, int cols, Random r) {
+        List<Integer> bounds = new ArrayList<Integer>();
         for (int i = 0; i < cols; i++) {
-            bounds[i] = r.nextInt(max - min) + min;
-            if (r.nextInt(10) == 1) bounds[i] = null;
-        }
-        return bounds;
-    }
-
-    public static Integer[] getUpperBounds(int min, int max, int cols, Integer[] lowerBounds, Random r) {
-        Integer[] bounds = new Integer[cols];
-        for (int i = 0; i < cols; i++) {
-            if (lowerBounds[i] == null) {
-                bounds[i] = r.nextInt(max);
+            if (r.nextInt(10) == 1) {
+                bounds.add(null);
             } else {
-                bounds[i] = r.nextInt(max - lowerBounds[i] + 1) + lowerBounds[i] - 1;
+                bounds.add(r.nextInt(max - min) + min);
             }
-            if (r.nextInt(10) == 1) bounds[i] = null;
         }
         return bounds;
     }
 
-    public static Boolean[] getInclusive(int cols, Random r) {
-        Boolean[] bounds = new Boolean[cols];
+    public static List<Integer> getUpperBounds(int min, int max, int cols, List<Integer> lowerBounds, Random r) {
+        List<Integer> bounds = new ArrayList<Integer>();
         for (int i = 0; i < cols; i++) {
-            bounds[i] = r.nextBoolean();
+            if (r.nextInt(10) == 1) {
+                bounds.add(null);
+            } else if (lowerBounds.get(i) == null) {
+                bounds.add(r.nextInt(max - min) + min);
+            } else {
+                bounds.add(r.nextInt(max - lowerBounds.get(i) + 1) + lowerBounds.get(i) - 1);
+            }
+        }
+        return bounds;
+    }
+
+    public static List<Boolean> getInclusive(int cols, Random r) {
+        List<Boolean> bounds = new ArrayList<Boolean>();
+        for (int i = 0; i < cols; i++) {
+            bounds.add(r.nextBoolean());
         }
         return bounds;
     }
