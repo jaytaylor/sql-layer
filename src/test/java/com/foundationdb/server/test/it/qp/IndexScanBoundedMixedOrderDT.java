@@ -175,19 +175,21 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
         if (value == null || loBound == null || hiBound == null) {
             return false;
         }
+        Boolean loCheck = loInclusive;
         if (value < loBound) {
-            return false;
+            loCheck = false;
         }
+        if (value > loBound) {
+            loCheck = true;
+        }
+        Boolean hiCheck = hiInclusive;
         if (value > hiBound) {
-            return false;
+            hiCheck = false;
         }
-        if (value == hiBound) {
-            return hiInclusive;
+        if (value < hiBound) {
+            hiCheck = true;
         }
-        if (value == loBound) {
-            return loInclusive;
-        }
-        return true;
+        return loCheck && hiCheck;
     }
 
     @Parameters(name="{0}")
