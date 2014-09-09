@@ -68,7 +68,7 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
     }
 
     @Override
-    protected String createQuery() {
+    protected String buildQuery() {
         StringBuilder queryBuilder = new StringBuilder();
         queryBuilder.append("SELECT ");
         for(int i = 0; i < TOTAL_COLS; ++i) {
@@ -80,12 +80,12 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
         queryBuilder.append(" FROM ");
         queryBuilder.append(TABLE_NAME);
 
-        queryBuilder.append(createConditions());
-        queryBuilder.append(createOrderings());
+        queryBuilder.append(buildConditions());
+        queryBuilder.append(buildOrderings());
         return queryBuilder.toString();
     }
 
-    private StringBuilder createConditions() {
+    private StringBuilder buildConditions() {
         StringBuilder conditionsBuilder = new StringBuilder();
         boolean hasConditions = false;
         for (int i = 0; i < loBounds.size(); i++) {
@@ -123,7 +123,7 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
         return conditionsBuilder;
     }
 
-    private StringBuilder createOrderings() {
+    private StringBuilder buildOrderings() {
         StringBuilder orderingsBuilder = new StringBuilder();
         orderingsBuilder.append(" ORDER BY ");
         boolean firstOrdering = true;

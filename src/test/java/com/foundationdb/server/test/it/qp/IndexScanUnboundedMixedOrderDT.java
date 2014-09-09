@@ -199,7 +199,7 @@ public class IndexScanUnboundedMixedOrderDT extends PostgresServerITBase
 
     @Test
     public void testQuery() {
-        this.query = createQuery();
+        this.query = buildQuery();
         List<List<?>> results = sql(query);
         compare(expectedRows(), results);
     }
@@ -217,7 +217,7 @@ public class IndexScanUnboundedMixedOrderDT extends PostgresServerITBase
         }
     }
 
-    protected String createQuery() {
+    protected String buildQuery() {
         StringBuilder sb = new StringBuilder();
         sb.append("SELECT ");
         for(int i = 0; i < TOTAL_COLS; ++i) {
