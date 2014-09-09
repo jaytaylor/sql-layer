@@ -18,6 +18,7 @@
 package com.foundationdb.server.test.it.qp;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
@@ -38,7 +39,7 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
     private List<Boolean> loInclusive;
     private List<Boolean> hiInclusive;
 
-    private Boolean[] skipped = new Boolean[]{false, false, false, false};
+    private List<Boolean> skipped = Arrays.asList(false, false, false, false);
 
 
     public IndexScanBoundedMixedOrderDT(String name, List<OrderByOptions> orderings, List<Integer> loBounds, List<Integer> hiBounds,
@@ -110,7 +111,7 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
                     conditionsBuilder.append(COLUMNS.get(i) + " < " + upper_bound);
                 }
             } else {
-                skipped[i] = true;
+                skipped.set(i, true);
             }
         }
 
@@ -147,9 +148,9 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
     }
 
     protected static Boolean withinBounds(List<?> values, List<Integer> loBounds, List<Boolean> loInclusive,
-            List<Integer> hiBounds, List<Boolean> hiInclusive, Boolean[] skipped) {
+            List<Integer> hiBounds, List<Boolean> hiInclusive, List<Boolean> skipped) {
         for (int i = 0; i < values.size(); i++) {
-            if (!skipped[i] && !(withinBounds((Integer)values.get(i), loBounds.get(i), loInclusive.get(i), 
+            if (!skipped.get(i) && !(withinBounds((Integer)values.get(i), loBounds.get(i), loInclusive.get(i), 
                     hiBounds.get(i), hiInclusive.get(i)))) {
                 return false;
             }
