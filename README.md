@@ -28,7 +28,7 @@ page for installation details.
 
 ### FoundationDB
 
-ro install FoundationDB, follow the official [Getting Started](https://foundationdb.com/documentation/getting-started.html)
+To install FoundationDB, follow the official [Getting Started](https://foundationdb.com/documentation/getting-started.html)
 guides, being sure to check that the cluster is up and running (covered
 in *Testing your FoundationDB installation*).
 
