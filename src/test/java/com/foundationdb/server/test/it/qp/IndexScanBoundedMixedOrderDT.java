@@ -245,9 +245,9 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
         return bounds;
     }
 
-    protected static List<Boolean> getBooleans(int cols, Random r) {
+    protected static List<Boolean> getBooleans(int num, Random r) {
         List<Boolean> bounds = new ArrayList<Boolean>();
-        for (int i = 0; i < cols; i++) {
+        for (int i = 0; i < num; i++) {
             bounds.add(r.nextBoolean());
         }
         return bounds;
