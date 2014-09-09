@@ -88,6 +88,7 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
 
     private static StringBuilder buildConditions(List<Integer> loBounds, List<Boolean> loInclusive,
             List<Integer> hiBounds, List<Boolean> hiInclusive, List<Boolean> skipped) {
+        // TODO: Add more complex conditions, e.g., (t0 IS NULL OR (t0 > 10 AND t0 < 100))
         StringBuilder conditionsBuilder = new StringBuilder();
         boolean hasConditions = false;
         for (int i = 0; i < loBounds.size(); i++) {
