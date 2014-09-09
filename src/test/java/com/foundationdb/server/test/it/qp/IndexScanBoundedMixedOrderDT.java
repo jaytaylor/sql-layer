@@ -80,6 +80,12 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
         queryBuilder.append(" FROM ");
         queryBuilder.append(TABLE_NAME);
 
+        queryBuilder.append(createConditions());
+        queryBuilder.append(createOrderings());
+        return queryBuilder.toString();
+    }
+
+    private StringBuilder createConditions() {
         StringBuilder conditionsBuilder = new StringBuilder();
         boolean hasConditions = false;
         for (int i = 0; i < loBounds.size(); i++) {
@@ -114,21 +120,24 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
                 skipped.set(i, true);
             }
         }
+        return conditionsBuilder;
+    }
 
-        queryBuilder.append(conditionsBuilder);
-        queryBuilder.append(" ORDER BY ");
+    private StringBuilder createOrderings() {
+        StringBuilder orderingsBuilder = new StringBuilder();
+        orderingsBuilder.append(" ORDER BY ");
         boolean firstOrdering = true;
         for (int i = 0; i < orderings.size(); i++) {
             String oStr = orderings.get(i).getOrderingString();
             if (oStr != null && firstOrdering) {
-                queryBuilder.append(COLUMNS.get(i) + " " + oStr);
+                orderingsBuilder.append(COLUMNS.get(i) + " " + oStr);
                 firstOrdering = false;
             }
             else if (oStr != null) {
-                queryBuilder.append(", " + COLUMNS.get(i) + " " + oStr);
+                orderingsBuilder.append(", " + COLUMNS.get(i) + " " + oStr);
             }
         }
-        return queryBuilder.toString();
+        return orderingsBuilder;
     }
 
     @Override
