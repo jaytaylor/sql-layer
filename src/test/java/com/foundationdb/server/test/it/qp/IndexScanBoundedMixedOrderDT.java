@@ -158,7 +158,7 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
         return true;
     }
 
-    static Boolean withinBounds(Integer value, Integer loBound, Boolean loInclusive, Integer hiBound,
+    protected static Boolean withinBounds(Integer value, Integer loBound, Boolean loInclusive, Integer hiBound,
             Boolean hiInclusive) {
         if (value == null && (loBound == null || hiBound == null)) {
             return true;
@@ -206,7 +206,7 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
         return params;
     }
 
-    public static List<Integer> getLowerBounds(int min, int max, int cols, Random r) {
+    protected static List<Integer> getLowerBounds(int min, int max, int cols, Random r) {
         List<Integer> bounds = new ArrayList<Integer>();
         for (int i = 0; i < cols; i++) {
             if (r.nextInt(10) == 1) {
@@ -218,7 +218,7 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
         return bounds;
     }
 
-    public static List<Integer> getUpperBounds(int min, int max, int cols, List<Integer> lowerBounds, Random r) {
+    protected static List<Integer> getUpperBounds(int min, int max, int cols, List<Integer> lowerBounds, Random r) {
         List<Integer> bounds = new ArrayList<Integer>();
         for (int i = 0; i < cols; i++) {
             if (r.nextInt(10) == 1) {
@@ -232,7 +232,7 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
         return bounds;
     }
 
-    public static List<Boolean> getInclusive(int cols, Random r) {
+    protected static List<Boolean> getInclusive(int cols, Random r) {
         List<Boolean> bounds = new ArrayList<Boolean>();
         for (int i = 0; i < cols; i++) {
             bounds.add(r.nextBoolean());
