@@ -53,13 +53,16 @@ configurations.
 Note: This section is intended *only* for developers.
 
 To build the SQL-Layer from source code several steps need to be taken in advance. 
+* For OS X systems there is a dependency on XCode, have the command line tools installed.  
+* For Windows have the Windows SDK installed and .NET Framework 4.
+* Have [Git](http://git-scm.com) installed. 
 * Install Java Development Kit (JDK) version 7, either [OpenJDK](http://openjdk.java.net) 
 or [Oracle JDK](http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html).
-* Set the environment variable $JAVA_HOME to the directory in which the JDK is installed.
+* Set the environment variable JAVA_HOME to the directory in which the JDK is installed.
 * Install [Maven](http://maven.apache.org) version 3 to build the package.
 * Install [Protobuf](https://code.google.com/p/protobuf/wiki/Download?tm=2) version 2.5.0.
   The Maven POM.xml file for building the SQL-Layer
-  assumes this is present in the parent directory of clone of this project. 
+  assumes this is present in the parent directory of the clone of this project. 
 * Clone and build the [FoundationDB SQL-Parser](https://github.com/FoundationDB/sql-parser) 
 * Clone and build the [FoundationDB JDBC-Driver](https://github.com/FoundationDB/sql-layer-adapter-jdbc) 
 
@@ -95,6 +98,11 @@ The server can then be started with the `fdbsqllayer` script. The `-f` flag
 will run it in the foreground:
 
     $ ./bin/fdbsqllayer -f
+
+Or for Windows users:
+
+    $ ./bin/fdbsqllayer.cmd -f
+
 
 A handful of informational messages will print and then the server will state it is ready:
 
