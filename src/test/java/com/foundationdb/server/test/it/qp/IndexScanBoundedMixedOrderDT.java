@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Random;
 
 import com.foundationdb.junit.SelectedParameterizedRunner;
+import com.foundationdb.server.test.it.qp.IndexScanUnboundedMixedOrderDT.OrderByOptions;
 import com.foundationdb.util.Strings;
 
 import org.junit.ComparisonFailure;
@@ -38,17 +39,17 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
     private List<Integer> hiBounds;
     private List<Boolean> loInclusive;
     private List<Boolean> hiInclusive;
-
-    private List<Boolean> skipped = Arrays.asList(false, false, false, false);
+    private List<Boolean> skipped;
 
 
     public IndexScanBoundedMixedOrderDT(String name, List<OrderByOptions> orderings, List<Integer> loBounds, List<Integer> hiBounds,
-                                        List<Boolean> loInclusive, List<Boolean> hiInclusive) {
+                                        List<Boolean> loInclusive, List<Boolean> hiInclusive, List<Boolean> skipped) {
         super(name, orderings);
         this.loBounds = loBounds;
         this.hiBounds = hiBounds;
         this.loInclusive = loInclusive;
         this.hiInclusive = hiInclusive;
+        this.skipped = skipped;
     }
 
     @Override
@@ -80,16 +81,17 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
         queryBuilder.append(" FROM ");
         queryBuilder.append(TABLE_NAME);
 
-        queryBuilder.append(buildConditions());
-        queryBuilder.append(buildOrderings());
+        queryBuilder.append(buildConditions(loBounds, loInclusive, hiBounds, hiInclusive, skipped));
+        queryBuilder.append(buildOrderings(orderings));
         return queryBuilder.toString();
     }
 
-    private StringBuilder buildConditions() {
+    private static StringBuilder buildConditions(List<Integer> loBounds, List<Boolean> loInclusive,
+            List<Integer> hiBounds, List<Boolean> hiInclusive, List<Boolean> skipped) {
         StringBuilder conditionsBuilder = new StringBuilder();
         boolean hasConditions = false;
         for (int i = 0; i < loBounds.size(); i++) {
-            if (R.nextBoolean()) {
+            if (!skipped.get(i)) {
                 if (hasConditions) {
                     conditionsBuilder.append(" AND ");
                 } else {
@@ -116,14 +118,12 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
                 } else {
                     conditionsBuilder.append(COLUMNS.get(i) + " < " + upper_bound);
                 }
-            } else {
-                skipped.set(i, true);
             }
         }
         return conditionsBuilder;
     }
 
-    private StringBuilder buildOrderings() {
+    private static StringBuilder buildOrderings(List<OrderByOptions> orderings) {
         StringBuilder orderingsBuilder = new StringBuilder();
         orderingsBuilder.append(" ORDER BY ");
         boolean firstOrdering = true;
@@ -205,12 +205,13 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
                 }
             }
             if(nonEmpty) {
-                String name = makeTestName(ordering);
                 List<Integer> loBounds = getLowerBounds(MIN_VALUE, MAX_VALUE, TOTAL_COLS, R);
                 List<Integer> hiBounds = getUpperBounds(MIN_VALUE, MAX_VALUE, TOTAL_COLS, loBounds, R);
-                List<Boolean> loInclusive = getInclusive(TOTAL_COLS, R);
-                List<Boolean> hiInclusive = getInclusive(TOTAL_COLS, R);
-                Object[] param = new Object[]{ name, ordering, loBounds, hiBounds, loInclusive, hiInclusive };
+                List<Boolean> loInclusive = getBooleans(TOTAL_COLS, R);
+                List<Boolean> hiInclusive = getBooleans(TOTAL_COLS, R);
+                List<Boolean> skipped = getBooleans(TOTAL_COLS, R);
+                String name = makeTestName(ordering, loBounds, loInclusive, hiBounds, hiInclusive, skipped);
+                Object[] param = new Object[]{ name, ordering, loBounds, hiBounds, loInclusive, hiInclusive, skipped };
                 params.add(param);
             }
         }
@@ -243,11 +244,19 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
         return bounds;
     }
 
-    protected static List<Boolean> getInclusive(int cols, Random r) {
+    protected static List<Boolean> getBooleans(int cols, Random r) {
         List<Boolean> bounds = new ArrayList<Boolean>();
         for (int i = 0; i < cols; i++) {
             bounds.add(r.nextBoolean());
         }
         return bounds;
+    }
+
+    protected static String makeTestName(List<OrderByOptions> orderings, List<Integer> loBounds, List<Boolean> loInclusive, 
+            List<Integer> hiBounds, List<Boolean> hiInclusive, List<Boolean> skipped) {
+        StringBuilder sb = new StringBuilder(IndexScanUnboundedMixedOrderDT.makeTestName(orderings));
+        sb.append(" ");
+        sb.append(buildConditions(loBounds, loInclusive, hiBounds, hiInclusive, skipped));
+        return sb.toString();
     }
 }
