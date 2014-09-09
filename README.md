@@ -62,8 +62,9 @@ or [Oracle JDK](http://www.oracle.com/technetwork/java/javase/downloads/jdk7-dow
 * Set the environment variable JAVA_HOME to the directory in which the JDK is installed.
 * Install [Maven](http://maven.apache.org) version 3 to build the package.
 * Install [Protobuf](https://code.google.com/p/protobuf/wiki/Download?tm=2) version 2.5.0.
-  The Maven POM.xml file for building the SQL-Layer
-  assumes this is present in the parent directory of the clone of this project. 
+  Installation instructions  are in their README.txt, it may require installation 
+  of gpp. The Maven POM.xml file for building the SQL-Layer
+  assumes this directory is present in the parent directory of the SQL-Layer. 
 * Clone and build the [FoundationDB SQL-Parser](https://github.com/FoundationDB/sql-parser) 
 * Clone and build the [FoundationDB JDBC-Driver](https://github.com/FoundationDB/sql-layer-adapter-jdbc) 
 
