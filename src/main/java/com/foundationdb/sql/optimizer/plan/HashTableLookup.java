@@ -17,21 +17,25 @@
  */
 package com.foundationdb.sql.optimizer.plan;
 
+import java.util.Collection;
 import java.util.List;
 
-
 /** Application of a Hash Table. */
-public class HashTableLookup extends BasePlanWithInput
+public class HashTableLookup extends BaseJoinable
 {
     private HashTable hashTable;
     private List<ExpressionNode> lookupExpressions;
+    private List<ConditionExpression> conditions;
+    private Collection<? extends ColumnSource> tables;
 
     public HashTableLookup(HashTable hashTable,
-                           PlanNode input,
-                           List<ExpressionNode> lookupExpressions){
-        super(input);
+                           List<ExpressionNode> lookupExpressions,
+                           List<ConditionExpression> conditions,
+                           Collection<? extends ColumnSource> tables) {
         this.hashTable = hashTable;
         this.lookupExpressions = lookupExpressions;
+        this.conditions = conditions;
+        this.tables = tables;
     }
 
     public HashTable getHashTable() {
@@ -42,6 +46,32 @@ public class HashTableLookup extends BasePlanWithInput
         return lookupExpressions;
     }
 
+    public Collection<? extends ConditionExpression> getConditions() {
+        return conditions;
+    }
+
+    public Collection<? extends ColumnSource> getTables() {
+        return tables;
+    }
+
+    @Override
+    public boolean accept(PlanVisitor v) {
+        if (v.visitEnter(this)) {
+            if (tables != null) {
+                for (ColumnSource table : tables) {
+                    if (!table.accept(v))
+                        break;
+                }
+            }
+        }
+        return v.visitLeave(this);
+    }
+
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        tables = duplicateList(tables, map);
+    }
 
     @Override
     public String summaryString() {

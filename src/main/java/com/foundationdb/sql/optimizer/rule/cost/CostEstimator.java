@@ -1092,27 +1092,31 @@ public abstract class CostEstimator implements TableRowCounts
                                                        checkSelectivity));
         return adjustCostEstimate(estimate);
     }
-    /**THIS NEEDS TO BE IMPLEMENTED CORRECTLY RIGTH NOW ITS A JOKE**/
+
+    public CostEstimate costHashLookup(CostEstimate equivalentCost,
+                                       int joinColumns,
+                                       int columnCount) {
+        long nrows = equivalentCost.getRowCount();
+        CostEstimate estimate = new CostEstimate(nrows,
+                                                 model.unloadHashTable((int)nrows,
+                                                                       joinColumns,
+                                                                       columnCount));
+        return adjustCostEstimate(estimate);
+    }
+
     public CostEstimate costHashJoin(CostEstimate loaderCost,
-                                        CostEstimate inputCost,
-                                        CostEstimate checkCost,
-                                        int joinColumns,
-                                        int outerColumnCount,
-                                        int innerColumnCount,
-                                        double selectivity
-    )  {
-        long checkCount = Math.max(Math.round(inputCost.getRowCount() * selectivity),1);
-        // Scan to load plus scan input plus check matching fraction
-        // plus filter setup and use.
-        CostEstimate estimate =
-                new CostEstimate(checkCount,
-                        loaderCost.getCost() +
-                        inputCost.getCost() +
-                        model.selectWithHashTable((int)inputCost.getRowCount(),
-                                                  (int)loaderCost.getRowCount(),
-                                                  outerColumnCount,
-                                                  innerColumnCount,
-                                                  joinColumns));
+                                     CostEstimate outerCost,
+                                     CostEstimate lookupCost,
+                                     int joinColumns,
+                                     int outerColumnCount,
+                                     int innerColumnCount) {
+        CostEstimate estimate = outerCost.nest(lookupCost);
+        estimate = new CostEstimate(estimate.getRowCount(),
+                                    loaderCost.getCost() +
+                                    model.loadHashTable((int)loaderCost.getRowCount(),
+                                                        joinColumns,
+                                                        outerColumnCount) +
+                                    estimate.getCost());
         return adjustCostEstimate(estimate);
     }
 

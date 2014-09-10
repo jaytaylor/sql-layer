@@ -807,11 +807,13 @@ public class API
     }
 
     // hashTableLookup_Default
-    public static Operator hashTableLookup_Default(List<AkCollator> collators,
+    public static Operator hashTableLookup_Default(RowType hashedRowType,
+                                                   List<AkCollator> collators,
                                                    List<TPreparedExpression> outerComparisonFields,
                                                    int hashTableBindingPosition)
     {
         return new HashTableLookup_Default(
+                hashedRowType,
                 collators,
                 outerComparisonFields,
                 hashTableBindingPosition);

@@ -1450,6 +1450,7 @@ public class OperatorAssembler extends BaseRule
             HashTable hashTable = usingHashTable.getHashTable();
             int pos = assignBindingPosition(hashTable);
             RowStream lstream = assembleStream(usingHashTable.getLoader());
+            hashTableLoaders.put(hashTable, lstream);
             RowStream stream = assembleStream(usingHashTable.getInput());
             List<ExpressionNode> expressionNodes = usingHashTable.getLookupExpressions();
             List<TPreparedExpression> tFields = assembleExpressions(expressionNodes,lstream.fieldOffsets);
@@ -1483,15 +1484,19 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleHashTableLookup(HashTableLookup hashTableLookup) {
             HashTable hashTable = hashTableLookup.getHashTable();
             int tablePos = getBindingPosition(hashTable);
-            RowStream stream = assembleStream(hashTableLookup.getInput());
+            RowStream lstream = hashTableLoaders.get(hashTable);
             List<ExpressionNode> expressionNodes = hashTableLookup.getLookupExpressions();
-            List<TPreparedExpression> tFields = assembleExpressions(hashTableLookup.getLookupExpressions(), stream.fieldOffsets);
+            List<TPreparedExpression> tFields = assembleExpressions(hashTableLookup.getLookupExpressions(), lstream.fieldOffsets);
             List<AkCollator> collators = new ArrayList<>();
             for(ExpressionNode en : expressionNodes){
                 collators.add(en.getCollator());
             }
 
+            RowStream stream = new RowStream();
+            stream.rowType = lstream.rowType;
+            stream.fieldOffsets = lstream.fieldOffsets;
             stream.operator = API.hashTableLookup_Default(
+                    stream.rowType,
                     collators,
                     tFields,
                     tablePos);
@@ -2067,6 +2072,7 @@ public class OperatorAssembler extends BaseRule
         // bindings is complete list of assignments; bindingPositions its inverse.
         protected List<Object> bindings = new ArrayList<>();
         protected Map<Object,Integer> bindingPositions = new HashMap<>();
+        protected Map<HashTable,RowStream> hashTableLoaders = new HashMap<>();
 
         protected int assignBindingPosition(Object binding) {
             int position = bindings.size();

@@ -46,13 +46,17 @@ class HashTableLookup_Default extends Operator
         return new Execution(context, bindingsCursor);
     }
 
-    public HashTableLookup_Default(List<AkCollator> collators,
+    public HashTableLookup_Default(RowType hashedRowType,
+                                   List<AkCollator> collators,
                                    List<TPreparedExpression> outerComparisonFields,
                                    int hashTableBindingPosition
     )
     {
+        ArgumentValidation.notNull("hashedRowType", hashedRowType);
         ArgumentValidation.notNull("outerComparisonFields", outerComparisonFields);
         ArgumentValidation.isGTE("outerComparisonFields", outerComparisonFields.size(), 1);
+
+        this.hashedRowType = hashedRowType;
         this.collators = collators;
         this.hashTableBindingPosition = hashTableBindingPosition;
         this.outerComparisonFields = outerComparisonFields;
@@ -67,7 +71,7 @@ class HashTableLookup_Default extends Operator
     // Object state
 
     private final int hashTableBindingPosition;
-    private RowType hashedRowType;
+    private final RowType hashedRowType;
     List<TPreparedExpression> outerComparisonFields;
     private final List<AkCollator> collators;
 
@@ -93,7 +97,7 @@ class HashTableLookup_Default extends Operator
                 CursorLifecycle.checkIdle(this);
 
                 hashTable = bindings.getHashTable(hashTableBindingPosition);
-                hashedRowType = hashTable.getRowType();
+                assert (hashedRowType == hashTable.getRowType()) : hashTable;
                 innerRowList = hashTable.getMatchingRows(null, evaluatableComparisonFields, collators, bindings);
                 innerRowListPosition = 0;
                 closed = false;

@@ -18,7 +18,7 @@
 package com.foundationdb.sql.optimizer.plan;
 
 
-/** A Bloom filter. */
+/** A hash table. */
 public class HashTable extends BaseHashTable
 {
     private long estimatedSize;

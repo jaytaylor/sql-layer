@@ -116,18 +116,11 @@ public class NestedLoopMapper extends BaseRule
                 break;
             case HASH_TABLE:
                 {
+                    map = new MapJoin(join.getJoinType(), outer, inner);
                     HashJoinNode hjoin = (HashJoinNode)join;
                     HashTable ht = (HashTable)hjoin.getHashTable();
                     PlanNode loader = hjoin.getLoader();
-                    map = new HashTableLookup(ht,
-                                              inner,
-                                              hjoin.getMatchColumns());
-                    PlanNode mnl = new MapJoin(join.getJoinType(),
-                                              outer,
-                                              map);
-                    map = new UsingHashTable(ht,
-                                             loader,
-                                             mnl,
+                    map = new UsingHashTable(ht, loader, map,
                                              hjoin.getHashColumns(),
                                              hjoin.getTKeyComparables());
                 }

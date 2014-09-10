@@ -400,7 +400,7 @@ public class JoinAndIndexPicker extends BaseRule
                 Plan plan = subpicker(subquerySource).subqueryPlan(subqueryBoundTables, subqueryJoins, subqueryOutsideJoins);
                 return new SubqueryPlan(subquerySource, subpicker(subquerySource), JoinableBitSet.of(0), plan, plan.costEstimate);
             }
-            if( joinable instanceof CreateAs) {
+            if (joinable instanceof CreateAs) {
                 return null;
             }
             if (joinable instanceof ExpressionsSource) {
@@ -435,6 +435,10 @@ public class JoinAndIndexPicker extends BaseRule
 
         public boolean containsColumn(ColumnExpression column) {
             return false;
+        }
+
+        public Collection<? extends ColumnSource> columnTables() {
+            return Collections.emptyList();
         }
 
         public double joinSelectivity() {
@@ -540,6 +544,11 @@ public class JoinAndIndexPicker extends BaseRule
             ColumnSource table = column.getTable();
             if (!(table instanceof TableSource)) return false;
             return groupGoal.getTables().containsTable((TableSource) table);
+        }
+
+        @Override
+        public Collection<? extends ColumnSource> columnTables() {
+            return groupGoal.getTableColumnSources();
         }
 
         @Override
@@ -1017,8 +1026,8 @@ public class JoinAndIndexPicker extends BaseRule
             if (joinConditions == null || joinConditions.isEmpty()) {
                 joinConditions = null;
             }
-            HashJoinNode join = new HashJoinNode(loaderJoinable.getJoinable(), inputJoinable.getJoinable(),
-                    checkJoinable.getJoinable(), joinType, hashTable, hashColumns, matchColumns, tKeyComparables);
+            HashJoinNode join = new HashJoinNode(loaderJoinable.getJoinable(), inputJoinable.getJoinable(), checkJoinable.getJoinable(),
+                                                 joinType, hashTable, hashColumns, matchColumns, tKeyComparables);
             join.setJoinConditions(joinConditions);
             join.setImplementation(joinImplementation);
             if (joinType == JoinType.SEMI)
@@ -1164,12 +1173,14 @@ public class JoinAndIndexPicker extends BaseRule
                     joinType, JoinNode.Implementation.NESTED_LOOPS,
                     joins, costEstimate);
 
-            Collection<JoinOperator> joinOperators = duplicateJoins(joins);
-            Plan hashLoaderPlan = right.bestPlan(condJoins, outsideJoins);
-            JoinPlan hashPlan2 = buildHashTableJoin(hashLoaderPlan, joinPlan , joinOperators);
-            if(hashPlan2 != null)
-                planClass.consider(hashPlan2);
-
+            if (isFreeOfJoinCondition(leftPlan, rightPlan.getConditions())) {
+                Collection<JoinOperator> joinOperators = duplicateJoins(joins);
+                Plan loaderPlan = right.bestPlan(condJoins, outsideJoins);
+                JoinPlan hashPlan = buildHashTableJoin(loaderPlan, joinPlan, joinOperators);
+                if (hashPlan != null) {
+                    planClass.consider(hashPlan);
+                }
+            }
             if (joinType.isSemi() || (joinType.isInner() && rightPlan.semiJoinEquivalent())) {
                 Collection<JoinOperator> semiJoins = duplicateJoins(joins);
                 Plan loaderPlan = right.bestPlan(condJoins, outsideJoins);
@@ -1262,11 +1273,9 @@ public class JoinAndIndexPicker extends BaseRule
             else
                 maxSelectivity = BLOOM_FILTER_MAX_SELECTIVITY_DEFAULT;
             if (maxSelectivity <= 0.0) return null; // Feature turned off.
-            List<List<ExpressionNode>> returning = buildExpressionColumns(joins, inputPlan, checkPlan);
-            if (returning == null)
+            HashTableColumns hashTableColumns = hashTableColumns(joins, inputPlan, checkPlan);
+            if (hashTableColumns == null)
                 return null;
-            List<ExpressionNode> hashColumns = returning.get(0);
-            List<ExpressionNode> matchColumns = returning.get(1);
             double selectivity = checkPlan.joinSelectivity();
             if (selectivity > maxSelectivity)
                 return null;
@@ -1287,7 +1296,7 @@ public class JoinAndIndexPicker extends BaseRule
                 .costBloomFilter(loaderPlan.costEstimate, inputPlan.costEstimate, checkPlan.costEstimate, selectivity);
             return new HashJoinPlan(loaderPlan, inputPlan, checkPlan,
                                     JoinType.SEMI, JoinNode.Implementation.BLOOM_FILTER,
-                                    joins, costEstimate, bloomFilter, hashColumns, matchColumns, null);
+                                    joins, costEstimate, bloomFilter, hashTableColumns.hashColumns, hashTableColumns.matchColumns, null);
         }
 
 
@@ -1298,7 +1307,7 @@ public class JoinAndIndexPicker extends BaseRule
                     if (indexCond instanceof ComparisonCondition) {
                         for (int i = 0; i < joinOperators.size(); i++) {
                             removeIfExists(indexCond, joinOperators.get(i).getJoinConditions());
-                            if(joinOperators.get(i).getJoin() != null)
+                            if (joinOperators.get(i).getJoin() != null)
                                 removeIfExists(indexCond, joinOperators.get(i).getJoin().getJoinConditions());
 
 
@@ -1310,7 +1319,7 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         private void removeIfExists(ConditionExpression condToRemove, ConditionList conditionList){
-            if(conditionList == null || conditionList.isEmpty())
+            if (conditionList == null || conditionList.isEmpty())
                 return;
             for (int j = 0; j < conditionList.size(); j++) {
                 if (conditionList.get(j) instanceof ComparisonCondition) {
@@ -1328,45 +1337,42 @@ public class JoinAndIndexPicker extends BaseRule
         int DEFAULT_COLUMN_COUNT = 5;
 
         public JoinPlan buildHashTableJoin(Plan loaderPlan, JoinPlan joinPlan,
-                                           Collection<JoinOperator> joinOperators){
-            Plan inputPlan = joinPlan.left;
-            joinOperators = cleanJoinOperators(inputPlan, (List)joinOperators);
-            Plan checkPlan = joinPlan.right;
-            joinOperators = cleanJoinOperators(checkPlan, (List)joinOperators);
+                                           Collection<JoinOperator> joinOperators) {
+            Plan outerPlan = joinPlan.left;
+            joinOperators = cleanJoinOperators(outerPlan, (List)joinOperators);
+            Plan innerPlan = joinPlan.right;
+            joinOperators = cleanJoinOperators(innerPlan, (List)joinOperators);
 
             Collection<JoinOperator> joins = joinOperators;
-            List<List<ExpressionNode>> returning = buildExpressionColumns(joins, inputPlan, checkPlan);
-            if (returning == null)
+            HashTableColumns hashTableColumns = hashTableColumns(joins, outerPlan, innerPlan);
+            if (hashTableColumns == null)
                 return null;
-            List<ExpressionNode> hashColumns = returning.get(0);
-            List<ExpressionNode> matchColumns = returning.get(1);
-            double selectivity = checkPlan.joinSelectivity();
             String prop = picker.rulesContext.getProperty("hashTableMaxRowCount");
             int maxColumnCount;
-            if( prop != null){
+            if (prop != null){
                 maxColumnCount = Integer.parseInt(prop);
-                if(maxColumnCount == 0) return null; }
+                if (maxColumnCount == 0) return null; }
             else
                 maxColumnCount = MAX_COL_COUNT;
-            if(loaderPlan.costEstimate.getRowCount() * hashColumns.size() > maxColumnCount)
+            if (loaderPlan.costEstimate.getRowCount() * hashTableColumns.hashColumns.size() > maxColumnCount)
                 return null;
             int outerColumnCount = DEFAULT_COLUMN_COUNT;
             int innerColumnCount = DEFAULT_COLUMN_COUNT;
             HashTable hashTable = new HashTable(loaderPlan.costEstimate.getRowCount());
-            for(ExpressionNode expression : matchColumns){
-                if(expression instanceof ColumnExpression){
+            for (ExpressionNode expression : hashTableColumns.matchColumns) {
+                if (expression instanceof ColumnExpression) {
                     ColumnSource columnSource = ((ColumnExpression)expression).getTable();
-                    if(columnSource instanceof TableSource){
+                    if (columnSource instanceof TableSource) {
                         TableNode table = ((TableSource)columnSource).getTable();
                         outerColumnCount = table.getTable().rowDef().getFieldCount();
                         break;
                     }
                 }
             }
-            for(ExpressionNode expression : hashColumns){
-                if(expression instanceof ColumnExpression){
+            for (ExpressionNode expression : hashTableColumns.hashColumns) {
+                if (expression instanceof ColumnExpression) {
                     ColumnSource columnSource = ((ColumnExpression)expression).getTable();
-                    if(columnSource instanceof TableSource){
+                    if (columnSource instanceof TableSource) {
                         TableNode table = ((TableSource)columnSource).getTable();
                         innerColumnCount = table.getTable().rowDef().getFieldCount();
                         break;
@@ -1374,8 +1380,8 @@ public class JoinAndIndexPicker extends BaseRule
                 }
             }
             List<TKeyComparable> tKeyComparables = new ArrayList<>();
-            for(JoinOperator joinOperator : joinOperators){
-                if(joinOperator.getJoin() != null && joinOperator.getJoin().hasJoinConditions()) {
+            for (JoinOperator joinOperator : joinOperators) {
+                if (joinOperator.getJoin() != null && joinOperator.getJoin().hasJoinConditions()) {
                     for (ConditionExpression conditionExpression : joinOperator.getJoin().getJoinConditions()) {
                         if (conditionExpression instanceof ComparisonCondition)
                             tKeyComparables.add(((ComparisonCondition) conditionExpression).getKeyComparable());
@@ -1383,56 +1389,98 @@ public class JoinAndIndexPicker extends BaseRule
                 }
             }
             boolean allNull = true;
-            for(TKeyComparable tKeyComparable: tKeyComparables){
-                if( tKeyComparable != null)
+            for (TKeyComparable tKeyComparable: tKeyComparables) {
+                if (tKeyComparable != null)
                     allNull = false;
             }
-            if(tKeyComparables.isEmpty() || allNull)
+            if (tKeyComparables.isEmpty() || allNull)
                 tKeyComparables = null;
             CostEstimate costEstimate = picker.getCostEstimator()
-                    .costHashJoin(loaderPlan.costEstimate, inputPlan.costEstimate, checkPlan.costEstimate, hashColumns.size(), outerColumnCount, innerColumnCount, selectivity);
-            return new HashJoinPlan(loaderPlan, inputPlan, checkPlan,
+                .costHashLookup(innerPlan.costEstimate, hashTableColumns.hashColumns.size(), innerColumnCount);
+            HashLookupPlan lookupPlan = new HashLookupPlan(costEstimate, hashTable, hashTableColumns);
+            costEstimate = picker.getCostEstimator()
+                    .costHashJoin(loaderPlan.costEstimate, outerPlan.costEstimate, costEstimate, hashTableColumns.hashColumns.size(), outerColumnCount, innerColumnCount);
+            return new HashJoinPlan(loaderPlan, outerPlan, lookupPlan,
                     joinPlan.joinType, JoinNode.Implementation.HASH_TABLE,
-                    joins, costEstimate, hashTable, hashColumns, matchColumns, tKeyComparables);
+                    joins, costEstimate, hashTable, hashTableColumns.hashColumns, hashTableColumns.matchColumns, tKeyComparables);
         }
 
-        public List<List<ExpressionNode>> buildExpressionColumns(Collection<JoinOperator> joins, Plan inputPlan, Plan checkPlan) {
+        static class HashLookupPlan extends Plan {
+            HashTable hashTable;
+            HashTableColumns hashTableColumns;
+
+            public HashLookupPlan(CostEstimate costEstimate, HashTable hashTable, HashTableColumns hashTableColumns) {
+                super(costEstimate);
+                this.hashTable = hashTable;
+                this.hashTableColumns = hashTableColumns;
+            }
+
+            @Override
+            public String toString() {
+                return hashTableColumns.conditions.toString();
+            }
+
+            @Override
+            public JoinableWithConditionsToRemove install(boolean copy) {
+                HashTableLookup lookup = new HashTableLookup(hashTable,
+                                                             hashTableColumns.matchColumns,
+                                                             hashTableColumns.conditions,
+                                                             hashTableColumns.tables);
+                return new JoinableWithConditionsToRemove(lookup,
+                                                          hashTableColumns.conditions);
+            }
+
+            @Override
+            public Collection<? extends ConditionExpression> getConditions() {
+                return hashTableColumns.conditions;
+            }
+        }
+
+        static class HashTableColumns {
+            List<ConditionExpression> conditions = new ArrayList<>();
             List<ExpressionNode> matchColumns = new ArrayList<>();
             List<ExpressionNode> hashColumns = new ArrayList<>();
+            Collection<? extends ColumnSource> tables;
+        }
+
+        /** Find some equality conditions between tables on the two sides of the join.
+         * These can be used to load a hash table / Bloom filter.
+         */
+        public HashTableColumns hashTableColumns(Collection<JoinOperator> joins, Plan inputPlan, Plan checkPlan) {
+            HashTableColumns result = new HashTableColumns();
 
             for (JoinOperator join : joins) {
                 if (join.getJoinConditions() != null) {
                     for (ConditionExpression cond : join.getJoinConditions()) {
-                        if (!(cond instanceof ComparisonCondition)) return null;
+                        if (!(cond instanceof ComparisonCondition)) continue;
                         ComparisonCondition ccond = (ComparisonCondition) cond;
-                        if (ccond.getOperation() != Comparison.EQ) return null;
+                        if (ccond.getOperation() != Comparison.EQ) continue;
                         ExpressionNode left = ccond.getLeft();
                         ExpressionNode right = ccond.getRight();
                         if (!((left instanceof ColumnExpression) &&
-                                (right instanceof ColumnExpression)))
-                            return null;
+                              (right instanceof ColumnExpression)))
+                            continue;
                         if (inputPlan.containsColumn((ColumnExpression) left) &&
-                                checkPlan.containsColumn((ColumnExpression) right)) {
-                            matchColumns.add(left);
-                            hashColumns.add(right);
+                            checkPlan.containsColumn((ColumnExpression) right)) {
+                            result.conditions.add(cond);
+                            result.matchColumns.add(left);
+                            result.hashColumns.add(right);
                         } else if (inputPlan.containsColumn((ColumnExpression) right) &&
-                                checkPlan.containsColumn((ColumnExpression) left)) {
-                            matchColumns.add(right);
-                            hashColumns.add(left);
-                        } else {
-                            return null;
+                                   checkPlan.containsColumn((ColumnExpression) left)) {
+                            result.conditions.add(cond);
+                            result.matchColumns.add(right);
+                            result.hashColumns.add(left);
                         }
                     }
                 }
             }
-            if(hashColumns.isEmpty() || matchColumns.isEmpty())
-                    return null;
-            List<List<ExpressionNode>> returningExpressions = new ArrayList<>();
-            returningExpressions.add(hashColumns);
-            returningExpressions.add(matchColumns);
-            return returningExpressions;
+            if (result.conditions.isEmpty())
+                return null;
+            result.tables = checkPlan.columnTables();
+            return result;
         }
     }
+
     // Find top-level joins and note what query they come from; 
     // Top-level queries and those used in expressions are returned directly.
     // Derived tables are deferred, since they need to be planned in
@@ -1479,4 +1527,43 @@ public class JoinAndIndexPicker extends BaseRule
             return true;
         }
     }
+
+    /** Does this scan only handle conditions independent of the outer scan? */
+    public static boolean isFreeOfJoinCondition(Plan outerPlan,
+                                                Collection<? extends ConditionExpression> conditions) {
+        if ((conditions == null) || conditions.isEmpty())
+            return true;
+        JoinConditionChecker checker = new JoinConditionChecker(outerPlan);
+        for (ConditionExpression cond : conditions) {
+            if (!cond.accept(checker)) break;
+        }
+        return !checker.found;
+    }
+
+    static class JoinConditionChecker implements ExpressionVisitor {
+        final Plan plan;
+        boolean found;
+
+        public JoinConditionChecker(Plan plan) {
+            this.plan = plan;
+        }
+
+        public boolean visitEnter(ExpressionNode n) {
+            return visit(n);
+        }
+
+        public boolean visitLeave(ExpressionNode n) {
+            return !found;
+        }
+
+        public boolean visit(ExpressionNode n) {
+            if (n instanceof ColumnExpression) {
+                if (plan.containsColumn((ColumnExpression)n)) {
+                    found = true;
+                }
+            }
+            return !found;
+        }
+    }
+
 }

@@ -104,12 +104,12 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
 
     @Test(expected = IllegalArgumentException.class)
     public void testHashJoinEmptyComparisonFields() {
-        hashTableLookup_Default(null, emptyExpressionList,TABLE_BINDING_POSITION);
+        hashTableLookup_Default(customerRowType, null, emptyExpressionList,TABLE_BINDING_POSITION);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testHashJoinNullComparisonFields() {
-        hashTableLookup_Default(null, null,  TABLE_BINDING_POSITION);
+        hashTableLookup_Default(customerRowType, null, null,  TABLE_BINDING_POSITION);
     }
 
     /** Test arguments using_HashTable  */
@@ -346,6 +346,7 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
 
         Operator project = project_Default(
                 hashTableLookup_Default(
+                        innerRowType,
                         collators,
                         outerExpressions,
                         TABLE_BINDING_POSITION

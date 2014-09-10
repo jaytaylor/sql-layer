@@ -280,6 +280,7 @@ public class Select_HashTableCT extends CostModelBase
         outerTimeOperator = new TimeOperator(outerStream);
         Operator project = project_Default(
                 hashTableLookup_Default(
+                        innerRowType,
                         null,
                         outerExpressions,
                         TABLE_BINDING_POSITION
