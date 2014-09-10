@@ -191,8 +191,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     @Override
     public void start() {
         super.start();
-        AkCollatorFactory.setUseKeyCoder(false);
-
         final boolean clearIncompatibleData = Boolean.parseBoolean(config.getProperty(CLEAR_INCOMPATIBLE_DATA_PROP));
 
         initSchemaManagerDirectory();

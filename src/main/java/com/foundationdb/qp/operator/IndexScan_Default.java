@@ -312,7 +312,7 @@ class IndexScan_Default extends Operator
                     close();
                 }
                 if (LOG_EXECUTION) {
-                    LOG.debug("IndexScan: yield {}", row);
+                    LOG.debug("IndexScan_default$Execution: yield {}", row);
                 }
                 return row;
             } finally {
@@ -402,7 +402,7 @@ class IndexScan_Default extends Operator
             try {
                 Row row = super.next();
                 if (LOG_EXECUTION) {
-                    LOG.debug("IndexScan: yield {}", row);
+                    LOG.debug(IndexScan_Default.this.toString() + ": yield {}", row);
                 }
                 return row;
             } finally {
@@ -422,7 +422,7 @@ class IndexScan_Default extends Operator
         @Override
         protected BindingsAwareCursor openACursor(QueryBindings bindings, boolean lookahead) {
             if (LOG_EXECUTION) {
-                LOG.debug("IndexScan: open{} for {}", lookahead ? " lookahead" : "", bindings);
+                LOG.debug(IndexScan_Default.this.toString() + ": open{} for {}", lookahead ? " lookahead" : "", bindings);
             }
             return super.openACursor(bindings, lookahead);
         }
@@ -432,6 +432,11 @@ class IndexScan_Default extends Operator
         LookaheadExecution(QueryContext context, QueryBindingsCursor bindingsCursor, 
                            StoreAdapter adapter, int quantum) {
             super(context, bindingsCursor, adapter, quantum);
+        }
+        
+        @Override
+        public String toString() {
+            return "LookaheadExecution for " + IndexScan_Default.this.toString();
         }
     }
 }

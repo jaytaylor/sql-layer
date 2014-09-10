@@ -450,7 +450,7 @@ public abstract class DPhyp<P>
 
         public JoinOperator(JoinOperator join) {
             this.join = join.join;
-            this.joinConditions = new ConditionList(join.joinConditions);
+            this.joinConditions = join.joinConditions == null ? null : new ConditionList(join.joinConditions);
             this.left = join.left;
             this.right = join.right;
             this.parent = join.parent;

@@ -177,7 +177,7 @@ public class OperatorITBase extends ITBase
         if (testCase.hKeyComparison()) {
             compareRenderedHKeys(testCase.firstExpectedHKeys(), cursor, testCase.reopenTopLevel());
         } else {
-            compareRows(testCase.firstExpectedRows(), cursor, testCase.reopenTopLevel(), collators);
+            compareRows(testCase.firstExpectedRows(), cursor, testCase.reopenTopLevel());
         }
         assertTrue(cursor.isIdle());
         // Check close during iteration.
@@ -199,7 +199,7 @@ public class OperatorITBase extends ITBase
         if (testCase.hKeyComparison()) {
             compareRenderedHKeys(testCase.secondExpectedHKeys(), cursor, testCase.reopenTopLevel());
         } else {
-            compareRows(testCase.secondExpectedRows(), cursor, testCase.reopenTopLevel(), collators);
+            compareRows(testCase.secondExpectedRows(), cursor, testCase.reopenTopLevel());
         }
         assertTrue(cursor.isIdle());
         // Check close of idle cursor is permitted

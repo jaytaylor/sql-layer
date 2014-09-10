@@ -872,7 +872,7 @@ public class AISBuilderTest
     {
         AISBuilder builder = new AISBuilder();
         builder.table("schema", "customer");
-        builder.column("schema", "customer", "customer_name", 0, type("MCOMPAT", "varchar", 100L, null, "UTF16", "latin1_swedish_ci", false), false, null, null);
+        builder.column("schema", "customer", "customer_name", 0, type("MCOMPAT", "varchar", 100L, null, "UTF16", "sr_RU", false), false, null, null);
         builder.basicSchemaIsComplete();
         builder.createGroup("group", "schema");
         AkibanInformationSchema ais = builder.akibanInformationSchema();
@@ -881,7 +881,7 @@ public class AISBuilderTest
         Table table = ais.getTable("schema", "customer");
         Column userColumn = table.getColumn(0);
         Assert.assertEquals("UTF16", userColumn.getCharsetName());
-        Assert.assertEquals("latin1_swedish_ci", userColumn.getCollationName());
+        Assert.assertEquals("sr_RU", userColumn.getCollationName());
 
         Assert.assertEquals(0, 
                 builder.akibanInformationSchema().validate(AISValidations.BASIC_VALIDATIONS).failures().size());

@@ -24,18 +24,19 @@ import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.protobuf.FDBProtobuf.TupleUsage;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.store.FDBNameGenerator;
 import com.foundationdb.server.store.format.columnkeys.ColumnKeysStorageFormat;
 import com.foundationdb.server.store.format.protobuf.FDBProtobufStorageFormat;
+import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
 import com.foundationdb.server.store.format.tuple.TupleStorageFormat;
 import com.foundationdb.util.Strings;
 
 public class FDBStorageFormatRegistry extends StorageFormatRegistry
 {
-
     public FDBStorageFormatRegistry(ConfigurationService configService) {
-        super(configService, FDBStorageFormat.identifier);
+        super(configService);
     }
 
     @Override
@@ -46,15 +47,24 @@ public class FDBStorageFormatRegistry extends StorageFormatRegistry
         ColumnKeysStorageFormat.register(this);
         super.registerStandardFormats();
     }
-    
+
+    @Override
+    public StorageDescription getDefaultStorageDescription(HasStorage object) {
+        StorageDescription sd = super.getDefaultStorageDescription(object);
+        if(sd instanceof TupleStorageDescription) {
+            TupleStorageDescription tsd = (TupleStorageDescription)sd;
+            if(object instanceof Group) {
+                tsd.setUsage(TupleUsage.KEY_AND_ROW);
+            } else {
+                tsd.setUsage(TupleUsage.KEY_ONLY);
+            }
+        }
+        return sd;
+    }
+
     public boolean isDescriptionClassAllowed(Class<? extends StorageDescription> descriptionClass) {
         return (super.isDescriptionClassAllowed(descriptionClass) ||
                 FDBStorageDescription.class.isAssignableFrom(descriptionClass));
-    }
-
-    // The old tree name field was the prefix bytes Base64 encoded.
-    public StorageDescription convertTreeName(String treeName, HasStorage forObject) {
-        return new FDBStorageDescription(forObject, Strings.fromBase64(treeName), FDBStorageFormat.identifier);
     }
 
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {

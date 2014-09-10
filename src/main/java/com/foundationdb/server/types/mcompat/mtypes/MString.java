@@ -31,6 +31,7 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.util.Strings;
+
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
@@ -158,7 +159,15 @@ public class MString extends TString
         @Override
         public void writeCollating(ValueSource inValue, TInstance inInstance, ValueTarget out) {
             final AkCollator collator = getCollator(inInstance);
-            out.putString(AkCollator.getString(inValue, collator), collator);
+            if (inValue.getObject() instanceof byte[]) {
+                out.putBytes((byte[])inValue.getObject());
+            }
+            else if (inValue.getObject() instanceof String || inValue.getObject() == null) {
+                out.putString((String)inValue.getObject(), collator);
+            }
+            else {
+                throw new UnsupportedOperationException("Unexpected inValue: " + inValue.getObject());
+            }
         }
 
         @Override

@@ -15,16 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.service.config;
+package com.foundationdb.server.error;
 
-import java.util.Map;
-import java.util.Set;
-
-public interface ConfigurationServiceMXBean
-{
-    Map<String,String> getProperties();
-
-    long getQueryTimeoutMilli();
-
-    void setQueryTimeoutMilli(long timeoutMilli);
+public final class InvalidCollationSchemeException extends InvalidOperationException {
+    public InvalidCollationSchemeException (String collation) {
+        super(ErrorCode.INVALID_COLLATION_SCHEME, collation);
+    }
 }

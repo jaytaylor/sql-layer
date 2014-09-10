@@ -25,6 +25,12 @@ import com.persistit.Value;
  * State used for traversing / modifying FDB storage.
  */
 public class FDBStoreData {
+    public static enum NudgeDir {
+        LEFT,
+        RIGHT,
+        DEEPER,
+    }
+
     public final FDBStorageDescription storageDescription;
     public final Key persistitKey;
     public final Session session;
@@ -33,7 +39,9 @@ public class FDBStoreData {
     public Value persistitValue;
     public Object otherValue;
     public FDBStoreDataIterator iterator;
-
+    // What way, if any, persistitKey has been nudged
+    public NudgeDir nudgeDir;
+    
     public FDBStoreData(Session session, FDBStorageDescription storageDescription, Key persistitKey) {
         this.storageDescription = storageDescription;
         this.persistitKey = persistitKey;

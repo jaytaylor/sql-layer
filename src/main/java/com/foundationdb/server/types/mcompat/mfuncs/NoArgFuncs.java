@@ -69,8 +69,14 @@ public class NoArgFuncs
 
         @Override
         protected int[] resultAttrs() {
-            return new int[] { VERSION_STR.length() };
+            return new int[]{VERSION_STR.length()};
         }
+
+        @Override
+        protected boolean neverConstant() {
+            return false;
+        }
+
     };
     
     public static final TScalar PI = new TScalarBase()
@@ -98,6 +104,11 @@ public class NoArgFuncs
         public TOverloadResult resultType()
         {
             return TOverloadResult.fixed(MApproximateNumber.DOUBLE);
+        }
+
+        @Override
+        protected boolean neverConstant() {
+            return false;
         }
     };
  
@@ -140,7 +151,7 @@ public class NoArgFuncs
         public void evaluate(TExecutionContext context, ValueTarget target)
         {
             target.putInt32(MDateAndTime.encodeTime(context.getCurrentDate(), context.getCurrentTimezone()));
-        }   
+        }
     };
 
     public static final TScalar CUR_TIMESTAMP = new NoArgExpression("CURRENT_TIMESTAMP", true)
@@ -177,7 +188,7 @@ public class NoArgFuncs
         {
             return MDateAndTime.TIMESTAMP;
         }
-        
+
     };
     
     public static final TScalar SYSDATE = new NoArgExpression("SYSDATE", false)
@@ -230,6 +241,7 @@ public class NoArgFuncs
         {
             target.putString(context.getSessionUser(), null);
         }
+
     };
     
     public static final TScalar SYSTEM_USER = new NoArgExpression("SYSTEM_USER", true)
@@ -248,6 +260,11 @@ public class NoArgFuncs
         public void evaluate(TExecutionContext context, ValueTarget target)
         {
             target.putString(context.getSystemUser(), null);
+        }
+
+        @Override
+        protected boolean neverConstant() {
+            return false;
         }
     };
     

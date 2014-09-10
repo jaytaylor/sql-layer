@@ -28,7 +28,6 @@ import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.util.AkibanAppender;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public class ProjectedRow extends AbstractRow
@@ -50,7 +49,11 @@ public class ProjectedRow extends AbstractRow
             } else {
                 buffer.append(", ");
             }
-            type.format(evaluation, appender);
+            if (type != null) {
+                type.format(evaluation, appender);
+            } else {
+                buffer.append("NULL");
+            }
         }
         buffer.append(')');
         return buffer.toString();

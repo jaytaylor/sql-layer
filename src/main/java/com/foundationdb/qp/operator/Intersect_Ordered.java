@@ -451,11 +451,12 @@ class Intersect_Ordered extends Operator
 
         @Override
         public QueryBindings nextBindings() {
+            
             QueryBindings bindings = bindingsCursor.nextBindings();
-            QueryBindings other = leftInput.nextBindings();
-            assert (bindings == other);
-            other = rightInput.nextBindings();
-            assert (bindings == other);
+            QueryBindings left = leftInput.nextBindings();
+            assert (bindings == left);
+            QueryBindings right  = rightInput.nextBindings();
+            assert (bindings == right);
             return bindings;
         }
 

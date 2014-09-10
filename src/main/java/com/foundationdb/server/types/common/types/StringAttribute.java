@@ -52,7 +52,7 @@ public enum StringAttribute implements Attribute
         }
         else {
             // TODO add implicit-vs-explicit
-            String collationName = AkCollatorFactory.getAkCollator(collationId).getName();
+            String collationName = AkCollatorFactory.getAkCollator(collationId).getScheme();
             CollationDerivation derivation = CollationDerivation.IMPLICIT;
             result = new CharacterTypeAttributes(charsetName, collationName, derivation);
         }

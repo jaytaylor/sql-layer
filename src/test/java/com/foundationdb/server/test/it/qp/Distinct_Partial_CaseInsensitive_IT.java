@@ -45,7 +45,7 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
             "s", "t",
             "id int not null",
             "cs varchar(10)", // case sensitive
-            "ci varchar(10) collate latin1_swedish_ci", // case insensitive
+            "ci varchar(10) collate en_us_ci", // case insensitive
             "ns int"); // non-string
     }
 

@@ -30,6 +30,7 @@ import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.util.TableChange.ChangeType;
 import com.foundationdb.server.store.format.columnkeys.ColumnKeysStorageDescription;
 import com.foundationdb.util.ArgumentValidation;
 import com.google.common.base.Objects;
@@ -349,6 +350,7 @@ public class TableChangeValidator {
 
         List<TableName> droppedSequences = new ArrayList<>();
         List<String> addedIdentity = new ArrayList<>();
+        List<String> addedIndexes = new ArrayList<>();
         Map<String,String> renamedColumns = new HashMap<>();
         for(TableChange change : state.columnChanges) {
             switch(change.getChangeType()) {
@@ -385,6 +387,12 @@ public class TableChangeValidator {
             }
         }
 
+        for(TableChange change : state.tableIndexChanges) {
+            if(change.getChangeType() == ChangeType.ADD) {
+                addedIndexes.add(change.getNewName());
+            }
+        }
+
         boolean renamed = !oldTable.getName().equals(newTable.getName()) || !renamedColumns.isEmpty();
 
         Map<String,String> preserveIndexes = new TreeMap<>();
@@ -401,6 +409,7 @@ public class TableChangeValidator {
                 preserveIndexes,
                 droppedSequences,
                 addedIdentity,
+                addedIndexes,
                 finalChangeLevel == ChangeLevel.TABLE,
                 isParentChanged() || primaryKeyChanged
             )
@@ -539,6 +548,7 @@ public class TableChangeValidator {
                 parentRenames,
                 preserved,
                 EMPTY_TABLE_NAME_LIST,
+                Collections.<String>emptyList(),
                 Collections.<String>emptyList(),
                 false,
                 !doPreserve

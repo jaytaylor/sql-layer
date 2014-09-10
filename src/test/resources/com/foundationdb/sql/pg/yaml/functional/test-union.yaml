@@ -58,6 +58,9 @@
 - Statement: select 0,'#' union select cid,name from customers union all select cat,sku from categories union select 7,'gg';
 - output: [[0, '#'],[1, 'Smith'], [1, 'Square'], [2, 'Circle'], [2, 'Jones'],[3, 'Hexagon'],[3, 'Smithson'], [7, 'gg']]
 ---
+- Statement: SELECT cid, name from customers WHERE cid <> 1 UNION SELECT cid, name FROM customers WHERE cid <> 2 UNION SELECT cid, name FROM customers WHERE cid <> 3
+- output: [[1, 'Smith'],[2, 'Jones'],[3, 'Smithson']]
+---
 - Statement: select cast ((1+0) AS DECIMAL) UNION select cos(0)
 - output: [[1.0]]
 ---

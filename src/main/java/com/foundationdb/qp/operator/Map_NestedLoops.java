@@ -237,7 +237,9 @@ class Map_NestedLoops extends Operator
         }
 
         protected Row nextInputRow() {
-            return input.next();
+            assert input.isActive() : "RowToBindingsCursor reading from idle cursor";
+            Row row = input.next();
+            return row;
         }
     }
 
@@ -301,7 +303,7 @@ class Map_NestedLoops extends Operator
                     }
                 }
                 if (LOG_EXECUTION) {
-                    LOG.debug("Map_NestedLoops: yield {}", row);
+                    LOG.debug("Map_NestedLoops$CollapseBindingsCursor: yield {}", row);
                 }
                 return row;
             } 
@@ -430,14 +432,14 @@ class Map_NestedLoops extends Operator
                         } else {
                             outerRow = row;
                             if (LOG_EXECUTION) {
-                                LOG.debug("Map_NestedLoops: restart inner loop using current branch row");
+                                LOG.debug("Map_NestedLoops$Execution: restart inner loop using current branch row");
                             }
                             startNewInnerLoop(row);
                         }
                     }
                 }
                 if (LOG_EXECUTION) {
-                    LOG.debug("Map_NestedLoops: yield {}", outputRow);
+                    LOG.debug("Map_NestedLoops$Execution: yield {}", outputRow);
                 }
                 return outputRow;
             } finally {

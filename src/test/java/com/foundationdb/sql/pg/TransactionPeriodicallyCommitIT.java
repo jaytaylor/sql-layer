@@ -21,7 +21,6 @@ import com.foundationdb.sql.jdbc.core.BaseConnection;
 import com.foundationdb.sql.jdbc.core.ProtocolConnection;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.sql.ResultSet;
@@ -36,6 +35,7 @@ import static org.junit.Assert.fail;
 
 public class TransactionPeriodicallyCommitIT extends PostgresServerITBase {
 
+    /** Delicate: STORAGE_FORMAT rowdata is ~139 per row, tuple is ~48 */
     private static final int AFTER_BYTES = 200;
     /** The number of commits it took to hit the number of bytes at which it should commit **/
     private static final int NUMBER_OF_INSERTS = 4;
@@ -70,11 +70,11 @@ public class TransactionPeriodicallyCommitIT extends PostgresServerITBase {
         getConnection().setAutoCommit(false);
         int lastCount = -1;
         int rowIndex = 0;
-        for (int i=0; i< NUMBER_OF_INSERTS * 2; i++) {
+        for (int i=0; i < 10; ++i) {
             rowIndex = insertRows(rowIndex, i);
             getConnection().rollback();
             int count = getCount();
-            if (i < NUMBER_OF_INSERTS -1) {
+            if (i < 2) {
                 assertEquals("Should not have committed anything after " + i + " statements", 0, count);
             } else {
                 if (lastCount < 0) {
@@ -83,8 +83,6 @@ public class TransactionPeriodicallyCommitIT extends PostgresServerITBase {
                     }
                 }
                 else if (count > lastCount) {
-                    // Make sure that we're approximately consistent, just to make the tests a little less brittle
-                    assertEquals(NUMBER_OF_INSERTS*NUMBER_OF_ROWS,lastCount,1);
                     assertEquals("Should be committing the same amount each time", lastCount*2, count);
                     return; // success, it committed twice during the transaction
                 }
@@ -115,7 +113,7 @@ public class TransactionPeriodicallyCommitIT extends PostgresServerITBase {
         getConnection().setAutoCommit(false);
         int lastCount = -1;
         int rowIndex = 0;
-        for (int i=1; i< NUMBER_OF_INSERTS * 2; i++) {
+        for (int i=1; i < 10; i++) {
             int transactionState = -1;
             for (int j = 0; j < i; j++) {
                 rowIndex = insertRow(rowIndex);
@@ -128,7 +126,7 @@ public class TransactionPeriodicallyCommitIT extends PostgresServerITBase {
             assertNotEquals(-1,transactionState);
             getConnection().rollback();
             int count = getCount();
-            if (i < NUMBER_OF_INSERTS -1) {
+            if (i < 2) {
                 assertEquals("Should not have committed anything after " + i + " statements", 0, count);
             } else {
                 if (lastCount < 0) {
@@ -142,10 +140,6 @@ public class TransactionPeriodicallyCommitIT extends PostgresServerITBase {
                     }
                 }
                 else if (count > lastCount) {
-                    // Make sure that we're approximately consistent, just because the test may be broken
-                    // if we're off by more than this.
-                    assertEquals(count + " rows inserted after " + lastCount + " rows",
-                            NUMBER_OF_INSERTS*NUMBER_OF_ROWS,lastCount,1);
                     assertEquals("Should be committing the same amount each time", lastCount*2, count);
                     assertEquals(count + " rows inserted after " + lastCount + " rows, but state not idle (OPEN is 1)",
                             ProtocolConnection.TRANSACTION_IDLE, transactionState);

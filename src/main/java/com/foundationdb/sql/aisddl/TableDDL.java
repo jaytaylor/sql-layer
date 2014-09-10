@@ -364,12 +364,7 @@ public class TableDDL
             object.setStorageDescription(ddlFunctions.getStorageFormatRegistry().parseSQL(storage, object));
             return;
         }
-        object.setStorageDescription(ddlFunctions.getStorageFormatRegistry().
-                getDefaultStorageDescription(object));
-        if (object.getStorageDescription() instanceof TupleStorageDescription) {
-            TupleStorageDescription tsd = (TupleStorageDescription) object.getStorageDescription();
-            tsd.setUsage(TupleUsage.KEY_AND_ROW);
-        }
+        object.setStorageDescription(ddlFunctions.getStorageFormatRegistry().getDefaultStorageDescription(object));
     }
 
     static void addColumn (final AISBuilder builder, final TypesTranslator typesTranslator, final ColumnDefinitionNode cdn,
@@ -657,10 +652,9 @@ public class TableDDL
         if (indexIsSpatial && !Index.isSpatialCompatible(tableIndex)) {
             throw new BadSpatialIndexException(tableIndex.getIndexName().getTableName(), null);
         }
-        if(id != null) {
-            StorageFormatNode sfn = id.getStorageFormat();
-            if (sfn != null)
-                tableIndex.setStorageDescription(ddl.getStorageFormatRegistry().parseSQL(sfn, tableIndex));
+        StorageFormatNode sfn = id.getStorageFormat();
+        if (sfn != null) {
+            tableIndex.setStorageDescription(ddl.getStorageFormatRegistry().parseSQL(sfn, tableIndex));
         }
         return tableIndex.getIndexName().getName();
     }

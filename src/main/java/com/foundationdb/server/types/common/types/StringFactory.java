@@ -75,7 +75,7 @@ public class StringFactory
     }
 
     public static String collationIdToName(int id) {
-        return (id == NULL_COLLATION_ID) ? null : AkCollatorFactory.getAkCollator(id).getName();
+        return (id == NULL_COLLATION_ID) ? null : AkCollatorFactory.getAkCollator(id).getScheme();
     }
 
     //------------------------------Default values------------------------------
@@ -87,7 +87,7 @@ public class StringFactory
     public static final int DEFAULT_CHARSET_ID = DEFAULT_CHARSET.ordinal();
     public static final int NULL_CHARSET_ID = -1;
     
-    public static final int DEFAULT_COLLATION_ID = 0; // UCS_BINARY
+    public static final int DEFAULT_COLLATION_ID = AkCollatorFactory.UCS_BINARY_ID;
     public static final int NULL_COLLATION_ID = -1; // String literals
     
     //--------------------------------------------------------------------------

@@ -23,6 +23,7 @@ import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
+import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
 import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
@@ -38,6 +39,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.UUID;
 
 public final class ValueSources {
 
@@ -115,6 +117,9 @@ public final class ValueSources {
                     value.putBytes(((ByteSource)object).toByteSubarray());
                 break;
             case STRING:
+                if(!(object instanceof CharSequence || object instanceof Number)) {
+                    throw new IllegalArgumentException("Unsafe toString(): " + object.getClass());
+                }
                 value.putString(object.toString(), null);
                 break;
             case BOOL:
@@ -298,6 +303,14 @@ public final class ValueSources {
             }
             logger.error("MDecimal with underlying object of : {}", source.getObject().getClass());
         }
+        
+        if (source.getType().typeClass() == AkGUID.INSTANCE.widestComparable()) {
+            if (source.getObject() instanceof UUID) {
+                return (UUID) source.getObject();
+            }
+            logger.error("GUID with underlying object of : {}", source.getObject().getClass());
+        }
+        
         if (source.getType().typeClass() == MBinary.LONGBLOB ||
              source.getType().typeClass() == MBinary.BLOB ||
              source.getType().typeClass() == MBinary.MEDIUMBLOB ||
@@ -394,8 +407,7 @@ public final class ValueSources {
             hash = Arrays.hashCode(source.getBytes());
             break;
         case STRING:
-            String stringVal = AkCollator.getString(source, collator);
-            hash = collator.hashCode(stringVal);
+            hash = AkCollator.hashValue(source, collator);
             break;
         default:
             throw new AssertionError(source.getType());
