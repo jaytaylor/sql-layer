@@ -64,7 +64,7 @@ call mvn clean package -U -D"fdbsql.release=%RELEASE%" -D"skipTests=true"
 IF ERRORLEVEL 1 GOTO EOF
 
 IF NOT DEFINED TOOLS_LOC SET TOOLS_LOC="git@github.com:FoundationDB/sql-layer-client-tools.git"
-IF NOT DEFINED TOOLS_REF SET TOOLS_REF="v2.0.0"
+IF NOT DEFINED TOOLS_REF SET TOOLS_REF="master"
 
 CD target
 git clone %TOOLS_LOC% client-tools
