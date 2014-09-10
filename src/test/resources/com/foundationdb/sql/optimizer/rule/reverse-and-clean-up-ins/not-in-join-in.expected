@@ -9,17 +9,14 @@ SelectQuery@78d61716
           OnlyIfEmpty@242895da
             MapJoin@64862dc1()
               UsingHashTable@25260d76(HashTable@653dd107)
-                Flatten@3504ead9(albums_tags)
-                  GroupScan@3d66567e(Group(test.albums_tags), rows = 1, cost = 0.00000)
-                    TableSource@2ec0cbac(albums_tags - TableFKJoin@9b889b0(Foreign Key albums_tags_fkey: test.albums_tags REFERENCES test.albums))
+                SingleIndexScan@1052d4e6(Index(test.albums.albums_fkey[IndexColumn(artist_id)]), covering/NONE, rows = 1, cost = 6.02560)
                 MapJoin@325786cc()
-                  SingleIndexScan@1052d4e6(Index(test.albums.albums_fkey[IndexColumn(artist_id)]), covering/NONE, rows = 1, cost = 6.02560)
+                  Flatten@3504ead9(albums_tags)
+                    GroupScan@3d66567e(Group(test.albums_tags), rows = 1, cost = 0.00000)
+                      TableSource@2ec0cbac(albums_tags - TableFKJoin@9b889b0(Foreign Key albums_tags_fkey: test.albums_tags REFERENCES test.albums))
                   Project@2e175069[albums_tags.tag_id, albums.artist_id]
-                    HashTableLookup@7ca03522(HashTable@653dd107, [albums.id])
-                      Flatten@55d667c0(albums_tags)
-                        AncestorLookup@7a008b19(albums_tags -> [albums_tags])
-                          SingleIndexScan@39ac54e2(Index(test.albums_tags.albums_tags_fkey[IndexColumn(album_id)]), NONE, =albums.id, rows = 1, cost = 12.3334)
-                          TableSource@2ec0cbac(albums_tags - TableFKJoin@9b889b0(Foreign Key albums_tags_fkey: test.albums_tags REFERENCES test.albums))
+                    HashTableLookup@7ca03522(HashTable@653dd107, [albums_tags.album_id])
+                      TableSource@64920dc2(albums - TableGroup@1ee27d73(albums))
               Select@60f8df02[artists.id == albums.artist_id]
                 Limit@72f92e0a(LIMIT 1)
                   Select@453dcd7e[albums_tags.tag_id == VALUES[0]]

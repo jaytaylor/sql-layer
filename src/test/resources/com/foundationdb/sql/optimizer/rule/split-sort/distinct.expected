@@ -15,9 +15,5 @@ SelectQuery@676ffc31
             Project@608d1c76[orders.order_date, child.name]
               Select@5047b87f[]
                 HashTableLookup@e80094e(HashTable@16c05b8c, [parent.name])
-                  Select@77e2e751[]
-                    Flatten@6507457b(customers INNER orders)
-                      Select@51c0b454[parent.name == customers.name]
-                        GroupScan@427f20ba(Group(test.customers), rows = 1000, cost = 60545.0)
-                          TableSource@7e19f267(customers - TableGroup@764b5a01(customers))
-                          TableSource@77d7e190(orders - TableGroupJoin@49da0650(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+                  TableSource@7e19f267(customers - TableGroup@764b5a01(customers))
+                  TableSource@77d7e190(orders - TableGroupJoin@49da0650(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

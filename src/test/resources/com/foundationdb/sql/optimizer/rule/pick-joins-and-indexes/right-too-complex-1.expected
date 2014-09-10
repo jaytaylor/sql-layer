@@ -1,11 +1,9 @@
-SelectQuery@59631383
-  ResultSet@77962b4d[name, order_date]
-    Project@23f50991[customers.name, orders.order_date]
-      Select@2c472108[]
-        HashJoinNode@6ef4e7f7(LEFT/HASH_TABLE[customers.cid] = [orders.cid])
-          TableGroupJoinTree@10a9420a(TableGroup@582ea711(customers), customers - SingleIndexScan@5eda7a51(Index(test.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 74.1740))
-            TableSource@5fe8816c(customers - TableGroup@582ea711(customers))
-          TableGroupJoinTree@7419e3bb(TableGroup@582ea711(customers), orders - SingleIndexScan@59948c7d(Index(test.orders.order_date[IndexColumn(order_date)]), covering/NONE, UNIONs of [NULL < % < 1029665, 1029665 < % ], rows = 999, cost = 707.459))
-            TableSource@e58ad87(orders - TableGroup@582ea711(customers))
-          TableGroupJoinTree@4fb64589(TableGroup@582ea711(customers), customers - GroupLoopScan@2793907d(orders - customers, rows = 1, cost = 7.01160))
-            TableSource@5fe8816c(customers - TableGroup@582ea711(customers))
+SelectQuery@615e7597
+  ResultSet@7a3e72[name, order_date]
+    Project@5999ae9c[customers.name, orders.order_date]
+      Select@7896b1b8[]
+        JoinNode@6d6de4e1(LEFT/NESTED_LOOPS)
+          TableGroupJoinTree@1cf7cbd1(TableGroup@50661532(customers), orders - SingleIndexScan@13f3589(Index(test.orders.order_date[IndexColumn(order_date)]), covering/NONE, UNIONs of [NULL < % < 1029665, 1029665 < % ], rows = 999, cost = 707.459))
+            TableSource@3f0dbef1(orders - TableGroup@50661532(customers))
+          TableGroupJoinTree@5df9aeda(TableGroup@50661532(customers), customers - GroupLoopScan@37f22bf(orders - customers, rows = 1, cost = 7.01160))
+            TableSource@72b0f2b2(customers - TableGroup@50661532(customers))

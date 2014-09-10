@@ -12,5 +12,4 @@ SelectQuery@6ed618e8
                 Select@6f5019f4[customers.cid == orders.cid]
                   OnlyIfEmpty@73d81b43
                     HashTableLookup@70e6071f(HashTable@4c967f6e, [orders.oid])
-                      Select@dddbe21[orders.oid == items.oid]
-                        SingleIndexScan@58ed6fa3(Index(test.items.sku[IndexColumn(sku)]), covering/NONE, =1234, rows = 97, cost = 158.981)
+                      TableSource@261db982(items - TableGroup@13dbed9e(customers))
