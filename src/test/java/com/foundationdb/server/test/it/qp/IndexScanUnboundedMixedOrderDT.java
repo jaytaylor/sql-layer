@@ -69,6 +69,7 @@ public class IndexScanUnboundedMixedOrderDT extends PostgresServerITBase
         }
     };
 
+    @SuppressWarnings("unchecked")
     static final Comparator DESC_COMPARATOR = new Comparator()
     {
         @Override
