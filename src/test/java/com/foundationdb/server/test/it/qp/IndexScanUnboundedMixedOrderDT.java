@@ -22,7 +22,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -144,8 +144,14 @@ public class IndexScanUnboundedMixedOrderDT extends PostgresServerITBase
     };
 
 
-    protected static final long SEED = System.currentTimeMillis();
-    protected static final Random R = new Random(SEED);
+    protected static final long SEED;
+    protected static final Random R;
+
+    static {
+        String seedStr = System.getProperty("fdbsql.test.seed");
+        SEED = (seedStr != null) ? Long.parseLong(seedStr) : System.currentTimeMillis();
+        R = new Random(SEED);
+    }
 
     protected final List<OrderByOptions> orderings;
     protected final List<List<Integer>> DB;
@@ -256,13 +262,14 @@ public class IndexScanUnboundedMixedOrderDT extends PostgresServerITBase
     public static Collection<List<OrderByOptions>> orderByPermutations() {
         List<Set<OrderByOptions>> optSets = new ArrayList<>();
         for(int i = 0; i < TOTAL_COLS; ++i) {
-            optSets.add(new HashSet<>(Arrays.asList(OrderByOptions.values())));
+            optSets.add(EnumSet.allOf(OrderByOptions.class));
         }
         return Sets.cartesianProduct(optSets);
     }
 
     @Parameters(name="{0}")
-    public static List<Object[]> orderings() throws Exception {
+    public static List<Object[]> params() throws Exception {
+        R.setSeed(SEED);
         List<Object[]> params = new ArrayList<>();
         for(List<OrderByOptions> p : orderByPermutations()) {
             String name = makeTestName(p);
