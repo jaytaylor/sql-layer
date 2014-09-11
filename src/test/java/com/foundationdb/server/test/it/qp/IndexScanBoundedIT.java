@@ -29,6 +29,8 @@ import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
+import java.util.Arrays;
+
 import static com.foundationdb.qp.operator.API.cursor;
 import static com.foundationdb.qp.operator.API.indexScan_Default;
 import static com.foundationdb.server.test.ExpressionGenerators.field;
@@ -1641,6 +1643,46 @@ public class IndexScanBoundedIT extends OperatorITBase
              ordering(DESC, DESC, DESC),
              1006);
         // DD, D already tested
+    }
+
+    // case 2: > null <= null
+    @Test(expected=IllegalArgumentException.class)
+    public void leftExclusiveNullRightInclusiveNull() {
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC, DESC),
+             1000);
+    }
+
+    // case 6: > non-null, <= null
+    @Test(expected=IllegalArgumentException.class)
+    public void leftExclusiveNonNullRightInclusiveNull() {
+        test(range(EXCLUSIVE, 1000, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC, DESC),
+             1000);
+    }
+
+    // case 10: >= null, <= null
+    @Test
+    public void leftInclusiveNullRightInclusiveNull() {
+        NewRow row = createNewRow(t, 2000L, null, 11L, 111L);
+        writeRows(row);
+        db = Arrays.copyOf(db, db.length + 1);
+        db[db.length -1] = row;
+        test(range(INCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC, DESC),
+             2000);
+    }
+
+    // case 14: >= non-null, <= null
+    @Test(expected=IllegalArgumentException.class)
+    public void leftInclusiveNonNullRightInclusiveNull() {
+        test(range(INCLUSIVE, 1000, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC, DESC),
+             1000);
     }
 
     // For use by this class
