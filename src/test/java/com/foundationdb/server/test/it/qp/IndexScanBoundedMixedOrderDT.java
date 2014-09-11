@@ -195,6 +195,7 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
 
     @Parameters(name="{0}")
     public static List<Object[]> params() throws Exception {
+        R.setSeed(SEED);
         Collection<List<OrderByOptions>> orderByPerms = IndexScanUnboundedMixedOrderDT.orderByPermutations();
         List<Object[]> params = new ArrayList<>();
         for(List<OrderByOptions> ordering : orderByPerms) {
