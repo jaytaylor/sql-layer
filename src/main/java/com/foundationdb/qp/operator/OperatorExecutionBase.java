@@ -24,12 +24,6 @@ import com.foundationdb.server.error.QueryCanceledException;
 public abstract class OperatorExecutionBase extends ExecutionBase implements RowOrientedCursorBase<Row>
 {
     @Override
-    public void destroy()
-    {
-        throw new UnsupportedOperationException(getClass().getName());
-    }
-
-    @Override
     public boolean isIdle()
     {
         throw new UnsupportedOperationException(getClass().getName());
@@ -42,7 +36,7 @@ public abstract class OperatorExecutionBase extends ExecutionBase implements Row
     }
 
     @Override
-    public boolean isDestroyed()
+    public boolean isClosed() 
     {
         throw new UnsupportedOperationException(getClass().getName());
     }

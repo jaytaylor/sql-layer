@@ -22,26 +22,36 @@ public final class CursorLifecycle
     public static void checkIdle(CursorBase cursor)
     {
         if (!cursor.isIdle()) {
-            throw new WrongStateException(IDLE, cursor);
+            throw new WrongStateException(CursorState.IDLE.toString(), cursor);
         }
     }
 
     public static void checkIdleOrActive(CursorBase cursor)
     {
-        if (cursor.isDestroyed()) {
-            throw new WrongStateException(IDLE_OR_ACTIVE, cursor);
+        if (cursor.isClosed()) {
+            String state = CursorState.IDLE.toString() + " OR " + CursorState.ACTIVE.toString();
+            throw new WrongStateException(state, cursor);
         }
     }
 
+    public static void checkClosed (CursorBase cursor)
+    {
+        if (!cursor.isClosed()) {
+            throw new WrongStateException (CursorState.CLOSED.toString(), cursor);
+        }
+    }
+    
     private static String cursorState(CursorBase cursor)
     {
-        return cursor.isIdle() ? IDLE : cursor.isActive() ? ACTIVE : DESTROYED;
+        return cursor.isIdle() ? CursorState.IDLE.toString() : 
+            cursor.isActive() ? CursorState.ACTIVE.toString() : CursorState.CLOSED.toString();
     }
 
-    private static String IDLE = "IDLE";
-    private static String ACTIVE = "ACTIVE";
-    private static String DESTROYED = "DESTROYED";
-    private static String IDLE_OR_ACTIVE = IDLE + " or " + ACTIVE;
+    enum CursorState {
+        CLOSED,
+        IDLE,
+        ACTIVE
+    }
 
     public static class WrongStateException extends RuntimeException
     {
