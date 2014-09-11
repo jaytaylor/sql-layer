@@ -8,7 +8,7 @@ SelectQuery@78d61716
         Select@61045038[]
           OnlyIfEmpty@242895da
             MapJoin@64862dc1()
-              UsingHashTable@25260d76(HashTable@653dd107)
+              UsingHashTable@25260d76(HashTable@653dd107, [albums.id])
                 SingleIndexScan@1052d4e6(Index(test.albums.albums_fkey[IndexColumn(artist_id)]), covering/NONE, rows = 1, cost = 6.02560)
                 MapJoin@325786cc()
                   Flatten@3504ead9(albums_tags)

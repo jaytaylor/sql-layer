@@ -54,6 +54,8 @@ public class UsingHashTable extends UsingLoaderBase
         StringBuilder str = new StringBuilder(super.summaryString());
         str.append("(");
         str.append(hashTable);
+        str.append(", ");
+        str.append(lookupExpressions);
         str.append(")");
         return str.toString();
     }

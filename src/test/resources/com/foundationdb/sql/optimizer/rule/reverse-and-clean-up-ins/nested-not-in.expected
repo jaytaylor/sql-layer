@@ -5,7 +5,7 @@ SelectQuery@6ed618e8
       Project@39b64680[customers.name]
         Select@6dce9b19[]
           OnlyIfEmpty@5deae1b7
-            UsingHashTable@6788e58c(HashTable@4c967f6e)
+            UsingHashTable@6788e58c(HashTable@4c967f6e, [items.oid])
               SingleIndexScan@2c88360a(Index(test.items.sku[IndexColumn(sku)]), covering/NONE, =1234, rows = 97, cost = 79.4406)
               MapJoin@6d3175fc()
                 SingleIndexScan@4a392b65(Index(test.orders.PRIMARY[IndexColumn(oid)]), covering/NONE, rows = 1000, cost = 688.942)

@@ -2,7 +2,7 @@ SelectQuery@676ffc31
   ResultSet@69162a04[order_date, name]
     Distinct@2e20a282
       Sort@38b46be[PROJECT[0], PROJECT[1]]
-        UsingHashTable@1d1bf632(HashTable@16c05b8c)
+        UsingHashTable@1d1bf632(HashTable@16c05b8c, [customers.name])
           Flatten@80ac97f(customers INNER orders)
             GroupScan@2eba4fff(Group(test.customers), rows = 1000, cost = 59725.0)
               TableSource@7e19f267(customers - TableGroup@764b5a01(customers))
