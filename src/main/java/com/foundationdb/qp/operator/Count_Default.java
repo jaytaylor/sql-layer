@@ -154,10 +154,8 @@ class Count_Default extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-                input.open();
+                super.open();
                 count = 0;
-                closed = false;
             } finally {
                 TAP_OPEN.out();
             }
@@ -175,10 +173,10 @@ class Count_Default extends Operator
                 }
                 checkQueryCancelation();
                 Row row = null;
-                while ((row == null) && !closed) {
+                while ((row == null) && this.isActive()) {
                     row = input.next();
                     if (row == null) {
-                        close();
+                        setIdle();
                         row = new ValuesRow(resultType, new Value(MNumeric.BIGINT.instance(false), count));
                     } else if (row.rowType() == countType) {
                         row = null;
@@ -196,35 +194,6 @@ class Count_Default extends Operator
             }
         }
 
-        @Override
-        public void close()
-        {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (!closed) {
-                input.close();
-                closed = true;
-            }
-        }
-
-        @Override
-        public void destroy()
-        {
-            close();
-            input.destroy();
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return closed;
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return !closed;
-        }
-
         // Execution interface
 
         Execution(QueryContext context, Cursor input)
@@ -235,6 +204,5 @@ class Count_Default extends Operator
         // Object state
 
         private long count;
-        private boolean closed = true;
     }
 }

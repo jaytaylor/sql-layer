@@ -97,7 +97,7 @@ class Select_BloomFilter extends Operator
     @Override
     public void findDerivedTypes(Set<RowType> derivedTypes)
     {
-        input.findDerivedTypes(derivedTypes);
+        inputOperator.findDerivedTypes(derivedTypes);
         onPositive.findDerivedTypes(derivedTypes);
     }
 
@@ -109,7 +109,7 @@ class Select_BloomFilter extends Operator
         }
         else {
             assert (tFields != null);
-            Cursor inputCursor = input.cursor(context, bindingsCursor);
+            Cursor inputCursor = inputOperator.cursor(context, bindingsCursor);
             QueryBindingsCursor toBindings = new FilterBindingsCursor(context, inputCursor, bindingPosition, depth, tFields, newExpressionsAdapter);
             Cursor checkCursor = onPositive.cursor(context, toBindings);
             return new RecoverRowsCursor(context, checkCursor, bindingPosition, depth);
@@ -119,13 +119,13 @@ class Select_BloomFilter extends Operator
     @Override
     public List<Operator> getInputOperators()
     {
-        return Arrays.asList(input, onPositive);
+        return Arrays.asList(inputOperator, onPositive);
     }
 
     @Override
     public String describePlan()
     {
-        return String.format("%s\n%s", describePlan(input), describePlan(onPositive));
+        return String.format("%s\n%s", describePlan(inputOperator), describePlan(onPositive));
     }
 
     // Select_BloomFilter interface
@@ -145,7 +145,7 @@ class Select_BloomFilter extends Operator
         ArgumentValidation.isGT("fields.size()", size, 0);
         ArgumentValidation.isGTE("bindingPosition", bindingPosition, 0);
         ArgumentValidation.isGT("depth", depth, 0);
-        this.input = input;
+        this.inputOperator = input;
         this.onPositive = onPositive;
         this.bindingPosition = bindingPosition;
         this.pipeline = pipeline;
@@ -170,7 +170,7 @@ class Select_BloomFilter extends Operator
 
     // Object state
 
-    private final Operator input;
+    private final Operator inputOperator;
     private final Operator onPositive;
     private final int bindingPosition, depth;
     private final boolean pipeline;
@@ -182,7 +182,7 @@ class Select_BloomFilter extends Operator
         Attributes atts = new Attributes();
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(bindingPosition));
-        atts.put(Label.INPUT_OPERATOR, input.getExplainer(context));
+        atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(context));
         atts.put(Label.INPUT_OPERATOR, onPositive.getExplainer(context));
         for (TPreparedExpression field : tFields) {
             atts.put(Label.EXPRESSIONS, field.getExplainer(context));
@@ -215,7 +215,7 @@ class Select_BloomFilter extends Operator
         }
     };
 
-    private class Execution<E> extends OperatorCursor
+    private class Execution<E> extends ChainedCursor
     {
         // Cursor interface
 
@@ -224,11 +224,9 @@ class Select_BloomFilter extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
+                super.open();
                 filter = bindings.getBloomFilter(bindingPosition);
                 bindings.setBloomFilter(bindingPosition, null);
-                inputCursor.open();
-                idle = false;
             } finally {
                 TAP_OPEN.out();
             }
@@ -246,13 +244,13 @@ class Select_BloomFilter extends Operator
                 }
                 Row row;
                 do {
-                    row = inputCursor.next();
+                    row = input.next();
                     if (row == null) {
-                        close();
+                        setIdle();
                     } else if (!filter.maybePresent(hashProjectedRow(row)) || !rowReallyHasMatch(row)) {
                         row = null;
                     }
-                } while (!idle && row == null);
+                } while (isActive() && row == null);
                 if (LOG_EXECUTION) {
                     LOG.debug("Select_BloomFilter: yield {}", row);
                 }
@@ -264,75 +262,13 @@ class Select_BloomFilter extends Operator
             }
         }
 
-        @Override
-        public void close()
-        {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (!idle) {
-                inputCursor.close();
-                idle = true;
-            }
-        }
-
-        @Override
-        public void destroy()
-        {
-            if (!destroyed) {
-                close();
-                inputCursor.destroy();
-                onPositiveCursor.destroy();
-                filter = null;
-                destroyed = true;
-            }
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return !destroyed && idle;
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return !destroyed && !idle;
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return destroyed;
-        }
-
-        @Override
-        public void openBindings() {
-            inputCursor.openBindings();
-        }
-
-        @Override
-        public QueryBindings nextBindings() {
-            bindings = inputCursor.nextBindings();
-            return bindings;
-        }
-
-        @Override
-        public void closeBindings() {
-            inputCursor.closeBindings();
-        }
-
-        @Override
-        public void cancelBindings(QueryBindings bindings) {
-            inputCursor.cancelBindings(bindings);
-            idle = true;
-        }
 
         // Execution interface
 
         <EXPR> Execution(QueryContext context, QueryBindingsCursor bindingsCursor,
                               List<? extends EXPR> expressions, ExpressionAdapter<EXPR,E> adapter)
         {
-            super(context);
-            this.inputCursor = input.cursor(context, bindingsCursor);
+            super(context, inputOperator.cursor(context, bindingsCursor));
             this.onPositiveBindingsCursor = new SingletonQueryBindingsCursor(null);
             this.onPositiveCursor = onPositive.cursor(context, onPositiveBindingsCursor);
             this.adapter = adapter;
@@ -383,15 +319,12 @@ class Select_BloomFilter extends Operator
 
         // Object state
 
-        private final Cursor inputCursor;
         private final Cursor onPositiveCursor;
         private final SingletonQueryBindingsCursor onPositiveBindingsCursor;
         private QueryBindings bindings;
         private BloomFilter filter;
         private final List<E> fieldEvals = new ArrayList<>();
         private final ExpressionAdapter<?, E> adapter;
-        private boolean idle = true;
-        private boolean destroyed = false;
     }
 
     // Turn input rows that match the filter into bindings for the onPositive plan.

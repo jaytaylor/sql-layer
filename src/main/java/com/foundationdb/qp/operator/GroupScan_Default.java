@@ -397,12 +397,6 @@ class GroupScan_Default extends Operator
         }
 
         @Override
-        public void destroy()
-        {
-            input.destroy();
-        }
-
-        @Override
         public boolean isIdle()
         {
             return input.isIdle();
@@ -413,13 +407,13 @@ class GroupScan_Default extends Operator
         {
             return input.isActive();
         }
-
+        
         @Override
-        public boolean isDestroyed()
-        {
-            return input.isDestroyed();
+        public boolean isClosed() {
+            return input.isClosed();
         }
 
+ 
         @Override
         public void rebind(QueryBindings bindings) {
             this.bindings = bindings;

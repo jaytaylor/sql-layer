@@ -162,8 +162,7 @@ class Sort_General extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-                input.open();
+                super.open();
                 output = new SorterToCursorAdapter(adapter(), context, bindings, input, sortType, ordering, sortOption, TAP_LOAD);
                 output.open();
             } finally {
@@ -186,7 +185,7 @@ class Sort_General extends Operator
                 checkQueryCancelation();
                 row = output.next();
                 if (row == null) {
-                    close();
+                    setIdle();
                 }
             } finally {
                 if (TAP_NEXT_ENABLED) {
@@ -202,42 +201,11 @@ class Sort_General extends Operator
         @Override
         public void close()
         {
-            CursorLifecycle.checkIdleOrActive(this);
+            super.close();
             if (output != null) {
-                input.close();
                 output.close();
                 output = null;
             }
-        }
-
-        @Override
-        public void destroy()
-        {
-            close();
-            input.destroy();
-            if (output != null) {
-                output.destroy();
-                output = null;
-            }
-            destroyed = true;
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return !destroyed && output == null;
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return !destroyed && output != null;
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return destroyed;
         }
 
         // Execution interface
@@ -250,6 +218,5 @@ class Sort_General extends Operator
         // Object state
 
         private RowCursor output;
-        private boolean destroyed = false;
     }
 }

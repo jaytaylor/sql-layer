@@ -167,11 +167,9 @@ class Select_HKeyOrdered extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-                input.open();
+                super.open();
                 pEvaluation.with(context);
                 pEvaluation.with(bindings);
-                idle = false;
             } finally {
                 TAP_OPEN.out();
             }
@@ -229,33 +227,8 @@ class Select_HKeyOrdered extends Operator
         @Override
         public void close()
         {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (!isIdle()) {
-                selectedRow = null;
-                input.close();
-                idle = true;
-            }
-        }
-
-        @Override
-        public void destroy()
-        {
-            if (!isDestroyed()) {
-                close();
-                input.destroy();
-            }
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return !input.isDestroyed() && idle;
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return !input.isDestroyed() && !idle;
+            super.close();
+            selectedRow = null;
         }
 
         // Execution interface
@@ -270,6 +243,5 @@ class Select_HKeyOrdered extends Operator
 
         private Row selectedRow; // The last input row with type = predicateRowType.
         private final TEvaluatableExpression pEvaluation;
-        private boolean idle = true;
     }
 }

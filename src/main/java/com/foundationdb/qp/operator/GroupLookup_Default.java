@@ -351,8 +351,7 @@ class GroupLookup_Default extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-                input.open();
+                super.open();
                 lookupState = LookupState.BETWEEN;
             } finally {
                 TAP_OPEN.out();
@@ -388,23 +387,11 @@ class GroupLookup_Default extends Operator
         @Override
         public void close()
         {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (input.isActive()) {
-                input.close();
-                lookupCursor.close();
-                lookupRow = null;
-                pending.clear();
-            }
+            super.close();
+            lookupCursor.close();
+            lookupRow = null;
+            pending.clear();
         }
-
-        @Override
-        public void destroy()
-        {
-            close();
-            input.destroy();
-            lookupCursor.destroy();
-        }
-
         // Execution interface
 
         Execution(QueryContext context, Cursor input)
