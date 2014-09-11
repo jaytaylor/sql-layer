@@ -1,3 +1,8 @@
+# Checks sequence values
+---
+- Properties: random-context
+- suppressed: true
+
 # Test inserting with DEFAULT
 ---
 - Properties: sys-mysql
