@@ -165,7 +165,7 @@ class Sort_InsertionLimited extends Operator
 
     // Inner classes
 
-    private enum State { CLOSED, FILLING, EMPTYING, DESTROYED }
+    private enum State { CLOSED, FILLING, EMPTYING }
 
     private class Execution extends ChainedCursor
     {
@@ -178,10 +178,9 @@ class Sort_InsertionLimited extends Operator
             try {
                 CursorLifecycle.checkIdle(this);
                 if(limit == 0) {
-                    LOG.debug("Sort_InsertionLimited: limit 0, closing");
-                    close();
+                    LOG.debug("Sort_InsertionLimited: limit 0,  left closed");
                 } else {
-                    input.open();
+                    super.open();
                     state = State.FILLING;
                     for (TEvaluatableExpression eval : tEvaluations) {
                         eval.with(context);
@@ -258,16 +257,14 @@ class Sort_InsertionLimited extends Operator
                         output = holder.empty();
                     }
                     else {
-                        close();
+                        setIdle();
+                        state = State.CLOSED;
                         output = null;
                     }
                     if (LOG_EXECUTION) {
                         LOG.debug("Sort_InsertionLimited: yield {}", output);
                     }
                     return output;
-                case DESTROYED:
-                    assert false;
-                    // Fall through
                 case CLOSED:
                 default:
                     if (LOG_EXECUTION) {
@@ -286,44 +283,19 @@ class Sort_InsertionLimited extends Operator
         public void close()
         {
             CursorLifecycle.checkIdleOrActive(this);
-            input.close();
+            super.close();
             if (sorted != null) {
-                if (iterator == null)
-                    iterator = sorted.iterator();
-                while (iterator.hasNext()) {
-                    iterator.next().empty();
-                }
-                iterator = null;
+                sorted.clear();
                 sorted = null;
+                iterator = null;
             }
             state = State.CLOSED;
-        }
-
-        @Override
-        public void destroy()
-        {
-            close();
-            input.destroy();
-            // TODO nothing to destroy for expressions yet
-            state = State.DESTROYED;
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return state == State.CLOSED;
         }
 
         @Override
         public boolean isActive()
         {
             return state == State.FILLING || state == State.EMPTYING;
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return state == State.DESTROYED;
         }
 
         // Execution interface

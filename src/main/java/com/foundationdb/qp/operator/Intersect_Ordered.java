@@ -288,7 +288,7 @@ class Intersect_Ordered extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorCursor
+    private class Execution extends OperatorCursor // DualChainedCursor
     {
         // Cursor interface
 

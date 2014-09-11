@@ -34,6 +34,28 @@ import com.foundationdb.server.api.dml.ColumnSelector;
  * @See LeafCursor
  * @see DualChainedCursor
  *
+ * Used by:
+ * @see Aggregate_Partial
+ * @see BranchLookup_Default
+ * @see Buffer_Default
+ * @see Count_Default
+ * @see Delete_Returning
+ * @see Distinct_Partial
+ * @see Filter_Default
+ * @see Flatten_HKeyOrdered
+ * @see GroupLookup_Default (non-lookahead)
+ * @see IfEmpty_Default
+ * @see Insert_Returning
+ * @see Limit_Default
+ * @see Product_Nested
+ * @see Project_Default
+ * @see Select_BloomFilter (non-lookahead)
+ * @see Select_HKeyOrdered
+ * @see Sort_General
+ * @see Sort_InsertLimited
+ * @see Update_Returning
+ * @see Using_BloomFilter
+ * 
  */
 public class ChainedCursor extends OperatorCursor
 {

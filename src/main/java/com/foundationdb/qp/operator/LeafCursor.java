@@ -17,16 +17,62 @@
 
 package com.foundationdb.qp.operator;
 
+/**
+ * LeafCursor handles the cursor processing for the Leaf operators.
+ * Unlike the ChainedCursor or DualChainedCursors, the LeafCursor
+ * isn't reading data from another operator cursor, but is reading it
+ * from an underlying Row source. Usually this is a adapter row, or 
+ * row collection. 
+ * 
+ * @see ChainedCursor
+ * @see DualChainedCursor
+ * 
+ * Used By
+ * @see AncestorLookup_Nested (non-lookahead)
+ * @see BranchLookup_Nested
+ * @see Count_TableStatus
+ * @see GroupScan_Default
+ * @see HKeyRow_Default
+ * @see IndexScan_Default
+ * @see ValuesScan_Default
+ * 
+ * @see IndexScan_FullText
+ */
 public class LeafCursor extends OperatorCursor
 {
     protected final QueryBindingsCursor bindingsCursor;
     protected QueryBindings bindings;
+    protected CursorLifecycle.CursorState state = CursorLifecycle.CursorState.CLOSED;
 
     protected LeafCursor(QueryContext context, QueryBindingsCursor bindingsCursor) {
         super(context);
         this.bindingsCursor = bindingsCursor;
     }
 
+    @Override
+    public boolean isIdle()
+    {
+        return state == CursorLifecycle.CursorState.IDLE;
+    }
+
+    @Override
+    public boolean isActive()
+    {
+        return state == CursorLifecycle.CursorState.ACTIVE;
+    }
+
+    @Override
+    public boolean isClosed()
+    {
+        return state == CursorLifecycle.CursorState.CLOSED;
+    }
+   
+    @Override
+    public void setIdle() 
+    {
+        state = CursorLifecycle.CursorState.IDLE;
+    }
+    
     @Override
     public void openBindings() {
         bindingsCursor.openBindings();

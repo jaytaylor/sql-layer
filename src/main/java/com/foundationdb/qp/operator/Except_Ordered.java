@@ -139,7 +139,7 @@ final class Except_Ordered extends SetOperatorBase {
         return new CompoundExplainer(Type.EXCEPT, att);
     }
 
-    private class Execution extends OperatorCursor {
+    private class Execution extends OperatorCursor { //DualChainedCursor
 
         @Override
         public void open()

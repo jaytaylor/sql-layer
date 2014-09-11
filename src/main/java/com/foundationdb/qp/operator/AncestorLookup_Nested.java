@@ -269,7 +269,7 @@ class AncestorLookup_Nested extends Operator
                     LOG.debug("AncestorLookup_Nested: open using {}", rowFromBindings);
                 }
                 findAncestors(rowFromBindings);
-                closed = false;
+                state = CursorLifecycle.CursorState.ACTIVE;
             } finally {
                 TAP_OPEN.out();
             }
@@ -291,7 +291,7 @@ class AncestorLookup_Nested extends Operator
                     LOG.debug("AncestorLookup: {}", row);
                 }
                 if (row == null) {
-                    close();
+                    setIdle();
                 }
                 return row;
             } finally {
@@ -305,36 +305,9 @@ class AncestorLookup_Nested extends Operator
         public void close()
         {
             CursorLifecycle.checkIdleOrActive(this);
-            if (!closed) {
-                pending.clear();
-                ancestorCursor.close();
-                closed = true;
-            }
-        }
-
-        @Override
-        public void destroy()
-        {
-            close();
-            ancestorCursor.destroy();
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return closed;
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return !closed;
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return ancestorCursor.isDestroyed();
+            pending.clear();
+            ancestorCursor.close();
+            state = CursorLifecycle.CursorState.CLOSED;
         }
 
         // Execution interface
@@ -378,7 +351,6 @@ class AncestorLookup_Nested extends Operator
 
         private final GroupCursor ancestorCursor;
         private final Queue<Row> pending;
-        private boolean closed = true;
     }
 
     private class AncestorCursor implements BindingsAwareCursor
@@ -424,13 +396,6 @@ class AncestorLookup_Nested extends Operator
         }
 
         @Override
-        public void destroy() {
-            for (GroupCursor cursor : cursors) {
-                cursor.destroy();
-            }
-        }
-
-        @Override
         public boolean isIdle() {
             return ((cursorIndex >= cursors.length) || cursors[cursorIndex].isIdle());
         }
@@ -440,11 +405,6 @@ class AncestorLookup_Nested extends Operator
             return ((cursorIndex < cursors.length) && cursors[cursorIndex].isActive());
         }
 
-        @Override
-        public boolean isDestroyed() {
-            return cursors[0].isDestroyed();
-        }
-        
         @Override
         public void rebind(QueryBindings bindings) {
             this.bindings = bindings;

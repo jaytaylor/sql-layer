@@ -121,7 +121,7 @@ public class ValuesScan_Default extends Operator
     {
         private final Collection<? extends BindableRow> rows;
         private Iterator<? extends BindableRow> iter;
-        private boolean destroyed = false;
+        //private boolean destroyed = false;
 
         public Execution (QueryContext context, QueryBindingsCursor bindingsCursor, Collection<? extends BindableRow> rows) {
             super(context, bindingsCursor);
@@ -131,6 +131,7 @@ public class ValuesScan_Default extends Operator
         @Override
         public void close() {
             CursorLifecycle.checkIdleOrActive(this);
+            state = CursorLifecycle.CursorState.CLOSED;
             iter = null;
         }
 
@@ -147,7 +148,7 @@ public class ValuesScan_Default extends Operator
                 if (iter != null && iter.hasNext()) {
                     output = iter.next().bind(context, bindings);
                 } else {
-                    close();
+                    setIdle();
                     output = null;
                 }
                 if (LOG_EXECUTION) {
@@ -167,34 +168,10 @@ public class ValuesScan_Default extends Operator
             try {
                 CursorLifecycle.checkIdle(this);
                 iter = rows.iterator();
+                state = CursorLifecycle.CursorState.ACTIVE;
             } finally {
                 TAP_OPEN.out();
             }
-        }
-
-        @Override
-        public void destroy()
-        {
-            close();
-            destroyed = true;
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return !destroyed && iter == null;
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return !destroyed && iter != null;
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return destroyed;
         }
     }
 }

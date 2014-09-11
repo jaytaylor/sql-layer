@@ -65,6 +65,12 @@ public abstract class OperatorExecutionBase extends ExecutionBase implements Row
         throw new UnsupportedOperationException(getClass().getName());
     }
 
+    @Override
+    public void setIdle() 
+    {
+        throw new UnsupportedOperationException(getClass().getName());
+    }
+    
     protected void checkQueryCancelation()
     {
         try {

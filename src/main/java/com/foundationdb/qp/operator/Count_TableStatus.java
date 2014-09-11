@@ -141,7 +141,7 @@ class Count_TableStatus extends Operator
             TAP_OPEN.in();
             try {
                 CursorLifecycle.checkIdle(this);
-                pending = true;
+                state = CursorLifecycle.CursorState.ACTIVE;
             } finally {
                 TAP_OPEN.out();
             }
@@ -159,9 +159,9 @@ class Count_TableStatus extends Operator
                 }
                 Row output;
                 checkQueryCancelation();
-                if (pending) {
+                if (isActive()) {
                     long rowCount = adapter().rowCount(adapter().getSession(), tableType);
-                    close();
+                    setIdle();
                     output = new ValuesRow(resultType, new Value(MNumeric.BIGINT.instance(false), rowCount));
                 }
                 else {
@@ -182,31 +182,7 @@ class Count_TableStatus extends Operator
         public void close()
         {
             CursorLifecycle.checkIdleOrActive(this);
-            pending = false;
-        }
-
-        @Override
-        public void destroy()
-        {
-            destroyed = true;
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return !destroyed && !pending;
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return !destroyed && pending;
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return destroyed;
+            state = CursorLifecycle.CursorState.CLOSED;
         }
 
         // Execution interface
@@ -217,8 +193,5 @@ class Count_TableStatus extends Operator
         }
 
         // Object state
-
-        private boolean pending;
-        private boolean destroyed = false;
     }
 }

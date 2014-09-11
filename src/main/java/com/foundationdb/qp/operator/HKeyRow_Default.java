@@ -134,7 +134,7 @@ class HKeyRow_Default extends Operator
             TAP_OPEN.in();
             try {
                 CursorLifecycle.checkIdle(this);
-                idle = false;
+                state=CursorLifecycle.CursorState.ACTIVE;
             } finally {
                 TAP_OPEN.out();
             }
@@ -149,7 +149,7 @@ class HKeyRow_Default extends Operator
                 if (CURSOR_LIFECYCLE_ENABLED) {
                     CursorLifecycle.checkIdleOrActive(this);
                 }
-                if (idle) {
+                if (isIdle()) {
                     return null;
                 }
                 checkQueryCancelation();
@@ -157,7 +157,7 @@ class HKeyRow_Default extends Operator
                 if (LOG_EXECUTION) {
                     LOG.debug("HKeyRow_Default: yield {}", row);
                 }
-                idle = true;
+                setIdle();
                 return row;
             } finally {
                 if (TAP_NEXT_ENABLED) {
@@ -169,28 +169,8 @@ class HKeyRow_Default extends Operator
         @Override
         public void close() {
             CursorLifecycle.checkIdleOrActive(this);
-            idle = true;
-        }
-
-        @Override
-        public void destroy() {
-            close();
+            state = CursorLifecycle.CursorState.CLOSED;
             evalExprs = null;
-        }
-
-        @Override
-        public boolean isIdle() {
-            return !isDestroyed() && idle;
-        }
-
-        @Override
-        public boolean isActive() {
-            return !isDestroyed() && !idle;
-        }
-
-        @Override
-        public boolean isDestroyed() {
-            return (evalExprs ==  null);
         }
 
         // For use by this class
@@ -222,7 +202,6 @@ class HKeyRow_Default extends Operator
         }
 
         // Object state
-        private boolean idle = true;
         private List<TEvaluatableExpression> evalExprs = null;
         private final PersistitKeyValueTarget target = new PersistitKeyValueTarget(rowType);
     }

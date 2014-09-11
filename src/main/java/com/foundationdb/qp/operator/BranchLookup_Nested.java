@@ -416,14 +416,7 @@ public class BranchLookup_Nested extends Operator
         {
             CursorLifecycle.checkIdleOrActive(this);
             cursor.close();
-            idle = true;
-        }
-
-        @Override
-        public void destroy()
-        {
-            close();
-            cursor.destroy();
+            state = CursorLifecycle.CursorState.CLOSED;
         }
 
         @Override
@@ -439,9 +432,9 @@ public class BranchLookup_Nested extends Operator
         }
 
         @Override
-        public boolean isDestroyed()
+        public boolean isClosed()
         {
-            return cursor.isDestroyed();
+            return cursor.isClosed();
         }
 
         // Execution interface

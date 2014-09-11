@@ -19,6 +19,7 @@ package com.foundationdb.server.service.text;
 
 import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.CursorLifecycle;
 import com.foundationdb.qp.operator.LeafCursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryBindingsCursor;
@@ -64,7 +65,6 @@ public class IndexScan_FullText extends Operator
     protected class Execution extends LeafCursor {
         private final FullTextIndexService service;
         private RowCursor cursor;
-        private boolean destroyed;
 
         public Execution(QueryContext context, QueryBindingsCursor bindingsCursor) {
             super(context, bindingsCursor);
@@ -84,6 +84,7 @@ public class IndexScan_FullText extends Operator
                 cursor = service.searchIndex(context, index, query, limit);
             }
             cursor.open();
+            state = CursorLifecycle.CursorState.ACTIVE;
         }
 
         @Override
@@ -104,29 +105,19 @@ public class IndexScan_FullText extends Operator
         {
             if (cursor != null) {
                 if (queryExpression.needsBindings()) {
-                    cursor.destroy();
                     cursor = null;
                 }
                 else {
                     cursor.close();
                 }
             }
-        }
-
-        @Override
-        public void destroy()
-        {
-            if (cursor != null) {
-                cursor.destroy();
-                cursor = null;
-            }
-            destroyed = true;
+            state = CursorLifecycle.CursorState.CLOSED;
         }
 
         @Override
         public boolean isIdle()
         {
-            return (cursor == null) ? !destroyed : cursor.isIdle();
+            return (cursor == null) ? super.isIdle() : cursor.isIdle();
         }
 
         @Override
@@ -136,9 +127,9 @@ public class IndexScan_FullText extends Operator
         }
 
         @Override
-        public boolean isDestroyed()
+        public boolean isClosed()
         {
-            return destroyed;
+            return cursor == null ? super.isClosed() : cursor.isClosed();
         }
     }
 

@@ -87,4 +87,10 @@ public interface CursorBase<T>
      * @return true iff the cursor is CLOSED.
      */
     boolean isClosed();
+    
+    /**
+     * sets the cursor into an IDLE state when all active records 
+     * are returned. 
+     */
+    void setIdle();
 }

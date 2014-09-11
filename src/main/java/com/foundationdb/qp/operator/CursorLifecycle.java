@@ -47,7 +47,7 @@ public final class CursorLifecycle
             cursor.isActive() ? CursorState.ACTIVE.toString() : CursorState.CLOSED.toString();
     }
 
-    enum CursorState {
+    public enum CursorState {
         CLOSED,
         IDLE,
         ACTIVE

@@ -85,7 +85,7 @@ import org.slf4j.LoggerFactory;
  Each row is individually processed.
 
  */
-
+@Deprecated
 class Delete_Default implements UpdatePlannable {
 
     // constructor
@@ -164,7 +164,7 @@ class Delete_Default implements UpdatePlannable {
                 }
             } finally {
                 if (input != null) {
-                    input.destroy();
+                    input.close();
                 }
                 if (TAP_NEXT_ENABLED) {
                     DELETE_TAP.out();

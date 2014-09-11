@@ -139,7 +139,6 @@ public class Buffer_Default extends Operator
 
     private class Execution extends ChainedCursor {
         private SorterToCursorAdapter sorter;
-        private boolean closed = true;
 
         public Execution(QueryContext context, Cursor input) {
             super(context, input);
@@ -153,7 +152,6 @@ public class Buffer_Default extends Operator
             try {
                 CursorLifecycle.checkIdle(this);
                 super.open();
-                closed = false;
                 // Eager load
                 BufferRowCreatorCursor creatorCursor = new BufferRowCreatorCursor(context, input);
                 sorter = new SorterToCursorAdapter(adapter(), context, bindings, creatorCursor, bufferRowType, ordering, sortOption, TAP_LOAD);
@@ -197,22 +195,8 @@ public class Buffer_Default extends Operator
 
         @Override
         public void close() {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (!closed) {
-                super.close();
-                sorter.close();
-                closed = true;
-            }
-        }
-
-        @Override
-        public boolean isIdle() {
-            return closed;
-        }
-
-        @Override
-        public boolean isActive() {
-            return !closed;
+            super.close();
+            sorter.close();
         }
     }
 }

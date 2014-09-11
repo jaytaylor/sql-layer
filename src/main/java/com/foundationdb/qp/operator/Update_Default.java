@@ -88,6 +88,7 @@ import java.util.List;
 
 */
 
+@Deprecated
 class Update_Default implements UpdatePlannable {
 
     // Object interface

@@ -26,6 +26,7 @@ import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -137,7 +138,9 @@ class GroupScan_Default extends Operator
         {
             TAP_OPEN.in();
             try {
+                CursorLifecycle.checkClosed(this);
                 cursor.open();
+                state = CursorLifecycle.CursorState.ACTIVE;
             } finally {
                 TAP_OPEN.out();
             }
@@ -153,7 +156,6 @@ class GroupScan_Default extends Operator
                 checkQueryCancelation();
                 Row row;
                 if ((row = cursor.next()) == null) {
-                    close();
                     row = null;
                 }
                 if (LOG_EXECUTION) {
@@ -171,13 +173,9 @@ class GroupScan_Default extends Operator
         public void close()
         {
             cursor.close();
+            state = CursorLifecycle.CursorState.CLOSED;
         }
 
-        @Override
-        public void destroy()
-        {
-            cursor.destroy();
-        }
 
         @Override
         public boolean isIdle()
@@ -189,12 +187,6 @@ class GroupScan_Default extends Operator
         public boolean isActive()
         {
             return cursor.isActive();
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return cursor.isDestroyed();
         }
 
         @Override
@@ -413,6 +405,10 @@ class GroupScan_Default extends Operator
             return input.isClosed();
         }
 
+        @Override
+        public void setIdle() {
+            input.setIdle();
+        }
  
         @Override
         public void rebind(QueryBindings bindings) {

@@ -294,6 +294,7 @@ class IndexScan_Default extends Operator
             TAP_OPEN.in();
             try {
                 cursor.open();
+                state = CursorLifecycle.CursorState.ACTIVE;
             } finally {
                 TAP_OPEN.out();
             }
@@ -309,10 +310,10 @@ class IndexScan_Default extends Operator
                 checkQueryCancelation();
                 Row row = cursor.next();
                 if (row == null) {
-                    close();
+                    setIdle();
                 }
                 if (LOG_EXECUTION) {
-                    LOG.debug("IndexScan_default$Execution: yield {}", row);
+                    LOG.debug("IndexScan_Default$Execution: yield {}", row);
                 }
                 return row;
             } finally {
@@ -332,30 +333,7 @@ class IndexScan_Default extends Operator
         public void close()
         {
             cursor.close();
-        }
-
-        @Override
-        public void destroy()
-        {
-            cursor.destroy();
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return cursor.isIdle();
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return cursor.isActive();
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return cursor.isDestroyed();
+            state = CursorLifecycle.CursorState.CLOSED;
         }
 
         @Override
