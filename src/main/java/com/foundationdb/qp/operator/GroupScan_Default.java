@@ -138,9 +138,8 @@ class GroupScan_Default extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkClosed(this);
+                super.open();
                 cursor.open();
-                state = CursorLifecycle.CursorState.ACTIVE;
             } finally {
                 TAP_OPEN.out();
             }
@@ -156,7 +155,7 @@ class GroupScan_Default extends Operator
                 checkQueryCancelation();
                 Row row;
                 if ((row = cursor.next()) == null) {
-                    row = null;
+                    setIdle();
                 }
                 if (LOG_EXECUTION) {
                     LOG.debug("GroupScan_Default: yield {}", row);
@@ -173,9 +172,8 @@ class GroupScan_Default extends Operator
         public void close()
         {
             cursor.close();
-            state = CursorLifecycle.CursorState.CLOSED;
+            super.close();
         }
-
 
         @Override
         public boolean isIdle()
@@ -340,12 +338,13 @@ class GroupScan_Default extends Operator
         private final Table hKeyType;
     }
 
-    private static class HKeyBoundCursor implements BindingsAwareCursor, GroupCursor
+    private static class HKeyBoundCursor extends RowCursorImpl implements BindingsAwareCursor, GroupCursor
     {
 
         @Override
         public void open()
         {
+            super.open();
             HKey hKey = getHKeyFromBindings();
             input.rebind(hKey, deep);
             input.open();
@@ -386,30 +385,9 @@ class GroupScan_Default extends Operator
         @Override
         public void close() {
             input.close();
+            super.close();
         }
 
-        @Override
-        public boolean isIdle()
-        {
-            return input.isIdle();
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return input.isActive();
-        }
-        
-        @Override
-        public boolean isClosed() {
-            return input.isClosed();
-        }
-
-        @Override
-        public void setIdle() {
-            input.setIdle();
-        }
- 
         @Override
         public void rebind(QueryBindings bindings) {
             this.bindings = bindings;

@@ -20,20 +20,21 @@ package com.foundationdb.qp.util;
 import com.foundationdb.qp.operator.BindingsAwareCursor;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.RowCursor;
+import com.foundationdb.qp.operator.RowCursorImpl;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.api.dml.ColumnSelector;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class MultiCursor implements BindingsAwareCursor
+public class MultiCursor extends RowCursorImpl implements BindingsAwareCursor
 {
     // Cursor interface
 
     @Override
     public void open()
     {
+        super.open();
         sealed = true;
         if (openAll) {
             for (RowCursor cursor : cursors) {
@@ -57,11 +58,6 @@ public class MultiCursor implements BindingsAwareCursor
         return next;
     }
 
-    @Override
-    public void jump(Row row, ColumnSelector columnSelector)
-    {
-        throw new UnsupportedOperationException();
-    }
 
     @Override
     public void close()
@@ -74,30 +70,7 @@ public class MultiCursor implements BindingsAwareCursor
             current.close();
         }
         current = null;
-    }
-
-    @Override
-    public void destroy()
-    {
-        cursorIterator = null;
-    }
-
-    @Override
-    public boolean isIdle()
-    {
-        return !isDestroyed() && current == null;
-    }
-
-    @Override
-    public boolean isActive()
-    {
-        return !isDestroyed() && current != null;
-    }
-
-    @Override
-    public boolean isDestroyed()
-    {
-        return cursorIterator == null;
+        super.close();
     }
 
     @Override

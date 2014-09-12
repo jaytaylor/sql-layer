@@ -17,9 +17,6 @@
 
 package com.foundationdb.qp.operator;
 
-import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.api.dml.ColumnSelector;
-
 /**
  * The first of the three complete implementations of the CursorBase
  * interface. 
@@ -61,7 +58,6 @@ public class ChainedCursor extends OperatorCursor
 {
     protected final Cursor input;
     protected QueryBindings bindings;
-    protected CursorLifecycle.CursorState state = CursorLifecycle.CursorState.CLOSED;
     
     protected ChainedCursor(QueryContext context, Cursor input) {
         super(context);
@@ -76,39 +72,14 @@ public class ChainedCursor extends OperatorCursor
     public void open() {
         CursorLifecycle.checkClosed(input);
         input.open();
-        state = CursorLifecycle.CursorState.ACTIVE;
+        super.open();
     }
 
     @Override
     public void close() {
-        if (CURSOR_LIFECYCLE_ENABLED) {
-            CursorLifecycle.checkIdleOrActive(input);
-        }
+        CursorLifecycle.checkIdleOrActive(input);
         input.close();
-        state = CursorLifecycle.CursorState.CLOSED;
-    }
-
-    @Override
-    public void setIdle() {
-        state = CursorLifecycle.CursorState.IDLE;
-    }
-
-    @Override
-    public boolean isIdle()
-    {
-        return state == CursorLifecycle.CursorState.IDLE;
-    }
-
-    @Override
-    public boolean isActive()
-    {
-        return state == CursorLifecycle.CursorState.ACTIVE;
-    }
-
-    @Override
-    public boolean isClosed()
-    {
-        return state == CursorLifecycle.CursorState.CLOSED;
+        super.close();
     }
 
     @Override
@@ -129,7 +100,8 @@ public class ChainedCursor extends OperatorCursor
 
     @Override
     public void cancelBindings(QueryBindings ancestor) {
-        close();                // In case override maintains some additional state.
+        CursorLifecycle.checkClosed(input);
+        //close();                // In case override maintains some additional state.
         input.cancelBindings(ancestor);
     }
 }

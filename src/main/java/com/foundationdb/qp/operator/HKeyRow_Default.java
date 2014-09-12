@@ -133,8 +133,7 @@ class HKeyRow_Default extends Operator
         public void open() {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-                state=CursorLifecycle.CursorState.ACTIVE;
+                super.open();
             } finally {
                 TAP_OPEN.out();
             }
@@ -168,8 +167,7 @@ class HKeyRow_Default extends Operator
 
         @Override
         public void close() {
-            CursorLifecycle.checkIdleOrActive(this);
-            state = CursorLifecycle.CursorState.CLOSED;
+            super.close();
             evalExprs = null;
         }
 

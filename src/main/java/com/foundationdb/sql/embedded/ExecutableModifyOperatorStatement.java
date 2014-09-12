@@ -22,9 +22,8 @@ import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.CursorLifecycle;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryBindings;
-import com.foundationdb.qp.operator.RowCursor;
+import com.foundationdb.qp.operator.RowCursorImpl;
 import com.foundationdb.qp.row.ImmutableRow;
-import com.foundationdb.qp.row.ProjectedRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.Schema;
 
@@ -75,7 +74,7 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
         finally {
             try {
                 if (cursor != null) {
-                    cursor.destroy();
+                    cursor.close();
                 }
             }
             catch (RuntimeException ex) {
@@ -107,18 +106,18 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
         return AISGenerationMode.NOT_ALLOWED;
     }
 
-    static class SpoolCursor implements RowCursor {
+    static class SpoolCursor  extends RowCursorImpl  {
         private List<Row> rows = new ArrayList<>();
         private Iterator<Row> iterator;
-        private enum State { CLOSED, FILLING, EMPTYING, DESTROYED }
-        private State state;
+        private enum State { FILLING, EMPTYING}
+        private State spoolState;
         
         public SpoolCursor() {
-            state = State.FILLING;
+            spoolState = State.FILLING;
         }
 
         public void add(Row row) {
-            assert (state == State.FILLING);
+            assert (spoolState == State.FILLING);
             if (row.isBindingsSensitive())
                 // create a copy of this row, and hold it instead
                 row = ImmutableRow.buildImmutableRow(row);
@@ -127,61 +126,25 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
 
         @Override
         public void open() {
-            CursorLifecycle.checkIdle(this);
+            super.open();
             iterator = rows.iterator();
-            state = State.EMPTYING;
+            spoolState = State.EMPTYING;
         }        
 
         @Override
         public Row next() {
             CursorLifecycle.checkIdleOrActive(this);
+            assert (spoolState == State.EMPTYING);
             if (iterator.hasNext()) {
                 Row row = iterator.next();
                 return row;
             }
             else {
-                close();
+                setIdle();
                 return null;
             }
         }
-
-        @Override
-        public void jump(Row row, com.foundationdb.server.api.dml.ColumnSelector columnSelector) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void close() {
-            CursorLifecycle.checkIdleOrActive(this);
-            state = State.CLOSED;
-        }
-        
-        @Override
-        public void destroy()
-        {
-            close();
-            state = State.DESTROYED;
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return ((state == State.CLOSED) || (state == State.FILLING));
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return (state == State.EMPTYING);
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return (state == State.DESTROYED);
-        }
     }
-
 }
 
 

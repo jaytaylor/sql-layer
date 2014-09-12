@@ -32,7 +32,7 @@ public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends
 
     @Override
     public void open() {
-        CursorLifecycle.checkIdle(this);
+        super.open();
         if (currentCursor != null) {
             currentCursor.open();
         }
@@ -63,7 +63,7 @@ public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends
         checkQueryCancelation();
         Row row = currentCursor.next();
         if (row == null) {
-            currentCursor.close();
+            currentCursor.setIdle();
         }
         return row;
     }
@@ -78,6 +78,7 @@ public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends
         if (currentCursor != null) {
             currentCursor.close();
         }
+        super.close();
     }
 
     @Override

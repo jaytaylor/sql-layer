@@ -293,8 +293,8 @@ class IndexScan_Default extends Operator
         {
             TAP_OPEN.in();
             try {
+                super.open();
                 cursor.open();
-                state = CursorLifecycle.CursorState.ACTIVE;
             } finally {
                 TAP_OPEN.out();
             }
@@ -330,10 +330,9 @@ class IndexScan_Default extends Operator
         }
 
         @Override
-        public void close()
-        {
+        public void close() {
             cursor.close();
-            state = CursorLifecycle.CursorState.CLOSED;
+            super.close();
         }
 
         @Override

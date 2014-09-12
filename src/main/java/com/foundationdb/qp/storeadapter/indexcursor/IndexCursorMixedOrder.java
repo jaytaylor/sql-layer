@@ -56,7 +56,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             success = true;
         } finally {
             if(!success) {
-                close();
+                setIdle();
             }
         }
     }
@@ -89,22 +89,22 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
                             assert next != startKey;
                             assert next != endKey;
                         } else {
-                            close();
+                            setIdle();
                         }
                     }
                     pastStart = true;
                 }
                 if (next != null && pastEnd(next)) {
                     next = null;
-                    close();
+                    setIdle();
                 }
             } else {
-                close();
+                setIdle();
             }
             success = true;
         } finally {
             if(!success) {
-                close();
+                setIdle();
             }
         }
         return next;
@@ -152,15 +152,15 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             success = true;
         } finally {
             if(!success) {
-                close();
+                setIdle();
             }
         }
     }
 
     @Override
-    public void destroy()
+    public void close()
     {
-        super.destroy();
+        super.close();
         if (startKey != null) {
             adapter.returnIndexRow(startKey);
             startKey = null;

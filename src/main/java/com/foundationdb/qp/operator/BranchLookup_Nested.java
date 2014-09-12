@@ -352,7 +352,7 @@ public class BranchLookup_Nested extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
+                super.open();
                 Row rowFromBindings = bindings.getRow(inputBindingPosition);
                 assert rowFromBindings.rowType() == inputRowType : rowFromBindings;
                 if (inputRowType != sourceRowType) {
@@ -365,7 +365,6 @@ public class BranchLookup_Nested extends Operator
                 cursor.rebind(hKey, true);
                 cursor.open();
                 inputRow = rowFromBindings;
-                idle = false;
             } finally {
                 TAP_OPEN.out();
             }
@@ -396,13 +395,15 @@ public class BranchLookup_Nested extends Operator
                             row = inputRow;
                             inputRow = null;
                         }
-                        close();
+                        setIdle();
                     }
                 }
                 if (LOG_EXECUTION) {
                     LOG.debug("BranchLookup_Nested: yield {}", row);
                 }
-                idle = row == null;
+                if (row == null) {
+                    setIdle();
+                }
                 return row;
             } finally {
                 if (TAP_NEXT_ENABLED) {
@@ -414,27 +415,8 @@ public class BranchLookup_Nested extends Operator
         @Override
         public void close()
         {
-            CursorLifecycle.checkIdleOrActive(this);
+            super.close();
             cursor.close();
-            state = CursorLifecycle.CursorState.CLOSED;
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return idle;
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return !idle;
-        }
-
-        @Override
-        public boolean isClosed()
-        {
-            return cursor.isClosed();
         }
 
         // Execution interface
@@ -462,15 +444,16 @@ public class BranchLookup_Nested extends Operator
         private final GroupCursor cursor;
         private final HKey hKey;
         private Row inputRow;
-        private boolean idle = true;
+        //private boolean idle = true;
     }
 
-    private class BranchCursor implements BindingsAwareCursor
+    private class BranchCursor extends RowCursorImpl implements BindingsAwareCursor
     {
         // BindingsAwareCursor interface
 
         @Override
         public void open() {
+            super.open();
             Row rowFromBindings = bindings.getRow(inputBindingPosition);
             assert rowFromBindings.rowType() == inputRowType : rowFromBindings;
             if (inputRowType != sourceRowType) {
@@ -498,7 +481,7 @@ public class BranchLookup_Nested extends Operator
                         row = inputRow;
                         inputRow = null;
                     }
-                    close();
+                    setIdle();
                 }
             }
             if (ExecutionBase.LOG_EXECUTION) {
@@ -516,29 +499,9 @@ public class BranchLookup_Nested extends Operator
         public void close() {
             inputRow = null;
             cursor.close();
+            super.close();
         }
 
-        @Override
-        public void destroy() {
-            close();
-            cursor.destroy();
-        }
-
-        @Override
-        public boolean isIdle() {
-            return cursor.isIdle();
-        }
-
-        @Override
-        public boolean isActive() {
-            return cursor.isActive();
-        }
-
-        @Override
-        public boolean isDestroyed() {
-            return cursor.isDestroyed();
-        }
-        
         @Override
         public void rebind(QueryBindings bindings) {
             this.bindings = bindings;

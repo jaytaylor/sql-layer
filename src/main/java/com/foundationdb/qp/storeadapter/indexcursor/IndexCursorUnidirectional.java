@@ -72,41 +72,41 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                         if (traverse(subsequentKeyComparison, true)) {
                             next = row();
                         } else {
-                            close();
+                            setIdle();
                         }
                     }
                     pastStart = true;
                 }
                 if (next != null && pastEnd(next)) {
                     next = null;
-                    close();
+                    setIdle();
                 }
             } else {
-                close();
+                setIdle();
             }
             success = true;
         } finally {
             if(!success) {
-                close();
+                setIdle();
             }
         }
         keyComparison = subsequentKeyComparison;
         return next;
     }
 
+    
     @Override
-    public void close()
-    {
-        super.close();
+    public void setIdle() {
+        super.setIdle();
         if (startKey != null) {
             clearStart();
         }
     }
-
+    
     @Override
-    public void destroy()
+    public void close()
     {
-        super.destroy();
+        super.close();
         if (startKey != null) {
             adapter.returnIndexRow(startKey);
             startKey = null;

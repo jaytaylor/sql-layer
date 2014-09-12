@@ -33,19 +33,17 @@ package com.foundationdb.qp.operator;
  * @see ChainedCursor
  *
  * Used by:
- * @see Except_Ordered
- * @see HKeyUnion_Ordered
- * @see Intersect_Ordered
- * @see Union_Ordered
- * @see UnionAll_Default
+ * @see Except_Ordered$Execution
+ * @see HKeyUnion_Ordered$Execution
+ * @see Intersect_Ordered$Execution
+ * @see Union_Ordered$Execution
+ * @see UnionAll_Default$Execution
  */
 public abstract class MultiChainedCursor extends  OperatorCursor {
 
     protected Cursor leftInput;
     protected Cursor rightInput;
-    //protected QueryBindings bindings;
     protected final QueryBindingsCursor bindingsCursor;
-    protected CursorLifecycle.CursorState state = CursorLifecycle.CursorState.CLOSED;
     
     protected MultiChainedCursor(QueryContext context, QueryBindingsCursor bindingsCursor) {
         super(context);
@@ -64,7 +62,7 @@ public abstract class MultiChainedCursor extends  OperatorCursor {
         CursorLifecycle.checkClosed(rightInput);
         leftInput.open();
         rightInput.open();
-        state = CursorLifecycle.CursorState.ACTIVE;
+        super.open();
     }
 
     @Override
@@ -75,30 +73,7 @@ public abstract class MultiChainedCursor extends  OperatorCursor {
         }
         leftInput.close();
         rightInput.close();
-        state = CursorLifecycle.CursorState.CLOSED;
-    }
-
-    @Override
-    public void setIdle() {
-        state = CursorLifecycle.CursorState.IDLE;
-    }
-
-    @Override
-    public boolean isIdle()
-    {
-        return state == CursorLifecycle.CursorState.IDLE;
-    }
-
-    @Override
-    public boolean isActive()
-    {
-        return state == CursorLifecycle.CursorState.ACTIVE;
-    }
-
-    @Override
-    public boolean isClosed()
-    {
-        return state == CursorLifecycle.CursorState.CLOSED;
+        super.close();
     }
 
     @Override

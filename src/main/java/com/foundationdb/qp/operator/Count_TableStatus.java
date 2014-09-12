@@ -140,8 +140,7 @@ class Count_TableStatus extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-                state = CursorLifecycle.CursorState.ACTIVE;
+                super.open();
             } finally {
                 TAP_OPEN.out();
             }
@@ -176,13 +175,6 @@ class Count_TableStatus extends Operator
                     TAP_NEXT.out();
                 }
             }
-        }
-
-        @Override
-        public void close()
-        {
-            CursorLifecycle.checkIdleOrActive(this);
-            state = CursorLifecycle.CursorState.CLOSED;
         }
 
         // Execution interface

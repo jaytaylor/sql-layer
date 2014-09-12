@@ -27,6 +27,7 @@ package com.foundationdb.qp.operator;
  * @see BranchLookup_Nested$BranchCursor
  * @See GroupScan_Default$HKeyBoundCursor
  * 
+ * @see com.foundationdb.qp.util.MultiCursor
  * @See PersistitIndexCursor
  * 
  * @See IndexCursor

@@ -184,7 +184,7 @@ class Update_Default implements UpdatePlannable {
                 }
             } finally {
                 if (input != null) {
-                    input.destroy();
+                    input.close();
                 }
                 if (TAP_NEXT_ENABLED) {
                     UPDATE_TAP.out();

@@ -20,9 +20,9 @@ package com.foundationdb.qp.storeadapter;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.qp.operator.CursorLifecycle;
 import com.foundationdb.qp.operator.GroupCursor;
+import com.foundationdb.qp.operator.RowCursorImpl;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.PersistitAdapterException;
 import com.foundationdb.util.tap.PointTap;
@@ -30,6 +30,7 @@ import com.foundationdb.util.tap.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +42,7 @@ import org.slf4j.LoggerFactory;
  */
 
 
-class PersistitGroupCursor implements GroupCursor
+class PersistitGroupCursor extends RowCursorImpl implements GroupCursor
 {
     // GroupCursor interface
 
@@ -59,14 +60,13 @@ class PersistitGroupCursor implements GroupCursor
     @Override
     public void open()
     {
+        super.open();
         try {
-            CursorLifecycle.checkIdle(this);
             this.exchange = adapter.takeExchange(group);
             exchange.clear();
             groupScan =
                 hKey == null ? new FullScan() :
                 hKeyDeep ? new HKeyAndDescendentsScan(hKey) : new HKeyWithoutDescendentsScan(hKey);
-            idle = false;
         } catch (PersistitException e) {
             adapter.handlePersistitException(e);
         }
@@ -77,11 +77,11 @@ class PersistitGroupCursor implements GroupCursor
     {
         try {
             CursorLifecycle.checkIdleOrActive(this);
-            boolean next = !idle;
+            boolean next = isActive();
             PersistitGroupRow row = null;
             if (next) {
                 groupScan.advance();
-                next = !idle;
+                next = isActive();
                 if (next) {
                     row = adapter.newGroupRow();
                     row.copyFromExchange(exchange);
@@ -100,45 +100,12 @@ class PersistitGroupCursor implements GroupCursor
     }
 
     @Override
-    public void jump(Row row, ColumnSelector columnSelector)
-    {
-        throw new UnsupportedOperationException(getClass().getName());
-    }
-
-    @Override
     public void close()
     {
-        CursorLifecycle.checkIdleOrActive(this);
-        if (!idle) {
-            groupScan = null;
-            adapter.returnExchange(exchange);
-            exchange = null;
-            idle = true;
-        }
-    }
-
-    @Override
-    public void destroy()
-    {
-        destroyed = true;
-    }
-
-    @Override
-    public boolean isIdle()
-    {
-        return !destroyed && idle;
-    }
-
-    @Override
-    public boolean isActive()
-    {
-        return !destroyed && !idle;
-    }
-
-    @Override
-    public boolean isDestroyed()
-    {
-        return destroyed;
+        groupScan = null;
+        adapter.returnExchange(exchange);
+        exchange = null;
+        super.close();
     }
 
     // For use by this package
@@ -149,7 +116,6 @@ class PersistitGroupCursor implements GroupCursor
         this.adapter = adapter;
         this.group = group;
         this.controllingHKey = adapter.newKey();
-        this.idle = true;
     }
 
     // Class state
@@ -178,8 +144,6 @@ class PersistitGroupCursor implements GroupCursor
     private PersistitHKey hKey;
     private boolean hKeyDeep;
     private GroupScan groupScan;
-    private boolean idle;
-    private boolean destroyed = false;
 
     // static state
     private static final PointTap TRAVERSE_COUNT = Tap.createCount("traverse: persistit group cursor");
@@ -204,7 +168,7 @@ class PersistitGroupCursor implements GroupCursor
         {
             TRAVERSE_COUNT.hit();
             if (!exchange.traverse(direction, true)) {
-                close();
+                setIdle();
             }
         }
 
@@ -225,7 +189,7 @@ class PersistitGroupCursor implements GroupCursor
             TRAVERSE_COUNT.hit();
             if (!exchange.traverse(direction, true) ||
                 exchange.getKey().firstUniqueByteIndex(controllingHKey) < controllingHKey.getEncodedSize()) {
-                close();
+                setIdle();
             }
             direction = Key.GT;
         }
@@ -248,11 +212,11 @@ class PersistitGroupCursor implements GroupCursor
                 TRAVERSE_COUNT.hit();
                 exchange.fetch();
                 if (!exchange.getValue().isDefined()) {
-                    close();
+                    setIdle();
                 }
                 first = false;
             } else {
-                close();
+                setIdle();
             }
         }
 

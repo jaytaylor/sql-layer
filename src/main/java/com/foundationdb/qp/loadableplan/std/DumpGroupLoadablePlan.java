@@ -175,7 +175,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
         @Override
         public void close() {
             if (cursor != null) {
-                cursor.destroy();
+                cursor.close();
                 cursor = null;
             }
         }

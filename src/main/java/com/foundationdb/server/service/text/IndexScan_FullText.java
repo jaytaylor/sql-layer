@@ -19,7 +19,6 @@ package com.foundationdb.server.service.text;
 
 import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.qp.operator.Cursor;
-import com.foundationdb.qp.operator.CursorLifecycle;
 import com.foundationdb.qp.operator.LeafCursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryBindingsCursor;
@@ -79,12 +78,12 @@ public class IndexScan_FullText extends Operator
         @Override
         public void open()
         {
+            super.open();
             if (queryExpression.needsBindings()) {
                 Query query = queryExpression.getQuery(context, bindings);
                 cursor = service.searchIndex(context, index, query, limit);
             }
             cursor.open();
-            state = CursorLifecycle.CursorState.ACTIVE;
         }
 
         @Override
@@ -111,7 +110,7 @@ public class IndexScan_FullText extends Operator
                     cursor.close();
                 }
             }
-            state = CursorLifecycle.CursorState.CLOSED;
+            super.close();
         }
 
         @Override

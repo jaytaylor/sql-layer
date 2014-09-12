@@ -26,7 +26,6 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
-import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.explain.std.LookUpOperatorExplainer;
 import com.foundationdb.util.ArgumentValidation;
@@ -263,13 +262,12 @@ class AncestorLookup_Nested extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
+                super.open();
                 Row rowFromBindings = bindings.getRow(inputBindingPosition);
                 if (LOG_EXECUTION) {
                     LOG.debug("AncestorLookup_Nested: open using {}", rowFromBindings);
                 }
                 findAncestors(rowFromBindings);
-                state = CursorLifecycle.CursorState.ACTIVE;
             } finally {
                 TAP_OPEN.out();
             }
@@ -304,10 +302,9 @@ class AncestorLookup_Nested extends Operator
         @Override
         public void close()
         {
-            CursorLifecycle.checkIdleOrActive(this);
+            super.close();
             pending.clear();
             ancestorCursor.close();
-            state = CursorLifecycle.CursorState.CLOSED;
         }
 
         // Execution interface
@@ -353,12 +350,13 @@ class AncestorLookup_Nested extends Operator
         private final Queue<Row> pending;
     }
 
-    private class AncestorCursor implements BindingsAwareCursor
+    private class AncestorCursor extends RowCursorImpl implements BindingsAwareCursor
     {
         // BindingsAwareCursor interface
 
         @Override
         public void open() {
+            super.open();
             Row rowFromBindings = bindings.getRow(inputBindingPosition);
             assert rowFromBindings.rowType() == rowType : rowFromBindings;
             for (int i = 0; i < hKeys.length; i++) {
@@ -383,16 +381,13 @@ class AncestorLookup_Nested extends Operator
             return row;
         }
 
-        @Override
-        public void jump(Row row, ColumnSelector columnSelector) {
-            throw new UnsupportedOperationException(getClass().getName());
-        }
 
         @Override
         public void close() {
             for (GroupCursor cursor : cursors) {
                 cursor.close();
             }
+            super.close();
         }
 
         @Override

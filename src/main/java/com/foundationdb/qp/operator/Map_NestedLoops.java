@@ -260,7 +260,7 @@ class Map_NestedLoops extends Operator
 
         @Override
         public void open() {
-            CursorLifecycle.checkIdle(this);
+            super.open();
             openBindings = currentBindings;
             inputOpenBindings = null;
         }
@@ -286,6 +286,7 @@ class Map_NestedLoops extends Operator
                     QueryBindings bindings = input.nextBindings();
                     if (bindings == null) {
                         openBindings = null;
+                        setIdle();
                         break;
                     }
                     if (bindings.getDepth() == depth) {
@@ -296,6 +297,7 @@ class Map_NestedLoops extends Operator
                         // End of this binding's rowset. Arrange for this to be next one.
                         pendingBindings = bindings;
                         openBindings = null;
+                        setIdle();
                         break;
                     }
                     else {
@@ -315,13 +317,8 @@ class Map_NestedLoops extends Operator
         }
 
         @Override
-        public void jump(Row row, ColumnSelector columnSelector) {
-            throw new UnsupportedOperationException(getClass().getName());
-        }
-
-        @Override
         public void close() {
-            CursorLifecycle.checkIdleOrActive(this);
+            super.close();
             if (openBindings != null) {
                 cancelBindings(openBindings);
                 assert (inputOpenBindings == null);
@@ -329,25 +326,15 @@ class Map_NestedLoops extends Operator
             }
         }
 
-        @Override
-        public void destroy() {
-            close();
-            input.destroy();
-        }
 
         @Override
         public boolean isIdle() {
-            return !input.isDestroyed() && (openBindings == null);
+            return !input.isClosed() && (openBindings == null);
         }
 
         @Override
         public boolean isActive() {
             return (openBindings != null);
-        }
-
-        @Override
-        public boolean isDestroyed() {
-            return input.isDestroyed();
         }
 
         @Override
@@ -394,7 +381,7 @@ class Map_NestedLoops extends Operator
 
     // Old-style execution: bind outer row into existing context and
     // open inner loop afresh.
-    private class Execution extends OperatorCursor // DualChainedCursor
+    private class Execution extends OperatorCursor
     {
         // Cursor interface
 
@@ -403,9 +390,8 @@ class Map_NestedLoops extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
+                super.open();
                 this.outerInput.open();
-                this.closed = false;
             } finally {
                 TAP_OPEN.out();
             }
@@ -423,12 +409,12 @@ class Map_NestedLoops extends Operator
                 }
                 checkQueryCancelation();
                 Row outputRow = null;
-                while (!closed && outputRow == null) {
+                while (outerInput.isActive() && outputRow == null) {
                     outputRow = nextOutputRow();
                     if (outputRow == null) {
                         Row row = outerInput.next();
                         if (row == null) {
-                            close();
+                            outerInput.setIdle();
                         } else {
                             outerRow = row;
                             if (LOG_EXECUTION) {
@@ -452,20 +438,9 @@ class Map_NestedLoops extends Operator
         @Override
         public void close()
         {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (!closed) {
-                innerInput.close();
-                closeOuter();
-                closed = true;
-            }
-        }
-
-        @Override
-        public void destroy()
-        {
-            close();
-            innerInput.destroy();
-            outerInput.destroy();
+            super.close();
+            innerInput.close();
+            closeOuter();
         }
 
         @Override
@@ -478,12 +453,6 @@ class Map_NestedLoops extends Operator
         public boolean isActive()
         {
             return outerInput.isActive();
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return outerInput.isDestroyed();
         }
 
         @Override
@@ -504,9 +473,9 @@ class Map_NestedLoops extends Operator
 
         @Override
         public void cancelBindings(QueryBindings bindings) {
+            CursorLifecycle.checkClosed(this);
             innerInput.close();
             outerInput.cancelBindings(bindings);
-            closed = true;
         }
 
         // Execution interface
@@ -520,6 +489,7 @@ class Map_NestedLoops extends Operator
             this.innerInput = innerInputOperator.cursor(context, innerBindingsCursor);
         }
 
+        
         // For use by this class
 
         private Row nextOutputRow()
@@ -559,7 +529,6 @@ class Map_NestedLoops extends Operator
         private final Cursor outerInput;
         private final Cursor innerInput;
         private Row outerRow;
-        private boolean closed = true;
         private QueryBindings outerBindings;
         private final SingletonQueryBindingsCursor innerBindingsCursor;
     }
