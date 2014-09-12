@@ -1174,7 +1174,7 @@ public class JoinAndIndexPicker extends BaseRule
                     joins, costEstimate);
 
             if (isFreeOfJoinCondition(leftPlan, rightPlan.getConditions())) {
-                Collection<JoinOperator> joinOperators = duplicateJoins(joins);
+                List<JoinOperator> joinOperators = duplicateJoins(joins);
                 Plan loaderPlan = right.bestPlan(condJoins, outsideJoins);
                 JoinPlan hashPlan = buildHashTableJoin(loaderPlan, joinPlan, joinOperators);
                 if (hashPlan != null) {
@@ -1219,8 +1219,8 @@ public class JoinAndIndexPicker extends BaseRule
             }
         }
 
-        private Collection<JoinOperator> duplicateJoins(Collection<JoinOperator> joins) {
-            Collection<JoinOperator> retJoins = new ArrayList<>();
+        private List<JoinOperator> duplicateJoins(Collection<JoinOperator> joins) {
+            List<JoinOperator> retJoins = new ArrayList<>();
             for (JoinOperator join : joins) {
                 retJoins.add(new JoinOperator(join));
             }
@@ -1300,7 +1300,7 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
 
-        private Collection<JoinOperator> cleanJoinOperators(Plan inputPlan, List<JoinOperator> joinOperators) {
+        private List<JoinOperator> cleanJoinOperators(Plan inputPlan, List<JoinOperator> joinOperators) {
             if (inputPlan instanceof GroupPlan && ((GroupPlan) inputPlan).scan instanceof SingleIndexScan && ((GroupPlan)inputPlan).scan.getConditions() != null) {
                 SingleIndexScan scan = (SingleIndexScan) ((GroupPlan) inputPlan).scan;
                 for (ConditionExpression indexCond : scan.getConditions()) {
@@ -1337,11 +1337,11 @@ public class JoinAndIndexPicker extends BaseRule
         int DEFAULT_COLUMN_COUNT = 5;
 
         public JoinPlan buildHashTableJoin(Plan loaderPlan, JoinPlan joinPlan,
-                                           Collection<JoinOperator> joinOperators) {
+                                           List<JoinOperator> joinOperators) {
             Plan outerPlan = joinPlan.left;
-            joinOperators = cleanJoinOperators(outerPlan, (List)joinOperators);
+            joinOperators = cleanJoinOperators(outerPlan, joinOperators);
             Plan innerPlan = joinPlan.right;
-            joinOperators = cleanJoinOperators(innerPlan, (List)joinOperators);
+            joinOperators = cleanJoinOperators(innerPlan, joinOperators);
 
             Collection<JoinOperator> joins = joinOperators;
             HashTableColumns hashTableColumns = hashTableColumns(joins, outerPlan, innerPlan);
