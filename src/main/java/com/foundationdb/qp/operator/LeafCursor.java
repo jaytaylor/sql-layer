@@ -37,6 +37,7 @@ package com.foundationdb.qp.operator;
  * @see ValuesScan_Default$Execution
  * 
  * @see com.foundationdb.server.service.text.IndexScan_FullText$Execution
+ * @see com.foundationdb.server.test.it.qp.QueryTimeoutIT$DoNothingForever$Execution
  */
 public class LeafCursor extends OperatorCursor
 {
@@ -55,6 +56,7 @@ public class LeafCursor extends OperatorCursor
 
     @Override
     public QueryBindings nextBindings() {
+        CursorLifecycle.checkClosed(this);
         bindings = bindingsCursor.nextBindings();
         return bindings;
     }
@@ -66,7 +68,8 @@ public class LeafCursor extends OperatorCursor
 
     @Override
     public void cancelBindings(QueryBindings bindings) {
-        close();
+        CursorLifecycle.checkClosed(this);
+        //close();
         bindingsCursor.cancelBindings(bindings);
     }
 }

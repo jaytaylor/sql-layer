@@ -85,6 +85,7 @@ public abstract class MultiChainedCursor extends  OperatorCursor {
 
     @Override
     public QueryBindings nextBindings() {
+        CursorLifecycle.checkClosed(this);
         QueryBindings bindings = bindingsCursor.nextBindings();
         QueryBindings other = leftInput.nextBindings();
         assert (bindings == other);

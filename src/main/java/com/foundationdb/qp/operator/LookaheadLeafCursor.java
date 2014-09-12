@@ -60,6 +60,9 @@ public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends
 
     @Override
     public Row next() {
+        if (CURSOR_LIFECYCLE_ENABLED) {
+            CursorLifecycle.checkIdleOrActive(this);
+        }
         checkQueryCancelation();
         Row row = currentCursor.next();
         if (row == null) {
@@ -137,6 +140,8 @@ public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends
 
     @Override
     public void cancelBindings(QueryBindings bindings) {
+        CursorLifecycle.checkClosed(this);
+        
         if ((currentBindings != null) && currentBindings.isAncestor(bindings)) {
             if (currentCursor != null) {
                 currentCursor.close();

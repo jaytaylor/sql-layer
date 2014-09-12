@@ -525,8 +525,7 @@ class GroupLookup_Default extends Operator
         public void open() {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-                closed = false;
+                super.open();
                 cursorIndex = 0;
             } finally {
                 TAP_OPEN.out();
@@ -545,7 +544,7 @@ class GroupLookup_Default extends Operator
                 }
                 checkQueryCancelation();
                 Row outputRow = null;
-                while (!closed && outputRow == null) {
+                while (isActive() && outputRow == null) {
                     // Get some more input rows, crossing bindings boundaries as
                     // necessary, and open cursors for them.
                     pipeline:
@@ -599,10 +598,10 @@ class GroupLookup_Default extends Operator
                     }
                     // Now take ancestor rows from the front of those.
                     if (inputRows[currentIndex] == null) {
-                        closed = true; // No more rows loaded.
+                        setIdle(); // No more rows loaded.
                     }
                     else if (inputRowBindings[currentIndex] != currentBindings) {
-                        closed = true; // Row came from another bindings.
+                        setIdle(); // Row came from another bindings.
                     }
                     else if (cursorIndex >= ncursors) {
                         // Done with this row.
@@ -652,8 +651,7 @@ class GroupLookup_Default extends Operator
 
         @Override
         public void close() {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (!closed) {
+            if (!isClosed()) {
                 // Any rows for the current bindings being closed need to be discarded.
                 while (currentBindings == inputRowBindings[currentIndex]) {
                     inputRows[currentIndex] = null;
@@ -666,10 +664,10 @@ class GroupLookup_Default extends Operator
                     }
                     currentIndex = (currentIndex + 1) % quantum;
                 }
-                closed = true;
+                super.close();
             }
         }
-
+        /*
         @Override
         public void destroy() {
             pendingBindings.clear();
@@ -682,22 +680,7 @@ class GroupLookup_Default extends Operator
             }
             input.destroy();
         }
-
-        @Override
-        public boolean isIdle() {
-            return !input.isDestroyed() && closed;
-        }
-
-        @Override
-        public boolean isActive() {
-            return !input.isDestroyed() && !closed;
-        }
-
-        @Override
-        public boolean isDestroyed() {
-            return input.isDestroyed();
-        }
-
+        */
         @Override
         public void openBindings() {
             clearBindings();
@@ -708,7 +691,7 @@ class GroupLookup_Default extends Operator
                 
         @Override
         public QueryBindings nextBindings() {
-            CursorLifecycle.checkIdle(this);
+            CursorLifecycle.checkClosed(this);
             currentBindings = pendingBindings.poll();
             if (currentBindings == null) {
                 currentBindings = input.nextBindings();
@@ -728,6 +711,7 @@ class GroupLookup_Default extends Operator
 
         @Override
         public void cancelBindings(QueryBindings bindings) {
+            CursorLifecycle.checkClosed(this);
             while (true) {
                 QueryBindings pending = pendingBindings.peek();
                 if (pending == null) break;
@@ -752,7 +736,6 @@ class GroupLookup_Default extends Operator
             if ((nextBindings != null) && nextBindings.isAncestor(bindings)) {
                 nextBindings = null;
             }
-            closed = true;
         }
 
         // LookaheadExecution interface
@@ -820,6 +803,6 @@ class GroupLookup_Default extends Operator
         private final HKey[] lookupHKeys;
         private int currentIndex, nextIndex, cursorIndex;
         private QueryBindings currentBindings, nextBindings;
-        private boolean bindingsExhausted, closed = true, newBindings;
+        private boolean bindingsExhausted, newBindings;
     }
 }

@@ -89,6 +89,7 @@ public class ChainedCursor extends OperatorCursor
 
     @Override
     public QueryBindings nextBindings() {
+        CursorLifecycle.checkClosed(this);
         bindings = input.nextBindings();
         return bindings;
     }
@@ -100,7 +101,7 @@ public class ChainedCursor extends OperatorCursor
 
     @Override
     public void cancelBindings(QueryBindings ancestor) {
-        CursorLifecycle.checkClosed(input);
+        CursorLifecycle.checkClosed(this);
         //close();                // In case override maintains some additional state.
         input.cancelBindings(ancestor);
     }

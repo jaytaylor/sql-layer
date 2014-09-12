@@ -318,6 +318,7 @@ class Map_NestedLoops extends Operator
 
         @Override
         public void close() {
+            input.close();
             super.close();
             if (openBindings != null) {
                 cancelBindings(openBindings);
@@ -366,6 +367,7 @@ class Map_NestedLoops extends Operator
 
         @Override
         public void cancelBindings(QueryBindings bindings) {
+            CursorLifecycle.checkClosed(this);
             input.cancelBindings(bindings);
             if ((inputOpenBindings != null) && inputOpenBindings.isAncestor(bindings)) {
                 inputOpenBindings = null;
