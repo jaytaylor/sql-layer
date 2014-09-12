@@ -288,7 +288,7 @@ class Intersect_Ordered extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorCursor // DualChainedCursor
+    private class Execution extends MultiChainedCursor // DualChainedCursor
     {
         // Cursor interface
 
@@ -297,12 +297,12 @@ class Intersect_Ordered extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-                leftInput.open();
-                rightInput.open();
+                super.open();
                 nextLeftRow();
                 nextRightRow();
-                closed = leftRow == null && rightRow == null;
+                if (leftRow == null && rightRow == null) {
+                    setIdle();
+                }
                 leftSkipRowFixed = rightSkipRowFixed = false; // Fixed fields are per iteration.
             } finally {
                 TAP_OPEN.out();
@@ -320,7 +320,7 @@ class Intersect_Ordered extends Operator
                     CursorLifecycle.checkIdleOrActive(this);
                 }
                 Row next = null;
-                while (!closed && next == null) {
+                while (isActive() && next == null) {
                     assert !(leftRow == null && rightRow == null);
                     long c = compareRows();
                     if (c < 0) {
@@ -368,7 +368,7 @@ class Intersect_Ordered extends Operator
                     if (leftEmpty && rightEmpty ||
                         leftEmpty && !keepUnmatchedRight ||
                         rightEmpty && !keepUnmatchedLeft) {
-                        close();
+                        setIdle();
                     }
                 }
                 if (LOG_EXECUTION) {
@@ -405,84 +405,25 @@ class Intersect_Ordered extends Operator
         @Override
         public void close()
         {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (!closed) {
-                leftRow = null;
-                rightRow = null;
-                leftInput.close();
-                rightInput.close();
-                closed = true;
-            }
+            super.close();
+            leftRow = null;
+            rightRow = null;
         }
 
         @Override
-        public void destroy()
-        {
-            close();
-            leftInput.destroy();
-            rightInput.destroy();
+        protected Operator left() {
+            return left;
         }
-
-        @Override
-        public boolean isIdle()
-        {
-            return closed;
+        
+        @Override 
+        protected Operator right() {
+            return right;
         }
-
-        @Override
-        public boolean isActive()
-        {
-            return !closed;
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            assert leftInput.isDestroyed() == rightInput.isDestroyed();
-            return leftInput.isDestroyed();
-        }
-
-        @Override
-        public void openBindings() {
-            bindingsCursor.openBindings();
-            leftInput.openBindings();
-            rightInput.openBindings();
-        }
-
-        @Override
-        public QueryBindings nextBindings() {
-            
-            QueryBindings bindings = bindingsCursor.nextBindings();
-            QueryBindings left = leftInput.nextBindings();
-            assert (bindings == left);
-            QueryBindings right  = rightInput.nextBindings();
-            assert (bindings == right);
-            return bindings;
-        }
-
-        @Override
-        public void closeBindings() {
-            bindingsCursor.closeBindings();
-            leftInput.closeBindings();
-            rightInput.closeBindings();
-        }
-
-        @Override
-        public void cancelBindings(QueryBindings bindings) {
-            leftInput.cancelBindings(bindings);
-            rightInput.cancelBindings(bindings);
-            bindingsCursor.cancelBindings(bindings);
-        }
-
         // Execution interface
 
         Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
-            super(context);
-            MultipleQueryBindingsCursor multiple = new MultipleQueryBindingsCursor(bindingsCursor);
-            this.bindingsCursor = multiple;
-            this.leftInput = left.cursor(context, multiple.newCursor());
-            this.rightInput = right.cursor(context, multiple.newCursor());
+            super(context, bindingsCursor);
         }
 
         // For use by this class
@@ -508,7 +449,7 @@ class Intersect_Ordered extends Operator
         private int compareRows()
         {
             int c;
-            assert !closed;
+            assert !isClosed();
             assert !(leftRow == null && rightRow == null);
             if (leftRow == null) {
                 c = 1;
@@ -635,10 +576,6 @@ class Intersect_Ordered extends Operator
 
         // Object state
 
-        private boolean closed = true;
-        private final QueryBindingsCursor bindingsCursor;
-        private final Cursor leftInput;
-        private final Cursor rightInput;
         private Row leftRow;
         private Row rightRow;
         private ValuesHolderRow leftSkipRow;

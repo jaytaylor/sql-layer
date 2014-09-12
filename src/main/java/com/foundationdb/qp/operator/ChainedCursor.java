@@ -80,18 +80,17 @@ public class ChainedCursor extends OperatorCursor
     }
 
     @Override
-    public void jump(Row row, ColumnSelector columnSelector)
-    {
-        input.jump(row, columnSelector);
-    }
-
-    @Override
     public void close() {
         if (CURSOR_LIFECYCLE_ENABLED) {
             CursorLifecycle.checkIdleOrActive(input);
         }
         input.close();
         state = CursorLifecycle.CursorState.CLOSED;
+    }
+
+    @Override
+    public void setIdle() {
+        state = CursorLifecycle.CursorState.IDLE;
     }
 
     @Override
@@ -128,9 +127,6 @@ public class ChainedCursor extends OperatorCursor
         input.closeBindings();
     }
 
-    protected void setIdle() {
-        state = CursorLifecycle.CursorState.IDLE;
-    }
     @Override
     public void cancelBindings(QueryBindings ancestor) {
         close();                // In case override maintains some additional state.

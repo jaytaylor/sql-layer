@@ -139,20 +139,17 @@ final class Except_Ordered extends SetOperatorBase {
         return new CompoundExplainer(Type.EXCEPT, att);
     }
 
-    private class Execution extends OperatorCursor { //DualChainedCursor
-
+    private class Execution extends MultiChainedCursor { 
+        
         @Override
         public void open()
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-                leftInput.open();
-                rightInput.open();
+                super.open();
                 nextRightRow();
                 nextLeftRow();
                 previousRow = null;
-                closed = false;
             } finally {
                 TAP_OPEN.out();
             }
@@ -224,78 +221,24 @@ final class Except_Ordered extends SetOperatorBase {
 
         @Override
         public void close() {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (!closed) {
-                leftRow = null;
-                rightRow = null;
-                leftInput.close();
-                rightInput.close();
-                closed = true;
-            }
+            super.close();
+            leftRow = null;
+            rightRow = null;
         }
 
+        @Override 
+        protected Operator left() {
+            return Except_Ordered.this.left();
+        }
+        
         @Override
-        public void destroy() {
-            close();
-            leftInput.destroy();
-            rightInput.destroy();
+        protected Operator right() {
+            return Except_Ordered.this.right();
         }
-
-        @Override
-        public boolean isIdle() {
-            return closed;
-        }
-
-        @Override
-        public boolean isActive() {
-            return !closed;
-        }
-
-        @Override
-        public boolean isDestroyed() {
-            assert leftInput.isDestroyed() == rightInput.isDestroyed();
-            return leftInput.isDestroyed();
-        }
-
-        @Override
-        public void openBindings() {
-            bindingsCursor.openBindings();
-            leftInput.openBindings();
-            rightInput.openBindings();
-        }
-
-        @Override
-        public QueryBindings nextBindings() {
-            QueryBindings bindings = bindingsCursor.nextBindings();
-            QueryBindings other = leftInput.nextBindings();
-            assert (bindings == other);
-            other = rightInput.nextBindings();
-            assert (bindings == other);
-            return bindings;
-        }
-
-        @Override
-        public void closeBindings() {
-            bindingsCursor.closeBindings();
-            leftInput.closeBindings();
-            rightInput.closeBindings();
-        }
-
-        @Override
-        public void cancelBindings(QueryBindings bindings) {
-            leftInput.cancelBindings(bindings);
-            rightInput.cancelBindings(bindings);
-            bindingsCursor.cancelBindings(bindings);
-        }
-
         // Execution interface
 
         Execution(QueryContext context, QueryBindingsCursor bindingsCursor) {
-            super(context);
-            MultipleQueryBindingsCursor multiple = new MultipleQueryBindingsCursor(bindingsCursor);
-            this.bindingsCursor = multiple;
-            this.leftInput = left().cursor(context, multiple.newCursor());
-            this.rightInput = right().cursor(context, multiple.newCursor());
+            super(context, bindingsCursor);
         }
 
         private int compareToPrevious() {
@@ -307,7 +250,7 @@ final class Except_Ordered extends SetOperatorBase {
 
         private int compareRows(){
             int c;
-            assert !closed;
+            assert !isClosed();
             assert !(leftRow == null && rightRow == null);
             if (leftRow == null) {
                 c = 1;
@@ -340,10 +283,6 @@ final class Except_Ordered extends SetOperatorBase {
             return row;
         }
 
-        private boolean closed = true;
-        private final QueryBindingsCursor bindingsCursor;
-        private final Cursor leftInput;
-        private final Cursor rightInput;
         private Row leftRow;
         private Row rightRow;
         private Row previousRow;

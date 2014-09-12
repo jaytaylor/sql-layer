@@ -394,7 +394,7 @@ class Map_NestedLoops extends Operator
 
     // Old-style execution: bind outer row into existing context and
     // open inner loop afresh.
-    private class Execution extends OperatorCursor
+    private class Execution extends OperatorCursor // DualChainedCursor
     {
         // Cursor interface
 
