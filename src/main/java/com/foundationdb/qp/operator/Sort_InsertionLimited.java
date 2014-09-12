@@ -18,7 +18,6 @@
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.ImmutableRow;
-import com.foundationdb.qp.row.ProjectedRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.*;
@@ -176,7 +175,6 @@ class Sort_InsertionLimited extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
                 if(limit == 0) {
                     LOG.debug("Sort_InsertionLimited: limit 0,  left closed");
                 } else {

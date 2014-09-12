@@ -154,7 +154,6 @@ final class UnionAll_Default extends SetOperatorBase {
 
         @Override
         public void close() {
-            CursorLifecycle.checkIdleOrActive(this);
             if (!leftInput.isClosed()) {
                 leftInput.close();
             }
@@ -163,6 +162,7 @@ final class UnionAll_Default extends SetOperatorBase {
             }
             currentCursor = null;
             currentInputRowType = null;
+            state = CursorLifecycle.CursorState.CLOSED;
         }
 
         @Override 
