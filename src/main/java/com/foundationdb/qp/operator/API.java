@@ -806,6 +806,42 @@ public class API
                 depth);
     }
 
+    // hashTableLookup_Default
+    public static Operator hashTableLookup_Default(RowType hashedRowType,
+                                                   List<AkCollator> collators,
+                                                   List<TPreparedExpression> outerComparisonFields,
+                                                   int hashTableBindingPosition)
+    {
+        return new HashTableLookup_Default(
+                hashedRowType,
+                collators,
+                outerComparisonFields,
+                hashTableBindingPosition);
+    }
+
+    // using_HashTable
+    public static Operator using_HashTable(Operator hashInput,
+                                           RowType hashedRowType,
+                                           List<TPreparedExpression> comparisonFields,
+                                           int hashTableBindingPosition,
+                                           Operator joinedInput,
+                                           List<AkCollator> collators)
+    {
+        return new Using_HashTable(hashInput, hashedRowType, comparisonFields, hashTableBindingPosition, joinedInput, collators, null);
+    }
+
+    // using_HashTable
+    public static Operator using_HashTable(Operator hashInput,
+                                           RowType hashedRowType,
+                                           List<TPreparedExpression> comparisonFields,
+                                           int hashTableBindingPosition,
+                                           Operator joinedInput,
+                                           List<AkCollator> collators,
+                                           List<TComparison> tComparisons)
+    {
+        return new Using_HashTable(hashInput, hashedRowType, comparisonFields, hashTableBindingPosition, joinedInput, collators, tComparisons);
+    }
+
     // EmitBoundRow_Nested
 
     public static Operator emitBoundRow_Nested(Operator input,
