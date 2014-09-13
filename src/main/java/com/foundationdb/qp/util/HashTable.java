@@ -31,6 +31,7 @@ import com.foundationdb.server.types.value.ValueTargets;
 import com.google.common.collect.ArrayListMultimap;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class HashTable {
@@ -39,13 +40,20 @@ public class HashTable {
     private RowType hashedRowType;
     private List<TComparison> tComparisons;
     private List<AkCollator> collators;
+    private boolean matchNulls;
 
     public List<Row> getMatchingRows(Row row, List<TEvaluatableExpression> evaluatableComparisonFields, QueryBindings bindings){
-        return hashTable.get(new KeyWrapper(row, evaluatableComparisonFields, bindings));
+        KeyWrapper key = new KeyWrapper(row, evaluatableComparisonFields, bindings);
+        if (!matchNulls && key.isNull())
+            return Collections.emptyList();
+        return hashTable.get(key);
     }
 
     public void put(Row row, List<TEvaluatableExpression> evaluatableComparisonFields, QueryBindings bindings){
-        hashTable.put(new KeyWrapper(row, evaluatableComparisonFields, bindings), row);
+        KeyWrapper key = new KeyWrapper(row, evaluatableComparisonFields, bindings);
+        if (matchNulls || !key.isNull()) {
+            hashTable.put(key, row);
+        }
     }
 
     public RowType getRowType() {
@@ -62,10 +70,14 @@ public class HashTable {
     public void setCollators(List<AkCollator> collators) {
         this.collators =  collators;
     }
+    public void setMatchNulls(boolean matchNulls) {
+        this.matchNulls = matchNulls;
+    }
 
     public class KeyWrapper implements Comparable<KeyWrapper> {
         List<ValueSource> values = new ArrayList<>();
         int hashKey = 0;
+        boolean isNull;
 
         @Override
         public int hashCode() {
@@ -96,6 +108,10 @@ public class HashTable {
             return 0;
         }
 
+        public boolean isNull() {
+            return isNull;
+        }
+
         public KeyWrapper(Row row, List<TEvaluatableExpression> comparisonExpressions, QueryBindings bindings){
             int i = 0;
             for (TEvaluatableExpression expression : comparisonExpressions) {
@@ -105,6 +121,8 @@ public class HashTable {
                     expression.with(bindings);
                 expression.evaluate();
                 ValueSource columnValue = expression.resultValue();
+                if (columnValue.isNull())
+                    isNull = true;
                 Value valueCopy = new Value(columnValue.getType());
                 ValueTargets.copyFrom(columnValue, valueCopy);
                 AkCollator collator = (collators != null) ? collators.get(i) : null;
