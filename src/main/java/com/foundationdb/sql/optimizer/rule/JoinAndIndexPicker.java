@@ -27,7 +27,11 @@ import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
 import com.foundationdb.sql.optimizer.plan.JoinNode.JoinType;
 
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.types.common.types.StringAttribute;
+import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.texpressions.Comparison;
+import com.foundationdb.sql.types.CharacterTypeAttributes;
 
 import com.foundationdb.server.error.AkibanInternalException;
 
@@ -989,12 +993,13 @@ public class JoinAndIndexPicker extends BaseRule
         BaseHashTable hashTable;
         List<ExpressionNode> hashColumns, matchColumns;
         List<TKeyComparable> tKeyComparables ;
+        List<AkCollator> collators;
         
         public HashJoinPlan(Plan loader, Plan input, Plan check,
                             JoinType joinType, JoinNode.Implementation joinImplementation,
                             Collection<JoinOperator> joins, CostEstimate costEstimate,
                             BaseHashTable hashTable, List<ExpressionNode> hashColumns, List<ExpressionNode> matchColumns,
-                            List<TKeyComparable> tKeyComparables
+                            List<TKeyComparable> tKeyComparables, List<AkCollator> collators
         ) {
             super(input, check, joinType, joinImplementation, joins, costEstimate);
             this.loader = loader;
@@ -1002,6 +1007,7 @@ public class JoinAndIndexPicker extends BaseRule
             this.hashColumns = hashColumns;
             this.matchColumns = matchColumns;
             this.tKeyComparables = tKeyComparables;
+            this.collators = collators;
         }
 
         @Override
@@ -1027,7 +1033,7 @@ public class JoinAndIndexPicker extends BaseRule
                 joinConditions = null;
             }
             HashJoinNode join = new HashJoinNode(loaderJoinable.getJoinable(), inputJoinable.getJoinable(), checkJoinable.getJoinable(),
-                                                 joinType, hashTable, hashColumns, matchColumns, tKeyComparables);
+                                                 joinType, hashTable, hashColumns, matchColumns, tKeyComparables, collators);
             join.setJoinConditions(joinConditions);
             join.setImplementation(joinImplementation);
             if (joinType == JoinType.SEMI)
@@ -1296,7 +1302,7 @@ public class JoinAndIndexPicker extends BaseRule
                 .costBloomFilter(loaderPlan.costEstimate, inputPlan.costEstimate, checkPlan.costEstimate, selectivity);
             return new HashJoinPlan(loaderPlan, inputPlan, checkPlan,
                                     JoinType.SEMI, JoinNode.Implementation.BLOOM_FILTER,
-                                    joins, costEstimate, bloomFilter, hashTableColumns.hashColumns, hashTableColumns.matchColumns, null);
+                                    joins, costEstimate, bloomFilter, hashTableColumns.hashColumns, hashTableColumns.matchColumns, hashTableColumns.tKeyComparables, hashTableColumns.collators);
         }
 
 
@@ -1379,22 +1385,6 @@ public class JoinAndIndexPicker extends BaseRule
                     }
                 }
             }
-            List<TKeyComparable> tKeyComparables = new ArrayList<>();
-            for (JoinOperator joinOperator : joinOperators) {
-                if (joinOperator.getJoin() != null && joinOperator.getJoin().hasJoinConditions()) {
-                    for (ConditionExpression conditionExpression : joinOperator.getJoin().getJoinConditions()) {
-                        if (conditionExpression instanceof ComparisonCondition)
-                            tKeyComparables.add(((ComparisonCondition) conditionExpression).getKeyComparable());
-                    }
-                }
-            }
-            boolean allNull = true;
-            for (TKeyComparable tKeyComparable: tKeyComparables) {
-                if (tKeyComparable != null)
-                    allNull = false;
-            }
-            if (tKeyComparables.isEmpty() || allNull)
-                tKeyComparables = null;
             CostEstimate costEstimate = picker.getCostEstimator()
                 .costHashLookup(innerPlan.costEstimate, hashTableColumns.hashColumns.size(), innerColumnCount);
             HashLookupPlan lookupPlan = new HashLookupPlan(costEstimate, hashTable, hashTableColumns);
@@ -1402,7 +1392,7 @@ public class JoinAndIndexPicker extends BaseRule
                     .costHashJoin(loaderPlan.costEstimate, outerPlan.costEstimate, costEstimate, hashTableColumns.hashColumns.size(), outerColumnCount, innerColumnCount);
             return new HashJoinPlan(loaderPlan, outerPlan, lookupPlan,
                     joinPlan.joinType, JoinNode.Implementation.HASH_TABLE,
-                    joins, costEstimate, hashTable, hashTableColumns.hashColumns, hashTableColumns.matchColumns, tKeyComparables);
+                    joins, costEstimate, hashTable, hashTableColumns.hashColumns, hashTableColumns.matchColumns, hashTableColumns.tKeyComparables, hashTableColumns.collators);
         }
 
         static class HashLookupPlan extends Plan {
@@ -1441,6 +1431,8 @@ public class JoinAndIndexPicker extends BaseRule
             List<ExpressionNode> matchColumns = new ArrayList<>();
             List<ExpressionNode> hashColumns = new ArrayList<>();
             Collection<? extends ColumnSource> tables;
+            List<TKeyComparable> tKeyComparables = new ArrayList<>();
+            List<AkCollator> collators = new ArrayList<>();
         }
 
         /** Find some equality conditions between tables on the two sides of the join.
@@ -1460,17 +1452,31 @@ public class JoinAndIndexPicker extends BaseRule
                         if (!((left instanceof ColumnExpression) &&
                               (right instanceof ColumnExpression)))
                             continue;
+                        ColumnExpression matchColumn, hashColumn;
                         if (inputPlan.containsColumn((ColumnExpression) left) &&
                             checkPlan.containsColumn((ColumnExpression) right)) {
-                            result.conditions.add(cond);
-                            result.matchColumns.add(left);
-                            result.hashColumns.add(right);
-                        } else if (inputPlan.containsColumn((ColumnExpression) right) &&
-                                   checkPlan.containsColumn((ColumnExpression) left)) {
-                            result.conditions.add(cond);
-                            result.matchColumns.add(right);
-                            result.hashColumns.add(left);
+                            matchColumn = (ColumnExpression) left;
+                            hashColumn = (ColumnExpression) right;
+                        } 
+                        else if (inputPlan.containsColumn((ColumnExpression) right) &&
+                                 checkPlan.containsColumn((ColumnExpression) left)) {
+                            matchColumn = (ColumnExpression) right;
+                            hashColumn = (ColumnExpression) left;
                         }
+                        else continue;
+                        result.conditions.add(cond);
+                        result.matchColumns.add(matchColumn);
+                        result.hashColumns.add(hashColumn);
+                        result.tKeyComparables.add(ccond.getKeyComparable());
+                        AkCollator collator = null;
+                        if (left.getType().hasAttributes(StringAttribute.class) &&
+                            right.getType().hasAttributes(StringAttribute.class)) {
+                            CharacterTypeAttributes leftAttributes = StringAttribute.characterTypeAttributes(left.getType());
+                            CharacterTypeAttributes rightAttributes = StringAttribute.characterTypeAttributes(right.getType());
+                            collator = TString.mergeAkCollators(leftAttributes, rightAttributes);
+
+                        }
+                        result.collators.add(collator);
                     }
                 }
             }
