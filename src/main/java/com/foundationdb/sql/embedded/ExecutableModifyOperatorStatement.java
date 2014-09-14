@@ -74,7 +74,7 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
         finally {
             try {
                 if (cursor != null) {
-                    cursor.close();
+                    cursor.closeTopLevel();
                 }
             }
             catch (RuntimeException ex) {

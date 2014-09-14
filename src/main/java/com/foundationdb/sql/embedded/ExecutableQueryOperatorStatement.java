@@ -50,7 +50,7 @@ class ExecutableQueryOperatorStatement extends ExecutableOperatorStatement
         }
         finally {
             if (cursor != null) {
-                cursor.destroy();
+                cursor.closeTopLevel();
             }
         }
     }

@@ -99,7 +99,6 @@ public class IndexScanPT extends QPProfilePTBase
                 assert row != null;
             }
             cursor.closeTopLevel();
-            cursor.destroy();
         }
         long end = System.nanoTime();
         if (label != null) {

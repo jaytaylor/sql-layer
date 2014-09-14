@@ -171,7 +171,7 @@ public class OperatorITBase extends ITBase
         testCase.firstSetup();
         cursor.open();
         assertTrue(cursor.isActive());
-        //cursor.close();
+        cursor.close();
         // Check active during iteration
         testCase.firstSetup();
         if (testCase.hKeyComparison()) {
@@ -179,7 +179,7 @@ public class OperatorITBase extends ITBase
         } else {
             compareRows(testCase.firstExpectedRows(), cursor, testCase.reopenTopLevel());
         }
-        assertTrue(cursor.isIdle());
+        assertTrue(cursor.isClosed());
         // Check close during iteration.
         if (testCase.hKeyComparison()
             ? testCase.firstExpectedHKeys().length > 1
@@ -201,13 +201,7 @@ public class OperatorITBase extends ITBase
         } else {
             compareRows(testCase.secondExpectedRows(), cursor, testCase.reopenTopLevel());
         }
-        assertTrue(cursor.isIdle());
-        // Check close of idle cursor is permitted
-        try {
-            cursor.close();
-        } catch (CursorLifecycle.WrongStateException e) {
-            fail();
-        }
+        assertTrue(cursor.isClosed());
     }
 
     protected void use(NewRow[] db)

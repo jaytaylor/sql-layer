@@ -25,7 +25,7 @@ package com.foundationdb.qp.operator;
  * row collection. 
  * 
  * @see ChainedCursor
- * @see DualChainedCursor
+ * @see MultiChainedCursor
  * 
  * Used By
  * @see AncestorLookup_Nested$Execution (non-lookahead)
@@ -69,7 +69,6 @@ public class LeafCursor extends OperatorCursor
     @Override
     public void cancelBindings(QueryBindings bindings) {
         CursorLifecycle.checkClosed(this);
-        //close();
         bindingsCursor.cancelBindings(bindings);
     }
 }

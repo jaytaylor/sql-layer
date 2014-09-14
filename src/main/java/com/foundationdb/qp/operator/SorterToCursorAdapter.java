@@ -20,7 +20,6 @@ package com.foundationdb.qp.operator;
 import com.foundationdb.qp.storeadapter.Sorter;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.util.tap.InOutTap;
 
 /**
@@ -34,9 +33,10 @@ class SorterToCursorAdapter extends RowCursorImpl
     @Override
     public void open()
     {
-        CursorLifecycle.checkIdle(this);
+        super.open();
         sorter = adapter.createSorter(context, bindings, input, rowType, ordering, sortOption, loadTap);
         cursor = sorter.sort();
+        
         input.close();
         cursor.open();
         state = CursorLifecycle.CursorState.ACTIVE;
@@ -54,7 +54,6 @@ class SorterToCursorAdapter extends RowCursorImpl
     {
         CursorLifecycle.checkIdleOrActive(this);
         if (cursor != null) {
-            cursor.close();
             cursor.close();
             cursor = null;
         }
@@ -96,5 +95,4 @@ class SorterToCursorAdapter extends RowCursorImpl
     private final InOutTap loadTap;
     private Sorter sorter;
     private RowCursor cursor;
-    private boolean destroyed = false;
 }

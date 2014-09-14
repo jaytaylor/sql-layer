@@ -17,6 +17,8 @@
 
 package com.foundationdb.qp.operator;
 
+import com.foundationdb.qp.row.Row;
+
 /**
  * The first of the three complete implementations of the CursorBase
  * interface. 
@@ -29,7 +31,7 @@ package com.foundationdb.qp.operator;
  * parent or child. 
  * 
  * @See LeafCursor
- * @see DualChainedCursor
+ * @see MultiChainedCursor
  *
  * Used by:
  * @see Aggregate_Partial
@@ -70,14 +72,16 @@ public class ChainedCursor extends OperatorCursor
 
     @Override
     public void open() {
-        CursorLifecycle.checkClosed(input);
         input.open();
         super.open();
+    }
+    @Override
+    public Row next() {
+        return input.next();
     }
 
     @Override
     public void close() {
-        CursorLifecycle.checkIdleOrActive(input);
         input.close();
         super.close();
     }
@@ -102,7 +106,6 @@ public class ChainedCursor extends OperatorCursor
     @Override
     public void cancelBindings(QueryBindings ancestor) {
         CursorLifecycle.checkClosed(this);
-        //close();                // In case override maintains some additional state.
         input.cancelBindings(ancestor);
     }
 }

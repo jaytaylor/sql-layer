@@ -167,7 +167,7 @@ public class UpsertProcessor extends DMLProcessor {
             cursor.openTopLevel();
             return cursor.next();
         } finally {
-            if (cursor != null) {
+            if (cursor != null && !cursor.isClosed()) {
                 cursor.close();
             }
         }

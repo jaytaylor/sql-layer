@@ -22,11 +22,11 @@ import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.operator.CursorLifecycle;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.RowCursorImpl;
 import com.foundationdb.qp.storeadapter.Sorter;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.error.StorageKeySizeExceededException;
 import com.foundationdb.server.types.value.ValueTargets;
 import com.foundationdb.util.tap.InOutTap;
@@ -182,10 +182,8 @@ public class MemorySorter implements Sorter
         return states;
     }
 
-    private static final class CollectionCursor implements RowCursor {
+    private static final class CollectionCursor extends RowCursorImpl {
         private final Collection<Row> collection;
-        private boolean isIdle = true;
-        private boolean isDestroyed = false;
         private Iterator<Row> it;
 
         public CollectionCursor(Collection<Row> collection) {
@@ -194,9 +192,8 @@ public class MemorySorter implements Sorter
 
         @Override
         public void open() {
-            CursorLifecycle.checkIdle(this);
+            super.open();
             it = collection.iterator();
-            isIdle = false;
         }
 
         @Override
@@ -209,37 +206,9 @@ public class MemorySorter implements Sorter
         }
 
         @Override
-        public void jump(Row row, ColumnSelector columnSelector) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public void close() {
-            CursorLifecycle.checkIdleOrActive(this);
-            if(!isIdle) {
-                it = null;
-                isIdle = true;
-            }
-        }
-
-        @Override
-        public void destroy() {
-            isDestroyed = true;
-        }
-
-        @Override
-        public boolean isIdle() {
-            return !isDestroyed && isIdle;
-        }
-
-        @Override
-        public boolean isActive() {
-            return !isDestroyed && !isIdle;
-        }
-
-        @Override
-        public boolean isDestroyed() {
-            return isDestroyed;
+            super.close();
+            it = null;
         }
     }
 

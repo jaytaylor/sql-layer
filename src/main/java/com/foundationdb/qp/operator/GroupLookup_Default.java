@@ -387,10 +387,11 @@ class GroupLookup_Default extends Operator
         @Override
         public void close()
         {
-            super.close();
-            lookupCursor.close();
+            if (!lookupCursor.isClosed())
+                lookupCursor.close();
             lookupRow = null;
             pending.clear();
+            super.close();
         }
         // Execution interface
 
@@ -446,27 +447,29 @@ class GroupLookup_Default extends Operator
         private void findAncestors(Row inputRow)
         {
             assert pending.isEmpty();
+            // TODO: What happens when ancestors.size == 0 ?
+            // readAncestorRow() closes the lookupCursor
+            // in anticipation of calling advanceLookup()
             for (int i = 0; i < ancestors.size(); i++) {
-                readAncestorRow(inputRow.ancestorHKey(ancestors.get(i)));
+                lookupRow = readAncestorRow(inputRow.ancestorHKey(ancestors.get(i)));
                 if (lookupRow != null) {
                     pending.add(lookupRow);
                 }
             }
         }
 
-        private void readAncestorRow(HKey hKey)
+        private Row readAncestorRow(HKey hKey)
         {
             try {
                 lookupCursor.rebind(hKey, false);
                 lookupCursor.open();
                 Row retrievedRow = lookupCursor.next();
-                if (retrievedRow == null) {
-                    lookupRow = null;
-                } else {
+                if (retrievedRow != null) {
                     // Retrieved row might not actually be what we were looking for -- not all ancestors are present,
                     // (there are orphan rows).
-                    lookupRow = hKey.equals(retrievedRow.hKey()) ? retrievedRow : null;
+                    retrievedRow = hKey.equals(retrievedRow.hKey()) ? retrievedRow : null;
                 }
+                return retrievedRow;
             } finally {
                 lookupCursor.close();
             }
@@ -500,6 +503,7 @@ class GroupLookup_Default extends Operator
             lookupRow = null;
             if (currentLookupRow == null) {
                 lookupState = LookupState.BETWEEN;
+                lookupCursor.close();
             } else if (branchOutputRowTypes.contains(currentLookupRow.rowType())) {
                 lookupRow = currentLookupRow;
             }
@@ -659,7 +663,9 @@ class GroupLookup_Default extends Operator
                     for (int i = 0; i < ncursors; i++) {
                         if (i == keepInputCursorIndex) continue;
                         int index = currentIndex * ncursors + i;
-                        cursors[index].close();
+                        if (!cursors[index].isClosed()) {
+                            cursors[index].close();
+                        }
                         lookupHKeys[index] = null;
                     }
                     currentIndex = (currentIndex + 1) % quantum;

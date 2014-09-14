@@ -142,7 +142,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         if (!closed) {
             currentRow = null;
             if (cursor != null) {
-                cursor.destroy();
+                cursor.close();
                 cursor = null;
             }
             closed = true;

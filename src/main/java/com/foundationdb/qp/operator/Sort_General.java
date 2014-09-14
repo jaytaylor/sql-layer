@@ -25,6 +25,7 @@ import com.foundationdb.server.explain.std.SortOperatorExplainer;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.qp.storeadapter.Sorter;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -180,7 +181,6 @@ class Sort_General extends Operator
             try {
                 if (CURSOR_LIFECYCLE_ENABLED) {
                     CursorLifecycle.checkIdleOrActive(this);
-                    CursorLifecycle.checkIdle(input);
                 }
                 checkQueryCancelation();
                 row = output.next();
@@ -201,11 +201,11 @@ class Sort_General extends Operator
         @Override
         public void close()
         {
-            super.close();
-            if (output != null) {
-                output.close();
-                output = null;
-            }
+            //NOTE: Not calling super.close() because the
+            // sorter has already closed the input. 
+            CursorLifecycle.checkIdleOrActive(this);
+            state = CursorLifecycle.CursorState.CLOSED;
+            output.close();
         }
 
         // Execution interface

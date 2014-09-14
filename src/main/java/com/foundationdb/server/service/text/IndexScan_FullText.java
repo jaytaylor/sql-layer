@@ -19,6 +19,7 @@ package com.foundationdb.server.service.text;
 
 import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.CursorLifecycle;
 import com.foundationdb.qp.operator.LeafCursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryBindingsCursor;
@@ -89,6 +90,9 @@ public class IndexScan_FullText extends Operator
         @Override
         public Row next()
         {
+            if (CURSOR_LIFECYCLE_ENABLED) {
+                CursorLifecycle.checkIdleOrActive(this);
+            }
             checkQueryCancelation();
             return cursor.next();
         }
@@ -103,12 +107,16 @@ public class IndexScan_FullText extends Operator
         public void close()
         {
             if (cursor != null) {
+                cursor.close();
+                cursor = null;
+                /*
                 if (queryExpression.needsBindings()) {
                     cursor = null;
                 }
                 else {
                     cursor.close();
                 }
+                */
             }
             super.close();
         }
@@ -128,7 +136,7 @@ public class IndexScan_FullText extends Operator
         @Override
         public boolean isClosed()
         {
-            return cursor == null ? super.isClosed() : cursor.isClosed();
+            return (cursor == null) ? super.isClosed() : cursor.isClosed();
         }
     }
 

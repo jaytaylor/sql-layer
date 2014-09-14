@@ -820,6 +820,7 @@ public class API
     }
 
     // Insert
+    @Deprecated
     public static UpdatePlannable insert_Default(Operator inputOperator)
     {
         return new Insert_Default(inputOperator);
@@ -832,6 +833,7 @@ public class API
 
     // Update
 
+    @Deprecated
     public static UpdatePlannable update_Default(Operator inputOperator,
                                                  UpdateFunction updateFunction)
     {
@@ -845,7 +847,7 @@ public class API
     }
     
     // Delete
-
+    @Deprecated
     public static UpdatePlannable delete_Default(Operator inputOperator)
     {
         return new Delete_Default(inputOperator);

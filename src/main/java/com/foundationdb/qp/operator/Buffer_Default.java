@@ -150,10 +150,11 @@ public class Buffer_Default extends Operator
         public void open() {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-                super.open();
+                CursorLifecycle.checkClosed(this);
                 // Eager load
                 BufferRowCreatorCursor creatorCursor = new BufferRowCreatorCursor(context, input);
+                creatorCursor.open(); // opens the input cursor too. 
+                state = CursorLifecycle.CursorState.ACTIVE;
                 sorter = new SorterToCursorAdapter(adapter(), context, bindings, creatorCursor, bufferRowType, ordering, sortOption, TAP_LOAD);
                 sorter.open();
             } finally {
@@ -195,7 +196,10 @@ public class Buffer_Default extends Operator
 
         @Override
         public void close() {
-            super.close();
+            //NOTE: Not calling super.close() because the
+            // sorter has already closed the input. 
+            CursorLifecycle.checkIdleOrActive(this);;
+            state = CursorLifecycle.CursorState.CLOSED;
             sorter.close();
         }
     }

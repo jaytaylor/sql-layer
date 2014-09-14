@@ -80,23 +80,24 @@ public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends
     public void close() {
         if (currentCursor != null) {
             currentCursor.close();
+            currentCursor = null;
         }
         super.close();
     }
 
     @Override
     public boolean isIdle() {
-        return ((currentCursor != null) && currentCursor.isIdle());
+        return currentCursor == null ? super.isIdle() : currentCursor.isIdle();
     }
 
     @Override
     public boolean isActive() {
-        return ((currentCursor != null) && currentCursor.isActive());
+        return currentCursor == null ? super.isActive() : currentCursor.isActive();
     }
     
     @Override
     public boolean isClosed() {
-        return ((currentCursor != null) && currentCursor.isClosed());
+        return currentCursor == null ? super.isClosed() : currentCursor.isClosed();
     }
 
     @Override
