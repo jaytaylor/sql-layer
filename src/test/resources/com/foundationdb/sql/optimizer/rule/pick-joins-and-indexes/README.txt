@@ -173,3 +173,7 @@ left-cross: LEFT join with cross join
 hash-multiple-1: Multiple columns handled by same hash table
 
 hash-multiple-2: Some conditions not handled by hash table
+
+hash-left: Hash LEFT join
+
+hash-semi: Hash SEMI join

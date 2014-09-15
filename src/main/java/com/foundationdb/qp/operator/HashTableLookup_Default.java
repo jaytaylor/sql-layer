@@ -19,7 +19,6 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.*;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
@@ -47,7 +46,6 @@ class HashTableLookup_Default extends Operator
     }
 
     public HashTableLookup_Default(RowType hashedRowType,
-                                   List<AkCollator> collators,
                                    List<TPreparedExpression> outerComparisonFields,
                                    int hashTableBindingPosition
     )
@@ -57,7 +55,6 @@ class HashTableLookup_Default extends Operator
         ArgumentValidation.isGTE("outerComparisonFields", outerComparisonFields.size(), 1);
 
         this.hashedRowType = hashedRowType;
-        this.collators = collators;
         this.hashTableBindingPosition = hashTableBindingPosition;
         this.outerComparisonFields = outerComparisonFields;
     }
@@ -73,7 +70,6 @@ class HashTableLookup_Default extends Operator
     private final int hashTableBindingPosition;
     private final RowType hashedRowType;
     List<TPreparedExpression> outerComparisonFields;
-    private final List<AkCollator> collators;
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
@@ -98,7 +94,7 @@ class HashTableLookup_Default extends Operator
 
                 hashTable = bindings.getHashTable(hashTableBindingPosition);
                 assert (hashedRowType == hashTable.getRowType()) : hashTable;
-                innerRowList = hashTable.getMatchingRows(null, evaluatableComparisonFields, collators, bindings);
+                innerRowList = hashTable.getMatchingRows(null, evaluatableComparisonFields, bindings);
                 innerRowListPosition = 0;
                 closed = false;
             } finally {

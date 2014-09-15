@@ -78,8 +78,8 @@ class Using_HashTable extends Operator
                            List<TPreparedExpression> comparisonFields,
                            int tableBindingPosition,
                            Operator joinedInput,
-                           List<AkCollator> collators,
-                           List<TComparison> tComparisons)
+                           List<TComparison> tComparisons,
+                           List<AkCollator> collators)
     {
         ArgumentValidation.notNull("hashInput", hashInput);
         ArgumentValidation.notNull("hashedRowType", hashedRowType);
@@ -92,18 +92,12 @@ class Using_HashTable extends Operator
         this.hashedRowType = hashedRowType;
         this.tableBindingPosition = tableBindingPosition;
         this.joinedInput = joinedInput;
-        this.collators = collators;
         this.tComparisons = tComparisons;
+        this.collators = collators;
         this.comparisonFields = comparisonFields;
 
     }
 
-    // For use by this class
-
-    private AkCollator collator(int f)
-    {
-        return collators == null ? null : collators.get(f);
-    }
 
     // Class state
 
@@ -119,9 +113,7 @@ class Using_HashTable extends Operator
     private final Operator joinedInput;
     private final List<AkCollator> collators;
     private final List<TComparison> tComparisons;
-    List<TPreparedExpression> comparisonFields;
-
-
+    private final List<TPreparedExpression> comparisonFields;
 
 
     @Override
@@ -206,9 +198,10 @@ class Using_HashTable extends Operator
             HashTable hashTable= new HashTable();
             hashTable.setRowType(hashedRowType);
             hashTable.setTComparisons(tComparisons);
+            hashTable.setCollators(collators);
             while ((row = loadCursor.next()) != null) {
                 assert(row.rowType().equals(hashedRowType));
-                hashTable.put(row, evaluatableComparisonFields, collators, null);
+                hashTable.put(row, evaluatableComparisonFields, bindings);
             }
             loadCursor.destroy();
             return hashTable;

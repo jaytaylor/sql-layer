@@ -1,0 +1,11 @@
+SelectQuery@6680f714
+  ResultSet@53b1a3f8[c1, c2, c3]
+    Project@7d97e06c[t1.c1, t1.c2, t1.c3]
+      Select@5a936e64[]
+        HashJoinNode@66cd621b(SEMI/HASH_TABLE[t2.c1] = [t1.c1])
+          TableGroupJoinTree@d3f4505(TableGroup@3eb292cd(t2), t2 - GroupScan@7fd987ef(Group(test.t2), rows = 1, cost = 0.00000))
+            TableSource@63300c4b(t2 - TableGroup@3eb292cd(t2))
+          TableGroupJoinTree@45c9b3(TableGroup@7209ffb5(t1), t1 - GroupScan@5e99b9c(Group(test.t1), rows = 1, cost = 0.00000))
+            TableSource@1668919e(t1 - TableGroup@7209ffb5(t1))
+          HashTableLookup@2fe74516(HashTable@1c3259fa, [t1.c1])
+            TableSource@63300c4b(t2 - TableGroup@3eb292cd(t2))

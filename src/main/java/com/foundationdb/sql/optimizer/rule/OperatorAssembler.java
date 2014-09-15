@@ -1454,32 +1454,38 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = assembleStream(usingHashTable.getInput());
             List<ExpressionNode> expressionNodes = usingHashTable.getLookupExpressions();
             List<TPreparedExpression> tFields = assembleExpressions(expressionNodes,lstream.fieldOffsets);
-            List<AkCollator> collators = new ArrayList<>();
-            for(ExpressionNode en : expressionNodes){
-                collators.add(en.getCollator());
-            }
 
-            
-            List<TComparison> tComparisons = null;
-            if(usingHashTable.getTKeyComparables() != null) {
-                tComparisons = new ArrayList<>();
-                for (TKeyComparable comparable : usingHashTable.getTKeyComparables()) {
-                    if (comparable == null) {
-                        tComparisons.add(null);
-                    } else {
-                        tComparisons.add(comparable.getComparison());
-                    }
+            List<TComparison> tComparisons = new ArrayList<>();
+            boolean allNull = true;
+            for (TKeyComparable comparable : usingHashTable.getTKeyComparables()) {
+                if (comparable == null) {
+                    tComparisons.add(null);
+                } else {
+                    tComparisons.add(comparable.getComparison());
+                    allNull = false;
                 }
             }
+            if (allNull)
+                tComparisons = null;
+            List<AkCollator> collators = usingHashTable.getCollators();
+            allNull = true;
+            for (AkCollator collator : collators) {
+                if (collator != null) {
+                    allNull = false;
+                    break;
+                }
+            }
+            if (allNull)
+                collators = null;
             stream.operator = API.using_HashTable(lstream.operator,
                     lstream.rowType,
                     tFields,
                     pos,
                     stream.operator,
-                    collators,
-                    tComparisons);
+                    tComparisons,
+                    collators);
             return stream;
-            }
+        }
 
         protected RowStream assembleHashTableLookup(HashTableLookup hashTableLookup) {
             HashTable hashTable = hashTableLookup.getHashTable();
@@ -1487,17 +1493,12 @@ public class OperatorAssembler extends BaseRule
             RowStream lstream = hashTableLoaders.get(hashTable);
             List<ExpressionNode> expressionNodes = hashTableLookup.getLookupExpressions();
             List<TPreparedExpression> tFields = assembleExpressions(hashTableLookup.getLookupExpressions(), lstream.fieldOffsets);
-            List<AkCollator> collators = new ArrayList<>();
-            for(ExpressionNode en : expressionNodes){
-                collators.add(en.getCollator());
-            }
 
             RowStream stream = new RowStream();
             stream.rowType = lstream.rowType;
             stream.fieldOffsets = lstream.fieldOffsets;
             stream.operator = API.hashTableLookup_Default(
                     stream.rowType,
-                    collators,
                     tFields,
                     tablePos);
             return stream;

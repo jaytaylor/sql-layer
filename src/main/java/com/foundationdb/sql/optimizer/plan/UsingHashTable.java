@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
+import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.types.TKeyComparable;
 
 import java.util.List;
@@ -27,15 +28,16 @@ public class UsingHashTable extends UsingLoaderBase
     private HashTable hashTable;
     private List<ExpressionNode> lookupExpressions;
     private List<TKeyComparable> tKeyComparables;
-
+    private List<AkCollator> collators;
 
     public UsingHashTable(HashTable hashTable, PlanNode loader, PlanNode input,
-                          List<ExpressionNode> lookupExpressions, List<TKeyComparable> tKeyComparables) {
+                          List<ExpressionNode> lookupExpressions,
+                          List<TKeyComparable> tKeyComparables, List<AkCollator> collators) {
         super(loader, input);
         this.hashTable = hashTable;
         this.lookupExpressions = lookupExpressions;
         this.tKeyComparables = tKeyComparables;
-
+        this.collators = collators;
     }
 
     public List<ExpressionNode> getLookupExpressions() {
@@ -46,7 +48,12 @@ public class UsingHashTable extends UsingLoaderBase
     public HashTable getHashTable() {
         return hashTable;
     }
-    public List<TKeyComparable> getTKeyComparables() {return tKeyComparables;}
+    public List<TKeyComparable> getTKeyComparables() {
+        return tKeyComparables;
+    }
+    public List<AkCollator> getCollators() {
+        return collators;
+    }
 
 
     @Override

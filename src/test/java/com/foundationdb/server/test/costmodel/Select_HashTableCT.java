@@ -281,7 +281,6 @@ public class Select_HashTableCT extends CostModelBase
         Operator project = project_Default(
                 hashTableLookup_Default(
                         innerRowType,
-                        null,
                         outerExpressions,
                         TABLE_BINDING_POSITION
                 ),
@@ -301,7 +300,7 @@ public class Select_HashTableCT extends CostModelBase
                         false,
                         1
                 ),
-                null
+                null, null
             );
 }
 

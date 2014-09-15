@@ -104,39 +104,39 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
 
     @Test(expected = IllegalArgumentException.class)
     public void testHashJoinEmptyComparisonFields() {
-        hashTableLookup_Default(customerRowType, null, emptyExpressionList,TABLE_BINDING_POSITION);
+        hashTableLookup_Default(customerRowType, emptyExpressionList,TABLE_BINDING_POSITION);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testHashJoinNullComparisonFields() {
-        hashTableLookup_Default(customerRowType, null, null,  TABLE_BINDING_POSITION);
+        hashTableLookup_Default(customerRowType, null,  TABLE_BINDING_POSITION);
     }
 
     /** Test arguments using_HashTable  */
 
     @Test(expected = IllegalArgumentException.class)
     public void testUsingHashJoinRightInputNull() {
-        using_HashTable(groupScan_Default(coi), customerRowType, genericExpressionList, TABLE_BINDING_POSITION, null, null);
+        using_HashTable(groupScan_Default(coi), customerRowType, genericExpressionList, TABLE_BINDING_POSITION, null, null, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testUsingHashJoinLeftInputNull() {
-        using_HashTable(null, customerRowType, genericExpressionList, TABLE_BINDING_POSITION, groupScan_Default(coi), null);
+        using_HashTable(null, customerRowType, genericExpressionList, TABLE_BINDING_POSITION, groupScan_Default(coi), null, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testUsingHashJoinBothInputsNull() {
-        using_HashTable(null, customerRowType,genericExpressionList,  TABLE_BINDING_POSITION, null, null);
+        using_HashTable(null, customerRowType,genericExpressionList,  TABLE_BINDING_POSITION, null, null, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testUsingHashJoinEmptyComparisonFields() {
-        using_HashTable(groupScan_Default(coi), customerRowType, emptyExpressionList, TABLE_BINDING_POSITION, groupScan_Default(coi), null);
+        using_HashTable(groupScan_Default(coi), customerRowType, emptyExpressionList, TABLE_BINDING_POSITION, groupScan_Default(coi), null, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testUsingHashJoinNullComparisonFields() {
-        using_HashTable(groupScan_Default(coi), customerRowType, null, TABLE_BINDING_POSITION, groupScan_Default(coi), null);
+        using_HashTable(groupScan_Default(coi), customerRowType, null, TABLE_BINDING_POSITION, groupScan_Default(coi), null, null);
     }
 
     /** Hash join tests **/
@@ -267,6 +267,7 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
         int FieldsToCompare[] = {1};
         Operator plan = hashJoinPlan(itemRowType, itemRowType,  FieldsToCompare,FieldsToCompare, null);
         Row[] expected = new Row[]{
+            /*
                 row(projectRowType, 111L, null, 111L),
                 row(projectRowType, 111L, null, 112L),
                 row(projectRowType, 111L, null, 211L),
@@ -283,6 +284,7 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
                 row(projectRowType, 222L, null, 112L),
                 row(projectRowType, 222L, null, 211L),
                 row(projectRowType, 222L, null, 222L),
+            */
                 row(projectRowType, 121L, 12L, 121L),
                 row(projectRowType, 121L, 12L, 122L),
                 row(projectRowType, 122L, 12L, 121L),
@@ -347,7 +349,6 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
         Operator project = project_Default(
                 hashTableLookup_Default(
                         innerRowType,
-                        collators,
                         outerExpressions,
                         TABLE_BINDING_POSITION
                 ),
@@ -369,7 +370,7 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
                         false,
                         1
                 ),
-                collators
+                null, collators
         );
     }
 }
