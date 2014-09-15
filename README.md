@@ -41,7 +41,7 @@ people) or directly from source (intended for developers).
 ### a. Packages
 
 Official packages for Windows, OS X, Ubuntu and CentOS/RedHat are available.
-See the [installation section](https://foundationdb.com/layers/sql/documentation/GettingStarted/installation.html)
+See the [installation section](https://foundationdb.com/layers/sql/documentation/GettingStarted/index.html)
 for more details.
 
 A single instance of the SQL Layer is installed by default and is appropriate
@@ -52,14 +52,37 @@ configurations.
 
 Note: This section is intended *only* for developers.
 
-Use [Maven](http://maven.apache.org) to build the project:
+To build the SQL Layer from source code several steps need to be taken in advance. 
+* Have the [FoundationDB key-value store](https://foundationdb.com/get) installed and running.
+* Install Java Development Kit (JDK) version 7, either [OpenJDK](http://openjdk.java.net) 
+or [Oracle JDK](http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html).
+* Set the environment variable JAVA_HOME to the directory in which the JDK is installed.
+* Install [Maven](http://maven.apache.org) version 3 to build the package.
+* Install [Protobuf](https://code.google.com/p/protobuf/wiki/Download?tm=2) version 2.5.0.
+  Installation instructions  are in their README.txt, it may require installation 
+  of gpp. The Maven POM.xml file for building the SQL Layer
+  assumes this directory is present in the parent directory of the SQL Layer. 
+* Clone and build the [FoundationDB SQL Parser](https://github.com/FoundationDB/sql-parser) 
+* Clone and build the [FoundationDB JDBC Driver](https://github.com/FoundationDB/sql-layer-adapter-jdbc) 
 
-    $ mvn package
+Not a prerequisite but recommended, you can install the 
+[SQL Layer Client Tools](https://github.com/FoundationDB/sql-layer-client-tools) to 
+interact with the SQL layer when it runs.
+
+After installing the listed prerequisites, you can clone the project using git, and build the SQL Layer.
+
+Move into the directory:
+
+    $ cd sql-layer
+
+Use Maven to build the project:
+
+    $ mvn install
 
 All unit and integration tests will be run by default, which could be lengthy.
 Test execution can be avoided with the `skipTests` option:
 
-    $ mvn package -DskipTests=true
+    $ mvn install -DskipTests=true
 
 An executable jar, and required dependencies, will be the `target/` directory
 once packaging is complete.
@@ -68,6 +91,11 @@ The server can then be started with the `fdbsqllayer` script. The `-f` flag
 will run it in the foreground:
 
     $ ./bin/fdbsqllayer -f
+
+Or for Windows users:
+
+    $ ./bin/fdbsqllayer.cmd -f
+
 
 A handful of informational messages will print and then the server will state it is ready:
 
