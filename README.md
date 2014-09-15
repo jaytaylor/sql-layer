@@ -55,7 +55,6 @@ Note: This section is intended *only* for developers.
 To build the SQL-Layer from source code several steps need to be taken in advance. 
 * Have the [FoundationDB key-value store](https://foundationdb.com/get) installed and running.
 * For OS X systems there is a dependency on XCode, have the command line tools installed.  
-* For Windows have the Windows SDK installed and .NET Framework 4.
 * Have [Git](http://git-scm.com) installed. 
 * Install Java Development Kit (JDK) version 7, either [OpenJDK](http://openjdk.java.net) 
 or [Oracle JDK](http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html).
