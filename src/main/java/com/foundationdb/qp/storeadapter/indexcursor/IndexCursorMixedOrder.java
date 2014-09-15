@@ -374,7 +374,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             // End value
             S eVal = sortKeyAdapter.get(endExpressions, f);
             if(endInclusive) {
-                if(sortKeyAdapter.isNull(eVal) && (startInclusive || sortKeyAdapter.isNull(sVal))) {
+                if(sortKeyAdapter.isNull(eVal) && (!startInclusive || !sortKeyAdapter.isNull(sVal))) {
                     // 2, 6, 14
                     throw new IllegalArgumentException();
                 }

@@ -18,6 +18,7 @@
 package com.foundationdb.sql.optimizer.rule;
 
 import com.foundationdb.qp.row.ValuesRow;
+import com.foundationdb.server.types.*;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.sql.optimizer.*;
 import com.foundationdb.sql.optimizer.plan.*;
@@ -47,11 +48,6 @@ import com.foundationdb.qp.operator.API.JoinType;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.types.service.TypesRegistryService;
-import com.foundationdb.server.types.TCast;
-import com.foundationdb.server.types.TClass;
-import com.foundationdb.server.types.TComparison;
-import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.texpressions.AnySubqueryTExpression;
 import com.foundationdb.server.types.texpressions.ExistsSubqueryTExpression;
@@ -458,6 +454,10 @@ public class OperatorAssembler extends BaseRule
                 return assembleUsingBloomFilter((UsingBloomFilter) node);
             else if (node instanceof BloomFilterFilter)
                 return assembleBloomFilterFilter((BloomFilterFilter) node);
+            else if (node instanceof UsingHashTable)
+                return assembleUsingHashTable((UsingHashTable)node);
+            else if (node instanceof HashTableLookup)
+                return assembleHashTableLookup((HashTableLookup)node);
             else if (node instanceof FullTextScan)
                 return assembleFullTextScan((FullTextScan) node);
             else if (node instanceof InsertStatement) 
@@ -1434,10 +1434,7 @@ public class OperatorAssembler extends BaseRule
             boundRows.pop();
             List<TPreparedExpression> tFields = assembleExpressions(bloomFilterFilter.getLookupExpressions(),
                     stream.fieldOffsets);
-            List<AkCollator> collators = new ArrayList<>();
-            for (ExpressionNode expressionNode : bloomFilterFilter.getLookupExpressions()) {
-                collators.add(expressionNode.getCollator());
-            }
+            List<AkCollator> collators = findCollators(bloomFilterFilter.getInput());
             stream.operator = API.select_BloomFilter(stream.operator,
                                                      cstream.operator,
                                                      tFields,
@@ -1446,6 +1443,63 @@ public class OperatorAssembler extends BaseRule
                                                      rulesContext.getPipelineConfiguration().isSelectBloomFilterEnabled(),
                                                      nestedBindingsDepth);
             nestedBindingsDepth--;
+            return stream;
+        }
+
+        protected RowStream assembleUsingHashTable( UsingHashTable usingHashTable) {
+            HashTable hashTable = usingHashTable.getHashTable();
+            int pos = assignBindingPosition(hashTable);
+            RowStream lstream = assembleStream(usingHashTable.getLoader());
+            hashTableLoaders.put(hashTable, lstream);
+            RowStream stream = assembleStream(usingHashTable.getInput());
+            List<ExpressionNode> expressionNodes = usingHashTable.getLookupExpressions();
+            List<TPreparedExpression> tFields = assembleExpressions(expressionNodes,lstream.fieldOffsets);
+            List<AkCollator> collators = new ArrayList<>();
+            for(ExpressionNode en : expressionNodes){
+                collators.add(en.getCollator());
+            }
+
+            
+            List<TComparison> tComparisons = null;
+            if(usingHashTable.getTKeyComparables() != null) {
+                tComparisons = new ArrayList<>();
+                for (TKeyComparable comparable : usingHashTable.getTKeyComparables()) {
+                    if (comparable == null) {
+                        tComparisons.add(null);
+                    } else {
+                        tComparisons.add(comparable.getComparison());
+                    }
+                }
+            }
+            stream.operator = API.using_HashTable(lstream.operator,
+                    lstream.rowType,
+                    tFields,
+                    pos,
+                    stream.operator,
+                    collators,
+                    tComparisons);
+            return stream;
+            }
+
+        protected RowStream assembleHashTableLookup(HashTableLookup hashTableLookup) {
+            HashTable hashTable = hashTableLookup.getHashTable();
+            int tablePos = getBindingPosition(hashTable);
+            RowStream lstream = hashTableLoaders.get(hashTable);
+            List<ExpressionNode> expressionNodes = hashTableLookup.getLookupExpressions();
+            List<TPreparedExpression> tFields = assembleExpressions(hashTableLookup.getLookupExpressions(), lstream.fieldOffsets);
+            List<AkCollator> collators = new ArrayList<>();
+            for(ExpressionNode en : expressionNodes){
+                collators.add(en.getCollator());
+            }
+
+            RowStream stream = new RowStream();
+            stream.rowType = lstream.rowType;
+            stream.fieldOffsets = lstream.fieldOffsets;
+            stream.operator = API.hashTableLookup_Default(
+                    stream.rowType,
+                    collators,
+                    tFields,
+                    tablePos);
             return stream;
         }
 
@@ -2018,6 +2072,7 @@ public class OperatorAssembler extends BaseRule
         // bindings is complete list of assignments; bindingPositions its inverse.
         protected List<Object> bindings = new ArrayList<>();
         protected Map<Object,Integer> bindingPositions = new HashMap<>();
+        protected Map<HashTable,RowStream> hashTableLoaders = new HashMap<>();
 
         protected int assignBindingPosition(Object binding) {
             int position = bindings.size();

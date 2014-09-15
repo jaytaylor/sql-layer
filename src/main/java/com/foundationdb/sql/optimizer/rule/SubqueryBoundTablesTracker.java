@@ -26,6 +26,8 @@ public abstract class SubqueryBoundTablesTracker implements PlanVisitor, Express
     protected PlanContext planContext;
     protected BaseQuery rootQuery;
     protected Deque<SubqueryState> subqueries = new ArrayDeque<>();
+    boolean trackingTables = true;
+
 
     protected SubqueryBoundTablesTracker(PlanContext planContext) {
         this.planContext = planContext;
@@ -38,6 +40,8 @@ public abstract class SubqueryBoundTablesTracker implements PlanVisitor, Express
 
     @Override
     public boolean visitEnter(PlanNode n) {
+        if(n instanceof HashTableLookup)
+            trackingTables = false;
         if (n instanceof Subquery) {
             subqueries.push(new SubqueryState((Subquery)n));
             return true;
@@ -54,12 +58,14 @@ public abstract class SubqueryBoundTablesTracker implements PlanVisitor, Express
             if (!subqueries.isEmpty())
                 subqueries.peek().tablesReferenced.addAll(outerTables);
         }
+        if(n instanceof HashTableLookup)
+            trackingTables = true;
         return true;
     }
 
     @Override
     public boolean visit(PlanNode n) {
-        if (!subqueries.isEmpty() &&
+        if (trackingTables && !subqueries.isEmpty() &&
             (n instanceof ColumnSource)) {
             boolean added = subqueries.peek().tablesDefined.add((ColumnSource)n);
             assert added : "Table defined more than once";
