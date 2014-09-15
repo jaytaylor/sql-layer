@@ -19,14 +19,19 @@ package com.foundationdb.rest;
 
 import com.foundationdb.rest.resources.ResourceHelper;
 import com.foundationdb.server.Quote;
+import com.foundationdb.server.error.ConnectionTerminatedException;
 import com.foundationdb.server.error.DirectEndpointNotFoundException;
 import com.foundationdb.server.error.DirectTransactionFailedException;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchRoutineException;
 import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.server.error.QueryCanceledException;
+import com.foundationdb.sql.pg.PostgresServerConnection.ErrorLogLevel;
 import com.foundationdb.util.AkibanAppender;
+import com.foundationdb.util.MultipleCauseException;
 import com.fasterxml.jackson.core.JsonParseException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,12 +40,14 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
+
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class RestResponseBuilder {
@@ -144,8 +151,11 @@ public class RestResponseBuilder {
     }
 
     public WebApplicationException wrapException(Throwable e) {
-        final ErrorCode code;
 
+        logError(e, "Exception from request(method: {}, url: {}, params: {}) {}", request.getMethod(), 
+                request.getRequestURL().toString(), request.getQueryString());
+
+        final ErrorCode code;
         if(e instanceof InvalidOperationException) {
             code = ((InvalidOperationException)e).getCode();
         } else if(e instanceof SQLException) {
@@ -157,11 +167,6 @@ public class RestResponseBuilder {
         if(status == null) {
             status = Response.Status.CONFLICT;
         }
-        code.logAtImportance(
-                LOG, "Exception from request(method: {}, url: {}, params: {})",
-                request.getMethod(), request.getRequestURL(), request.getQueryString(),
-                e
-        );
         String exMsg = (e.getMessage() != null) ? e.getMessage() : e.getClass().getName();
         return new WebApplicationException(
                 Response.status(status)
@@ -207,5 +212,32 @@ public class RestResponseBuilder {
         map.put(DirectTransactionFailedException.class, Response.Status.INTERNAL_SERVER_ERROR);
         map.put(JsonParseException.class, Response.Status.BAD_REQUEST);
         return map;
+    }
+
+    public static ErrorLogLevel getErrorLevel(Throwable ex) {
+        if (ex instanceof QueryCanceledException || ex instanceof ConnectionTerminatedException) {
+            return ErrorLogLevel.INFO; // TODO: are these exceptions even through anywhere in here?
+        }
+        if (ex instanceof MultipleCauseException) {
+            List<Throwable> causes = ((MultipleCauseException)ex).getCauses();
+            return getErrorLevel(causes.get(causes.size()-1)); // as in PostgresServerConnection,
+                                                               // only log last cause
+        }
+        return ErrorLogLevel.WARN;
+    }
+
+    private void logError(Throwable ex, String msg, String method, String url, String query) {
+        ErrorLogLevel level = getErrorLevel(ex);
+        switch(level) {
+            case WARN:
+                LOG.warn(msg, method, url, query, ex);
+                break;
+            case INFO:
+                LOG.info(msg, method, url, query, ex);
+                break;
+            case DEBUG:
+                LOG.debug(msg, method, url, query, ex);
+                break;
+        }
     }
 }

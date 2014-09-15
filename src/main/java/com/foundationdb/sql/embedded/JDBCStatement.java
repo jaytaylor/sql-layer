@@ -18,14 +18,21 @@
 package com.foundationdb.sql.embedded;
 
 import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.sql.pg.PostgresServerConnection;
+import com.foundationdb.sql.pg.PostgresServerConnection.ErrorLogLevel;
+import com.foundationdb.rest.RestResponseBuilder;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Queue;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class JDBCStatement implements Statement
 {
+    private static final Logger logger = LoggerFactory.getLogger(PostgresServerConnection.class);
     protected final JDBCConnection connection;
     protected String sql;
     private boolean closed;
@@ -85,6 +92,7 @@ public class JDBCStatement implements Statement
             success = true;
         }
         catch (RuntimeException ex) {
+            logError(ex);
             throw JDBCException.throwUnwrapped(ex);
         }
         finally {
@@ -404,4 +412,21 @@ public class JDBCStatement implements Statement
         return false;
     }
 
+    private void logError(Throwable ex) {
+        if (ex instanceof Wrapper) {
+            ex = ((SQLException)ex).getCause();
+        }
+        ErrorLogLevel level = RestResponseBuilder.getErrorLevel(ex);
+        switch(level) {
+        case WARN:
+            logger.warn("Statement execution for query {} failed with exception {}", sql, ex);
+            break;
+        case INFO:
+            logger.info("Statement execution for query {} failed with exception {}", sql, ex);
+            break;
+        case DEBUG:
+            logger.debug("Statement execution for query {} failed with exception {}", sql, ex);
+            break;
+        }
+    }
 }

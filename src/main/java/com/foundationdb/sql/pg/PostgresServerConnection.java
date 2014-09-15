@@ -376,7 +376,7 @@ public class PostgresServerConnection extends ServerSessionBase
         }
     }
 
-    private enum ErrorLogLevel { WARN, INFO, DEBUG };
+    public enum ErrorLogLevel { WARN, INFO, DEBUG };
 
     private void logError(ErrorLogLevel level, String msg, Throwable ex) {
         String sql = null;
