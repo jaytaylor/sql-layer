@@ -304,7 +304,7 @@ class AncestorLookup_Nested extends Operator
         {
             super.close();
             pending.clear();
-            ancestorCursor.close();
+            assert ancestorCursor.isClosed() : "Failed to close ancestorCursor"; 
         }
 
         // Execution interface
@@ -332,7 +332,6 @@ class AncestorLookup_Nested extends Operator
         private Row readAncestorRow(HKey hKey)
         {
             Row row;
-            ancestorCursor.close();
             ancestorCursor.rebind(hKey, false);
             ancestorCursor.open();
             row = ancestorCursor.next();
@@ -341,6 +340,7 @@ class AncestorLookup_Nested extends Operator
             if (row != null && !hKey.equals(row.hKey())) {
                 row = null;
             }
+            ancestorCursor.close();
             return row;
         }
 

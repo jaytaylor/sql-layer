@@ -571,11 +571,6 @@ public class MergeJoinSorter implements Sorter {
         }
         
         @Override
-        public void open() {
-            super.open();
-        }
-
-        @Override
         public Row next() {
             CursorLifecycle.checkIdleOrActive(this);
             Row row = null;
@@ -592,7 +587,7 @@ public class MergeJoinSorter implements Sorter {
             }
             return row;
         }
-
+        
         /*
          * The FasterXML.Sort isn't capable of removing duplicates, it just 
          * puts them in order in the sort output. Skip the duplicates by reading

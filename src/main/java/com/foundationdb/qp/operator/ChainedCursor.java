@@ -18,6 +18,7 @@
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.api.dml.ColumnSelector;
 
 /**
  * The first of the three complete implementations of the CursorBase
@@ -80,6 +81,11 @@ public class ChainedCursor extends OperatorCursor
         return input.next();
     }
 
+    @Override
+    public void jump(Row row, ColumnSelector columnSelector) {
+        input.jump(row, columnSelector);
+    }
+    
     @Override
     public void close() {
         input.close();
