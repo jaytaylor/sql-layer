@@ -285,6 +285,68 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>com.mycila.maven-license-plugin</groupId>
+                <artifactId>maven-license-plugin</artifactId>
+                <version>1.10.b1</version>
+                <configuration>
+                    <header>src/etc/header.txt</header>
+                    <headerSections>
+                        <headerSection>
+                            <key>__YEAR_SECTION__</key>
+                            <defaultValue>2014</defaultValue>
+                            <ensureMatch>20(09|10|11|12|13)\-20(13|14)|2014</ensureMatch>
+                        </headerSection>
+                    </headerSections>
+                    <strictCheck>true</strictCheck>
+                    <failIfMissing>true</failIfMissing>
+                    <excludes>
+                        <!-- General files that can't have or don't need header -->
+                        <exclude>.gitignore</exclude>
+                        <exclude>README.md</exclude>
+                        <exclude>LICENSE.txt</exclude>
+                        <exclude>**/*.body</exclude>
+                        <exclude>**/*.dat</exclude>
+                        <exclude>**/*.ddl</exclude>
+                        <exclude>**/*.error</exclude>
+                        <exclude>**/*.expected</exclude>
+                        <exclude>**/*.expected_header</exclude>
+                        <exclude>**/*.fail</exclude>
+                        <exclude>**/*.get</exclude>
+                        <exclude>**/*.iml</exclude>
+                        <exclude>**/*.options</exclude>
+                        <exclude>**/*.out</exclude>
+                        <exclude>**/*.params</exclude>
+                        <exclude>**/*.post</exclude>
+                        <exclude>**/*.properties</exclude>
+                        <exclude>**/*.proto</exclude>
+                        <exclude>**/*.put</exclude>
+                        <exclude>**/*.sql</exclude>
+                        <exclude>**/*.test</exclude>
+                        <exclude>**/*.txt</exclude>
+                        <exclude>**/*.yaml</exclude>
+                        <exclude>**/*.xml</exclude>
+                        <exclude>**/src/test/resources/</exclude>
+                        <exclude>packaging/**</exclude>
+                        <!-- No extension. Manually add header and ignore -->
+                        <exclude>bin/*</exclude>
+                    </excludes>
+                    <mapping>
+                        <g>JAVADOC_STYLE</g>
+                        <yml>SCRIPT_STYLE</yml>
+                    </mapping>
+                    <properties>
+                        <year>2012</year>
+                    </properties>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.1</version>
