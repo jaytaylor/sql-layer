@@ -56,15 +56,18 @@ public class HttpThreadedLoginIT extends ITBase
         return properties;
     }
 
-    private static int openRestURL(String userInfo, int port, String path) throws Exception {
+    private static void checkOpenRestURL(String userInfo, int port, String path, int expectedCode) throws Exception {
         CloseableHttpClient client = HttpClientBuilder.create().build();
         URI uri = new URI("http", userInfo, "localhost", port, path, null, null);
         HttpGet get = new HttpGet(uri);
         HttpResponse response = client.execute(get);
         int code = response.getStatusLine().getStatusCode();
-        EntityUtils.consume(response.getEntity());
+        String content = EntityUtils.toString(response.getEntity());
         client.close();
-        return code;
+        if(code != expectedCode) {
+            fail(String.format("expected code %d but got %d for userInfo=%s and content=%s",
+                               expectedCode, code, userInfo, content));
+        }
     }
 
     @Test
@@ -136,7 +139,7 @@ public class HttpThreadedLoginIT extends ITBase
         public void run() {
             String userInfo = String.format("user_%d:password", userNum);
             try {
-                assertEquals(userInfo, HttpStatus.SC_UNAUTHORIZED, openRestURL(userInfo, port, url));
+                checkOpenRestURL(userInfo, port, url, HttpStatus.SC_UNAUTHORIZED);
             } catch(Exception e) {
                 throw new RuntimeException(e);
             }
