@@ -218,15 +218,15 @@ public class RestResponseBuilder {
         if (ex instanceof QueryCanceledException || ex instanceof ConnectionTerminatedException) {
             return ErrorLogLevel.INFO; // TODO: are these exceptions even through anywhere in here?
         }
-        if (ex instanceof MultipleCauseException) {
-            List<Throwable> causes = ((MultipleCauseException)ex).getCauses();
-            return getErrorLevel(causes.get(causes.size()-1)); // as in PostgresServerConnection,
-                                                               // only log last cause
-        }
         return ErrorLogLevel.WARN;
     }
 
     private void logError(Throwable ex, String msg, String method, String url, String query) {
+        if (ex instanceof MultipleCauseException) {
+            for (Throwable cause : ((MultipleCauseException)ex).getCauses()) {
+                    logError(cause, msg, method, url, query);
+            }
+        }
         ErrorLogLevel level = getErrorLevel(ex);
         switch(level) {
             case WARN:

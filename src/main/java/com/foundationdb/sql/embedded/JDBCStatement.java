@@ -20,6 +20,7 @@ package com.foundationdb.sql.embedded;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.sql.pg.PostgresServerConnection;
 import com.foundationdb.sql.pg.PostgresServerConnection.ErrorLogLevel;
+import com.foundationdb.util.MultipleCauseException;
 import com.foundationdb.rest.RestResponseBuilder;
 
 import java.sql.*;
@@ -415,6 +416,11 @@ public class JDBCStatement implements Statement
     private void logError(Throwable ex) {
         if (ex instanceof Wrapper) {
             ex = ((SQLException)ex).getCause();
+        }
+        if (ex instanceof MultipleCauseException) {
+            for (Throwable cause : ((MultipleCauseException)ex).getCauses()) {
+                logError(cause);
+            }
         }
         ErrorLogLevel level = RestResponseBuilder.getErrorLevel(ex);
         switch(level) {
