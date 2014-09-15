@@ -215,7 +215,7 @@ public class RestResponseBuilder {
 
     public static ErrorLogLevel getErrorLevel(Throwable ex) {
         if (ex instanceof QueryCanceledException || ex instanceof ConnectionTerminatedException) {
-            return ErrorLogLevel.INFO; // TODO: are these exceptions even through anywhere in here?
+            return ErrorLogLevel.INFO; // use INFO to be consistent with PostgresServerConnection
         }
         return ErrorLogLevel.WARN;
     }
@@ -226,6 +226,7 @@ public class RestResponseBuilder {
                     logError(cause, msg, method, url, query);
             }
         }
+
         ErrorLogLevel level = getErrorLevel(ex);
         switch(level) {
             case WARN:
