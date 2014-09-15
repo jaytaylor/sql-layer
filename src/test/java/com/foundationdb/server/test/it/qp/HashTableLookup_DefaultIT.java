@@ -267,6 +267,7 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
         int FieldsToCompare[] = {1};
         Operator plan = hashJoinPlan(itemRowType, itemRowType,  FieldsToCompare,FieldsToCompare, null);
         Row[] expected = new Row[]{
+            /*
                 row(projectRowType, 111L, null, 111L),
                 row(projectRowType, 111L, null, 112L),
                 row(projectRowType, 111L, null, 211L),
@@ -283,6 +284,7 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
                 row(projectRowType, 222L, null, 112L),
                 row(projectRowType, 222L, null, 211L),
                 row(projectRowType, 222L, null, 222L),
+            */
                 row(projectRowType, 121L, 12L, 121L),
                 row(projectRowType, 121L, 12L, 122L),
                 row(projectRowType, 122L, 12L, 121L),
