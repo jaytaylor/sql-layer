@@ -61,10 +61,12 @@ class PersistitIndexCursor extends RowCursorImpl implements BindingsAwareCursor
     @Override
     public void jump(Row row, ColumnSelector columnSelector)
     {
+        CursorLifecycle.checkIdleOrActive(this);
         Index index = indexRowType.index();
         assert !index.isSpatial(); // Jump not yet supported for spatial indexes
         rowState.openIteration();
         indexCursor.jump(row, columnSelector);
+        state = CursorLifecycle.CursorState.ACTIVE;
     }
 
     @Override

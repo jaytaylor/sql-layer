@@ -24,6 +24,7 @@ import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.CursorLifecycle;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.rowtype.InternalIndexTypes;
 import com.foundationdb.qp.storeadapter.SpatialHelper;
@@ -44,8 +45,13 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     {
         super.open();
         keyRange = initialKeyRange;
-        if (keyRange != null)
+        if (keyRange != null) {
             initializeCursor();
+            // end state never changes while cursor is open
+            // start state can change on a jump, so it is set in initializeCursor.
+            this.endBoundColumns = keyRange.boundColumns();
+            this.endKey = endBoundColumns == 0 ? null : adapter.takeIndexRow(keyRange.indexRowType());
+        }
         evaluateBoundaries(context, sortKeyAdapter);
         initializeForOpen();
     }
@@ -121,6 +127,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     public void jump(Row row, ColumnSelector columnSelector)
     {
         assert keyRange != null;
+        CursorLifecycle.checkIdleOrActive(this);
         keyRange =
             direction == FORWARD
             ? keyRange.resetLo(new IndexBound(row, columnSelector))
@@ -128,6 +135,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         initializeCursor();
         reevaluateBoundaries(context, sortKeyAdapter);
         initializeForOpen();
+        state = CursorLifecycle.CursorState.ACTIVE;
     }
 
     // IndexCursorUnidirectional interface
@@ -155,9 +163,6 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         super(context, iterationHelper);
         this.initialKeyRange = keyRange;
         this.ordering = ordering;
-        // end state never changes. start state can change on a jump, so it is set in initializeCursor.
-        this.endBoundColumns = keyRange.boundColumns();
-        this.endKey = endBoundColumns == 0 ? null : adapter.takeIndexRow(keyRange.indexRowType());
         this.sortKeyAdapter = sortKeyAdapter;
     }
 
@@ -394,8 +399,9 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         }
         this.startKey = adapter.takeIndexRow(keyRange.indexRowType());
         this.startKeyKey = adapter.createKey();
-        this.endKeyKey = adapter.createKey();
         this.startBoundColumns = keyRange.boundColumns();
+
+        this.endKeyKey = adapter.createKey();
         // Set up type info, allowing for spatial indexes
         //this.collators = sortKeyAdapter.createAkCollators(startBoundColumns);
         this.types = sortKeyAdapter.createTInstances(startBoundColumns);

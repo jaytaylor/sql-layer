@@ -326,7 +326,9 @@ class IndexScan_Default extends Operator
         @Override
         public void jump(Row row, ColumnSelector columnSelector)
         {
+            CursorLifecycle.checkIdleOrActive(this);
             cursor.jump(row, columnSelector);
+            state = CursorLifecycle.CursorState.ACTIVE;
         }
 
         @Override

@@ -23,6 +23,7 @@ import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.CursorLifecycle;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
@@ -113,9 +114,11 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     @Override
     public void jump(Row row, ColumnSelector columnSelector)
     {
+        assert keyRange != null; // keyRange is null when used from a Sorter
+        CursorLifecycle.checkIdleOrActive(this);
+        state = CursorLifecycle.CursorState.ACTIVE;
         // Reposition cursor by delegating jump to each MixedOrderScanState. Also recompute
         // startKey so that beforeStart() works.
-        assert keyRange != null; // keyRange is null when used from a Sorter
         clear();
         boolean success = false;
         int field = 0;

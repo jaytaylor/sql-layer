@@ -83,7 +83,9 @@ public class ChainedCursor extends OperatorCursor
 
     @Override
     public void jump(Row row, ColumnSelector columnSelector) {
+        CursorLifecycle.checkIdleOrActive(input);
         input.jump(row, columnSelector);
+        state = CursorLifecycle.CursorState.ACTIVE;
     }
     
     @Override

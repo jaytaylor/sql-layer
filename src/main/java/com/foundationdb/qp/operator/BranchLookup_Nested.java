@@ -492,7 +492,9 @@ public class BranchLookup_Nested extends Operator
 
         @Override
         public void jump(Row row, ColumnSelector columnSelector) {
+            CursorLifecycle.checkIdleOrActive(cursor);
             cursor.jump(row, columnSelector);
+            state = CursorLifecycle.CursorState.ACTIVE;
         }
 
         @Override
