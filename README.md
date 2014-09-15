@@ -52,36 +52,28 @@ configurations.
 
 Note: This section is intended *only* for developers.
 
-To build the SQL-Layer from source code several steps need to be taken in advance. 
+To build the SQL Layer from source code several steps need to be taken in advance. 
 * Have the [FoundationDB key-value store](https://foundationdb.com/get) installed and running.
-* For OS X systems there is a dependency on XCode, have the command line tools installed.  
-* Have [Git](http://git-scm.com) installed. 
 * Install Java Development Kit (JDK) version 7, either [OpenJDK](http://openjdk.java.net) 
 or [Oracle JDK](http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html).
 * Set the environment variable JAVA_HOME to the directory in which the JDK is installed.
 * Install [Maven](http://maven.apache.org) version 3 to build the package.
 * Install [Protobuf](https://code.google.com/p/protobuf/wiki/Download?tm=2) version 2.5.0.
   Installation instructions  are in their README.txt, it may require installation 
-  of gpp. The Maven POM.xml file for building the SQL-Layer
-  assumes this directory is present in the parent directory of the SQL-Layer. 
-* Clone and build the [FoundationDB SQL-Parser](https://github.com/FoundationDB/sql-parser) 
-* Clone and build the [FoundationDB JDBC-Driver](https://github.com/FoundationDB/sql-layer-adapter-jdbc) 
+  of gpp. The Maven POM.xml file for building the SQL Layer
+  assumes this directory is present in the parent directory of the SQL Layer. 
+* Clone and build the [FoundationDB SQL Parser](https://github.com/FoundationDB/sql-parser) 
+* Clone and build the [FoundationDB JDBC Driver](https://github.com/FoundationDB/sql-layer-adapter-jdbc) 
 
 Not a prerequisite but recommended, you can install the 
-[SQL-Layer Client Tools](https://github.com/FoundationDB/sql-layer-client-tools) to 
-interact with the SQL-layer when it runs.
+[SQL Layer Client Tools](https://github.com/FoundationDB/sql-layer-client-tools) to 
+interact with the SQL layer when it runs.
 
-After installing the listed prerequisites, you can clone the project using git, and build the SQL-Layer.
-
-    $ git clone git@github.com:FoundationDB/sql-layer.git
+After installing the listed prerequisites, you can clone the project using git, and build the SQL Layer.
 
 Move into the directory:
 
     $ cd sql-layer
-
-Check if Protobuf is installed correctly by running:
-
-    $ mvn compile test-compile  
 
 Use Maven to build the project:
 
