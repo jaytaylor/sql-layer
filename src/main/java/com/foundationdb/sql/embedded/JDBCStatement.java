@@ -18,10 +18,9 @@
 package com.foundationdb.sql.embedded;
 
 import com.foundationdb.qp.operator.QueryBindings;
-import com.foundationdb.sql.pg.PostgresServerConnection;
-import com.foundationdb.sql.pg.PostgresServerConnection.ErrorLogLevel;
-import com.foundationdb.util.MultipleCauseException;
 import com.foundationdb.rest.RestResponseBuilder;
+import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.error.InvalidOperationException;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -33,7 +32,9 @@ import org.slf4j.LoggerFactory;
 
 public class JDBCStatement implements Statement
 {
-    private static final Logger logger = LoggerFactory.getLogger(PostgresServerConnection.class);
+
+    private static final Logger LOG = LoggerFactory.getLogger(RestResponseBuilder.class.getName());
+
     protected final JDBCConnection connection;
     protected String sql;
     private boolean closed;
@@ -93,7 +94,17 @@ public class JDBCStatement implements Statement
             success = true;
         }
         catch (RuntimeException ex) {
-            logError(ex);
+            final ErrorCode code;
+
+            if(ex instanceof InvalidOperationException) {
+                code = ((InvalidOperationException)ex).getCode();
+            } else {
+                code = ErrorCode.UNEXPECTED_EXCEPTION;
+            }
+            code.logAtImportance(
+                    LOG, "Statement execution for query {} failed with exception {}", sql, ex
+            );
+
             throw JDBCException.throwUnwrapped(ex);
         }
         finally {
@@ -413,26 +424,4 @@ public class JDBCStatement implements Statement
         return false;
     }
 
-    private void logError(Throwable ex) {
-        if (ex instanceof Wrapper) {
-            ex = ((SQLException)ex).getCause();
-        }
-        if (ex instanceof MultipleCauseException) {
-            for (Throwable cause : ((MultipleCauseException)ex).getCauses()) {
-                logError(cause);
-            }
-        }
-        ErrorLogLevel level = RestResponseBuilder.getErrorLevel(ex);
-        switch(level) {
-        case WARN:
-            logger.warn("Statement execution for query {} failed with exception {}", sql, ex);
-            break;
-        case INFO:
-            logger.info("Statement execution for query {} failed with exception {}", sql, ex);
-            break;
-        case DEBUG:
-            logger.debug("Statement execution for query {} failed with exception {}", sql, ex);
-            break;
-        }
-    }
 }
