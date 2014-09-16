@@ -98,7 +98,7 @@ public class JDBCStatement implements Statement
                 throwable = (SQLException)ex.getCause();
             }
 
-            final ErrorCode code = ErrorCode.getCodeForException(throwable);
+            final ErrorCode code = ErrorCode.getCodeForRESTException(throwable);
             code.logAtImportance(
                     LOG, "Statement execution for query {} failed with exception {}", sql, throwable
             );

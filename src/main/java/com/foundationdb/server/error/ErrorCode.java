@@ -540,7 +540,7 @@ public enum ErrorCode {
         return ROLLBACK_CLASS.equals(code);
     }
 
-    public static ErrorCode getCodeForException(Throwable e) {
+    public static ErrorCode getCodeForRESTException(Throwable e) {
         if(e instanceof InvalidOperationException) {
             return ((InvalidOperationException)e).getCode();
         } else if(e instanceof SQLException) {

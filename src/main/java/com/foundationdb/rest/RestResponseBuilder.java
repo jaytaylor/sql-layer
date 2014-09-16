@@ -144,7 +144,7 @@ public class RestResponseBuilder {
     }
 
     public WebApplicationException wrapException(Throwable e) {
-        final ErrorCode code = ErrorCode.getCodeForException(e);
+        final ErrorCode code = ErrorCode.getCodeForRESTException(e);
         Response.Status status = EXCEPTION_STATUS_MAP.get(e.getClass());
         if(status == null) {
             status = Response.Status.CONFLICT;
