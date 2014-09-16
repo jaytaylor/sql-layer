@@ -349,7 +349,7 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public long rowCount(Session session) {
-            return ErrorCode.values().length;
+            return ErrorCodeClass.getClasses().size();
         }
 
         private class Scan extends BaseScan {
