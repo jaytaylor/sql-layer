@@ -18,7 +18,3 @@
 ---
 - Statement: CREATE INDEX idx_ef ON t(z_order_lat_lon(e, f))
 - error: [5000V]
----
-- Statement: CREATE INDEX idx_a ON t(z_order_lat_lon(a))
-- error: [42000]
-...
