@@ -18,7 +18,6 @@
 package com.foundationdb.sql.embedded;
 
 import com.foundationdb.qp.operator.QueryBindings;
-import com.foundationdb.rest.RestResponseBuilder;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.sql.embedded.JDBCException.Wrapper;
 
@@ -33,7 +32,7 @@ import org.slf4j.LoggerFactory;
 public class JDBCStatement implements Statement
 {
 
-    private static final Logger LOG = LoggerFactory.getLogger(RestResponseBuilder.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(JDBCStatement.class.getName());
 
     protected final JDBCConnection connection;
     protected String sql;
