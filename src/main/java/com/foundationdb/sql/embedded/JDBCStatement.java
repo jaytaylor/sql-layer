@@ -20,7 +20,7 @@ package com.foundationdb.sql.embedded;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.rest.RestResponseBuilder;
 import com.foundationdb.server.error.ErrorCode;
-import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.sql.embedded.JDBCException.Wrapper;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -94,15 +94,14 @@ public class JDBCStatement implements Statement
             success = true;
         }
         catch (RuntimeException ex) {
-            final ErrorCode code;
-
-            if(ex instanceof InvalidOperationException) {
-                code = ((InvalidOperationException)ex).getCode();
-            } else {
-                code = ErrorCode.UNEXPECTED_EXCEPTION;
+            Throwable throwable = ex;
+            if (throwable instanceof Wrapper) {
+                throwable = (SQLException)ex.getCause();
             }
+
+            final ErrorCode code = ErrorCode.getCodeForException(throwable);
             code.logAtImportance(
-                    LOG, "Statement execution for query {} failed with exception {}", sql, ex
+                    LOG, "Statement execution for query {} failed with exception {}", sql, throwable
             );
 
             throw JDBCException.throwUnwrapped(ex);

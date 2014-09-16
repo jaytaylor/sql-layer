@@ -144,15 +144,7 @@ public class RestResponseBuilder {
     }
 
     public WebApplicationException wrapException(Throwable e) {
-        final ErrorCode code;
-
-        if(e instanceof InvalidOperationException) {
-            code = ((InvalidOperationException)e).getCode();
-        } else if(e instanceof SQLException) {
-            code = ErrorCode.valueOfCode(((SQLException)e).getSQLState());
-        } else {
-            code = ErrorCode.UNEXPECTED_EXCEPTION;
-        }
+        final ErrorCode code = ErrorCode.getCodeForException(e);
         Response.Status status = EXCEPTION_STATUS_MAP.get(e.getClass());
         if(status == null) {
             status = Response.Status.CONFLICT;

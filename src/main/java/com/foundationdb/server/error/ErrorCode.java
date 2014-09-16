@@ -19,6 +19,7 @@ package com.foundationdb.server.error;
 
 import org.slf4j.Logger;
 
+import java.sql.SQLException;
 import java.util.ResourceBundle;
 
 /**
@@ -537,6 +538,16 @@ public enum ErrorCode {
 
     public boolean isRollbackClass() {
         return ROLLBACK_CLASS.equals(code);
+    }
+
+    public static ErrorCode getCodeForException(Throwable e) {
+        if(e instanceof InvalidOperationException) {
+            return ((InvalidOperationException)e).getCode();
+        } else if(e instanceof SQLException) {
+            return ErrorCode.valueOfCode(((SQLException)e).getSQLState());
+        } else {
+            return ErrorCode.UNEXPECTED_EXCEPTION;
+        }
     }
 
     public void logAtImportance(Logger log, String msg, Object... msgArgs) {
