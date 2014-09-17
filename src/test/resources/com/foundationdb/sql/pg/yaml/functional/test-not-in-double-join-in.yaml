@@ -1,7 +1,7 @@
 # BUG: Intermittently hangs when pipelining is on
 ---
 - Properties: all
-- suppressed: true
+- suppressed: false
 
 ---
 - CreateTable: artists (id serial PRIMARY KEY, name varchar(255));

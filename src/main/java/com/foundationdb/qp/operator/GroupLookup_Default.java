@@ -534,9 +534,6 @@ class GroupLookup_Default extends Operator
             try {
                 super.open();
                 cursorIndex = 0;
-                if (inputRows[nextIndex] != null) {
-                    input.open();
-                }
             } finally {
                 TAP_OPEN.out();
             }
@@ -677,8 +674,10 @@ class GroupLookup_Default extends Operator
                 }
                 currentIndex = (currentIndex + 1) % quantum;
             }
-            if (!input.isClosed()) {
+            
+            if (inputRows[nextIndex] == null && !input.isClosed()) {
                 input.close();
+                nextBindings = null;
             }
             super.close();
         }

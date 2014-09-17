@@ -213,6 +213,10 @@ class Map_NestedLoops extends Operator
                 baseBindings = bindings;
                 input.open();
             }
+            if (ExecutionBase.LOG_EXECUTION) {
+                LOG.debug("Map_NestedLoops$RowToBindingsCursor: bindings {}", bindings);
+            }
+            
             return bindings;
         }
 

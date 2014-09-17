@@ -112,6 +112,7 @@ public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends
 
     @Override
     public QueryBindings nextBindings() {
+        CursorLifecycle.checkClosed(this);
         resetActiveCursors();
         BindingsAndCursor<C> bandc = pendingBindings.poll();
         if (bandc != null) {
