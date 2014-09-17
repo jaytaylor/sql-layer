@@ -772,7 +772,7 @@ public class Table extends Columnar implements HasGroup, Visitable
     private HKey hKey;
     private boolean containsOwnHKey;
     private List<Column> allHKeyColumns;
-    private Integer depth = null;
+    private volatile Integer depth = null;
     private volatile List<Table> hKeyDependentTables;
     private Integer version;
     private PendingOSC pendingOSC;
