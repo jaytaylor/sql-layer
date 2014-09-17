@@ -740,7 +740,7 @@ public final class TypeResolver extends BaseRule {
                 return expression;
             }
             else if (columnSource instanceof NullSource) {
-                expression.setPreptimeValue(new TPreptimeValue(null));
+                expression.setPreptimeValue(new TPreptimeValue(null, null));
                 return expression;
             }
             else if (columnSource instanceof Project) {
@@ -763,7 +763,7 @@ public final class TypeResolver extends BaseRule {
                 expression.setPreptimeValue(tpv);
             }
             else if (columnSource instanceof CreateAs){
-                expression.setPreptimeValue(new TPreptimeValue(null));
+                expression.setPreptimeValue(new TPreptimeValue(null, null));
                 return expression;
             }
             else {
