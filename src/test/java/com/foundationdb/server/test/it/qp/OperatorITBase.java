@@ -20,7 +20,6 @@ package com.foundationdb.server.test.it.qp;
 import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
-import com.foundationdb.qp.operator.CursorLifecycle;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
