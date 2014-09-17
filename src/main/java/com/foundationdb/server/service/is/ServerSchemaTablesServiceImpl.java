@@ -24,6 +24,7 @@ import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
@@ -38,6 +39,7 @@ import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.error.ErrorCodeClass;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.monitor.CursorMonitor;
@@ -61,6 +63,7 @@ public class ServerSchemaTablesServiceImpl
     implements Service, ServerSchemaTablesService {
 
     static final TableName ERROR_CODES = new TableName (SCHEMA_NAME, "error_codes");
+    static final TableName ERROR_CODE_CLASSES = new TableName (SCHEMA_NAME, "error_code_classes");
     static final TableName SERVER_INSTANCE_SUMMARY = new TableName (SCHEMA_NAME, "server_instance_summary");
     static final TableName SERVER_SERVERS = new TableName (SCHEMA_NAME, "server_servers");
     static final TableName SERVER_SESSIONS = new TableName (SCHEMA_NAME, "server_sessions");
@@ -98,6 +101,8 @@ public class ServerSchemaTablesServiceImpl
         AkibanInformationSchema ais = createTablesToRegister(schemaManager.getTypesTranslator());
         // ERROR_CODES
         attach (ais, ERROR_CODES, ServerErrorCodes.class);
+        // ERROR_CODE_CLASSES
+        attach (ais, ERROR_CODE_CLASSES, ServerErrorCodeClasses.class);
         //SERVER_INSTANCE_SUMMARY
         attach (ais, SERVER_INSTANCE_SUMMARY, InstanceSummary.class);
         //SERVER_SERVERS
@@ -326,6 +331,41 @@ public class ServerSchemaTablesServiceImpl
                         codes[(int)rowCounter].name(),
                         codes[(int)rowCounter].getMessage(),
                         null,
+                        ++rowCounter);
+            }
+        }
+    }
+
+    private class ServerErrorCodeClasses extends BasicFactoryBase {
+
+        public ServerErrorCodeClasses(TableName sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan (adapter.getSession(), getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount(Session session) {
+            return ErrorCodeClass.getClasses().size();
+        }
+
+        private class Scan extends BaseScan {
+
+            private final List<ErrorCodeClass> classes = ErrorCodeClass.getClasses();
+            public Scan(Session session, RowType rowType) {
+                super(rowType);
+            }
+
+            @Override
+            public Row next() {
+                if (rowCounter >= classes.size())
+                    return null;
+                return new ValuesRow(rowType,
+                        classes.get((int)rowCounter).getKey(),
+                        classes.get((int)rowCounter).getDescription(),
                         ++rowCounter);
             }
         }
@@ -663,6 +703,10 @@ public class ServerSchemaTablesServiceImpl
             .colString("code", 5, false)
             .colString("name", DESCRIPTOR_MAX, false)
             .colString("message", IDENT_MAX, false)
+            .colString("description", PATH_MAX, true);
+
+        builder.table(ERROR_CODE_CLASSES)
+            .colString("class", 2, false)
             .colString("description", PATH_MAX, true);
 
         builder.table(SERVER_PARAMETERS)
