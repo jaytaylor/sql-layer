@@ -167,7 +167,7 @@ public final class ValueSources {
             if (value.getType() == null) {
                 return new TPreptimeValue(value.getType());
             }
-            return new TPreptimeValue(value.getType(), value);
+            return new TPreptimeValue(value);
         }
         return new TPreptimeValue (type,value);
     }

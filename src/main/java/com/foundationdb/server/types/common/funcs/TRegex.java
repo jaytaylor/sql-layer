@@ -94,7 +94,7 @@ public class TRegex extends TScalarBase
             // Constant input
             boolean matches = p.matcher(inputValue.getString()).find();
             Value value = new Value(context.getOutputType(), matches);
-            return new TPreptimeValue(value.getType(), value);
+            return new TPreptimeValue(value);
         }
 
         return null;
