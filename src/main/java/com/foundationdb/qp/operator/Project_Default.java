@@ -127,7 +127,6 @@ class Project_Default extends Operator
         this.inputOperator = inputOperator;
         this.rowType = rowType;
         this.pExpressions = pExpressions;
-        this.tInstances = TInstance.createTInstances(pExpressions);
         this.projectType = rowType.schema().newProjectType(pExpressions);
     }
 
@@ -147,7 +146,6 @@ class Project_Default extends Operator
                                                     projectTableRowType.table(),
                                                     pExpressions);
         this.pExpressions = pExpressions; // TODO defensively copy once the old expressions are gone (until then, this may NPE)
-        this.tInstances = TInstance.createTInstances(pExpressions);
     }
 
 
@@ -162,7 +160,6 @@ class Project_Default extends Operator
     protected final Operator inputOperator;
     protected final RowType rowType;
     private final List<? extends TPreparedExpression> pExpressions;
-    private final List<? extends TInstance> tInstances;
     protected ProjectedRowType projectType;
 
     @Override
@@ -217,7 +214,7 @@ class Project_Default extends Operator
                 if ((inputRow = input.next()) != null) {
                     projectedRow =
                         inputRow.rowType() == rowType
-                        ? new ProjectedRow(projectType, inputRow, context, bindings, pEvalExpr, tInstances)
+                        ? new ProjectedRow(projectType, inputRow, context, bindings, pEvalExpr)
                         : inputRow;
                 }
                 if (projectedRow == null) {
