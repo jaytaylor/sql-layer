@@ -73,15 +73,17 @@ public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends
 
     @Override
     public void jump(Row row, ColumnSelector columnSelector) {
+        if (CURSOR_LIFECYCLE_ENABLED) {
+            CursorLifecycle.checkIdleOrActive(this);
+        }
         currentCursor.jump(row, columnSelector);
+        state = CursorLifecycle.CursorState.ACTIVE;
     }
 
     @Override
     public void close() {
-        if (currentCursor != null) {
-            currentCursor.close();
-            currentCursor = null;
-        }
+        resetActiveCursors();
+        //recyclePending();
         super.close();
     }
 
@@ -110,16 +112,7 @@ public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends
 
     @Override
     public QueryBindings nextBindings() {
-        if (currentCursor != null) {
-            currentCursor.close();
-            cursorPool.add(currentCursor);
-            currentCursor = null;
-        }
-        if (pendingCursor != null) {
-            pendingCursor.close(); // Abandoning lookahead.
-            cursorPool.add(pendingCursor);
-            pendingCursor = null;
-        }
+        resetActiveCursors();
         BindingsAndCursor<C> bandc = pendingBindings.poll();
         if (bandc != null) {
             currentBindings = bandc.bindings;
@@ -144,16 +137,7 @@ public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends
         CursorLifecycle.checkClosed(this);
         
         if ((currentBindings != null) && currentBindings.isAncestor(bindings)) {
-            if (currentCursor != null) {
-                currentCursor.close();
-                cursorPool.add(currentCursor);
-                currentCursor = null;
-            }
-            if (pendingCursor != null) {
-                pendingCursor.close();
-                cursorPool.add(pendingCursor);
-                pendingCursor = null;
-            }
+            resetActiveCursors();
             currentBindings = null;
         }
         while (true) {
@@ -201,6 +185,19 @@ public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends
 
     // For use by this class
 
+    protected void resetActiveCursors() {
+        if (currentCursor != null) {
+            currentCursor.close();
+            cursorPool.add(currentCursor);
+            currentCursor = null;
+        }
+        if (pendingCursor != null) {
+            pendingCursor.close();
+            cursorPool.add(pendingCursor);
+            pendingCursor = null;
+        }
+    }
+    
     protected void recyclePending() {
         while (true) {
             BindingsAndCursor<C> bandc = pendingBindings.poll();

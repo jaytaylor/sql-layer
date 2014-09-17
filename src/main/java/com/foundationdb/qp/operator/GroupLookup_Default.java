@@ -470,6 +470,9 @@ class GroupLookup_Default extends Operator
                     retrievedRow = hKey.equals(retrievedRow.hKey()) ? retrievedRow : null;
                 }
                 return retrievedRow;
+            } catch (RuntimeException e) {
+                e.printStackTrace();
+                throw e;
             } finally {
                 lookupCursor.close();
             }
@@ -531,6 +534,9 @@ class GroupLookup_Default extends Operator
             try {
                 super.open();
                 cursorIndex = 0;
+                if (inputRows[nextIndex] != null) {
+                    input.open();
+                }
             } finally {
                 TAP_OPEN.out();
             }
@@ -571,6 +577,8 @@ class GroupLookup_Default extends Operator
                         }
                         Row row = input.next();
                         if (row == null) {
+                            // This is correct, close the input to allow
+                            // nextBindings() to process correctly. 
                             input.close();
                             nextBindings = null;
                         }
@@ -655,38 +663,26 @@ class GroupLookup_Default extends Operator
 
         @Override
         public void close() {
-            if (!isClosed()) {
                 // Any rows for the current bindings being closed need to be discarded.
-                while (currentBindings == inputRowBindings[currentIndex]) {
-                    inputRows[currentIndex] = null;
-                    inputRowBindings[currentIndex] = null;
-                    for (int i = 0; i < ncursors; i++) {
-                        if (i == keepInputCursorIndex) continue;
-                        int index = currentIndex * ncursors + i;
-                        if (!cursors[index].isClosed()) {
-                            cursors[index].close();
-                        }
-                        lookupHKeys[index] = null;
+            while (currentBindings == inputRowBindings[currentIndex]) {
+                inputRows[currentIndex] = null;
+                inputRowBindings[currentIndex] = null;
+                for (int i = 0; i < ncursors; i++) {
+                    if (i == keepInputCursorIndex) continue;
+                    int index = currentIndex * ncursors + i;
+                    if (!cursors[index].isClosed()) {
+                        cursors[index].close();
                     }
-                    currentIndex = (currentIndex + 1) % quantum;
+                    lookupHKeys[index] = null;
                 }
-                super.close();
+                currentIndex = (currentIndex + 1) % quantum;
             }
-        }
-        /*
-        @Override
-        public void destroy() {
-            pendingBindings.clear();
-            Arrays.fill(inputRowBindings, null);
-            Arrays.fill(inputRows, null);
-            for (GroupCursor ancestorCursor : cursors) {
-                if (ancestorCursor != null) {
-                    ancestorCursor.destroy();
-                }
+            if (!input.isClosed()) {
+                input.close();
             }
-            input.destroy();
+            super.close();
         }
-        */
+
         @Override
         public void openBindings() {
             clearBindings();
@@ -788,9 +784,7 @@ class GroupLookup_Default extends Operator
         // For use by this class
 
         private void clearBindings() {
-            if (nextBindings != null) {
-                input.close();  // Starting over.
-            }
+            CursorLifecycle.checkClosed(this);
             Arrays.fill(inputRows, null);
             pendingBindings.clear();
             Arrays.fill(inputRowBindings, null);

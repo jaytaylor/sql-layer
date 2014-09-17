@@ -238,10 +238,14 @@ class Union_Ordered extends SetOperatorBase
         @Override
         public void jump(Row jumpRow, ColumnSelector jumpRowColumnSelector)
         {
+            if (CURSOR_LIFECYCLE_ENABLED) {
+                CursorLifecycle.checkIdleOrActive(this);
+            }
+            state = CursorLifecycle.CursorState.ACTIVE;
             nextLeftRowSkip(jumpRow, fixedFields, jumpRowColumnSelector);
             nextRightRowSkip(jumpRow, fixedFields, jumpRowColumnSelector);
             if (leftRow == null && rightRow == null) {
-                close();
+                setIdle();
             }
         }
 

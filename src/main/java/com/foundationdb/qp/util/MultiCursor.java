@@ -115,6 +115,7 @@ public class MultiCursor extends RowCursorImpl implements BindingsAwareCursor
             }
         } else {
             current = null;
+            setIdle();
         }
     }
 

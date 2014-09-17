@@ -165,12 +165,6 @@ class HKeyRow_Default extends Operator
             }
         }
 
-        @Override
-        public void close() {
-            super.close();
-            evalExprs = null;
-        }
-
         // For use by this class
 
         private HKeyRow buildHKeyRow() {
@@ -200,7 +194,7 @@ class HKeyRow_Default extends Operator
         }
 
         // Object state
-        private List<TEvaluatableExpression> evalExprs = null;
+        private final List<TEvaluatableExpression> evalExprs;
         private final PersistitKeyValueTarget target = new PersistitKeyValueTarget(rowType);
     }
 }

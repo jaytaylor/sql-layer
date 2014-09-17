@@ -230,8 +230,6 @@ class Map_NestedLoops extends Operator
             if ((baseBindings != null) && baseBindings.isAncestor(bindings)) {
                 baseBindings = null;
                 input.close();
-            }
-            if (bindings.getDepth() < depth) {
                 input.cancelBindings(bindings);
             }
         }
@@ -324,7 +322,7 @@ class Map_NestedLoops extends Operator
             }
             super.close();
             if (openBindings != null) {
-                cancelBindings(openBindings);
+                cancelBindings(openBindings); //TODO Close Bindings? Skip? 
                 assert (inputOpenBindings == null);
                 assert (openBindings == null);
             }

@@ -379,7 +379,6 @@ class GroupScan_Default extends Operator
         @Override
         public void jump(Row row, ColumnSelector columnSelector)
         {
-            CursorLifecycle.checkIdleOrActive(this);
             input.jump(row, columnSelector);
             state = CursorLifecycle.CursorState.ACTIVE;
         }

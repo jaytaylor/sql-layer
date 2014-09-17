@@ -170,6 +170,9 @@ public abstract class ITBase extends ApiTestBase {
                 compareTwoRows(expected[count], actualRow, count);
                 actualRows.add(actualRow);
             }
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            throw e;
         } finally {
             if (topLevel)
                 ((Cursor)cursor).closeTopLevel();

@@ -28,6 +28,7 @@ import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -326,7 +327,9 @@ class IndexScan_Default extends Operator
         @Override
         public void jump(Row row, ColumnSelector columnSelector)
         {
-            CursorLifecycle.checkIdleOrActive(this);
+            if (CURSOR_LIFECYCLE_ENABLED) {
+                CursorLifecycle.checkIdleOrActive(this);
+            }
             cursor.jump(row, columnSelector);
             state = CursorLifecycle.CursorState.ACTIVE;
         }

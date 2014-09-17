@@ -21,15 +21,13 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.rowtype.IndexRowType;
-import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.rowtype.*;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.explain.std.LookUpOperatorExplainer;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -492,7 +490,6 @@ public class BranchLookup_Nested extends Operator
 
         @Override
         public void jump(Row row, ColumnSelector columnSelector) {
-            CursorLifecycle.checkIdleOrActive(cursor);
             cursor.jump(row, columnSelector);
             state = CursorLifecycle.CursorState.ACTIVE;
         }
@@ -566,6 +563,10 @@ public class BranchLookup_Nested extends Operator
             }
         }
 
+        @Override 
+        public void close() {
+            super.close();
+        }
         // LookaheadLeafCursor interface
 
         @Override

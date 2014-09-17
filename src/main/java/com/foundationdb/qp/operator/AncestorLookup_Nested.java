@@ -372,7 +372,7 @@ class AncestorLookup_Nested extends Operator
             Row row = null;
             while ((row == null) && (cursorIndex < cursors.length)) {
                 row = cursors[cursorIndex].next();
-                cursors[cursorIndex].close();
+                cursors[cursorIndex].setIdle();
                 if (row != null && !hKeys[cursorIndex].equals(row.hKey())) {
                     row = null;
                 }

@@ -100,7 +100,9 @@ public class IndexScan_FullText extends Operator
         @Override
         public void jump(Row row, ColumnSelector columnSelector)
         {
-            CursorLifecycle.checkIdleOrActive(this);
+            if (CURSOR_LIFECYCLE_ENABLED) {
+                CursorLifecycle.checkIdleOrActive(this);
+            }
             cursor.jump(row, columnSelector);
             state = CursorLifecycle.CursorState.ACTIVE;
         }

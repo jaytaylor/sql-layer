@@ -17,6 +17,9 @@
 
 package com.foundationdb.sql.embedded;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
@@ -27,7 +30,8 @@ import com.foundationdb.sql.optimizer.plan.CostEstimate;
 class ExecutableQueryOperatorStatement extends ExecutableOperatorStatement
 {
     private CostEstimate costEstimate;
-
+    private static final Logger LOG = LoggerFactory.getLogger(ExecutableQueryOperatorStatement.class);
+    
     protected ExecutableQueryOperatorStatement(Schema schema,
                                                Operator resultOperator,
                                                JDBCResultSetMetaData resultSetMetaData, 
@@ -47,7 +51,11 @@ class ExecutableQueryOperatorStatement extends ExecutableOperatorStatement
             ExecuteResults result = new ExecuteResults(cursor);
             cursor = null;
             return result;
-        }
+        } catch (RuntimeException e) {
+            LOG.error("caught error: {}", e.toString());
+            cursor = null;
+            throw e;
+        }       
         finally {
             if (cursor != null) {
                 cursor.closeTopLevel();

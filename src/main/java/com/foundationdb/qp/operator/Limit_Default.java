@@ -188,7 +188,6 @@ final class Limit_Default extends Operator
         public void open() {
             TAP_OPEN.in();
             try {
-                super.open();
                 if (isSkipBinding()) {
                     ValueSource value = bindings.getValue(skip());
                     if (!value.isNull())
@@ -217,11 +216,20 @@ final class Limit_Default extends Operator
                 }
                 if (limitLeft < 0)
                     throw new NegativeLimitException("LIMIT", limitLeft);
+                super.open();
             } finally {
                 TAP_OPEN.out();
             }
         }
 
+        @Override 
+        public void close() {
+            // Because the checks in open() may 
+            // prevent the cursor from being opened. 
+            if (!isClosed()) {
+                super.close();
+            }
+        }
         @Override
         public Row next() {
             if (TAP_NEXT_ENABLED) {

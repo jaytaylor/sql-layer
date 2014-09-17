@@ -178,9 +178,12 @@ class Using_BloomFilter extends Operator
         {
             TAP_OPEN.in();
             try {
-                super.open();
+                // Usually super.open called first, but needs to be done
+                // opposite order here to allow Select_BloomFilter access
+                // to the filled BloomFilter in the bindings. 
                 BloomFilter filter = loadBloomFilter();
                 bindings.setBloomFilter(filterBindingPosition, filter);
+                super.open();
             } finally {
                 TAP_OPEN.out();
             }

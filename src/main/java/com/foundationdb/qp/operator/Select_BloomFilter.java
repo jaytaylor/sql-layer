@@ -321,7 +321,6 @@ class Select_BloomFilter extends Operator
 
         private final Cursor onPositiveCursor;
         private final SingletonQueryBindingsCursor onPositiveBindingsCursor;
-        private QueryBindings bindings;
         private BloomFilter filter;
         private final List<E> fieldEvals = new ArrayList<>();
         private final ExpressionAdapter<?, E> adapter;

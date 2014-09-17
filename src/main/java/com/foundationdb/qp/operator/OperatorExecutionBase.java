@@ -86,7 +86,7 @@ public abstract class OperatorExecutionBase extends ExecutionBase implements Row
         try {
             context.checkQueryCancelation();
         } catch (QueryCanceledException e) {
-            close();
+            //close();
             throw e;
         }
     }

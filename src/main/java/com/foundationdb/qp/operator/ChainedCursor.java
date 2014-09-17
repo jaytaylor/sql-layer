@@ -73,8 +73,8 @@ public class ChainedCursor extends OperatorCursor
 
     @Override
     public void open() {
-        input.open();
         super.open();
+        input.open();
     }
     @Override
     public Row next() {
@@ -83,7 +83,9 @@ public class ChainedCursor extends OperatorCursor
 
     @Override
     public void jump(Row row, ColumnSelector columnSelector) {
-        CursorLifecycle.checkIdleOrActive(input);
+        if (CURSOR_LIFECYCLE_ENABLED) {
+            CursorLifecycle.checkIdleOrActive(this);
+        }
         input.jump(row, columnSelector);
         state = CursorLifecycle.CursorState.ACTIVE;
     }

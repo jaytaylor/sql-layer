@@ -28,6 +28,7 @@ import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.value.ValueTargets;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -385,6 +386,10 @@ class Intersect_Ordered extends Operator
         @Override
         public void jump(Row jumpRow, ColumnSelector jumpRowColumnSelector)
         {
+            if (CURSOR_LIFECYCLE_ENABLED) {
+                CursorLifecycle.checkIdleOrActive(this);
+            }
+            state = CursorLifecycle.CursorState.ACTIVE;
             // This operator emits rows from left or right. The row used to specify the jump should be of the matching
             // row type.
             int suffixRowFixedFields;
@@ -398,7 +403,7 @@ class Intersect_Ordered extends Operator
             nextLeftRowSkip(jumpRow, suffixRowFixedFields, jumpRowColumnSelector, true);
             nextRightRowSkip(jumpRow, suffixRowFixedFields, jumpRowColumnSelector, true);
             if (leftRow == null || rightRow == null) {
-                close();
+                setIdle();
             }
         }
 

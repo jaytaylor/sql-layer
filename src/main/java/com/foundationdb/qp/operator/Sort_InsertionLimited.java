@@ -175,16 +175,16 @@ class Sort_InsertionLimited extends Operator
         {
             TAP_OPEN.in();
             try {
-                if(limit == 0) {
-                    LOG.debug("Sort_InsertionLimited: limit 0,  left closed");
-                } else {
-                    super.open();
-                    state = State.FILLING;
-                    for (TEvaluatableExpression eval : tEvaluations) {
-                        eval.with(context);
-                        eval.with(bindings);
-                    }
-                    sorted = new TreeSet<>();
+                super.open();
+                sortingState = State.FILLING;
+                for (TEvaluatableExpression eval : tEvaluations) {
+                    eval.with(context);
+                    eval.with(bindings);
+                }
+                sorted = new TreeSet<>();
+                if(limit <= 0) {
+                    setIdle();
+                    sortingState = State.CLOSED;
                 }
             } finally {
                 TAP_OPEN.out();
@@ -202,7 +202,7 @@ class Sort_InsertionLimited extends Operator
                     CursorLifecycle.checkIdleOrActive(this);
                 }
                 checkQueryCancelation();
-                switch (state) {
+                switch (sortingState) {
                 case FILLING:
                     {
                         // If duplicates are preserved, the label is different for each row. Otherwise, it stays at 0.
@@ -245,7 +245,7 @@ class Sort_InsertionLimited extends Operator
                             }
                         }
                         iterator = sorted.iterator();
-                        state = State.EMPTYING;
+                        sortingState = State.EMPTYING;
                     }
                     /* falls through */
                 case EMPTYING:
@@ -256,7 +256,7 @@ class Sort_InsertionLimited extends Operator
                     }
                     else {
                         setIdle();
-                        state = State.CLOSED;
+                        sortingState = State.CLOSED;
                         output = null;
                     }
                     if (LOG_EXECUTION) {
@@ -280,20 +280,23 @@ class Sort_InsertionLimited extends Operator
         @Override
         public void close()
         {
+            // This cursor may never be opened if started with limit 0
             CursorLifecycle.checkIdleOrActive(this);
             super.close();
-            if (sorted != null) {
-                sorted.clear();
-                sorted = null;
-                iterator = null;
+            if (limit > 0) {
+                if (sorted != null) {
+                    sorted.clear();
+                    sorted = null;
+                    iterator = null;
+                }
+                sortingState = State.CLOSED;
             }
-            state = State.CLOSED;
         }
 
         @Override
         public boolean isActive()
         {
-            return state == State.FILLING || state == State.EMPTYING;
+            return sortingState == State.FILLING || sortingState == State.EMPTYING;
         }
 
         // Execution interface
@@ -312,7 +315,7 @@ class Sort_InsertionLimited extends Operator
         // Object state
 
         private final List<TEvaluatableExpression> tEvaluations;
-        private State state = State.CLOSED;
+        private State sortingState = State.CLOSED;
         private SortedSet<Holder> sorted;
         private Iterator<Holder> iterator;
     }
