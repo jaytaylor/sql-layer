@@ -203,7 +203,9 @@ class Sort_General extends Operator
         {
             //NOTE: Not calling super.close() because the
             // sorter has already closed the input. 
-            CursorLifecycle.checkIdleOrActive(this);
+            if (CURSOR_LIFECYCLE_ENABLED) {
+                CursorLifecycle.checkIdleOrActive(this);
+            }
             state = CursorLifecycle.CursorState.CLOSED;
             output.close();
         }

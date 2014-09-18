@@ -102,7 +102,6 @@ class PersistitGroupCursor extends RowCursorImpl implements GroupCursor
     @Override
     public void close()
     {
-        CursorLifecycle.checkIdleOrActive(this);
         groupScan = null;
         if (exchange != null) {
             adapter.returnExchange(exchange);

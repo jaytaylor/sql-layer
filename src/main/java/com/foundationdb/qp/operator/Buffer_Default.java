@@ -34,6 +34,7 @@ import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.texpressions.TPreparedField;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -198,7 +199,9 @@ public class Buffer_Default extends Operator
         public void close() {
             //NOTE: Not calling super.close() because the
             // sorter has already closed the input. 
-            CursorLifecycle.checkIdleOrActive(this);;
+            if (CURSOR_LIFECYCLE_ENABLED) {
+                CursorLifecycle.checkIdleOrActive(this);
+            }
             state = CursorLifecycle.CursorState.CLOSED;
             sorter.close();
         }

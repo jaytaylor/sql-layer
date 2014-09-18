@@ -57,7 +57,9 @@ public abstract class RowCursorImpl implements RowCursor {
     
     @Override 
     public void close() {
-        CursorLifecycle.checkIdleOrActive(this);
+        if (ExecutionBase.CURSOR_LIFECYCLE_ENABLED) {
+            CursorLifecycle.checkIdleOrActive(this);
+        }
         state = CursorLifecycle.CursorState.CLOSED;
     }
     

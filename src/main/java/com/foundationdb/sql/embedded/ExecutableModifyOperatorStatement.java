@@ -20,6 +20,7 @@ package com.foundationdb.sql.embedded;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.CursorLifecycle;
+import com.foundationdb.qp.operator.ExecutionBase;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.RowCursorImpl;
@@ -133,7 +134,9 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
 
         @Override
         public Row next() {
-            CursorLifecycle.checkIdleOrActive(this);
+            if (ExecutionBase.CURSOR_LIFECYCLE_ENABLED) {
+                CursorLifecycle.checkIdleOrActive(this);
+            }
             assert (spoolState == State.EMPTYING);
             if (iterator.hasNext()) {
                 Row row = iterator.next();

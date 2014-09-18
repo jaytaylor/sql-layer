@@ -28,6 +28,7 @@ import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.WrappingByteSource;
 import com.foundationdb.util.tap.InOutTap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -281,7 +282,9 @@ class Sort_InsertionLimited extends Operator
         public void close()
         {
             // This cursor may never be opened if started with limit 0
-            CursorLifecycle.checkIdleOrActive(this);
+            if (CURSOR_LIFECYCLE_ENABLED) {
+                CursorLifecycle.checkIdleOrActive(this);
+            }
             super.close();
             if (limit > 0) {
                 if (sorted != null) {

@@ -53,7 +53,9 @@ public abstract class OperatorExecutionBase extends ExecutionBase implements Row
     @Override
     public void close()
     {
-        CursorLifecycle.checkIdleOrActive(this);
+        if (CURSOR_LIFECYCLE_ENABLED) {
+            CursorLifecycle.checkIdleOrActive(this);
+        }
         state = CursorLifecycle.CursorState.CLOSED;
     }
 
