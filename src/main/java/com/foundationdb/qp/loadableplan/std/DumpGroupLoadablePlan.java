@@ -145,7 +145,6 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             while (cursor.isActive()) {
                 Row row = cursor.next();
                 if (row == null) {
-                    cursor.close();
                     break;
                 }
                 RowType rowType = row.rowType();

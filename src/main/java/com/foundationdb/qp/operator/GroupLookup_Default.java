@@ -447,9 +447,6 @@ class GroupLookup_Default extends Operator
         private void findAncestors(Row inputRow)
         {
             assert pending.isEmpty();
-            // TODO: What happens when ancestors.size == 0 ?
-            // readAncestorRow() closes the lookupCursor
-            // in anticipation of calling advanceLookup()
             for (int i = 0; i < ancestors.size(); i++) {
                 lookupRow = readAncestorRow(inputRow.ancestorHKey(ancestors.get(i)));
                 if (lookupRow != null) {
@@ -470,9 +467,9 @@ class GroupLookup_Default extends Operator
                     retrievedRow = hKey.equals(retrievedRow.hKey()) ? retrievedRow : null;
                 }
                 return retrievedRow;
-            } catch (RuntimeException e) {
-                e.printStackTrace();
-                throw e;
+            //} catch (RuntimeException e) {
+            //    e.printStackTrace();
+            //    throw e;
             } finally {
                 lookupCursor.close();
             }

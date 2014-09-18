@@ -49,7 +49,7 @@ class PersistitGroupCursor extends RowCursorImpl implements GroupCursor
     @Override
     public void rebind(HKey hKey, boolean deep)
     {
-        CursorLifecycle.checkIdle(this);
+        CursorLifecycle.checkClosed(this);
         this.hKey = (PersistitHKey) hKey;
         this.hKeyDeep = deep;
     }

@@ -142,7 +142,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         if (!closed) {
             currentRow = null;
             if (cursor != null) {
-                cursor.close();
+                cursor.closeTopLevel();
                 cursor = null;
             }
             closed = true;
@@ -406,19 +406,4 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     private int rowCount = 0;
     private Row currentRow;
     private boolean closed = true; // Not false, so that initial call to hasMore, prior to open, will proceed to call open.
-
-//    // inner class
-//    static class OpenInfoStruct {
-//        final ScanLimit scanLimit;
-//        final boolean singleRow;
-//        final boolean descending;
-//        final boolean deep;
-//
-//        private OpenInfoStruct(ScanLimit scanLimit, boolean singleRow, boolean descending, boolean deep) {
-//            this.scanLimit = scanLimit;
-//            this.singleRow = singleRow;
-//            this.descending = descending;
-//            this.deep = deep;
-//        }
-//    }
 }
