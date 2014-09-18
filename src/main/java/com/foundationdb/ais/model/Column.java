@@ -489,7 +489,7 @@ public class Column implements ColumnContainer, Visitable
 
     // TODO: Should be final, but the multi-part construction of a valid Column needs to be cleaned up
     private volatile Long maxStorageSize;
-    private Integer prefixSize;
+    private volatile Integer prefixSize;
 
     private FieldDef fieldDef;
     private Boolean defaultIdentity;
