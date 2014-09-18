@@ -93,7 +93,8 @@ public class PostgresServerBloomFilterIT extends PostgresServerITBase{
         ResultSet planRS = statement.executeQuery("EXPLAIN " + SQL);
         boolean found = false;
         while (!found && planRS.next()) {
-            if (((String) planRS.getObject(1)).contains("Using_BloomFilter"))
+            String row = (String)planRS.getObject(1);
+            if (row.contains("Using_BloomFilter"))
                 found = true;
         }
         assert(found);

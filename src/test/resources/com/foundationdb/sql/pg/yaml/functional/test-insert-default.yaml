@@ -1,3 +1,8 @@
+# Sequence cache is per-node
+---
+- Properties: random-context
+- suppressed: true
+
 # Test inserting with DEFAULT
 ---
 - Properties: sys-mysql

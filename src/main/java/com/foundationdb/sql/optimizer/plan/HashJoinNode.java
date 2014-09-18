@@ -17,6 +17,9 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
+import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.types.TKeyComparable;
+
 import java.util.List;
 
 /** A join with some kind of hash table loading. */
@@ -25,15 +28,20 @@ public class HashJoinNode extends JoinNode
     private Joinable loader;
     private BaseHashTable hashTable;
     private List<ExpressionNode> hashColumns, matchColumns;
+    private List<TKeyComparable> tKeyComparables;
+    private List<AkCollator> collators;
 
     public HashJoinNode(Joinable loader, Joinable input, Joinable check, JoinType joinType, 
-                        BaseHashTable hashTable, List<ExpressionNode> hashColumns, List<ExpressionNode> matchColumns) {
+                        BaseHashTable hashTable, List<ExpressionNode> hashColumns, List<ExpressionNode> matchColumns,
+                        List<TKeyComparable> tKeyComparables, List<AkCollator> collators) {
         super(input, check, joinType);
         this.loader = loader;
         loader.setOutput(this);
         this.hashTable = hashTable;
         this.hashColumns = hashColumns;
         this.matchColumns = matchColumns;
+        this.tKeyComparables = tKeyComparables;
+        this.collators = collators;
     }
 
     public Joinable getLoader() {
@@ -54,6 +62,12 @@ public class HashJoinNode extends JoinNode
     }
     public List<ExpressionNode> getMatchColumns() {
         return matchColumns;
+    }
+    public List<TKeyComparable> getTKeyComparables() {
+        return tKeyComparables;
+    }
+    public List<AkCollator> getCollators() {
+        return collators;
     }
 
     @Override

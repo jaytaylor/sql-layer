@@ -1,23 +1,23 @@
 ---
-- CreateTable: artists (id serial PRIMARY KEY, name varchar(255));
+- CreateTable: artists (id INT PRIMARY KEY, name varchar(255));
 ---
-- CreateTable: albums (id serial PRIMARY KEY, name varchar(255), artist_id integer REFERENCES artists);
+- CreateTable: albums (id INT PRIMARY KEY, name varchar(255), artist_id integer REFERENCES artists);
 ---
-- CreateTable: tags (id serial PRIMARY KEY, name varchar(255));
+- CreateTable: tags (id INT PRIMARY KEY, name varchar(255));
 ---
 - CreateTable: albums_tags (album_id integer REFERENCES albums, tag_id integer REFERENCES tags);
 ---
-- Statement: INSERT INTO albums (name) VALUES ('Al') RETURNING *;
+- Statement: INSERT INTO albums (id,name) VALUES (1,'Al')
 ---
-- Statement: INSERT INTO artists (name) VALUES ('Ar') RETURNING *;
+- Statement: INSERT INTO artists (id,name) VALUES (1,'Ar')
 ---
-- Statement: INSERT INTO tags (name) VALUES ('T') RETURNING *;
+- Statement: INSERT INTO tags (id,name) VALUES (1,'T')
 ---
-- Statement: INSERT INTO albums (name) VALUES ('Al2') RETURNING *;
+- Statement: INSERT INTO albums (id,name) VALUES (2,'Al2')
 ---
-- Statement: INSERT INTO artists (name) VALUES ('Ar2') RETURNING *;
+- Statement: INSERT INTO artists (id,name) VALUES (2,'Ar2')
 ---
-- Statement: INSERT INTO tags (name) VALUES ('T2') RETURNING *;
+- Statement: INSERT INTO tags (id,name) VALUES (2,'T2')
 ---
 # This is a simple reduction of a bug found with the Sequel gem. That specific
 # bug can be reduced more to the test-in-subselect-with-and test, so if that one

@@ -1,15 +1,19 @@
-SelectQuery@7f328c7a
-  ResultSet@4fa4ded3[order_date, name]
-    Distinct@5121177e
-      Sort@8c3c315[PROJECT[0], PROJECT[1]]
-        MapJoin@193936e1()
-          Flatten@7b41fab6(customers INNER orders)
-            GroupScan@28b301f2(Group(test.customers), rows = 1000, cost = 59725.0)
-              TableSource@e3a1ec6(customers - TableGroup@7ca522a6(customers))
-              TableSource@337ec9f7(orders - TableGroupJoin@44cbbe(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
-          Project@538d7ace[orders.order_date, child.name]
-            Select@6d79953c[]
-              Flatten@249c2715(child)
-                BranchLookup@7c9e67a(parent -> parent)
-                  SingleIndexScan@583a5794(Index(test.parent.name[IndexColumn(name)]), NONE, =customers.name, rows = 10, cost = 640.731)
-                  TableSource@7f5e2075(child - TableGroupJoin@5e4be2cc(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(test.parent))))
+SelectQuery@676ffc31
+  ResultSet@69162a04[order_date, name]
+    Distinct@2e20a282
+      Sort@38b46be[PROJECT[0], PROJECT[1]]
+        UsingHashTable@1d1bf632(HashTable@16c05b8c, [customers.name])
+          Flatten@80ac97f(customers INNER orders)
+            GroupScan@2eba4fff(Group(test.customers), rows = 1000, cost = 59725.0)
+              TableSource@7e19f267(customers - TableGroup@764b5a01(customers))
+              TableSource@77d7e190(orders - TableGroupJoin@49da0650(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+          MapJoin@8d49411()
+            Flatten@7c32b4f8(parent INNER child)
+              GroupScan@3c44ec9e(Group(test.parent), rows = 1000, cost = 42273.0)
+                TableSource@3a08d4b6(parent - TableGroup@4d023453(parent))
+                TableSource@597988de(child - TableGroupJoin@510a97fb(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(test.parent))))
+            Project@608d1c76[orders.order_date, child.name]
+              Select@5047b87f[]
+                HashTableLookup@e80094e(HashTable@16c05b8c, [parent.name])
+                  TableSource@7e19f267(customers - TableGroup@764b5a01(customers))
+                  TableSource@77d7e190(orders - TableGroupJoin@49da0650(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
