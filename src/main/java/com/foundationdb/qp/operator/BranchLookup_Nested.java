@@ -442,7 +442,6 @@ public class BranchLookup_Nested extends Operator
         private final GroupCursor cursor;
         private final HKey hKey;
         private Row inputRow;
-        //private boolean idle = true;
     }
 
     private class BranchCursor extends RowCursorImpl implements BindingsAwareCursor
@@ -563,10 +562,6 @@ public class BranchLookup_Nested extends Operator
             }
         }
 
-        @Override 
-        public void close() {
-            super.close();
-        }
         // LookaheadLeafCursor interface
 
         @Override

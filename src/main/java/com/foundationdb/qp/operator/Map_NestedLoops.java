@@ -325,7 +325,7 @@ class Map_NestedLoops extends Operator
             }
             super.close();
             if (openBindings != null) {
-                cancelBindings(openBindings); //TODO Close Bindings? Skip? 
+                cancelBindings(openBindings);
                 assert (inputOpenBindings == null);
                 assert (openBindings == null);
             }

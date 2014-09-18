@@ -467,9 +467,6 @@ class GroupLookup_Default extends Operator
                     retrievedRow = hKey.equals(retrievedRow.hKey()) ? retrievedRow : null;
                 }
                 return retrievedRow;
-            //} catch (RuntimeException e) {
-            //    e.printStackTrace();
-            //    throw e;
             } finally {
                 lookupCursor.close();
             }
