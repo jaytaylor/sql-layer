@@ -1,17 +1,12 @@
 Source: fdb-sql-layer
+Version: VERSION-RELEASE
 Section: database
 Priority: optional
 Maintainer: FoundationDB <distribution@foundationdb.com>
-Build-Depends: debhelper (>= 5), java7-jdk | java8-jdk
 Homepage: https://foundationdb.com/layers/sql
-Vcs-Git: git://github.com/FoundationDB/sql-layer.git
-Vcs-Browser: https://github.com/FoundationDB/sql-layer
-Standards-Version: 3.9.1
-
 Package: fdb-sql-layer
 Architecture: all
-Depends: java7-runtime-headless | java8-runtime-headless, foundationdb-clients (>= 2.0.0), adduser, ${misc:Depends}
-Suggests: fdb-sql-layer-client-tools, foundationdb-server
+Depends: openjdk-7-jre-headless | java7-runtime-headless | java8-runtime-headless , foundationdb-clients (>=2.0.0), adduser
 Description: FoundationDB SQL Layer
  The FoundationDB SQL Layer is a fault-tolerant and scalable open source RDBMS,
  best suited for applications with high concurrency and short transactional

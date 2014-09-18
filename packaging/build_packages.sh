@@ -146,23 +146,39 @@ filter_config_files() {
 
 case "${1}" in
     "deb")
+        umask 0022
         build_sql_layer "${STAGE_DIR}/usr/sbin"  "${STAGE_DIR}/usr/share/foundationdb/sql"
-        filter_config_files "${STAGE_DIR}/etc/foundationdb/sql" "/var/lib/foundationdb/sql" "/var/log/foundationdb/sql" "/tmp"
 
-        cp -r "${PACKAGING_DIR}/deb" "${STAGE_DIR}/debian"
-        mkdir -p "${STAGE_DIR}/usr/share/doc/fdb-sql-layer/"
-        cp "${PACKAGING_DIR}/deb/copyright" "${STAGE_DIR}/usr/share/doc/fdb-sql-layer/"
+        cd "${STAGE_DIR}"
+        mkdir -p -m 0755 "DEBIAN"
+        mkdir -p -m 0755 "etc/foundationdb/sql"
+        mkdir -p -m 0755 "usr/share/doc/fdb-sql-layer"
+        mkdir -p -m 0755 "usr/share/foundationdb/sql/plugins"
+        mkdir -p -m 0755 "usr/share/foundationdb/sql/server"
+        mkdir -p -m 0755 "usr/share/foundationdb/sql/conf"
+        mkdir -p -m 0755 "var/lib/foundationdb/sql"
+        mkdir -p -m 0755 "var/log/foundationdb/sql"
+        mkdir -p -m 0755 "etc/init.d"
 
-        cd "${STAGE_DIR}/debian"
-        sed -e "s/VERSION/${LAYER_VERSION}/g" -e "s/RELEASE/${RELEASE}/g" changelog.in > changelog
-        sed -e "s/LAYER_JAR_NAME/${LAYER_JAR_NAME}/g" links.in > links
+        cp -r "${TOP_DIR}/packaging/conf" ./usr/share/foundationdb/sql 
+        cp "${TOP_DIR}/packaging/deb/fdb-sql-layer.init" "${STAGE_DIR}/etc/init.d/fdb-sql-layer"
+        cp "${TOP_DIR}/packaging/deb/conffiles" "${STAGE_DIR}/DEBIAN/conffiles"
 
-        echo "Installed-Size:" $(du -sx --exclude debian $STAGE_DIR | awk '{print $1}') >> $STAGE_DIR/debian/control
-        cd ..
+        chmod 755 "${STAGE_DIR}/etc/init.d/fdb-sql-layer" 
+        filter_config_files "${STAGE_DIR}/usr/share/foundationdb/sql" \
+              "/var/lib/foundationdb/sql" "/var/log/foundationdb/sql" "/tmp"
+        install -m 0644 "${PACKAGING_DIR}/deb/copyright" "usr/share/doc/fdb-sql-layer/"
 
-        # No sign source, no sign changes, binary only
-        debuild -us -uc -b
-    ;;
+        sed -e "s/VERSION/${LAYER_VERSION}/g" -e "s/RELEASE/${RELEASE}/g" \
+              "${PACKAGING_DIR}/deb/control"  > DEBIAN/control
+
+        cd usr/share/foundationdb/sql
+        ln -s "${LAYER_JAR_NAME}" "./fdb-sql-layer.jar"
+        cd "${STAGE_DIR}"
+        echo "Installed-Size:" $(du -sx --exclude DEBIAN $STAGE_DIR | awk '{print $1}') >> $STAGE_DIR/DEBIAN/control
+        
+        fakeroot dpkg-deb --build . "${TOP_DIR}/target"
+    ;;    
 
     "rpm")
         if [ -z "${EPOCH}" ]; then

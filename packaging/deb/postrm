@@ -1,0 +1,7 @@
+#!/bin/sh
+
+
+if ["$1" = "remove"]; then
+    update-rc.d -f fdb-sql-layer remove
+fi
+
