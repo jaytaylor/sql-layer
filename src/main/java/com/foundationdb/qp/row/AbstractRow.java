@@ -27,6 +27,7 @@ import com.foundationdb.util.AkibanAppender;
 
 public abstract class AbstractRow implements Row
 {
+    private static final boolean STRICT_TYPES = true;
     // ValueRecord interface
 
     /**
@@ -64,7 +65,11 @@ public abstract class AbstractRow implements Row
     public abstract HKey hKey();
 
     @Override
-    public abstract ValueSource value(int i);
+    public final ValueSource value(int i) {
+        return checkValueType(i);
+    }
+
+    protected abstract ValueSource uncheckedValue(int i);
     
     @Override
     public HKey ancestorHKey(Table table)
@@ -120,6 +125,29 @@ public abstract class AbstractRow implements Row
 
     public RowData rowData() {
         throw new UnsupportedOperationException();
+    }
+
+
+    // AbstractRow interface
+    protected void checkTypes() {
+        if (false) {
+            for (int i = 0; i < rowType().nFields(); i++) {
+                checkValueType(i);
+            }
+        }
+    }
+
+    private ValueSource checkValueType(int i) {
+        ValueSource nextValue = uncheckedValue(i);
+        if (STRICT_TYPES) {
+            TInstance nextValueType = nextValue.getType();
+            TInstance expectedTInst = rowType().typeAt(i);
+            if (TInstance.tClass(nextValueType) != TInstance.tClass(expectedTInst))
+                throw new IllegalArgumentException(
+                        "value at index " + i + " expected type " + rowType().typeAt(i)
+                                + ", but UnderlyingType was " + nextValueType + ": " + nextValue);
+        }
+        return nextValue;
     }
 
     // Object state

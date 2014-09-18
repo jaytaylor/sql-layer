@@ -45,7 +45,7 @@ public class TestRow extends AbstractRow
      }
 
      @Override
-     public ValueSource value(int i) {
+     public ValueSource uncheckedValue(int i) {
          return valueRow.value(i);
      }
 

@@ -35,6 +35,8 @@ public final class OverlayingRow extends AbstractRow {
         this.underlying = underlying;
         this.rowType = rowType;
         this.pOverlays = new Value[underlying.rowType().nFields()];
+        // this might cause problems if it is later overlayed
+        checkTypes();
     }
 
     public OverlayingRow overlay(int index, ValueSource object) {
@@ -68,7 +70,7 @@ public final class OverlayingRow extends AbstractRow {
     }
 
     @Override
-    public ValueSource value(int i) {
+    public ValueSource uncheckedValue(int i) {
         return pOverlays[i] == null ? underlying.value(i) : pOverlays[i];
 
     }

@@ -47,6 +47,7 @@ public class ExpressionRow extends AbstractRow
             evaluation.with(bindings);
             this.pEvaluations.add(evaluation);
         }
+        checkTypes();
     }
 
     /* AbstractRow */
@@ -57,7 +58,7 @@ public class ExpressionRow extends AbstractRow
     }
 
     @Override
-    public ValueSource value(int i) {
+    public ValueSource uncheckedValue(int i) {
         TEvaluatableExpression eval = pEvaluations.get(i);
         eval.evaluate();
         return eval.resultValue();

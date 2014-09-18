@@ -57,7 +57,7 @@ public class PersistitGroupRow extends AbstractRow
     }
 
     @Override
-    public ValueSource value(int i) {
+    public ValueSource uncheckedValue(int i) {
         FieldDef fieldDef = rowDef().getFieldDef(i);
         RowData rowData = rowData();
         RowDataValueSource valueSource = valueSource(i);
@@ -170,6 +170,7 @@ public class PersistitGroupRow extends AbstractRow
         this.adapter = adapter;
         this.rowData = rowData;
         this.hKeyCache = new HKeyCache<PersistitHKey>(adapter);
+        checkTypes();
     }
 
     private RowDataValueSource valueSource(int i) {

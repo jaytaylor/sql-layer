@@ -42,6 +42,7 @@ public class FDBGroupRow extends AbstractRow {
     public FDBGroupRow(FDBAdapter adapter) {
         this.adapter = adapter;
         this.hKeyCache = new HKeyCache<>(adapter);
+        checkTypes();
     }
 
     public void set(Key key, RowData rowData) {
@@ -63,7 +64,7 @@ public class FDBGroupRow extends AbstractRow {
     }
 
     @Override
-    public ValueSource value(int i) {
+    public ValueSource uncheckedValue(int i) {
         FieldDef fieldDef = rowDef().getFieldDef(i);
         RowData rowData = rowData();
         RowDataValueSource valueSource = ValueSource(i);

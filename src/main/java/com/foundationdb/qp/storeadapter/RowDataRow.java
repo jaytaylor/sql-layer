@@ -37,6 +37,7 @@ public class RowDataRow extends AbstractRow
         assert (rowType.typeId() == rowData.getRowDefId());
         this.rowType = rowType;
         this.rowData = rowData;
+        checkTypes();
     }
 
     @Override
@@ -55,7 +56,7 @@ public class RowDataRow extends AbstractRow
     }
 
     @Override
-    public ValueSource value(int i) {
+    public ValueSource uncheckedValue(int i) {
         FieldDef fieldDef = rowType.table().rowDef().getFieldDef(i);
         RowDataValueSource valueSource = valueSource(i);
         valueSource.bind(fieldDef, rowData);

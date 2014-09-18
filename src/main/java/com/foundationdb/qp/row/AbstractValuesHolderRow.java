@@ -41,7 +41,7 @@ class AbstractValuesHolderRow extends AbstractRow {
     }
 
     @Override
-    public ValueSource value(int i) {
+    public ValueSource uncheckedValue(int i) {
         Value value = values.get(i);
         if (!value.hasAnyValue())
             throw new IllegalStateException("value at index " + i + " was never set");
@@ -65,6 +65,7 @@ class AbstractValuesHolderRow extends AbstractRow {
         this.isMutable = false;
         this.rowType = rowType;
         this.values = Collections.unmodifiableList(values);
+        checkTypes();
     }
 
     AbstractValuesHolderRow(RowType rowType, boolean isMutable,

@@ -42,7 +42,7 @@ public class HKeyRow extends AbstractRow
     }
 
     @Override
-    public ValueSource value(int i) {
+    public ValueSource uncheckedValue(int i) {
         return hKey.pEval(i);
     }
 
@@ -81,6 +81,7 @@ public class HKeyRow extends AbstractRow
         this.hKeyCache = hKeyCache;
         this.rowType = rowType;
         this.hKey = hKey;
+        checkTypes();
     }
     
     // Object state

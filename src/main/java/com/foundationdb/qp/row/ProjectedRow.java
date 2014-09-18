@@ -68,7 +68,7 @@ public class ProjectedRow extends AbstractRow
     }
 
     @Override
-    public ValueSource value(int index) {
+    public ValueSource uncheckedValue(int index) {
         TEvaluatableExpression evaluatableExpression = pEvaluatableExpressions.get(index);
         if (!evaluated[index]) {
             evaluatableExpression.with(context);
@@ -103,6 +103,7 @@ public class ProjectedRow extends AbstractRow
             evaluated = null;
         else
             evaluated = new boolean[pEvaluatableExpressions.size()];
+        checkTypes();
     }
 
     public static List<TEvaluatableExpression> createTEvaluatableExpressions

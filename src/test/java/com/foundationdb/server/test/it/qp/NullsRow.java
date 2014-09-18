@@ -35,7 +35,7 @@ public final class NullsRow extends AbstractRow {
     }
 
     @Override
-    public ValueSource value(int index) {
+    public ValueSource uncheckedValue(int index) {
         return ValueSources.getNullSource(rowType.typeAt(index));
     }
 
