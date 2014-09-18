@@ -32,6 +32,7 @@ package com.foundationdb.qp.operator;
  * @see BranchLookup_Nested$Execution
  * @see Count_TableStatus$Execution
  * @see GroupScan_Default$Execution
+ * @see HashTableLookup_Default$Execution
  * @see HKeyRow_Default$Execution
  * @see IndexScan_Default$Execution
  * @see ValuesScan_Default$Execution

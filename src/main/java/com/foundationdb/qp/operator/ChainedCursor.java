@@ -55,6 +55,7 @@ import com.foundationdb.server.api.dml.ColumnSelector;
  * @see Sort_InsertLimited
  * @see Update_Returning
  * @see Using_BloomFilter
+ * @see Using_HashTable
  * 
  */
 public class ChainedCursor extends OperatorCursor
