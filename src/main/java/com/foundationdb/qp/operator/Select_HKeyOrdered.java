@@ -143,7 +143,6 @@ class Select_HKeyOrdered extends Operator
     private final Operator inputOperator;
     private final RowType predicateRowType;
     private final boolean groupScanInput;
-    //private final Expression predicate;
     private final TPreparedExpression pPredicate;
 
     @Override

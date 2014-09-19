@@ -373,7 +373,7 @@ class Intersect_Ordered extends Operator
                     }
                 }
                 if (LOG_EXECUTION) {
-                    LOG.debug("intersect_Ordered: yield {}", next);
+                    LOG.debug("Intersect_Ordered: yield {}", next);
                 }
                 return next;
             } finally {

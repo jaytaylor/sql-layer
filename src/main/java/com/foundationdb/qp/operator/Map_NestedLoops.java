@@ -21,7 +21,6 @@ import com.foundationdb.qp.row.ImmutableRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.explain.std.NestedLoopsExplainer;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
@@ -421,10 +420,11 @@ class Map_NestedLoops extends Operator
                         Row row = outerInput.next();
                         if (row == null) {
                             outerInput.setIdle();
+                            outerRow = null;
                         } else {
                             outerRow = row;
                             if (LOG_EXECUTION) {
-                                LOG.debug("Map_NestedLoops$Execution: restart inner loop using current branch row");
+                                LOG.debug("Map_NestedLoops$Execution: restart inner loop using current row: {}", row);
                             }
                             startNewInnerLoop(row);
                         }
@@ -446,7 +446,7 @@ class Map_NestedLoops extends Operator
         {
             super.close();
             if (!innerInput.isClosed())
-                innerInput.closeTopLevel();
+                innerInput.close();
             closeOuter();
         }
 
@@ -481,7 +481,6 @@ class Map_NestedLoops extends Operator
         @Override
         public void cancelBindings(QueryBindings bindings) {
             CursorLifecycle.checkClosed(this);
-            innerInput.close();
             outerInput.cancelBindings(bindings);
         }
 
@@ -496,7 +495,6 @@ class Map_NestedLoops extends Operator
             this.innerInput = innerInputOperator.cursor(context, innerBindingsCursor);
         }
 
-        
         // For use by this class
 
         private Row nextOutputRow()
@@ -505,7 +503,6 @@ class Map_NestedLoops extends Operator
             if (outerRow != null) {
                 Row innerRow = innerInput.next();
                 if (innerRow == null) {
-                    innerInput.setIdle();
                     outerRow = null;
                 } else {
                     outputRow = innerRow;
@@ -527,9 +524,11 @@ class Map_NestedLoops extends Operator
         private void startNewInnerLoop(Row row)
         {
             if (!innerInput.isClosed())
-                innerInput.closeTopLevel();
+                innerInput.close();
             outerBindings.setRow(inputBindingPosition, row);
             innerBindingsCursor.reset(outerBindings);
+            // The reset() closes the bindings as well, 
+            // This opens them correctly. 
             innerInput.openTopLevel();
         }
 
