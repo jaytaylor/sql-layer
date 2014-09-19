@@ -414,13 +414,13 @@ class Map_NestedLoops extends Operator
                 }
                 checkQueryCancelation();
                 Row outputRow = null;
-                while (outerInput.isActive() && outputRow == null) {
+                while (isActive() && outputRow == null) {
                     outputRow = nextOutputRow();
                     if (outputRow == null) {
                         Row row = outerInput.next();
                         if (row == null) {
-                            outerInput.setIdle();
                             outerRow = null;
+                            setIdle();
                         } else {
                             outerRow = row;
                             if (LOG_EXECUTION) {
@@ -448,18 +448,6 @@ class Map_NestedLoops extends Operator
             if (!innerInput.isClosed())
                 innerInput.close();
             closeOuter();
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return outerInput.isIdle();
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return outerInput.isActive();
         }
 
         @Override
