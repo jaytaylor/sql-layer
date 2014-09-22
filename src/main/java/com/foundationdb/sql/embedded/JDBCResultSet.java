@@ -147,7 +147,7 @@ public class JDBCResultSet implements DirectResultSet
         statement.closingResultSet(this);
         try {
             if (cursor != null) {
-                cursor.destroy();
+                cursor.close();
                 cursor = null;
             }
         }

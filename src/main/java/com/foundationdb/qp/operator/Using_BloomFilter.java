@@ -178,9 +178,12 @@ class Using_BloomFilter extends Operator
         {
             TAP_OPEN.in();
             try {
+                // Usually super.open called first, but needs to be done
+                // opposite order here to allow Select_BloomFilter access
+                // to the filled BloomFilter in the bindings. 
                 BloomFilter filter = loadBloomFilter();
                 bindings.setBloomFilter(filterBindingPosition, filter);
-                input.open();
+                super.open();
             } finally {
                 TAP_OPEN.out();
             }
@@ -205,15 +208,6 @@ class Using_BloomFilter extends Operator
             }
         }
 
-        @Override
-        public void destroy()
-        {
-            close();
-            input.destroy();
-            if (bindings != null) {
-                bindings.setBloomFilter(filterBindingPosition, null);
-            }
-        }
 
         // Execution interface
 
@@ -253,7 +247,7 @@ class Using_BloomFilter extends Operator
                 filter.add(h);
                 rows++;
             }
-            loadCursor.destroy();
+            loadCursor.closeTopLevel();
             return rows;
         }
 

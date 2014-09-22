@@ -185,7 +185,7 @@ public class IndexScanLookaheadIT extends OperatorITBase
 
     private IndexBound iidBound(int iid)
     {
-        return new IndexBound(row(itemIidIndexRowType, iid), new SetColumnSelector(0));
+        return new IndexBound(row(itemIidIndexRowType, iid, null, null), new SetColumnSelector(0));
     }
 
     private Row intRow(RowType rowType, int x)

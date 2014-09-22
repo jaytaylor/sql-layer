@@ -45,8 +45,7 @@ abstract class SubqueryTEvaluateble implements TEvaluatableExpression {
         cursor.openTopLevel();
         try {
             doEval(value);
-        }
-        finally {
+        } finally {
             cursor.closeTopLevel();
         }
     }

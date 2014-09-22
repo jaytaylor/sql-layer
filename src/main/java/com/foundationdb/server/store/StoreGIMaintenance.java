@@ -125,7 +125,7 @@ class StoreGIMaintenance {
             }
         } finally {
             if (cursor != null) {
-                cursor.destroy();
+                cursor.closeTopLevel();
             }
             if (runTapEntered) {
                 RUN_TAP.out();
@@ -163,7 +163,7 @@ class StoreGIMaintenance {
                     return true;
                 }
                 finally {
-                    siblingsCounter.destroy();
+                    siblingsCounter.closeTopLevel();
                     SIBLING_ALL_TAP.out();
                 }
              default:

@@ -17,6 +17,29 @@
 
 package com.foundationdb.qp.operator;
 
+/**
+ * LeafCursor handles the cursor processing for the Leaf operators.
+ * Unlike the ChainedCursor or DualChainedCursors, the LeafCursor
+ * isn't reading data from another operator cursor, but is reading it
+ * from an underlying Row source. Usually this is a adapter row, or 
+ * row collection. 
+ * 
+ * @see ChainedCursor
+ * @see MultiChainedCursor
+ * 
+ * Used By
+ * @see AncestorLookup_Nested$Execution (non-lookahead)
+ * @see BranchLookup_Nested$Execution
+ * @see Count_TableStatus$Execution
+ * @see GroupScan_Default$Execution
+ * @see HashTableLookup_Default$Execution
+ * @see HKeyRow_Default$Execution
+ * @see IndexScan_Default$Execution
+ * @see ValuesScan_Default$Execution
+ * 
+ * @see com.foundationdb.server.service.text.IndexScan_FullText$Execution
+ * @see com.foundationdb.server.test.it.qp.QueryTimeoutIT$DoNothingForever$Execution
+ */
 public class LeafCursor extends OperatorCursor
 {
     protected final QueryBindingsCursor bindingsCursor;
@@ -34,6 +57,7 @@ public class LeafCursor extends OperatorCursor
 
     @Override
     public QueryBindings nextBindings() {
+        CursorLifecycle.checkClosed(this);
         bindings = bindingsCursor.nextBindings();
         return bindings;
     }
@@ -45,7 +69,7 @@ public class LeafCursor extends OperatorCursor
 
     @Override
     public void cancelBindings(QueryBindings bindings) {
-        close();
+        CursorLifecycle.checkClosed(this);
         bindingsCursor.cancelBindings(bindings);
     }
 }

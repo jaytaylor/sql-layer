@@ -1,0 +1,7 @@
+---  # based on files in server /src/test/resources/com/foundationdb/sql/pg/select
+- Include: all-schema.yaml
+---
+- Statement: SELECT customers.name,order_date,sku,quan FROM items INNER JOIN orders ON orders.oid = items.oid LEFT OUTER JOIN customers ON customers.cid = orders.cid WHERE order_date < '2011-03-01' 
+- output: [[null,'2010-01-01','9999','888'],['Jones','2011-02-28','1234','99']]
+#- comment: ['select-24: RIGHT join']
+...

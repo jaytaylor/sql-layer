@@ -32,7 +32,7 @@ public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends
 
     @Override
     public void open() {
-        CursorLifecycle.checkIdle(this);
+        super.open();
         if (currentCursor != null) {
             currentCursor.open();
         }
@@ -60,59 +60,45 @@ public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends
 
     @Override
     public Row next() {
+        if (CURSOR_LIFECYCLE_ENABLED) {
+            CursorLifecycle.checkIdleOrActive(this);
+        }
         checkQueryCancelation();
         Row row = currentCursor.next();
         if (row == null) {
-            currentCursor.close();
+            currentCursor.setIdle();
         }
         return row;
     }
 
     @Override
     public void jump(Row row, ColumnSelector columnSelector) {
+        if (CURSOR_LIFECYCLE_ENABLED) {
+            CursorLifecycle.checkIdleOrActive(this);
+        }
         currentCursor.jump(row, columnSelector);
+        state = CursorLifecycle.CursorState.ACTIVE;
     }
 
     @Override
     public void close() {
-        if (currentCursor != null) {
-            currentCursor.close();
-        }
-    }
-
-    @Override
-    public void destroy() {
-        CursorLifecycle.checkIdleOrActive(this);
-        if (currentCursor != null) {
-            currentCursor.destroy();
-            currentCursor = null;
-        }
-        if (pendingCursor != null) {
-            pendingCursor.destroy();
-            pendingCursor = null;
-        }
-        recyclePending();
-        while (true) {
-            C cursor = cursorPool.poll();
-            if (cursor == null) break;
-            cursor.destroy();
-        }
-        destroyed = true;
+        resetActiveCursors();
+        super.close();
     }
 
     @Override
     public boolean isIdle() {
-        return (currentCursor != null) ? currentCursor.isIdle() : !destroyed;
+        return currentCursor == null ? super.isIdle() : currentCursor.isIdle();
     }
 
     @Override
     public boolean isActive() {
-        return ((currentCursor != null) && currentCursor.isActive());
+        return currentCursor == null ? super.isActive() : currentCursor.isActive();
     }
-
+    
     @Override
-    public boolean isDestroyed() {
-        return destroyed;
+    public boolean isClosed() {
+        return currentCursor == null ? super.isClosed() : currentCursor.isClosed();
     }
 
     @Override
@@ -125,16 +111,8 @@ public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends
 
     @Override
     public QueryBindings nextBindings() {
-        if (currentCursor != null) {
-            currentCursor.close();
-            cursorPool.add(currentCursor);
-            currentCursor = null;
-        }
-        if (pendingCursor != null) {
-            pendingCursor.close(); // Abandoning lookahead.
-            cursorPool.add(pendingCursor);
-            pendingCursor = null;
-        }
+        CursorLifecycle.checkClosed(this);
+        resetActiveCursors();
         BindingsAndCursor<C> bandc = pendingBindings.poll();
         if (bandc != null) {
             currentBindings = bandc.bindings;
@@ -156,17 +134,10 @@ public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends
 
     @Override
     public void cancelBindings(QueryBindings bindings) {
+        CursorLifecycle.checkClosed(this);
+        
         if ((currentBindings != null) && currentBindings.isAncestor(bindings)) {
-            if (currentCursor != null) {
-                currentCursor.close();
-                cursorPool.add(currentCursor);
-                currentCursor = null;
-            }
-            if (pendingCursor != null) {
-                pendingCursor.close();
-                cursorPool.add(pendingCursor);
-                pendingCursor = null;
-            }
+            resetActiveCursors();
             currentBindings = null;
         }
         while (true) {
@@ -214,6 +185,19 @@ public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends
 
     // For use by this class
 
+    protected void resetActiveCursors() {
+        if (currentCursor != null) {
+            currentCursor.close();
+            cursorPool.add(currentCursor);
+            currentCursor = null;
+        }
+        if (pendingCursor != null) {
+            pendingCursor.close();
+            cursorPool.add(pendingCursor);
+            pendingCursor = null;
+        }
+    }
+    
     protected void recyclePending() {
         while (true) {
             BindingsAndCursor<C> bandc = pendingBindings.poll();
@@ -239,5 +223,5 @@ public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends
     protected final Queue<C> cursorPool;
     protected QueryBindings currentBindings;
     protected C pendingCursor, currentCursor;
-    protected boolean bindingsExhausted, destroyed;
+    protected boolean bindingsExhausted;// destroyed;
 }

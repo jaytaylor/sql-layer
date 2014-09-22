@@ -27,16 +27,15 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.server.api.dml.ColumnSelector;
 
-class PersistitIndexCursor implements BindingsAwareCursor
+class PersistitIndexCursor extends RowCursorImpl implements BindingsAwareCursor
 {
     // Cursor interface
 
     @Override
     public void open()
     {
-        CursorLifecycle.checkIdle(this);
+        super.open();
         indexCursor.open(); // Does iterationHelper.openIteration, where iterationHelper = rowState
-        idle = false;
     }
 
     @Override
@@ -51,55 +50,30 @@ class PersistitIndexCursor implements BindingsAwareCursor
                                 selector.matchesAll() ||
                                 !next.keyEmpty() && selector.matches(next.tableBitmap()));
             } else {
-                close();
+                setIdle();
                 needAnother = false;
             }
         } while (needAnother);
-        assert (next == null) == idle : "next: " + next + " vs idle " + idle;
+        assert (next == null) == isIdle() : "next: " + next + " vs idle " + isIdle();
         return next;
     }
 
     @Override
     public void jump(Row row, ColumnSelector columnSelector)
     {
+        CursorLifecycle.checkIdleOrActive(this);
         Index index = indexRowType.index();
         assert !index.isSpatial(); // Jump not yet supported for spatial indexes
         rowState.openIteration();
-        idle = false;
         indexCursor.jump(row, columnSelector);
+        state = CursorLifecycle.CursorState.ACTIVE;
     }
 
     @Override
     public void close()
     {
-        CursorLifecycle.checkIdleOrActive(this);
         indexCursor.close(); // IndexCursor.close() closes the rowState (IndexCursor.iterationHelper)
-        idle = true;
-    }
-
-    @Override
-    public void destroy()
-    {
-        destroyed = true;
-        indexCursor.destroy();
-    }
-
-    @Override
-    public boolean isIdle()
-    {
-        return !destroyed && idle;
-    }
-
-    @Override
-    public boolean isActive()
-    {
-        return !destroyed && !idle;
-    }
-
-    @Override
-    public boolean isDestroyed()
-    {
-        return destroyed;
+        super.close();
     }
 
     @Override
@@ -123,7 +97,6 @@ class PersistitIndexCursor implements BindingsAwareCursor
         this.indexRowType = indexRowType;
         this.isTableIndex = indexRowType.index().isTableIndex();
         this.selector = selector;
-        this.idle = true;
         this.rowState = context.getStore().createIterationHelper(indexRowType);
         this.indexCursor = IndexCursor.create(context, keyRange, ordering, rowState,  openAllSubCursors);
     }
@@ -140,6 +113,4 @@ class PersistitIndexCursor implements BindingsAwareCursor
     private final IterationHelper rowState;
     private IndexCursor indexCursor;
     private final IndexScanSelector selector;
-    private boolean idle;
-    private boolean destroyed = false;
 }

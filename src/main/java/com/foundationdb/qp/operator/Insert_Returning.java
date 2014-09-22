@@ -133,9 +133,7 @@ public class Insert_Returning extends Operator {
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-                input.open();
-                idle = false;
+                super.open();
             } finally {
                 TAP_OPEN.out();
             }
@@ -155,8 +153,6 @@ public class Insert_Returning extends Operator {
                 
                 Row inputRow;
                 if ((inputRow = input.next()) != null) {
-                    // TODO: Perform constraint check for insert here
-                    // Needs to be moved to Constraint Check operator. 
                     // Do the real work of inserting the row
                     adapter().writeRow(inputRow);
                     if (LOG_EXECUTION) {
@@ -171,35 +167,6 @@ public class Insert_Returning extends Operator {
             }
         }
     
-        @Override
-        public void close()
-        {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (!idle) {
-                input.close();
-                idle = true;
-            }
-        }
-    
-        @Override
-        public void destroy()
-        {
-            close();
-            input.destroy();
-        }
-    
-        @Override
-        public boolean isIdle()
-        {
-            return !input.isDestroyed() && idle;
-        }
-    
-        @Override
-        public boolean isActive()
-        {
-            return !input.isDestroyed() && !idle;
-        }
-
         // Execution interface
     
         Execution(QueryContext context, Cursor input)
@@ -208,7 +175,5 @@ public class Insert_Returning extends Operator {
         }
     
         // Object state
-
-        private boolean idle = true;
     }
 }

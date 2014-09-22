@@ -141,9 +141,12 @@ class Using_HashTable extends Operator
         {
             TAP_OPEN.in();
             try {
+                // Usually super.open called first, but needs to be done
+                // opposite order here to allow Using_HashFilter access
+                // to the filled HashTable in the bindings. 
                 HashTable hashTable = buildHashTable();
                 bindings.setHashTable(tableBindingPosition, hashTable);
-                input.open();
+                super.open();
             } finally {
                 TAP_OPEN.out();
             }
@@ -169,13 +172,12 @@ class Using_HashTable extends Operator
         }
 
         @Override
-        public void destroy()
+        public void close()
         {
-            close();
-            input.destroy();
             if (bindings != null) {
                 bindings.setHashTable(tableBindingPosition, null);
             }
+            super.close();
         }
 
         // Execution interface
@@ -203,7 +205,7 @@ class Using_HashTable extends Operator
                 assert(row.rowType().equals(hashedRowType));
                 hashTable.put(row, evaluatableComparisonFields, bindings);
             }
-            loadCursor.destroy();
+            loadCursor.closeTopLevel();
             return hashTable;
         }
      }

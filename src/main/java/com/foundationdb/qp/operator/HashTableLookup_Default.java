@@ -83,20 +83,18 @@ class HashTableLookup_Default extends Operator
         return new CompoundExplainer(Type.HASH_JOIN, atts);
     }
 
-    private class Execution extends OperatorCursor
+    private class Execution extends LeafCursor
     {
 
         @Override
         public void open(){
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-
+                super.open();
                 hashTable = bindings.getHashTable(hashTableBindingPosition);
                 assert (hashedRowType == hashTable.getRowType()) : hashTable;
                 innerRowList = hashTable.getMatchingRows(null, evaluatableComparisonFields, bindings);
                 innerRowListPosition = 0;
-                closed = false;
             } finally {
                 TAP_OPEN.out();
             }
@@ -128,78 +126,17 @@ class HashTableLookup_Default extends Operator
             }
         }
 
-        @Override
-        public void close()
-        {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (!closed) {
-                closed = true;
-            }
-        }
-
-        @Override
-        public void closeBindings() {
-            bindingsCursor.closeBindings();
-        }
-
-        @Override
-        public void destroy()
-        {
-            close();
-            destroyed = true;
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return closed;
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return !closed;
-        }
-
-        @Override
-        public void openBindings() {
-            bindingsCursor.openBindings();
-        }
-
-        @Override
-        public QueryBindings nextBindings() {
-             bindings = bindingsCursor.nextBindings();
-            return bindings;
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return destroyed;
-        }
-
-        @Override
-        public void cancelBindings(QueryBindings bindings) {
-            bindingsCursor.cancelBindings(bindings);
-        }
-
         Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
-            super(context);
-            MultipleQueryBindingsCursor multiple = new MultipleQueryBindingsCursor(bindingsCursor);
-            this.bindingsCursor = multiple;
+            super(context,  new MultipleQueryBindingsCursor(bindingsCursor));
             for (TPreparedExpression comparisonField : outerComparisonFields) {
                 evaluatableComparisonFields.add(comparisonField.build());
             }
         }
         // Cursor interface
         protected HashTable hashTable;
-        private boolean closed = true;
-        private final QueryBindingsCursor bindingsCursor;
         private List<Row> innerRowList;
         private int innerRowListPosition = 0;
-        private QueryBindings bindings;
-        private boolean destroyed = false;
         private final List<TEvaluatableExpression> evaluatableComparisonFields = new ArrayList<>();
 
     }

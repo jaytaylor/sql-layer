@@ -1144,9 +1144,8 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                                      StoreGIHandler.forTable(this, session, table),
                                      StoreGIHandler.Action.CASCADE);
             }
-            cursor.closeTopLevel();
         } finally {
-            cursor.destroy();
+            cursor.closeTopLevel();
         }
     }
 

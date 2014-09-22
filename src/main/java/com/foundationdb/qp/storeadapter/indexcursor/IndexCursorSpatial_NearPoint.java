@@ -80,7 +80,7 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
             geNeedToAdvance = true;
         }
         if (next == null) {
-            close();
+            setIdle();
         }
         return next;
     }
@@ -92,16 +92,6 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
             super.close();
             geCursor.close();
             ltCursor.close();
-        }
-    }
-
-    @Override
-    public void destroy()
-    {
-        if (!isDestroyed()) {
-            super.destroy();
-            geCursor.destroy();
-            ltCursor.destroy();
         }
     }
 

@@ -226,9 +226,8 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 long count = rowIndexer.indexRows(cursor);
                 logger.debug("Populated {} with {} rows", indexInfo.getIndex().getIndexName(), count);
             } finally {
-                if(cursor != null) {
+                if(cursor != null && !cursor.isClosed()) {
                     cursor.close();
-                    cursor.destroy();
                 }
             }
             transactionService.addCallback(session, CallbackType.COMMIT, new Callback() {
@@ -277,8 +276,8 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 it.remove();
             }
         } finally {
-            if(cursor != null) {
-                cursor.destroy();
+            if(cursor != null && !cursor.isClosed()) {
+                cursor.close();
             }
         }
     }

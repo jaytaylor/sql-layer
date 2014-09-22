@@ -72,13 +72,6 @@ class IndexCursorSpatial_InBox extends IndexCursor
     }
 
     @Override
-    public void destroy()
-    {
-        super.destroy();
-        multiCursor.destroy();
-    }
-
-    @Override
     public void rebind(QueryBindings bindings)
     {
         super.rebind(bindings);

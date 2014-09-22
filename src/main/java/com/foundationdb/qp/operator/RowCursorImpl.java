@@ -14,51 +14,55 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.ColumnSelector;
-import com.foundationdb.server.error.QueryCanceledException;
 
 /**
- *  Abstract implementation of RowCursor. 
- *  
+ * Abstract implementation of RowCursor. 
+ * 
  *  Implements the state checking for the CursorBase, but not any of the
- *  operations methods. If you change this, also change @See RowCursorImpl, 
+ *  operations methods. If you change this, also change @See OperatorExecutionBase
  *  as the two set of state implementations should match. 
  *
+ * @see AncestorLookup_Nested$AncestorCursor
+ * @see BranchLookup_Nested$BranchCursor
+ * @see GroupScan_Default$HKeyBoundCursor
+ * 
+ *
+ * @see SorterToCursorAdapter
+ * @see com.foundationdb.qp.storeadapter.indexcursor.MergeJoinSorter$KeyFinalCursor
+ * @see com.foundationdb.qp.storeadapter.PersistitIndexCursor
+ * @see com.foundationdb.server.service.text.FullTextCursor
+ * @see com.foundationdb.sql.embedded.ExecutableModifyOperatorStatement$SpoolCursor
+ * 
+ * @see com.foundationdb.qp.storeadapter.indexcursor.IndexCursor
+ *  * @see com.foundationdb.qp.storeadapter.indexcursor.IndexCursorMixedOrder
+ *  * @see com.foundationdb.qp.storeadapter.indexcursor.IndexCursorSpatial_InBox
+ *  * @see com.foundationdb.qp.storeadapter.indexcursor.IndexCursorSpatial_NearPoint
+ *  * @see com.foundationdb.qp.storeadapter.indexcursor.IndexCursorUnidrectional
+ *  
+ * @see com.foundationdb.qp.memoryadapter.MemoryGroupCursor
+ * @see com.foundationdb.qp.storeadapter.FDBGroupCursor
+ * @see com.foundationdb.qp.storeadapter.PersistitGroupCursor
  */
+public abstract class RowCursorImpl implements RowCursor {
 
-public abstract class OperatorExecutionBase extends ExecutionBase implements RowCursor
-{
     @Override
     public void open() {
         CursorLifecycle.checkClosed(this);
         state = CursorLifecycle.CursorState.ACTIVE;
     }
-
-    @Override
-    public Row next()
-    {
-        throw new UnsupportedOperationException(getClass().getName());
-    }
-
-    @Override
-    public void jump(Row row, ColumnSelector columnSelector)
-    {
-        throw new UnsupportedOperationException(getClass().getName());
-    }
-
-    @Override
-    public void close()
-    {
-        if (CURSOR_LIFECYCLE_ENABLED) {
+    
+    @Override 
+    public void close() {
+        if (ExecutionBase.CURSOR_LIFECYCLE_ENABLED) {
             CursorLifecycle.checkIdleOrActive(this);
         }
         state = CursorLifecycle.CursorState.CLOSED;
     }
-
+    
     @Override
     public void setIdle() {
         state = CursorLifecycle.CursorState.IDLE;
@@ -82,22 +86,11 @@ public abstract class OperatorExecutionBase extends ExecutionBase implements Row
         return state == CursorLifecycle.CursorState.CLOSED;
     }
 
-    
-    protected void checkQueryCancelation()
-    {
-        try {
-            context.checkQueryCancelation();
-        } catch (QueryCanceledException e) {
-            //close();
-            throw e;
-        }
+    @Override
+    public void jump(Row row, ColumnSelector columnSelector) {
+        throw new UnsupportedOperationException();            
     }
 
-    protected OperatorExecutionBase(QueryContext context)
-    {
-        super(context);
-    }
-    
+    // Object State
     protected CursorLifecycle.CursorState state = CursorLifecycle.CursorState.CLOSED;
-
 }
