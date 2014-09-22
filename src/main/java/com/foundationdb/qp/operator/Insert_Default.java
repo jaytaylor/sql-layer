@@ -77,7 +77,7 @@ import java.util.List;
 
  */
 
-@Deprecated
+/* Deprecated */
 class Insert_Default implements UpdatePlannable {
 
     public Insert_Default(Operator inputOperator) {

@@ -85,7 +85,7 @@ import org.slf4j.LoggerFactory;
  Each row is individually processed.
 
  */
-@Deprecated
+/* Deprecated */
 class Delete_Default implements UpdatePlannable {
 
     // constructor
