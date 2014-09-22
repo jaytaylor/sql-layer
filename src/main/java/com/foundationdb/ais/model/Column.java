@@ -488,8 +488,8 @@ public class Column implements ColumnContainer, Visitable
     private Long initialAutoIncrementValue;
 
     // TODO: Should be final, but the multi-part construction of a valid Column needs to be cleaned up
-    private Long maxStorageSize;
-    private Integer prefixSize;
+    private volatile Long maxStorageSize;
+    private volatile Integer prefixSize;
 
     private FieldDef fieldDef;
     private Boolean defaultIdentity;
