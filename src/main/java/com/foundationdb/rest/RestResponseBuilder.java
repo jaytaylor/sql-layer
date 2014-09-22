@@ -50,7 +50,7 @@ public class RestResponseBuilder {
 
     private static final Charset UTF8 = Charset.forName("UTF-8");
     private static final Map<Class,Response.Status> EXCEPTION_STATUS_MAP = buildExceptionStatusMap();
-    private static final Logger LOG = LoggerFactory.getLogger(RestResponseBuilder.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(RestResponseBuilder.class);
 
     private final HttpServletRequest request;
     private final boolean isJsonp;

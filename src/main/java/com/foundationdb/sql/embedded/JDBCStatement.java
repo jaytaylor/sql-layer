@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 public class JDBCStatement implements Statement
 {
 
-    private static final Logger LOG = LoggerFactory.getLogger(JDBCStatement.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(JDBCStatement.class);
 
     protected final JDBCConnection connection;
     protected String sql;
