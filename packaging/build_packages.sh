@@ -160,12 +160,12 @@ case "${1}" in
         mkdir -p -m 0755 "var/log/foundationdb/sql"
         mkdir -p -m 0755 "etc/init.d"
 
-        cp -r "${TOP_DIR}/packaging/conf" ./usr/share/foundationdb/sql 
-        cp "${TOP_DIR}/packaging/deb/fdb-sql-layer.init" "${STAGE_DIR}/etc/init.d/fdb-sql-layer"
-        cp "${TOP_DIR}/packaging/deb/conffiles" "${STAGE_DIR}/DEBIAN/conffiles"
+        install -m 0755 "${TOP_DIR}/packaging/deb/fdb-sql-layer.init" "${STAGE_DIR}/etc/init.d/fdb-sql-layer"
+        install -m 0644 "${TOP_DIR}/packaging/deb/conffiles" "${STAGE_DIR}/DEBIAN/conffiles"
+        install -m 0755 "${TOP_DIR}/packaging/deb/postinst" "${STAGE_DIR}/DEBIAN/postinst"
+        install -m 0755 "${TOP_DIR}/packaging/deb/postrm" "${STAGE_DIR}/DEBIAN/postrm"
 
-        chmod 755 "${STAGE_DIR}/etc/init.d/fdb-sql-layer" 
-        filter_config_files "${STAGE_DIR}/usr/share/foundationdb/sql" \
+        filter_config_files "${STAGE_DIR}/etc/foundationdb/sql" \
               "/var/lib/foundationdb/sql" "/var/log/foundationdb/sql" "/tmp"
         install -m 0644 "${PACKAGING_DIR}/deb/copyright" "usr/share/doc/fdb-sql-layer/"
 
@@ -173,7 +173,7 @@ case "${1}" in
               "${PACKAGING_DIR}/deb/control"  > DEBIAN/control
 
         cd usr/share/foundationdb/sql
-        ln -s "${LAYER_JAR_NAME}" "./fdb-sql-layer.jar"
+        ln -s "${LAYER_JAR_NAME}" "${STAGE_DIR}/usr/share/foundationdb/sql/fdb-sql-layer.jar"
         cd "${STAGE_DIR}"
         echo "Installed-Size:" $(du -sx --exclude DEBIAN $STAGE_DIR | awk '{print $1}') >> $STAGE_DIR/DEBIAN/control
         
