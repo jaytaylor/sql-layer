@@ -125,8 +125,8 @@ public class HKey
                             : keyDepthTmp[hKeySegment - 1] + 1 + segments.get(hKeySegment - 1).columns().size();
                     }
                     keyDepthTmp[hKeySegments] = columnsTmp.length + hKeySegments;
-                    columns = columnsTmp;
                     keyDepth = keyDepthTmp;
+                    columns = columnsTmp;
                 }
             }
         }
