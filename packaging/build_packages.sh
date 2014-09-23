@@ -150,32 +150,28 @@ case "${1}" in
         build_sql_layer "${STAGE_DIR}/usr/sbin"  "${STAGE_DIR}/usr/share/foundationdb/sql"
 
         cd "${STAGE_DIR}"
-        mkdir -p -m 0755 "DEBIAN"
-        mkdir -p -m 0755 "etc/foundationdb/sql"
-        mkdir -p -m 0755 "usr/share/doc/fdb-sql-layer"
-        mkdir -p -m 0755 "usr/share/foundationdb/sql/plugins"
-        mkdir -p -m 0755 "usr/share/foundationdb/sql/server"
-        mkdir -p -m 0755 "usr/share/foundationdb/sql/conf"
-        mkdir -p -m 0755 "var/lib/foundationdb/sql"
-        mkdir -p -m 0755 "var/log/foundationdb/sql"
-        mkdir -p -m 0755 "etc/init.d"
+        mkdir -p -m 0755 DEBIAN
+        mkdir -p -m 0755 etc/foundationdb/sql
+        mkdir -p -m 0755 etc/init.d
+        mkdir -p -m 0755 usr/share/doc/fdb-sql-layer
+        mkdir -p -m 0755 usr/share/foundationdb/sql/{plugins,server}
+        mkdir -p -m 0755 var/{lib,log}/foundationdb/sql
 
+        install -m 0644 "${TOP_DIR}/packaging/deb/conffiles" "${STAGE_DIR}/DEBIAN/"
+        install -m 0755 "${TOP_DIR}/packaging/deb/"{pre,post}* "${STAGE_DIR}/DEBIAN/"
         install -m 0755 "${TOP_DIR}/packaging/deb/fdb-sql-layer.init" "${STAGE_DIR}/etc/init.d/fdb-sql-layer"
-        install -m 0644 "${TOP_DIR}/packaging/deb/conffiles" "${STAGE_DIR}/DEBIAN/conffiles"
-        install -m 0755 "${TOP_DIR}/packaging/deb/postinst" "${STAGE_DIR}/DEBIAN/postinst"
-        install -m 0755 "${TOP_DIR}/packaging/deb/postrm" "${STAGE_DIR}/DEBIAN/postrm"
 
         filter_config_files "${STAGE_DIR}/etc/foundationdb/sql" \
               "/var/lib/foundationdb/sql" "/var/log/foundationdb/sql" "/tmp"
         install -m 0644 "${PACKAGING_DIR}/deb/copyright" "usr/share/doc/fdb-sql-layer/"
 
         sed -e "s/VERSION/${LAYER_VERSION}/g" -e "s/RELEASE/${RELEASE}/g" \
-              "${PACKAGING_DIR}/deb/control"  > DEBIAN/control
+              "${PACKAGING_DIR}/deb/fdb-sql-layer.control.in"  > DEBIAN/control
 
         cd usr/share/foundationdb/sql
-        ln -s "${LAYER_JAR_NAME}" "${STAGE_DIR}/usr/share/foundationdb/sql/fdb-sql-layer.jar"
+        ln -s "${LAYER_JAR_NAME}" "fdb-sql-layer.jar"
         cd "${STAGE_DIR}"
-        echo "Installed-Size:" $(du -sx --exclude DEBIAN $STAGE_DIR | awk '{print $1}') >> $STAGE_DIR/DEBIAN/control
+        echo "Installed-Size:" $(du -sx --exclude DEBIAN $STAGE_DIR | awk '{print $1}') >> "${STAGE_DIR}/DEBIAN/control"
         
         fakeroot dpkg-deb --build . "${TOP_DIR}/target"
     ;;    
