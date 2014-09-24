@@ -55,13 +55,13 @@
 ---
 - Statement: SELECT * FROM (
                SELECT id, T1, NULL AS T2, NULL AS T3 FROM table1
-               UNION ALL SELECT id, NULL AS T1, T2, NULL AS T3 FROM table2)
+               UNION ALL SELECT id, NULL AS T1, T2, NULL AS T3 FROM table2) tables
              LEFT OUTER JOIN joinable ON tables.id = joinable.T1;
 - output: [[1, 2, null, null, 1, 5, 9], [5, null, 6, null, null, null, null]]
 ---
 - Statement: SELECT * FROM (
                SELECT id, T1, NULL AS T2, NULL AS T3 FROM table1
-               UNION ALL SELECT id, NULL AS T1, T2, NULL AS T3 FROM table2)
+               UNION ALL SELECT id, NULL AS T1, T2, NULL AS T3 FROM table2) tables
              LEFT OUTER JOIN joinable ON tables.id = joinable.T2;
 - output: [[1, 2, null, null, null, null, null], [5, null, 6, null, 1, 5, 9]]
 ---

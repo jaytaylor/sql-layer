@@ -852,6 +852,9 @@ public class ConstantFolder extends BaseRule
 
         protected Constantness isConstant(ExpressionNode expr) {
             TPreptimeValue tpv = expr.getPreptimeValue();
+            if (tpv == null) {
+                return Constantness.NULL;
+            }
             ValueSource value = tpv.value();
             if (tpv.type() == null) {
                 assert value == null || value.isNull() : value;

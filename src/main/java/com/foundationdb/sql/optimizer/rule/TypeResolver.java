@@ -55,6 +55,7 @@ import com.foundationdb.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 import com.foundationdb.sql.optimizer.rule.ConstantFolder.Folder;
 import com.foundationdb.sql.optimizer.rule.PlanContext.WhiteboardMarker;
 import com.foundationdb.sql.optimizer.rule.PlanContext.DefaultWhiteboardMarker;
+import com.foundationdb.sql.parser.CastNode;
 import com.foundationdb.sql.parser.ValueNode;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
@@ -927,8 +928,40 @@ public final class TypeResolver extends BaseRule {
                 SetPlanNode setOperator = (SetPlanNode)project;
                 project = getProject(((SetPlanNode)project).getLeft());
                 Project oldProject = (Project)project;
-                Project setProject = (Project) project.duplicate();
-                setProject.replaceInput(oldProject.getInput(), setOperator);
+                // Project setProject = (Project) project.duplicate();
+                // There was a comment in 4e3e5bb version of this file
+                // that said:
+                //   Add a project on top of the (nested) union
+                //   to make sure the casts work on the way up
+                // I tried adding that back in so that it actually updates
+                // correctly, but then I got a bind error.
+                // Will have to investigate more on monday.
+                //
+                // I added some checks to AbstractRow, and descendents to
+                // check that the row type aligned with the value type,
+                // PostgresMiscYamlIT had about 10 failing tests when that
+                // check is enabled. Perfomance dictates that this will
+                // either have to be removed, or toggled by a constant
+                // or property.
+                // below is the original line. replaceInput didn't work because
+                // duplicate does a deep copy and replaceInput does a reference equals
+                // but changing it to setInput doesn't fix the problem noted above.
+                // setProject.replaceInput(oldProject.getInput(), setOperator);
+
+                // setProject.setInput(setOperator);
+
+                //setProject.setInput(setOperator);
+
+                List<ExpressionNode> fields = new ArrayList<>(oldProject.nFields());
+                for (int i=0; i < oldProject.nFields(); i++) {
+                    ExpressionNode oldField = oldProject.getFields().get(i);
+                    fields.add(new ColumnExpression(oldProject, i, oldField.getSQLtype(), oldField.getSQLsource(),
+                            oldProject.getTypeAt(i)));
+                }
+                Project setProject = new Project(setOperator, fields);
+                ((BasePlanWithInput) node).setInput(setProject);
+
+
                 return setProject;
             }
             else if (!(project instanceof BasePlanWithInput)) 
