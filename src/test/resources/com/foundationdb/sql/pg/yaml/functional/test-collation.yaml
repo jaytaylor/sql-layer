@@ -112,6 +112,17 @@
 - CreateTable: noRegion(c char(5) COLLATE zh__pinyin_ci)
 - error: [2H001]
 ---
-# make sure this doesn't throw an error
+- CreateTable: ambiguous(c char(5) COLLATE en_ci)
+- error: [2H002]
+---
+- CreateTable: ambiguous(c char(5) COLLATE fr_cx)
+- error: [2H002]
+---
+- CreateTable: ambiguous(c char(5) COLLATE en_co)
+- error: [2H002]
+---
+# make sure these last ones don't throw errors
 - CreateTable: noRegion(c char(5) COLLATE zh__pinyin)
+---
+- CreateTable: noRegion2(c char(5) COLLATE en_)
 ...

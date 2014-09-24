@@ -70,7 +70,7 @@ public class AkCollatorFactoryTest {
         try {
             AkCollatorFactory.setCollationMode(DEFAULT_MODE);
             final AkCollator collator = AkCollatorFactory.getAkCollator("sv_se_ci");
-            assertEquals("Collector should have correct name", "sv_se_ci", collator.getScheme());
+            assertEquals("Collector should have correct name", "sv_se_ci_cx", collator.getScheme());
         } finally {
             AkCollatorFactory.setCollationMode(saveMode);
         }
@@ -123,8 +123,8 @@ public class AkCollatorFactoryTest {
             AkCollatorFactory.setCollationMode("LOOSE");
             assertEquals("Should be binary", AkCollatorFactory.UCS_BINARY_COLLATOR, AkCollatorFactory
                     .getAkCollator("fricostatic_sengalese_ci"));
-            assertEquals("Collector should have correct name", "en_ie_ci", AkCollatorFactory.getAkCollator(
-                    "en_ie_ci").getScheme());
+            assertEquals("Collector should have correct name", "en_ie_ci_cx", AkCollatorFactory.getAkCollator(
+                    "en_ie_ci_cx").getScheme());
 
         } finally {
             AkCollatorFactory.setCollationMode(saveMode);

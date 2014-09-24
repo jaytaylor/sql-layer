@@ -17,10 +17,10 @@
 ---
 - Statement: SELECT TRIM( both 'x' from 'xxabcx') from all_types;
 - output: [['abc'], ['abc'], ['abc']]
---- 
+---
 - Statement: SELECT TRIM(LEADING ' ' from '   abc  ') from all_types;
 - output: [['abc  '], ['abc  '], ['abc  ']]
---- 
+---
 - Statement: SELECT TRIM (LEADING '1' from '111abc111') from all_types;
 - output: [['abc111'], ['abc111'], ['abc111']]
 ---
@@ -87,7 +87,7 @@
 - Statement: SELECT RTRIM('') from all_types;
 - output: [[''], [''], ['']]
 ---
-- CreateTable: T1 (c1 varchar(1)) 
+- CreateTable: T1 (c1 varchar(1))
 ---
 - Statement:  explain verbose select trim (LEADING cast(c1 as char(1)) from 'aaa') from T1
 - output: [
@@ -106,5 +106,5 @@
 # It is unlikely that the effect could cause problems in production, so for now it will just
 # change when you request different collations (that aren't actually different)
 - Statement: select describe_expression(trim(LEADING ' ' from cast(t2.c2 as varchar(350) collate en_us_ci))) from t2
-- output: [['variable MCOMPAT_ VARCHAR(350, UTF8, en_us_ci) NULL']]
+- output: [['variable MCOMPAT_ VARCHAR(350, UTF8, en_us_ci_cx) NULL']]
 ...
