@@ -138,7 +138,13 @@ public abstract class AbstractRow implements Row
     }
 
     private ValueSource checkValueType(int i) {
-        ValueSource nextValue = uncheckedValue(i);
+        ValueSource nextValue;
+        try {
+            nextValue = uncheckedValue(i);
+        } catch (Error e) {
+            // swallow exceptions....
+            return null;
+        }
         if (STRICT_TYPES) {
             TInstance nextValueType = nextValue.getType();
             TInstance expectedTInst = rowType().typeAt(i);
