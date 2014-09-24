@@ -840,14 +840,15 @@ public final class TypeResolver extends BaseRule {
         }
 
         private void updateSetNode(SetPlanNode setPlan) {
-            Project leftProject = getProject(setPlan.getLeft());
-            Project rightProject= getProject(setPlan.getRight());
+            ProjectHolder leftProject = getProject(setPlan.getLeft());
+            ProjectHolder rightProject= getProject(setPlan.getRight());
             Project topProject = (Project)setPlan.getOutput();
-            ResultSet leftResult = (ResultSet)leftProject.getOutput();
-            ResultSet rightResult = (ResultSet)rightProject.getOutput();
-            List<ResultField> fields = new ArrayList<> (leftProject.nFields());
+            ResultSet leftResult = leftProject.getResultSet();
+            ResultSet rightResult = rightProject.getResultSet();
+            int nFields = leftProject.getFields().size();
+            List<ResultField> fields = new ArrayList<>(nFields);
 
-            for (int i= 0; i < leftProject.nFields(); i++) {
+            for (int i= 0; i < nFields; i++) {
                 ExpressionNode leftExpr = leftProject.getFields().get(i);
                 ExpressionNode rightExpr= rightProject.getFields().get(i);
                 DataTypeDescriptor leftType = leftExpr.getSQLtype();
@@ -869,16 +870,9 @@ public final class TypeResolver extends BaseRule {
                     }
                 }
                 TInstance projectInst = typesTranslator.typeForSQLType(projectType);
-                ValueNode leftSource = leftExpr.getSQLsource();
-                ValueNode rightSource = rightExpr.getSQLsource();
 
-                CastExpression leftCast = new CastExpression(leftExpr, projectType, leftSource, projectInst);
-                castProjectField(leftCast, folder, parametersSync, typesTranslator);
-                leftProject.getFields().set(i, leftCast);
-
-                CastExpression rightCast = new CastExpression (rightExpr, projectType, rightSource, projectInst);
-                castProjectField(rightCast, folder, parametersSync, typesTranslator);
-                rightProject.getFields().set(i, rightCast);
+                leftProject.applyCast(i, projectType, projectInst);
+                rightProject.applyCast(i, projectType, projectInst);
 
                 ResultField leftField = leftResult.getFields().get(i);
                 ResultField rightField = rightResult.getFields().get(i);
@@ -918,60 +912,87 @@ public final class TypeResolver extends BaseRule {
             TypeResolver.finishCast(cast, folder, parameterSync);
         }
 
-        private Project getProject(PlanNode node) {
+        private ProjectHolder getProject(PlanNode node) {
             PlanNode project = ((BasePlanWithInput)node).getInput();
             if (project instanceof Project)
-                return (Project)project;
+                return new SingleProjectHolder((Project)project);
 
 
             else if (project instanceof SetPlanNode) {
-                SetPlanNode setOperator = (SetPlanNode)project;
-                project = getProject(((SetPlanNode)project).getLeft());
-                Project oldProject = (Project)project;
-                // Project setProject = (Project) project.duplicate();
-                // There was a comment in 4e3e5bb version of this file
-                // that said:
-                //   Add a project on top of the (nested) union
-                //   to make sure the casts work on the way up
-                // I tried adding that back in so that it actually updates
-                // correctly, but then I got a bind error.
-                // Will have to investigate more on monday.
-                //
-                // I added some checks to AbstractRow, and descendents to
-                // check that the row type aligned with the value type,
-                // PostgresMiscYamlIT had about 10 failing tests when that
-                // check is enabled. Perfomance dictates that this will
-                // either have to be removed, or toggled by a constant
-                // or property.
-                // below is the original line. replaceInput didn't work because
-                // duplicate does a deep copy and replaceInput does a reference equals
-                // but changing it to setInput doesn't fix the problem noted above.
-                // setProject.replaceInput(oldProject.getInput(), setOperator);
+                return new SetProjectHolder((SetPlanNode)project);
 
-                // setProject.setInput(setOperator);
-
-                //setProject.setInput(setOperator);
-
-                List<ExpressionNode> fields = new ArrayList<>(oldProject.nFields());
-                for (int i=0; i < oldProject.nFields(); i++) {
-                    ExpressionNode oldField = oldProject.getFields().get(i);
-                    fields.add(new ColumnExpression(oldProject, i, oldField.getSQLtype(), oldField.getSQLsource(),
-                            oldProject.getTypeAt(i)));
-                }
-                Project setProject = new Project(setOperator, fields);
-                ((BasePlanWithInput) node).setInput(setProject);
-
-
-                return setProject;
             }
-            else if (!(project instanceof BasePlanWithInput)) 
+            else if (!(project instanceof BasePlanWithInput))
                 return null;
             project = ((BasePlanWithInput)project).getInput();
             if (project instanceof Project)
-                return (Project)project;
+                return new SingleProjectHolder((Project)project);
             return null;
         }
+
+        private static interface ProjectHolder {
+            ResultSet getResultSet();
+            List<ExpressionNode> getFields();
+            void applyCast(int i, DataTypeDescriptor projectType, TInstance projectInstance);
+        }
+
+        private class SetProjectHolder implements ProjectHolder {
+            private ProjectHolder leftProject;
+            private ProjectHolder rightProject;
+            private ResultSet resultSet;
+
+            private SetProjectHolder(SetPlanNode node) {
+                resultSet = (ResultSet)node.getOutput();
+                leftProject = getProject(node.getLeft());
+                rightProject = getProject(node.getRight());
+            }
+
+            @Override
+            public ResultSet getResultSet() {
+                return resultSet;
+            }
+
+            @Override
+            public List<ExpressionNode> getFields() {
+                return leftProject.getFields();
+            }
+
+            @Override
+            public void applyCast(int i, DataTypeDescriptor projectType, TInstance projectInstance) {
+                leftProject.applyCast(i, projectType, projectInstance);
+                rightProject.applyCast(i, projectType, projectInstance);
+            }
+        }
+
+        private class SingleProjectHolder implements ProjectHolder {
+
+            private Project project;
+
+            private SingleProjectHolder(Project project) {
+                this.project = project;
+            }
+
+            @Override
+            public ResultSet getResultSet() {
+                return (ResultSet)project.getOutput();
+            }
+
+            @Override
+            public List<ExpressionNode> getFields() {
+                return project.getFields();
+            }
+
+            @Override
+            public void applyCast(int i, DataTypeDescriptor projectType, TInstance projectInstance) {
+                ExpressionNode expression = getFields().get(i);
+                ValueNode source = expression.getSQLsource();
+                CastExpression cast = new CastExpression(expression, projectType, source, projectInstance);
+                castProjectField(cast, folder, parametersSync, typesTranslator);
+                getFields().set(i, cast);
+            }
+        }
     }
+
 
     private static ValueSource castValue(TCast cast, TPreptimeValue source, TInstance targetInstance) {
         if (source == null)
@@ -1096,7 +1117,7 @@ public final class TypeResolver extends BaseRule {
                 if (operand instanceof ParameterExpression) {
                     TInstance castTarget = type(cast);
                     TInstance parameterType = type(operand);
-                    if (castTarget.equals(parameterType))
+                    if (castTarget != null && castTarget.equals(parameterType))
                         n = operand;
                 }
             }
