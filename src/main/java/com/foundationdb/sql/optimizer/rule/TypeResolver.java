@@ -985,10 +985,20 @@ public final class TypeResolver extends BaseRule {
             @Override
             public void applyCast(int i, DataTypeDescriptor projectType, TInstance projectInstance) {
                 ExpressionNode expression = getFields().get(i);
-                ValueNode source = expression.getSQLsource();
-                CastExpression cast = new CastExpression(expression, projectType, source, projectInstance);
-                castProjectField(cast, folder, parametersSync, typesTranslator);
-                getFields().set(i, cast);
+                TInstance expressionType = type(expression);
+                if (expression instanceof CastExpression) {
+                    if (expressionType == null) {
+                        CastExpression castExpression = (CastExpression) expression;
+                        expression = castExpression.getOperand();
+                        expressionType = type(expression);
+                    }
+                }
+                if (expressionType == null || !expressionType.equals(projectInstance)) {
+                    ValueNode source = expression.getSQLsource();
+                    CastExpression cast = new CastExpression(expression, projectType, source, projectInstance);
+                    castProjectField(cast, folder, parametersSync, typesTranslator);
+                    getFields().set(i, cast);
+                }
             }
         }
     }
