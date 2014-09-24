@@ -857,11 +857,11 @@ public final class TypeResolver extends BaseRule {
                 DataTypeDescriptor projectType = null;
                 // Case of SELECT null UNION SELECT null -> pick a type
                 if (leftType == null && rightType == null)
-                    projectType = new DataTypeDescriptor (TypeId.VARCHAR_ID, true);
-                if (leftType == null)
-                    projectType = rightType;
+                    projectType = null;
+                else if (leftType == null)
+                    projectType = rightType.getNullabilityType(true);
                 else if (rightType == null)
-                    projectType = leftType;
+                    projectType = leftType.getNullabilityType(true);
                 else {
                     try {
                         projectType = leftType.getDominantType(rightType);

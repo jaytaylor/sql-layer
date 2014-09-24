@@ -22,6 +22,8 @@ union-10r: with returning
 
 union-11: three way union with null
 
+union-12: null vs non-nullable
+
 params-0: bare parameter
 
 params-1: parameter type inferred
