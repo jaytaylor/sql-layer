@@ -1,3 +1,5 @@
-SELECT             id, NULL AS T3 FROM table1
-  UNION ALL SELECT id, NULL AS T3 FROM table2
-  UNION ALL SELECT id, T3         FROM table3
+SELECT name, NULL AS quan FROM parent
+UNION
+SELECT name, NULL AS quan FROM customers
+UNION
+select sku AS name, quan FROM items

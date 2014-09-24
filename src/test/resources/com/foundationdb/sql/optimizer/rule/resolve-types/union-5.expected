@@ -6,6 +6,6 @@ SelectQuery@85f4bbb
           Select@ec802ad[]
             TableSource@6d27b36f(t1)
       ResultSet@49757465[_SQL_COL_2]
-        Project@3e2cb890[Cast(plus(t1.n2,0) AS MCOMPAT_ BIGINT(21) NULL)]
+        Project@3e2cb890[plus(t1.n2,0)]
           Select@6a0915d3[]
             TableSource@7a780607(t1)
