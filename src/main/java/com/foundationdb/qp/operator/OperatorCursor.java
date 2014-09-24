@@ -35,10 +35,6 @@ public abstract class OperatorCursor extends OperatorExecutionBase implements Cu
     @Override
     public void closeTopLevel() {
         close();
-        if (CURSOR_LIFECYCLE_ENABLED) {
-            QueryBindings bindings = nextBindings();
-            assert (bindings == null);
-        }
         closeBindings();
     }
 }
