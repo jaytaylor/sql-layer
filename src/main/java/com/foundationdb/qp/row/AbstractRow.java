@@ -33,7 +33,7 @@ public abstract class AbstractRow implements Row
      * value examined. Generally speeking the rest of the code does a good enough job that
      * this is rare at best, but it can act as a canary for bigger problems.
      */
-    private static final boolean STRICT_TYPES = false;
+    private static final boolean DEBUG_ROWTYPE = Boolean.getBoolean("fdbsql.test.debug_rowtype");
     // ValueRecord interface
 
     /**
@@ -135,7 +135,7 @@ public abstract class AbstractRow implements Row
 
 
     private ValueSource checkValueType(int i, ValueSource nextValue) {
-        if (STRICT_TYPES) {
+        if (DEBUG_ROWTYPE) {
             TInstance nextValueType = nextValue.getType();
             TInstance expectedTInst = rowType().typeAt(i);
             if (TInstance.tClass(nextValueType) != TInstance.tClass(expectedTInst))
