@@ -675,7 +675,7 @@ public final class TypeResolver extends BaseRule {
                                         ? null
                                         : new TPreptimeValue(columnType, asColType);
                                 ValueSource backToConstType = castValue(colToConst, asColTypeTpv, constType);
-                                if (ValueSources.areEqual(constValue.value(), backToConstType, constType)) {
+                                if (ValueSources.areEqual(constValue.value(), backToConstType)) {
                                     TPreptimeValue constTpv = new TPreptimeValue(columnType, asColType);
                                     ConstantExpression constCasted = new ConstantExpression(constTpv);
                                     expression.setRight(constCasted);

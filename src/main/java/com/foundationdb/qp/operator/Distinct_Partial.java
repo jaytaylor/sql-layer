@@ -279,7 +279,7 @@ class Distinct_Partial extends Operator
                     return collator.compare(x, y) == 0;
                 }
             }
-            return ValueSources.areEqual(x, y, type);
+            return ValueSources.areEqual(x, y);
         }
 
         // Object state
