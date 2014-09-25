@@ -55,7 +55,6 @@ import com.foundationdb.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 import com.foundationdb.sql.optimizer.rule.ConstantFolder.Folder;
 import com.foundationdb.sql.optimizer.rule.PlanContext.WhiteboardMarker;
 import com.foundationdb.sql.optimizer.rule.PlanContext.DefaultWhiteboardMarker;
-import com.foundationdb.sql.parser.CastNode;
 import com.foundationdb.sql.parser.ValueNode;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
