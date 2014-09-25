@@ -309,14 +309,14 @@ public class AkCollatorFactory {
             String variant = null;
             try {
                 locale = new ULocale(pieces[LANGUAGE_NDX], pieces[REGION_NDX]);
-                ULocale.Builder builder = new ULocale.Builder();
-                builder.setLanguage(pieces[LANGUAGE_NDX]);
-                builder.setRegion(pieces[REGION_NDX]);
+                ULocale.Builder builder = new ULocale.Builder().setLanguage(pieces[LANGUAGE_NDX])
+                                                               .setRegion(pieces[REGION_NDX]);
                 checkLocale(pieces[LANGUAGE_NDX], pieces[REGION_NDX], scheme);
                 if (pieces.length == REGION_NDX + 2) {
                     try {
                         variant = pieces[REGION_NDX+1];
-                        builder.setVariant(variant.toUpperCase());
+                        // TODO: check variant (somehow), or get rid of it?
+                        builder = builder.setVariant(variant.toUpperCase());
                         setStrength = false;
                     } catch (IllformedLocaleException e) {
                         throw new InvalidCollationSchemeException(scheme);
