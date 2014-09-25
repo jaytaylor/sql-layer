@@ -18,6 +18,7 @@
 package com.foundationdb.server.service.is;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
@@ -36,8 +37,13 @@ import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.server.test.it.qp.TestRow;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.texpressions.TPreparedField;
+import com.foundationdb.server.types.texpressions.TPreparedLiteral;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -98,7 +104,7 @@ public class ServerSchemaTablesServiceIT extends ITBase
     @Test
     public void testServerInstanceSummary() {
         final Object[][] expected = {
-                {"FoundationDB SQL Layer"}
+                {null}
         };
 
         checkSubsetTable(expected, ServerSchemaTablesServiceImpl.SERVER_INSTANCE_SUMMARY, 0);
@@ -189,7 +195,7 @@ public class ServerSchemaTablesServiceIT extends ITBase
 
     }
     
-    private void checkSubsetTable(Object[][] expected, TableName tableName, int column) 
+    private void checkSubsetTable(Object[][] expected, TableName tableName, int columnNum) 
     {
         Table table = ais().getTable(tableName);
         Schema schema = SchemaCache.globalSchema(ais());
@@ -199,9 +205,13 @@ public class ServerSchemaTablesServiceIT extends ITBase
         QueryContext queryContext = new SimpleQueryContext(adapter);
         
         List<TPreparedExpression> pExpressions = new ArrayList<>(1);
-        pExpressions.add(new TPreparedField(rowType.typeAt(column), column));
+       
+        Value value = new Value(rowType.typeAt(columnNum));
+        value.putNull();
+        TPreptimeValue ptval = new TPreptimeValue (value.getType(), value);
+        pExpressions.add(new TPreparedLiteral(ptval.type(), ptval.value()));
         
-        ValuesRowType expectedType = schema.newValuesType(rowType.typeAt(column));
+        ValuesRowType expectedType = schema.newValuesType(rowType.typeAt(columnNum));
         
         Row[] rows = objectToRows(expected, expectedType);
         
