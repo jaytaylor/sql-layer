@@ -83,19 +83,16 @@ public class ServerSchemaTablesServiceIT extends ITBase
     @Test
     public void testErrorCode() {
         final Object[][] expected = { 
-                {"00000", "SUCCESSFUL_COMPLETION", "Successful completion", null, 1}
         };
         
-        checkLimitTable (expected, ServerSchemaTablesServiceImpl.ERROR_CODES, 1);
+        checkLimitTable (expected, ServerSchemaTablesServiceImpl.ERROR_CODES, 0);
     }
     
-    @Ignore ("Error Class is hashmap backed, so adding a new class will cause the first one change")
     @Test
     public void testErrorClass() {
         final Object[][] expected = {
-                {"3B", "Savepoint exception", 1}
         };
-        checkLimitTable (expected, ServerSchemaTablesServiceImpl.ERROR_CODE_CLASSES, 1);
+        checkLimitTable (expected, ServerSchemaTablesServiceImpl.ERROR_CODE_CLASSES, 0);
     }
     
     @Test
@@ -108,12 +105,48 @@ public class ServerSchemaTablesServiceIT extends ITBase
     }
     
     @Test
+    public void testCursors() {
+        final Object[][] expected = {
+        };
+        checkLimitTable (expected, ServerSchemaTablesServiceImpl.SERVER_CURSORS, 0);
+    }
+
+    @Test
+    public void testGarbageCollectors() {
+        final Object[][] expected = {
+        };
+        checkLimitTable (expected, ServerSchemaTablesServiceImpl.SERVER_GARBAGE_COLLECTORS, 0);
+    }
+
+    @Test
+    public void testMemoryPools() {
+        final Object[][] expected = {
+        };
+        checkLimitTable (expected, ServerSchemaTablesServiceImpl.SERVER_MEMORY_POOLS, 0);
+    }
+
+    @Test
     public void testServers() {
         final Object[][] expected = {
         };
 
-        checkSubsetTable(expected, ServerSchemaTablesServiceImpl.SERVER_SERVERS, 0);
+        checkLimitTable(expected, ServerSchemaTablesServiceImpl.SERVER_SERVERS, 0);
     }
+
+    @Test
+    public void testServerSessions() {
+        final Object[][] expected = {
+        };
+        checkLimitTable (expected, ServerSchemaTablesServiceImpl.SERVER_SESSIONS, 0);
+    }
+    
+    @Test
+    public void testServerParameters() {
+        final Object[][] expected = {
+        };
+        checkLimitTable (expected, ServerSchemaTablesServiceImpl.SERVER_PARAMETERS, 0);
+    }
+
     
     @Test
     public void testServerUsers() {
@@ -131,6 +164,12 @@ public class ServerSchemaTablesServiceIT extends ITBase
         checkTable(expected,ServerSchemaTablesServiceImpl.SERVER_PREPARED_STATEMENTS);
     }
     
+    @Test
+    public void testTaps() {
+        final Object[][] expected = {
+        };
+        checkLimitTable (expected, ServerSchemaTablesServiceImpl.SERVER_TAPS, 0);
+    }
     
 
     private void checkLimitTable (Object[][] expected, TableName tableName, int limit) 
