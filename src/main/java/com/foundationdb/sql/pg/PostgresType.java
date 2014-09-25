@@ -69,8 +69,10 @@ public class PostgresType extends ServerType
         PG_ATTRIBUTE_TYPE_OID(75, "pg_attribute", TypType.COMPOSITE),
         PG_PROC_TYPE_OID(81, "pg_proc", TypType.COMPOSITE),
         PG_CLASS_TYPE_OID(83, "pg_class", TypType.COMPOSITE),
+        JSON_TYPE_OID(114, "json", BinaryEncoding.STRING_BYTES, Types.VARCHAR),
         XML_TYPE_OID(142, "xml"),
         _XML_TYPE_OID(143, "_xml"),
+        _JSON_TYPE_OID(199, "_json"),
         SMGR_TYPE_OID(210, "smgr"),
         POINT_TYPE_OID(600, "point"),
         LSEG_TYPE_OID(601, "lseg"),
@@ -150,7 +152,8 @@ public class PostgresType extends ServerType
         REGPROCEDURE_TYPE_OID(2202, "regprocedure"),
         REGOPER_TYPE_OID(2203, "regoper"),
         REGOPERATOR_TYPE_OID(2204, "regoperator"),
-        UUID_TYPE_OID(2950, "uuid");
+        UUID_TYPE_OID(2950, "uuid"),
+        _UUID_TYPE_OID(2951, "_uuid");
         
         enum TypType {
             BASE,
