@@ -140,7 +140,7 @@ public abstract class AbstractRow implements Row
             TInstance expectedTInst = rowType().typeAt(i);
             if (TInstance.tClass(nextValueType) != TInstance.tClass(expectedTInst))
                 throw new IllegalArgumentException(
-                        "value at index " + i + " expected type " + rowType().typeAt(i)
+                        "value at index " + i + " expected type " + expectedTInst
                                 + ", but UnderlyingType was " + nextValueType + ": " + nextValue);
         }
         return nextValue;
