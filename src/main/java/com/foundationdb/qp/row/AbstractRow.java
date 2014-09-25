@@ -27,6 +27,12 @@ import com.foundationdb.util.AkibanAppender;
 
 public abstract class AbstractRow implements Row
 {
+    /**
+     * Setting this to true causes every value type to be checked against the rowtype,
+     * to make sure they're the same. This can be rather expensive, and happens for every
+     * value examined. Generally speeking the rest of the code does a good enough job that
+     * this is rare at best, but it can act as a canary for bigger problems.
+     */
     private static final boolean STRICT_TYPES = true;
     // ValueRecord interface
 
