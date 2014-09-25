@@ -12,7 +12,7 @@
 - output: [[1],[2],[4]]
 ---
 - CreateTable: t2 (id INT, c CHAR(5) COLLATE foo)
-- error: [2H001]
+- error: [2H000]
 ---
 - CreateTable: t2 (id INT, c CHAR(5) CHARACTER SET foo)
 - error: [2C000]
@@ -115,11 +115,10 @@
 - CreateTable: ambiguous(c char(5) COLLATE en_ci)
 - error: [2H002]
 ---
-- CreateTable: ambiguous(c char(5) COLLATE fr_cx)
-- error: [2H002]
----
 - CreateTable: ambiguous(c char(5) COLLATE en_co)
 - error: [2H002]
+---
+- CreateTable: unambiguous(c char(5) COLLATE fr_cx_ci)
 ---
 # make sure these last ones don't throw errors
 - CreateTable: noRegion(c char(5) COLLATE zh__pinyin)

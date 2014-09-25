@@ -18,7 +18,9 @@
 package com.foundationdb.server.collation;
 
 import java.lang.ref.SoftReference;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,6 +58,10 @@ public class AkCollatorFactory {
     private final static Map<String, Integer> schemeToIdMap = new ConcurrentHashMap<>();
 
     private final static AtomicInteger collationIdGenerator = new AtomicInteger(UCS_BINARY_ID);
+
+    // TODO: should this be a hashset?
+    private final static HashSet<String> regions = new HashSet<String>(Arrays.asList(ULocale.getISOCountries()));
+    private final static HashSet<String> languages = new HashSet<String>(Arrays.asList(ULocale.getISOLanguages()));
 
     private volatile static Mode mode = Mode.STRICT;
 
@@ -128,9 +134,10 @@ public class AkCollatorFactory {
             return canonicalize.append("_").toString();
         }
 
-        if (pieces[REGION_NDX].equals(CASE_INSENSITIVE) ||
-                pieces[REGION_NDX].equals(ACCENT_SENSITIVE) ||
-                pieces[REGION_NDX].equals(ACCENT_INSENSITIVE)) {
+        if (pieces.length == REGION_NDX + 1 &&
+                (pieces[REGION_NDX].equals(CASE_INSENSITIVE) ||
+                 pieces[REGION_NDX].equals(ACCENT_SENSITIVE) ||
+                 pieces[REGION_NDX].equals(ACCENT_INSENSITIVE))) {
             String possibility1 = new StringBuilder().append(pieces[LANGUAGE_NDX])
                                                      .append("_")
                                                      .append("_")
@@ -138,13 +145,14 @@ public class AkCollatorFactory {
                                                      .toString();
             String possibility2 = new StringBuilder().append(pieces[LANGUAGE_NDX])
                                                      .append("_")
-                                                     .append(REGION_NDX)
-                                                     .append("_")
                                                      .append(pieces[REGION_NDX])
+                                                     .append("_")
+                                                     .append(pieces[REGION_NDX] == CASE_INSENSITIVE ?
+                                                             CASE_SENSITIVE : ACCENT_INSENSITIVE)
                                                      .toString();
             throw new AmbiguousCollationException(scheme, possibility1, possibility2);
         }
-
+        
         canonicalize.append("_").append(pieces[REGION_NDX]);
 
         if (pieces.length == CASE_NDX + 1 && !pieces[CASE_NDX].equals(CASE_SENSITIVE) &&
@@ -298,13 +306,17 @@ public class AkCollatorFactory {
 
             ULocale locale = null;
             Boolean setStrength = true;
+            String variant = null;
             try {
+                locale = new ULocale(pieces[LANGUAGE_NDX], pieces[REGION_NDX]);
                 ULocale.Builder builder = new ULocale.Builder();
                 builder.setLanguage(pieces[LANGUAGE_NDX]);
                 builder.setRegion(pieces[REGION_NDX]);
+                checkLocale(pieces[LANGUAGE_NDX], pieces[REGION_NDX], scheme);
                 if (pieces.length == REGION_NDX + 2) {
                     try {
-                        builder.setVariant(pieces[REGION_NDX+1]);
+                        variant = pieces[REGION_NDX+1];
+                        builder.setVariant(variant.toUpperCase());
                         setStrength = false;
                     } catch (IllformedLocaleException e) {
                         throw new InvalidCollationSchemeException(scheme);
@@ -318,6 +330,8 @@ public class AkCollatorFactory {
             }
 
             collator = (RuleBasedCollator) RuleBasedCollator.getInstance(locale);
+            checkVariant(collator, variant, scheme);
+
             if (setStrength) {
                 setCollatorStrength(collator, scheme);
             }
@@ -325,6 +339,18 @@ public class AkCollatorFactory {
         }
         collator = collator.cloneAsThawed();
         return collator;
+    }
+
+    private static void checkLocale(String language, String region, String scheme) {
+        if ((!language.isEmpty() && !languages.contains(language)) ||
+                (!region.isEmpty() && !regions.contains(region.toUpperCase())))
+            throw new UnsupportedCollationException(scheme);
+    }
+
+    private static void checkVariant(Collator collator, String variant, String scheme) {
+        if (variant != null &&
+                !collator.getLocale(ULocale.VALID_LOCALE).getVariant().equalsIgnoreCase(variant))
+            throw new UnsupportedCollationException(scheme);
     }
 
     private static void setCollatorStrength(RuleBasedCollator collator, String scheme) {
