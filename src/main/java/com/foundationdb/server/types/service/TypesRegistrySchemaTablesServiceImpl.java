@@ -46,7 +46,8 @@ extends SchemaTablesService
 implements Service, TypesRegistrySchemaTablesService {
     
     private final TypesRegistryService typesRegistry;
-
+    public static final TableName AK_OVERLOADS = TableName.create(TableName.INFORMATION_SCHEMA, "ak_overloads");
+    public static final TableName AK_CASTS = TableName.create(TableName.INFORMATION_SCHEMA, "ak_casts");
     @Inject
     public TypesRegistrySchemaTablesServiceImpl(SchemaManager schemaManager, 
             TypesRegistryService typesRegistry) {
@@ -56,12 +57,10 @@ implements Service, TypesRegistrySchemaTablesService {
 
     @Override
     public void start() {
-        TableName overloadsName = TableName.create(TableName.INFORMATION_SCHEMA, "ak_overloads");
-        OverloadsTableFactory overloadsFactory = new OverloadsTableFactory(overloadsName);
+        OverloadsTableFactory overloadsFactory = new OverloadsTableFactory(AK_OVERLOADS);
         attach(overloadsFactory.table(schemaManager.getTypesTranslator()),  overloadsFactory);
         
-        TableName castsName = TableName.create(TableName.INFORMATION_SCHEMA, "ak_casts");
-        CastsTableFactory castsFactory = new CastsTableFactory(castsName);
+        CastsTableFactory castsFactory = new CastsTableFactory(AK_CASTS);
         attach (castsFactory.table(schemaManager.getTypesTranslator()), castsFactory);
     }
 
