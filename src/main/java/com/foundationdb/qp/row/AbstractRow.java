@@ -134,30 +134,6 @@ public abstract class AbstractRow implements Row
     }
 
 
-    // AbstractRow interface
-    protected void checkTypes() {
-        if (STRICT_TYPES) {
-            int nFields;
-            try {
-                nFields = rowType().nFields();
-            } catch (Exception e) {
-                // this throws an exception if there's no active row
-                return;
-            }
-            for (int i = 0; i < nFields; i++) {
-                ValueSource nextValue = null;
-                try {
-                    nextValue = uncheckedValue(i);
-                } catch (Exception e) {
-                    // we're not worried here about whether or not we can get the value
-                    // that is often perfectly acceptable
-                    continue;
-                }
-                checkValueType(i, nextValue);
-            }
-        }
-    }
-
     private ValueSource checkValueType(int i, ValueSource nextValue) {
         if (STRICT_TYPES) {
             TInstance nextValueType = nextValue.getType();
