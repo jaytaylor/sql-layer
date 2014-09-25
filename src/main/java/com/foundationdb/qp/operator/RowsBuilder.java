@@ -136,7 +136,6 @@ public final class RowsBuilder {
         private InternalValuesRow(RowType rowType, List<? extends ValueSource> values) {
             this.rowType = rowType;
             this.values = new ArrayList<>(values);
-            checkTypes();
         }
 
         @Override

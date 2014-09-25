@@ -170,7 +170,6 @@ public class PersistitGroupRow extends AbstractRow
         this.adapter = adapter;
         this.rowData = rowData;
         this.hKeyCache = new HKeyCache<PersistitHKey>(adapter);
-        checkTypes();
     }
 
     private RowDataValueSource valueSource(int i) {

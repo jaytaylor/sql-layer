@@ -47,7 +47,6 @@ public class ExpressionRow extends AbstractRow
             evaluation.with(bindings);
             this.pEvaluations.add(evaluation);
         }
-        checkTypes();
     }
 
     /* AbstractRow */

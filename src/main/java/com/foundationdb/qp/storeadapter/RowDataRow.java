@@ -37,7 +37,6 @@ public class RowDataRow extends AbstractRow
         assert (rowType.typeId() == rowData.getRowDefId());
         this.rowType = rowType;
         this.rowData = rowData;
-        checkTypes();
     }
 
     @Override

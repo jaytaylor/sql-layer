@@ -83,7 +83,6 @@ public class CompoundRow extends AbstractRow {
         this.secondRow = secondRow;
         this.firstRowFields = type.first().nFields();
         this.rowOffset = type.first().nFields();
-        checkTypes();
     }
 
     private ValueSource nullValue(int i) {

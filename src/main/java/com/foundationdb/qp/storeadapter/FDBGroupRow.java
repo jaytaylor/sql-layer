@@ -42,7 +42,6 @@ public class FDBGroupRow extends AbstractRow {
     public FDBGroupRow(FDBAdapter adapter) {
         this.adapter = adapter;
         this.hKeyCache = new HKeyCache<>(adapter);
-        checkTypes();
     }
 
     public void set(Key key, RowData rowData) {

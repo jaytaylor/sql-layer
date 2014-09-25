@@ -103,7 +103,6 @@ public class ProjectedRow extends AbstractRow
             evaluated = null;
         else
             evaluated = new boolean[pEvaluatableExpressions.size()];
-        checkTypes();
     }
 
     public static List<TEvaluatableExpression> createTEvaluatableExpressions

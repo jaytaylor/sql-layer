@@ -65,7 +65,6 @@ class AbstractValuesHolderRow extends AbstractRow {
         this.isMutable = false;
         this.rowType = rowType;
         this.values = Collections.unmodifiableList(values);
-        checkTypes();
     }
 
     AbstractValuesHolderRow(RowType rowType, boolean isMutable,
