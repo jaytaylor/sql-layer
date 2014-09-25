@@ -43,7 +43,6 @@ public final class ImmutableRow extends AbstractValuesHolderRow
     {
         int size = row.rowType().nFields();
         List<ValueSource> ret = new ArrayList<>(size);
-        // this is after project, why doesn't the rowtype align with the valuetype
         for (int i = 0; i < size; ++i)
             ret.add(row.value(i));
         return ret.iterator();
