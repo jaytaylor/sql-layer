@@ -33,7 +33,7 @@ public abstract class AbstractRow implements Row
      * value examined. Generally speeking the rest of the code does a good enough job that
      * this is rare at best, but it can act as a canary for bigger problems.
      */
-    private static final boolean STRICT_TYPES = true;
+    private static final boolean STRICT_TYPES = false;
     // ValueRecord interface
 
     /**
