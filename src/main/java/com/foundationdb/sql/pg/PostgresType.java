@@ -157,7 +157,7 @@ public class PostgresType extends ServerType
             COMPOSITE,
             DOMAIN,
             ENUM,
-            PSEDUO;
+            PSEUDO;
         }
 
         private int oid;
