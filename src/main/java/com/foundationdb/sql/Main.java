@@ -23,9 +23,13 @@ import com.foundationdb.util.GCMonitor;
 import com.foundationdb.util.LoggingStream;
 import com.foundationdb.util.OsUtils;
 import com.google.inject.Inject;
+import com.google.inject.ProvisionException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.foundationdb.server.error.MetadataVersionNewerException;
+import com.foundationdb.server.error.MetadataVersionTooOldException;
 import com.foundationdb.server.manage.ManageMXBean;
 import com.foundationdb.server.manage.ManageMXBeanImpl;
 import com.foundationdb.server.service.Service;
@@ -155,6 +159,14 @@ public class Main implements Service, JmxManageable, LayerInfoInterface
 
         try {
             doStartup();
+        } catch (ProvisionException e) {
+            if (e.getCause() instanceof MetadataVersionNewerException || 
+                    e.getCause() instanceof MetadataVersionTooOldException) {
+                LOG.error(e.getCause().getLocalizedMessage());
+            } else {
+                LOG.error("Provisioning exception starting system {}", e);
+            }
+            System.exit(1);
         } catch(Throwable t) {
             LOG.error("Problem starting system", t);
             System.exit(1);
@@ -197,6 +209,7 @@ public class Main implements Service, JmxManageable, LayerInfoInterface
             FileWriter out = new FileWriter(pidFile);
             out.write(OsUtils.getProcessID());
             out.flush();
+            out.close();
         }
     }
 

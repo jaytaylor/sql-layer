@@ -443,6 +443,8 @@ public enum ErrorCode {
     ROW_OUTPUT              ("53", "005", Importance.DEBUG, RowOutputException.class),
     SCAN_RETRY_ABANDONDED   ("53", "006", Importance.ERROR, ScanRetryAbandonedException.class),
     //53007
+    METADATA_VERSION_OLD   ("53", "007", Importance.ERROR, MetadataVersionTooOldException.class),
+    METADATA_VERSION_NEWER ("53", "008", Importance.ERROR, MetadataVersionNewerException.class),
     //53008
     TABLEDEF_MISMATCH       ("53", "009", Importance.DEBUG, TableDefinitionMismatchException.class),
     PROTOBUF_READ           ("53", "00A", Importance.ERROR, ProtobufReadException.class),
