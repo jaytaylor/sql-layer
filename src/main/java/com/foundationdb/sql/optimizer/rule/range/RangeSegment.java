@@ -18,7 +18,9 @@
 package com.foundationdb.sql.optimizer.rule.range;
 
 import com.foundationdb.server.types.texpressions.Comparison;
+import com.foundationdb.sql.optimizer.plan.ColumnExpression;
 import com.foundationdb.sql.optimizer.plan.ConstantExpression;
+import com.foundationdb.sql.optimizer.plan.ExpressionNode;
 import com.foundationdb.util.ArgumentValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,8 +34,6 @@ import java.util.ListIterator;
 public final class RangeSegment {
 
     private static final Logger log = LoggerFactory.getLogger(RangeSegment.class);
-
-    public static final RangeSegment ONLY_NULL = new RangeSegment(RangeEndpoint.NULL_INCLUSIVE, RangeEndpoint.NULL_INCLUSIVE);
 
     public static List<RangeSegment> fromComparison(Comparison op, ConstantExpression constantExpression) {
         final RangeEndpoint startPoint;
@@ -289,4 +289,9 @@ public final class RangeSegment {
             return segment1.getStart().compareTo(segment2.getStart());
         }
     };
+
+    public static RangeSegment onlyNull(ExpressionNode expressionNode) {
+        return new RangeSegment(RangeEndpoint.nullInclusive(expressionNode),
+                RangeEndpoint.nullInclusive(expressionNode));
+    }
 }
