@@ -24,6 +24,8 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.rowdata.FieldDef;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TypeDeclarationException;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 
@@ -82,7 +84,12 @@ public class NewRowBackedIndexRow implements Row
     public ValueSource value(int i) {
         FieldDef fieldDef = index.getAllColumns().get(i).getColumn().getFieldDef();
         int fieldPos = fieldDef.getFieldIndex();
-        return ValueSources.valuefromObject(row.get(fieldPos), rowType.typeAt(fieldPos));
+        Object value = row.get(fieldPos);
+        TInstance type = rowType.typeAt(fieldPos);
+        if (type == null && value != null) {
+            throw new RowType.InconsistentRowTypeException(i, value);
+        }
+        return ValueSources.valuefromObject(value, type);
     }
 
     @Override

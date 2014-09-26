@@ -138,10 +138,10 @@ public abstract class AbstractRow implements Row
         if (DEBUG_ROWTYPE) {
             TInstance nextValueType = nextValue.getType();
             TInstance expectedTInst = rowType().typeAt(i);
+            if (expectedTInst == null && !nextValue.isNull())
+                throw new RowType.InconsistentRowTypeException(i, nextValue.getObject());
             if (TInstance.tClass(nextValueType) != TInstance.tClass(expectedTInst))
-                throw new IllegalArgumentException(
-                        "value at index " + i + " expected type " + expectedTInst
-                                + ", but UnderlyingType was " + nextValueType + ": " + nextValue);
+                throw new RowType.InconsistentRowTypeException(i, expectedTInst, nextValueType, nextValue);
         }
         return nextValue;
     }
