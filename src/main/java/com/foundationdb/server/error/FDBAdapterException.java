@@ -39,4 +39,8 @@ public class FDBAdapterException extends StoreAdapterRuntimeException
     private FDBAdapterException(ErrorCode errorCode, String desc) {
         super(errorCode, desc);
     }
+    
+    protected FDBAdapterException (ErrorCode code, Long i, Long j, Long k, Long l) {
+        super (code, i, j, k, l);
+    }
 }
