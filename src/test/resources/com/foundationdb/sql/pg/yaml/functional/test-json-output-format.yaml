@@ -50,11 +50,11 @@
 ---
 - Statement: SET OutputFormat TO 'json_with_meta_data';
 ---
-- Statement: SELECT * FROM t
-- output: [['[{"name":"id","oid":23,"type":"INTEGER NOT NULL"},{"name":"name","oid":1043,"type":"VARCHAR(32) CHARACTER SET UTF8 COLLATE UCS_BINARY NOT NULL","length":32}]'],['{"id":1,"name":"abc"}'],["{\"id\":2,\"name\":\"abc'xyz\"}"],["{\"id\":3,\"name\":\"abc\\\"xyz\"}"],["{\"id\":4,\"name\":\"abc\\nxyz\"}"],["{\"id\":5,\"name\":\"\\u2603\"}"]]
+- Statement: SELECT * FROM t order by id
+- output_already_ordered: [['[{"name":"id","oid":23,"type":"INTEGER NOT NULL"},{"name":"name","oid":1043,"type":"VARCHAR(32) CHARACTER SET UTF8 COLLATE UCS_BINARY NOT NULL","length":32}]'],['{"id":1,"name":"abc"}'],["{\"id\":2,\"name\":\"abc'xyz\"}"],["{\"id\":3,\"name\":\"abc\\\"xyz\"}"],["{\"id\":4,\"name\":\"abc\\nxyz\"}"],["{\"id\":5,\"name\":\"\\u2603\"}"]]
 ---
 - Statement: INSERT INTO t2(n) VALUES(7),(8) RETURNING id;
-- output: [['[{"name":"id","oid":23,"type":"INTEGER NOT NULL"}]'],['{"id":3}'],['{"id":4}']]
+- output_already_ordered: [['[{"name":"id","oid":23,"type":"INTEGER NOT NULL"}]'],['{"id":3}'],['{"id":4}']]
 ---
 - Statement: SET OutputFormat TO DEFAULT;
 ...
