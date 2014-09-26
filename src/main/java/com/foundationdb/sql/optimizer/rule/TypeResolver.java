@@ -55,6 +55,7 @@ import com.foundationdb.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 import com.foundationdb.sql.optimizer.rule.ConstantFolder.Folder;
 import com.foundationdb.sql.optimizer.rule.PlanContext.WhiteboardMarker;
 import com.foundationdb.sql.optimizer.rule.PlanContext.DefaultWhiteboardMarker;
+import com.foundationdb.sql.parser.CastNode;
 import com.foundationdb.sql.parser.ValueNode;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
@@ -740,7 +741,7 @@ public final class TypeResolver extends BaseRule {
                 return expression;
             }
             else if (columnSource instanceof NullSource) {
-                expression.setPreptimeValue(new TPreptimeValue(null));
+                expression.setPreptimeValue(new TPreptimeValue(null, null));
                 return expression;
             }
             else if (columnSource instanceof Project) {
@@ -763,7 +764,7 @@ public final class TypeResolver extends BaseRule {
                 expression.setPreptimeValue(tpv);
             }
             else if (columnSource instanceof CreateAs){
-                expression.setPreptimeValue(new TPreptimeValue(null));
+                expression.setPreptimeValue(new TPreptimeValue(null, null));
                 return expression;
             }
             else {
@@ -839,14 +840,15 @@ public final class TypeResolver extends BaseRule {
         }
 
         private void updateSetNode(SetPlanNode setPlan) {
-            Project leftProject = getProject(setPlan.getLeft());
-            Project rightProject= getProject(setPlan.getRight());
+            ProjectHolder leftProject = getProject(setPlan.getLeft());
+            ProjectHolder rightProject= getProject(setPlan.getRight());
             Project topProject = (Project)setPlan.getOutput();
-            ResultSet leftResult = (ResultSet)leftProject.getOutput();
-            ResultSet rightResult = (ResultSet)rightProject.getOutput();
-            List<ResultField> fields = new ArrayList<> (leftProject.nFields());
+            ResultSet leftResult = leftProject.getResultSet();
+            ResultSet rightResult = rightProject.getResultSet();
+            int nFields = leftProject.getFields().size();
+            List<ResultField> fields = new ArrayList<>(nFields);
 
-            for (int i= 0; i < leftProject.nFields(); i++) {
+            for (int i= 0; i < nFields; i++) {
                 ExpressionNode leftExpr = leftProject.getFields().get(i);
                 ExpressionNode rightExpr= rightProject.getFields().get(i);
                 DataTypeDescriptor leftType = leftExpr.getSQLtype();
@@ -855,11 +857,11 @@ public final class TypeResolver extends BaseRule {
                 DataTypeDescriptor projectType = null;
                 // Case of SELECT null UNION SELECT null -> pick a type
                 if (leftType == null && rightType == null)
-                    projectType = new DataTypeDescriptor (TypeId.VARCHAR_ID, true);
-                if (leftType == null)
-                    projectType = rightType;
+                    projectType = null;
+                else if (leftType == null)
+                    projectType = rightType.getNullabilityType(true);
                 else if (rightType == null)
-                    projectType = leftType;
+                    projectType = leftType.getNullabilityType(true);
                 else {
                     try {
                         projectType = leftType.getDominantType(rightType);
@@ -868,16 +870,9 @@ public final class TypeResolver extends BaseRule {
                     }
                 }
                 TInstance projectInst = typesTranslator.typeForSQLType(projectType);
-                ValueNode leftSource = leftExpr.getSQLsource();
-                ValueNode rightSource = rightExpr.getSQLsource();
 
-                CastExpression leftCast = new CastExpression(leftExpr, projectType, leftSource, projectInst);
-                castProjectField(leftCast, folder, parametersSync, typesTranslator);
-                leftProject.getFields().set(i, leftCast);
-
-                CastExpression rightCast = new CastExpression (rightExpr, projectType, rightSource, projectInst);
-                castProjectField(rightCast, folder, parametersSync, typesTranslator);
-                rightProject.getFields().set(i, rightCast);
+                leftProject.applyCast(i, projectType, projectInst);
+                rightProject.applyCast(i, projectType, projectInst);
 
                 ResultField leftField = leftResult.getFields().get(i);
                 ResultField rightField = rightResult.getFields().get(i);
@@ -917,28 +912,97 @@ public final class TypeResolver extends BaseRule {
             TypeResolver.finishCast(cast, folder, parameterSync);
         }
 
-        private Project getProject(PlanNode node) {
+        private ProjectHolder getProject(PlanNode node) {
             PlanNode project = ((BasePlanWithInput)node).getInput();
             if (project instanceof Project)
-                return (Project)project;
+                return new SingleProjectHolder((Project)project);
 
 
             else if (project instanceof SetPlanNode) {
-                SetPlanNode setOperator = (SetPlanNode)project;
-                project = getProject(((SetPlanNode)project).getLeft());
-                Project oldProject = (Project)project;
-                Project setProject = (Project) project.duplicate();
-                setProject.replaceInput(oldProject.getInput(), setOperator);
-                return setProject;
+                return new SetProjectHolder((SetPlanNode)project);
+
             }
-            else if (!(project instanceof BasePlanWithInput)) 
+            else if (!(project instanceof BasePlanWithInput))
                 return null;
             project = ((BasePlanWithInput)project).getInput();
             if (project instanceof Project)
-                return (Project)project;
+                return new SingleProjectHolder((Project)project);
             return null;
         }
+
+        private static interface ProjectHolder {
+            ResultSet getResultSet();
+            List<ExpressionNode> getFields();
+            void applyCast(int i, DataTypeDescriptor projectType, TInstance projectInstance);
+        }
+
+        private class SetProjectHolder implements ProjectHolder {
+            private ProjectHolder leftProject;
+            private ProjectHolder rightProject;
+            private ResultSet resultSet;
+
+            private SetProjectHolder(SetPlanNode node) {
+                resultSet = (ResultSet)node.getOutput();
+                leftProject = getProject(node.getLeft());
+                rightProject = getProject(node.getRight());
+            }
+
+            @Override
+            public ResultSet getResultSet() {
+                return resultSet;
+            }
+
+            @Override
+            public List<ExpressionNode> getFields() {
+                return leftProject.getFields();
+            }
+
+            @Override
+            public void applyCast(int i, DataTypeDescriptor projectType, TInstance projectInstance) {
+                leftProject.applyCast(i, projectType, projectInstance);
+                rightProject.applyCast(i, projectType, projectInstance);
+            }
+        }
+
+        private class SingleProjectHolder implements ProjectHolder {
+
+            private Project project;
+
+            private SingleProjectHolder(Project project) {
+                this.project = project;
+            }
+
+            @Override
+            public ResultSet getResultSet() {
+                return (ResultSet)project.getOutput();
+            }
+
+            @Override
+            public List<ExpressionNode> getFields() {
+                return project.getFields();
+            }
+
+            @Override
+            public void applyCast(int i, DataTypeDescriptor projectType, TInstance projectInstance) {
+                ExpressionNode expression = getFields().get(i);
+                TInstance expressionType = type(expression);
+                if (expression instanceof CastExpression) {
+                    if (expressionType == null) {
+                        CastExpression castExpression = (CastExpression) expression;
+                        expression = castExpression.getOperand();
+                        expressionType = type(expression);
+                    }
+                }
+                if (expressionType == null || !expressionType.equals(projectInstance)) {
+                    ValueNode source = expression.getSQLsource();
+                    CastExpression cast = new CastExpression(expression, projectType, source, projectInstance);
+                    castProjectField(cast, folder, parametersSync, typesTranslator);
+                    getFields().set(i, cast);
+                }
+            }
+        }
     }
+
 
     private static ValueSource castValue(TCast cast, TPreptimeValue source, TInstance targetInstance) {
         if (source == null)
@@ -1063,7 +1127,7 @@ public final class TypeResolver extends BaseRule {
                 if (operand instanceof ParameterExpression) {
                     TInstance castTarget = type(cast);
                     TInstance parameterType = type(operand);
-                    if (castTarget.equals(parameterType))
+                    if (castTarget != null && castTarget.equals(parameterType))
                         n = operand;
                 }
             }

@@ -41,7 +41,7 @@ class AbstractValuesHolderRow extends AbstractRow {
     }
 
     @Override
-    public ValueSource value(int i) {
+    public ValueSource uncheckedValue(int i) {
         Value value = values.get(i);
         if (!value.hasAnyValue())
             throw new IllegalStateException("value at index " + i + " was never set");
@@ -78,8 +78,7 @@ class AbstractValuesHolderRow extends AbstractRow {
             ValueSource nextValue = initialValues.next();
             TInstance nextValueType = nextValue.getType();
             TInstance expectedTInst = rowType.typeAt(i);
-            if (TInstance.tClass(nextValueType) != TInstance.tClass(expectedTInst) && nextValueType != null)
-                // TODO: nextValue shouldn't have a null type, it should match the TInstance type instead
+            if (TInstance.tClass(nextValueType) != TInstance.tClass(expectedTInst))
                 throw new IllegalArgumentException(
                         "value at index " + i + " expected type " + rowType.typeAt(i)
                                 + ", but UnderlyingType was " + nextValueType + ": " + nextValue);

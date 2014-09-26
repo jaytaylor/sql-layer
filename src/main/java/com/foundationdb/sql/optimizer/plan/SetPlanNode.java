@@ -25,7 +25,7 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 
 /** A set operation on two input streams.(UNION, INTERSECT, EXCEPT )*/
-public class SetPlanNode extends BasePlanNode implements PlanWithInput, TypedPlan
+public class SetPlanNode extends BasePlanNode implements PlanWithInput, TypedPlan, ColumnSource
 {
     public enum opEnum { UNION, INTERSECT, EXCEPT, NULL }
 

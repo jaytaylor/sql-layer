@@ -1804,12 +1804,12 @@ public class ASTStatementLoader extends BaseRule
                 // Extract the (potential) schema name as the first parameter
                 TInstance schemaType = typesTranslator.typeForString(schema);
                 params.add(new ConstantExpression(
-                        new TPreptimeValue(schemaType, new Value(schemaType, schema))));
+                        new TPreptimeValue(new Value(schemaType, schema))));
                 // Extract the schema name as the second parameter
                 String sequence = seqNode.getSequenceName().getTableName();
                 TInstance sequenceType = typesTranslator.typeForString(sequence);
                 params.add(new ConstantExpression(
-                        new TPreptimeValue(sequenceType, new Value(sequenceType, sequence))));
+                        new TPreptimeValue(new Value(sequenceType, sequence))));
                 
                 return new FunctionExpression ("nextval", params,
                         sqlType, valueNode, type);
@@ -1824,12 +1824,12 @@ public class ASTStatementLoader extends BaseRule
                 // Extract the (potential) schema name as the first parameter
                 TInstance schemaType = typesTranslator.typeForString(schema);
                 params.add(new ConstantExpression(
-                        new TPreptimeValue(schemaType, new Value(schemaType, schema))));
+                        new TPreptimeValue(new Value(schemaType, schema))));
                 // Extract the schema name as the second parameter
                 String sequence = seqNode.getSequenceName().getTableName();
                 TInstance sequenceType = typesTranslator.typeForString(sequence);
                 params.add(new ConstantExpression(
-                        new TPreptimeValue(sequenceType, new Value(sequenceType, sequence))));
+                        new TPreptimeValue(new Value(sequenceType, sequence))));
                 
                 return new FunctionExpression ("currval", params,
                         sqlType, valueNode, type);
