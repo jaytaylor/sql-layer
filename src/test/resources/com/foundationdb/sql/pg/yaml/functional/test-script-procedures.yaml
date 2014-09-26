@@ -50,7 +50,7 @@
 - Statement: SET OutputFormat TO 'json_with_meta_data';
 ---
 - Statement: CALL test_b1(100,99)
-- output: [['[{"name":"s","oid":701,"type":double"},{"name":"d","oid":701,"type":double"}]'],['{"s":199.0,"d":1.0}']]
+- output: [['[{"name":"s","oid":701,"type":"double"},{"name":"d","oid":701,"type":"double"}]'],['{"s":199.0,"d":1.0}']]
 ---
 - Statement: SET OutputFormat TO DEFAULT;
 ---
