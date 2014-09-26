@@ -16,10 +16,11 @@
  */
 package com.foundationdb.server.error;
 
-public class MetadataVersionTooOldException extends StartupFailureException {
+public class StartupFailureException extends FDBAdapterException {
 
-    public MetadataVersionTooOldException(Long currMetaVersion, Long currDataVersion, Long presentMetaVersion, Long presentDataVersion) {
-        super(ErrorCode.METADATA_VERSION_OLD, currMetaVersion, currDataVersion, presentMetaVersion, presentDataVersion);
+    protected StartupFailureException(ErrorCode code, Long i, Long j, Long k,
+            Long l) {
+        super(code, i, j, k, l);
     }
 
 }
