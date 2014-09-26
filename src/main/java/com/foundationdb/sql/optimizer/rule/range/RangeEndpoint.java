@@ -144,8 +144,6 @@ public abstract class RangeEndpoint implements Comparable<RangeEndpoint> {
     }
 
     public static final RangeEndpoint UPPER_WILD = new Wild();
-    public static final RangeEndpoint NULL_EXCLUSIVE = exclusive(ConstantExpression.typedNull(null, null, null));
-    public static final RangeEndpoint NULL_INCLUSIVE = inclusive(NULL_EXCLUSIVE.getValueExpression());
 
 
     private static class Wild extends RangeEndpoint {
