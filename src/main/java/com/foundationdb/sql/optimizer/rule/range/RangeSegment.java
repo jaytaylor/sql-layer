@@ -43,11 +43,11 @@ public final class RangeSegment {
             startPoint = endPoint = RangeEndpoint.inclusive(constantExpression);
             break;
         case LT:
-            startPoint = RangeEndpoint.NULL_EXCLUSIVE;
+            startPoint = RangeEndpoint.nullExclusive(constantExpression);
             endPoint = RangeEndpoint.exclusive(constantExpression);
             break;
         case LE:
-            startPoint = RangeEndpoint.NULL_EXCLUSIVE;
+            startPoint = RangeEndpoint.nullExclusive(constantExpression);
             endPoint = RangeEndpoint.inclusive(constantExpression);
             break;
         case GT:

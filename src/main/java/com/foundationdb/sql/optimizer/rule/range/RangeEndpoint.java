@@ -57,6 +57,11 @@ public abstract class RangeEndpoint implements Comparable<RangeEndpoint> {
         return new ValueEndpoint(value, false);
     }
 
+    public static ValueEndpoint nullExclusive(ConstantExpression otherValue) {
+        return exclusive(ConstantExpression.typedNull(otherValue.getSQLtype(), otherValue.getSQLsource(),
+                otherValue.getType()));
+    }
+
     public static RangeEndpoint of(ConstantExpression value, boolean inclusive) {
         return new ValueEndpoint(value, inclusive);
     }
