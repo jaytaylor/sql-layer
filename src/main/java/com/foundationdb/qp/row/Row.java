@@ -29,7 +29,7 @@ public interface Row extends ValueRecord
      * value examined. Generally speeking the rest of the code does a good enough job that
      * this is rare at best, but it can act as a canary for bigger problems.
      */
-    boolean DEBUG_ROWTYPE = Boolean.getBoolean("fdbsql.test.debug_rowtype");
+    final boolean DEBUG_ROWTYPE = Boolean.getBoolean("fdbsql.test.debug_rowtype");
 
     RowType rowType();
     HKey hKey();
