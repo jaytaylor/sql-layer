@@ -28,7 +28,7 @@ public class AkCollatorICU extends AkCollator {
 
     final ThreadLocal<Collator> collator = new ThreadLocal<Collator>() {
         protected Collator initialValue() {
-            return AkCollatorFactory.forScheme(getScheme());
+            return AkCollatorFactory.forScheme(getSpecifier());
         }
     };
 
@@ -43,8 +43,8 @@ public class AkCollatorICU extends AkCollator {
      *            Formatted string containing Locale name, and collation string
      *            strength.
      */
-    AkCollatorICU(final String scheme, final int collationId) {
-        super(scheme, collationId);
+    AkCollatorICU(final CollationSpecifier specifier, final int collationId) {
+        super(specifier, collationId);
         collator.get(); // force the collator to initialize (to test scheme)
     }
 

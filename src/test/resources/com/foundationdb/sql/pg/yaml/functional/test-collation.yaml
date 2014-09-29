@@ -110,18 +110,24 @@
 - error: [2H000]
 ---
 - CreateTable: noRegion(c char(5) COLLATE zh__pinyin_ci)
-- error: [2H001]
+- error: [2H000]
 ---
 - CreateTable: ambiguous(c char(5) COLLATE en_ci)
 - error: [2H002]
 ---
+- CreateTable: suggestion1(c char(5) COLLATE en__ci_co)
+---
+- CreateTable: suggestion2(c char(5) COLLATE en_ci_cs_co)
+- error: [2H000]
+---
 - CreateTable: ambiguous(c char(5) COLLATE en_co)
 - error: [2H002]
 ---
-- CreateTable: unambiguous(c char(5) COLLATE fr_cx_ci)
+- CreateTable: ambiguous(c char(5) COLLATE fr_cx_ci)
+- error: [2H002]
 ---
-# make sure these last ones don't throw errors
 - CreateTable: noRegion(c char(5) COLLATE zh__pinyin)
+- error: [2H000]
 ---
 - CreateTable: noRegion2(c char(5) COLLATE en_)
 ...

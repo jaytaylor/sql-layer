@@ -26,7 +26,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.foundationdb.server.error.AmbiguousCollationException;
 import com.foundationdb.server.error.InvalidCollationSchemeException;
 import com.foundationdb.server.error.UnsupportedCollationException;
 import com.ibm.icu.text.Collator;
@@ -61,10 +60,8 @@ public class AkCollatorFactory {
 
     /*
      * Used to check the validity of requested locales
-     * TODO: should this be a hashset?
      */
-    private final static HashSet<String> regions = new HashSet<String>(Arrays.asList(ULocale.getISOCountries()));
-    private final static HashSet<String> languages = new HashSet<String>(Arrays.asList(ULocale.getISOLanguages()));
+    private final static HashSet<ULocale> locales = new HashSet<ULocale>(Arrays.asList(ULocale.getAvailableLocales()));
 
     private volatile static Mode mode = Mode.STRICT;
 
@@ -76,19 +73,6 @@ public class AkCollatorFactory {
     public enum Mode {
         STRICT, LOOSE, DISABLED
     }
-
-    /*
-     * Indices for specification of collation
-     */
-    private final static int LANGUAGE_NDX = 0;
-    private final static int REGION_NDX = 1;
-    private final static int CASE_NDX = 2;
-    private final static int ACCENT_NDX = 3;
-
-    private final static String CASE_SENSITIVE = "cs";
-    private final static String CASE_INSENSITIVE = "ci";
-    private final static String ACCENT_SENSITIVE = "co";
-    private final static String ACCENT_INSENSITIVE = "cx";
 
     /**
      * Set factory to one of three modes specified by case-insensitive string:
@@ -124,110 +108,6 @@ public class AkCollatorFactory {
         return mode;
     }
 
-    private static String canonicalizeCollation(String scheme) {
-        String[] pieces = scheme.toLowerCase().split("_");
-        if (pieces.length == 0 || pieces.length > ACCENT_NDX + 1) {
-            throw new InvalidCollationSchemeException(scheme);
-        }
-
-        StringBuilder canonicalize = new StringBuilder();
-        canonicalize.append(pieces[LANGUAGE_NDX]);
-
-        if (pieces.length == 1) {
-            return canonicalize.append("__")
-                               .append(CASE_SENSITIVE)
-                               .append("_")
-                               .append("ACCENT_SENSITIVE")
-                               .toString();
-        }
-
-        checkAmbiguous(scheme, pieces);
-        
-        canonicalize.append("_").append(pieces[REGION_NDX]);
-
-        if (pieces.length == CASE_NDX + 1 && !pieces[CASE_NDX].equals(CASE_SENSITIVE) &&
-                !pieces[CASE_NDX].equals(CASE_INSENSITIVE) &&
-                !pieces[CASE_NDX].equals(ACCENT_SENSITIVE) &&
-                !pieces[CASE_NDX].equals(ACCENT_INSENSITIVE)) {
-            // scheme matches xx_xx_variant
-            return canonicalize.append("_").append(pieces[CASE_NDX]).toString();
-        }
-
-        String cases = "";
-        String accents = "";
-        if (pieces.length >= CASE_NDX + 1) {
-            if (pieces[CASE_NDX].equals(CASE_SENSITIVE)) {
-                cases = CASE_SENSITIVE;
-            }
-            else if (pieces[CASE_NDX].equals(CASE_INSENSITIVE)) {
-                cases = CASE_INSENSITIVE;
-            }
-            else if (pieces[CASE_NDX].equals(ACCENT_SENSITIVE)) {
-                accents = ACCENT_SENSITIVE;
-            }
-            else if (pieces[CASE_NDX].equals(ACCENT_INSENSITIVE)) {
-                accents = ACCENT_INSENSITIVE;
-            }
-            else {
-                throw new InvalidCollationSchemeException(scheme);
-            }
-        }
-        if (pieces.length == ACCENT_NDX + 1) {
-            // can't specify case or accent strength twice
-            if (!accents.isEmpty() &&
-                    (pieces[ACCENT_NDX].equals(ACCENT_SENSITIVE) ||
-                     pieces[ACCENT_NDX].equals(ACCENT_INSENSITIVE))) {
-                throw new InvalidCollationSchemeException(scheme);
-            }
-            if (!cases.isEmpty() &&
-                    (pieces[ACCENT_NDX].equals(CASE_SENSITIVE) ||
-                     pieces[ACCENT_NDX].equals(CASE_INSENSITIVE))) {
-                throw new InvalidCollationSchemeException(scheme);
-            }
-
-            if (pieces[ACCENT_NDX].equals(CASE_SENSITIVE)) {
-                cases = CASE_SENSITIVE;
-            }
-            else if (pieces[ACCENT_NDX].equals(CASE_INSENSITIVE)) {
-                cases = CASE_INSENSITIVE;
-            }
-            else if (pieces[ACCENT_NDX].equals(ACCENT_SENSITIVE)) {
-                accents = ACCENT_SENSITIVE;
-            }
-            else if (pieces[ACCENT_NDX].equals(ACCENT_INSENSITIVE)) {
-                accents = ACCENT_INSENSITIVE;
-            }
-            else {
-                throw new InvalidCollationSchemeException(scheme);
-            }
-        }
-
-        if (cases.isEmpty()) cases = CASE_SENSITIVE;
-        if (accents.isEmpty()) accents = ACCENT_INSENSITIVE;
-
-        return canonicalize.append("_").append(cases).append("_").append(accents).toString();
-    }
-
-    private static void checkAmbiguous(String scheme, String[] pieces) {
-        if (pieces.length == REGION_NDX + 1 &&
-                (pieces[REGION_NDX].equals(CASE_INSENSITIVE) ||
-                 pieces[REGION_NDX].equals(ACCENT_SENSITIVE) ||
-                 pieces[REGION_NDX].equals(ACCENT_INSENSITIVE))) {
-            String possibility1 = new StringBuilder().append(pieces[LANGUAGE_NDX])
-                                                     .append("_")
-                                                     .append("_")
-                                                     .append(pieces[REGION_NDX])
-                                                     .toString();
-            String possibility2 = new StringBuilder().append(pieces[LANGUAGE_NDX])
-                                                     .append("_")
-                                                     .append(pieces[REGION_NDX])
-                                                     .append("_")
-                                                     .append(pieces[REGION_NDX] == CASE_INSENSITIVE ?
-                                                             CASE_SENSITIVE : ACCENT_INSENSITIVE)
-                                                     .toString();
-            throw new AmbiguousCollationException(scheme, possibility1, possibility2);
-        }        
-    }
 
     public static AkCollator getAkCollator(String scheme) {
         if (mode == Mode.DISABLED || scheme == null) {
@@ -238,9 +118,9 @@ public class AkCollatorFactory {
             return mapToBinary(scheme);
         }
 
-        scheme = canonicalizeCollation(scheme);
+        CollationSpecifier specifier = new CollationSpecifier(scheme);
 
-        SoftReference<AkCollator> ref = collatorMap.get(scheme);
+        SoftReference<AkCollator> ref = collatorMap.get(specifier.toString());
         if (ref != null) {
             AkCollator akCollator = ref.get();
             if (akCollator != null) {
@@ -251,14 +131,14 @@ public class AkCollatorFactory {
 
         synchronized (collatorMap) {
 
-            Integer collationId = schemeToIdMap.get(scheme);
+            Integer collationId = schemeToIdMap.get(specifier.toString());
             if (collationId == null) {
                 collationId = collationIdGenerator.incrementAndGet();
             }
 
             final AkCollator akCollator;
             try {
-                akCollator = new AkCollatorICU(scheme, collationId);
+                akCollator = new AkCollatorICU(specifier, collationId);
             } catch (InvalidCollationSchemeException | UnsupportedCollationException e) {
                 if (mode == Mode.LOOSE) {
                     return mapToBinary(scheme);
@@ -270,7 +150,7 @@ public class AkCollatorFactory {
             ref = new SoftReference<>(akCollator);
             collatorMap.put(scheme, ref);
             collationIdMap.put(collationId, ref);
-            schemeToIdMap.put(scheme, collationId);
+            schemeToIdMap.put(specifier.toString(), collationId);
 
             return akCollator;
         }
@@ -308,96 +188,71 @@ public class AkCollatorFactory {
      * Construct an actual ICU Collator given a collation scheme. The
      * result is a Collator that must be use in a thread-private manner.
      */
-    static synchronized Collator forScheme(final String scheme) {
-        RuleBasedCollator collator = (RuleBasedCollator) sourceMap.get(scheme);
+    static synchronized Collator forScheme(final CollationSpecifier specifier) {
+        RuleBasedCollator collator = (RuleBasedCollator) sourceMap.get(specifier.toString());
         if (collator == null) {
-            String[] pieces = scheme.toLowerCase().split("_", -1);
-            if (pieces.length < REGION_NDX + 1) {
-                throw new InvalidCollationSchemeException(scheme);
-            }
 
-            ULocale locale = null;
-            Boolean setStrength = true;
-            String variant = null;
-            try {
-                locale = new ULocale(pieces[LANGUAGE_NDX], pieces[REGION_NDX]);
-                ULocale.Builder builder = new ULocale.Builder().setLanguage(pieces[LANGUAGE_NDX])
-                                                               .setRegion(pieces[REGION_NDX]);
-                checkLocale(pieces[LANGUAGE_NDX], pieces[REGION_NDX], scheme);
-                if (pieces.length == REGION_NDX + 2) {
-                    try {
-                        variant = pieces[REGION_NDX+1];
-                        // TODO: check variant (somehow), or get rid of it?
-                        builder = builder.setVariant(variant.toUpperCase());
-                        setStrength = false;
-                    } catch (IllformedLocaleException e) {
-                        throw new InvalidCollationSchemeException(scheme);
-                        // after canonicalization, there will either be lang_region_variant or
-                        // lang_region_case_accent. so if variant isn't valid here, neither is scheme.
-                    }
-                }
-                locale = builder.build();
-            } catch (IllformedLocaleException e) {
-                throw new UnsupportedCollationException(scheme);
-            }
+            ULocale locale = new ULocale(specifier.getLocale());
+            checkLocale(locale, specifier.getOriginalScheme());
+            setKeywords(locale, specifier.getKeywordsAndValues());
 
             collator = (RuleBasedCollator) RuleBasedCollator.getInstance(locale);
-            checkVariant(collator, variant, scheme);
+            checkKeywords(collator.getLocale(ULocale.VALID_LOCALE), specifier.getKeywordsAndValues(), 
+                    specifier.getOriginalScheme());
 
-            if (setStrength) {
-                setCollatorStrength(collator, scheme);
+            if (specifier.setStrength()) {
+                setCollatorStrength(collator, specifier);
             }
-            sourceMap.put(scheme, collator);
+            sourceMap.put(specifier.toString(), collator);
         }
         collator = collator.cloneAsThawed();
         return collator;
     }
 
-    private static void checkLocale(String language, String region, String scheme) {
-        if ((!language.isEmpty() && !languages.contains(language)) ||
-                (!region.isEmpty() && !regions.contains(region.toUpperCase())))
+    private static void checkLocale(ULocale locale, String scheme) {
+        if (!locales.contains(locale))
             throw new UnsupportedCollationException(scheme);
     }
 
-    private static void checkVariant(Collator collator, String variant, String scheme) {
-        if (variant != null &&
-                !collator.getLocale(ULocale.VALID_LOCALE).getVariant().equalsIgnoreCase(variant))
-            throw new UnsupportedCollationException(scheme);
+    private static void setKeywords(ULocale locale, Map<String, String> keywordsToValues) {
+        for (Entry<String, String> entry : keywordsToValues.entrySet()) {
+            locale.setKeywordValue(entry.getKey(), entry.getValue());
+        }
     }
 
-    /**
-     * This should only be called after canonicalizing the scheme
-     * 
-     * @param collator
-     * @param scheme should be of the form xx_xx_case_accent
-     */
-    private static void setCollatorStrength(RuleBasedCollator collator, String scheme) {
-        String[] pieces = scheme.toLowerCase().split("_");
-        if (pieces.length > ACCENT_NDX + 1) {
+    private static void checkKeywords(ULocale locale, Map<String, String> keywordsToValues, String scheme) {
+        int count = 0;
+
+        while (locale.getKeywords() != null && locale.getKeywords().hasNext()) {
+            String keyword = locale.getKeywords().next();
+            if (!keywordsToValues.containsKey(keyword) || 
+                    !keywordsToValues.get(keyword).equalsIgnoreCase(locale.getKeywordValue(keyword))) {
+                throw new InvalidCollationSchemeException(scheme);
+            }
+            count++;
+        }
+        
+        if (count != keywordsToValues.size()) {
             throw new InvalidCollationSchemeException(scheme);
         }
-        if (pieces[CASE_NDX].equals(CASE_SENSITIVE) &&
-                pieces[ACCENT_NDX].equals(ACCENT_SENSITIVE)) {
+    }
+
+    private static void setCollatorStrength(RuleBasedCollator collator, CollationSpecifier specifier) {
+        if (specifier.caseSensitive() && specifier.accentSensitive()) {
             collator.setStrength(Collator.TERTIARY);
             collator.setCaseLevel(false);
         }
-        else if (pieces[CASE_NDX].equals(CASE_SENSITIVE) &&
-                pieces[ACCENT_NDX].equals(ACCENT_INSENSITIVE)) {
+        else if (specifier.caseSensitive() && !specifier.accentSensitive()) {
             collator.setCaseLevel(true);
-            collator.setStrength(Collator.TERTIARY);
+            collator.setStrength(Collator.PRIMARY);
         }
-        else if (pieces[CASE_NDX].equals(CASE_INSENSITIVE) &&
-                pieces[ACCENT_NDX].equals(ACCENT_SENSITIVE)) {
+        else if (!specifier.caseSensitive() && specifier.accentSensitive()) {
             collator.setStrength(Collator.SECONDARY);
             collator.setCaseLevel(false);
         }
-        else if (pieces[CASE_NDX].equals(CASE_INSENSITIVE) &&
-                pieces[ACCENT_NDX].equals(ACCENT_INSENSITIVE)) {
+        else {
             collator.setStrength(Collator.PRIMARY);
             collator.setCaseLevel(false);
-        }
-        else {
-            throw new InvalidCollationSchemeException(scheme);
         }
     }
 

@@ -113,7 +113,7 @@ public class AkCollatorFactoryTest {
 
     @Test(expected = InvalidCollationSchemeException.class)
     public void collationBadScheme() throws Exception {
-        AkCollatorFactory.forScheme("en_us_too_many_arguments");
+        CollationSpecifier collationSpecifier = new CollationSpecifier("en_us_too_many_arguments");
     }
 
     @Test

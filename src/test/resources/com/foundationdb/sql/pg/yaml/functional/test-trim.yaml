@@ -106,5 +106,5 @@
 # It is unlikely that the effect could cause problems in production, so for now it will just
 # change when you request different collations (that aren't actually different)
 - Statement: select describe_expression(trim(LEADING ' ' from cast(t2.c2 as varchar(350) collate en_us_ci))) from t2
-- output: [['variable MCOMPAT_ VARCHAR(350, UTF8, en_us_ci_cx) NULL']]
+- output: [['variable MCOMPAT_ VARCHAR(350, UTF8, en_us_ci_co) NULL']]
 ...
