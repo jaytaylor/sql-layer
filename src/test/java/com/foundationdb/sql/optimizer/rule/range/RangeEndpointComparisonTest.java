@@ -28,6 +28,8 @@ import java.util.Collection;
 import static com.foundationdb.sql.optimizer.rule.range.ComparisonResult.*;
 import static com.foundationdb.sql.optimizer.rule.range.TUtils.exclusive;
 import static com.foundationdb.sql.optimizer.rule.range.TUtils.inclusive;
+import static com.foundationdb.sql.optimizer.rule.range.TUtils.nullExclusive;
+import static com.foundationdb.sql.optimizer.rule.range.TUtils.nullInclusive;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(NamedParameterizedRunner.class)
@@ -37,19 +39,19 @@ public final class RangeEndpointComparisonTest {
         ParameterizationBuilder pb = new ParameterizationBuilder();
 
         // nulls vs nulls
-        param(pb,  RangeEndpoint.NULL_INCLUSIVE, EQ,  RangeEndpoint.NULL_INCLUSIVE);
-        param(pb,  RangeEndpoint.NULL_INCLUSIVE, LT_BARELY,  RangeEndpoint.NULL_EXCLUSIVE);
-        param(pb,  RangeEndpoint.NULL_EXCLUSIVE, EQ,  RangeEndpoint.NULL_EXCLUSIVE);
+        param(pb,  nullInclusive(AARDVARK), EQ,  nullInclusive(AARDVARK));
+        param(pb,  nullInclusive(AARDVARK), LT_BARELY,  nullExclusive(AARDVARK));
+        param(pb,  nullExclusive(AARDVARK), EQ,  nullExclusive(AARDVARK));
 
         // nulls vs "normal" values
-        param(pb,  RangeEndpoint.NULL_INCLUSIVE, LT, inclusive(AARDVARK));
-        param(pb,  RangeEndpoint.NULL_INCLUSIVE, LT, exclusive(AARDVARK));
-        param(pb,  RangeEndpoint.NULL_EXCLUSIVE, LT, inclusive(AARDVARK));
-        param(pb,  RangeEndpoint.NULL_EXCLUSIVE, LT, exclusive(AARDVARK));
+        param(pb,  nullInclusive(AARDVARK), LT, inclusive(AARDVARK));
+        param(pb,  nullInclusive(AARDVARK), LT, exclusive(AARDVARK));
+        param(pb,  nullExclusive(AARDVARK), LT, inclusive(AARDVARK));
+        param(pb,  nullExclusive(AARDVARK), LT, exclusive(AARDVARK));
 
         // nulls vs wild
-        param(pb,  RangeEndpoint.NULL_INCLUSIVE, LT, RangeEndpoint.UPPER_WILD);
-        param(pb,  RangeEndpoint.NULL_EXCLUSIVE, LT, RangeEndpoint.UPPER_WILD);
+        param(pb,  nullInclusive(AARDVARK), LT, RangeEndpoint.UPPER_WILD);
+        param(pb,  nullExclusive(AARDVARK), LT, RangeEndpoint.UPPER_WILD);
 
         // normal values vs same values
         param(pb, inclusive(AARDVARK), EQ, inclusive(AARDVARK));

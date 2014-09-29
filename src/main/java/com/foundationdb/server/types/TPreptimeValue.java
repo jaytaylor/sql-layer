@@ -91,7 +91,7 @@ public final class TPreptimeValue {
             return false;
         if (value == null)
             return that.value == null;
-        return that.value != null && ValueSources.areEqual(value, that.value, type);
+        return that.value != null && ValueSources.areEqual(value, that.value);
     }
 
     @Override

@@ -61,7 +61,8 @@ public final class ColumnRanges {
                     ExpressionNode operand = condition.getOperands().get(0);
                     if (operand instanceof ColumnExpression) {
                         ColumnExpression operandColumn = (ColumnExpression) operand;
-                        return new ColumnRanges(operandColumn, condition, Collections.singletonList(RangeSegment.ONLY_NULL));
+                        return new ColumnRanges(operandColumn, condition,
+                                Collections.singletonList(RangeSegment.onlyNull(operandColumn)));
                     }
                 }
             }
