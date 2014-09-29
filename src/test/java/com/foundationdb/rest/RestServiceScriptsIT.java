@@ -42,6 +42,7 @@ import org.eclipse.jetty.client.ContentExchange;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpExchange;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -104,6 +105,7 @@ import com.fasterxml.jackson.databind.JsonNode;
  * 
  * @author peter
  */
+@Ignore                         // Presently no scripts.
 @RunWith(NamedParameterizedRunner.class)
 public class RestServiceScriptsIT extends ITBase {
 
