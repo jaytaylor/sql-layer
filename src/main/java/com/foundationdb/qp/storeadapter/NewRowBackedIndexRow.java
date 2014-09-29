@@ -19,6 +19,7 @@ package com.foundationdb.qp.storeadapter;
 
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
@@ -86,7 +87,7 @@ public class NewRowBackedIndexRow implements Row
         int fieldPos = fieldDef.getFieldIndex();
         Object value = row.get(fieldPos);
         TInstance type = rowType.typeAt(fieldPos);
-        if (type == null && value != null) {
+        if (DEBUG_ROWTYPE && type == null && value != null) {
             throw new RowType.InconsistentRowTypeException(i, value);
         }
         return ValueSources.valuefromObject(value, type);
