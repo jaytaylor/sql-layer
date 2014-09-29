@@ -77,6 +77,7 @@ import java.util.List;
 
  */
 
+/* Deprecated */
 class Insert_Default implements UpdatePlannable {
 
     public Insert_Default(Operator inputOperator) {
@@ -152,7 +153,7 @@ class Insert_Default implements UpdatePlannable {
                 }
             } finally {
                 if (input != null) {
-                    input.destroy();
+                    input.close();
                 }
                 if (TAP_NEXT_ENABLED) {
                     INSERT_TAP.out();

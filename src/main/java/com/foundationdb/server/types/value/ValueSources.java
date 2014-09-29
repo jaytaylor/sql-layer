@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.types.value;
 
+import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
@@ -75,6 +76,10 @@ public final class ValueSources {
     }
 
     public static Value valuefromObject(Object object, TInstance type) {
+        return valuefromObject(object, type, null);
+    }
+
+    public static Value valuefromObject(Object object, TInstance type, QueryContext queryContext) {
         Value value = new Value(type);
         if (object == null) {
             value.putNull();
@@ -132,21 +137,21 @@ public final class ValueSources {
             if (type == null) {
                 value = fromObject(object);
             } else {
-                value = convertFromObject(object, type);
+                value = convertFromObject(object, type, queryContext);
             }
         }
         return value;
     }
     
-    private static Value convertFromObject (Object object, TInstance type) {
+    private static Value convertFromObject (Object object, TInstance type, QueryContext queryContext) {
         Value in = fromObject(object);
         TInstance inType = in.getType();
         Value out = null;
         if (!inType.equals(type)) {
             TExecutionContext context =
                     new TExecutionContext(Collections.singletonList(in.getType()),
-                            type,
-                                null);
+                                          type,
+                                          queryContext);
             out = new Value(type);
             type.typeClass().fromObject(context, in, out);
         } else {

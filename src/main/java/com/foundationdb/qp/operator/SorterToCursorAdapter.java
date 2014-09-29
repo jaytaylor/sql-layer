@@ -20,25 +20,26 @@ package com.foundationdb.qp.operator;
 import com.foundationdb.qp.storeadapter.Sorter;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.util.tap.InOutTap;
 
 /**
  * Cursors are reusable but Sorters are not.
  * This class creates a new Sorter each time a new cursor scan is started.
  */
-class SorterToCursorAdapter implements RowCursor
+class SorterToCursorAdapter extends RowCursorImpl
 {
     // RowCursor interface
 
     @Override
     public void open()
     {
-        CursorLifecycle.checkIdle(this);
+        super.open();
         sorter = adapter.createSorter(context, bindings, input, rowType, ordering, sortOption, loadTap);
         cursor = sorter.sort();
+        
         input.close();
         cursor.open();
+        state = CursorLifecycle.CursorState.ACTIVE;
     }
 
     @Override
@@ -49,50 +50,20 @@ class SorterToCursorAdapter implements RowCursor
     }
 
     @Override
-    public void jump(Row row, ColumnSelector columnSelector)
-    {
-        throw new UnsupportedOperationException(getClass().getName());
-    }
-
-    @Override
     public void close()
     {
-        CursorLifecycle.checkIdleOrActive(this);
+        if (ExecutionBase.CURSOR_LIFECYCLE_ENABLED) {
+            CursorLifecycle.checkIdleOrActive(this);
+        }
         if (cursor != null) {
             cursor.close();
-            // Destroy here because Sorters can only be used once.
-            cursor.destroy();
             cursor = null;
         }
         if (sorter != null) {
             sorter.close();
             sorter = null;
         }
-    }
-
-    @Override
-    public void destroy()
-    {
-        close();
-        destroyed = true;
-    }
-
-    @Override
-    public boolean isIdle()
-    {
-        return !destroyed && cursor == null;
-    }
-
-    @Override
-    public boolean isActive()
-    {
-        return !destroyed && cursor != null;
-    }
-
-    @Override
-    public boolean isDestroyed()
-    {
-        return destroyed;
+        state = CursorLifecycle.CursorState.CLOSED;
     }
 
     // SorterToCursorAdapter interface
@@ -126,5 +97,4 @@ class SorterToCursorAdapter implements RowCursor
     private final InOutTap loadTap;
     private Sorter sorter;
     private RowCursor cursor;
-    private boolean destroyed = false;
 }

@@ -99,7 +99,8 @@ public class MultipleQueryBindingsCursor implements QueryBindingsCursor
 
         @Override
         public QueryBindings nextBindings() {
-            assert (open && (index >= offset));
+            assert (open);
+            assert (index >= offset);
             while (index - offset >= buffer.size()) {
                 if (exhausted) {
                     return null;

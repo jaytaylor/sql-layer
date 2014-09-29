@@ -21,15 +21,13 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.rowtype.IndexRowType;
-import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.rowtype.*;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.explain.std.LookUpOperatorExplainer;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -352,7 +350,7 @@ public class BranchLookup_Nested extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
+                super.open();
                 Row rowFromBindings = bindings.getRow(inputBindingPosition);
                 assert rowFromBindings.rowType() == inputRowType : rowFromBindings;
                 if (inputRowType != sourceRowType) {
@@ -365,7 +363,6 @@ public class BranchLookup_Nested extends Operator
                 cursor.rebind(hKey, true);
                 cursor.open();
                 inputRow = rowFromBindings;
-                idle = false;
             } finally {
                 TAP_OPEN.out();
             }
@@ -396,13 +393,15 @@ public class BranchLookup_Nested extends Operator
                             row = inputRow;
                             inputRow = null;
                         }
-                        close();
+                        setIdle();
                     }
                 }
                 if (LOG_EXECUTION) {
                     LOG.debug("BranchLookup_Nested: yield {}", row);
                 }
-                idle = row == null;
+                if (row == null) {
+                    setIdle();
+                }
                 return row;
             } finally {
                 if (TAP_NEXT_ENABLED) {
@@ -414,34 +413,8 @@ public class BranchLookup_Nested extends Operator
         @Override
         public void close()
         {
-            CursorLifecycle.checkIdleOrActive(this);
+            super.close();
             cursor.close();
-            idle = true;
-        }
-
-        @Override
-        public void destroy()
-        {
-            close();
-            cursor.destroy();
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return idle;
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return !idle;
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return cursor.isDestroyed();
         }
 
         // Execution interface
@@ -469,15 +442,15 @@ public class BranchLookup_Nested extends Operator
         private final GroupCursor cursor;
         private final HKey hKey;
         private Row inputRow;
-        private boolean idle = true;
     }
 
-    private class BranchCursor implements BindingsAwareCursor
+    private class BranchCursor extends RowCursorImpl implements BindingsAwareCursor
     {
         // BindingsAwareCursor interface
 
         @Override
         public void open() {
+            super.open();
             Row rowFromBindings = bindings.getRow(inputBindingPosition);
             assert rowFromBindings.rowType() == inputRowType : rowFromBindings;
             if (inputRowType != sourceRowType) {
@@ -505,7 +478,7 @@ public class BranchLookup_Nested extends Operator
                         row = inputRow;
                         inputRow = null;
                     }
-                    close();
+                    setIdle();
                 }
             }
             if (ExecutionBase.LOG_EXECUTION) {
@@ -517,35 +490,16 @@ public class BranchLookup_Nested extends Operator
         @Override
         public void jump(Row row, ColumnSelector columnSelector) {
             cursor.jump(row, columnSelector);
+            state = CursorLifecycle.CursorState.ACTIVE;
         }
 
         @Override
         public void close() {
             inputRow = null;
             cursor.close();
+            super.close();
         }
 
-        @Override
-        public void destroy() {
-            close();
-            cursor.destroy();
-        }
-
-        @Override
-        public boolean isIdle() {
-            return cursor.isIdle();
-        }
-
-        @Override
-        public boolean isActive() {
-            return cursor.isActive();
-        }
-
-        @Override
-        public boolean isDestroyed() {
-            return cursor.isDestroyed();
-        }
-        
         @Override
         public void rebind(QueryBindings bindings) {
             this.bindings = bindings;

@@ -26,6 +26,7 @@ import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -137,6 +138,7 @@ class GroupScan_Default extends Operator
         {
             TAP_OPEN.in();
             try {
+                super.open();
                 cursor.open();
             } finally {
                 TAP_OPEN.out();
@@ -153,8 +155,7 @@ class GroupScan_Default extends Operator
                 checkQueryCancelation();
                 Row row;
                 if ((row = cursor.next()) == null) {
-                    close();
-                    row = null;
+                    setIdle();
                 }
                 if (LOG_EXECUTION) {
                     LOG.debug("GroupScan_Default: yield {}", row);
@@ -171,12 +172,7 @@ class GroupScan_Default extends Operator
         public void close()
         {
             cursor.close();
-        }
-
-        @Override
-        public void destroy()
-        {
-            cursor.destroy();
+            super.close();
         }
 
         @Override
@@ -189,12 +185,6 @@ class GroupScan_Default extends Operator
         public boolean isActive()
         {
             return cursor.isActive();
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return cursor.isDestroyed();
         }
 
         @Override
@@ -348,12 +338,13 @@ class GroupScan_Default extends Operator
         private final Table hKeyType;
     }
 
-    private static class HKeyBoundCursor implements BindingsAwareCursor, GroupCursor
+    private static class HKeyBoundCursor extends RowCursorImpl implements BindingsAwareCursor, GroupCursor
     {
 
         @Override
         public void open()
         {
+            super.open();
             HKey hKey = getHKeyFromBindings();
             input.rebind(hKey, deep);
             input.open();
@@ -389,35 +380,13 @@ class GroupScan_Default extends Operator
         public void jump(Row row, ColumnSelector columnSelector)
         {
             input.jump(row, columnSelector);
+            state = CursorLifecycle.CursorState.ACTIVE;
         }
 
         @Override
         public void close() {
             input.close();
-        }
-
-        @Override
-        public void destroy()
-        {
-            input.destroy();
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return input.isIdle();
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return input.isActive();
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return input.isDestroyed();
+            super.close();
         }
 
         @Override

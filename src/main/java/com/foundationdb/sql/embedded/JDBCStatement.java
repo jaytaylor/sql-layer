@@ -18,14 +18,22 @@
 package com.foundationdb.sql.embedded;
 
 import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.sql.embedded.JDBCException.Wrapper;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Queue;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class JDBCStatement implements Statement
 {
+
+    private static final Logger LOG = LoggerFactory.getLogger(JDBCStatement.class);
+
     protected final JDBCConnection connection;
     protected String sql;
     private boolean closed;
@@ -85,6 +93,16 @@ public class JDBCStatement implements Statement
             success = true;
         }
         catch (RuntimeException ex) {
+            Throwable throwable = ex;
+            if (throwable instanceof Wrapper) {
+                throwable = (SQLException)ex.getCause();
+            }
+
+            final ErrorCode code = ErrorCode.getCodeForRESTException(throwable);
+            code.logAtImportance(
+                    LOG, "Statement execution for query {} failed with exception {}", sql, throwable
+            );
+
             throw JDBCException.throwUnwrapped(ex);
         }
         finally {

@@ -141,9 +141,7 @@ class Filter_Default extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-                input.open();
-                closed = false;
+                super.open();
             } finally {
                 TAP_OPEN.out();
             }
@@ -164,11 +162,11 @@ class Filter_Default extends Operator
                 do {
                     row = input.next();
                     if (row == null) {
-                        close();
+                        setIdle();
                     } else if (!keepTypes.contains(row.rowType())) {
                         row = null;
                     }
-                } while (row == null && !closed);
+                } while (row == null && isActive());
                 if (LOG_EXECUTION) {
                     LOG.debug("Filter_Default: yield {}", row);
                 }
@@ -180,28 +178,6 @@ class Filter_Default extends Operator
             }
         }
 
-        @Override
-        public void close()
-        {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (!closed) {
-                input.close();
-                closed = true;
-            }
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return closed;
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return !closed;
-        }
-
         // Execution interface
 
         Execution(QueryContext context, Cursor input)
@@ -211,6 +187,5 @@ class Filter_Default extends Operator
 
         // Object state
 
-        private boolean closed = true;
     }
 }

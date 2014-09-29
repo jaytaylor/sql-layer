@@ -20,7 +20,6 @@ package com.foundationdb.server.test.it.qp;
 import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
-import com.foundationdb.qp.operator.CursorLifecycle;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
@@ -159,14 +158,14 @@ public class OperatorITBase extends ITBase
         cursor.openBindings();
         cursor.nextBindings();
         // Check idle following creation
-        assertTrue(cursor.isIdle());
+        assertTrue(cursor.isClosed());
         // Check active following open
         testCase.firstSetup();
         cursor.open();
         assertTrue(cursor.isActive());
         // Check idle following close
         cursor.close();
-        assertTrue(cursor.isIdle());
+        assertTrue(cursor.isClosed());
         // Check active following re-open
         testCase.firstSetup();
         cursor.open();
@@ -179,7 +178,7 @@ public class OperatorITBase extends ITBase
         } else {
             compareRows(testCase.firstExpectedRows(), cursor, testCase.reopenTopLevel());
         }
-        assertTrue(cursor.isIdle());
+        assertTrue(cursor.isClosed());
         // Check close during iteration.
         if (testCase.hKeyComparison()
             ? testCase.firstExpectedHKeys().length > 1
@@ -192,7 +191,7 @@ public class OperatorITBase extends ITBase
             cursor.next();
             assertTrue(cursor.isActive());
             cursor.close();
-            assertTrue(cursor.isIdle());
+            assertTrue(cursor.isClosed());
         }
         // Check that a second execution works
         testCase.secondSetup();
@@ -201,40 +200,7 @@ public class OperatorITBase extends ITBase
         } else {
             compareRows(testCase.secondExpectedRows(), cursor, testCase.reopenTopLevel());
         }
-        assertTrue(cursor.isIdle());
-        // Check close of idle cursor is permitted
-        try {
-            cursor.close();
-        } catch (CursorLifecycle.WrongStateException e) {
-            fail();
-        }
-        // Check destroyed following destroy
-        cursor.destroy();
-        assertTrue(cursor.isDestroyed());
-        // Check open after destroy disallowed
-        try {
-            testCase.firstSetup();
-            cursor.open();
-            fail();
-        } catch (CursorLifecycle.WrongStateException e) {
-            // expected
-        }
-/*
-        // Check next after destroy disallowed
-        try {
-            cursor.next();
-            fail();
-        } catch (CursorLifecycle.WrongStateException e) {
-            // expected
-        }
-        // Check close after destroy disallowed
-        try {
-            cursor.close();
-            fail();
-        } catch (CursorLifecycle.WrongStateException e) {
-            // expected
-        }
-*/
+        assertTrue(cursor.isClosed());
     }
 
     protected void use(NewRow[] db)

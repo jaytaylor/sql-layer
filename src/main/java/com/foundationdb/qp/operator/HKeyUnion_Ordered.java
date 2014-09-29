@@ -191,7 +191,7 @@ class HKeyUnion_Ordered extends Operator
 
     // Inner classes
 
-    private class Execution extends OperatorCursor
+    private class Execution extends MultiChainedCursor 
     {
         // Cursor interface
 
@@ -200,13 +200,12 @@ class HKeyUnion_Ordered extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-                leftInput.open();
-                rightInput.open();
+                super.open();
                 previousHKey = null;
                 nextLeftRow();
                 nextRightRow();
-                closed = leftRow == null && rightRow == null;
+                if (leftRow == null && rightRow == null)
+                    setIdle();
             } finally {
                 TAP_OPEN.out();
             }
@@ -223,7 +222,7 @@ class HKeyUnion_Ordered extends Operator
                     CursorLifecycle.checkIdleOrActive(this);
                 }
                 Row nextRow = null;
-                while (!closed && nextRow == null) {
+                while (isActive() && nextRow == null) {
                     assert !(leftRow == null && rightRow == null);
                     long c = compareRows();
                     if (c < 0) {
@@ -242,10 +241,10 @@ class HKeyUnion_Ordered extends Operator
                         }
                     }
                     if (leftRow == null && rightRow == null) {
-                        close();
+                        setIdle();
                     }
                     if (nextRow == null) {
-                        close();
+                        setIdle();
                     } else if (previousHKey == null || !previousHKey.prefixOf(nextRow.hKey())) {
                         HKey nextHKey = outputHKey(nextRow);
                         HKeyCache<HKey> hKeyCache = new HKeyCache<>(adapter);
@@ -269,83 +268,25 @@ class HKeyUnion_Ordered extends Operator
         @Override
         public void close()
         {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (!closed) {
-                leftRow = null;
-                rightRow = null;
-                leftInput.close();
-                rightInput.close();
-                closed = true;
-            }
+            super.close();
+            leftRow = null;
+            rightRow = null;
         }
 
         @Override
-        public void destroy()
-        {
-            close();
-            leftInput.destroy();
-            rightInput.destroy();
+        protected Operator left() {
+            return left;
         }
-
-        @Override
-        public boolean isIdle()
-        {
-            return closed;
+        
+        @Override 
+        protected Operator right() {
+            return right;
         }
-
-        @Override
-        public boolean isActive()
-        {
-            return !closed;
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            assert leftInput.isDestroyed() == rightInput.isDestroyed();
-            return leftInput.isDestroyed();
-        }
-
-        @Override
-        public void openBindings() {
-            bindingsCursor.openBindings();
-            leftInput.openBindings();
-            rightInput.openBindings();
-        }
-
-        @Override
-        public QueryBindings nextBindings() {
-            QueryBindings bindings = bindingsCursor.nextBindings();
-            QueryBindings other = leftInput.nextBindings();
-            assert (bindings == other);
-            other = rightInput.nextBindings();
-            assert (bindings == other);
-            return bindings;
-        }
-
-        @Override
-        public void closeBindings() {
-            bindingsCursor.closeBindings();
-            leftInput.closeBindings();
-            rightInput.closeBindings();
-        }
-
-        @Override
-        public void cancelBindings(QueryBindings bindings) {
-            leftInput.cancelBindings(bindings);
-            rightInput.cancelBindings(bindings);
-            bindingsCursor.cancelBindings(bindings);
-        }
-
         // Execution interface
 
         Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
-            super(context);
-            MultipleQueryBindingsCursor multiple = new MultipleQueryBindingsCursor(bindingsCursor);
-            this.bindingsCursor = multiple;
-            this.leftInput = left.cursor(context, multiple.newCursor());
-            this.rightInput = right.cursor(context, multiple.newCursor());
+            super(context, bindingsCursor);
             adapter = context.getStore();
         }
         
@@ -372,7 +313,7 @@ class HKeyUnion_Ordered extends Operator
         private long compareRows()
         {
             long c;
-            assert !closed;
+            assert !isClosed();
             assert !(leftRow == null && rightRow == null);
             if (leftRow == null) {
                 c = 1;
@@ -394,14 +335,10 @@ class HKeyUnion_Ordered extends Operator
 
         // Object state
 
-        private final QueryBindingsCursor bindingsCursor;
-        private final Cursor leftInput;
-        private final Cursor rightInput;
         private Row leftRow;
         private Row rightRow;
         private final StoreAdapter adapter;
         private HKey previousHKey;
-        private boolean closed = true;
     }
 
     private interface RowsComparator {

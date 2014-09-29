@@ -34,6 +34,7 @@ import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.texpressions.TPreparedField;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -139,7 +140,6 @@ public class Buffer_Default extends Operator
 
     private class Execution extends ChainedCursor {
         private SorterToCursorAdapter sorter;
-        private boolean closed = true;
 
         public Execution(QueryContext context, Cursor input) {
             super(context, input);
@@ -151,11 +151,11 @@ public class Buffer_Default extends Operator
         public void open() {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-                super.open();
-                closed = false;
+                CursorLifecycle.checkClosed(this);
                 // Eager load
                 BufferRowCreatorCursor creatorCursor = new BufferRowCreatorCursor(context, input);
+                creatorCursor.open(); // opens the input cursor too. 
+                state = CursorLifecycle.CursorState.ACTIVE;
                 sorter = new SorterToCursorAdapter(adapter(), context, bindings, creatorCursor, bufferRowType, ordering, sortOption, TAP_LOAD);
                 sorter.open();
             } finally {
@@ -197,22 +197,13 @@ public class Buffer_Default extends Operator
 
         @Override
         public void close() {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (!closed) {
-                super.close();
-                sorter.close();
-                closed = true;
+            //NOTE: Not calling super.close() because the
+            // sorter has already closed the input. 
+            if (CURSOR_LIFECYCLE_ENABLED) {
+                CursorLifecycle.checkIdleOrActive(this);
             }
-        }
-
-        @Override
-        public boolean isIdle() {
-            return closed;
-        }
-
-        @Override
-        public boolean isActive() {
-            return !closed;
+            state = CursorLifecycle.CursorState.CLOSED;
+            sorter.close();
         }
     }
 }

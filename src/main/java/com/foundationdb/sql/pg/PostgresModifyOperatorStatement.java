@@ -122,7 +122,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
     @Override
     public void closeCursor(Cursor cursor) {
         if (cursor != null) {
-            cursor.destroy();
+            cursor.closeTopLevel();
         }
     }
     

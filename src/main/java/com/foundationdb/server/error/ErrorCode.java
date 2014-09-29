@@ -19,6 +19,7 @@ package com.foundationdb.server.error;
 
 import org.slf4j.Logger;
 
+import java.sql.SQLException;
 import java.util.ResourceBundle;
 
 /**
@@ -441,8 +442,8 @@ public enum ErrorCode {
     FDB_ERROR               ("53", "004", Importance.ERROR, FDBAdapterException.class),
     ROW_OUTPUT              ("53", "005", Importance.DEBUG, RowOutputException.class),
     SCAN_RETRY_ABANDONDED   ("53", "006", Importance.ERROR, ScanRetryAbandonedException.class),
-    //53007
-    //53008
+    METADATA_VERSION_OLD    ("53", "007", Importance.ERROR, MetadataVersionTooOldException.class),
+    METADATA_VERSION_NEWER  ("53", "008", Importance.ERROR, MetadataVersionNewerException.class),
     TABLEDEF_MISMATCH       ("53", "009", Importance.DEBUG, TableDefinitionMismatchException.class),
     PROTOBUF_READ           ("53", "00A", Importance.ERROR, ProtobufReadException.class),
     PROTOBUF_WRITE          ("53", "00B", Importance.ERROR, ProtobufWriteException.class),
@@ -537,6 +538,16 @@ public enum ErrorCode {
 
     public boolean isRollbackClass() {
         return ROLLBACK_CLASS.equals(code);
+    }
+
+    public static ErrorCode getCodeForRESTException(Throwable e) {
+        if(e instanceof InvalidOperationException) {
+            return ((InvalidOperationException)e).getCode();
+        } else if(e instanceof SQLException) {
+            return ErrorCode.valueOfCode(((SQLException)e).getSQLState());
+        } else {
+            return ErrorCode.UNEXPECTED_EXCEPTION;
+        }
     }
 
     public void logAtImportance(Logger log, String msg, Object... msgArgs) {

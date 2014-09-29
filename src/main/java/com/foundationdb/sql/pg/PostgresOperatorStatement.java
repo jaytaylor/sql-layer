@@ -88,7 +88,7 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
 
     public void closeCursor(Cursor cursor) {
         if (cursor != null) {
-            cursor.destroy();
+            cursor.closeTopLevel();
         }
     }
     

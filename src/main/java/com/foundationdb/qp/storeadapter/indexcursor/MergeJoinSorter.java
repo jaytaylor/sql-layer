@@ -35,13 +35,13 @@ import com.foundationdb.qp.operator.CursorLifecycle;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.RowCursor;
+import com.foundationdb.qp.operator.RowCursorImpl;
 import com.foundationdb.qp.storeadapter.Sorter;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.PersistitValueValueSource;
 import com.foundationdb.server.PersistitValueValueTarget;
-import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.error.MergeSortIOException;
 import com.foundationdb.server.error.StorageKeySizeExceededException;
@@ -55,13 +55,13 @@ import com.persistit.Persistit;
 import com.persistit.Value;
 import com.persistit.exception.ConversionException;
 import com.persistit.exception.KeyTooLongException;
-
 import com.fasterxml.sort.DataReader;
 import com.fasterxml.sort.DataReaderFactory;
 import com.fasterxml.sort.DataWriter;
 import com.fasterxml.sort.DataWriterFactory;
 import com.fasterxml.sort.SortConfig;
 import com.fasterxml.sort.TempFileProvider;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -553,9 +553,7 @@ public class MergeJoinSorter implements Sorter {
      * Class to create a cursor which reads the final sorted output
      * from the file, returning each sorted item as a Row. 
      */
-    public static class KeyFinalCursor implements RowCursor {
-        private boolean isIdle = true;
-        private boolean isDestroyed = false;
+    public static class KeyFinalCursor extends RowCursorImpl {
 
         private final Iterator<SortKey> sortIterator;
         private final RowType rowType;
@@ -573,12 +571,6 @@ public class MergeJoinSorter implements Sorter {
         }
         
         @Override
-        public void open() {
-            CursorLifecycle.checkIdle(this);
-            isIdle = false;
-        }
-
-        @Override
         public Row next() {
             CursorLifecycle.checkIdleOrActive(this);
             Row row = null;
@@ -595,7 +587,7 @@ public class MergeJoinSorter implements Sorter {
             }
             return row;
         }
-
+        
         /*
          * The FasterXML.Sort isn't capable of removing duplicates, it just 
          * puts them in order in the sort output. Skip the duplicates by reading
@@ -622,39 +614,6 @@ public class MergeJoinSorter implements Sorter {
                 }
             }
             return rowCopy;
-        }
-        @Override
-        public void close() {
-            CursorLifecycle.checkIdleOrActive(this);
-            if(!isIdle) {
-                isIdle = true;
-                // pullSorter closed by MergeJoinSorter
-            }
-        }
-
-        @Override
-        public void jump(Row row, ColumnSelector columnSelector) {
-            throw new UnsupportedOperationException();            
-        }
-
-        @Override
-        public void destroy() {
-            isDestroyed = true;
-        }
-
-        @Override
-        public boolean isIdle() {
-            return !isDestroyed && isIdle;
-        }
-
-        @Override
-        public boolean isActive() {
-            return !isDestroyed && !isIdle;
-        }
-
-        @Override
-        public boolean isDestroyed() {
-            return isDestroyed;
         }
     }
     

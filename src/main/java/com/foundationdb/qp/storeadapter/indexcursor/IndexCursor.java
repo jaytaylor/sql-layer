@@ -23,24 +23,23 @@ import com.foundationdb.qp.operator.BindingsAwareCursor;
 import com.foundationdb.qp.operator.CursorLifecycle;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.RowCursorImpl;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
 import com.persistit.Key;
 import com.persistit.Key.Direction;
 
-public abstract class IndexCursor implements BindingsAwareCursor
+public abstract class IndexCursor extends RowCursorImpl implements BindingsAwareCursor
 {
     // Cursor interface
 
     @Override
     public void open()
     {
-        CursorLifecycle.checkIdle(this);
+        super.open();
         iterationHelper.openIteration();
-        idle = false;
     }
 
     @Override
@@ -51,41 +50,10 @@ public abstract class IndexCursor implements BindingsAwareCursor
     }
 
     @Override
-    public void jump(Row row, ColumnSelector columnSelector)
-    {
-        throw new UnsupportedOperationException(getClass().getName());
-    }
-
-    @Override
     public void close()
     {
-        CursorLifecycle.checkIdleOrActive(this);
         iterationHelper.closeIteration();
-        idle = true;
-    }
-
-    @Override
-    public void destroy()
-    {
-        destroyed = true;
-    }
-
-    @Override
-    public boolean isIdle()
-    {
-        return !destroyed && idle;
-    }
-
-    @Override
-    public boolean isActive()
-    {
-        return !destroyed && !idle;
-    }
-
-    @Override
-    public boolean isDestroyed()
-    {
-        return destroyed;
+        super.close();
     }
 
     @Override
@@ -163,8 +131,6 @@ public abstract class IndexCursor implements BindingsAwareCursor
     protected final StoreAdapter adapter;
     protected final IterationHelper iterationHelper;
     protected QueryBindings bindings;
-    private boolean idle = true;
-    private boolean destroyed = false;
 
     static final PointTap INDEX_TRAVERSE = Tap.createCount("traverse: index cursor");
 }

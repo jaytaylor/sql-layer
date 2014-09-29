@@ -172,8 +172,7 @@ class EmitBoundRow_Nested extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-                input.open();
+                super.open();
             } finally {
                 TAP_OPEN.out();
             }
@@ -195,7 +194,7 @@ class EmitBoundRow_Nested extends Operator
                     LOG.debug("EmitBoundRow: {}", row == null ? null : row);
                 }
                 if (row == null) {
-                    close();
+                    setIdle();
                 }
                 else  {
                     assert (row.rowType() == inputRowType);
@@ -218,22 +217,6 @@ class EmitBoundRow_Nested extends Operator
                     TAP_NEXT.out();
                 }
             }
-        }
-
-        @Override
-        public void close()
-        {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (input.isActive()) {
-                input.close();
-            }
-        }
-
-        @Override
-        public void destroy()
-        {
-            close();
-            input.destroy();
         }
 
         // Execution interface
