@@ -22,7 +22,6 @@ import com.foundationdb.rest.resources.*;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.dxl.DXLService;
-import com.foundationdb.server.service.restdml.DirectService;
 import com.foundationdb.server.service.restdml.RestDMLService;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.SessionService;
@@ -53,7 +52,6 @@ public class RestServiceImpl implements RestService, Service {
     public RestServiceImpl(ConfigurationService configService,
                            HttpConductor http,
                            RestDMLService restDMLService,
-                           DirectService directService,
                            SessionService sessionService,
                            TransactionService transactionService,
                            SecurityService securityService,
@@ -64,7 +62,6 @@ public class RestServiceImpl implements RestService, Service {
         this.reqs = new ResourceRequirements(
             dxlService,
             restDMLService,
-            directService,
             securityService,
             sessionService,
             transactionService,
@@ -121,9 +118,6 @@ public class RestServiceImpl implements RestService, Service {
         }
         if (resource_list.contains("version")) {
             resources.add(new VersionResource(reqs));
-        }
-        if (resource_list.contains("direct")) {
-            resources.add(new DirectResource(reqs));
         }
         if (resource_list.contains("view")) {
             resources.add(new ViewResource(reqs));

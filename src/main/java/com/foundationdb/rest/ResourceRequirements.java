@@ -19,7 +19,6 @@ package com.foundationdb.rest;
 
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.dxl.DXLService;
-import com.foundationdb.server.service.restdml.DirectService;
 import com.foundationdb.server.service.restdml.RestDMLService;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.SessionService;
@@ -29,7 +28,6 @@ import com.foundationdb.server.store.Store;
 public class ResourceRequirements {
     public final DXLService dxlService;
     public final RestDMLService restDMLService;
-    public final DirectService directService;
     public final SecurityService securityService;
     public final SessionService sessionService;
     public final TransactionService transactionService;
@@ -38,7 +36,6 @@ public class ResourceRequirements {
 
     public ResourceRequirements(DXLService dxlService,
                                 RestDMLService restDMLService,
-                                DirectService directService,
                                 SecurityService securityService,
                                 SessionService sessionService,
                                 TransactionService transactionService,
@@ -46,7 +43,6 @@ public class ResourceRequirements {
                                 ConfigurationService configService) {
         this.dxlService = dxlService;
         this.restDMLService = restDMLService;
-        this.directService = directService;
         this.securityService = securityService;
         this.sessionService = sessionService;
         this.transactionService = transactionService;
