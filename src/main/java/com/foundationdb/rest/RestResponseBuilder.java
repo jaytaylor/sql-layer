@@ -19,8 +19,6 @@ package com.foundationdb.rest;
 
 import com.foundationdb.rest.resources.ResourceHelper;
 import com.foundationdb.server.Quote;
-import com.foundationdb.server.error.DirectEndpointNotFoundException;
-import com.foundationdb.server.error.DirectTransactionFailedException;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchRoutineException;
@@ -195,8 +193,6 @@ public class RestResponseBuilder {
         Map<Class, Response.Status> map = new HashMap<>();
         map.put(NoSuchTableException.class, Response.Status.NOT_FOUND);
         map.put(NoSuchRoutineException.class, Response.Status.NOT_FOUND);
-        map.put(DirectEndpointNotFoundException.class, Response.Status.NOT_FOUND);
-        map.put(DirectTransactionFailedException.class, Response.Status.INTERNAL_SERVER_ERROR);
         map.put(JsonParseException.class, Response.Status.BAD_REQUEST);
         return map;
     }
