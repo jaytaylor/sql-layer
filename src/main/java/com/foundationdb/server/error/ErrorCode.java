@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+ 
 package com.foundationdb.server.error;
 
 import org.slf4j.Logger;
@@ -24,34 +24,34 @@ import java.util.ResourceBundle;
 
 /**
  * The error codes that are part of the public API.
- *
+ * 
  * From the SQL Standard, the SQLSTATE (ErrorCodes) are a 2 character class value
  * followed by a 3 character sub-class value. These characters are either digits or
- * upper-case latin characters. (0-9 or A-Z).
- *
+ * upper-case latin characters. (0-9 or A-Z). 
+ * 
  * Class values that begin with 0 through 4 or A through H are defined by the standard.
  * Class values that begin with 5 through 9 or I through Z are implementation defined.
- *
+ *  
  * The subclass '000' means no subclass to the given SQLSTATE class
- *
+ * 
  * Sub-class values that begin with 0-4 or A-H are defined by either the SQL standard, or
- * another standard. Sub-class values beginning with 5-9 or I-Z are implementation defined
- * subclasses.
- *
+ * another standard. Sub-class values beginning with 5-9 or I-Z are implementation defined 
+ * subclasses. 
+ * 
  * The SQLCODE encompasses more than errors, though most of the SQLCODES do indicate errors or
  * exceptions. The ErrorCode implements the errors and exceptions, but not any of the non-error
- * SQLCODES.
- *
- * The specific division between a class and a subclass is not made clear by the standard.
+ * SQLCODES.  
+ * 
+ * The specific division between a class and a subclass is not made clear by the standard. 
  */
 public enum ErrorCode {
-
+    
     // Class 00 - successful completion
     SUCCESSFUL_COMPLETION ("00", "000", Importance.TRACE, null),
-
+    
     // Class 01 - warning
     // No Warnings defined
-
+    
     // Class 02 - No data found
 
     // Class 07 - dynamic SQL error
@@ -65,7 +65,7 @@ public enum ErrorCode {
         // SubClass 008 - invalid descriptor count
         // SubClass 009 - invalid descriptor index
         // SubClass 00B - data type transform function violation
-        // SubClass 00C - undefined DATA value
+        // SubClass 00C - undefined DATA value    
         // SubClass 00D - invalid DATA target
         // SubClass 00E - invalid LEVEL value
         // SubClass 00F - invalid DATETIME_INTERVAL_CODE
@@ -75,7 +75,7 @@ public enum ErrorCode {
         // SubClass 003 - connection does not exist
         // SubClass 004 - SQL-server rejected establishment of SQL-connection
         // SubClass 006 - connection failure
-        // SubClass 007 - transaction resolution unknown
+        // SubClass 007 - transaction resolution unknown    
     CONNECTION_TERMINATED   ("08", "500", Importance.ERROR, ConnectionTerminatedException.class),
     UNSUPPORTED_PROTOCOL    ("08", "501", Importance.ERROR, UnsupportedProtocolException.class),
     // Class 09 - triggered action exception
@@ -93,11 +93,11 @@ public enum ErrorCode {
     STALE_STATEMENT         ("0A", "50A", Importance.ERROR, StaleStatementException.class),
     UNSUPPORTED_FULL_OUTER_JOIN("0A", "50B", Importance.DEBUG, UnsupportedFullOuterJoinException.class),
     UNSUPPORTED_GROUP_BY_ROLLUP("0A", "50C", Importance.DEBUG, UnsupportedGroupByRollupException.class),
-
+    
     // Class 0D - invalid target type specification
     // Class 0E - invalid schema name list specification
     // Class 0F - locator exception
-    // Class 0L - invalid grantor
+    // Class 0L - invalid grantor 
     // Class 0M - invalid SQL-invoked procedure reference
     // Class 0P - invalid role specification
     // Class 0S - invalid transform group name specification
@@ -106,22 +106,22 @@ public enum ErrorCode {
     // Class 0V - attempt to assign to ordering column
     // Class 0W - prohibited statement encountered during trigger execution
     // Class 0Z - diagnostics exceptions
-
+    
     // Class 21 - cardinality violation
     SUBQUERY_TOO_MANY_ROWS  ("21", "000", Importance.DEBUG, SubqueryTooManyRowsException.class),
     // Class 22 - data exception
         // SubClass 001 - string data, right truncation
     STRING_TRUNCATION       ("22", "001", Importance.DEBUG, StringTruncationException.class),
-        // SubClass 002 - null value, no indicator parameter
+        // SubClass 002 - null value, no indicator parameter 
         // SubClass 003 - numeric value out of range
     VALUE_OUT_OF_RANGE      ("22", "003", Importance.DEBUG, OutOfRangeException.class),
         // SubClass 004 - null value not allowed
         // SubClass 005 - error in assignment
         // SubClass 006 - invalid interval format
     INVALID_INTERVAL_FORMAT  ("22", "006", Importance.DEBUG, InvalidIntervalFormatException.class),
-        // SubClass 007 - invalid datetime format
+        // SubClass 007 - invalid datetime format 
     INVALID_DATE_FORMAT     ("22", "007", Importance.DEBUG, InvalidDateFormatException.class),
-        // SubClass 008 - datetime field overflow
+        // SubClass 008 - datetime field overflow 
         // SubClass 009 - invalid time zone displacement value
 
         // SubClass 00B - escape character conflict
@@ -129,28 +129,28 @@ public enum ErrorCode {
         // SubClass 00D - invalid escape octet
         // SubClass 00E - null value in array target
         // SubClass 00F - zero-length character string
-
+    
         // SubClass 00G - most specific type mismatch
-        // SubClass 00H - sequence generator limit exceeded
+        // SubClass 00H - sequence generator limit exceeded 
     SEQUENCE_LIMIT_EXCEEDED ("22", "00H", Importance.DEBUG, SequenceLimitExceededException.class),
         // SubClass 00P - interval value out of range
         // SubClass 00Q - multiset value overflow
-
-        // SubClass 010 - invalid indicator parameter value
+    
+        // SubClass 010 - invalid indicator parameter value    
         // SubClass 011 - substring error
         // SubClass 012 - division by zero
     DIVIDE_BY_ZERO          ("22", "012", Importance.DEBUG, DivisionByZeroException.class),
         // SubClass 013 - invalid preceding or following size in window function
-
+    
         // SubClass 014 - invalid argument for NTILE function
-        // SubClass 015 - interval field overflow
+        // SubClass 015 - interval field overflow 
         // SubClass 016 - invalid argument for NTH_VALUE function
         // SubClass 018 - invalid character value for cast
     INVALID_CHAR_TO_NUM     ("22", "018", Importance.DEBUG, InvalidCharToNumException.class),
         // SubClass 019 - invalid escape character
         // SubClass 01B - invalid regular expression
         // SubClass 01C - null row not permitted in table
-
+    
         // SubClass 01E - invalid argument for natural logarithm
         // SubClass 01F - invalid argument for power function
         // SubClass 01G - invalid argument for width bucket function
@@ -159,21 +159,21 @@ public enum ErrorCode {
         // SubClass 01U - attempt to replace a zero-length string
         // SubClass 01W - invalid row count in fetch first clause
         // SubClass 01X - invalid row count in result offset clause
-
+    
         // SubClass 021 - character not in repertoire
-        // SubClass 022 - indicator overflow
+        // SubClass 022 - indicator overflow 
         // SubClass 023 - invalid parameter value
     INVALID_PARAMETER_VALUE  ("22", "023", Importance.DEBUG, InvalidParameterValueException.class),
         // SubClass 024 - unterminated C string
         // SubClass 025 - invalid escape sequence
         // SubClass 026 - string data, length mismatch
         // SubClass 027 - trim error
-
+    
         // SubClass 029 - noncharacter in UCS string
         // SubClass 02D - null value substituted for mutator subject parameter
-
-        // SubClass 02E - array element error
-        // SubClass 02F - array data, right truncation
+    
+        // SubClass 02E - array element error 
+        // SubClass 02F - array data, right truncation    
         // SubClass 02G - invalid repeat argument in a sample clause
         // SubClass 02H - invalid sample size 02H
     TABLE_DEFINITION_CHANGED("22", "501", Importance.DEBUG, TableDefinitionChangedException.class),
@@ -191,11 +191,11 @@ public enum ErrorCode {
     FK_REFERENCING_VIOLATION ("23", "503", Importance.DEBUG, ForeignKeyReferencingViolationException.class),
     FK_REFERENCED_VIOLATION ("23", "504", Importance.DEBUG, ForeignKeyReferencedViolationException.class),
     // Class 24 - invalid cursor state
-    CURSOR_IS_FINISHED      ("24", "501", Importance.ERROR, CursorIsFinishedException.class),
+    CURSOR_IS_FINISHED      ("24", "501", Importance.ERROR, CursorIsFinishedException.class), 
     CURSOR_IS_UNKNOWN       ("24", "502", Importance.ERROR, CursorIsUnknownException.class),
     NO_ACTIVE_CURSOR        ("24", "503", Importance.ERROR, NoActiveCursorException.class),
     CURSOR_CLOSE_BAD        ("24", "504", Importance.ERROR, CursorCloseBadException.class),
-
+    
 
     // Class 25 - invalid transaction state
         // SubClass 001 - active SQL-transaction
@@ -213,14 +213,14 @@ public enum ErrorCode {
     IMPLICITLY_COMMITTED    ("25", "010", Importance.DEBUG, ImplicitlyCommittedException.class),
     TRANSACTION_ABORTED     ("25", "P02", Importance.DEBUG, TransactionAbortedException.class), // No standard, Postgres uses P02
     // Class 26 - invalid SQL statement name
-    // Class 27 - triggered data change violation
+    // Class 27 - triggered data change violation 
     // Class 28 - invalid authorization specification
     AUTHENTICATION_FAILED   ("28", "000", Importance.DEBUG, AuthenticationFailedException.class),
     // Class 2B - dependent privilege descriptors still exist
     VIEW_REFERENCES_EXIST   ("2B", "000", Importance.DEBUG, ViewReferencesExist.class),
     FOREIGN_KEY_PREVENTS_DROP_TABLE ("2B", "001", Importance.DEBUG, ForeignKeyPreventsDropTableException.class),
     FOREIGN_KEY_PREVENTS_ALTER_COLUMN ("2B", "002", Importance.DEBUG, ForeignKeyPreventsAlterColumnException.class),
-    // Class 2C - invalid character set name
+    // Class 2C - invalid character set name 
     UNSUPPORTED_CHARSET     ("2C", "000", Importance.DEBUG, UnsupportedCharsetException.class),
     // Class 2D - invalid transaction termination
     // Class 2E - invalid connection name
@@ -229,7 +229,7 @@ public enum ErrorCode {
     UNSUPPORTED_COLLATION   ("2H", "000", Importance.DEBUG, UnsupportedCollationException.class),
     INVALID_COLLATION_SCHEME("2H", "001", Importance.DEBUG, InvalidCollationSchemeException.class),
     AMBIGUOUS_COLLATION     ("2H", "002", Importance.DEBUG, AmbiguousCollationException.class),
-
+    
     // Class 30 - invalid SQL statement identifier
     // Class 33 - invalid SQL descriptor name
     // Class 34 - invalid cursor name
@@ -244,7 +244,7 @@ public enum ErrorCode {
     // Class 3D - invalid catalog name
     // Class 3F - invalid schema name
     NO_SUCH_SCHEMA          ("3F", "000", Importance.DEBUG, NoSuchSchemaException.class),
-
+    
     // Class 40 - transaction rollback
     QUERY_TIMEOUT           ("40", "000", Importance.ERROR, QueryTimedOutException.class),
     PERSISTIT_ROLLBACK      ("40", "001", Importance.ERROR, PersistitRollbackException.class),
@@ -259,9 +259,9 @@ public enum ErrorCode {
     // These exceptions are re-thrown errors from the parser and from the
     // AISBinder, ASTStatementLoader, BasicDDLFunctions, or BasicDMLFunctions
     SQL_PARSE_EXCEPTION     ("42", "000", Importance.DEBUG, SQLParseException.class),
-    NO_SUCH_TABLE           ("42", "501", Importance.DEBUG, NoSuchTableException.class),
+    NO_SUCH_TABLE           ("42", "501", Importance.DEBUG, NoSuchTableException.class), 
     NO_INDEX                ("42", "502", Importance.DEBUG, NoSuchIndexException.class),
-    NO_SUCH_GROUP           ("42", "503", Importance.DEBUG, NoSuchGroupException.class),
+    NO_SUCH_GROUP           ("42", "503", Importance.DEBUG, NoSuchGroupException.class), 
     NO_SUCH_TABLEDEF        ("42", "504", Importance.DEBUG, RowDefNotFoundException.class),
     NO_SUCH_TABLEID         ("42", "505", Importance.DEBUG, NoSuchTableIdException.class),
     AMBIGUOUS_COLUMN_NAME   ("42", "506", Importance.DEBUG, AmbiguousColumNameException.class),
@@ -295,22 +295,22 @@ public enum ErrorCode {
     FOREIGN_KEY_NOT_DEFERRABLE ("42", "523", Importance.DEBUG, ForeignKeyNotDeferrableException.class),
     NO_AGGREGATE_WITH_GROUP_BY("42", "524", Importance.DEBUG, NoAggregateWithGroupByException.class),
     NO_TABLE_SPECIFIED      ("42", "525", Importance.DEBUG, NoTableSpecifiedInQueryException.class),
-
+    
     // Class 42/600 - JSON interface errors
     KEY_COLUMN_MISMATCH     ("42", "600", Importance.DEBUG, KeyColumnMismatchException.class),
     KEY_COLUMN_MISSING      ("42", "601", Importance.DEBUG, KeyColumnMissingException.class),
     INVALID_CHILD_COLLECTION("42", "602", Importance.DEBUG, InvalidChildCollectionException.class),
     NO_SUCH_FOREIGN_KEY     ("42", "603", Importance.DEBUG, NoSuchForeignKeyException.class),
-
+    
     // Class 42/700 - full text errors
     FULL_TEXT_QUERY_PARSE   ("42", "700", Importance.DEBUG, FullTextQueryParseException.class),
-
+    
     // Class 42/800 - Akiba Direct errors
     CANT_CALL_SCRIPT_LIBRARY ("42", "800", Importance.DEBUG, CantCallScriptLibraryException.class),
     SCRIPT_REGISTRATION_EXCEPTION ("42", "801", Importance.DEBUG, ScriptLibraryRegistrationException.class),
     DIRECT_ENDPOINT_NOT_FOUND ("42", "802", Importance.DEBUG, DirectEndpointNotFoundException.class),
     DIRECT_TRANSACTION_FAILED ("42", "803", Importance.ERROR, DirectTransactionFailedException.class),
-
+        
     // Class 44 - with check option violation
 
 
@@ -323,19 +323,19 @@ public enum ErrorCode {
     INVALID_SQLJ_DEPLOYMENT_DESCRIPTOR ("46", "200", Importance.DEBUG, InvalidSQLJDeploymentDescriptorException.class),
 
     // Class 50 - DDL definition failure
-    PROTECTED_TABLE         ("50", "002", Importance.DEBUG, ProtectedTableDDLException.class),
-    JOIN_TO_PROTECTED_TABLE ("50", "003", Importance.DEBUG, JoinToProtectedTableException.class),
-    JOIN_TO_UNKNOWN_TABLE   ("50", "004", Importance.DEBUG, JoinToUnknownTableException.class),
-    JOIN_TO_WRONG_COLUMNS   ("50", "005", Importance.DEBUG, JoinToWrongColumnsException.class),
-    DUPLICATE_TABLE         ("50", "006", Importance.DEBUG, DuplicateTableNameException.class),
+    PROTECTED_TABLE         ("50", "002", Importance.DEBUG, ProtectedTableDDLException.class), 
+    JOIN_TO_PROTECTED_TABLE ("50", "003", Importance.DEBUG, JoinToProtectedTableException.class), 
+    JOIN_TO_UNKNOWN_TABLE   ("50", "004", Importance.DEBUG, JoinToUnknownTableException.class),  
+    JOIN_TO_WRONG_COLUMNS   ("50", "005", Importance.DEBUG, JoinToWrongColumnsException.class), 
+    DUPLICATE_TABLE         ("50", "006", Importance.DEBUG, DuplicateTableNameException.class), 
     UNSUPPORTED_DROP        ("50", "007", Importance.DEBUG, UnsupportedDropException.class),
     UNSUPPORTED_COLUMN_DATA_TYPE   ("50", "008", Importance.DEBUG, UnsupportedColumnDataTypeException.class),
-    JOIN_TO_MULTIPLE_PARENTS("50", "009", Importance.DEBUG, JoinToMultipleParentsException.class),
+    JOIN_TO_MULTIPLE_PARENTS("50", "009", Importance.DEBUG, JoinToMultipleParentsException.class), 
     UNSUPPORTED_INDEX_DATA_TYPE("50", "00A", Importance.DEBUG, UnsupportedIndexDataTypeException.class),
     MULTIPLE_IDENTITY_COLUMNS("50", "00B", Importance.DEBUG, MultipleIdentityColumnsException.class),
     DUPLICATE_COLUMN        ("50", "00C", Importance.DEBUG, DuplicateColumnNameException.class),
-    DUPLICATE_GROUP         ("50", "00D", Importance.DEBUG, DuplicateGroupNameException.class),
-    REFERENCED_TABLE        ("50", "00E", Importance.DEBUG, ReferencedTableException.class),
+    DUPLICATE_GROUP         ("50", "00D", Importance.DEBUG, DuplicateGroupNameException.class), 
+    REFERENCED_TABLE        ("50", "00E", Importance.DEBUG, ReferencedTableException.class),  
     DROP_INDEX_NOT_ALLOWED  ("50", "00F", Importance.DEBUG, DropIndexNotAllowedException.class),
     FK_DDL_VIOLATION        ("50", "00G", Importance.DEBUG, ForeignConstraintDDLException.class),
     PROTECTED_INDEX         ("50", "00H", Importance.DEBUG, ProtectedIndexException.class),
@@ -353,7 +353,7 @@ public enum ErrorCode {
     INDISTINGUISHABLE_INDEX ("50", "00T", Importance.DEBUG, IndistinguishableIndexException.class),
     DROP_GROUP_NOT_ROOT     ("50", "00U", Importance.DEBUG, DropGroupNotRootException.class),
     BAD_SPATIAL_INDEX       ("50", "00V", Importance.DEBUG, BadSpatialIndexException.class),
-    DUPLICATE_ROUTINE       ("50", "00W", Importance.DEBUG, DuplicateRoutineNameException.class),
+    DUPLICATE_ROUTINE       ("50", "00W", Importance.DEBUG, DuplicateRoutineNameException.class), 
     DUPLICATE_PARAMETER     ("50", "00X", Importance.DEBUG, DuplicateParameterNameException.class),
     SET_STORAGE_NOT_ROOT    ("50", "00Y", Importance.DEBUG, SetStorageNotRootException.class),
     INVALID_CREATE_AS       ("50", "00Z", Importance.DEBUG, InvalidCreateAsException.class),
@@ -429,12 +429,12 @@ public enum ErrorCode {
     //5200C
     //5200D
     QUERY_LOG_CLOSE_FAIL    ("52", "00E", Importance.ERROR, QueryLogCloseException.class),
-    INVALID_PORT            ("52", "00F", Importance.ERROR, InvalidPortException.class),
+    INVALID_PORT            ("52", "00F", Importance.ERROR, InvalidPortException.class), 
     INVALID_VOLUME          ("52", "010", Importance.ERROR, InvalidVolumeException.class),
     INVALID_OPTIMIZER_PROPERTY ("52", "011", Importance.ERROR, InvalidOptimizerPropertyException.class),
     IS_TABLE_VERSION_MISMATCH ("52", "012", Importance.ERROR, ISTableVersionMismatchException.class),
 
-    // Class 53 - Internal error
+    // Class 53 - Internal error 
     INTERNAL_ERROR          ("53", "000", Importance.ERROR, null),
     INTERNAL_CORRUPTION     ("53", "001", Importance.ERROR, RowDataCorruptionException.class),
     //53002
@@ -454,12 +454,12 @@ public enum ErrorCode {
     NOT_ALLOWED_BY_CONFIG   ("53", "00G", Importance.ERROR, NotAllowedByConfigException.class),
     JOIN_GRAPH_FAILURE      ("53", "00H", Importance.ERROR, FailedJoinGraphCreationException.class),
     CORRUPTED_PLAN          ("53", "00I", Importance.ERROR, CorruptedPlanException.class),
-
+    
     // Class 55 - Type conversion errors
     UNKNOWN_TYPE            ("55", "001", Importance.DEBUG, UnknownDataTypeException.class),
     UNSUPPORTED_DATA_TYPE   ("55", "002", Importance.DEBUG, UnsupportedDataTypeException.class),
     OVERFLOW                ("55", "004", Importance.DEBUG, OverflowException.class),
-
+    
     // Class 56 - Explain query errors
     UNABLE_TO_EXPLAIN       ("56", "000", Importance.DEBUG, UnableToExplainException.class),
 
@@ -476,7 +476,7 @@ public enum ErrorCode {
     // Class 58 - Query canceled by user
     QUERY_CANCELED          ("58", "000", Importance.ERROR, QueryCanceledException.class),
 
-    // Class 70 - Unknown errors
+    // Class 70 - Unknown errors 
     UNKNOWN                 ("70", "000", Importance.ERROR, null),
     UNEXPECTED_EXCEPTION    ("70", "001", Importance.ERROR, null),
     ;
@@ -493,13 +493,13 @@ public enum ErrorCode {
     static final ResourceBundle resourceBundle = ResourceBundle.getBundle("com.foundationdb.server.error.error_code");
 
 
-    private ErrorCode(String code, String subCode, Importance importance,
+    private ErrorCode(String code, String subCode, Importance importance, 
             Class<? extends InvalidOperationException> exception) {
         this.code = code;
         this.subcode = subCode;
         this.importance = importance;
         this.exceptionClass = exception;
-        this.formattedValue = this.code + this.subcode;
+        this.formattedValue = this.code + this.subcode; 
     }
 
     public static ErrorCode valueOfCode(String value)
@@ -516,19 +516,19 @@ public enum ErrorCode {
         return importance;
     }
 
-    public String getMessage() {
+    public String getMessage() { 
         return resourceBundle.getString(name());
     }
 
     public Class<? extends InvalidOperationException> associatedExceptionClass() {
-        return exceptionClass;
+        return exceptionClass; 
     }
 
     public String getFormattedValue() {
         return formattedValue;
     }
 
-    public String getCode() {
+    public String getCode() { 
         return code;
     }
 
