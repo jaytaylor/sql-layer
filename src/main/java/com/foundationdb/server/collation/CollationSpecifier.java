@@ -44,14 +44,14 @@ public class CollationSpecifier {
     private final static String DEFAULT_CASE = CASE_SENSITIVE;
     private final static String DEFAULT_ACCENT = ACCENT_SENSITIVE;
 
+    // Used to check the validity of requested locales
+    private final static HashSet<ULocale> locales = new HashSet<ULocale>(Arrays.asList(ULocale.getAvailableLocales()));
+
     private String scheme; // the original, user-created scheme; this.toString() will produce a canonical version
     private String locale = null;
     private Boolean caseSensitive = null;
     private Boolean accentSensitive = null;
     private HashMap<String, String> keywordsToValues = new HashMap<String, String>();
-    
-    // Used to check the validity of requested locales
-    private final static HashSet<ULocale> locales = new HashSet<ULocale>(Arrays.asList(ULocale.getAvailableLocales()));
 
     public CollationSpecifier(String scheme) {
         init(scheme);
