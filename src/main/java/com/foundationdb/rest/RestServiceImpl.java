@@ -28,14 +28,12 @@ import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.Store;
 import com.google.inject.Inject;
-import com.sun.jersey.api.core.DefaultResourceConfig;
-import com.sun.jersey.api.core.ResourceConfig;
-import com.sun.jersey.spi.container.servlet.ServletContainer;
-
+import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.servlet.ServletContainer;
 import org.eclipse.jetty.servlet.ServletHolder;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class RestServiceImpl implements RestService, Service {
     private final ConfigurationService configService;
@@ -100,7 +98,7 @@ public class RestServiceImpl implements RestService, Service {
     private ResourceConfig createResourceConfigV1() {
         String resource_list = configService.getProperty(RESOURCE_LIST);
         
-        List<Object> resources = new ArrayList<>();
+        Set<Object> resources = new HashSet<>();
         if (resource_list.contains("entity")) {
             resources.add(new EntityResource(reqs));
         }
@@ -126,8 +124,8 @@ public class RestServiceImpl implements RestService, Service {
         resources.add(new DefaultResource());
 
         
-        DefaultResourceConfig config = new DefaultResourceConfig();
-        config.getSingletons().addAll(resources);
+        ResourceConfig config = new ResourceConfig();
+        config.registerInstances(resources);
         return config;
     }
 }
