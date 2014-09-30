@@ -40,6 +40,7 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.AbstractRow;
+import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.storeadapter.OperatorBasedRowCollector;
 import com.foundationdb.qp.storeadapter.PersistitHKey;
@@ -75,6 +76,7 @@ import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
 import com.persistit.Key;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -145,13 +147,13 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     /** Delete the key. */
     abstract void clear(Session session, SDType storeData);
 
-    abstract void resetForWrite(SDType storeData, Index index, PersistitIndexRowBuffer indexRowBuffer);
+    abstract void resetForWrite(SDType storeData, Index index, IndexRow indexRowBuffer);
 
     /** Create an iterator to visit all descendants of the current key. */
     protected abstract Iterator<Void> createDescendantIterator(Session session, SDType storeData);
 
     /** Read the index row for the given RowData or null if not present. storeData has been initialized for index. */
-    protected abstract PersistitIndexRowBuffer readIndexRow(Session session,
+    protected abstract IndexRow readIndexRow(Session session,
                                                             Index parentPKIndex,
                                                             SDType storeData,
                                                             RowDef childRowDef,
@@ -184,7 +186,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         int i2hPosition = 0;
         IndexToHKey indexToHKey = null;
         SDType parentStoreData = null;
-        PersistitIndexRowBuffer parentPKIndexRow = null;
+        IndexRow parentPKIndexRow = null;
 
         // All columns of all segments of the HKey
         for(HKeySegment hKeySegment : table.hKey().segments()) {

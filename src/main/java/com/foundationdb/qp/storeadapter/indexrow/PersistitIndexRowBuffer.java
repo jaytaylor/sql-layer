@@ -186,7 +186,31 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
             value.putByteArray(pValue.getEncodedBytes(), 0, pValue.getEncodedSize());
         }
     }
-
+    
+    @Override
+    public int compareTo(IndexRow that, int fieldCount, boolean[] ascending) {
+        if (that instanceof PersistitIndexRowBuffer) {
+            return compareTo((PersistitIndexRowBuffer)that, fieldCount, ascending);
+        } else {
+            throw new UnsupportedOperationException(index.toString());
+        }
+    }
+    
+    @Override
+    public int compareTo (IndexRow that, int fieldCount) {
+        return compareTo (that, fieldCount, null);
+    }
+    
+    @Override
+    public void append (EdgeValue value) {
+        if (value == EdgeValue.BEFORE)
+            append(Key.BEFORE);
+        else if (value == EdgeValue.AFTER)
+            append(Key.AFTER);
+        else
+            throw new UnsupportedOperationException(value.toString());
+    }
+    
     // PersistitIndexRowBuffer interface
 
     public void appendFieldTo(int position, Key target)
@@ -227,11 +251,13 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     }
 
     // For group index rows
+    @Override
     public void resetForWrite(Index index, Key key, Value value)
     {
-        reset(index, key, value, true);
+        reset(index, key, (Value)value, true);
     }
 
+    @Override
     public void resetForRead(Index index, Key key, Value value)
     {
         reset(index, key, value, false);
@@ -381,6 +407,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         }
     }
 
+    @Override
     public void reset()
     {
         pKey.clear();

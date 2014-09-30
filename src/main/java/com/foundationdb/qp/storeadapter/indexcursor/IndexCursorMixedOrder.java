@@ -25,12 +25,11 @@ import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.CursorLifecycle;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
-import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
+import com.foundationdb.qp.row.IndexRow;
+import com.foundationdb.qp.row.IndexRow.EdgeValue;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.types.TInstance;
-import com.persistit.Key;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -386,7 +385,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             } else {
                 if(sortKeyAdapter.isNull(eVal)) {
                     // 0, 4, 8, 12
-                    endKey.append(Key.AFTER);
+                    endKey.append(EdgeValue.AFTER);
                 } else {
                     // 1, 5, 9, 13
                     endKey.append(eVal, typeAt(f));
@@ -397,14 +396,14 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             if(!ascending[f]) {
                 startInclusive = keyRange.hiInclusive();
                 endInclusive = keyRange.loInclusive();
-                PersistitIndexRow tmpKey = startKey;
+                IndexRow tmpKey = startKey;
                 startKey = endKey;
                 endKey = tmpKey;
             }
         }
     }
 
-    private void clear(PersistitIndexRowBuffer bound)
+    private void clear(IndexRow bound)
     {
         assert bound == startKey || bound == endKey;
         bound.resetForWrite(index(), adapter.createKey(), null); // TODO: Reuse the existing key
@@ -416,7 +415,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
         if (startKey == null || row == null || startUnbounded()) {
             beforeStart = false;
         } else {
-            PersistitIndexRow current = (PersistitIndexRow) row;
+            IndexRow current = (IndexRow) row;
             int c = current.compareTo(startKey, startBoundColumns, ascending);
             beforeStart = c < 0 || c == 0 && !startInclusive;
         }
@@ -429,7 +428,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
         if (endKey == null || endUnbounded()) {
             pastEnd = false;
         } else {
-            PersistitIndexRow current = (PersistitIndexRow) row;
+            IndexRow current = (IndexRow) row;
             int c = current.compareTo(endKey, endBoundColumns, ascending);
             pastEnd = c > 0 || c == 0 && !endInclusive;
         }
@@ -467,7 +466,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     private TInstance[] types;
     // Entry for every column in the index (larger than ordering.sortColumns() if under-specified)
     private boolean[] ascending;
-    private PersistitIndexRow startKey;
-    private PersistitIndexRow endKey;
+    private IndexRow startKey;
+    private IndexRow endKey;
     private boolean pastStart;
 }

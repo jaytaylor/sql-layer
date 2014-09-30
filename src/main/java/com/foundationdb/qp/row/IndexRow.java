@@ -17,23 +17,27 @@
 
 package com.foundationdb.qp.row;
 
-import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.types.TInstance;
 import com.persistit.Key;
+import com.persistit.Value;
 
 public abstract class IndexRow extends AbstractRow
 {
     // Row interface
 
-    public RowType rowType()
+    @Override
+    public IndexRowType rowType()
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public HKey hKey()
     {
         throw new UnsupportedOperationException();
@@ -44,6 +48,7 @@ public abstract class IndexRow extends AbstractRow
     public abstract void initialize(RowData rowData, Key hKey, SpatialColumnHandler spatialColumnHandler, long zValue);
 
     public abstract <S> void append(S source, TInstance type);
+    public abstract void append (EdgeValue value);
 
     public abstract void close(Session session, Store store, boolean forInsert);
 
@@ -51,4 +56,30 @@ public abstract class IndexRow extends AbstractRow
     public boolean isBindingsSensitive() {
         return false;
     }
+
+    public abstract void resetForRead(Index index, Key key, Value value); 
+    
+    public void resetForWrite(Index index, Key createKey) {
+        resetForWrite(index, createKey, null);
+    }
+    public abstract void resetForWrite(Index index, Key createKey, Value value);
+
+    public abstract int compareTo(IndexRow startKey, int startBoundColumns,
+            boolean[] ascending); 
+    
+    public abstract int compareTo(IndexRow thatKey, int startBoundColumns);
+
+    public abstract void reset();
+    
+    // TODO: Remove these as we get rid of the Key use in the upper layers
+    
+    public abstract void copyPersistitKeyTo(Key key);
+    public abstract void appendFieldTo(int position, Key target);
+    public abstract void copyFrom(Key key, Value value);
+
+    public static enum EdgeValue {
+        BEFORE,
+        AFTER;
+    }
+
 }

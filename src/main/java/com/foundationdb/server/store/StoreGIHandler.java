@@ -34,8 +34,6 @@ import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.tap.PointTap;
-import com.foundationdb.util.tap.Tap;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;

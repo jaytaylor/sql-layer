@@ -18,6 +18,7 @@ package com.foundationdb.qp.storeadapter;
 
 import com.foundationdb.qp.storeadapter.indexcursor.IterationHelper;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
+import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.server.store.FDBStoreData;
@@ -62,7 +63,7 @@ public class FDBIterationHelper implements IterationHelper
     @Override
     public Row row() {
         assert (storeData.rawKey != null) : "Called for chopped key (or before iterating)"; // See advanceLogical() for former
-        PersistitIndexRow row = adapter.takeIndexRow(rowType);
+        IndexRow row = adapter.takeIndexRow(rowType);
         // updateKey() called from advance
         updateValue();
         row.copyFrom(storeData.persistitKey, storeData.persistitValue);
