@@ -14,6 +14,9 @@
 - CreateTable: t2 (id INT, c CHAR(5) COLLATE foo)
 - error: [2H000]
 ---
+- CreateTable: t2 (id INT, c CHAR(5) COLLATE foo_us)
+- error: [2H000]
+---
 - CreateTable: t2 (id INT, c CHAR(5) CHARACTER SET foo)
 - error: [2C000]
 ---
@@ -130,4 +133,14 @@
 - error: [2H000]
 ---
 - CreateTable: noRegion2(c char(5) COLLATE en_)
+---
+- CreateTable: keywords(c char(5) COLLATE "zh_@collation=stroke")
+---
+# note: this fails because the default for zh_ is pinyin, so
+# the pinyin collation keyword is dropped and cannot be validated. 
+- CreateTable: redundantKeyword(c char(5) COLLATE "zh_@collation=pinyin")
+- error: [2H000]
+---
+- CreateTable: badKeywords(c char(5) COLLATE "zh_@badkeyword=stroke")
+- error: [2H000]
 ...

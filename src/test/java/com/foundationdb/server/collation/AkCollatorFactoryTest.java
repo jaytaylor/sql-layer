@@ -70,7 +70,7 @@ public class AkCollatorFactoryTest {
         try {
             AkCollatorFactory.setCollationMode(DEFAULT_MODE);
             final AkCollator collator = AkCollatorFactory.getAkCollator("sv_se_ci");
-            assertEquals("Collector should have correct name", "sv_se_ci_cx", collator.getScheme());
+            assertEquals("Collector should have correct name", "sv_se_ci_co", collator.getScheme());
         } finally {
             AkCollatorFactory.setCollationMode(saveMode);
         }
@@ -111,9 +111,9 @@ public class AkCollatorFactoryTest {
         }
     }
 
-    @Test(expected = InvalidCollationSchemeException.class)
+    @Test(expected = UnsupportedCollationException.class)
     public void collationBadScheme() throws Exception {
-        CollationSpecifier collationSpecifier = new CollationSpecifier("en_us_too_many_arguments");
+        CollationSpecifier collationSpecifier = new CollationSpecifier("en_us_bad_arguments");
     }
 
     @Test

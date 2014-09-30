@@ -18,9 +18,7 @@
 package com.foundationdb.server.collation;
 
 import java.lang.ref.SoftReference;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,8 +28,6 @@ import com.foundationdb.server.error.InvalidCollationSchemeException;
 import com.foundationdb.server.error.UnsupportedCollationException;
 import com.ibm.icu.text.Collator;
 import com.ibm.icu.text.RuleBasedCollator;
-import com.ibm.icu.util.IllformedLocaleException;
-import com.ibm.icu.util.ULocale;
 
 /**
  * Provides Collator instances. Collator is not threadsafe, so this class keeps
@@ -57,11 +53,6 @@ public class AkCollatorFactory {
     private final static Map<String, Integer> schemeToIdMap = new ConcurrentHashMap<>();
 
     private final static AtomicInteger collationIdGenerator = new AtomicInteger(UCS_BINARY_ID);
-
-    /*
-     * Used to check the validity of requested locales
-     */
-    private final static HashSet<ULocale> locales = new HashSet<ULocale>(Arrays.asList(ULocale.getAvailableLocales()));
 
     private volatile static Mode mode = Mode.STRICT;
 
@@ -108,7 +99,6 @@ public class AkCollatorFactory {
         return mode;
     }
 
-
     public static AkCollator getAkCollator(String scheme) {
         if (mode == Mode.DISABLED || scheme == null) {
             return UCS_BINARY_COLLATOR;
@@ -118,7 +108,15 @@ public class AkCollatorFactory {
             return mapToBinary(scheme);
         }
 
-        CollationSpecifier specifier = new CollationSpecifier(scheme);
+        CollationSpecifier specifier;
+        try {
+            specifier = new CollationSpecifier(scheme);
+        } catch (InvalidCollationSchemeException | UnsupportedCollationException e) {
+            if (mode == Mode.LOOSE){
+                return mapToBinary(scheme);
+            }
+            throw e;
+        }
 
         SoftReference<AkCollator> ref = collatorMap.get(specifier.toString());
         if (ref != null) {
@@ -142,13 +140,12 @@ public class AkCollatorFactory {
             } catch (InvalidCollationSchemeException | UnsupportedCollationException e) {
                 if (mode == Mode.LOOSE) {
                     return mapToBinary(scheme);
-                } else {
-                    throw e;
                 }
+                throw e;
             }
 
             ref = new SoftReference<>(akCollator);
-            collatorMap.put(scheme, ref);
+            collatorMap.put(specifier.toString(), ref);
             collationIdMap.put(collationId, ref);
             schemeToIdMap.put(specifier.toString(), collationId);
 
@@ -191,69 +188,11 @@ public class AkCollatorFactory {
     static synchronized Collator forScheme(final CollationSpecifier specifier) {
         RuleBasedCollator collator = (RuleBasedCollator) sourceMap.get(specifier.toString());
         if (collator == null) {
-
-            ULocale locale = new ULocale(specifier.getLocale());
-            checkLocale(locale, specifier.getOriginalScheme());
-            setKeywords(locale, specifier.getKeywordsAndValues());
-
-            collator = (RuleBasedCollator) RuleBasedCollator.getInstance(locale);
-            checkKeywords(collator.getLocale(ULocale.VALID_LOCALE), specifier.getKeywordsAndValues(), 
-                    specifier.getOriginalScheme());
-
-            if (specifier.setStrength()) {
-                setCollatorStrength(collator, specifier);
-            }
+            collator = specifier.createCollator();
             sourceMap.put(specifier.toString(), collator);
         }
         collator = collator.cloneAsThawed();
         return collator;
-    }
-
-    private static void checkLocale(ULocale locale, String scheme) {
-        if (!locales.contains(locale))
-            throw new UnsupportedCollationException(scheme);
-    }
-
-    private static void setKeywords(ULocale locale, Map<String, String> keywordsToValues) {
-        for (Entry<String, String> entry : keywordsToValues.entrySet()) {
-            locale.setKeywordValue(entry.getKey(), entry.getValue());
-        }
-    }
-
-    private static void checkKeywords(ULocale locale, Map<String, String> keywordsToValues, String scheme) {
-        int count = 0;
-
-        while (locale.getKeywords() != null && locale.getKeywords().hasNext()) {
-            String keyword = locale.getKeywords().next();
-            if (!keywordsToValues.containsKey(keyword) || 
-                    !keywordsToValues.get(keyword).equalsIgnoreCase(locale.getKeywordValue(keyword))) {
-                throw new InvalidCollationSchemeException(scheme);
-            }
-            count++;
-        }
-        
-        if (count != keywordsToValues.size()) {
-            throw new InvalidCollationSchemeException(scheme);
-        }
-    }
-
-    private static void setCollatorStrength(RuleBasedCollator collator, CollationSpecifier specifier) {
-        if (specifier.caseSensitive() && specifier.accentSensitive()) {
-            collator.setStrength(Collator.TERTIARY);
-            collator.setCaseLevel(false);
-        }
-        else if (specifier.caseSensitive() && !specifier.accentSensitive()) {
-            collator.setCaseLevel(true);
-            collator.setStrength(Collator.PRIMARY);
-        }
-        else if (!specifier.caseSensitive() && specifier.accentSensitive()) {
-            collator.setStrength(Collator.SECONDARY);
-            collator.setCaseLevel(false);
-        }
-        else {
-            collator.setStrength(Collator.PRIMARY);
-            collator.setCaseLevel(false);
-        }
     }
 
     private static AkCollator mapToBinary(final String scheme) {

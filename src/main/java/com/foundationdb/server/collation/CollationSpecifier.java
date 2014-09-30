@@ -17,10 +17,19 @@
 
 package com.foundationdb.server.collation;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import com.foundationdb.server.error.AmbiguousCollationException;
 import com.foundationdb.server.error.InvalidCollationSchemeException;
+import com.foundationdb.server.error.UnsupportedCollationException;
+import com.ibm.icu.text.Collator;
+import com.ibm.icu.text.RuleBasedCollator;
+import com.ibm.icu.util.ULocale;
 
 /**
  * This should take in a string representing a collation,
@@ -28,15 +37,11 @@ import com.foundationdb.server.error.InvalidCollationSchemeException;
  * getting collation attributes 
  * 
  * (for use in AkCollatorFactory).
- * 
- * @author hchandl
  *
  */
 public class CollationSpecifier {
 
-    /*
-     * Only the region needs to be checked specifically, for ambiguity
-     */
+    // Only the region needs to be checked, for ambiguity
     private final static int REGION_NDX = 1;
 
     private final static String CASE_SENSITIVE = "cs";
@@ -47,24 +52,24 @@ public class CollationSpecifier {
     private final static String DEFAULT_CASE = CASE_SENSITIVE;
     private final static String DEFAULT_ACCENT = ACCENT_SENSITIVE;
 
+    private String scheme;
     private String locale = null;
     private Boolean caseSensitive = null;
     private Boolean accentSensitive = null;
     private HashMap<String, String> keywordsToValues = new HashMap<String, String>();
-    private String rawKeywordString = null;
+    private String rawKeywordString = null; // convenient so this won't need to be rebuilt in toString()
+    
+    // Used to check the validity of requested locales
+    private final static HashSet<ULocale> locales = new HashSet<ULocale>(Arrays.asList(ULocale.getAvailableLocales()));
 
-    private final String originalScheme;
 
     public CollationSpecifier(String scheme) {
-        originalScheme = scheme;
-        canonicalizeCollation();
+        init(scheme);
     }
 
-    private void canonicalizeCollation() {
-        String[] pieces = originalScheme.toLowerCase().split("_");
-        if (pieces.length == 0) {
-            throw new InvalidCollationSchemeException(originalScheme);
-        }
+    private void init(String scheme) {
+        this.scheme = scheme;
+        String[] pieces = scheme.toLowerCase().split("_");
 
         StringBuilder localeBuilder = new StringBuilder();
         Boolean localeStarted = false;
@@ -75,68 +80,142 @@ public class CollationSpecifier {
         for (int i = 0; i < pieces.length; i++) {
             if (pieces[i].startsWith("@")) {
                 rawKeywordString = pieces[i];
-                processKeywords(pieces[i]);
+                keywordsToValues = processKeywordString(pieces[i], scheme);
                 localeFinished = true;
             }
-            else if (pieces[i].equals(CASE_SENSITIVE) || pieces[i].equals(CASE_INSENSITIVE)) {
+            else if (isCaseString(pieces[i]) || isAccentString(pieces[i])) {
                 if (i == REGION_NDX) {
                     if (localeStarted) localeBuilder.append("_");
-                    else localeStarted = true;
+                    localeStarted = true;
+
                     localeBuilder.append(pieces[i]);
-                    ambiguousCase = true;
-                } else {
-                    setCaseAndAccent(pieces[i]);
-                    localeFinished = true;
-                }
-            }
-            else if (pieces[i].equals(ACCENT_SENSITIVE) || pieces[i].equals(ACCENT_INSENSITIVE)) {
-                if (i == REGION_NDX) {
-                    if (localeStarted) localeBuilder.append("_");
-                    else localeStarted = true;
-                    localeBuilder.append(pieces[i]);
-                    ambiguousAccent = true;
+
+                    if (isCaseString(pieces[i])) {
+                        ambiguousCase = true;
+                    } else {
+                        ambiguousAccent = true;
+                    }
                 } else {
                     setCaseAndAccent(pieces[i]);
                     localeFinished = true;
                 }
             }
             else if (localeFinished) {
-                throw new InvalidCollationSchemeException(originalScheme);
+                throw new InvalidCollationSchemeException(scheme);
             } else {
                 if (localeStarted) localeBuilder.append("_");
-                else localeStarted = true;
+                localeStarted = true;
                 localeBuilder.append(pieces[i]);
             }
         }
-        
+
         // if the locale is just a language, need to append an underscore
-        // makes things easier later (esp. with ambiguity)
+        // makes building the string easier/avoids ambiguity in REGION ndx
         if (localeBuilder.indexOf("_") == -1) {
             localeBuilder.append("_");
         }
         locale = localeBuilder.toString();
 
-        if ((ambiguousCase && caseSensitive == null) || (ambiguousAccent && accentSensitive == null)) {
+        checkAmbiguous(ambiguousCase, ambiguousAccent, pieces);
+
+        if (caseSensitive == null) caseSensitive = CASE_SENSITIVE.equalsIgnoreCase(DEFAULT_CASE);
+        if (accentSensitive == null) accentSensitive = ACCENT_SENSITIVE.equalsIgnoreCase(DEFAULT_ACCENT);
+    }
+
+    private void checkAmbiguous(Boolean ambiguousCase, Boolean ambiguousAccent, String[] pieces) {
+        if ((ambiguousCase && caseSensitive == null) || 
+                (ambiguousAccent && accentSensitive == null)) {
+            String providedCase = caseSensitive == null ? DEFAULT_CASE : caseSensitive ? CASE_SENSITIVE : CASE_INSENSITIVE;
+            String providedAccent = accentSensitive == null ? DEFAULT_ACCENT : accentSensitive ? ACCENT_SENSITIVE: ACCENT_INSENSITIVE;
             throwAmbiguousException(locale, rawKeywordString, pieces[REGION_NDX], ambiguousCase,
-                                    ambiguousAccent, caseSensitive == null ? DEFAULT_CASE : caseSensitive ? CASE_SENSITIVE : CASE_INSENSITIVE, 
-                                            accentSensitive == null ? DEFAULT_ACCENT : accentSensitive ? ACCENT_SENSITIVE: ACCENT_INSENSITIVE, originalScheme);
+                                    ambiguousAccent, providedCase, providedAccent, scheme);
+        }
+    }
+
+    public RuleBasedCollator createCollator() {
+        ULocale ulocale = new ULocale(locale);
+        checkLocale(ulocale, scheme);
+        ulocale = setKeywords(ulocale, keywordsToValues);
+
+        RuleBasedCollator collator = (RuleBasedCollator) RuleBasedCollator.getInstance(ulocale);
+        checkKeywords(collator.getLocale(ULocale.VALID_LOCALE), keywordsToValues,
+                scheme);
+
+        if (shouldSetStrength()) {
+            setCollatorStrength(collator, this);
+        }
+        
+        return collator;
+    }
+
+    private static void checkKeywords(ULocale locale, Map<String, String> keywordsToValues, String scheme) {
+        int count = 0;
+
+        Iterator<String> localeKeywords = locale.getKeywords();
+        while (localeKeywords != null && localeKeywords.hasNext()) {
+            String keyword = localeKeywords.next();
+            if (!keywordsToValues.containsKey(keyword) || 
+                    !keywordsToValues.get(keyword).equalsIgnoreCase(locale.getKeywordValue(keyword))) {
+                throw new UnsupportedCollationException(scheme);
+            }
+            count++;
         }
 
-        if (caseSensitive == null) caseSensitive = true;
-        if (accentSensitive == null) accentSensitive = true;
+        if (count != keywordsToValues.size()) {
+            throw new UnsupportedCollationException(scheme);
+        }
+    }
+
+    private static void setCollatorStrength(RuleBasedCollator collator, CollationSpecifier specifier) {
+        if (specifier.caseSensitive() && specifier.accentSensitive()) {
+            collator.setStrength(Collator.TERTIARY);
+            collator.setCaseLevel(false);
+        }
+        else if (specifier.caseSensitive() && !specifier.accentSensitive()) {
+            collator.setCaseLevel(true);
+            collator.setStrength(Collator.PRIMARY);
+        }
+        else if (!specifier.caseSensitive() && specifier.accentSensitive()) {
+            collator.setStrength(Collator.SECONDARY);
+            collator.setCaseLevel(false);
+        }
+        else {
+            collator.setStrength(Collator.PRIMARY);
+            collator.setCaseLevel(false);
+        }
+    }
+
+    private static ULocale setKeywords(ULocale locale, Map<String, String> keywordsToValues) {
+        for (Entry<String, String> entry : keywordsToValues.entrySet()) {
+            locale = locale.setKeywordValue(entry.getKey(), entry.getValue());
+        }
+        return locale;
+    }
+
+    private static void checkLocale(ULocale locale, String scheme) {
+        if (!locales.contains(locale))
+            throw new UnsupportedCollationException(scheme);
+    }
+
+    private static Boolean isCaseString(String caseOrNot) {
+        return caseOrNot.equalsIgnoreCase(CASE_INSENSITIVE) || 
+               caseOrNot.equalsIgnoreCase(CASE_SENSITIVE);
+    }
+
+    private static Boolean isAccentString(String accentOrNot) {
+        return accentOrNot.equalsIgnoreCase(ACCENT_INSENSITIVE) ||
+               accentOrNot.equalsIgnoreCase(ACCENT_SENSITIVE);
     }
 
     private void setCaseAndAccent(String caseOrAccent) {
         // can't specify accent or case twice
         if (accentSensitive != null &&
-                (caseOrAccent.equals(ACCENT_SENSITIVE) ||
-                 caseOrAccent.equals(ACCENT_INSENSITIVE))) {
-            throw new InvalidCollationSchemeException(originalScheme);
+                isAccentString(caseOrAccent)) {
+            throw new InvalidCollationSchemeException(scheme);
         }
         if (caseSensitive != null &&
-                (caseOrAccent.equals(CASE_SENSITIVE) ||
-                 caseOrAccent.equals(CASE_INSENSITIVE))) {
-            throw new InvalidCollationSchemeException(originalScheme);
+                isCaseString(caseOrAccent)) {
+            throw new InvalidCollationSchemeException(scheme);
         }
         if (caseOrAccent.equals(CASE_SENSITIVE)) {
             caseSensitive = true;
@@ -151,32 +230,35 @@ public class CollationSpecifier {
             accentSensitive = false;
         }
         else {
-            // shouldn't actually hit here due to if statements above
-            throw new InvalidCollationSchemeException(originalScheme);
+            throw new InvalidCollationSchemeException(scheme);
         }
     }
 
-    private void processKeywords(String keywords) {
+    private static HashMap<String, String> processKeywordString(String keywords, String scheme) {
         // skip the initial @ when parsing for keywords and values
         String[] keywordsAndValues = keywords.substring(1).split(";");
-        
+
+        HashMap<String, String> keywordsToValues = new HashMap<String, String>();
         for (String keywordAndValue : keywordsAndValues) {
             String[] pieces = keywordAndValue.split("=");
             if (pieces.length != 2) {
-                throw new InvalidCollationSchemeException(originalScheme);
+                throw new InvalidCollationSchemeException(scheme);
             }
             keywordsToValues.put(pieces[0], pieces[1]);
         }
+        return keywordsToValues;
     }
 
     private static void throwAmbiguousException(String locale, String rawKeywordString, String region, 
             Boolean ambiguousCase, Boolean ambiguousAccent, String providedCase, String providedAccent, 
             String scheme) {
+        String possibility1case = ambiguousCase ? region : providedCase == null ? DEFAULT_CASE : providedCase;
+        String possibility1accent = ambiguousAccent ? region : providedAccent == null ? DEFAULT_ACCENT : providedAccent;
         String possibility1 = new StringBuilder().append(locale.replace(region, ""))
                                                  .append("_")
-                                                 .append(ambiguousCase ? region : providedCase == null ? DEFAULT_CASE : providedCase)
+                                                 .append(possibility1case)
                                                  .append("_")
-                                                 .append(ambiguousAccent ? region : providedAccent == null ? DEFAULT_ACCENT : providedAccent)
+                                                 .append(possibility1accent)
                                                  .toString();
         String possibility2 = new StringBuilder().append(locale)
                                                  .append("_")
@@ -195,19 +277,11 @@ public class CollationSpecifier {
         return accentSensitive;
     }
 
-    public String getLocale() {
-        return locale;
-    }
-
-    public String getOriginalScheme() {
-        return originalScheme;
-    }
-
     public HashMap<String, String> getKeywordsAndValues() {
         return keywordsToValues;
     }
 
-    public Boolean setStrength() {
+    public Boolean shouldSetStrength() {
         return keywordsToValues.isEmpty();
     }
 
