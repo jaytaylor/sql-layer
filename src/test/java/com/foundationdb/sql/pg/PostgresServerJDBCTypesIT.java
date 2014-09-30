@@ -88,7 +88,7 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
             tc("Byte", Types.TINYINT, "col_tinyint", (byte)123),
             tc("Bytes", Types.VARBINARY, "col_varbinary", new byte[] { 0, 1, (byte)0xFF }),
             tc("Date", Types.DATE, "col_date", new Date(startOfDay)),
-            tc("Double", Types.DOUBLE, "col_double", 3.14),
+            tc("Double", Types.DOUBLE, "col_double", 3.14E52),
             tc("Float", Types.FLOAT, "col_float", 3.14f),
             tc("Int", Types.INTEGER, "col_int", 123456),
             tc("Long", Types.BIGINT, "col_bigint", 0x12345678L),
