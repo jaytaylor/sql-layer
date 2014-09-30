@@ -146,4 +146,10 @@
 ---
 - CreateTable: badKeywords(c char(5) COLLATE "zh_badkeyword=stroke")
 - error: [2H003]
+---
+- CreateTable: keywordsWithShortcuts(c char(5) COLLATE "zh_badkeyword=stroke_ci_cx")
+- error: [2H001]
+---
+- CreateTable: keywordsWithShortcuts(c char(5) COLLATE "zh_badkeyword=stroke_Hant_TW")
+- error: [2H001]
 ...
