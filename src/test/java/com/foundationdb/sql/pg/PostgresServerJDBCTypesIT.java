@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.GregorianCalendar;
+import java.util.UUID;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -59,6 +60,7 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
             new SimpleColumn("col_time", "MCOMPAT_ time"), 
             new SimpleColumn("col_timestamp", "MCOMPAT_ timestamp"),
             new SimpleColumn("col_datetime", "MCOMPAT_ datetime"),
+            new SimpleColumn("col_guid", "AKSQL_ GUID"),
         };
         createTableFromTypes(SCHEMA_NAME, "types", false, false, columns);
     }
@@ -97,6 +99,7 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
             tc("Time", Types.TIME, "col_time", new Time(timeOfDay)),
             tc("Timestamp", Types.TIMESTAMP, "col_timestamp", new Timestamp(timeNoMillis)),
             tc("Timestamp(Datetime)", Types.TIMESTAMP, "col_datetime", new Timestamp(timeNoMillis)),
+            tc("GUID", Types.OTHER, "col_guid", UUID.randomUUID()),
         };
         Collection<Parameterization> result = new ArrayList<>();
         for (Object[] tc : tcs) {
@@ -226,6 +229,9 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
         case Types.TIMESTAMP:
             stmt.setTimestamp(index, (Timestamp)value);
             break;
+        case Types.OTHER:
+            stmt.setObject(index, value);
+            break;
         default:
             fail("Unknown JDBC type");
         }
@@ -260,6 +266,8 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
             return rs.getTime(index);
         case Types.TIMESTAMP:
             return rs.getTimestamp(index);
+        case Types.OTHER:
+            return rs.getObject(index);
         default:
             fail("Unknown JDBC type");
             return null;
