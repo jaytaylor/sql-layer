@@ -23,7 +23,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.foundationdb.server.error.InvalidCollationSchemeException;
 import com.foundationdb.server.error.UnsupportedCollationException;
 
 import org.junit.Test;

@@ -99,7 +99,7 @@ public class AkCollatorFactory {
         return mode;
     }
 
-    public static AkCollator getAkCollator(String scheme) {
+    public static AkCollator getAkCollator(final String scheme) {
         if (mode == Mode.DISABLED || scheme == null) {
             return UCS_BINARY_COLLATOR;
         }

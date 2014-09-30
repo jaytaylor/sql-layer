@@ -134,16 +134,16 @@
 ---
 - CreateTable: noRegion2(c char(5) COLLATE en_)
 ---
-- CreateTable: keywords(c char(5) COLLATE "zh_@collation=stroke")
+- CreateTable: keywords(c char(5) COLLATE "zh_collation=stroke")
 ---
 # note: this fails because zh_ is already pinyin, so
 # the pinyin collation keyword is dropped and cannot be validated. 
-- CreateTable: redundantKeyword(c char(5) COLLATE "zh_@collation=pinyin")
-- error: [2H000]
+- CreateTable: redundantKeyword(c char(5) COLLATE "zh_collation=pinyin")
+- error: [2H003]
 ---
 # but this one will work, because zh_Hant_TW uses stroke by default instead of pinyin
-- CreateTable: t987 (c CHAR(5) COLLATE "zh_Hant_TW_@collation=pinyin")
+- CreateTable: t987 (c CHAR(5) COLLATE "zh_Hant_TW_collation=pinyin")
 ---
-- CreateTable: badKeywords(c char(5) COLLATE "zh_@badkeyword=stroke")
-- error: [2H000]
+- CreateTable: badKeywords(c char(5) COLLATE "zh_badkeyword=stroke")
+- error: [2H003]
 ...
