@@ -145,6 +145,44 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
         setStmt.close();
     }
 
+    @Test
+    public void setAsString() throws Exception {
+        PreparedStatement setStmt = getConnection().prepareStatement(String.format("INSERT INTO types(id,%s) VALUES(?,?)", colName));
+        PreparedStatement getStmt = getConnection().prepareStatement(String.format("SELECT %s FROM types WHERE id = ?", colName));
+        Object valueForStrings = value;
+        // "3true" -> true
+        // check out Date with "3"+value.toString()
+        // also Date/Time with value.toString() + "3" -> get's parsed as null
+        // bytes need special handling here.
+        if (value instanceof byte[]) {
+            byte[] bytes = (byte[])value;
+            byte[] bytesCopy = new byte[bytes.length];
+            valueForStrings = bytesCopy;
+            // large bytes fall over when you try to encode them as UTF-8
+            // not going to worry about that here
+            for (int i=0; i<bytes.length; i++) {
+                if (bytes[i] < 0) {
+                    bytesCopy[i] = 37;
+                } else {
+                    bytesCopy[i] = bytes[i];
+                }
+            }
+            setStmt.setString(2, new String(bytesCopy, "UTF-8"));
+        } else {
+            setStmt.setString(2, valueForStrings.toString());
+        }
+        setStmt.setInt(1, 1);
+        setStmt.executeUpdate();
+        getStmt.setInt(1, 1);
+        ResultSet rs = getStmt.executeQuery();
+        assertTrue(rs.next());
+        compareObjects(asObject(valueForStrings, jdbcType), rs.getObject(1));
+        rs.close();
+
+        getStmt.close();
+        setStmt.close();
+    }
+
     protected static void setMethod(PreparedStatement stmt, int index,
                                     Object value, int jdbcType) 
             throws Exception {
