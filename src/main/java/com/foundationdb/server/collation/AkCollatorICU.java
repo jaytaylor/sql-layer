@@ -22,13 +22,16 @@ import com.google.common.hash.Hashing;
 import com.ibm.icu.text.Collator;
 import com.persistit.Key;
 import com.persistit.util.Util;
+
 import java.util.Arrays;
 
 public class AkCollatorICU extends AkCollator {
 
+    private final CollationSpecifier collationSpecifier;
+
     final ThreadLocal<Collator> collator = new ThreadLocal<Collator>() {
         protected Collator initialValue() {
-            return AkCollatorFactory.forScheme(getSpecifier());
+            return AkCollatorFactory.forScheme(collationSpecifier);
         }
     };
 
@@ -43,8 +46,9 @@ public class AkCollatorICU extends AkCollator {
      *            Formatted string containing Locale name, and collation string
      *            strength.
      */
-    AkCollatorICU(final CollationSpecifier specifier, final int collationId) {
-        super(specifier, collationId);
+    AkCollatorICU(final String scheme, final int collationId) {
+        super(scheme, collationId);
+        collationSpecifier = new CollationSpecifier(scheme);
         collator.get(); // force the collator to initialize (to test scheme)
     }
 
@@ -103,6 +107,16 @@ public class AkCollatorICU extends AkCollator {
     @Override
     public int hashCode(byte[] bytes) {
         return hashFunction.hashBytes(bytes, 0, bytes.length).asInt();
+    }
+
+    @Override
+    public String toString() {
+        return collationSpecifier.toString(); 
+    }
+
+    @Override
+    public String getScheme() {
+        return collationSpecifier.toString();
     }
 
     private static final HashFunction hashFunction = Hashing.goodFastHash(32); // Because we're returning ints

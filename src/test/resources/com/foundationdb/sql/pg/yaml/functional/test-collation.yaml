@@ -136,10 +136,13 @@
 ---
 - CreateTable: keywords(c char(5) COLLATE "zh_@collation=stroke")
 ---
-# note: this fails because the default for zh_ is pinyin, so
+# note: this fails because zh_ is already pinyin, so
 # the pinyin collation keyword is dropped and cannot be validated. 
 - CreateTable: redundantKeyword(c char(5) COLLATE "zh_@collation=pinyin")
 - error: [2H000]
+---
+# but this one will work, because zh_Hant_TW uses stroke by default instead of pinyin
+- CreateTable: t987 (c CHAR(5) COLLATE "zh_Hant_TW_@collation=pinyin")
 ---
 - CreateTable: badKeywords(c char(5) COLLATE "zh_@badkeyword=stroke")
 - error: [2H000]

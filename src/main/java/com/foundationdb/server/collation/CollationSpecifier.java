@@ -57,7 +57,7 @@ public class CollationSpecifier {
     private Boolean caseSensitive = null;
     private Boolean accentSensitive = null;
     private HashMap<String, String> keywordsToValues = new HashMap<String, String>();
-    private String rawKeywordString = null; // convenient so this won't need to be rebuilt in toString()
+    private String rawKeywordString = null; // saved so this won't need to be rebuilt in toString()
     
     // Used to check the validity of requested locales
     private final static HashSet<ULocale> locales = new HashSet<ULocale>(Arrays.asList(ULocale.getAvailableLocales()));
@@ -110,7 +110,7 @@ public class CollationSpecifier {
         }
 
         // if the locale is just a language, need to append an underscore
-        // makes building the string easier/avoids ambiguity in REGION ndx
+        // to avoid ambiguity in toString()
         if (localeBuilder.indexOf("_") == -1) {
             localeBuilder.append("_");
         }
@@ -125,10 +125,28 @@ public class CollationSpecifier {
     private void checkAmbiguous(Boolean ambiguousCase, Boolean ambiguousAccent, String[] pieces) {
         if ((ambiguousCase && caseSensitive == null) || 
                 (ambiguousAccent && accentSensitive == null)) {
-            String providedCase = caseSensitive == null ? DEFAULT_CASE : caseSensitive ? CASE_SENSITIVE : CASE_INSENSITIVE;
-            String providedAccent = accentSensitive == null ? DEFAULT_ACCENT : accentSensitive ? ACCENT_SENSITIVE: ACCENT_INSENSITIVE;
-            throwAmbiguousException(locale, rawKeywordString, pieces[REGION_NDX], ambiguousCase,
-                                    ambiguousAccent, providedCase, providedAccent, scheme);
+
+            String providedCase = caseSensitive == null ? DEFAULT_CASE
+                                                        : caseSensitive ? CASE_SENSITIVE : CASE_INSENSITIVE;
+            String providedAccent = accentSensitive == null ? DEFAULT_ACCENT
+                                                            : accentSensitive ? ACCENT_SENSITIVE: ACCENT_INSENSITIVE;
+
+            String possibility1case = ambiguousCase ? pieces[REGION_NDX] : providedCase;
+            String possibility1accent = ambiguousAccent ? pieces[REGION_NDX] : providedAccent;
+            String possibility1 = new StringBuilder().append(locale.replace(pieces[REGION_NDX], ""))
+                                                     .append("_")
+                                                     .append(possibility1case)
+                                                     .append("_")
+                                                     .append(possibility1accent)
+                                                     .toString();
+
+            String possibility2 = new StringBuilder().append(locale)
+                                                     .append("_")
+                                                     .append(providedCase)
+                                                     .append("_")
+                                                     .append(providedAccent)
+                                                     .toString();
+            throw new AmbiguousCollationException(scheme, possibility1, possibility2);
         }
     }
 
@@ -247,26 +265,6 @@ public class CollationSpecifier {
             keywordsToValues.put(pieces[0], pieces[1]);
         }
         return keywordsToValues;
-    }
-
-    private static void throwAmbiguousException(String locale, String rawKeywordString, String region, 
-            Boolean ambiguousCase, Boolean ambiguousAccent, String providedCase, String providedAccent, 
-            String scheme) {
-        String possibility1case = ambiguousCase ? region : providedCase == null ? DEFAULT_CASE : providedCase;
-        String possibility1accent = ambiguousAccent ? region : providedAccent == null ? DEFAULT_ACCENT : providedAccent;
-        String possibility1 = new StringBuilder().append(locale.replace(region, ""))
-                                                 .append("_")
-                                                 .append(possibility1case)
-                                                 .append("_")
-                                                 .append(possibility1accent)
-                                                 .toString();
-        String possibility2 = new StringBuilder().append(locale)
-                                                 .append("_")
-                                                 .append(providedCase == null ? DEFAULT_CASE : providedCase)
-                                                 .append("_")
-                                                 .append(providedAccent == null ? DEFAULT_ACCENT : providedAccent)
-                                                 .toString();
-        throw new AmbiguousCollationException(scheme, possibility1, possibility2);
     }
 
     public boolean caseSensitive() {

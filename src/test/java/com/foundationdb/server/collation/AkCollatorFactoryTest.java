@@ -114,6 +114,7 @@ public class AkCollatorFactoryTest {
     @Test(expected = UnsupportedCollationException.class)
     public void collationBadScheme() throws Exception {
         CollationSpecifier collationSpecifier = new CollationSpecifier("en_us_bad_arguments");
+        AkCollatorFactory.forScheme(collationSpecifier);
     }
 
     @Test

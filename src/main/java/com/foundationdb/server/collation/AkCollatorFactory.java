@@ -108,17 +108,7 @@ public class AkCollatorFactory {
             return mapToBinary(scheme);
         }
 
-        CollationSpecifier specifier;
-        try {
-            specifier = new CollationSpecifier(scheme);
-        } catch (InvalidCollationSchemeException | UnsupportedCollationException e) {
-            if (mode == Mode.LOOSE){
-                return mapToBinary(scheme);
-            }
-            throw e;
-        }
-
-        SoftReference<AkCollator> ref = collatorMap.get(specifier.toString());
+        SoftReference<AkCollator> ref = collatorMap.get(scheme);
         if (ref != null) {
             AkCollator akCollator = ref.get();
             if (akCollator != null) {
@@ -129,14 +119,14 @@ public class AkCollatorFactory {
 
         synchronized (collatorMap) {
 
-            Integer collationId = schemeToIdMap.get(specifier.toString());
+            Integer collationId = schemeToIdMap.get(scheme);
             if (collationId == null) {
                 collationId = collationIdGenerator.incrementAndGet();
             }
 
             final AkCollator akCollator;
             try {
-                akCollator = new AkCollatorICU(specifier, collationId);
+                akCollator = new AkCollatorICU(scheme, collationId);
             } catch (InvalidCollationSchemeException | UnsupportedCollationException e) {
                 if (mode == Mode.LOOSE) {
                     return mapToBinary(scheme);
@@ -145,9 +135,9 @@ public class AkCollatorFactory {
             }
 
             ref = new SoftReference<>(akCollator);
-            collatorMap.put(specifier.toString(), ref);
+            collatorMap.put(scheme, ref);
             collationIdMap.put(collationId, ref);
-            schemeToIdMap.put(specifier.toString(), collationId);
+            schemeToIdMap.put(scheme, collationId);
 
             return akCollator;
         }
@@ -182,7 +172,7 @@ public class AkCollatorFactory {
     }
 
     /**
-     * Construct an actual ICU Collator given a collation scheme. The
+     * Construct an actual ICU Collator given a collation specifier. The
      * result is a Collator that must be use in a thread-private manner.
      */
     static synchronized Collator forScheme(final CollationSpecifier specifier) {
