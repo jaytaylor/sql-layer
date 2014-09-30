@@ -38,7 +38,7 @@ public class QueryBindingsTest
         QueryBindings bindings = new SparseArrayQueryBindings();
         ValueSource value = new Value(MNumeric.INT.instance(false), 123);
         bindings.setValue(1, value);
-        assertTrue(ValueSources.areEqual(value, bindings.getValue(1), null));
+        assertTrue(ValueSources.areEqual(value, bindings.getValue(1)));
     }
 
     @Test(expected=BindingNotSetException.class)
@@ -87,7 +87,7 @@ public class QueryBindingsTest
             child.setRow(1, row);
             assertEquals(row, child.getRow(1));
         }
-        assertTrue(ValueSources.areEqual(value, child.getValue(0), null));
+        assertTrue(ValueSources.areEqual(value, child.getValue(0)));
         try {
             parent.getRow(1);
             fail();

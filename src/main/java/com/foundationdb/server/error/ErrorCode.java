@@ -305,12 +305,9 @@ public enum ErrorCode {
     // Class 42/700 - full text errors
     FULL_TEXT_QUERY_PARSE   ("42", "700", Importance.DEBUG, FullTextQueryParseException.class),
     
-    // Class 42/800 - Akiba Direct errors
+    // Class 42/800 - Script errors
     CANT_CALL_SCRIPT_LIBRARY ("42", "800", Importance.DEBUG, CantCallScriptLibraryException.class),
-    SCRIPT_REGISTRATION_EXCEPTION ("42", "801", Importance.DEBUG, ScriptLibraryRegistrationException.class),
-    DIRECT_ENDPOINT_NOT_FOUND ("42", "802", Importance.DEBUG, DirectEndpointNotFoundException.class),
-    DIRECT_TRANSACTION_FAILED ("42", "803", Importance.ERROR, DirectTransactionFailedException.class),
-        
+
     // Class 44 - with check option violation
 
 
@@ -442,8 +439,8 @@ public enum ErrorCode {
     FDB_ERROR               ("53", "004", Importance.ERROR, FDBAdapterException.class),
     ROW_OUTPUT              ("53", "005", Importance.DEBUG, RowOutputException.class),
     SCAN_RETRY_ABANDONDED   ("53", "006", Importance.ERROR, ScanRetryAbandonedException.class),
-    //53007
-    //53008
+    METADATA_VERSION_OLD    ("53", "007", Importance.ERROR, MetadataVersionTooOldException.class),
+    METADATA_VERSION_NEWER  ("53", "008", Importance.ERROR, MetadataVersionNewerException.class),
     TABLEDEF_MISMATCH       ("53", "009", Importance.DEBUG, TableDefinitionMismatchException.class),
     PROTOBUF_READ           ("53", "00A", Importance.ERROR, ProtobufReadException.class),
     PROTOBUF_WRITE          ("53", "00B", Importance.ERROR, ProtobufWriteException.class),

@@ -186,19 +186,6 @@ public final class TInstance {
         return sb.toString();
     }
 
-    public static List<? extends TInstance> createTInstances(List<? extends TPreparedExpression> pExpressions)
-    {
-        if (pExpressions == null) {
-            return null;
-        }
-        int n = pExpressions.size();
-        List<TInstance> tInstances = new ArrayList<>(n);
-        for (int i = 0; i < n; i++) {
-            tInstances.add(pExpressions.get(i).resultType());
-        }
-        return tInstances;
-    }
-
     // object interface
 
     @Override

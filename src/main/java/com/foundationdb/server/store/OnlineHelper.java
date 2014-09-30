@@ -1031,8 +1031,8 @@ public class OnlineHelper implements RowListener
                                       origRow,
                                       context,
                                       bindings,
-                                      ProjectedRow.createTEvaluatableExpressions(pProjections),
-                                      TInstance.createTInstances(pProjections));
+                                      ProjectedRow.createTEvaluatableExpressions(pProjections)
+            );
         } else {
             newRow = new OverlayingRow(origRow, transform.rowType);
         }

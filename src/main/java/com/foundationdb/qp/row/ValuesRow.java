@@ -32,7 +32,7 @@ public final class ValuesRow extends AbstractRow {
     }
 
     @Override
-    public ValueSource value(int i) {
+    public ValueSource uncheckedValue(int i) {
         return values[i];
     }
 

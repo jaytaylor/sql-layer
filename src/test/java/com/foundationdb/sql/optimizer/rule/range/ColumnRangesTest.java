@@ -40,7 +40,7 @@ public final class ColumnRangesTest {
         ColumnRanges expected = columnRanges(
                 firstName,
                 compare,
-                segment(RangeEndpoint.NULL_EXCLUSIVE, exclusive("joe"))
+                segment(nullExclusive("joe"), exclusive("joe"))
         );
         assertEquals(expected, ColumnRanges.rangeAtNode(compare));
     }
@@ -64,7 +64,7 @@ public final class ColumnRangesTest {
         ColumnRanges expected = columnRanges(
                 firstName,
                 compare,
-                segment(RangeEndpoint.NULL_EXCLUSIVE, inclusive("joe"))
+                segment(nullExclusive("joe"), inclusive("joe"))
         );
         assertEquals(expected, ColumnRanges.rangeAtNode(compare));
     }
@@ -100,7 +100,7 @@ public final class ColumnRangesTest {
         ColumnRanges expected = columnRanges(
                 firstName,
                 compare,
-                segment(RangeEndpoint.NULL_EXCLUSIVE, exclusive("joe"))
+                segment(nullExclusive("joe"), exclusive("joe"))
         );
         assertEquals(expected, ColumnRanges.rangeAtNode(compare));
     }
@@ -124,7 +124,7 @@ public final class ColumnRangesTest {
         ColumnRanges expected = columnRanges(
                 firstName,
                 compare,
-                segment(RangeEndpoint.NULL_EXCLUSIVE, inclusive("joe"))
+                segment(nullExclusive("joe"), inclusive("joe"))
         );
         assertEquals(expected, ColumnRanges.rangeAtNode(compare));
     }
@@ -160,7 +160,7 @@ public final class ColumnRangesTest {
         ColumnRanges expected = columnRanges(
                 firstName,
                 compare,
-                    segment(RangeEndpoint.NULL_EXCLUSIVE, exclusive("joe")),
+                    segment(nullExclusive("joe"), exclusive("joe")),
                     segment(exclusive("joe"), RangeEndpoint.UPPER_WILD)
         );
         assertEquals(expected, ColumnRanges.rangeAtNode(compare));
@@ -173,7 +173,7 @@ public final class ColumnRangesTest {
         ColumnRanges expected = columnRanges(
                 firstName,
                 compare,
-                segment(RangeEndpoint.NULL_EXCLUSIVE, exclusive("joe")),
+                segment(nullExclusive("joe"), exclusive("joe")),
                 segment(exclusive("joe"), RangeEndpoint.UPPER_WILD)
         );
         assertEquals(expected, ColumnRanges.rangeAtNode(compare));
@@ -193,7 +193,7 @@ public final class ColumnRangesTest {
         ColumnRanges expected = columnRanges(
                 firstName,
                 isNull,
-                segment(RangeEndpoint.NULL_INCLUSIVE, RangeEndpoint.NULL_INCLUSIVE)
+                segment(RangeEndpoint.nullInclusive(firstName), RangeEndpoint.nullInclusive(firstName))
         );
         assertEquals(expected, ColumnRanges.rangeAtNode(isNull));
     }
@@ -218,7 +218,7 @@ public final class ColumnRangesTest {
         ColumnRanges expected = columnRanges(
                 firstName,
                 either,
-                segment(RangeEndpoint.NULL_EXCLUSIVE, exclusive("abe")),
+                segment(nullExclusive("joe"), exclusive("abe")),
                 segment(inclusive("joe"), RangeEndpoint.UPPER_WILD)
         );
         assertEquals(expected, ColumnRanges.rangeAtNode(either));
@@ -232,7 +232,7 @@ public final class ColumnRangesTest {
         ColumnRanges expected = columnRanges(
                 firstName,
                 either,
-                segment(RangeEndpoint.NULL_EXCLUSIVE, RangeEndpoint.UPPER_WILD)
+                segment(nullExclusive("joe"), RangeEndpoint.UPPER_WILD)
         );
         assertEquals(expected, ColumnRanges.rangeAtNode(either));
     }

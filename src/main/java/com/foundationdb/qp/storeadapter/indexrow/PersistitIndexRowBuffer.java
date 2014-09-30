@@ -51,7 +51,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     // Row interface
 
     @Override
-    public ValueSource value(int i) {
+    public ValueSource uncheckedValue(int i) {
         return null;
     }
 

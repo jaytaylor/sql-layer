@@ -58,6 +58,10 @@ public final class TPreptimeValue {
         this(type, null);
     }
 
+    public TPreptimeValue(ValueSource value) {
+        this(value.getType(), value);
+    }
+
     public TPreptimeValue(TInstance type, ValueSource value) {
         this.type = type;
         this.value = value;
@@ -87,7 +91,7 @@ public final class TPreptimeValue {
             return false;
         if (value == null)
             return that.value == null;
-        return that.value != null && ValueSources.areEqual(value, that.value, type);
+        return that.value != null && ValueSources.areEqual(value, that.value);
     }
 
     @Override

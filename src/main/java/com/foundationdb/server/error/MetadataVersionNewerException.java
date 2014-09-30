@@ -14,12 +14,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package com.foundationdb.server.error;
 
+public class MetadataVersionNewerException extends StartupFailureException {
 
-public class DirectEndpointNotFoundException extends InvalidOperationException {
-    public DirectEndpointNotFoundException(Object... args) {
-        super(ErrorCode.DIRECT_ENDPOINT_NOT_FOUND, args);
+    public MetadataVersionNewerException(Long currMetaVersion, Long currDataVersion, Long presentMetaVersion, Long presentDataVersion) {
+        super(ErrorCode.METADATA_VERSION_NEWER, currMetaVersion, currDataVersion, presentMetaVersion, presentDataVersion);
     }
+
 }

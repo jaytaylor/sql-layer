@@ -68,7 +68,7 @@ public final class OverlayingRow extends AbstractRow {
     }
 
     @Override
-    public ValueSource value(int i) {
+    public ValueSource uncheckedValue(int i) {
         return pOverlays[i] == null ? underlying.value(i) : pOverlays[i];
 
     }

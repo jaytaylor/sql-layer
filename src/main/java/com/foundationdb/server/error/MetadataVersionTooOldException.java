@@ -14,15 +14,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+package com.foundationdb.server.error;
 
-package com.foundationdb.server.service.restdml;
+public class MetadataVersionTooOldException extends StartupFailureException {
 
-import org.junit.Test;
-
-public class DirectServiceTest {
-
-    @Test
-    public void populateEndpointMap() throws Exception {
-        DirectServiceImpl.EndpointMap em = new DirectServiceImpl.EndpointMap(null);
+    public MetadataVersionTooOldException(Long currMetaVersion, Long currDataVersion, Long presentMetaVersion, Long presentDataVersion) {
+        super(ErrorCode.METADATA_VERSION_OLD, currMetaVersion, currDataVersion, presentMetaVersion, presentDataVersion);
     }
+
 }

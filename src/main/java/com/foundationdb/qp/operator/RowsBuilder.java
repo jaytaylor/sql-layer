@@ -124,7 +124,7 @@ public final class RowsBuilder {
         }
 
         @Override
-        public ValueSource value(int i) {
+        public ValueSource uncheckedValue(int i) {
             return values.get(i);
         }
 

@@ -26,6 +26,8 @@ import java.util.List;
 
 import static com.foundationdb.sql.optimizer.rule.range.TUtils.exclusive;
 import static com.foundationdb.sql.optimizer.rule.range.TUtils.inclusive;
+import static com.foundationdb.sql.optimizer.rule.range.TUtils.nullExclusive;
+import static com.foundationdb.sql.optimizer.rule.range.TUtils.nullInclusive;
 import static com.foundationdb.sql.optimizer.rule.range.TUtils.segment;
 import static com.foundationdb.util.AssertUtils.assertCollectionEquals;
 import static org.junit.Assert.assertNull;
@@ -42,7 +44,7 @@ public final class RangeSegmentTest {
     @Test
     public void sacUnchanged() {
         List<RangeSegment> original = Arrays.asList(
-                segment(RangeEndpoint.NULL_EXCLUSIVE, exclusive("apple")),
+                segment(nullExclusive("apple"), exclusive("apple")),
                 segment(exclusive("apple"), exclusive("orange")),
                 segment(exclusive("orange"), RangeEndpoint.UPPER_WILD)
         );
@@ -55,11 +57,11 @@ public final class RangeSegmentTest {
         List<RangeSegment> original = Arrays.asList(
                 segment(exclusive("apple"), exclusive("orange")),
                 segment(exclusive("orange"), RangeEndpoint.UPPER_WILD),
-                segment(RangeEndpoint.NULL_EXCLUSIVE, exclusive("apple"))
+                segment(nullExclusive("apple"), exclusive("apple"))
         );
         sacAndCheck(
                 original,
-                segment(RangeEndpoint.NULL_EXCLUSIVE, exclusive("apple")),
+                segment(nullExclusive("apple"), exclusive("apple")),
                 segment(exclusive("apple"), exclusive("orange")),
                 segment(exclusive("orange"), RangeEndpoint.UPPER_WILD)
         );
@@ -117,24 +119,24 @@ public final class RangeSegmentTest {
     @Test
     public void sacCombineStartExclusiveInclusiveNulls() {
         List<RangeSegment> original = Arrays.asList(
-                segment(RangeEndpoint.NULL_EXCLUSIVE, exclusive("apple")),
-                segment(RangeEndpoint.NULL_INCLUSIVE, inclusive("banana"))
+                segment(nullExclusive("apple"), exclusive("apple")),
+                segment(nullInclusive("banana"), inclusive("banana"))
         );
         sacAndCheck(
                 original,
-                segment(RangeEndpoint.NULL_INCLUSIVE, inclusive("banana"))
+                segment(nullInclusive("banana"), inclusive("banana"))
         );
     }
 
     @Test
     public void sacCombineStartInclusiveExclusiveNulls() {
         List<RangeSegment> original = Arrays.asList(
-                segment(RangeEndpoint.NULL_INCLUSIVE, exclusive("apple")),
-                segment(RangeEndpoint.NULL_EXCLUSIVE, inclusive("banana"))
+                segment(nullInclusive("apple"), exclusive("apple")),
+                segment(nullExclusive("banana"), inclusive("banana"))
         );
         sacAndCheck(
                 original,
-                segment(RangeEndpoint.NULL_INCLUSIVE, inclusive("banana"))
+                segment(nullInclusive("banana"), inclusive("banana"))
         );
     }
 
@@ -214,11 +216,11 @@ public final class RangeSegmentTest {
     public void sacOverlapWildStart() {
         List<RangeSegment> original = Arrays.asList(
                 segment(exclusive("apple"), exclusive("person")),
-                segment(RangeEndpoint.NULL_EXCLUSIVE, inclusive("zebra"))
+                segment(nullExclusive("zebra"), inclusive("zebra"))
         );
         sacAndCheck(
                 original,
-                segment(RangeEndpoint.NULL_EXCLUSIVE, inclusive("zebra"))
+                segment(nullExclusive("zebra"), inclusive("zebra"))
         );
     }
 

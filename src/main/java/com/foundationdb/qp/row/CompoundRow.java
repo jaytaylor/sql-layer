@@ -34,7 +34,7 @@ public class CompoundRow extends AbstractRow {
     }
 
     @Override
-    public ValueSource value(int i) {
+    public ValueSource uncheckedValue(int i) {
         ValueSource source;
         if (i < firstRowFields) {
             source = firstRow == null ? nullValue(i) : firstRow.value(i);

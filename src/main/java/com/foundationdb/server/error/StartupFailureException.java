@@ -14,12 +14,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package com.foundationdb.server.error;
 
+public class StartupFailureException extends FDBAdapterException {
 
-public class DirectTransactionFailedException extends InvalidOperationException {
-    public DirectTransactionFailedException(Object... args) {
-        super(ErrorCode.DIRECT_TRANSACTION_FAILED, args);
+    protected StartupFailureException(ErrorCode code, Long i, Long j, Long k,
+            Long l) {
+        super(code, i, j, k, l);
     }
+
 }
