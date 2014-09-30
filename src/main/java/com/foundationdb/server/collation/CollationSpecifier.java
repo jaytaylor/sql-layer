@@ -44,7 +44,7 @@ public class CollationSpecifier {
     private final static String DEFAULT_CASE = CASE_SENSITIVE;
     private final static String DEFAULT_ACCENT = ACCENT_SENSITIVE;
 
-    private String scheme;
+    private String scheme; // the original, user-created scheme; this.toString() will produce a canonical version
     private String locale = null;
     private Boolean caseSensitive = null;
     private Boolean accentSensitive = null;
