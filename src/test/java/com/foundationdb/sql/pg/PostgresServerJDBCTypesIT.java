@@ -241,7 +241,7 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
 
     protected static void compareObjects(Object expected, Object actual) {
         if (expected instanceof byte[]) {
-            assertTrue(Arrays.equals((byte[])expected, (byte[])expected));
+            assertTrue(Arrays.equals((byte[])expected, (byte[])actual));
         }
         else if (expected instanceof java.util.Date) {
             assertEquals(String.format("%s <> %s", 
