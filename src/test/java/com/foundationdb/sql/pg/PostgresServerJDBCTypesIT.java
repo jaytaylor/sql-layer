@@ -50,9 +50,6 @@ import static org.junit.Assert.fail;
 @RunWith(SelectedParameterizedRunner.class)
 public class PostgresServerJDBCTypesIT extends PostgresServerITBase
 {
-    // TODO:
-    // testSetWildlyIncorrectValueAsString
-    // testSetWithWrongType (not string)
 
     @Before
     public void createTable() throws Exception {
