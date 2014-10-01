@@ -70,7 +70,6 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
             new SimpleColumn("col_smallint", "MCOMPAT_ smallint"),
             new SimpleColumn("col_varchar", "MCOMPAT_ varchar", 16L, null),
             new SimpleColumn("col_time", "MCOMPAT_ time"), 
-            new SimpleColumn("col_timestamp", "MCOMPAT_ timestamp"),
             new SimpleColumn("col_datetime", "MCOMPAT_ datetime"),
             new SimpleColumn("col_guid", "AKSQL_ GUID"),
         };
@@ -124,7 +123,6 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
             // obviously any string can be a string
             tc("String", Types.VARCHAR, "col_varchar", "hello", null, null, 348),
             tc("Time", Types.TIME, "col_time", new Time(timeOfDay), "Mike", null, 23409782134097980L),
-            tc("Timestamp", Types.TIMESTAMP, "col_timestamp", new Timestamp(timeNoMillis), "Meg", null, 347.892),
             tc("Timestamp(Datetime)", Types.TIMESTAMP, "col_datetime", new Timestamp(timeNoMillis), "Bob", null, 2345.32E14),
             tc("GUID", Types.OTHER, "col_guid", UUID.randomUUID(), "3249",
                     new PSQLException("ERROR: Invalid UUID string: 3249", PSQLState.INVALID_PARAMETER_VALUE), 30),
