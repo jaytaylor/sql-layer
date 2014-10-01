@@ -71,6 +71,13 @@ public abstract class IndexRow extends AbstractRow
 
     public abstract void reset();
     
+    public abstract boolean keyEmpty();
+    
+    // Group Index Row only - table bitmap stored in index value
+    public abstract void tableBitmap(long bitmap);
+    public abstract long tableBitmap(); 
+
+    
     // TODO: Remove these as we get rid of the Key use in the upper layers
     
     public abstract void copyPersistitKeyTo(Key key);
@@ -81,5 +88,6 @@ public abstract class IndexRow extends AbstractRow
         BEFORE,
         AFTER;
     }
+
 
 }

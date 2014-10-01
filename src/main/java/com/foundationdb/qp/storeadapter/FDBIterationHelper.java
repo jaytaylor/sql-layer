@@ -17,7 +17,6 @@
 package com.foundationdb.qp.storeadapter;
 
 import com.foundationdb.qp.storeadapter.indexcursor.IterationHelper;
-import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;

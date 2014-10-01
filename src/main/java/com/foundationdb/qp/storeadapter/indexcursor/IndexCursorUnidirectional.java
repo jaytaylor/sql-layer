@@ -28,7 +28,6 @@ import com.foundationdb.qp.operator.CursorLifecycle;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.rowtype.InternalIndexTypes;
 import com.foundationdb.qp.storeadapter.SpatialHelper;
-import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.IndexRow.EdgeValue;
 import com.foundationdb.qp.row.Row;
@@ -335,7 +334,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     {
         boolean beforeStart = false;
         if (startKey != null && row != null && startBoundColumns != 0) {
-            PersistitIndexRow current = (PersistitIndexRow) row;
+            IndexRow current = (IndexRow) row;
             int c = current.compareTo(startKey, startBoundColumns) * direction;
             beforeStart = c < 0 || c == 0 && !startInclusive;
         }

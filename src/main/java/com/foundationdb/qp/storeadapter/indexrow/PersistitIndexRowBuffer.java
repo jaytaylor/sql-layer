@@ -234,9 +234,15 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         pKey.append(edgeValue);
     }
 
+    @Override
     public void tableBitmap(long bitmap)
     {
         value.put(bitmap);
+    }
+
+    @Override
+    public long tableBitmap() {
+        throw new UnsupportedOperationException();
     }
 
     public void copyPersistitKeyTo(Key key)
@@ -269,6 +275,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         this.keyCreator = keyCreator;
     }
 
+    @Override
     public boolean keyEmpty()
     {
         return pKey.getEncodedSize() == 0;
@@ -539,6 +546,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
             throw new IllegalStateException("Unexpected fields in Value: " + index);
         }
     }
+
 
     // Inner classes
 
