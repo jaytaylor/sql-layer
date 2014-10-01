@@ -47,7 +47,7 @@ public class CollationSpecifier {
     // Used to check the validity of requested locales
     private final static HashSet<ULocale> locales = new HashSet<ULocale>(Arrays.asList(ULocale.getAvailableLocales()));
 
-    private String scheme; // the original, user-created scheme; this.toString() will produce a canonical version
+    private String scheme; // the original, user-created scheme; use toString() instead for a standardized version
     private String locale = null;
     private Boolean caseSensitive = null;
     private Boolean accentSensitive = null;
