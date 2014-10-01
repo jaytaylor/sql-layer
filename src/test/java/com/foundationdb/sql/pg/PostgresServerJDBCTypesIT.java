@@ -35,6 +35,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameters;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertEquals;
@@ -122,7 +123,7 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
             tc("Time", Types.TIME, "col_time", new Time(timeOfDay), "Mike", null),
             tc("Timestamp(Datetime)", Types.TIMESTAMP, "col_datetime", new Timestamp(timeNoMillis), "Bob", null),
             tc("GUID", Types.OTHER, "col_guid", UUID.randomUUID(), "3249",
-               new PSQLException("ERROR: Invalid UUID string: 3249", PSQLState.INVALID_PARAMETER_VALUE)),
+               new PSQLException("3249", new PSQLState("2202I"))),
         };
         return Arrays.asList(tcs);
     }
@@ -221,7 +222,7 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
                 fail("Expected an exception to be thrown");
             } catch (Exception e) {
                 assertThat(e, is(instanceOf(defaultValue.getClass())));
-                assertEquals(((Exception) defaultValue).getMessage(), e.getMessage());
+                assertThat(e.getMessage(), containsString(((Exception) defaultValue).getMessage()));
                 if (defaultValue instanceof PSQLException) {
                     assertEquals(((PSQLException)defaultValue).getSQLState(),
                             ((PSQLException)e).getSQLState());
@@ -229,14 +230,14 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
             }
         } else {
             setStmt.executeUpdate();
-        }
-        getStmt.setInt(1, 1);
-        ResultSet rs = getStmt.executeQuery();
-        assertTrue(rs.next());
-        compareObjects(asObject(defaultValue, jdbcType), rs.getObject(1));
-        rs.close();
+            getStmt.setInt(1, 1);
+            ResultSet rs = getStmt.executeQuery();
+            assertTrue(rs.next());
+            compareObjects(asObject(defaultValue, jdbcType), rs.getObject(1));
+            rs.close();
 
-        getStmt.close();
+            getStmt.close();
+        }
         setStmt.close();
     }
 
