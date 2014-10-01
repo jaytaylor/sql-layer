@@ -100,11 +100,7 @@
 ---
 - Statement: Insert into t2 (c2) values ('  this is the test string')
 ---
-# Note: if this statement starts failing when run with other tests, but not when run by itself
-# Search through the YAML files for COLLATE, where they collate with a different spelling/case
-# for the en_us_ci collation (en_ci is the same collator).
-# It is unlikely that the effect could cause problems in production, so for now it will just
-# change when you request different collations (that aren't actually different)
+# The returned collation should be standardized
 - Statement: select describe_expression(trim(LEADING ' ' from cast(t2.c2 as varchar(350) collate en_us_ci))) from t2
 - output: [['variable MCOMPAT_ VARCHAR(350, UTF8, en_us_ci_co) NULL']]
 ...
