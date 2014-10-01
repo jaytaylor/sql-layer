@@ -18,19 +18,21 @@ package com.foundationdb.qp.storeadapter.indexrow;
 
 import static java.lang.Math.min;
 
+import com.foundationdb.ais.model.GroupIndex;
+import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.IndexToHKey;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.IndexRow;
-import com.foundationdb.qp.row.IndexRow.EdgeValue;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.storeadapter.indexcursor.SortKeyAdapter;
 import com.foundationdb.qp.storeadapter.indexcursor.SortKeyTarget;
 import com.foundationdb.qp.storeadapter.indexcursor.ValueSortKeyAdapter;
-import com.foundationdb.qp.util.HKeyCache;
 import com.foundationdb.qp.util.PersistitKey;
+import com.foundationdb.server.PersistitKeyValueSource;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.KeyCreator;
@@ -52,35 +54,150 @@ public class FDBIndexRow extends IndexRow {
 
     @Override
     protected ValueSource uncheckedValue(int i) {
-        throw new UnsupportedOperationException();
+        PersistitKeyValueSource source = new PersistitKeyValueSource(types[i]);
+        source.attach(iKey, i, types[i]);
+        return source;
+    }
+    
+    @Override
+    public final int compareTo(Row row, int thisStartIndex, int thatStartIndex, int fieldCount)
+    {
+        // The dependence on field positions and fieldCount is a problem for spatial indexes
+        if (index.isSpatial()) {
+            throw new UnsupportedOperationException(index.toString());
+        }
+        if (!(row instanceof FDBIndexRow)) {
+            return super.compareTo(row, thisStartIndex, thatStartIndex, fieldCount);
+        }
+        if (fieldCount <= 0) {
+            return 0;
+        }
+        
+        // field and byte indexing is as if the pKey and pValue were one contiguous array of bytes. But we switch
+        // from pKey to pValue as needed to avoid having to actually copy the bytes into such an array.
+        FDBIndexRow that = (FDBIndexRow) row;
+        Key thisKey;
+        Key thatKey;
+        //if (thisStartIndex < this.pKeyFields) {
+            assert (thisStartIndex < this.pKeyFields);
+            thisKey = this.iKey;
+        //} else {
+        //    thisKey = this.pValue;
+        //    thisStartIndex -= this.pKeyFields;
+        //}
+        //if (thatStartIndex < that.pKeyFields) {
+            assert thatStartIndex < that.pKeyFields;
+            thatKey = that.iKey;
+        //} else {
+        //    checkValueUsage();
+        //    thatKey = that.pValue;
+        //    thatStartIndex -= that.pKeyFields;
+        //}
+        int thisPosition = thisKey.indexTo(thisStartIndex).getIndex();
+        int thatPosition = thatKey.indexTo(thatStartIndex).getIndex();
+        byte[] thisBytes = thisKey.getEncodedBytes();
+        byte[] thatBytes = thatKey.getEncodedBytes();
+        int c = 0;
+        int eqSegments = 0;
+        while (eqSegments < fieldCount) {
+            byte thisByte = thisBytes[thisPosition++];
+            byte thatByte = thatBytes[thatPosition++];
+            c = (thisByte & 0xff) - (thatByte & 0xff);
+            if (c != 0) {
+                break;
+            } else if (thisByte == 0) {
+                // thisByte = thatByte = 0
+                eqSegments++;
+                if (thisStartIndex + eqSegments == this.pKeyFields) {
+                    if (this.iValue == null) {
+                        assert eqSegments == fieldCount : index;
+                    } else {
+                        thisBytes = this.iValue.getEncodedBytes();
+                        thisPosition = 0;
+                    }
+                }
+                if (thatStartIndex + eqSegments == that.pKeyFields) {
+                    if(that.iValue == null) {
+                        assert eqSegments == fieldCount : index;
+                    } else {
+                        thatBytes = that.iValue.getEncodedBytes();
+                        thatPosition = 0;
+                    }
+                }
+            }
+        }
+        // If c == 0 then the two subarrays must match.
+        if (c < 0) {
+            c = -(eqSegments + 1);
+        } else if (c > 0) {
+            c = eqSegments + 1;
+        }
+        return c;
     }
 
     @Override
     public HKey hKey()
     {
-        throw new UnsupportedOperationException();
+        assert this.leafTableHKey != null;
+        return this.leafTableHKey;
     }
     
     @Override
     public HKey ancestorHKey(Table table)
     {
-        return new PersistitHKey(keyCreator.createKey(), table.hKey());
+        PersistitHKey ancestorHKey; 
+        
+        IndexToHKey indexToHKey;
+        if (index.isGroupIndex()) {
+            ancestorHKey = new PersistitHKey(keyCreator.createKey(), table.hKey());
+            indexToHKey = ((GroupIndex)index).indexToHKey(table.getDepth());
+        } else {
+            ancestorHKey = new PersistitHKey(keyCreator.createKey(), index.leafMostTable().hKey());
+            indexToHKey = ((TableIndex)index).indexToHKey();
+        }
+        Key hKey = ancestorHKey.key();
+        hKey.clear();
+        for (int i = 0; i < indexToHKey.getLength(); i++) {
+            if (indexToHKey.isOrdinal(i)) {
+                hKey.append(indexToHKey.getOrdinal(i));
+            } else {
+                int indexField = indexToHKey.getIndexRowPosition(i);
+                if (index.isSpatial()) {
+                    // A spatial index has a single key column (the z-value), representing the declared spatial key columns.
+                    if (indexField > index.firstSpatialArgument())
+                        indexField -= index.dimensions() - 1;
+                }
+                Key keySource = iKey;
+                if (indexField < 0 || indexField > keySource.getDepth()) {
+                    throw new IllegalStateException(String.format("keySource: %s, indexField: %s",
+                                                                  keySource, indexField));
+                }
+                PersistitKey.appendFieldFromKey(hKey, keySource, indexField, index.getIndexName());
+            }
+        }
+        if (index.isTableIndex() && index.leafMostTable() != table) {
+            this.leafTableHKey = ancestorHKey; 
+            ancestorHKey = new PersistitHKey(keyCreator.createKey(), table.hKey());
+            this.leafTableHKey.copyTo(ancestorHKey);
+            ancestorHKey.useSegments(table.getDepth() + 1);
+        }
+        
+        return ancestorHKey;
     }
     
     @Override
     public void initialize(RowData rowData, Key hKey,
             SpatialColumnHandler spatialColumnHandler, long zValue) {
-        // TODO Auto-generated method stub
         throw new UnsupportedOperationException();
-
     }
 
     @Override
     public <S> void append(S source, TInstance type) {
         pKeyTarget.append(source, type);
+        pKeyAppends++;
     }
 
-    @Override /* Required */
+    @Override
     public void append(EdgeValue value) {
         if (value == EdgeValue.BEFORE)
            iKey.append(Key.BEFORE);
@@ -93,9 +210,7 @@ public class FDBIndexRow extends IndexRow {
 
     @Override
     public void close(Session session, Store store, boolean forInsert) {
-        // TODO Auto-generated method stub
         throw new UnsupportedOperationException();
-
     }
 
     @Override
@@ -104,6 +219,7 @@ public class FDBIndexRow extends IndexRow {
         this.iKey = key;
         this.iValue = value;
         this.pKeyTarget = null;
+        this.pKeyFields = index.getAllColumns().size();
         if (value != null) {
             value.getByteArray(iValue.getEncodedBytes(), 0, 0, value.getArrayLength());
             iValue.setEncodedSize(value.getArrayLength());
@@ -115,6 +231,7 @@ public class FDBIndexRow extends IndexRow {
         this.index = index;
         this.iKey = createKey;
         this.iValue = value;
+        this.pKeyFields = index.getAllColumns().size();
         if (value != null) {
             value.clear();
         }
@@ -126,7 +243,7 @@ public class FDBIndexRow extends IndexRow {
     }
 
 
-    @Override /* Required */
+    @Override 
     public int compareTo(IndexRow thatKey, int startBoundColumns) {
         return compareTo (thatKey, startBoundColumns, null);
     }
@@ -228,7 +345,7 @@ public class FDBIndexRow extends IndexRow {
     
     @Override
     public void appendFieldTo(int position, Key target) {
-        throw new UnsupportedOperationException();
+        PersistitKey.appendFieldFromKey(target, iKey, position, index.getIndexName());
     }
 
     @Override
@@ -237,6 +354,7 @@ public class FDBIndexRow extends IndexRow {
         if (value != null && value.isDefined() && !value.isNull()) {
             tableBitmap = value.getLong();
         }
+        leafTableHKey = ancestorHKey(index.leafMostTable());
     }
 
     @Override
@@ -260,6 +378,8 @@ public class FDBIndexRow extends IndexRow {
         ArgumentValidation.notNull("keyCreator", keyCreator);
         this.keyCreator = keyCreator;
         this.indexRowType = null;
+        this.types = null;
+        //this.leafmostTable = null;
     }
 
     public FDBIndexRow (KeyCreator adapter, IndexRowType indexRowType)
@@ -270,9 +390,10 @@ public class FDBIndexRow extends IndexRow {
         resetForWrite(indexRowType.index(), iKey);
         this.indexRowType = indexRowType;
         this.index = this.indexRowType.index();
+        this.pKeyFields = index.getAllColumns().size();
         //this.leafmostTable = index.leafMostTable();
         //this.hKeyCache = new HKeyCache<>(adapter);
-        //this.types = index.types();
+        this.types = index.types();
     }
     
     private Index index;
@@ -280,8 +401,6 @@ public class FDBIndexRow extends IndexRow {
     private Value iValue;
     private final IndexRowType indexRowType;
     private long tableBitmap;
-
-
     private SortKeyTarget pKeyTarget;
 
     private int pKeyFields;
@@ -291,6 +410,7 @@ public class FDBIndexRow extends IndexRow {
     
     //protected final HKeyCache<PersistitHKey> hKeyCache;
     //protected final Table leafmostTable;
-    //private final TInstance[] types;
+    private final TInstance[] types;
     private final KeyCreator keyCreator;
+    private HKey leafTableHKey;
 }

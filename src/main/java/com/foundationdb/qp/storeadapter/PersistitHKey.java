@@ -39,8 +39,8 @@ public class PersistitHKey implements HKey
         return
             that == this ||
             (that != null &&
-             PersistitHKey.class.equals(that.getClass()) &&
-             this.hKey.equals(((PersistitHKey)that).hKey));
+                that instanceof PersistitHKey &&
+                this.hKey.equals(((PersistitHKey)that).hKey));
     }
 
     @Override
