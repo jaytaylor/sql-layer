@@ -20,6 +20,7 @@ package com.foundationdb.sql.server;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.error.UnsupportedCharsetException;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
@@ -217,6 +218,12 @@ public class ServerValueDecoder
                 bindings.setValue(index, target);
                 return;
             }
+        }
+        switch (TInstance.underlyingType(targetType)) {
+            case STRING:
+                if (!(value instanceof String)) {
+                    throw new InvalidParameterValueException(value.toString());
+                }
         }
 
         ValueSource source = ValueSources.valuefromObject(value, targetType,

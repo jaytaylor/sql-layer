@@ -38,9 +38,11 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.UUID;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -89,6 +91,15 @@ public class PostgresServerJDBCBinaryTypesIT extends PostgresServerITBase
         ResultSet rs = getStmt.executeQuery();
         assertTrue(rs.next());
         compareObjects(asObject(value, jdbcType), rs.getObject(1));
+        rs.close();
+    }
+
+    private void checkNoneSet() throws Exception {
+        PreparedStatement getStmt = getConnection().prepareStatement(
+                String.format("SELECT id FROM types WHERE id = ?"));
+        getStmt.setInt(1, 1);
+        ResultSet rs = getStmt.executeQuery();
+        assertFalse(rs.next());
         rs.close();
     }
 
@@ -142,6 +153,20 @@ public class PostgresServerJDBCBinaryTypesIT extends PostgresServerITBase
         set.setShort(1, (short)52);
         set.executeUpdate();
         checkValue("col_double", 52.0, Types.DOUBLE);
+    }
+
+    @Test
+    public void testSetVarcharWithShort() throws Exception {
+        PreparedStatement set = setStmt("col_varchar");
+        set.setShort(1, (short)52);
+        try {
+            set.executeUpdate();
+            fail("Expected exception to be thrown");
+        } catch (PSQLException e) {
+            assertThat(e.getMessage(), containsString("52"));
+            assertEquals("22023", e.getSQLState());
+        }
+        checkNoneSet();
     }
 
     @Override
