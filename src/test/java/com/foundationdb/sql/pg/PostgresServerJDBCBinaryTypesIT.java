@@ -83,7 +83,8 @@ public class PostgresServerJDBCBinaryTypesIT extends PostgresServerITBase
     }
 
     private void checkValue(String columnName, Object value, int jdbcType) throws Exception {
-        PreparedStatement getStmt = getConnection().prepareStatement(String.format("SELECT %s FROM types WHERE id = ?", columnName));
+        PreparedStatement getStmt = getConnection().prepareStatement(
+                String.format("SELECT %s FROM types WHERE id = ?", columnName));
         getStmt.setInt(1, 1);
         ResultSet rs = getStmt.executeQuery();
         assertTrue(rs.next());
@@ -162,7 +163,8 @@ public class PostgresServerJDBCBinaryTypesIT extends PostgresServerITBase
 
     protected static void compareObjects(Object expected, Object actual) {
         if (expected instanceof byte[]) {
-            assertTrue("Expected "  + Arrays.toString((byte[])expected) + " but got " + Arrays.toString((byte[])actual), Arrays.equals((byte[])expected, (byte[])actual));
+            assertTrue("Expected "  + Arrays.toString((byte[])expected) + " but got " + Arrays.toString((byte[])actual),
+                    Arrays.equals((byte[])expected, (byte[])actual));
         }
         else if (expected instanceof java.util.Date) {
             assertEquals(String.format("%s <> %s", 
