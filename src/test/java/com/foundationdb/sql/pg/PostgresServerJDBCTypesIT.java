@@ -17,19 +17,15 @@
 
 package com.foundationdb.sql.pg;
 
-import com.foundationdb.junit.NamedParameterizedRunner;
-import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
-import com.foundationdb.junit.Parameterization;
 
+import com.foundationdb.junit.SelectedParameterizedRunner;
 
 import com.foundationdb.sql.jdbc.util.PSQLException;
 
 import java.sql.*;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.GregorianCalendar;
 import java.util.UUID;
 
@@ -37,10 +33,11 @@ import com.foundationdb.sql.jdbc.util.PSQLState;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized.Parameters;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -48,7 +45,7 @@ import static org.junit.Assert.fail;
 /**
  * Test using various JDBC <code>set</code> and <code>get</code> methods.
  */
-@RunWith(NamedParameterizedRunner.class)
+@RunWith(SelectedParameterizedRunner.class)
 public class PostgresServerJDBCTypesIT extends PostgresServerITBase
 {
     // TODO:
@@ -93,8 +90,8 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
         return new Object[] { name, jdbcType, colName, value, unparseable, defaultValue, valueOfIncorrectType};
     }
 
-    @TestParameters
-    public static Collection<Parameterization> types() throws Exception {
+    @Parameters(name="{0}")
+    public static Iterable<Object[]> types() throws Exception {
         Calendar cal = new GregorianCalendar();
         cal.set(Calendar.MILLISECOND, 0);
         long timeNoMillis = cal.getTime().getTime();
@@ -127,11 +124,7 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
             tc("GUID", Types.OTHER, "col_guid", UUID.randomUUID(), "3249",
                     new PSQLException("ERROR: Invalid UUID string: 3249", PSQLState.INVALID_PARAMETER_VALUE), 30),
         };
-        Collection<Parameterization> result = new ArrayList<>();
-        for (Object[] tc : tcs) {
-            result.add(Parameterization.create((String)tc[0], tc));
-        }
-        return result;
+        return Arrays.asList(tcs);
     }
 
     private final String caseName;
