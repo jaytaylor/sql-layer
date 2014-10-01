@@ -57,7 +57,7 @@ public class CollationSpecifier {
         init(scheme);
     }
 
-    private void init(String scheme) {
+    private final void init(String scheme) {
         this.scheme = scheme;
         String[] pieces = scheme.toLowerCase().split("_");
 
