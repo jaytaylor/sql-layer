@@ -64,8 +64,6 @@ public class CollationSpecifier {
         StringBuilder localeBuilder = new StringBuilder();
         Boolean localeStarted = false;
         Boolean localeFinished = false;
-        Boolean ambiguousCase = false;
-        Boolean ambiguousAccent = false;
         for (int i = 0; i < pieces.length; i++) {
             if (pieces[i].contains("=")) {
                 addKeyword(pieces[i], scheme);
@@ -75,14 +73,7 @@ public class CollationSpecifier {
                 if (i == REGION_NDX) {
                     if (localeStarted) localeBuilder.append("_");
                     localeStarted = true;
-
                     localeBuilder.append(pieces[i]);
-
-                    if (isCaseShortcut(pieces[i])) {
-                        ambiguousCase = true;
-                    } else {
-                        ambiguousAccent = true;
-                    }
                 } else {
                     setCaseAndAccent(pieces[i]);
                     localeFinished = true;
@@ -105,7 +96,7 @@ public class CollationSpecifier {
         locale = localeBuilder.toString();
 
         checkKeywordsAndShortcuts();
-        checkAmbiguous(ambiguousCase, ambiguousAccent, pieces);
+        checkAmbiguous(pieces);
 
         if (caseSensitive == null) caseSensitive = CASE_SENSITIVE.equalsIgnoreCase(DEFAULT_CASE);
         if (accentSensitive == null) accentSensitive = ACCENT_SENSITIVE.equalsIgnoreCase(DEFAULT_ACCENT);
@@ -117,24 +108,23 @@ public class CollationSpecifier {
         }
     }
 
-    private void checkAmbiguous(Boolean ambiguousCase, Boolean ambiguousAccent, String[] pieces) {
-        if ((ambiguousCase && caseSensitive == null) || 
-                (ambiguousAccent && accentSensitive == null)) {
-
+    private void checkAmbiguous(String[] pieces) {
+        if (pieces.length < REGION_NDX + 1) return;
+        if ((isCaseShortcut(pieces[REGION_NDX]) && caseSensitive == null) ||
+                (isAccentShortcut(pieces[REGION_NDX]) && accentSensitive == null)) {
             String providedCase = caseSensitive == null ? DEFAULT_CASE
                                                         : caseSensitive ? CASE_SENSITIVE : CASE_INSENSITIVE;
             String providedAccent = accentSensitive == null ? DEFAULT_ACCENT
                                                             : accentSensitive ? ACCENT_SENSITIVE: ACCENT_INSENSITIVE;
 
-            String possibility1case = ambiguousCase ? pieces[REGION_NDX] : providedCase;
-            String possibility1accent = ambiguousAccent ? pieces[REGION_NDX] : providedAccent;
+            String possibility1case = isCaseShortcut(pieces[REGION_NDX]) ? pieces[REGION_NDX] : providedCase;
+            String possibility1accent = isAccentShortcut(pieces[REGION_NDX]) ? pieces[REGION_NDX] : providedAccent;
             String possibility1 = new StringBuilder().append(locale.replace(pieces[REGION_NDX], ""))
                                                      .append("_")
                                                      .append(possibility1case)
                                                      .append("_")
                                                      .append(possibility1accent)
                                                      .toString();
-
             String possibility2 = new StringBuilder().append(locale)
                                                      .append("_")
                                                      .append(providedCase)
