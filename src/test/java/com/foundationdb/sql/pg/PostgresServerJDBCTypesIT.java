@@ -38,6 +38,7 @@ import org.junit.runners.Parameterized.Parameters;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -82,12 +83,11 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
      * @param unparseable some sort of string that couldn't possibly be parsed (e.g. an int of value "Suzie")
      * @param defaultValue the default value that should come back if you pass in a wildly incorrect string
      *                     TODO: is this different if the column is NOT NULL
-     * @param valueOfIncorrectType this should be a value that can't be interpreted as the given type (e.g. byte array as date)
      * @return
      */
     static Object[] tc(String name, int jdbcType, String colName, Object value,
-                       String unparseable, Object defaultValue, Object valueOfIncorrectType) {
-        return new Object[] { name, jdbcType, colName, value, unparseable, defaultValue, valueOfIncorrectType};
+                       String unparseable, Object defaultValue) {
+        return new Object[] { name, jdbcType, colName, value, unparseable, defaultValue};
     }
 
     @Parameters(name="{0}")
@@ -106,23 +106,23 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
         tcal.set(Calendar.DAY_OF_MONTH, 1);
         long timeOfDay = tcal.getTime().getTime();
         Object[][] tcs = new Object[][] {
-            tc("BigDecimal", Types.DECIMAL, "col_decimal", new BigDecimal("3.14"), "Suzie", new BigDecimal("0.00"), new Time(timeOfDay)),
-            tc("Boolean", Types.BOOLEAN, "col_boolean", Boolean.TRUE, "Jack", false, new Date(startOfDay)),
-            tc("Byte", Types.TINYINT, "col_tinyint", (byte)123, "Lewis", (byte)0, true),
+            tc("BigDecimal", Types.DECIMAL, "col_decimal", new BigDecimal("3.14"), "Suzie", new BigDecimal("0.00")),
+            tc("Boolean", Types.BOOLEAN, "col_boolean", Boolean.TRUE, "Jack", false),
+            tc("Byte", Types.TINYINT, "col_tinyint", (byte)123, "Lewis", (byte)0),
             // strings are parsed into byte arrays
-            tc("Bytes", Types.VARBINARY, "col_varbinary", new byte[] { 0, 1, (byte)0xFF }, null, null, new Timestamp(timeNoMillis)),
-            tc("Date", Types.DATE, "col_date", new Date(startOfDay), "Janet", null, new BigDecimal(30.245)),
-            tc("Double", Types.DOUBLE, "col_double", 3.14E52, "Bridget", 0.0, new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9}),
-            tc("Float", Types.FLOAT, "col_float", 3.14f, "Willy", 0.0f, new Time(timeOfDay)),
-            tc("Int", Types.INTEGER, "col_int", 123456, "Mary", 0, new Date(startOfDay)),
-            tc("Long", Types.BIGINT, "col_bigint", 0x12345678L, "Jimmy", 0L, false),
-            tc("Short", Types.SMALLINT, "col_smallint", (short)1001, "Martha", (short)0, new Timestamp(timeNoMillis)),
+            tc("Bytes", Types.VARBINARY, "col_varbinary", new byte[] { 0, 1, (byte)0xFF }, null, null),
+            tc("Date", Types.DATE, "col_date", new Date(startOfDay), "Janet", null),
+            tc("Double", Types.DOUBLE, "col_double", 3.14E52, "Bridget", 0.0),
+            tc("Float", Types.FLOAT, "col_float", 3.14f, "Willy", 0.0f),
+            tc("Int", Types.INTEGER, "col_int", 123456, "Mary", 0),
+            tc("Long", Types.BIGINT, "col_bigint", 0x12345678L, "Jimmy", 0L),
+            tc("Short", Types.SMALLINT, "col_smallint", (short)1001, "Martha", (short)0),
             // obviously any string can be a string
-            tc("String", Types.VARCHAR, "col_varchar", "hello", null, null, 348),
-            tc("Time", Types.TIME, "col_time", new Time(timeOfDay), "Mike", null, 23409782134097980L),
-            tc("Timestamp(Datetime)", Types.TIMESTAMP, "col_datetime", new Timestamp(timeNoMillis), "Bob", null, 2345.32E14),
+            tc("String", Types.VARCHAR, "col_varchar", "hello", null, null),
+            tc("Time", Types.TIME, "col_time", new Time(timeOfDay), "Mike", null),
+            tc("Timestamp(Datetime)", Types.TIMESTAMP, "col_datetime", new Timestamp(timeNoMillis), "Bob", null),
             tc("GUID", Types.OTHER, "col_guid", UUID.randomUUID(), "3249",
-                    new PSQLException("ERROR: Invalid UUID string: 3249", PSQLState.INVALID_PARAMETER_VALUE), 30),
+               new PSQLException("ERROR: Invalid UUID string: 3249", PSQLState.INVALID_PARAMETER_VALUE)),
         };
         return Arrays.asList(tcs);
     }
@@ -132,18 +132,16 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
     private final String colName;
     private final Object value;
     private final String unparseable;
-    private Object defaultValue;
-    private final Object incorrectType;
+    private final Object defaultValue;
 
     public PostgresServerJDBCTypesIT(String caseName, int jdbcType, String colName,
-                                     Object value, String unparseable, Object defaultValue, Object valueOfIncorrectType) {
+                                     Object value, String unparseable, Object defaultValue) {
         this.caseName = caseName;
         this.jdbcType = jdbcType;
         this.colName = colName;
         this.value = value;
         this.unparseable = unparseable;
         this.defaultValue = defaultValue;
-        this.incorrectType = valueOfIncorrectType;
     }
 
     @Test
