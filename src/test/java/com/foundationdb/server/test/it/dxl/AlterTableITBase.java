@@ -76,19 +76,7 @@ public class AlterTableITBase extends ITBase {
     // Added after bug1047977
     @After
     public void lookForDanglingTrees() throws Exception {
-        // Collect all trees storage currently has
-        Set<String> storeTrees = new TreeSet<>();
-        storeTrees.addAll(store().getStorageDescriptionNames());
-
-        // Collect all trees in AIS
-        Set<String> smTrees = serviceManager().getSchemaManager().getTreeNames(session());
-
-        // Subtract knownTrees from storage trees instead of requiring exact. There may be allocated trees that
-        // weren't materialized (yet), for example.
-        Set<String> difference = new TreeSet<>(storeTrees);
-        difference.removeAll(smTrees);
-
-        assertEquals("Found orphaned trees", "[]", difference.toString());
+        super.lookForDanglingTrees();
     }
 
     protected void checkIndexesInstead(TableName name, String... indexNames) {

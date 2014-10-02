@@ -31,6 +31,7 @@ import com.foundationdb.server.error.ViewReferencesExist;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -85,6 +86,11 @@ public final class DropSchemaIT extends ITBase {
             final View view = ais.getView(new TableName(schemaName, name));
             assertNull (schemaName + "." + name + " still exists", view);
         }
+    }
+
+    @After
+    public void lookForDanglingTrees() throws Exception {
+        super.lookForDanglingTrees();
     }
 
     @Test
