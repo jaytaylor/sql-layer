@@ -16,6 +16,110 @@
  */
 package com.foundationdb.qp.storeadapter.indexrow;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.Before;
+import org.junit.Test;
+
+import com.foundationdb.ais.CAOIBuilderFiller;
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Join;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.aisb2.NewAISBuilder;
+import com.foundationdb.qp.row.HKey;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.server.collation.TestKeyCreator;
+import com.foundationdb.server.service.tree.KeyCreator;
+import com.persistit.Key;
+
 public class FDBIndexRowTest {
 
+    @Before
+    public void createAIS() {
+        NewAISBuilder builder = CAOIBuilderFiller.createAndFillBuilder("Test");
+        ais = builder.ais();
+        Table customers = ais.getTable("Test", CAOIBuilderFiller.CUSTOMER_TABLE);
+        assertNotNull(customers);
+        Map<Table, Integer> ordinalMap = new HashMap<>();
+        List<Table> remainingTables = new ArrayList<>();
+        // Add all roots
+        for(Table table : ais.getTables().values()) {
+            if(table.isRoot()) {
+                remainingTables.add(table);
+            }
+        }
+        while(!remainingTables.isEmpty()) {
+            Table table = remainingTables.remove(remainingTables.size()-1);
+            ordinalMap.put(table, 0);
+            for(Index index : table.getIndexesIncludingInternal()) {
+                index.computeFieldAssociations(ordinalMap);
+            }
+            // Add all immediate children
+            for(Join join : table.getChildJoins()) {
+                remainingTables.add(join.getChild());
+            }
+        }
+        for(Group group : ais.getGroups().values()) {
+            for(Index index : group.getIndexes()) {
+                index.computeFieldAssociations(ordinalMap);
+            }
+        }
+        schema = new Schema (ais);
+        customerPK = schema.indexRowType(customers.getIndex(Index.PRIMARY));
+    }
+    
+    @Test
+    public void testCreation () {
+        FDBIndexRow row = new FDBIndexRow (testCreator, customerPK);
+        assertNotNull (row);
+        assertEquals(row.rowType(), customerPK);
+    }
+
+    @Test
+    public void testCopyFromEmpty() {
+        Table customers = ais.getTable("Test", CAOIBuilderFiller.CUSTOMER_TABLE);
+        FDBIndexRow row = new FDBIndexRow (testCreator, customerPK);
+
+       Key pkKey = testCreator.createKey();
+       
+       row.copyFrom(pkKey, null);
+       
+       assertTrue (row.keyEmpty());
+       assertNotNull (row.ancestorHKey(customers));
+    }
+
+    @Test
+    public void testCopyFromEntry() {
+        Table customers = ais.getTable("Test", CAOIBuilderFiller.CUSTOMER_TABLE);
+        FDBIndexRow row = new FDBIndexRow (testCreator, customerPK);
+
+       Key pkKey = testCreator.createKey();
+       pkKey.append (1L);
+       pkKey.append(1);
+       row.copyFrom(pkKey, null);
+       
+       assertTrue (!row.keyEmpty());
+       HKey hKey = row.ancestorHKey(customers);
+       assertNotNull (hKey);
+       assertTrue(hKey.segments() == 1);
+       assertTrue(hKey.pEval(0).getInt64() == 1);
+    }
+    
+    
+    Schema schema;
+    AkibanInformationSchema ais;
+    KeyCreator testCreator = new TestKeyCreator();
+    IndexRowType customerPK; 
+    
 }
