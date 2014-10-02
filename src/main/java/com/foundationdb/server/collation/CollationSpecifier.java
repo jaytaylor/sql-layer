@@ -75,10 +75,16 @@ public class CollationSpecifier {
                     localeStarted = true;
                     localeBuilder.append(pieces[i]);
                 } else if (isCaseShortcut(pieces[i])){
+                    if (caseSet) {
+                        throw new InvalidCollationSchemeException(scheme, "can't set the case sensitivity twice");
+                    }
                     caseSensitive = CASE_SENSITIVE.equalsIgnoreCase(pieces[i]);
                     localeFinished = true;
                     caseSet = true;
                 } else {
+                    if (accentSet) {
+                        throw new InvalidCollationSchemeException(scheme, "can't set the accent sensitivity twice");
+                    }
                     accentSensitive = ACCENT_SENSITIVE.equalsIgnoreCase(pieces[i]);
                     localeFinished = true;
                     accentSet = true;
@@ -101,7 +107,7 @@ public class CollationSpecifier {
         locale = localeBuilder.toString();
 
         checkKeywordsAndShortcuts(caseSet, accentSet);
-        checkAmbiguous(pieces, caseSet, accentSet);
+        checkAmbiguous(pieces, caseSensitive, accentSensitive, caseSet, accentSet);
 
         if (caseSet) {
             this.caseSensitive = caseSensitive;
@@ -121,7 +127,8 @@ public class CollationSpecifier {
         }
     }
 
-    private void checkAmbiguous(String[] pieces, boolean caseSet, boolean accentSet) {
+    private void checkAmbiguous(String[] pieces, boolean caseSensitive, boolean accentSensitive, 
+            boolean caseSet, boolean accentSet) {
         if (pieces.length < REGION_NDX + 1) return;
         if ((isCaseShortcut(pieces[REGION_NDX]) && !caseSet) ||
                 (isAccentShortcut(pieces[REGION_NDX]) && !accentSet)) {
