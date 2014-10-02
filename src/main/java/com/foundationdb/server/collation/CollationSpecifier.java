@@ -47,36 +47,41 @@ public class CollationSpecifier {
     // Used to check the validity of requested locales
     private final static HashSet<ULocale> locales = new HashSet<ULocale>(Arrays.asList(ULocale.getAvailableLocales()));
 
-    private String scheme; // the original, user-created scheme; use toString() instead for a standardized version
-    private String locale = null;
-    private Boolean caseSensitive = null;
-    private Boolean accentSensitive = null;
-    private HashMap<String, String> keywordsToValues = new HashMap<String, String>();
+    private final String scheme; // the original, user-created scheme; use toString() instead for a standardized version
+    private final String locale;
+    private final boolean caseSensitive;
+    private final boolean accentSensitive;
+    private final HashMap<String, String> keywordsToValues = new HashMap<String, String>();
 
     public CollationSpecifier(String scheme) {
-        init(scheme);
-    }
-
-    private final void init(String scheme) {
         this.scheme = scheme;
         String[] pieces = scheme.toLowerCase().split("_");
 
         StringBuilder localeBuilder = new StringBuilder();
-        Boolean localeStarted = false;
-        Boolean localeFinished = false;
+        boolean localeStarted = false;
+        boolean localeFinished = false;
+        boolean caseSet = false;
+        boolean accentSet = false;
+        boolean caseSensitive = false;
+        boolean accentSensitive = false;
         for (int i = 0; i < pieces.length; i++) {
             if (pieces[i].contains("=")) {
                 addKeyword(pieces[i], scheme);
                 localeFinished = true;
             }
-            else if (isCaseShortcut(pieces[i]) || isAccentShortcut(pieces[i])) {
+            else if (isCaseShortcut(pieces[i]) || (isAccentShortcut(pieces[i]))) {
                 if (i == REGION_NDX) {
                     if (localeStarted) localeBuilder.append("_");
                     localeStarted = true;
                     localeBuilder.append(pieces[i]);
-                } else {
-                    setCaseAndAccent(pieces[i]);
+                } else if (isCaseShortcut(pieces[i])){
+                    caseSensitive = CASE_SENSITIVE.equalsIgnoreCase(pieces[i]);
                     localeFinished = true;
+                    caseSet = true;
+                } else {
+                    accentSensitive = ACCENT_SENSITIVE.equalsIgnoreCase(pieces[i]);
+                    localeFinished = true;
+                    accentSet = true;
                 }
             }
             else if (localeFinished) {
@@ -95,27 +100,35 @@ public class CollationSpecifier {
         }
         locale = localeBuilder.toString();
 
-        checkKeywordsAndShortcuts();
-        checkAmbiguous(pieces);
+        checkKeywordsAndShortcuts(caseSet, accentSet);
+        checkAmbiguous(pieces, caseSet, accentSet);
 
-        if (caseSensitive == null) caseSensitive = CASE_SENSITIVE.equalsIgnoreCase(DEFAULT_CASE);
-        if (accentSensitive == null) accentSensitive = ACCENT_SENSITIVE.equalsIgnoreCase(DEFAULT_ACCENT);
+        if (caseSet) {
+            this.caseSensitive = caseSensitive;
+        } else {
+            this.caseSensitive = CASE_SENSITIVE.equalsIgnoreCase(DEFAULT_CASE);
+        }
+        if (accentSet) {
+            this.accentSensitive = accentSensitive;
+        } else {
+            this. accentSensitive = ACCENT_SENSITIVE.equalsIgnoreCase(DEFAULT_ACCENT);
+        }
     }
 
-    private void checkKeywordsAndShortcuts() {
-        if (!keywordsToValues.isEmpty() && (caseSensitive != null || accentSensitive != null)) {
+    private void checkKeywordsAndShortcuts(boolean caseSet, boolean accentSet) {
+        if (!keywordsToValues.isEmpty() && (caseSet || accentSet)) {
             throw new InvalidCollationSchemeException(scheme, "can't include both keywords and case/accent shortcuts");
         }
     }
 
-    private void checkAmbiguous(String[] pieces) {
+    private void checkAmbiguous(String[] pieces, boolean caseSet, boolean accentSet) {
         if (pieces.length < REGION_NDX + 1) return;
-        if ((isCaseShortcut(pieces[REGION_NDX]) && caseSensitive == null) ||
-                (isAccentShortcut(pieces[REGION_NDX]) && accentSensitive == null)) {
-            String providedCase = caseSensitive == null ? DEFAULT_CASE
-                                                        : caseSensitive ? CASE_SENSITIVE : CASE_INSENSITIVE;
-            String providedAccent = accentSensitive == null ? DEFAULT_ACCENT
-                                                            : accentSensitive ? ACCENT_SENSITIVE: ACCENT_INSENSITIVE;
+        if ((isCaseShortcut(pieces[REGION_NDX]) && !caseSet) ||
+                (isAccentShortcut(pieces[REGION_NDX]) && !accentSet)) {
+            String providedCase = !caseSet ? DEFAULT_CASE
+                                           : caseSensitive ? CASE_SENSITIVE : CASE_INSENSITIVE;
+            String providedAccent = !accentSet ? DEFAULT_ACCENT
+                                               : accentSensitive ? ACCENT_SENSITIVE: ACCENT_INSENSITIVE;
 
             String possibility1case = isCaseShortcut(pieces[REGION_NDX]) ? pieces[REGION_NDX] : providedCase;
             String possibility1accent = isAccentShortcut(pieces[REGION_NDX]) ? pieces[REGION_NDX] : providedAccent;
@@ -199,30 +212,6 @@ public class CollationSpecifier {
     private static Boolean isAccentShortcut(String accentOrNot) {
         return accentOrNot.equalsIgnoreCase(ACCENT_INSENSITIVE) ||
                accentOrNot.equalsIgnoreCase(ACCENT_SENSITIVE);
-    }
-
-    private void setCaseAndAccent(String caseOrAccent) {
-        // can't specify accent or case twice
-        if (accentSensitive != null &&
-                isAccentShortcut(caseOrAccent)) {
-            throw new InvalidCollationSchemeException(scheme, "can't specify accent sensitivity twice");
-        }
-        if (caseSensitive != null &&
-                isCaseShortcut(caseOrAccent)) {
-            throw new InvalidCollationSchemeException(scheme, "can't specify case sensitivity twice");
-        }
-        if (caseOrAccent.equals(CASE_SENSITIVE)) {
-            caseSensitive = true;
-        }
-        else if (caseOrAccent.equals(CASE_INSENSITIVE)) {
-            caseSensitive = false;
-        }
-        else if (caseOrAccent.equals(ACCENT_SENSITIVE)) {
-            accentSensitive = true;
-        }
-        else if (caseOrAccent.equals(ACCENT_INSENSITIVE)) {
-            accentSensitive = false;
-        }
     }
 
     private void addKeyword(String keywordAndValue, String scheme) {
