@@ -188,6 +188,9 @@ public interface SchemaManager {
      */
     void dropSchema(Session session, String schemaName, DropBehavior dropBehavior, Set<TableName> sequencesToDrop);
 
+    /** Drops all non-system schemas from the ais. **/
+    void dropNonSystemSchemas(Session session);
+
     /** Change definitions of existing tables. */
     void alterTableDefinitions(Session session, Collection<ChangedTableDescription> alteredTables);
 

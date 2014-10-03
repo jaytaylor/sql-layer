@@ -1137,54 +1137,7 @@ public class ApiTestBase {
     }
 
     protected final void dropAllTables(Session session) throws InvalidOperationException {
-        for(Routine routine : ddl().getAIS(session).getRoutines().values()) {
-            TableName name = routine.getName();
-            if (!name.getSchemaName().equals(TableName.SQLJ_SCHEMA) &&
-                !name.getSchemaName().equals(TableName.SYS_SCHEMA) &&
-                !name.getSchemaName().equals(TableName.SECURITY_SCHEMA)) {
-                ddl().dropRoutine(session(), name);
-                routineLoader().checkUnloadRoutine(session(), name);
-            }
-        }
-        for(SQLJJar jar : ddl().getAIS(session).getSQLJJars().values()) {
-            TableName name = jar.getName();
-            if (!name.getSchemaName().equals(TableName.SQLJ_SCHEMA) &&
-                !name.getSchemaName().equals(TableName.SYS_SCHEMA) &&
-                !name.getSchemaName().equals(TableName.SECURITY_SCHEMA)) {
-                ddl().dropSQLJJar(session(), name);
-            }
-        }
-
-        for(View view : ddl().getAIS(session).getViews().values()) {
-            // In case one view references another, avoid having to delete in proper order.
-            view.getTableColumnReferences().clear();
-        }
-        for(View view : ddl().getAIS(session).getViews().values()) {
-            ddl().dropView(session, view.getName());
-        }
-
-        // Note: Group names, being derived, can change across DDL. Save root names instead.
-        Set<TableName> groupRoots = new HashSet<>();
-        for(Table table : ddl().getAIS(session).getTables().values()) {
-            if(table.getParentJoin() == null && 
-               !TableName.INFORMATION_SCHEMA.equals(table.getName().getSchemaName()) &&
-               !TableName.SECURITY_SCHEMA.equals(table.getName().getSchemaName())) {
-                groupRoots.add(table.getName());
-            }
-        }
-        for(TableName rootName : groupRoots) {
-            ddl().dropGroup(session, getTable(rootName).getGroup().getName());
-        }
-
-        for(Sequence s : ddl().getAIS(session).getSequences().values()) {
-            String schema = s.getSequenceName().getSchemaName();
-            if(!TableName.INFORMATION_SCHEMA.equals(schema) &&
-               !TableName.SECURITY_SCHEMA.equals(schema) &&
-               !TableName.SQLJ_SCHEMA.equals(schema) &&
-               !TableName.SYS_SCHEMA.equals(schema)) {
-                ddl().dropSequence(session, s.getSequenceName());
-            }
-        }
+        ddl().dropNonSystemSchemas(session);
 
         // Now sanity check
         Set<TableName> uTables = new HashSet<>(ddl().getAIS(session).getTables().keySet());

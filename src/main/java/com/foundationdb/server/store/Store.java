@@ -42,6 +42,7 @@ import com.persistit.Key;
 import com.persistit.Value;
 
 import java.util.Collection;
+import java.util.List;
 
 public interface Store extends KeyCreator {
 
@@ -132,6 +133,9 @@ public interface Store extends KeyCreator {
      */
     void dropSchema(Session session, com.foundationdb.ais.model.Schema schema);
 
+    /** (Test helper) Drop all non-system schemas */
+    void dropNonSystemSchemas(Session session, Collection<com.foundationdb.ais.model.Schema> schemas);
+
     /**
      * Truncate the given group. This includes indexes from all tables, group
      * indexes, the group itself, and all table statuses.
@@ -194,4 +198,5 @@ public interface Store extends KeyCreator {
 
     /** (Test helper) Get exception thrown for online DML vs DDL violation */
     Class<? extends Exception> getOnlineDMLFailureException();
+
 }

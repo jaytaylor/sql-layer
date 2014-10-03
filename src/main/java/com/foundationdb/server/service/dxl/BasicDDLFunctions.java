@@ -46,6 +46,7 @@ import com.foundationdb.ais.model.Index.IndexType;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.Schema;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Table;
@@ -407,6 +408,20 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         txnService.beginTransaction(session);
         try {
             dropSchemaInternal(session, schemaName);
+            txnService.commitTransaction(session);
+        } finally {
+            txnService.rollbackTransactionIfOpen(session);
+        }
+    }
+
+    @Override
+    public void dropNonSystemSchemas(Session session) {
+        logger.trace("dropping non system schemas");
+        txnService.beginTransaction(session);
+        try {
+            Collection<Schema> schemas = new ArrayList<>(getAIS(session).getSchemas().values());
+            schemaManager().dropNonSystemSchemas(session);
+            store().dropNonSystemSchemas(session, schemas);
             txnService.commitTransaction(session);
         } finally {
             txnService.rollbackTransactionIfOpen(session);

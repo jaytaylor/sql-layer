@@ -113,6 +113,11 @@ public interface DDLFunctions {
      */
     void dropSchema(Session session, String schemaName);
 
+    /**
+     * Wipes out all the non-system schemas.
+     */
+    void dropNonSystemSchemas(Session session);
+
      /**
      * Drops all tables associated with the group
      * @param groupName the group to drop

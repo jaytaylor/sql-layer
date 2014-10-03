@@ -33,6 +33,7 @@ import com.foundationdb.ais.model.Schema;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
@@ -669,6 +670,15 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     @Override
     public void dropSchema(Session session, Schema schema) {
         removeTrees(session, schema);
+    }
+
+    @Override
+    public void dropNonSystemSchemas(Session session, Collection<Schema> schemas) {
+        for (Schema schema : schemas) {
+            if (!TableName.inSystemSchema(schema.getName())) {
+                dropSchema(session, schema);
+            }
+        }
     }
 
     @Override

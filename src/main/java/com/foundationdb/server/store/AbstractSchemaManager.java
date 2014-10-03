@@ -35,6 +35,7 @@ import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
+import com.foundationdb.ais.model.Schema;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
@@ -479,6 +480,58 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         Collection<String> schemaNames = new ArrayList<>();
         schemaNames.add(schemaName);
         saveAISChange(session, newAIS, schemaNames);
+    }
+
+    @Override
+    public void dropNonSystemSchemas(Session session) {
+        AkibanInformationSchema aisForChange = getAISForChange(session);
+        List<String> affectedSchemas = new ArrayList<>();
+        for (String schemaName : aisForChange.getSchemas().keySet()) {
+            affectedSchemas.add(schemaName);
+        }
+        AkibanInformationSchema newAIS = aisCloner.clone(aisForChange,
+                new ProtobufWriter.WriteSelector() {
+                    @Override
+                    public Columnar getSelected(Columnar columnar) {
+                        return columnar.getName().inSystemSchema() ? columnar : null;
+                    }
+
+                    @Override
+                    public boolean isSelected(Group group) {
+                        return group.getName().inSystemSchema();
+                    }
+
+                    @Override
+                    public boolean isSelected(Join parentJoin) {
+                        return parentJoin.getConstraintName().inSystemSchema();
+                    }
+
+                    @Override
+                    public boolean isSelected(Index index) {
+                        return TableName.inSystemSchema(index.getSchemaName());
+                    }
+
+                    @Override
+                    public boolean isSelected(Sequence sequence) {
+                        return sequence.getSequenceName().inSystemSchema();
+                    }
+
+                    @Override
+                    public boolean isSelected(Routine routine) {
+                        return routine.getName().inSystemSchema();
+                    }
+
+                    @Override
+                    public boolean isSelected(SQLJJar sqljJar) {
+                        return sqljJar.getName().inSystemSchema();
+                    }
+
+                    @Override
+                    public boolean isSelected(ForeignKey foreignKey) {
+                        return foreignKey.getConstraintName().inSystemSchema();
+                    }
+                });
+        saveAISChange(session, newAIS, affectedSchemas);
     }
 
     @Override
