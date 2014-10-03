@@ -43,6 +43,7 @@ import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.row.ProjectedRow;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.WriteIndexRow;
 import com.foundationdb.qp.rowtype.ProjectedTableRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -89,6 +90,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.persistit.Key;
 import com.persistit.KeyState;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -428,7 +430,7 @@ public class OnlineHelper implements RowListener
                                    StoreAdapter adapter,
                                    final TransformCache transformCache,
                                    Multimap<Group,RowType> tableIndexes) {
-        final PersistitIndexRowBuffer buffer = new PersistitIndexRowBuffer(adapter);
+        final WriteIndexRow buffer = new WriteIndexRow(adapter);
         for(Entry<Group, Collection<RowType>> entry : tableIndexes.asMap().entrySet()) {
             if(entry.getValue().isEmpty()) {
                 continue;
@@ -499,7 +501,7 @@ public class OnlineHelper implements RowListener
         switch(transform.changeLevel) {
             case INDEX:
                 if(transform.tableIndexes.length > 0) {
-                    PersistitIndexRowBuffer buffer = new PersistitIndexRowBuffer(store);
+                    WriteIndexRow buffer = new WriteIndexRow (store);
                     for(TableIndex index : transform.tableIndexes) {
                         long oldZValue = -1;
                         long newZValue = -1;

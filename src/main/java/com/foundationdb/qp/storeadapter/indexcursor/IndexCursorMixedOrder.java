@@ -406,7 +406,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     private void clear(IndexRow bound)
     {
         assert bound == startKey || bound == endKey;
-        bound.resetForWrite(index(), adapter.createKey(), null); // TODO: Reuse the existing key
+        bound.resetForWrite(index(), adapter.createKey()); // TODO: Reuse the existing key
     }
 
     private boolean beforeStart(Row row)

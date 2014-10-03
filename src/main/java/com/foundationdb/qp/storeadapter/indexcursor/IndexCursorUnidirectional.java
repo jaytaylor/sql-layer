@@ -357,13 +357,13 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     protected void clearStart()
     {
         startKeyKey.clear();
-        startKey.resetForWrite(index(), startKeyKey, null);
+        startKey.resetForWrite(index(), startKeyKey);
     }
 
     protected void clearEnd()
     {
         endKeyKey.clear();
-        endKey.resetForWrite(index(), endKeyKey, null);
+        endKey.resetForWrite(index(), endKeyKey);
     }
 
     protected TInstance type(int f)

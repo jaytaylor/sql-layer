@@ -32,10 +32,7 @@ import com.foundationdb.qp.storeadapter.indexcursor.SortKeyTarget;
 import com.foundationdb.qp.storeadapter.indexcursor.ValueSortKeyAdapter;
 import com.foundationdb.qp.util.PersistitKey;
 import com.foundationdb.server.PersistitKeyValueSource;
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.KeyCreator;
-import com.foundationdb.server.store.Store;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.value.ValueSource;
@@ -109,15 +106,8 @@ public class FDBIndexRow extends IndexRow {
     }
     
     @Override
-    public void initialize(RowData rowData, Key hKey,
-            SpatialColumnHandler spatialColumnHandler, long zValue) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public <S> void append(S source, TInstance type) {
         pKeyTarget.append(source, type);
-        pKeyAppends++;
     }
 
     @Override
@@ -129,11 +119,6 @@ public class FDBIndexRow extends IndexRow {
         else
             throw new UnsupportedOperationException(value.toString());
 
-    }
-
-    @Override
-    public void close(Session session, Store store, boolean forInsert) {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -150,22 +135,18 @@ public class FDBIndexRow extends IndexRow {
     }
 
     @Override
-    public void resetForWrite(Index index, Key createKey, Value value) {
+    public void resetForWrite (Index index, Key key) {
         this.index = index;
-        this.iKey = createKey;
-        this.iValue = value;
+        this.iKey = key;
+        this.iValue = null;
         this.pKeyFields = index.getAllColumns().size();
-        if (value != null) {
-            value.clear();
-        }
-
         if (this.pKeyTarget == null) {
             this.pKeyTarget = SORT_KEY_ADAPTER.createTarget(index.getIndexName());
         }
-        this.pKeyTarget.attach(createKey);
+        this.pKeyTarget.attach(key);
+        
     }
-
-
+    
     @Override 
     public int compareTo(IndexRow thatKey, int startBoundColumns) {
         return compareTo (thatKey, startBoundColumns, null);
@@ -252,7 +233,6 @@ public class FDBIndexRow extends IndexRow {
 
     @Override
     public void reset() {
-        pKeyAppends = 0;
         iKey.clear();
         if (iValue != null) {
             iValue.clear();
@@ -326,7 +306,6 @@ public class FDBIndexRow extends IndexRow {
     private SortKeyTarget pKeyTarget;
 
     private int pKeyFields;
-    private int pKeyAppends = 0;
 
     private final SortKeyAdapter<ValueSource, TPreparedExpression> SORT_KEY_ADAPTER = ValueSortKeyAdapter.INSTANCE;
     

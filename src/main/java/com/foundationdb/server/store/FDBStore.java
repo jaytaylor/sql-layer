@@ -32,6 +32,7 @@ import com.foundationdb.directory.DirectorySubspace;
 import com.foundationdb.directory.PathUtil;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.WriteIndexRow;
 import com.foundationdb.qp.storeadapter.FDBAdapter;
 //import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.rowtype.Schema;
@@ -246,7 +247,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
 
     @Override
-    void resetForWrite(FDBStoreData storeData, Index index, IndexRow indexRowBuffer) {
+    void resetForWrite(FDBStoreData storeData, Index index, WriteIndexRow indexRowBuffer) {
         if(storeData.persistitValue == null) {
             storeData.persistitValue = new Value((Persistit) null);
         }
@@ -313,7 +314,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                               TableIndex index,
                               RowData rowData,
                               Key hKey,
-                              IndexRow indexRow,
+                              WriteIndexRow indexRow,
                               SpatialColumnHandler spatialColumnHandler,
                               long zValue,
                               boolean doLock) {
@@ -332,7 +333,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                                TableIndex index,
                                RowData rowData,
                                Key hKey,
-                               IndexRow indexRow,
+                               WriteIndexRow indexRow,
                                SpatialColumnHandler spatialColumnHandler,
                                long zValue,
                                boolean doLock) {
@@ -717,7 +718,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                                    RowData rowData,
                                    Index index,
                                    Key hKey,
-                                   IndexRow indexRow,
+                                   WriteIndexRow indexRow,
                                    SpatialColumnHandler spatialColumnHandler,
                                    long zValue,
                                    boolean forInsert) {

@@ -42,6 +42,7 @@ import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.WriteIndexRow;
 import com.foundationdb.qp.storeadapter.OperatorBasedRowCollector;
 import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.storeadapter.RowDataCreator;
@@ -147,7 +148,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     /** Delete the key. */
     abstract void clear(Session session, SDType storeData);
 
-    abstract void resetForWrite(SDType storeData, Index index, IndexRow indexRowBuffer);
+    abstract void resetForWrite(SDType storeData, Index index, WriteIndexRow indexRowBuffer);
 
     /** Create an iterator to visit all descendants of the current key. */
     protected abstract Iterator<Void> createDescendantIterator(Session session, SDType storeData);
@@ -781,7 +782,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         }
 
         boolean bumpCount = false;
-        PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
+        WriteIndexRow indexRow = new WriteIndexRow(this);
         for(TableIndex index : indexes) {
             long zValue = -1;
             SpatialColumnHandler spatialColumnHandler = null;
@@ -851,7 +852,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         }
 
         // Remove all indexes (before the group row is gone in-case listener needs it)
-        PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
+        WriteIndexRow indexRow = new WriteIndexRow(this);
         for(TableIndex index : rowDef.getIndexes()) {
             long zValue = -1;
             SpatialColumnHandler spatialColumnHandler = null;
@@ -917,7 +918,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                 listener.onUpdatePost(session, oldRowDef.table(), hKey, oldRow, mergedRow);
             }
 
-            PersistitIndexRowBuffer indexRowBuffer = new PersistitIndexRowBuffer(this);
+            WriteIndexRow indexRowBuffer = new WriteIndexRow(this);
             for(TableIndex index : oldRowDef.getIndexes()) {
                 updateIndex(session, index, oldRowDef, currentRow, newRowDef, mergedRow, hKey, indexRowBuffer);
             }
@@ -959,7 +960,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                                       AkibanInformationSchema ais,
                                       SDType storeData,
                                       BitSet tablesRequiringHKeyMaintenance,
-                                      PersistitIndexRowBuffer indexRowBuffer,
+                                      WriteIndexRow indexRowBuffer,
                                       boolean cascadeDelete)
     {
         Iterator it = createDescendantIterator(session, storeData);
@@ -1048,7 +1049,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                              RowDef newRowDef,
                              RowData newRow,
                              Key hKey,
-                             PersistitIndexRowBuffer indexRowBuffer) {
+                             WriteIndexRow indexRowBuffer) {
         int nkeys = index.getKeyColumns().size();
         IndexRowComposition indexRowComposition = index.indexRowComposition();
         if(!fieldsEqual(oldRowDef, oldRow, newRowDef, newRow, nkeys, indexRowComposition)) {

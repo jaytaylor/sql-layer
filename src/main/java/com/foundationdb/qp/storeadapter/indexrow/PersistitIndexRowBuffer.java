@@ -136,7 +136,6 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
 
     // IndexRow interface
 
-    @Override
     public void initialize(RowData rowData, Key hKey, SpatialColumnHandler spatialColumnHandler, long zValue)
     {
         pKeyAppends = 0;
@@ -146,7 +145,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         RowDataSource rowDataValueSource = new RowDataValueSource();
         while (indexField < indexRowComp.getLength()) {
             // handleSpatialColumn will increment pKeyAppends once for all spatial columns
-            if (spatialColumnHandler != null && spatialColumnHandler.handleSpatialColumn(this, indexField, zValue)) {
+            if (spatialColumnHandler != null /*&& spatialColumnHandler.handleSpatialColumn(this, indexField, zValue) */){
                 if (indexField == index.firstSpatialArgument()) {
                     pKeyAppends++;
                 }
@@ -176,7 +175,6 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         pKeyAppends++;
     }
 
-    @Override
     public void close(Session session, Store store, boolean forInsert)
     {
         // If necessary, copy pValue state into value. (Check pValueAppender, because that is non-null only in
@@ -257,7 +255,6 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     }
 
     // For group index rows
-    @Override
     public void resetForWrite(Index index, Key key, Value value)
     {
         reset(index, key, (Value)value, true);
