@@ -323,7 +323,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         checkUniqueness(session, txn, index, rowData, indexKey);
 
         byte[] packedKey = packedTuple(index, indexKey);
-        //assert indexRow.getValue() == null : index;
         txn.setBytes(packedKey, EMPTY_BYTE_ARRAY);
     }
 
