@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.LinkedList;
 import java.util.Deque;
@@ -452,12 +453,12 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 }
             }
         }
-        List<Sequence> sequencesToDrop = new ArrayList<>();
+        Set<TableName> sequencesToDrop = new TreeSet<>();
         for (Sequence sequence : schema.getSequences().values()) {
             // Drop the sequences in this schema, but not the 
             // generator sequences, which will be dropped with the table.
             if(!isIdentitySequence(schema.getTables().values(), sequence)) {
-                sequencesToDrop.add(sequence);
+                sequencesToDrop.add(sequence.getSequenceName());
             }
         }
         // Remove groups that contain tables in multiple schemas
@@ -486,7 +487,8 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 jarsToDrop.add(jar);
         }
         // TODO not CASCADE
-        schemaManager().dropSchema(session, schemaName, SchemaManager.DropBehavior.CASCADE);
+        schemaManager().dropSchema(session, schemaName, SchemaManager.DropBehavior.CASCADE, sequencesToDrop);
+        store().dropSchema(session, schema);
 //        // Do the actual dropping
 //        for(View view : viewsToDrop) {
 //            dropView(session, view.getName());

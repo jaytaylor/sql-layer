@@ -126,6 +126,12 @@ public interface Store extends KeyCreator {
      */
     void dropGroup(Session session, Group group);
 
+
+    /**
+     * Delete all data associated with the schema.
+     */
+    void dropSchema(Session session, com.foundationdb.ais.model.Schema schema);
+
     /**
      * Truncate the given group. This includes indexes from all tables, group
      * indexes, the group itself, and all table statuses.
@@ -143,7 +149,12 @@ public interface Store extends KeyCreator {
      * @param table Table
      * @throws Exception
      */
-    void removeTrees(Session session, Table table);
+    void removeTrees(Session session, Table table);/**
+
+     /**
+     * Remove all trees, and their contents, associated with the given schema.
+     */
+    void removeTrees(Session session, com.foundationdb.ais.model.Schema schema);
     void removeTree(Session session, HasStorage object);
     void truncateTree(Session session, HasStorage object);
 

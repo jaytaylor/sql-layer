@@ -472,9 +472,10 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
 
     @Override
-    public void dropSchema(Session session, String schemaName, DropBehavior dropBehavior) {
+    public void dropSchema(Session session, String schemaName, DropBehavior dropBehavior, Set<TableName> sequencesToDrop) {
+
         AkibanInformationSchema newAIS = removeSchemaFromAIS(getAISForChange(session), schemaName,
-                new TreeSet<TableName>(), new TreeSet<TableName>(), new TreeSet<TableName>());
+                sequencesToDrop, new TreeSet<TableName>(), new TreeSet<TableName>());
         Collection<String> schemaNames = new ArrayList<>();
         schemaNames.add(schemaName);
         saveAISChange(session, newAIS, schemaNames);
@@ -909,6 +910,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
                                                         final Set<TableName> sqljJars) {
         return aisCloner.clone(oldAIS,
                 // TODO fix this
+                // TODO there's a lot more things in here (specifically routine & sqljjar than specified in storage...
                 new ProtobufWriter.WriteSelector() {
                     @Override
                     public Columnar getSelected(Columnar columnar) {

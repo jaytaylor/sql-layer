@@ -19,6 +19,7 @@ package com.foundationdb.server.store;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import com.foundationdb.ais.AISCloner;
@@ -182,9 +183,10 @@ public interface SchemaManager {
      * @param session The session to operate under.
      * @param schemaName The name of the schema to drop.
      * @param dropBehavior How to handle child tables.
+     * @param sequencesToDrop
      * @throws NoSuchSchemaException if the schema does not exist
      */
-    void dropSchema(Session session, String schemaName, DropBehavior dropBehavior);
+    void dropSchema(Session session, String schemaName, DropBehavior dropBehavior, Set<TableName> sequencesToDrop);
 
     /** Change definitions of existing tables. */
     void alterTableDefinitions(Session session, Collection<ChangedTableDescription> alteredTables);

@@ -29,6 +29,7 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.IndexRowComposition;
 import com.foundationdb.ais.model.IndexToHKey;
+import com.foundationdb.ais.model.Schema;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
@@ -666,6 +667,11 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     }
 
     @Override
+    public void dropSchema(Session session, Schema schema) {
+        removeTrees(session, schema);
+    }
+
+    @Override
     public void truncateGroup(final Session session, final Group group) {
         group.getRoot().visit(new AbstractVisitor() {
             @Override
@@ -696,6 +702,11 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         for(Index index : indexes) {
             removeTree(session, index);
         }
+    }
+
+    @Override
+    public void removeTrees(Session session, Schema schema) {
+        // TODO implement
     }
 
     @Override
