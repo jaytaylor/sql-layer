@@ -427,6 +427,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         // Find all groups and tables in the schema
         Set<Group> groupsToDrop = new HashSet<>();
         List<Table> tablesToDrop = new ArrayList<>();
+        Set<TableName> sequencesToDrop = new TreeSet<>();
 
         for(Table table : schema.getTables().values()) {
             groupsToDrop.add(table.getGroup());
@@ -453,14 +454,6 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 }
             }
         }
-        Set<TableName> sequencesToDrop = new TreeSet<>();
-        for (Sequence sequence : schema.getSequences().values()) {
-            // Drop the sequences in this schema, but not the 
-            // generator sequences, which will be dropped with the table.
-            if(!isIdentitySequence(schema.getTables().values(), sequence)) {
-                sequencesToDrop.add(sequence.getSequenceName());
-            }
-        }
         // Remove groups that contain tables in multiple schemas
         for(Table table : tablesToDrop) {
             groupsToDrop.remove(table.getGroup());
@@ -473,6 +466,13 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 return o2.getTableId().compareTo(o1.getTableId());
             }
         });
+        for (Sequence sequence : schema.getSequences().values()) {
+            // Drop the sequences in this schema, but not the
+            // generator sequences, which will be dropped with the table.
+            if(!isIdentitySequence(schema.getTables().values(), sequence)) {
+                sequencesToDrop.add(sequence.getSequenceName());
+            }
+        }
         List<Routine> routinesToDrop = new ArrayList<>(schema.getRoutines().values());
         List<SQLJJar> jarsToDrop = new ArrayList<>();
         for (SQLJJar jar : schema.getSQLJJars().values()) {
