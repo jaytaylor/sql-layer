@@ -40,14 +40,6 @@ public class IndexRowPool
     {
     }
 
-    //public static IndexRow newIndexRow(StoreAdapter adapter, IndexRowType indexRowType);
-    /*{
-        return
-            indexRowType.index().isTableIndex()
-            ? new PersistitTableIndexRow(adapter, indexRowType)
-            : new PersistitGroupIndexRow(adapter, indexRowType);
-    }
-    */
     // For use by this class
 
     private AdapterPool adapterPool(StoreAdapter adapter)

@@ -34,7 +34,6 @@ import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.WriteIndexRow;
 import com.foundationdb.qp.storeadapter.FDBAdapter;
-//import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.storeadapter.indexrow.FDBIndexRow;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
