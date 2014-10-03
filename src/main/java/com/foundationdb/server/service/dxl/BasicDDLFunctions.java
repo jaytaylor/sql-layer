@@ -485,25 +485,27 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             if (!anyOutside)
                 jarsToDrop.add(jar);
         }
-        // Do the actual dropping
-        for(View view : viewsToDrop) {
-            dropView(session, view.getName());
-        }
-        for(Table table : tablesToDrop) {
-            dropTableInternal(session, table.getName());
-        }
-        for(Group group : groupsToDrop) {
-            dropGroupInternal(session, group.getName());
-        }
-        for (Sequence sequence : sequencesToDrop) {
-            dropSequence(session, sequence.getSequenceName());
-        }
-        for (Routine routine : routinesToDrop) {
-            dropRoutine(session, routine.getName());
-        }
-        for (SQLJJar jar : jarsToDrop) {
-            dropSQLJJar(session, jar.getName());
-        }
+        // TODO not CASCADE
+        schemaManager().dropSchema(session, schemaName, SchemaManager.DropBehavior.CASCADE);
+//        // Do the actual dropping
+//        for(View view : viewsToDrop) {
+//            dropView(session, view.getName());
+//        }
+//        for(Table table : tablesToDrop) {
+//            dropTableInternal(session, table.getName());
+//        }
+//        for(Group group : groupsToDrop) {
+//            dropGroupInternal(session, group.getName());
+//        }
+//        for (Sequence sequence : sequencesToDrop) {
+//            dropSequence(session, sequence.getSequenceName());
+//        }
+//        for (Routine routine : routinesToDrop) {
+//            dropRoutine(session, routine.getName());
+//        }
+//        for (SQLJJar jar : jarsToDrop) {
+//            dropSQLJJar(session, jar.getName());
+//        }
     }
 
     private void addView(View view, Collection<View> into, Collection<View> seen, 

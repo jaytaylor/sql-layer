@@ -31,6 +31,7 @@ import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
@@ -91,6 +92,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 
 public abstract class AbstractSchemaManager implements Service, SchemaManager {
@@ -466,6 +468,16 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public void dropTableDefinition(Session session, String schemaName, String tableName, DropBehavior dropBehavior) {
         dropTableCommon(session, new TableName(schemaName, tableName), dropBehavior, false, false);
+    }
+
+
+    @Override
+    public void dropSchema(Session session, String schemaName, DropBehavior dropBehavior) {
+        AkibanInformationSchema newAIS = removeSchemaFromAIS(getAISForChange(session), schemaName,
+                new TreeSet<TableName>(), new TreeSet<TableName>(), new TreeSet<TableName>());
+        Collection<String> schemaNames = new ArrayList<>();
+        schemaNames.add(schemaName);
+        saveAISChange(session, newAIS, schemaNames);
     }
 
     @Override
@@ -888,6 +900,56 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             final String schemaName = jarName.getSchemaName();
             saveAISChange(session, newAIS, Collections.singleton(schemaName));
         }
+    }
+
+    private AkibanInformationSchema removeSchemaFromAIS(AkibanInformationSchema oldAIS,
+                                                        final String schemaName,
+                                                        final Set<TableName> sequences,
+                                                        final Set<TableName> routines,
+                                                        final Set<TableName> sqljJars) {
+        return aisCloner.clone(oldAIS,
+                // TODO fix this
+                new ProtobufWriter.WriteSelector() {
+                    @Override
+                    public Columnar getSelected(Columnar columnar) {
+                        return null;
+                    }
+
+                    @Override
+                    public boolean isSelected(Group group) {
+                        return group.getSchemaName() != schemaName;
+                    }
+
+                    @Override
+                    public boolean isSelected(Join parentJoin) {
+                        return parentJoin.getGroup().getSchemaName() != schemaName;
+                    }
+
+                    @Override
+                    public boolean isSelected(Index index) {
+                        return index.getSchemaName() != schemaName;
+                    }
+
+                    @Override
+                    public boolean isSelected(Sequence sequence) {
+                        return sequence.getSchemaName() != schemaName && !sequences.contains(sequence.getSequenceName());
+                    }
+
+                    @Override
+                    public boolean isSelected(Routine routine) {
+                        return !routines.contains(routine.getName());
+                    }
+
+                    @Override
+                    public boolean isSelected(SQLJJar sqljJar) {
+                        return !sqljJars.contains(sqljJar.getName());
+                    }
+
+                    @Override
+                    public boolean isSelected(ForeignKey foreignKey) {
+                        return foreignKey.getReferencingTable().getGroup().getSchemaName() != schemaName;
+                    }
+                });
     }
 
     /** Construct a new AIS from {@code oldAIS} without {@code tableNames} or {@code sequences}. */

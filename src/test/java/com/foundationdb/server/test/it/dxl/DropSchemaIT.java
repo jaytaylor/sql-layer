@@ -24,6 +24,7 @@ import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.View;
+import com.foundationdb.server.error.ForeignKeyPreventsDropTableException;
 import com.foundationdb.server.error.ForeignConstraintDDLException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchSchemaException;
@@ -184,7 +185,7 @@ public final class DropSchemaIT extends ITBase {
         try {
             ddl().dropSchema(session(), "one");
             Assert.fail("ForeignConstraintDDLException expected");
-        } catch(ForeignConstraintDDLException e) {
+        } catch(ForeignKeyPreventsDropTableException e) {
             // expected
         }
         expectTables("one", "c");

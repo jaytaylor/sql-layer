@@ -908,6 +908,11 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
+        public void dropSchema(Session session, String schemaName, DropBehavior dropBehavior) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public void alterTableDefinitions(Session session, Collection<ChangedTableDescription> alteredTables) {
             throw new UnsupportedOperationException();
         }
