@@ -20,7 +20,6 @@ package com.foundationdb.server.service.dxl;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -312,7 +311,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             listener.onDrop(session, table);
         }
         schemaManager().dropTableDefinition(session, tableName.getSchemaName(), tableName.getTableName(),
-                                            SchemaManager.DropBehavior.RESTRICT);
+                SchemaManager.DropBehavior.RESTRICT);
         checkCursorsForDDLModification(session, table);
     }
 
@@ -443,7 +442,6 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         // Find all groups and tables in the schema
         Set<Group> groupsToDrop = new HashSet<>();
         List<Table> tablesToDrop = new ArrayList<>();
-        Set<TableName> sequencesToDrop = new TreeSet<>();
 
         for(Table table : schema.getTables().values()) {
             groupsToDrop.add(table.getGroup());
@@ -470,30 +468,17 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 }
             }
         }
-        for (Sequence sequence : schema.getSequences().values()) {
-            // Drop the sequences in this schema, but not the
-            // generator sequences, which will be dropped with the table.
-            if(!isIdentitySequence(schema.getTables().values(), sequence)) {
-                sequencesToDrop.add(sequence.getSequenceName());
-            }
-        }
-        Set<TableName> routinesToDrop = new TreeSet<>();
-        for (Routine routine : schema.getRoutines().values()) {
-            routinesToDrop.add(routine.getName());
-        }
-        Set<TableName> jarsToDrop = new TreeSet<>();
         for (SQLJJar jar : schema.getSQLJJars().values()) {
             for (Routine routine : jar.getRoutines()) {
                 if (!routine.getName().getSchemaName().equals(schemaName)) {
                     throw new ReferencedSQLJJarException(jar);
                 }
             }
-            jarsToDrop.add(jar.getName());
         }
         for (Table table : tablesToDrop) {
             dropTableAndChildren(session, table);
         }
-        schemaManager().dropSchema(session, schemaName, sequencesToDrop, routinesToDrop, jarsToDrop);
+        schemaManager().dropSchema(session, schemaName);
         store().dropSchema(session, schema);
     }
 

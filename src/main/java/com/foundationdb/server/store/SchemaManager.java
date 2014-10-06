@@ -179,11 +179,11 @@ public interface SchemaManager {
     void dropTableDefinition(Session session, String schemaName, String tableName, DropBehavior dropBehavior);
 
     /**
-     * Delete the definition for an entire schema.
+     * Delete the definition for an entire schema, and everything inside that schema, plus the sequences provided.
+     *
      * @throws NoSuchSchemaException if the schema does not exist
      */
-    void dropSchema(Session session, String schemaName, Set<TableName> sequencesToDrop,
-                    Set<TableName> routinesToDrop, Set<TableName> jarsToDrop);
+    void dropSchema(Session session, String schemaName);
 
     /** Drops all non-system schemas from the ais. **/
     void dropNonSystemSchemas(Session session);

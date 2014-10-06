@@ -908,7 +908,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
-        public void dropSchema(Session session, String schemaName, Set<TableName> sequencesToDrop, Set<TableName> routinesToDrop, Set<TableName> jarsToDrop) {
+        public void dropSchema(Session session, String schemaName) {
             throw new UnsupportedOperationException();
         }
 

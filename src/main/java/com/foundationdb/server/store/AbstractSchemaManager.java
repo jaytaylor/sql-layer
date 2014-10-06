@@ -92,7 +92,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.UUID;
 
 public abstract class AbstractSchemaManager implements Service, SchemaManager {
@@ -472,10 +471,9 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
 
     @Override
-    public void dropSchema(Session session, String schemaName, Set<TableName> sequencesToDrop, Set<TableName> routinesToDrop, Set<TableName> jarsToDrop) {
+    public void dropSchema(Session session, String schemaName) {
 
-        AkibanInformationSchema newAIS = removeSchemaFromAIS(getAISForChange(session), schemaName,
-                sequencesToDrop, routinesToDrop, jarsToDrop);
+        AkibanInformationSchema newAIS = removeSchemaFromAIS(getAISForChange(session), schemaName);
         saveAISChange(session, newAIS, Collections.singleton(schemaName));
     }
 
@@ -953,11 +951,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         }
     }
 
-    private AkibanInformationSchema removeSchemaFromAIS(AkibanInformationSchema oldAIS,
-                                                        final String schemaName,
-                                                        final Set<TableName> sequences,
-                                                        final Set<TableName> routines,
-                                                        final Set<TableName> sqljJars) {
+    private AkibanInformationSchema removeSchemaFromAIS(AkibanInformationSchema oldAIS, final String schemaName) {
         return aisCloner.clone(oldAIS,
                 new ProtobufWriter.WriteSelector() {
                     @Override
@@ -982,17 +976,17 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
                     @Override
                     public boolean isSelected(Sequence sequence) {
-                        return !sequence.getSchemaName().equals(schemaName) && !sequences.contains(sequence.getSequenceName());
+                        return !sequence.getSchemaName().equals(schemaName);
                     }
 
                     @Override
                     public boolean isSelected(Routine routine) {
-                        return !routines.contains(routine.getName());
+                        return !routine.getName().getSchemaName().equals(schemaName);
                     }
 
                     @Override
                     public boolean isSelected(SQLJJar sqljJar) {
-                        return !sqljJars.contains(sqljJar.getName());
+                        return !sqljJar.getName().getSchemaName().equals(schemaName);
                     }
 
                     @Override
