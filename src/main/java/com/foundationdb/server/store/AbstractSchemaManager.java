@@ -505,7 +505,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
                     @Override
                     public boolean isSelected(Index index) {
-                        return TableName.inSystemSchema(index.getSchemaName());
+                        return index.getIndexName().getFullTableName().inSystemSchema();
                     }
 
                     @Override
