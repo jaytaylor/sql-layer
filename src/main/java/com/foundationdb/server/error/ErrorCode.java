@@ -226,9 +226,10 @@ public enum ErrorCode {
     // Class 2E - invalid connection name
     // Class 2F - SQL routine exception
     // Class 2H - invalid collation name
-    UNSUPPORTED_COLLATION   ("2H", "000", Importance.DEBUG, UnsupportedCollationException.class),
-    INVALID_COLLATION_SCHEME("2H", "001", Importance.DEBUG, InvalidCollationSchemeException.class),
-    
+    UNSUPPORTED_COLLATION    ("2H", "000", Importance.DEBUG, UnsupportedCollationException.class),
+    INVALID_COLLATION_SCHEME ("2H", "001", Importance.DEBUG, InvalidCollationSchemeException.class),
+    AMBIGUOUS_COLLATION      ("2H", "002", Importance.DEBUG, AmbiguousCollationException.class),
+    INVALID_COLLATION_KEYWORD("2H", "003", Importance.DEBUG, InvalidCollationKeywordException.class),
     
     // Class 30 - invalid SQL statement identifier
     // Class 33 - invalid SQL descriptor name

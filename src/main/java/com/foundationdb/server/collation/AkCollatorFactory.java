@@ -28,15 +28,13 @@ import com.foundationdb.server.error.InvalidCollationSchemeException;
 import com.foundationdb.server.error.UnsupportedCollationException;
 import com.ibm.icu.text.Collator;
 import com.ibm.icu.text.RuleBasedCollator;
-import com.ibm.icu.util.IllformedLocaleException;
-import com.ibm.icu.util.ULocale;
 
 /**
  * Provides Collator instances. Collator is not threadsafe, so this class keeps
  * SoftReferences to thread-local instances.
- * 
+ *
  * @author peter
- * 
+ *
  */
 public class AkCollatorFactory {
 
@@ -51,7 +49,7 @@ public class AkCollatorFactory {
     private final static Map<String, SoftReference<AkCollator>> collatorMap = new ConcurrentHashMap<>();
 
     private final static Map<Integer, SoftReference<AkCollator>> collationIdMap = new ConcurrentHashMap<>();
-    
+
     private final static Map<String, Integer> schemeToIdMap = new ConcurrentHashMap<>();
 
     private final static AtomicInteger collationIdGenerator = new AtomicInteger(UCS_BINARY_ID);
@@ -66,14 +64,6 @@ public class AkCollatorFactory {
     public enum Mode {
         STRICT, LOOSE, DISABLED
     }
-    
-    /*
-     * Indices for specification of collation
-     */
-    private final static int LANGUAGE_NDX = 0;
-    private final static int REGION_NDX = 1;
-    private final static int CASE_NDX = 2;
-    private final static int ACCENT_NDX = 3;
 
     /**
      * Set factory to one of three modes specified by case-insensitive string:
@@ -114,6 +104,10 @@ public class AkCollatorFactory {
             return UCS_BINARY_COLLATOR;
         }
 
+        if (scheme.equalsIgnoreCase(UCS_BINARY)) {
+            return mapToBinary(scheme);
+        }
+
         SoftReference<AkCollator> ref = collatorMap.get(scheme);
         if (ref != null) {
             AkCollator akCollator = ref.get();
@@ -123,12 +117,8 @@ public class AkCollatorFactory {
             }
         }
 
-        if (scheme.equalsIgnoreCase(UCS_BINARY)) {
-            return mapToBinary(scheme);
-        }
-
         synchronized (collatorMap) {
-            
+
             Integer collationId = schemeToIdMap.get(scheme);
             if (collationId == null) {
                 collationId = collationIdGenerator.incrementAndGet();
@@ -140,9 +130,8 @@ public class AkCollatorFactory {
             } catch (InvalidCollationSchemeException | UnsupportedCollationException e) {
                 if (mode == Mode.LOOSE) {
                     return mapToBinary(scheme);
-                } else {
-                    throw e;
                 }
+                throw e;
             }
 
             ref = new SoftReference<>(akCollator);
@@ -153,7 +142,7 @@ public class AkCollatorFactory {
             return akCollator;
         }
     }
-    
+
     public static AkCollator getAkCollator(final int collatorId) {
         final SoftReference<AkCollator> ref = collationIdMap.get(collatorId);
         AkCollator collator = (ref == null ? null : ref.get());
@@ -181,89 +170,19 @@ public class AkCollatorFactory {
         }
         return null;
     }
-    
+
     /**
-     * Construct an actual ICU Collator given a collation scheme. The
+     * Construct an actual ICU Collator given a collation specifier. The
      * result is a Collator that must be use in a thread-private manner.
      */
-    static synchronized Collator forScheme(final String scheme) {
-        RuleBasedCollator collator = (RuleBasedCollator) sourceMap.get(scheme); 
+    static synchronized Collator forScheme(final CollationSpecifier specifier) {
+        RuleBasedCollator collator = (RuleBasedCollator) sourceMap.get(specifier.toString());
         if (collator == null) {
-            String[] pieces = scheme.toLowerCase().split("_");
-            if (pieces.length < REGION_NDX + 1) {
-                throw new InvalidCollationSchemeException(scheme);
-            }
-
-            ULocale locale = null;
-            Boolean setStrength = true;
-            try {
-                ULocale.Builder builder = new ULocale.Builder();
-                builder.setLanguage(pieces[LANGUAGE_NDX]);
-                builder.setRegion(pieces[REGION_NDX]);
-                if (pieces.length == REGION_NDX + 2) {
-                    try {
-                        builder.setVariant(pieces[REGION_NDX+1]);
-                        setStrength = false;
-                    } catch (IllformedLocaleException e) {
-                        if (pieces[REGION_NDX].isEmpty()) {
-                            throw new InvalidCollationSchemeException(scheme);
-                        }
-                        // could still be strength settings, so no need to throw an error here
-                        // as long as there's a region
-                    }
-                }
-                locale = builder.build();
-            } catch (IllformedLocaleException e) {
-                throw new UnsupportedCollationException(scheme);
-            }
-
-            collator = (RuleBasedCollator) RuleBasedCollator.getInstance(locale);
-            if (setStrength) {
-                setCollatorStrength(collator, scheme);
-            }
-            sourceMap.put(scheme, collator);
+            collator = specifier.createCollator();
+            sourceMap.put(specifier.toString(), collator);
         }
         collator = collator.cloneAsThawed();
         return collator;
-    }
-
-    private static void setCollatorStrength(RuleBasedCollator collator, String scheme) {
-        String[] pieces = scheme.toLowerCase().split("_");
-        if (pieces.length == CASE_NDX + 1) {
-            if (pieces[CASE_NDX].equals("cs")) {
-                collator.setStrength(Collator.TERTIARY);
-            }
-            else if (pieces[CASE_NDX].equals("ci")) {
-                collator.setStrength(Collator.SECONDARY);
-            }
-            else {
-                throw new InvalidCollationSchemeException(scheme);
-            }
-        }
-        else if (pieces.length == ACCENT_NDX + 1) {
-            if (pieces[CASE_NDX].equals("cs") && pieces[ACCENT_NDX].equals("co")) {
-                collator.setStrength(Collator.TERTIARY);
-                collator.setCaseLevel(false);
-            }
-            else if (pieces[CASE_NDX].equals("cs") && pieces[ACCENT_NDX].equals("cx")) {
-                collator.setStrength(Collator.PRIMARY);
-                collator.setCaseLevel(true);
-            }
-            else if (pieces[CASE_NDX].equals("ci") && pieces[ACCENT_NDX].equals("co")) {
-                collator.setStrength(Collator.SECONDARY);
-                collator.setCaseLevel(false);
-            }
-            else if (pieces[CASE_NDX].equals("ci") && pieces[ACCENT_NDX].equals("cx")) {
-                collator.setStrength(Collator.PRIMARY);
-                collator.setCaseLevel(false);
-            }
-            else {
-                throw new InvalidCollationSchemeException(scheme);
-            }
-        }
-        else if (pieces.length > ACCENT_NDX + 1) {
-            throw new InvalidCollationSchemeException(scheme);
-        }
     }
 
     private static AkCollator mapToBinary(final String scheme) {
@@ -273,7 +192,7 @@ public class AkCollatorFactory {
 
     /**
      * Intended only for unit tests.
-     * 
+     *
      * @return Number of times either getAkCollator() method has returned a
      *         cached value.
      */

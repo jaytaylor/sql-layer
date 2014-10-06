@@ -17,8 +17,10 @@
 
 package com.foundationdb.server.error;
 
-public final class InvalidCollationSchemeException extends InvalidOperationException {
-    public InvalidCollationSchemeException (String collation, String msg) {
-        super(ErrorCode.INVALID_COLLATION_SCHEME, collation, msg);
+import com.foundationdb.ais.model.TableName;
+
+public class AmbiguousCollationException extends InvalidOperationException {
+    public AmbiguousCollationException(String userInput, String canonical1, String canonical2) {
+        super(ErrorCode.AMBIGUOUS_COLLATION, userInput, canonical1, canonical2);
     }
 }

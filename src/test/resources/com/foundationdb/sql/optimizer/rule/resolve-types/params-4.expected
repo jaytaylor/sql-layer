@@ -1,6 +1,6 @@
 [char(5)]
 SelectQuery@f795b2
   ResultSet@7e84d99c[_SQL_COL_1]
-    Project@43ead1a8[LIKE(Cast($0 AS MCOMPAT_ VARCHAR(5, UTF8, en_us_ci) NULL),abc%)]
+    Project@43ead1a8[LIKE(Cast($0 AS MCOMPAT_ VARCHAR(5, UTF8, en_us_ci_co) NULL),abc%)]
       Select@19e60a8b[]
         ExpressionsSource@4dbe38f5([[]])

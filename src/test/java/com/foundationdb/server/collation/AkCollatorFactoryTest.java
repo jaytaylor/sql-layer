@@ -23,7 +23,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.foundationdb.server.error.InvalidCollationSchemeException;
 import com.foundationdb.server.error.UnsupportedCollationException;
 
 import org.junit.Test;
@@ -70,7 +69,7 @@ public class AkCollatorFactoryTest {
         try {
             AkCollatorFactory.setCollationMode(DEFAULT_MODE);
             final AkCollator collator = AkCollatorFactory.getAkCollator("sv_se_ci");
-            assertEquals("Collector should have correct name", "sv_se_ci", collator.getScheme());
+            assertEquals("Collector should have correct name", "sv_se_ci_co", collator.getScheme());
         } finally {
             AkCollatorFactory.setCollationMode(saveMode);
         }
@@ -111,9 +110,10 @@ public class AkCollatorFactoryTest {
         }
     }
 
-    @Test(expected = InvalidCollationSchemeException.class)
+    @Test(expected = UnsupportedCollationException.class)
     public void collationBadScheme() throws Exception {
-        AkCollatorFactory.forScheme("en_us_too_many_arguments");
+        CollationSpecifier collationSpecifier = new CollationSpecifier("en_us_bad_arguments");
+        AkCollatorFactory.forScheme(collationSpecifier);
     }
 
     @Test
@@ -123,8 +123,8 @@ public class AkCollatorFactoryTest {
             AkCollatorFactory.setCollationMode("LOOSE");
             assertEquals("Should be binary", AkCollatorFactory.UCS_BINARY_COLLATOR, AkCollatorFactory
                     .getAkCollator("fricostatic_sengalese_ci"));
-            assertEquals("Collector should have correct name", "en_ie_ci", AkCollatorFactory.getAkCollator(
-                    "en_ie_ci").getScheme());
+            assertEquals("Collector should have correct name", "en_ie_ci_cx", AkCollatorFactory.getAkCollator(
+                    "en_ie_ci_cx").getScheme());
 
         } finally {
             AkCollatorFactory.setCollationMode(saveMode);
