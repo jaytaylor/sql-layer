@@ -1,0 +1,13 @@
+---
+- Statement: CREATE TABLE t1(id INT PRIMARY KEY, name VARCHAR(16));
+---
+- Statement: CREATE TABLE t2(pid INT, FOREIGN KEY(pid) REFERENCES t1(id), bval BOOLEAN);
+---
+- Statement: INSERT INTO t1 VALUES (1, 'harrison'), (2, 'chandler');
+---
+- Statement: INSERT INTO t2 VALUES (1, true), (2, false);
+---
+# shouldn't get an assertion error
+- Statement: SELECT * FROM t1 WHERE (SELECT bval FROM t2 WHERE t1.id = t2.pid);
+- output: [[1, 'harrison']]
+...
