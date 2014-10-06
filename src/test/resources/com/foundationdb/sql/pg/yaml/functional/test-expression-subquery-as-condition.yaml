@@ -7,7 +7,6 @@
 ---
 - Statement: INSERT INTO t2 VALUES (1, true), (2, false);
 ---
-# shouldn't get an assertion error
 - Statement: SELECT * FROM t1 WHERE (SELECT bval FROM t2 WHERE t1.id = t2.pid);
 - output: [[1, 'harrison']]
 ...
