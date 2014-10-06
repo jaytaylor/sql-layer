@@ -180,11 +180,6 @@ public interface SchemaManager {
 
     /**
      * Delete the definition for an entire schema.
-     * @param session The session to operate under.
-     * @param schemaName The name of the schema to drop.
-     * @param sequencesToDrop
-     * @param routinesToDrop
-     * @param jarsToDrop
      * @throws NoSuchSchemaException if the schema does not exist
      */
     void dropSchema(Session session, String schemaName, Set<TableName> sequencesToDrop,
