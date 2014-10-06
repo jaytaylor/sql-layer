@@ -969,22 +969,22 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
                     @Override
                     public boolean isSelected(Group group) {
-                        return group.getSchemaName() != schemaName;
+                        return !group.getSchemaName().equals(schemaName);
                     }
 
                     @Override
                     public boolean isSelected(Join parentJoin) {
-                        return parentJoin.getGroup().getSchemaName() != schemaName;
+                        return !parentJoin.getGroup().getSchemaName().equals(schemaName);
                     }
 
                     @Override
                     public boolean isSelected(Index index) {
-                        return index.getSchemaName() != schemaName;
+                        return !index.getSchemaName().equals(schemaName);
                     }
 
                     @Override
                     public boolean isSelected(Sequence sequence) {
-                        return sequence.getSchemaName() != schemaName && !sequences.contains(sequence.getSequenceName());
+                        return !sequence.getSchemaName().equals(schemaName) && !sequences.contains(sequence.getSequenceName());
                     }
 
                     @Override
@@ -999,7 +999,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
                     @Override
                     public boolean isSelected(ForeignKey foreignKey) {
-                        return foreignKey.getReferencingTable().getGroup().getSchemaName() != schemaName;
+                        return !foreignKey.getReferencingTable().getGroup().getSchemaName().equals(schemaName);
                     }
                 });
     }
