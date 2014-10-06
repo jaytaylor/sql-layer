@@ -476,9 +476,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
         AkibanInformationSchema newAIS = removeSchemaFromAIS(getAISForChange(session), schemaName,
                 sequencesToDrop, routinesToDrop, jarsToDrop);
-        Collection<String> schemaNames = new ArrayList<>();
-        schemaNames.add(schemaName);
-        saveAISChange(session, newAIS, schemaNames);
+        saveAISChange(session, newAIS, Collections.singleton(schemaName));
     }
 
     @Override
