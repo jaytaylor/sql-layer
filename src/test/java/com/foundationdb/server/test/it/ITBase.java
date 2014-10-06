@@ -272,7 +272,7 @@ public abstract class ITBase extends ApiTestBase {
         return space;
     }
 
-    public void lookForDanglingTrees() throws Exception {
+    public void lookForDanglingStorage() throws Exception {
         // Collect all trees storage currently has
         Set<String> storeTrees = new TreeSet<>();
         storeTrees.addAll(store().getStorageDescriptionNames());

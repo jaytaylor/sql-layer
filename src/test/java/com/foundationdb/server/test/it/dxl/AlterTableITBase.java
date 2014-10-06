@@ -37,8 +37,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 
 import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import static org.junit.Assert.assertEquals;
@@ -75,8 +73,8 @@ public class AlterTableITBase extends ITBase {
 
     // Added after bug1047977
     @After
-    public void lookForDanglingTrees() throws Exception {
-        super.lookForDanglingTrees();
+    public void lookForDanglingStorage() throws Exception {
+        super.lookForDanglingStorage();
     }
 
     protected void checkIndexesInstead(TableName name, String... indexNames) {

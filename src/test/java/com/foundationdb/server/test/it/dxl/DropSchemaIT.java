@@ -19,25 +19,19 @@ package com.foundationdb.server.test.it.dxl;
 
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.View;
-import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
-import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.ForeignKeyPreventsDropTableException;
 import com.foundationdb.server.error.ForeignConstraintDDLException;
 import com.foundationdb.server.error.InvalidOperationException;
-import com.foundationdb.server.error.NoSuchSchemaException;
 import com.foundationdb.server.error.ReferencedSQLJJarException;
 import com.foundationdb.server.error.ViewReferencesExist;
 import com.foundationdb.server.test.it.ITBase;
-import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
@@ -142,8 +136,8 @@ public final class DropSchemaIT extends ITBase {
     }
 
     @After
-    public void lookForDanglingTrees() throws Exception {
-        super.lookForDanglingTrees();
+    public void lookForDanglingStorage() throws Exception {
+        super.lookForDanglingStorage();
     }
 
     @Test
