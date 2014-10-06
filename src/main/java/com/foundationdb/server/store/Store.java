@@ -153,7 +153,7 @@ public interface Store extends KeyCreator {
      * @param table Table
      * @throws Exception
      */
-    void removeTrees(Session session, Table table);/**
+    void removeTrees(Session session, Table table);
 
      /**
      * Remove all trees, and their contents, associated with the given schema.
