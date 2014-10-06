@@ -470,18 +470,6 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 }
             }
         }
-        // Remove groups that contain tables in multiple schemas
-        for(Table table : tablesToDrop) {
-            groupsToDrop.remove(table.getGroup());
-        }
-        // Sort table IDs so higher (i.e. children) are first
-        Collections.sort(tablesToDrop, new Comparator<Table>() {
-            @Override
-            public int compare(Table o1, Table o2) {
-
-                return o2.getTableId().compareTo(o1.getTableId());
-            }
-        });
         for (Sequence sequence : schema.getSequences().values()) {
             // Drop the sequences in this schema, but not the
             // generator sequences, which will be dropped with the table.
@@ -502,8 +490,18 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             }
             jarsToDrop.add(jar.getName());
         }
+        for (Table table : tablesToDrop) {
+            dropTableAndChildren(session, table);
+        }
         schemaManager().dropSchema(session, schemaName, sequencesToDrop, routinesToDrop, jarsToDrop);
         store().dropSchema(session, schema);
+    }
+
+    private void dropTableAndChildren(Session session, Table table) {
+        for (Join childJoin : table.getChildJoins()) {
+            dropTableAndChildren(session, childJoin.getChild());
+        }
+        dropTableInternal(session, table.getName());
     }
 
     private void addView(View view, Collection<View> into, Collection<View> seen, 

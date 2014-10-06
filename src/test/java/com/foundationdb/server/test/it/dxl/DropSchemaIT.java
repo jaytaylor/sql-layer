@@ -28,6 +28,7 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
+import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.ForeignKeyPreventsDropTableException;
 import com.foundationdb.server.error.ForeignConstraintDDLException;
 import com.foundationdb.server.error.InvalidOperationException;
@@ -43,6 +44,7 @@ import org.junit.Test;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -211,21 +213,65 @@ public final class DropSchemaIT extends ITBase {
     @Test
     public void crossSchemaGroupValid() throws InvalidOperationException {
         createTable("one", "c", "id int not null primary key");
-        createTable("one", "o", "id int not null primary key, cid int, grouping foreign key(cid) references c(id)");
-        createTable("two", "i", "id int not null primary key, oid int, grouping foreign key(oid) references one.o(id)");
+        createChildTable("one", "o", "one", "c");
+        createChildTable("two", "i", "one", "c");
         ddl().dropSchema(session(), "two");
         expectTables("one", "c", "o");
         expectNotTables("two", "i");
     }
 
     @Test
+    public void crossSchemaGroupValidCheckData() throws InvalidOperationException {
+        int cTableId = createTable("one", "c", "id int not null primary key");
+        writeRow(cTableId, 1);
+        int oTableId = createTable("two", "o",
+                "id int not null primary key, oid int, grouping foreign key(oid) references one.c(id)");
+        writeRow(oTableId, 100, 10);
+        ddl().dropSchema(session(), "two");
+        updateAISGeneration(); // necessary to run scans below
+        expectTables("one", "c");
+        expectNotTables("two", "o");
+        cTableId = getTable("one", "c").getTableId();
+        expectFullRows(
+                cTableId,
+                createNewRow(cTableId, 1));
+        oTableId = createTable("two", "o",
+                "id int not null primary key, oid int, grouping foreign key(oid) references one.c(id)");
+        writeRow(oTableId, 102, 10);
+        List<NewRow> newRows = scanAllIndex(getTable("two", "o").getPrimaryKey().getIndex());
+        assertEquals(newRows.toString(), newRows.size(), 1);
+        assertEquals(102, newRows.get(0).get(0));
+        expectFullRows(
+                oTableId,
+                createNewRow(oTableId, 102, 10));
+    }
+
+    private int createChildTable(String childSchema, String childName, String parentSchema, String parentName) {
+        return createTable(childSchema, childName,
+                "id int not null primary key, pid int, grouping foreign key(pid) references " +
+                        parentSchema + "." + parentName + "(id)");
+    }
+
+    @Test
     public void crossSchemaGroupValid2() throws InvalidOperationException {
         createTable("one", "c", "id int not null primary key");
-        createTable("two", "o", "id int not null primary key, cid int, grouping foreign key(cid) references one.c(id)");
-        createTable("two", "i", "id int not null primary key, oid int, grouping foreign key(oid) references o(id)");
+        createChildTable("two", "o", "one", "c");
+        createChildTable("two", "i", "two", "o");
         ddl().dropSchema(session(), "two");
         expectTables("one", "c");
         expectNotTables("two", "o", "i");
+    }
+
+    @Test
+    public void crossSchemaGroupValid3() throws InvalidOperationException {
+        createTable("one", "a", "id int not null primary key");
+        createChildTable("one", "b", "one", "a");
+        createChildTable("two", "c", "one", "b");
+        createChildTable("two", "d", "two", "c");
+        createChildTable("two", "e", "two", "d");
+        ddl().dropSchema(session(), "two");
+        expectTables("one", "a", "b");
+        expectNotTables("two", "c", "d", "e");
     }
 
     @Test
