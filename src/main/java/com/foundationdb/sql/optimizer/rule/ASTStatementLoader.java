@@ -1100,12 +1100,7 @@ public class ASTStatementLoader extends BaseRule
                     operand = operands.get(0);
             }
             ConditionExpression condition;
-            if (subqueryNode.getSubqueryType() == SubqueryNode.SubqueryType.EXPRESSION) {
-                ExpressionNode expression = toExpression(subqueryNode);
-                condition = new BooleanCastExpression(expression, subqueryNode.getType(),
-                        subqueryNode, expression.getType());
-            }
-            else if (needOperand) {
+            if (needOperand) {
                 assert (operand != null);
                 ValueNode leftOperand = subqueryNode.getLeftOperand();
                 ConditionExpression inner = null;
@@ -1151,6 +1146,11 @@ public class ASTStatementLoader extends BaseRule
                 TInstance type = typesTranslator.typeForSQLType(subqueryNode.getType());
                 condition = new AnyCondition(new Subquery(subquery, peekEquivalenceFinder()),
                                              subqueryNode.getType(), subqueryNode, type);
+            }
+            else if (subqueryNode.getSubqueryType() == SubqueryNode.SubqueryType.EXPRESSION) {
+                ExpressionNode expression = toExpression(subqueryNode);
+                condition = new BooleanCastExpression(expression, subqueryNode.getType(),
+                        subqueryNode, expression.getType());
             }
             else {
                 TInstance type = typesTranslator.typeForSQLType(subqueryNode.getType());
