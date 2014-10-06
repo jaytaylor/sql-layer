@@ -639,15 +639,7 @@ public class AISMerge {
         }
     }
 
-    /**
-     * Adds **NEW** sequence with same properties (except name & schema) as the given sequence.
-     * @param builder
-     * @param schemaName
-     * @param tableName
-     * @param column
-     * @param defaultIdentity
-     * @param sequence
-     */
+    /** Adds **NEW** sequence with same properties (except name & schema) as the given sequence. */
     private void addIdentitySequence(AISBuilder builder, String schemaName, String tableName, String column,
                                      boolean defaultIdentity, Sequence sequence) {
         // This enforces that the sequence is always in the same schema as the table. Some things depend on that
