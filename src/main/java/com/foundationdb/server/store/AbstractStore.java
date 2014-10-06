@@ -716,6 +716,9 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
 
     @Override
     public void removeTrees(Session session, Schema schema) {
+        for (Sequence sequence : schema.getSequences().values()) {
+            removeTree(session, sequence);
+        }
         for (Table table : schema.getTables().values()) {
             removeTrees(session, table);
         }
