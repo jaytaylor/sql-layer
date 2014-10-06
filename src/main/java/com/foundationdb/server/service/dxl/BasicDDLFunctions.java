@@ -78,6 +78,7 @@ import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.NoSuchTableIdException;
 import com.foundationdb.server.error.NotAllowedByConfigException;
 import com.foundationdb.server.error.ProtectedIndexException;
+import com.foundationdb.server.error.ReferencedSQLJJarException;
 import com.foundationdb.server.error.RowDefNotFoundException;
 import com.foundationdb.server.error.UnsupportedDropException;
 import com.foundationdb.server.error.ViewReferencesExist;
@@ -488,41 +489,21 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 sequencesToDrop.add(sequence.getSequenceName());
             }
         }
-        List<Routine> routinesToDrop = new ArrayList<>(schema.getRoutines().values());
-        List<SQLJJar> jarsToDrop = new ArrayList<>();
+        Set<TableName> routinesToDrop = new TreeSet<>();
+        for (Routine routine : schema.getRoutines().values()) {
+            routinesToDrop.add(routine.getName());
+        }
+        Set<TableName> jarsToDrop = new TreeSet<>();
         for (SQLJJar jar : schema.getSQLJJars().values()) {
-            boolean anyOutside = false;
             for (Routine routine : jar.getRoutines()) {
                 if (!routine.getName().getSchemaName().equals(schemaName)) {
-                    anyOutside = true;
-                    break;
+                    throw new ReferencedSQLJJarException(jar);
                 }
             }
-            if (!anyOutside)
-                jarsToDrop.add(jar);
+            jarsToDrop.add(jar.getName());
         }
-        // TODO not CASCADE
-        schemaManager().dropSchema(session, schemaName, SchemaManager.DropBehavior.CASCADE, sequencesToDrop);
+        schemaManager().dropSchema(session, schemaName, sequencesToDrop, routinesToDrop, jarsToDrop);
         store().dropSchema(session, schema);
-//        // Do the actual dropping
-//        for(View view : viewsToDrop) {
-//            dropView(session, view.getName());
-//        }
-//        for(Table table : tablesToDrop) {
-//            dropTableInternal(session, table.getName());
-//        }
-//        for(Group group : groupsToDrop) {
-//            dropGroupInternal(session, group.getName());
-//        }
-//        for (Sequence sequence : sequencesToDrop) {
-//            dropSequence(session, sequence.getSequenceName());
-//        }
-//        for (Routine routine : routinesToDrop) {
-//            dropRoutine(session, routine.getName());
-//        }
-//        for (SQLJJar jar : jarsToDrop) {
-//            dropSQLJJar(session, jar.getName());
-//        }
     }
 
     private void addView(View view, Collection<View> into, Collection<View> seen, 

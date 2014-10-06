@@ -35,7 +35,6 @@ import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
-import com.foundationdb.ais.model.Schema;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
@@ -473,10 +472,10 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
 
     @Override
-    public void dropSchema(Session session, String schemaName, DropBehavior dropBehavior, Set<TableName> sequencesToDrop) {
+    public void dropSchema(Session session, String schemaName, Set<TableName> sequencesToDrop, Set<TableName> routinesToDrop, Set<TableName> jarsToDrop) {
 
         AkibanInformationSchema newAIS = removeSchemaFromAIS(getAISForChange(session), schemaName,
-                sequencesToDrop, new TreeSet<TableName>(), new TreeSet<TableName>());
+                sequencesToDrop, routinesToDrop, jarsToDrop);
         Collection<String> schemaNames = new ArrayList<>();
         schemaNames.add(schemaName);
         saveAISChange(session, newAIS, schemaNames);
@@ -962,8 +961,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
                                                         final Set<TableName> routines,
                                                         final Set<TableName> sqljJars) {
         return aisCloner.clone(oldAIS,
-                // TODO fix this
-                // TODO there's a lot more things in here (specifically routine & sqljjar than specified in storage...
                 new ProtobufWriter.WriteSelector() {
                     @Override
                     public Columnar getSelected(Columnar columnar) {
