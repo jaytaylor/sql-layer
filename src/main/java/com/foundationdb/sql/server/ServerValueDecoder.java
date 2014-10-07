@@ -23,10 +23,15 @@ import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.error.UnknownDataTypeException;
 import com.foundationdb.server.error.UnsupportedCharsetException;
+import com.foundationdb.server.types.TCast;
+import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
@@ -54,9 +59,10 @@ public class ServerValueDecoder
      */
     public void decodeValue(byte[] encoded, ServerType type, boolean binary,
                             QueryBindings bindings, int index,
-                            QueryContext queryContext) {
+                            QueryContext queryContext, TypesRegistryService typesRegistryService) {
        
         TInstance targetType = type != null ? type.getType() : null;
+        // TODO: is this correct, try to write a test that executes this path, probably `SELECT ?`
         if (targetType == null)
             targetType = typesTranslator.typeForString();
         long lvalue = 0;
@@ -64,15 +70,11 @@ public class ServerValueDecoder
         int lvalueType = Types.NULL;
         ValueSource source;
         if (encoded == null) {
-            Value value = new Value(targetType);
-            value.putNull();
-            source = value;
+            source = new Value(null);
         }
         else if (!binary) {
             try {
-                new String(encoded, encoding);
-                source = new Value(targetType);
-                assert false : "TODO non-binary transfer";
+                source = new Value(MString.varchar(), new String(encoded, encoding));
             }
             catch (UnsupportedEncodingException ex) {
                 throw new UnsupportedCharsetException(encoding);
@@ -82,45 +84,46 @@ public class ServerValueDecoder
             try {
                 switch (type.getBinaryEncoding()) {
                 case BINARY_OCTAL_TEXT:
-                    source = decodeBinaryOctalText(encoded, targetType);
+                    source = decodeBinaryOctalText(encoded);
                     break;
                 case INT_8:
                 case INT_16:
                 case INT_32:
                 case INT_64: // Types.BIGINT
                     // Go by the length sent rather than the implied type.
-                    source = decodeIntegerType(encoded, targetType);
+                    source = decodeIntegerType(encoded);
                     break;
                 case FLOAT_32:
-                    source = decodeFloat(encoded, targetType);
+                    source = decodeFloat(encoded);
                     break;
                 case FLOAT_64:
-                    source = decodeDouble(encoded, targetType);
+                    source = decodeDouble(encoded);
                     break;
                 case STRING_BYTES:
-                    source = decodeString(encoded, targetType);
+                    source = decodeString(encoded);
                     break;
                 case BOOLEAN_C:
-                    source = decodeBoolean(encoded, targetType);
+                    source = decodeBoolean(encoded);
                     break;
                 case TIMESTAMP_FLOAT64_SECS_2000_NOTZ: // Types.TIMESTAMP
-                    source = decodeTimestampFloat64Secs2000NoTZ(encoded, targetType);
+                    source = decodeTimestampFloat64Secs2000NoTZ(encoded);
                     break;
                 case TIMESTAMP_INT64_MICROS_2000_NOTZ: // Types.TIMESTAMP
-                    source = decodeTimestampInt64Micros2000NoTZ(encoded, targetType);
+                    source = decodeTimestampInt64Micros2000NoTZ(encoded);
                     break;
                 case DAYS_2000: // DATE
-                    source = decodeDays2000(encoded, targetType);
+                    source = decodeDays2000(encoded);
                     break;
                 case TIME_FLOAT64_SECS_NOTZ: // TIME
-                    source = decodeTimeFloat64SecsNoTZ(encoded, targetType);
+                    source = decodeTimeFloat64SecsNoTZ(encoded);
                     break;
                 case TIME_INT64_MICROS_NOTZ: // TIME
-                    source = decodeTimeInt64MicrosNoTZ(encoded, targetType);
+                    source = decodeTimeInt64MicrosNoTZ(encoded);
                     break;
                 case DECIMAL_PG_NUMERIC_VAR:
-                    source = decodeDecimalPgNumericVar(encoded, targetType);
+                    source = decodeDecimalPgNumericVar(encoded);
                     break;
+                // TODO GUID
                 default:
                     source = new Value(targetType);
                     assert false : "TODO default case";
@@ -199,11 +202,17 @@ public class ServerValueDecoder
 //
 //        source = ValueSources.valuefromObject(value, targetType,
 //                queryContext);
-
-        bindings.setValue(index, source);
+        TCast cast = typesRegistryService.getCastsResolver().cast(source.getType(), targetType);
+        TExecutionContext context =
+                new TExecutionContext(Collections.singletonList(source.getType()),
+                        targetType,
+                        queryContext);
+        Value target = new Value(targetType);
+        cast.evaluate(context, source, target);
+        bindings.setValue(index, target);
     }
 
-    private ValueSource decodeBinaryOctalText(byte[] encoded, TInstance targetType) {
+    private ValueSource decodeBinaryOctalText(byte[] encoded) {
         // if (targetType.typeClass() instanceof TString)
         //     value = new String(encoded, encoding);
         // else
@@ -212,7 +221,7 @@ public class ServerValueDecoder
         return null;
     }
 
-    private ValueSource decodeTimeInt64MicrosNoTZ(byte[] encoded, TInstance targetType) {
+    private ValueSource decodeTimeInt64MicrosNoTZ(byte[] encoded) {
         // lvalue = timeSecsNoTZ((int)(getDataStream(encoded).readLong() / 1000000L));
         // lvalueType = Types.TIME;
 
@@ -220,49 +229,49 @@ public class ServerValueDecoder
         return null;
     }
 
-    private ValueSource decodeTimeFloat64SecsNoTZ(byte[] encoded, TInstance targetType) {
+    private ValueSource decodeTimeFloat64SecsNoTZ(byte[] encoded) {
         // lvalue = timeSecsNoTZ((int)getDataStream(encoded).readDouble());
         // lvalueType = Types.TIME;
         assert false : "handle decodeTimeFloat64SecsNoTZ";
         return null;
     }
 
-    private ValueSource decodeDays2000(byte[] encoded, TInstance targetType) {
+    private ValueSource decodeDays2000(byte[] encoded) {
         // lvalue = days2000(getDataStream(encoded).readInt());
 
         assert false : "handle decodeDays2000";
         return null;
     }
 
-    private ValueSource decodeBoolean(byte[] encoded, TInstance targetType) {
+    private ValueSource decodeBoolean(byte[] encoded) {
         // getDataStream(encoded).readDouble();
 
         assert false : "handle decodeBoolean";
         return null;
     }
 
-    private ValueSource decodeDouble(byte[] encoded, TInstance targetType) {
+    private ValueSource decodeDouble(byte[] encoded) {
         // getDataStream(encoded).readDouble();
 
         assert false : "handle decodeDouble";
         return null;
     }
 
-    private ValueSource decodeString(byte[] encoded, TInstance targetType) {
+    private ValueSource decodeString(byte[] encoded) {
         // new String(encoded, encoding)
 
         assert false : "handle decodeString";
         return null;
     }
 
-    private ValueSource decodeFloat(byte[] encoded, TInstance targetType) {
+    private ValueSource decodeFloat(byte[] encoded) {
         // getDataStream(encoded).readFloat();
 
         assert false : "handle decodeFloat";
         return null;
     }
 
-    private ValueSource decodeDecimalPgNumericVar(byte[] encoded, TInstance targetType) {
+    private ValueSource decodeDecimalPgNumericVar(byte[] encoded) {
 //
 //        DataInputStream dstr = getDataStream(encoded);
 //        short ndigits = dstr.readShort();
@@ -276,7 +285,7 @@ public class ServerValueDecoder
         return null;
     }
 
-    private ValueSource decodeTimestampInt64Micros2000NoTZ(byte[] encoded, TInstance targetType) {
+    private ValueSource decodeTimestampInt64Micros2000NoTZ(byte[] encoded) {
 //
 //        long micros = getDataStream(encoded).readLong();
 //        long secs = micros / 1000000;
@@ -288,7 +297,7 @@ public class ServerValueDecoder
         return null;
     }
 
-    private ValueSource decodeTimestampFloat64Secs2000NoTZ(byte[] encoded, TInstance targetType) {
+    private ValueSource decodeTimestampFloat64Secs2000NoTZ(byte[] encoded) {
 //
 //            double dsecs = getDataStream(encoded).readDouble();
 //            long secs = (long)dsecs;
@@ -300,55 +309,19 @@ public class ServerValueDecoder
         return null;
     }
 
-    public ValueSource decodeIntegerType(byte[] encoded, TInstance targetType) throws IOException {
-        long lvalue;
+    public ValueSource decodeIntegerType(byte[] encoded) throws IOException {
+        // TODO unsigned?
         switch (encoded.length) {
         case 1:
-            lvalue = getDataStream(encoded).read();
-            break;
+            return new Value(MNumeric.TINYINT.instance(false), getDataStream(encoded).read());
         case 2:
-            lvalue = getDataStream(encoded).readShort();
-            break;
+            return new Value(MNumeric.SMALLINT.instance(false), getDataStream(encoded).readShort());
         case 4:
-            lvalue = getDataStream(encoded).readInt();
-            break;
+            return new Value(MNumeric.INT.instance(false), getDataStream(encoded).readInt());
         case 8:
-            lvalue = getDataStream(encoded).readLong();
-            break;
+            return new Value(MNumeric.BIGINT.instance(false), getDataStream(encoded).readLong());
         default:
             throw new AkibanInternalException("Not an integer size: " + encoded);
-        }
-        UnderlyingType underlyingType = TInstance.underlyingType(targetType);
-
-        Value source = new Value(targetType);
-        if (underlyingType == null) {
-            assert false : "handle null; value must be null if type is null";
-        }
-        switch (underlyingType) {
-            case BOOL:
-                source.putBool(lvalue != 0);
-                return source;
-            case INT_8:
-            case INT_16:
-            case UINT_16:
-            case INT_32:
-            case INT_64:
-                typesTranslator.setIntegerValue(source, lvalue);
-                return source;
-            case FLOAT:
-                assert false : "implement int to float";
-            case DOUBLE:
-                assert false : "implement int to double";
-            case BYTES:
-                source.putBytes(encoded);
-                return source;
-            case STRING:
-                // TODO: verify that this is ok to be null. valueFromObject used null if the underlyingType was string
-                // and StringFactory.NULL_COLLATION_ID if the underlyingType was null
-                source.putString(Long.toString(lvalue), null);
-                return source;
-            default:
-                throw new UnknownDataTypeException(underlyingType.toString());
         }
     }
 
