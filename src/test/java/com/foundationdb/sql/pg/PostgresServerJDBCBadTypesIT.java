@@ -55,8 +55,11 @@ import static org.junit.Assert.fail;
  * for example, at the time of this writing, setBoolean does a text transfer
  * with "0" or "1"
  */
-public class PostgresServerJDBCBinaryTypesIT extends PostgresServerITBase
+@RunWith(SelectedParameterizedRunner.class)
+public class PostgresServerJDBCBadTypesIT extends PostgresServerITBase
 {
+
+    private final Boolean binary;
 
     @Before
     public void createTable() throws Exception {
@@ -78,6 +81,16 @@ public class PostgresServerJDBCBinaryTypesIT extends PostgresServerITBase
             new SimpleColumn("col_guid", "AKSQL_ GUID"),
         };
         createTableFromTypes(SCHEMA_NAME, "types", false, false, columns);
+    }
+
+
+    @Parameters(name="{0}")
+    public static Iterable<Object[]> types() throws Exception {
+        return Arrays.asList(new Object[]{"Binary", true}, new Object[]{"Text", false});
+    }
+
+    public PostgresServerJDBCBadTypesIT(String name, Boolean binary) {
+        this.binary = binary;
     }
 
     private PreparedStatement setStmt(String columnName) throws Exception {
@@ -109,6 +122,14 @@ public class PostgresServerJDBCBinaryTypesIT extends PostgresServerITBase
         set.setShort(1, (short)34);
         set.executeUpdate();
         checkValue("col_bigint", 34L, Types.BIGINT);
+    }
+
+    @Test
+    public void testSetDateWithLong() throws Exception {
+        PreparedStatement set = setStmt("col_datetime");
+        set.setLong(1, (long)2008);
+        set.executeUpdate();
+        checkValue("col_datetime", null, Types.DATE);
     }
 
     @Test
@@ -172,7 +193,7 @@ public class PostgresServerJDBCBinaryTypesIT extends PostgresServerITBase
     @Override
     protected String getConnectionURL() {
         // loglevel=2 is also useful for seeing what's really happening.
-        return super.getConnectionURL() + "?prepareThreshold=1&binaryTransfer=" + true;
+        return super.getConnectionURL() + "?prepareThreshold=1&binaryTransfer=" + binary;
     }
 
     protected static Object asObject(Object value, int jdbcType) {
