@@ -48,11 +48,12 @@ import static org.junit.Assert.fail;
  * Test using various JDBC <code>set</code> and <code>get</code> methods.
  */
 @RunWith(SelectedParameterizedRunner.class)
-public class PostgresServerJDBCTypesIT extends PostgresServerITBase
+public abstract class PostgresServerJDBCTypesIT extends PostgresServerITBase
 {
 
     @Before
     public void createTable() throws Exception {
+        // TODO unsigned
         SimpleColumn columns[] = {
             new SimpleColumn("col_boolean", "AKSQL_ boolean"),
             new SimpleColumn("col_tinyint", "MCOMPAT_ tinyint"),
@@ -71,6 +72,19 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
         };
         createTableFromTypes(SCHEMA_NAME, "types", false, false, columns);
     }
+
+    @Before
+    public void ensureCorrectConnectionType() throws Exception {
+        forgetConnection();
+    }
+
+    @Override
+    protected String getConnectionURL() {
+        // loglevel=2 is also useful for seeing what's really happening.
+        return super.getConnectionURL() + "?prepareThreshold=1&binaryTransfer=" + binaryTransfer();
+    }
+
+    protected abstract boolean binaryTransfer();
 
     /**
      *
