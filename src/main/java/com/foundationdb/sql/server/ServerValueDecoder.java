@@ -20,6 +20,7 @@ package com.foundationdb.sql.server;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.UnknownDataTypeException;
 import com.foundationdb.server.error.UnsupportedCharsetException;
 import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TExecutionContext;
@@ -67,7 +68,10 @@ public class ServerValueDecoder
         int lvalueType = Types.NULL;
         ValueSource source;
         if (encoded == null) {
-            source = new Value(null);
+            Value value = new Value(targetType);
+            value.putNull();
+            bindings.setValue(index, value);
+            return;
         }
         else if (!binary) {
             try {
@@ -123,14 +127,7 @@ public class ServerValueDecoder
                     break;
                 // TODO GUID
                 default:
-                    source = new Value(targetType);
-                    assert false : "TODO default case";
-                    return;
-//                    if (targetType.typeClass() instanceof TString)
-//                        value = new String(encoded, encoding);
-//                    else
-//                        value = encoded;
-//                    break;
+                    throw new UnknownDataTypeException(type.toString());
                 }
             }
             catch (UnsupportedEncodingException ex) {
