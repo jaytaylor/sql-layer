@@ -382,7 +382,8 @@ public class AISMerge {
         }
 
         if(index.getIndexMethod() == Index.IndexMethod.Z_ORDER_LAT_LON) {
-            newIndex.markSpatial(index.firstSpatialArgument(), index.dimensions());
+            newIndex.markSpatial(index.firstSpatialArgument(),
+                                 index.lastSpatialArgument() - index.firstSpatialArgument() + 1);
         }
 
         if(curIndex != null) {

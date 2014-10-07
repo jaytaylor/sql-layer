@@ -715,14 +715,14 @@ public class ApiTestBase {
     }
 
     protected final TableIndex createSpatialTableIndex(String schema, String table, String indexName,
-                                                       int firstSpatialArgument, int dimensions,
+                                                       int firstSpatialArgument, int spatialColumns,
                                                        String... indexCols) {
         StringBuilder cols = new StringBuilder();
         for (int i = 0; i < indexCols.length; i++) {
             if (i > 0) cols.append(",");
             if (i == firstSpatialArgument) cols.append("Z_ORDER_LAT_LON(");
             cols.append(indexCols[i]);
-            if (i == firstSpatialArgument + dimensions - 1) cols.append(")");
+            if (i == firstSpatialArgument + spatialColumns - 1) cols.append(")");
         }
         createIndexInternal(schema, table, indexName, cols.toString());
         return ddl().getTable(session(), new TableName(schema, table)).getIndex(indexName);

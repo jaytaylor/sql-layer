@@ -530,6 +530,7 @@ public class ProtobufWriter {
         if (index.getIndexMethod() == Index.IndexMethod.Z_ORDER_LAT_LON) {
             indexBuilder.
                     setFirstSpatialArg(index.firstSpatialArgument()).
+                    setLastSpatialArg(index.lastSpatialArgument()).
                     setDimensions(index.dimensions());
 
         }

@@ -37,43 +37,53 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import static com.foundationdb.qp.operator.API.cursor;
 import static com.foundationdb.qp.operator.API.indexScan_Default;
 import static java.lang.Math.abs;
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-public class SpatialLatLonTableIndexScanIT extends OperatorITBase
+@Ignore
+public class BoxTableIndexScanIT extends OperatorITBase
 {
     @Override
     protected void setupCreateSchema()
     {
-        point = createTable(
-            "schema", "point",
+        box = createTable(
+            "schema", "box",
             "id int not null",
             "before int not null", // id mod 3
             "after int not null", // id mod 5
             "lat decimal(11, 7)",
             "lon decimal(11, 7)",
+            "box_blob blob",
             "primary key(id)");
-        createSpatialTableIndex("schema", "point", "lat_lon", 0, 2, "lat", "lon");
-        createSpatialTableIndex("schema", "point", "before_lat_lon", 1, 2, "before", "lat", "lon");
-        createSpatialTableIndex("schema", "point", "lat_lon_after", 0, 2, "lat", "lon", "after");
-        createSpatialTableIndex("schema", "point", "before_lat_lon_after", 1, 2, "before", "lat", "lon", "after");
+        createSpatialTableIndex("schema", "box", "idx_box_blob", 0, 2, "box_blob");
     }
 
     @Override
     protected void setupPostCreateSchema()
     {
         schema = new Schema(ais());
-        pointRowType = schema.tableRowType(table(point));
-        pointOrdinal = pointRowType.table().getOrdinal();
-        latLonIndexRowType = indexType(point, "lat", "lon");
-        beforeLatLonIndexRowType = indexType(point, "before", "lat", "lon");
-        latLonAfterIndexRowType = indexType(point, "lat", "lon", "after");
-        beforeLatLonAfterIndexRowType = indexType(point, "before", "lat", "lon", "after");
+        boxRowType = schema.tableRowType(table(box));
+        boxOrdinal = boxRowType.table().getOrdinal();
+        latLonIndexRowType = indexType(box, "box_blob");
         space = SpaceLatLon.create();
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
@@ -146,7 +156,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
             // Delete rows with odd ids
             for (Integer id : zToId.values()) {
                 if ((id % 2) == 1) {
-                    dml().deleteRow(session(), createNewRow(point,
+                    dml().deleteRow(session(), createNewRow(box,
                                                             id,
                                                             before(id),
                                                             after(id),
@@ -245,8 +255,8 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
             for (int id = 0; id < n; id++) {
                 BigDecimal lat = lats.get(id);
                 BigDecimal lon = lons.get(id);
-                NewRow before = createNewRow(point, id, before(id), after(id), lat, lon);
-                NewRow after = createNewRow(point, id, before(id), after(id), lat, lon.add(BigDecimal.ONE));
+                NewRow before = createNewRow(box, id, before(id), after(id), lat, lon);
+                NewRow after = createNewRow(box, id, before(id), after(id), lat, lon.add(BigDecimal.ONE));
                 long z = space.shuffle(lat, lon.add(BigDecimal.ONE));
                 zToId.put(z, id);
                 dml().updateRow(session(), before, after, null);
@@ -774,7 +784,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
             for (long x = LON_LO; x < LON_HI; x += DLON) {
                 BigDecimal lat = new BigDecimal(y);
                 BigDecimal lon = new BigDecimal(x);
-                dml().writeRow(session(), createNewRow(point, id, before(id),  after(id), lat, lon));
+                dml().writeRow(session(), createNewRow(box, id, before(id),  after(id), lat, lon));
                 long z = space.shuffle(SpaceLatLon.scaleLat(lat), SpaceLatLon.scaleLon(lon));
                 zToId.put(z, id);
                 lats.add(lat);
@@ -821,7 +831,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
 
     private String expectedHKey(int id)
     {
-        return String.format("{%s,(long)%s}", pointOrdinal, id);
+        return String.format("{%s,(long)%s}", boxOrdinal, id);
     }
 
     private long[][] sort(long[][] a)
@@ -874,9 +884,9 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
     private static final int DLAT = 10;
     private static final int DLON = 10;
 
-    private int point;
-    private TableRowType pointRowType;
-    private int pointOrdinal;
+    private int box;
+    private TableRowType boxRowType;
+    private int boxOrdinal;
     private IndexRowType latLonIndexRowType;
     private IndexRowType beforeLatLonIndexRowType;
     private IndexRowType latLonAfterIndexRowType;

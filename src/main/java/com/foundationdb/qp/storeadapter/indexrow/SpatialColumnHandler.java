@@ -44,12 +44,13 @@ public class SpatialColumnHandler
         coords = new long[dimensions];
         rowDataSource = new RowDataValueSource();
         firstSpatialField = index.firstSpatialArgument();
-        lastSpatialField = firstSpatialField + dimensions - 1;
-        for (int d = 0; d < dimensions; d++) {
-            IndexColumn indexColumn = index.getKeyColumns().get(firstSpatialField + d);
+        lastSpatialField = index.lastSpatialArgument();
+        int spatialColumns = lastSpatialField - firstSpatialField + 1;
+        for (int c = 0; c < spatialColumns; c++) {
+            IndexColumn indexColumn = index.getKeyColumns().get(firstSpatialField + c);
             Column column = indexColumn.getColumn();
-            tinstances[d] = column.getType();
-            fieldDefs[d] = column.getFieldDef();
+            tinstances[c] = column.getType();
+            fieldDefs[c] = column.getFieldDef();
         }
     }
 
