@@ -24,8 +24,10 @@ import com.foundationdb.server.error.UnsupportedCharsetException;
 import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.common.types.TBinary;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
+import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.service.TypesRegistryService;
@@ -79,7 +81,7 @@ public class ServerValueDecoder
             try {
                 switch (type.getBinaryEncoding()) {
                 case BINARY_OCTAL_TEXT:
-                    source = decodeBinaryOctalText(encoded);
+                    source = new Value(MBinary.VARBINARY.instance(false), encoded);
                     break;
                 case INT_8:
                 case INT_16:
@@ -206,15 +208,6 @@ public class ServerValueDecoder
         Value target = new Value(targetType);
         cast.evaluate(context, source, target);
         bindings.setValue(index, target);
-    }
-
-    private ValueSource decodeBinaryOctalText(byte[] encoded) {
-        // if (targetType.typeClass() instanceof TString)
-        //     value = new String(encoded, encoding);
-        // else
-        //     value = encoded;
-        assert false : "handle decodeBinaryOctalText";
-        return null;
     }
 
     private ValueSource decodeTimeInt64MicrosNoTZ(byte[] encoded) {
