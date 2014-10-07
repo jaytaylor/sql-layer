@@ -20,22 +20,17 @@ package com.foundationdb.sql.server;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.error.AkibanInternalException;
-import com.foundationdb.server.error.InvalidParameterValueException;
-import com.foundationdb.server.error.UnknownDataTypeException;
 import com.foundationdb.server.error.UnsupportedCharsetException;
 import com.foundationdb.server.types.TCast;
-import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.service.TypesRegistryService;
-import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
-import com.foundationdb.server.types.value.ValueSources;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -97,7 +92,7 @@ public class ServerValueDecoder
                     source = decodeFloat(encoded);
                     break;
                 case FLOAT_64:
-                    source = decodeDouble(encoded);
+                    source = new Value(MApproximateNumber.DOUBLE.instance(false), getDataStream(encoded).readDouble());
                     break;
                 case STRING_BYTES:
                     source = decodeString(encoded);
@@ -247,13 +242,6 @@ public class ServerValueDecoder
         // getDataStream(encoded).readDouble();
 
         assert false : "handle decodeBoolean";
-        return null;
-    }
-
-    private ValueSource decodeDouble(byte[] encoded) {
-        // getDataStream(encoded).readDouble();
-
-        assert false : "handle decodeDouble";
         return null;
     }
 
