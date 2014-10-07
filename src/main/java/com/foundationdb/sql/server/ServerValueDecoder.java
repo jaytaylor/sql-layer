@@ -89,7 +89,8 @@ public class ServerValueDecoder
                     source = decodeIntegerType(encoded);
                     break;
                 case FLOAT_32:
-                    source = decodeFloat(encoded);
+
+                    source = new Value(MApproximateNumber.FLOAT.instance(false), getDataStream(encoded).readFloat());
                     break;
                 case FLOAT_64:
                     source = new Value(MApproximateNumber.DOUBLE.instance(false), getDataStream(encoded).readDouble());
@@ -249,13 +250,6 @@ public class ServerValueDecoder
         // new String(encoded, encoding)
 
         assert false : "handle decodeString";
-        return null;
-    }
-
-    private ValueSource decodeFloat(byte[] encoded) {
-        // getDataStream(encoded).readFloat();
-
-        assert false : "handle decodeFloat";
         return null;
     }
 
