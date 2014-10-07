@@ -482,7 +482,9 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         AkibanInformationSchema aisForChange = getAISForChange(session);
         List<String> affectedSchemas = new ArrayList<>();
         for (String schemaName : aisForChange.getSchemas().keySet()) {
-            affectedSchemas.add(schemaName);
+            if (!TableName.inSystemSchema(schemaName)) {
+                affectedSchemas.add(schemaName);
+            }
         }
         AkibanInformationSchema newAIS = aisCloner.clone(aisForChange,
                 new ProtobufWriter.WriteSelector() {
