@@ -26,7 +26,6 @@ import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.RowOutput;
 import com.foundationdb.server.api.dml.scan.ScanAllRequest;
 import com.foundationdb.server.api.dml.scan.ScanFlag;
-import com.foundationdb.sql.RegexFilenameFilter;
 
 import org.junit.Ignore;
 

@@ -127,7 +127,6 @@ class Project_Default extends Operator
         this.inputOperator = inputOperator;
         this.rowType = rowType;
         this.pExpressions = pExpressions;
-        this.tInstances = TInstance.createTInstances(pExpressions);
         this.projectType = rowType.schema().newProjectType(pExpressions);
     }
 
@@ -147,7 +146,6 @@ class Project_Default extends Operator
                                                     projectTableRowType.table(),
                                                     pExpressions);
         this.pExpressions = pExpressions; // TODO defensively copy once the old expressions are gone (until then, this may NPE)
-        this.tInstances = TInstance.createTInstances(pExpressions);
     }
 
 
@@ -162,7 +160,6 @@ class Project_Default extends Operator
     protected final Operator inputOperator;
     protected final RowType rowType;
     private final List<? extends TPreparedExpression> pExpressions;
-    private final List<? extends TInstance> tInstances;
     protected ProjectedRowType projectType;
 
     @Override
@@ -192,10 +189,7 @@ class Project_Default extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-                input.open();
-                idle = false;
-
+                super.open();
             } finally {
                 TAP_OPEN.out();
             }
@@ -217,11 +211,11 @@ class Project_Default extends Operator
                 if ((inputRow = input.next()) != null) {
                     projectedRow =
                         inputRow.rowType() == rowType
-                        ? new ProjectedRow(projectType, inputRow, context, bindings, pEvalExpr, tInstances)
+                        ? new ProjectedRow(projectType, inputRow, context, bindings, pEvalExpr)
                         : inputRow;
                 }
                 if (projectedRow == null) {
-                    close();
+                    setIdle();
                 }
                 if (LOG_EXECUTION) {
                     LOG.debug("Project_Default: yield {}", projectedRow);
@@ -234,41 +228,6 @@ class Project_Default extends Operator
             }
         }
 
-        @Override
-        public void close()
-        {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (!idle) {
-                input.close();
-                idle = true;
-            }
-        }
-
-        @Override
-        public void destroy()
-        {
-            close();
-            input.destroy();
-            pEvalExpr = null;
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return !input.isDestroyed() && idle;
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return !input.isDestroyed() && !idle;
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return input.isDestroyed();
-        }
 
         // Execution interface
 
@@ -283,7 +242,6 @@ class Project_Default extends Operator
         }
 
         // Object state
-        private boolean idle = true;
         private List<TEvaluatableExpression> pEvalExpr = null;
     }
 }

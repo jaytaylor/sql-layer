@@ -162,8 +162,8 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
             }
         }
         finally {
-            if (cursor != null)
-                cursor.destroy();
+            if (cursor != null && !cursor.isClosed())
+                cursor.closeTopLevel();
             if (transaction)
                 transactionService.rollbackTransaction(session);
         }

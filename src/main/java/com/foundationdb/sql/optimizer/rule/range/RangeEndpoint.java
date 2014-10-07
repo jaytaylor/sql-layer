@@ -18,6 +18,7 @@
 package com.foundationdb.sql.optimizer.rule.range;
 
 import com.foundationdb.sql.optimizer.plan.ConstantExpression;
+import com.foundationdb.sql.optimizer.plan.ExpressionNode;
 
 public abstract class RangeEndpoint implements Comparable<RangeEndpoint> {
 
@@ -57,6 +58,14 @@ public abstract class RangeEndpoint implements Comparable<RangeEndpoint> {
         return new ValueEndpoint(value, false);
     }
 
+    public static ValueEndpoint nullExclusive(ExpressionNode nodeOfMatchingType) {
+        return exclusive(nullConstantExpression(nodeOfMatchingType));
+    }
+
+    public static RangeEndpoint nullInclusive(ExpressionNode nodeOfMatchingType) {
+        return inclusive(nullConstantExpression(nodeOfMatchingType));
+    }
+
     public static RangeEndpoint of(ConstantExpression value, boolean inclusive) {
         return new ValueEndpoint(value, inclusive);
     }
@@ -89,6 +98,11 @@ public abstract class RangeEndpoint implements Comparable<RangeEndpoint> {
             return ComparisonResult.GT_BARELY;
         }
         return comparison;
+    }
+
+    private static ConstantExpression nullConstantExpression(ExpressionNode nodeOfMatchingType) {
+        return ConstantExpression.typedNull(nodeOfMatchingType.getSQLtype(), nodeOfMatchingType.getSQLsource(),
+                nodeOfMatchingType.getType());
     }
 
     @SuppressWarnings("unchecked") // We know that oneT and twoT are both Comparables of the same class.
@@ -130,8 +144,7 @@ public abstract class RangeEndpoint implements Comparable<RangeEndpoint> {
     }
 
     public static final RangeEndpoint UPPER_WILD = new Wild();
-    public static final RangeEndpoint NULL_EXCLUSIVE = exclusive(ConstantExpression.typedNull(null, null, null));
-    public static final RangeEndpoint NULL_INCLUSIVE = inclusive(NULL_EXCLUSIVE.getValueExpression());
+
 
     private static class Wild extends RangeEndpoint {
 

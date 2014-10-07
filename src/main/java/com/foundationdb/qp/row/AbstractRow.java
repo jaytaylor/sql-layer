@@ -64,7 +64,11 @@ public abstract class AbstractRow implements Row
     public abstract HKey hKey();
 
     @Override
-    public abstract ValueSource value(int i);
+    public final ValueSource value(int i) {
+        return checkValueType(i, uncheckedValue(i));
+    }
+
+    protected abstract ValueSource uncheckedValue(int i);
     
     @Override
     public HKey ancestorHKey(Table table)
@@ -88,6 +92,11 @@ public abstract class AbstractRow implements Row
     public Row subRow(RowType subRowType)
     {
         return rowType() == subRowType ? this : null;
+    }
+
+    @Override
+    public boolean isBindingsSensitive() {
+        return true;
     }
 
     @Override
@@ -115,6 +124,19 @@ public abstract class AbstractRow implements Row
 
     public RowData rowData() {
         throw new UnsupportedOperationException();
+    }
+
+
+    private ValueSource checkValueType(int i, ValueSource nextValue) {
+        if (DEBUG_ROWTYPE) {
+            TInstance nextValueType = nextValue.getType();
+            TInstance expectedTInst = rowType().typeAt(i);
+            if (expectedTInst == null && !nextValue.isNull())
+                throw new RowType.InconsistentRowTypeException(i, nextValue.getObject());
+            if (TInstance.tClass(nextValueType) != TInstance.tClass(expectedTInst))
+                throw new RowType.InconsistentRowTypeException(i, expectedTInst, nextValueType, nextValue);
+        }
+        return nextValue;
     }
 
     // Object state

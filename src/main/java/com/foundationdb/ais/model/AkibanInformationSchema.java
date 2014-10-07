@@ -499,7 +499,7 @@ public class AkibanInformationSchema implements Visitable
     // State
 
     private static String defaultCharsetName = "utf8";
-    private static String defaultCollationName = "utf8_bin";
+    private static String defaultCollationName = "UCS_BINARY";
 
     private final int charsetId, collationId;
     private final Map<TableName, Group> groups = new TreeMap<>();

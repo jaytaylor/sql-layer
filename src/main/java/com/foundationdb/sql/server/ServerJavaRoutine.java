@@ -23,9 +23,6 @@ import java.util.Queue;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.CacheValueGenerator;
 import com.foundationdb.ais.model.Parameter;
-import com.foundationdb.direct.Direct;
-import com.foundationdb.direct.DirectClassLoader;
-import com.foundationdb.direct.DirectContextImpl;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.explain.Explainable;
 
@@ -59,14 +56,9 @@ public abstract class ServerJavaRoutine implements Explainable
 
     public void push() {
         ServerCallContextStack.get().push(context, invocation);
-        AkibanInformationSchema ais = context.getServer().getAIS();
-        if (context.getServer().isDirectEnabled())
-            Direct.enter(context.getCurrentSchema(), ais);
     }
 
     public void pop(boolean success) {
-        if (context.getServer().isDirectEnabled())
-            Direct.leave();
         ServerCallContextStack.get().pop(context, invocation, success);
     }
 

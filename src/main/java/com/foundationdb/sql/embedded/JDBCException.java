@@ -49,7 +49,7 @@ public class JDBCException extends SQLException
     }
 
     // Allow outer layer to throw SQLException through inner layer that does not.
-    private static class Wrapper extends RuntimeException {
+    protected static class Wrapper extends RuntimeException {
         public Wrapper(SQLException cause) {
             super(cause);
         }

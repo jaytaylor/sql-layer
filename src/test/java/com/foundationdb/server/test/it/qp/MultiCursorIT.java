@@ -175,27 +175,15 @@ public class MultiCursorIT extends OperatorITBase
         }
 
         @Override
-        public void destroy()
-        {
-            items = null;
-        }
-
-        @Override
         public boolean isIdle()
         {
-            return !isDestroyed() && position == items.length;
+            return position == items.length;
         }
 
         @Override
         public boolean isActive()
         {
-            return !isDestroyed() && position < items.length;
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return items == null;
+            return position < items.length;
         }
 
         // TestCursor interface
@@ -216,5 +204,14 @@ public class MultiCursorIT extends OperatorITBase
 
         private int[] items;
         private int position;
+        @Override
+        public boolean isClosed() {
+            return position == items.length;
+        }
+
+        @Override
+        public void setIdle() {
+            
+        }
     }
 }

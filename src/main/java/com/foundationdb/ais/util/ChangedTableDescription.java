@@ -51,6 +51,7 @@ public class ChangedTableDescription {
     private final Map<String,String> preserveIndexes;
     private final Collection<TableName> droppedSequences;
     private final Collection<String> identityAdded;
+    private final Collection<String> indexesAdded;
     private final boolean isTableAffected;
     private final boolean isPKAffected;
 
@@ -62,7 +63,7 @@ public class ChangedTableDescription {
     public ChangedTableDescription(int tableID, TableName tableName, Table newDefinition, Map<String,String> colNames,
                                    ParentChange parentChange, TableName parentName, Map<String,String> parentColNames,
                                    Map<String, String> preserveIndexes, Collection<TableName> droppedSequences,
-                                   Collection<String> identityAdded,
+                                   Collection<String> identityAdded, Collection<String> indexesAdded,
                                    boolean isTableAffected, boolean isPKAffected) {
         ArgumentValidation.notNull("tableName", tableName);
         ArgumentValidation.notNull("preserveIndexes", preserveIndexes);
@@ -76,6 +77,7 @@ public class ChangedTableDescription {
         this.preserveIndexes = preserveIndexes;
         this.droppedSequences = droppedSequences;
         this.identityAdded = identityAdded;
+        this.indexesAdded = indexesAdded;
         this.isTableAffected = isTableAffected;
         this.isPKAffected = isPKAffected;
     }
@@ -122,6 +124,10 @@ public class ChangedTableDescription {
 
     public Collection<String> getIdentityAdded() {
         return identityAdded;
+    }
+
+    public Collection<String> getIndexesAdded() {
+        return indexesAdded;
     }
 
     public boolean isTableAffected() {

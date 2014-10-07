@@ -16,12 +16,17 @@
  */
 package com.foundationdb.server.collation;
 
+import java.nio.charset.Charset;
+import java.util.Arrays;
+
+import com.foundationdb.server.types.common.types.StringFactory;
 import com.persistit.Key;
 
 public class AkCollatorBinary extends AkCollator {
+    private final Charset UTF8 = Charset.forName("UTF8");
 
     public AkCollatorBinary() {
-        super(AkCollatorFactory.UCS_BINARY, AkCollatorFactory.UCS_BINARY, 0);
+        super(AkCollatorFactory.UCS_BINARY, 0);
     }
     
     @Override
@@ -34,23 +39,18 @@ public class AkCollatorBinary extends AkCollator {
         key.append(value);
     }
 
-    @Override
-    public String decode(Key key) {
-        return key.decodeString();
-    }
-
     /**
      * Append the given value to the given key.
      */
     public byte[] encodeSortKeyBytes(String value) {
-        throw new UnsupportedOperationException("No sort key encoding for binary collation");
+        return value.getBytes(UTF8);
     }
 
     /**
      * Recover the value or throw an unsupported exception.
      */
-    public String decodeSortKeyBytes(byte[] bytes, int index, int length) {
-        throw new UnsupportedOperationException("No sort key encoding for binary collation");
+    public String debugDecodeSortKeyBytes(byte[] bytes, int index, int length) {
+        return internalDecodeSortKeyBytes(bytes, index, length);
     }
 
     @Override
@@ -65,11 +65,20 @@ public class AkCollatorBinary extends AkCollator {
 
     @Override
     public String toString() {
-        return getName();
+        return getScheme();
     }
 
     @Override
     public int hashCode(String string) {
         return string.hashCode();
+    }
+
+    @Override
+    public int hashCode(byte[] bytes) {
+        return hashCode(internalDecodeSortKeyBytes(bytes, 0, bytes.length));
+    }
+
+    private String internalDecodeSortKeyBytes(byte[] bytes, int index, int length) {
+        return new String(bytes, index, length, UTF8);
     }
 }

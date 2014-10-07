@@ -17,12 +17,14 @@
 
 package com.foundationdb.server.types.value;
 
+import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
+import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
 import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
@@ -38,6 +40,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.UUID;
 
 public final class ValueSources {
 
@@ -73,6 +76,10 @@ public final class ValueSources {
     }
 
     public static Value valuefromObject(Object object, TInstance type) {
+        return valuefromObject(object, type, null);
+    }
+
+    public static Value valuefromObject(Object object, TInstance type, QueryContext queryContext) {
         Value value = new Value(type);
         if (object == null) {
             value.putNull();
@@ -115,6 +122,9 @@ public final class ValueSources {
                     value.putBytes(((ByteSource)object).toByteSubarray());
                 break;
             case STRING:
+                if(!(object instanceof CharSequence || object instanceof Number)) {
+                    throw new IllegalArgumentException("Unsafe toString(): " + object.getClass());
+                }
                 value.putString(object.toString(), null);
                 break;
             case BOOL:
@@ -127,21 +137,21 @@ public final class ValueSources {
             if (type == null) {
                 value = fromObject(object);
             } else {
-                value = convertFromObject(object, type);
+                value = convertFromObject(object, type, queryContext);
             }
         }
         return value;
     }
     
-    private static Value convertFromObject (Object object, TInstance type) {
+    private static Value convertFromObject (Object object, TInstance type, QueryContext queryContext) {
         Value in = fromObject(object);
         TInstance inType = in.getType();
         Value out = null;
         if (!inType.equals(type)) {
             TExecutionContext context =
                     new TExecutionContext(Collections.singletonList(in.getType()),
-                            type,
-                                null);
+                                          type,
+                                          queryContext);
             out = new Value(type);
             type.typeClass().fromObject(context, in, out);
         } else {
@@ -162,7 +172,7 @@ public final class ValueSources {
             if (value.getType() == null) {
                 return new TPreptimeValue(value.getType());
             }
-            return new TPreptimeValue(value.getType(), value);
+            return new TPreptimeValue(value);
         }
         return new TPreptimeValue (type,value);
     }
@@ -298,6 +308,14 @@ public final class ValueSources {
             }
             logger.error("MDecimal with underlying object of : {}", source.getObject().getClass());
         }
+        
+        if (source.getType().typeClass() == AkGUID.INSTANCE.widestComparable()) {
+            if (source.getObject() instanceof UUID) {
+                return (UUID) source.getObject();
+            }
+            logger.error("GUID with underlying object of : {}", source.getObject().getClass());
+        }
+        
         if (source.getType().typeClass() == MBinary.LONGBLOB ||
              source.getType().typeClass() == MBinary.BLOB ||
              source.getType().typeClass() == MBinary.MEDIUMBLOB ||
@@ -322,7 +340,7 @@ public final class ValueSources {
         }
     }
 
-    public static boolean areEqual(ValueSource one, ValueSource two, TInstance type) {
+    public static boolean areEqual(ValueSource one, ValueSource two) {
         TInstance oneType = one.getType();
         TInstance twoType = two.getType();
         if (oneType == null || twoType == null)
@@ -394,8 +412,7 @@ public final class ValueSources {
             hash = Arrays.hashCode(source.getBytes());
             break;
         case STRING:
-            String stringVal = AkCollator.getString(source, collator);
-            hash = collator.hashCode(stringVal);
+            hash = AkCollator.hashValue(source, collator);
             break;
         default:
             throw new AssertionError(source.getType());

@@ -18,7 +18,7 @@ subquery-join-1: join to subquery (with condition pushed down)
 
 subquery-join-2: WHERE pushed down for group index
 
-subquery-join-3: subquery with its own joining
+subquery-join-3: subquery with its own joining using Hash Table for one join
 
 three-groups: second group dividing two halves
 

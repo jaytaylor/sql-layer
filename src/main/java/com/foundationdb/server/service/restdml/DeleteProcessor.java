@@ -85,8 +85,8 @@ public class DeleteProcessor extends DMLProcessor {
                 cursor.closeTopLevel();
             }
         } finally {
-            if (cursor != null)
-                cursor.destroy();
+            if (cursor != null && !cursor.isClosed())
+                cursor.close();
 
         }
     }

@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.store.format.columnkeys;
 
-import com.foundationdb.Range;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Join;
@@ -44,10 +43,8 @@ import com.foundationdb.server.store.format.tuple.TupleRowDataConverter;
 import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.tuple.ByteArrayUtil;
-import com.foundationdb.tuple.Tuple;
 import com.foundationdb.tuple.Tuple2;
 import com.persistit.Key;
-import com.persistit.KeyShim;
 
 import java.util.HashMap;
 import java.util.List;
@@ -62,7 +59,7 @@ import static com.foundationdb.server.store.FDBStoreDataHelper.*;
  * The value is a single <code>Tuple</code> element.
  * Child rows follow immediately after the last parent column, due to
  * the tuple encoding using 02 for column name strings and 0C-1C for
- * orginal integers.
+ * ordinal integers.
  */
 public class ColumnKeysStorageDescription extends FDBStorageDescription
 {
@@ -80,6 +77,11 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
     @Override
     public StorageDescription cloneForObject(HasStorage forObject) {
         return new ColumnKeysStorageDescription(forObject, this, storageFormat);
+    }
+    
+    @Override
+    public StorageDescription cloneForObjectWithoutState(HasStorage forObject) {
+        return new ColumnKeysStorageDescription(forObject, storageFormat);
     }
 
     @Override
@@ -103,41 +105,16 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
     }
 
     @Override
-    public byte[] getKeyBytes(Key key) {
-        Key.EdgeValue edge = null;
-        int nkeys = key.getDepth();
-        if (KeyShim.isBefore(key)) {
-            edge = Key.BEFORE;
-            nkeys--;
-        }
-        else if (KeyShim.isAfter(key)) {
-            edge = Key.AFTER;
-            nkeys--;
-        }
-        // Get the base key prefix, all but column name.
-        Object[] keys = new Object[nkeys];
-        key.reset();
-        for (int i = 0; i < nkeys; i++) {
-            keys[i] = key.decode();
-        }
-        byte[] bytes = Tuple2.from(keys).pack();
-        if (edge == Key.BEFORE) {
-            // Meaning start with descendants.
-            return ByteArrayUtil.join(bytes, FIRST_NUMERIC);
-        }
-        else if (edge == Key.AFTER) {
-            if (nkeys == 0) {
-                return new byte[] { (byte)0xFF };
-            }
-            else {
-                return ByteArrayUtil.strinc(bytes);
-            }
-        }
-        else {
-            return bytes;
-        }
+    public byte[] getKeyBytes(Key key, FDBStoreData.NudgeDir nudged) {
+        assert nudged == null : "Nudge only expected during mixed mode index iteration";
+        return getKeyBytes(key);
     }
-
+    
+    @Override
+    public byte[] getKeyBytes(Key key ) {
+        return TupleStorageDescription.getKeyBytesInternal(key, null);
+    }
+        
     @Override
     public void getTupleKey(Tuple2 t, Key key) {
         key.clear();

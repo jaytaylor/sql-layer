@@ -220,11 +220,6 @@ public class QueryTimeoutIT extends OperatorITBase
             // Cursor interface
 
             @Override
-            public void open()
-            {
-            }
-
-            @Override
             public Row next()
             {
                 checkQueryCancelation();
@@ -236,14 +231,9 @@ public class QueryTimeoutIT extends OperatorITBase
                 return null;
             }
 
-            @Override
-            public void close()
-            {
-            }
-
             // Execution interface
 
-            Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
+            Execution(QueryContext context,QueryBindingsCursor bindingsCursor)
             {
                 super(context, bindingsCursor);
             }

@@ -1,0 +1,14 @@
+# Got a NPE in AISCloner.
+---
+- CreateTable: metadatum_names(id INT PRIMARY KEY, name VARCHAR(255) NOT NULL)
+---
+- CreateTable: metadatum_values(id INT PRIMARY KEY, metadatum_name_id INT NOT NULL, value VARCHAR(255) NOT NULL, GROUPING FOREIGN KEY(metadatum_name_id) REFERENCES metadatum_names(id))
+---
+- CreateTable: reports(id BIGINT PRIMARY KEY, date DATETIME, name VARCHAR(255))
+---
+- CreateTable: metadata(id BIGINT PRIMARY KEY, report_id INT, name VARCHAR(255), value VARCHAR(255), metadatum_value_id INT NOT NULL, GROUPING FOREIGN KEY(report_id) REFERENCES reports(id))
+---
+- Statement: CREATE INDEX reports_metadata_grouping ON metadata(name, reports.date, value, reports.name) USING RIGHT JOIN
+---
+- Statement: ALTER TABLE metadata ADD CONSTRAINT fk_metadatum_values_metadata FOREIGN KEY (metadatum_value_id) REFERENCES metadatum_values(id)
+...

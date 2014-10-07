@@ -141,7 +141,7 @@ public class Table extends Columnar implements HasGroup, Visitable
         return unmodifiableGroupIndexes;
     }
 
-    protected void addIndex(TableIndex index)
+    protected synchronized void addIndex(TableIndex index)
     {
         indexMap.put(index.getIndexName().getName(), index);
         if (index.isPrimaryKey()) {
@@ -162,7 +162,7 @@ public class Table extends Columnar implements HasGroup, Visitable
         groupIndexes.remove(groupIndex);
     }
 
-    public void removeIndexes(Collection<TableIndex> indexesToDrop) {
+    public synchronized void removeIndexes(Collection<TableIndex> indexesToDrop) {
         if((primaryKey != null) && indexesToDrop.contains(primaryKey.getIndex())) {
             primaryKey = null;
         }
@@ -500,13 +500,14 @@ public class Table extends Columnar implements HasGroup, Visitable
         if (hKeyDependentTables == null) {
             synchronized (lazyEvaluationLock) {
                 if (hKeyDependentTables == null) {
-                    hKeyDependentTables = new ArrayList<>();
+                    List<Table> hKeyDependentTablesTmp = new ArrayList<>();
                     for (Join join : getChildJoins()) {
                         Table child = join.getChild();
                         if (!child.containsOwnHKey()) {
-                            addTableAndDescendents(child, hKeyDependentTables);
+                            addTableAndDescendents(child, hKeyDependentTablesTmp);
                         }
                     }
+                    hKeyDependentTables = hKeyDependentTablesTmp;
                 }
             }
         }
@@ -772,7 +773,7 @@ public class Table extends Columnar implements HasGroup, Visitable
     private HKey hKey;
     private boolean containsOwnHKey;
     private List<Column> allHKeyColumns;
-    private Integer depth = null;
+    private volatile Integer depth = null;
     private volatile List<Table> hKeyDependentTables;
     private Integer version;
     private PendingOSC pendingOSC;

@@ -95,6 +95,7 @@ public class TimeOperator extends Operator
         @Override
         public void open()
         {
+            super.open();
             long start = System.nanoTime();
             input.open();
             long stop = System.nanoTime();
@@ -118,6 +119,7 @@ public class TimeOperator extends Operator
             input.close();
             long stop = System.nanoTime();
             elapsedNsec += stop - start;
+            super.close();
         }
 
         // Execution interface

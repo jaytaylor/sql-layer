@@ -1,89 +1,155 @@
 # Test collation (other than UCS_BINARY)
 ---
-- CreateTable: t (id INT PRIMARY KEY NOT NULL, s VARCHAR(32) CHARACTER SET latin1 COLLATE latin1_swedish_ci)
----
-- Statement: "INSERT INTO t(id, s)
-    VALUES (0, null), (1, 'alfa'), (2, 'charlie'), (3, 'BRAVO'), (4, '\u00c5ngstr\u00f6m'), (5, 'Zulu')"
----
-- Statement: SELECT id FROM t WHERE s > 'B'
-- output: [[2], [3], [4], [5]]
----
-- Statement: SELECT id FROM t WHERE s = 'Charlie'
-- output: [[2]]
----
-- Statement: SELECT * FROM t ORDER BY s
-- output_already_ordered: [[0, null], [1, 'alfa'], [3, 'BRAVO'], [2, 'charlie'], [5, 'Zulu'], [4, !unicode "\u00c5ngstr\u00f6m"]]
----
-- Statement: CREATE INDEX t_s ON t(s)
----
-- Statement: SELECT id FROM t WHERE s > 'B'
-- output: [[2], [3], [4], [5]]
----
-- Statement: SELECT id FROM t WHERE s = 'Charlie'
-- output: [[2]]
----
-- Statement: SELECT * FROM t ORDER BY s
-- output_already_ordered: [[0, null], [1, 'alfa'], [3, 'BRAVO'], [2, 'charlie'], [5, 'Zulu'], [4, !unicode "\u00c5ngstr\u00f6m"]]
----
-- Statement: DELETE FROM t
----
-- Statement: INSERT INTO t(id, s)
-    VALUES (1, 'aaa'), (2, 'aaa'), (3, 'bbb'), (4, 'BBB'), (5, 'AAA')
----
-- Statement: SELECT COUNT(DISTINCT s) FROM t
-- output: [[2]]
----
-- CreateTable: parent (name VARCHAR(10) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL PRIMARY KEY, i INT)
----
-- CreateTable: child (name VARCHAR(12) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL PRIMARY KEY, GROUPING FOREIGN KEY(name) REFERENCES parent(name), j INT)
----
-- Statement: INSERT INTO parent(name, i)
-    VALUES ('alfa', 1), ('charlie', 3), ('delta', 4)
----
-- Statement: INSERT INTO child(name, j)
-    VALUES ('alfa', 100), ('bravo', 200), ('Delta', 400)
----
-- Statement: EXPLAIN SELECT i, j FROM parent INNER JOIN child USING (name)
-- output: [['Project_Default(parent.i, child.j)'],
-           ['  Filter_Default(parent - child)'],
-           ['    Flatten_HKeyOrdered(parent INNER child)'],
-           ['      GroupScan_Default(parent)']]
----
-- Statement: SELECT i, j FROM parent INNER JOIN child USING (name)
-- output: [[1, 100],[4,400]]
----
-- Statement: SELECT i, j FROM parent LEFT JOIN child USING (name)
-- output: [[1, 100],[3,null],[4,400]]
----
-- Statement: SELECT i, j FROM parent RIGHT JOIN child USING (name)
-- output: [[1, 100],[null,200],[4,400]]
----
-- CreateTable: t1 (id INT PRIMARY KEY NOT NULL, s VARCHAR(32) COLLATE utf8_bin)
+- CreateTable: t1 (id INT PRIMARY KEY NOT NULL, s VARCHAR(32) COLLATE en_us_ci)
 ---
 - Statement: INSERT INTO t1(id, s)
     VALUES (1, 'alfa'), (2, 'charlie'), (3, 'BRAVO'), (4, 'Delta'), (5, 'echo')
 ---
-- CreateTable: t2 (id INT PRIMARY KEY NOT NULL, s VARCHAR(32) COLLATE en_us_ci)
----
-- Statement: INSERT INTO t2(id, s)
-    VALUES (1, 'alfa'), (2, 'charlie'), (3, 'BRAVO'), (4, 'Delta'), (5, 'echo')
----
 - Statement: SELECT id FROM t1 WHERE s LIKE '%a%'
-- output: [[1],[2],[4]]
----
-- Statement: SELECT id FROM t2 WHERE s LIKE '%a%'
 - output: [[1],[2],[3],[4]]
 ---
-- Statement: SELECT id FROM t1 WHERE s COLLATE "en_us_ci" LIKE '%a%'
-- output: [[1],[2],[3],[4]]
----
-- Statement: SELECT id FROM t2 WHERE s COLLATE UCS_BINARY LIKE '%a%'
+- Statement: SELECT id FROM t1 WHERE s COLLATE UCS_BINARY LIKE '%a%'
 - output: [[1],[2],[4]]
 ---
-- CreateTable: t3 (id INT, c CHAR(5) COLLATE foo)
+- CreateTable: t2 (id INT, c CHAR(5) COLLATE foo)
 - error: [2H000]
 ---
-- CreateTable: t3 (id INT, c CHAR(5) CHARACTER SET foo)
+- CreateTable: t2 (id INT, c CHAR(5) COLLATE foo_us)
+- error: [2H000]
+---
+- CreateTable: t2 (id INT, c CHAR(5) CHARACTER SET foo)
 - error: [2C000]
-# NOTE if adding more tests, make sure to use lower case for en_us_ci
+---
+- CreateTable: t3 (id INT PRIMARY KEY NOT NULL, s VARCHAR(32) COLLATE en_us_cs)
+---
+- Statement: CREATE INDEX t3_ndx ON t3(s);
+---
+- Statement: INSERT INTO t3(id, s)
+    VALUES (1, 'alfa'), (2, 'charlie'), (3, 'BRAVO'), (4, 'Delta'), (5, 'echo')
+---
+- Statement: SELECT * FROM t3 WHERE s = 'charlie'
+- output: [[2, 'charlie']]
+---
+- CreateTable: asdf (id INT PRIMARY KEY NOT NULL, s VARCHAR(32) COLLATE en_us_ci)
+---
+- Statement: CREATE INDEX asdf_ndx ON asdf(s);
+---
+- Statement: INSERT INTO asdf(id, s)
+    VALUES (1, 'alfa'), (2, 'charlie'), (3, 'BRAVO'), (4, 'Charlie'), (5, 'echo')
+---
+- Statement: SELECT * FROM asdf WHERE s = 'Charlie'
+- output: [[2, 'charlie'], [4, 'Charlie']]
+---
+- Statement: SELECT id FROM t3 WHERE s LIKE '%a%'
+- output: [[1],[2],[4]]
+---
+- Statement: SELECT id FROM t3 WHERE s COLLATE UCS_BINARY LIKE '%a%'
+- output: [[1],[2],[4]]
+---
+- CreateTable: t5 (id INT, v VARCHAR(255) COLLATE en_us)
+---
+- Statement: INSERT INTO t5 VALUES(1, E'\u00D6b'), (2, 'Oa'), (3, 'Oc')
+---
+- Statement: SELECT id FROM t5 ORDER BY v ASC
+- output_already_ordered: [[2], [1], [3]]
+---
+- CreateTable: t6 (id INT, v VARCHAR(255) COLLATE de_DE)
+---
+- Statement: INSERT INTO t6 VALUES(1, E'\u00D6b'), (2, 'Oa'), (3, 'Oc')
+---
+- Statement: SELECT id FROM t6 ORDER BY v ASC
+- output_already_ordered: [[2], [1], [3]]
+---
+- CreateTable: t7 (id INT, v VARCHAR(255) COLLATE tr_TR)
+---
+- Statement: INSERT INTO t7 VALUES(1, 'P'), (2, E'\u00D6b'), (3, 'Oz')
+---
+- Statement: SELECT id FROM t7 ORDER BY v ASC
+- output_already_ordered: [[3], [2], [1]]
+---
+- CreateTable: t8 (id INT, v VARCHAR(255) COLLATE sv_SE)
+---
+- Statement: INSERT INTO t8 VALUES(2, E'\u00D6b'), (3, 'Z')
+---
+- Statement: SELECT id FROM t8 ORDER BY v ASC
+- output_already_ordered: [[3], [2]]
+---
+# bug: parameter collation defaulted to ucs_binary
+- Statement: SELECT 'asdf' COLLATE en_us_ci LIKE ?
+- params: [['AsDf']]
+- output: [ [true] ]
+---
+- Statement: SELECT ? LIKE 'AsDf' COLLATE en_us_ci
+- params: [['asdf']]
+- output: [ [true] ]
+---
+- CreateTable: tUnion1(id INTEGER PRIMARY KEY, s VARCHAR(256) COLLATE en_us)
+---
+- Statement: CREATE INDEX tUnion1_ndx ON tUnion1(s)
+---
+- Statement: INSERT INTO tUnion1 VALUES (1, 'asdf'), (2, 'qwer')
+---
+- CreateTable: tUnion2(id INTEGER PRIMARY KEY, s VARCHAR(256) COLLATE sv_se)
+---
+- Statement: INSERT INTO tUnion2 VALUES (1, 'jkl;'), (2, 'uiop')
+---
+- Statement: Select t3.s FROM (SELECT s FROM tUnion1 AS t1 UNION SELECT s FROM tUnion2 AS t2) as t3;
+- output: [['jkl;'], ['qwer'], ['asdf'], ['uiop']]
+---
+- CreateTable: tIntersect1(id INTEGER PRIMARY KEY, s VARCHAR(256) COLLATE en_us)
+---
+- Statement: CREATE INDEX tIntersect1_ndx ON tIntersect1(s)
+---
+- Statement: INSERT INTO tIntersect1 VALUES (1, 'asdf'), (2, 'qwer')
+---
+- CreateTable: tIntersect2(id INTEGER PRIMARY KEY, s VARCHAR(256) COLLATE sv_se)
+---
+- Statement: INSERT INTO tIntersect2 VALUES (1, 'jkl;'), (2, 'qwer')
+---
+- Statement: Select t3.s FROM (SELECT s FROM tIntersect1 AS t1 INTERSECT SELECT s FROM tIntersect2 AS t2) as t3;
+- output: [['qwer']]
+---
+- CreateTable: t(c char(5) COLLATE utf8_bin)
+- error: [2H000]
+---
+- CreateTable: noRegion(c char(5) COLLATE zh__pinyin_ci)
+- error: [2H000]
+---
+- CreateTable: ambiguous(c char(5) COLLATE en_ci)
+- error: [2H002]
+---
+- CreateTable: suggestion1(c char(5) COLLATE en__ci_co)
+---
+- CreateTable: suggestion2(c char(5) COLLATE en_ci_cs_co)
+- error: [2H000]
+---
+- CreateTable: ambiguous(c char(5) COLLATE en_co)
+- error: [2H002]
+---
+- CreateTable: ambiguous(c char(5) COLLATE fr_cx_ci)
+- error: [2H002]
+---
+- CreateTable: noRegion(c char(5) COLLATE zh__pinyin)
+- error: [2H000]
+---
+- CreateTable: noRegion2(c char(5) COLLATE en_)
+---
+- CreateTable: keywords(c char(5) COLLATE "zh_collation=stroke")
+---
+# note: this fails because zh_ is already pinyin, so
+# the pinyin collation keyword is dropped and cannot be validated. 
+- CreateTable: redundantKeyword(c char(5) COLLATE "zh_collation=pinyin")
+- error: [2H003]
+---
+# but this one will work, because zh_Hant_TW uses stroke by default instead of pinyin
+- CreateTable: t987 (c CHAR(5) COLLATE "zh_Hant_TW_collation=pinyin")
+---
+- CreateTable: badKeywords(c char(5) COLLATE "zh_badkeyword=stroke")
+- error: [2H003]
+---
+- CreateTable: keywordsWithShortcuts(c char(5) COLLATE "zh_badkeyword=stroke_ci_cx")
+- error: [2H001]
+---
+- CreateTable: keywordsWithShortcuts(c char(5) COLLATE "zh_badkeyword=stroke_Hant_TW")
+- error: [2H001]
 ...

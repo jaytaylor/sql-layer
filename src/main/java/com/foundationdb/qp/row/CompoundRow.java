@@ -34,7 +34,7 @@ public class CompoundRow extends AbstractRow {
     }
 
     @Override
-    public ValueSource value(int i) {
+    public ValueSource uncheckedValue(int i) {
         ValueSource source;
         if (i < firstRowFields) {
             source = firstRow == null ? nullValue(i) : firstRow.value(i);
@@ -87,6 +87,25 @@ public class CompoundRow extends AbstractRow {
 
     private ValueSource nullValue(int i) {
         return ValueSources.getNullSource(rowType.typeAt(i));
+    }
+
+    @Override
+    public boolean isBindingsSensitive() {
+        if (firstRow != null && firstRow.isBindingsSensitive()) {
+            return true;
+        }
+        else if (secondRow != null && secondRow.isBindingsSensitive()) {
+            return true;
+        }
+        return false;
+    }
+
+    public Row getFirstRow() {
+        return firstRow;
+    }
+
+    public Row getSecondRow() {
+        return secondRow;
     }
 
     // Object state

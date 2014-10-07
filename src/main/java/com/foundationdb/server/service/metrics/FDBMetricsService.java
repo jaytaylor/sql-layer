@@ -468,7 +468,6 @@ public class FDBMetricsService implements MetricsService, Service
         dataSubspace = confSubspace = confChangesSubspace = null;
         timebase = flushInterval = 0;
         address = null;
-        backgroundThread = null;
         running = anyEnabled = confChanged = metricsConfChanged = metricsDataChanged = backgroundIdle = false;
     }
 

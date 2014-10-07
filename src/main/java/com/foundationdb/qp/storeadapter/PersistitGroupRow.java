@@ -57,7 +57,7 @@ public class PersistitGroupRow extends AbstractRow
     }
 
     @Override
-    public ValueSource value(int i) {
+    public ValueSource uncheckedValue(int i) {
         FieldDef fieldDef = rowDef().getFieldDef(i);
         RowData rowData = rowData();
         RowDataValueSource valueSource = valueSource(i);
@@ -183,6 +183,11 @@ public class PersistitGroupRow extends AbstractRow
             };
         }
         return valueSources.get(i);
+    }
+
+    @Override
+    public boolean isBindingsSensitive() {
+        return false;
     }
 
     // Class state

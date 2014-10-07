@@ -18,10 +18,7 @@
 package com.foundationdb.sql.server;
 
 import com.foundationdb.ais.model.ForeignKey;
-import com.foundationdb.ais.model.Table;
-import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.operator.StoreAdapterHolder;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.AkibanInternalException;
@@ -55,7 +52,6 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
 {
     public static final String COMPILER_PROPERTIES_PREFIX = "optimizer.";
     public static final String PIPELINE_PROPERTIES_PREFIX = "fdbsql.pipeline.";
-    public static final String FEATURE_DIRECT_ROUTINES_PROP = "fdbsql.feature.direct_routines_on";
 
     protected final ServerServiceRequirements reqs;
     protected Properties compilerProperties;
@@ -67,7 +63,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     protected StoreAdapterHolder adapters = new StoreAdapterHolder();
     protected ServerTransaction transaction;
     protected boolean transactionDefaultReadOnly = false;
-    protected boolean transactionPeriodicallyCommit = false;
+    protected ServerTransaction.PeriodicallyCommit transactionPeriodicallyCommit = ServerTransaction.PeriodicallyCommit.OFF;
     protected ServerSessionMonitor sessionMonitor;
 
     protected Long queryTimeoutMilli = null;
@@ -144,10 +140,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             return true;
         }
         if ("transactionPeriodicallyCommit".equals(key)) {
-            boolean periodicallyCommit = (value != null) && Boolean.parseBoolean(value);
-            transactionPeriodicallyCommit = periodicallyCommit;
-            if (transaction != null)
-                transaction.setPeriodicallyCommit(periodicallyCommit);
+            transactionPeriodicallyCommit = ServerTransaction.PeriodicallyCommit.fromProperty(value);
             return true;
         }
         if ("constraintCheckTime".equals(key)) {
@@ -288,12 +281,12 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     @Override
-    public boolean isTransactionPeriodicallyCommit() {
+    public ServerTransaction.PeriodicallyCommit getTransactionPeriodicallyCommit() {
         return transactionPeriodicallyCommit;
     }
 
     @Override
-    public void setTransactionPeriodicallyCommit(boolean periodicallyCommit) {
+    public void setTransactionPeriodicallyCommit(ServerTransaction.PeriodicallyCommit periodicallyCommit) {
         this.transactionPeriodicallyCommit = periodicallyCommit;
     }
 
@@ -387,14 +380,14 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             case READ:
             case NEW:
             case IMPLICIT_COMMIT_AND_NEW:
-                transaction = new ServerTransaction(this, true, false);
+                transaction = new ServerTransaction(this, true, ServerTransaction.PeriodicallyCommit.OFF);
                 localTransaction = true;
                 break;
             case WRITE:
             case NEW_WRITE:
                 if (transactionDefaultReadOnly)
                     throw new TransactionReadOnlyException();
-                transaction = new ServerTransaction(this, false, false);
+                transaction = new ServerTransaction(this, false, ServerTransaction.PeriodicallyCommit.OFF);
                 transaction.beforeUpdate();
                 localTransaction = true;
                 break;
@@ -416,10 +409,12 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
 
     /** Complete execute given statement.
      * @see #beforeExecute
+     * @param allowsPeriodicCommit Some places where this is called are after a parse or prepare statement, we don't want
+     *                         to commit in those instances, only when a user statement was actually executed.
      */
-    protected void afterExecute(ServerStatement stmt, 
+    protected void afterExecute(ServerStatement stmt,
                                 boolean localTransaction,
-                                boolean success) {
+                                boolean success, boolean allowsPeriodicCommit) {
         if (localTransaction) {
             if (success)
                 commitTransaction();
@@ -440,8 +435,15 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
                 transaction.afterUpdate();
                 break;
             }
-            // Give periodic commit a chance if enabled.
-            transaction.checkPeriodicallyCommit();
+            if (allowsPeriodicCommit && success && !transaction.isRollbackPending()) {
+                if (transactionPeriodicallyCommit == ServerTransaction.PeriodicallyCommit.USERLEVEL &&
+                        transaction.shouldPeriodicallyCommit()) {
+                    commitTransaction();
+                } else {
+                    // Give periodic commit a chance if enabled.
+                    transaction.checkPeriodicallyCommit();
+                }
+            }
         }
     }
 
@@ -500,13 +502,6 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         if (pipelineConfiguration == null)
             pipelineConfiguration = new PipelineConfiguration(reqs.config().deriveProperties(PIPELINE_PROPERTIES_PREFIX));
         return pipelineConfiguration;
-    }
-
-    @Override
-    public boolean isDirectEnabled() {
-        if (directEnabled == null)
-            directEnabled = Boolean.valueOf(reqs.config().getProperty(FEATURE_DIRECT_ROUTINES_PROP));
-        return directEnabled;
     }
 
     @Override

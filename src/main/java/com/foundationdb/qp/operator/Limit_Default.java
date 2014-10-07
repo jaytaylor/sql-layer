@@ -188,9 +188,6 @@ final class Limit_Default extends Operator
         public void open() {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-                super.open();
-                closed = false;
                 if (isSkipBinding()) {
                     ValueSource value = bindings.getValue(skip());
                     if (!value.isNull())
@@ -219,11 +216,20 @@ final class Limit_Default extends Operator
                 }
                 if (limitLeft < 0)
                     throw new NegativeLimitException("LIMIT", limitLeft);
+                super.open();
             } finally {
                 TAP_OPEN.out();
             }
         }
 
+        @Override 
+        public void close() {
+            // Because the checks in open() may 
+            // prevent the cursor from being opened. 
+            if (!isClosed()) {
+                super.close();
+            }
+        }
         @Override
         public Row next() {
             if (TAP_NEXT_ENABLED) {
@@ -239,31 +245,31 @@ final class Limit_Default extends Operator
                     if ((row = input.next()) == null) {
                         skipLeft = 0;
                         limitLeft = -1;
-                        close();
+                        setIdle();
                         if (LOG_EXECUTION) {
-                            LOG.debug("Limit_Default: yield null");
+                            LOG.debug("Limit_Default: skipLeft until complete yield null");
                         }
                         return null;
                     }
                     skipLeft--;
                 }
                 if (limitLeft < 0) {
-                    close();
+                    setIdle();
                     if (LOG_EXECUTION) {
-                        LOG.debug("Limit_Default: yield null");
+                        LOG.debug("Limit_Default: limitLeft < 0, yield null");
                     }
                     return null;
                 }
                 if (limitLeft == 0) {
-                    close();
+                    setIdle();
                     if (LOG_EXECUTION) {
-                        LOG.debug("Limit_Default: yield null");
+                        LOG.debug("Limit_Default: limitLeft == 0, yield null");
                     }
                     return null;
                 }
                 if ((row = input.next()) == null) {
                     limitLeft = -1;
-                    close();
+                    setIdle();
                     if (LOG_EXECUTION) {
                         LOG.debug("Limit_Default: yield null");
                     }
@@ -281,28 +287,6 @@ final class Limit_Default extends Operator
             }
         }
 
-        @Override
-        public void close()
-        {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (!closed) {
-                super.close();
-                closed = true;
-            }
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return closed;
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return !closed;
-        }
-
         // Execution interface
         Execution(QueryContext context, Cursor input) {
             super(context, input);
@@ -311,6 +295,5 @@ final class Limit_Default extends Operator
         // object state
 
         private int skipLeft, limitLeft;
-        private boolean closed = true;
     }
 }

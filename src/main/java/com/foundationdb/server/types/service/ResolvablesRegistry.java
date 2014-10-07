@@ -18,6 +18,7 @@
 package com.foundationdb.server.types.service;
 
 import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.OverloadException;
 import com.foundationdb.server.types.InputSetFlags;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TCommutativeOverloads;

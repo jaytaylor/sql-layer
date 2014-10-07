@@ -146,10 +146,12 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         POSTMODERN_LIST("\\(SELECT relname FROM pg_catalog.pg_class INNER JOIN pg_catalog.pg_namespace ON \\(relnamespace = pg_namespace.oid\\) WHERE \\(\\(relkind = E?'(\\w)'\\) and \\(nspname NOT IN \\(E?'pg_catalog', E?'pg_toast'\\)\\) and pg_catalog.pg_table_is_visible\\(pg_class.oid\\)\\)\\)", true),
         POSTMODERN_EXISTS("\\(SELECT \\(EXISTS \\(SELECT 1 FROM pg_catalog.pg_class WHERE \\(\\(relkind = E?'(\\w)'\\) and \\(relname = E?'(.+)'\\)\\)\\)\\)\\)", true),
         POSTMODERN_TABLE_DESCRIPTION("\\(\\(SELECT DISTINCT attname, typname, \\(not attnotnull\\), attnum FROM pg_catalog.pg_attribute INNER JOIN pg_catalog.pg_type ON \\(pg_type.oid = atttypid\\) INNER JOIN pg_catalog.pg_class ON \\(\\(pg_class.oid = attrelid\\) and \\(pg_class.relname = E?'(.+)'\\)\\) INNER JOIN pg_catalog.pg_namespace ON \\(pg_namespace.oid = pg_class.relnamespace\\) WHERE \\(\\(attnum > 0\\) and (?:true|\\(pg_namespace.nspname = E?'(.+)'\\))\\)\\) ORDER BY attnum\\)", true),
-        PGPOOL2_HASPGPOOL_REGCLASSQUERY("SELECT count(*) FROM pg_catalog.pg_proc AS p WHERE p.proname = 'pgpool_regclass'"),
+        PGPOOL2_HASPGPOOL_REGCLASSQUERY("SELECT count\\(\\*\\) FROM pg_catalog.pg_proc AS p WHERE p.proname = 'pgpool_regclass'|SELECT count\\(\\*\\) from \\(SELECT has_function_privilege\\('.*', 'pgpool_regclass\\(cstring\\)', 'execute'\\) WHERE EXISTS\\(SELECT \\* FROM pg_catalog.pg_proc AS p WHERE p.proname = 'pgpool_regclass'\\)\\) AS s", true),
         PGPOOL2_HASRELITEMPPQUERY("SELECT count(*) FROM pg_catalog.pg_class AS c, pg_attribute AS a WHERE c.relname = 'pg_class' AND a.attrelid = c.oid AND a.attname = 'relistemp'"),
         PGPOOL2_HASRELPERSISTENCEQUERY("SELECT count(*) FROM pg_catalog.pg_class AS c, pg_catalog.pg_attribute AS a WHERE c.relname = 'pg_class' AND a.attrelid = c.oid AND a.attname = 'relpersistence'"),
-        PGPOOL2_ISBELONGTOPGCATALOGQUERY("SELECT count\\(\\*\\) FROM pg_class AS c, pg_namespace AS n WHERE c.relname = '(.+)' AND c.relnamespace = n.oid AND n.nspname (?:= 'pg_catalog'|~ '\\^pg_temp_')", true);
+        PGPOOL2_ISBELONGTOPGCATALOGQUERY("SELECT count\\(\\*\\) FROM pg_class AS c, pg_namespace AS n WHERE c.relname = '(.+)' AND c.relnamespace = n.oid AND n.nspname (?:= 'pg_catalog'|~ '\\^pg_temp_')", true),
+        PGPOOL2_NEXTVALQUERY("SELECT count\\(\\*\\) FROM pg_catalog.pg_attrdef AS d, pg_catalog.pg_class AS c WHERE d.adrelid = c.oid AND d.adsrc ~ 'nextval' AND c.relname = '.*'", true),
+        PGPOOL2_STANDBYQUERY("SELECT pg_is_in_recovery()");
 
         private String sql;
         private Pattern pattern;
@@ -459,9 +461,15 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         case PGPOOL2_HASRELITEMPPQUERY:
         case PGPOOL2_HASRELPERSISTENCEQUERY:
         case PGPOOL2_ISBELONGTOPGCATALOGQUERY:
+        case PGPOOL2_NEXTVALQUERY:
             ncols = 1;
             names = new String[] { "?column?" };
             types = new PostgresType[] { columnTypes.get(ColumnType.INT2) };
+            break;
+        case PGPOOL2_STANDBYQUERY:
+            ncols = 1;
+            names = new String[] { "?column?" };
+            types = new PostgresType[] { columnTypes.get(ColumnType.BOOL) };
             break;
         default:
             return;
@@ -594,7 +602,12 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         case PGPOOL2_HASRELITEMPPQUERY:
         case PGPOOL2_HASRELPERSISTENCEQUERY:
         case PGPOOL2_ISBELONGTOPGCATALOGQUERY:
+        case PGPOOL2_NEXTVALQUERY:
             nrows = pgpool2CountQuery(context, server, messenger, maxrows);
+            break;
+        case PGPOOL2_STANDBYQUERY:
+            nrows = pgpool2StandbyQuery(context, server, messenger, maxrows);
+            break;
         }
         {        
           messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
@@ -1816,6 +1829,14 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(1); // 1 column for this query
         writeColumn(context, server, messenger, 0, (short)0, columnTypes.get(ColumnType.INT2));
+        messenger.sendMessage();
+        return 1;
+    }
+
+    private int pgpool2StandbyQuery(PostgresQueryContext context, PostgresServerSession server, PostgresMessenger messenger, int maxrows) throws IOException {
+        messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+        messenger.writeShort(1); // 1 column for this query
+        writeColumn(context, server, messenger, 0, false, columnTypes.get(ColumnType.BOOL));
         messenger.sendMessage();
         return 1;
     }

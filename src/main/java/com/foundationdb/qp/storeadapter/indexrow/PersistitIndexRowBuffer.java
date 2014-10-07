@@ -45,14 +45,19 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     @Override
     public int compareTo(PersistitIndexRowBuffer that)
     {
-        return compareTo(that, null);
+        return compareTo(that, Integer.MAX_VALUE, null);
     }
 
     // Row interface
 
     @Override
-    public ValueSource value(int i) {
+    public ValueSource uncheckedValue(int i) {
         return null;
+    }
+
+    @Override
+    public boolean isBindingsSensitive() {
+        return false;
     }
 
     @Override
@@ -243,26 +248,43 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         return pKey.getEncodedSize() == 0;
     }
 
-    public int compareTo(PersistitIndexRowBuffer that, boolean[] ascending)
+    public int compareTo(PersistitIndexRowBuffer that, int fieldCount) {
+        return compareTo(that, fieldCount, null);
+    }
+
+    public int compareTo(PersistitIndexRowBuffer that, int fieldCount, boolean[] ascending)
     {
+        if(fieldCount <= 0) {
+            return 0;
+        }
         int c;
         byte[] thisBytes = this.pKey.getEncodedBytes();
         byte[] thatBytes = that.pKey.getEncodedBytes();
         int b = 0; // byte position
         int f = 0; // field position
-        int end = min(this.pKey.getEncodedSize(), that.pKey.getEncodedSize());
+        int thisEnd = this.pKey.getEncodedSize();
+        int thatEnd = that.pKey.getEncodedSize();
+        int end = min(thisEnd, thatEnd);
         while (b < end && f < pKeyFields) {
             int thisByte = thisBytes[b] & 0xff;
             int thatByte = thatBytes[b] & 0xff;
             c = thisByte - thatByte;
             if (c != 0) {
-                return ascending == null || ascending[f] ? c : -c;
+                return isSet(ascending, f, c, -c);
             } else {
                 b++;
                 if (thisByte == 0) {
-                    f++;
+                    if(++f == fieldCount) {
+                        return 0;
+                    }
                 }
             }
+        }
+        if (thisEnd > thatEnd) {
+            return isSet(ascending, f, 1, -1);
+        }
+        if (thatEnd > thisEnd) {
+            return isSet(ascending, f, -1, 1);
         }
         // Compare pValues, if there are any
         thisBytes = this.pValue == null ? null : this.pValue.getEncodedBytes();
@@ -270,26 +292,40 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         if (thisBytes == null && thatBytes == null) {
             return 0;
         } else if (thisBytes == null) {
-            return ascending == null || ascending[f] ? -1 : 1;
+            return isSet(ascending, f, -1, 1);
         } else if (thatBytes == null) {
-            return ascending == null || ascending[f] ? 1 : -1;
+            return isSet(ascending, f, 1, -1);
         }
         b = 0;
-        end = min(this.pValue.getEncodedSize(), that.pValue.getEncodedSize());
+        thisEnd = this.pValue.getEncodedSize();
+        thatEnd = that.pValue.getEncodedSize();
+        end = min(thisEnd, thatEnd);
         while (b < end) {
             int thisByte = thisBytes[b] & 0xff;
             int thatByte = thatBytes[b] & 0xff;
             c = thisByte - thatByte;
             if (c != 0) {
-                return ascending == null || ascending[f] ? c : -c;
+                return isSet(ascending, f, c, -c);
             } else {
                 b++;
                 if (thisByte == 0) {
-                    f++;
+                    if(++f == fieldCount) {
+                        return 0;
+                    }
                 }
             }
         }
+        if (thisEnd > thatEnd) {
+            return isSet(ascending, f, 1, -1);
+        }
+        if (thatEnd > thisEnd) {
+            return isSet(ascending, f,  -1, 1);
+        }
         return 0;
+    }
+
+    private static int isSet(boolean[] values, int idx, int tVal, int fVal) {
+        return ((values == null) || values[idx]) ? tVal : fVal;
     }
 
     // For use by subclasses

@@ -19,6 +19,7 @@ package com.foundationdb.server.error;
 
 import org.slf4j.Logger;
 
+import java.sql.SQLException;
 import java.util.ResourceBundle;
 
 /**
@@ -182,6 +183,7 @@ public enum ErrorCode {
     EXTERNAL_ROW_READER_EXCEPTION ("22", "505", Importance.DEBUG, ExternalRowReaderException.class),
     SECURITY                ("22", "506", Importance.ERROR, SecurityException.class),
     STORAGE_KEY_SIZE_EXCEEDED("22", "507", Importance.ERROR, StorageKeySizeExceededException.class),
+    OVERLOAD_EXCEPTION("22", "508", Importance.ERROR, OverloadException.class),
 
     // Class 23 - integrity constraint violation
     DUPLICATE_KEY           ("23", "501", Importance.DEBUG, DuplicateKeyException.class),
@@ -224,8 +226,10 @@ public enum ErrorCode {
     // Class 2E - invalid connection name
     // Class 2F - SQL routine exception
     // Class 2H - invalid collation name
-    UNSUPPORTED_COLLATION   ("2H", "000", Importance.DEBUG, UnsupportedCollationException.class),
-    
+    UNSUPPORTED_COLLATION    ("2H", "000", Importance.DEBUG, UnsupportedCollationException.class),
+    INVALID_COLLATION_SCHEME ("2H", "001", Importance.DEBUG, InvalidCollationSchemeException.class),
+    AMBIGUOUS_COLLATION      ("2H", "002", Importance.DEBUG, AmbiguousCollationException.class),
+    INVALID_COLLATION_KEYWORD("2H", "003", Importance.DEBUG, InvalidCollationKeywordException.class),
     
     // Class 30 - invalid SQL statement identifier
     // Class 33 - invalid SQL descriptor name
@@ -302,12 +306,9 @@ public enum ErrorCode {
     // Class 42/700 - full text errors
     FULL_TEXT_QUERY_PARSE   ("42", "700", Importance.DEBUG, FullTextQueryParseException.class),
     
-    // Class 42/800 - Akiba Direct errors
+    // Class 42/800 - Script errors
     CANT_CALL_SCRIPT_LIBRARY ("42", "800", Importance.DEBUG, CantCallScriptLibraryException.class),
-    SCRIPT_REGISTRATION_EXCEPTION ("42", "801", Importance.DEBUG, ScriptLibraryRegistrationException.class),
-    DIRECT_ENDPOINT_NOT_FOUND ("42", "802", Importance.DEBUG, DirectEndpointNotFoundException.class),
-    DIRECT_TRANSACTION_FAILED ("42", "803", Importance.ERROR, DirectTransactionFailedException.class),
-        
+
     // Class 44 - with check option violation
 
 
@@ -439,8 +440,8 @@ public enum ErrorCode {
     FDB_ERROR               ("53", "004", Importance.ERROR, FDBAdapterException.class),
     ROW_OUTPUT              ("53", "005", Importance.DEBUG, RowOutputException.class),
     SCAN_RETRY_ABANDONDED   ("53", "006", Importance.ERROR, ScanRetryAbandonedException.class),
-    //53007
-    //53008
+    METADATA_VERSION_OLD    ("53", "007", Importance.ERROR, MetadataVersionTooOldException.class),
+    METADATA_VERSION_NEWER  ("53", "008", Importance.ERROR, MetadataVersionNewerException.class),
     TABLEDEF_MISMATCH       ("53", "009", Importance.DEBUG, TableDefinitionMismatchException.class),
     PROTOBUF_READ           ("53", "00A", Importance.ERROR, ProtobufReadException.class),
     PROTOBUF_WRITE          ("53", "00B", Importance.ERROR, ProtobufWriteException.class),
@@ -535,6 +536,16 @@ public enum ErrorCode {
 
     public boolean isRollbackClass() {
         return ROLLBACK_CLASS.equals(code);
+    }
+
+    public static ErrorCode getCodeForRESTException(Throwable e) {
+        if(e instanceof InvalidOperationException) {
+            return ((InvalidOperationException)e).getCode();
+        } else if(e instanceof SQLException) {
+            return ErrorCode.valueOfCode(((SQLException)e).getSQLState());
+        } else {
+            return ErrorCode.UNEXPECTED_EXCEPTION;
+        }
     }
 
     public void logAtImportance(Logger log, String msg, Object... msgArgs) {

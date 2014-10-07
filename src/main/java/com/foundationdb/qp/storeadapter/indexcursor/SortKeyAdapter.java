@@ -27,7 +27,6 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.texpressions.Comparison;
 
 public abstract class SortKeyAdapter<S, E> {
-    public abstract AkCollator[] createAkCollators(int size);
     public abstract TInstance[] createTInstances(int size);
     public abstract void setColumnMetadata(Column column, int f, TInstance[] tInstances);
 
@@ -49,24 +48,6 @@ public abstract class SortKeyAdapter<S, E> {
     public boolean areEqual(TInstance type, S one, S two, QueryContext queryContext) {
         E expr = createComparison(type, one, Comparison.EQ, two);
         return evaluateComparison(expr, queryContext);
-    }
-
-    public void checkConstraints(ValueRecord loExpressions, ValueRecord hiExpressions, TInstance[] types,
-                                 int f)
-    {
-        S loValueSource = get(loExpressions, f);
-        S hiValueSource = get(hiExpressions, f);
-        if (isNull(loValueSource) && isNull(hiValueSource)) {
-            // OK, they're equal
-        } else if (isNull(loValueSource) || isNull(hiValueSource)) {
-            throw new IllegalArgumentException(String.format("lo: %s, hi: %s", loValueSource, hiValueSource));
-        } else {
-            TInstance type = (types == null) ? null : types[f];
-            long comparison = compare(type, loValueSource, hiValueSource);
-            if (comparison != 0) {
-                throw new IllegalArgumentException();
-            }
-        }
     }
 
     public abstract boolean isNull(S source);

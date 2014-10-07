@@ -80,9 +80,12 @@ public abstract class TString extends TClass
         STRING {
             @Override
             public void format(TInstance type, ValueSource source, AkibanAppender out) {
-                if (source.hasCacheValue() && out.canAppendBytes()) {
+                if (source.hasCacheValue()) {
                     Object cached = source.getObject();
-                    if (cached instanceof ByteSource) {
+                    if (cached instanceof String) {
+                        out.append((String)cached);
+                        return;
+                    } else if (cached instanceof ByteSource && out.canAppendBytes()) {
                         String tInstanceCharset = StringAttribute.charsetName(type);
                         Charset appenderCharset = out.appendBytesAs();
                         if (Strings.equalCharsets(appenderCharset, tInstanceCharset)) {
@@ -90,12 +93,8 @@ public abstract class TString extends TClass
                             return;
                         }
                     }
-                    else {
-                        logger.warn("couldn't append TString directly; bad cached object. {}", source);
-                    }
                 }
-                AkCollator collator = getCollator(type);
-                out.append(AkCollator.getString(source, collator));
+                out.append(source.getString());
             }
 
             @Override
@@ -270,7 +269,7 @@ public abstract class TString extends TClass
                 }
             }
             else {
-                output.append(collator.getName());
+                output.append(collator.getScheme());
             }
             break;
         }
@@ -303,7 +302,7 @@ public abstract class TString extends TClass
                 }
             }
             else {
-                return collator.getName();
+                return collator.getScheme();
             }
         default:
             throw new IllegalArgumentException("illegal attribute index: " + attributeIndex);
@@ -430,18 +429,20 @@ public abstract class TString extends TClass
     private static class StringCacher implements ValueCacher {
         @Override
         public void cacheToValue(Object cached, TInstance type, BasicValueTarget target) {
-            String asString = getString((ByteSource) cached, type);
-            target.putString(asString, null);
+            String asString;
+            if(cached instanceof String) {
+                asString = (String)cached;
+            } else if(cached instanceof WrappingByteSource) {
+                asString = getString((ByteSource) cached, type);
+            } else {
+                throw new IllegalStateException("Unexpected cache type: " + cached.getClass());
+            }
+            target.putString(asString, getCollator(type));
         }
 
         @Override
         public Object valueToCache(BasicValueSource value, TInstance type) {
-            String charsetName = StringAttribute.charsetName(type);
-            try {
-                return new WrappingByteSource(value.getString().getBytes(charsetName));
-            } catch (UnsupportedEncodingException e) {
-                throw new UnsupportedCharsetException(charsetName);
-            }
+            return value.getString();
         }
 
         @Override

@@ -22,8 +22,10 @@ package com.foundationdb.qp.rowtype;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.HKey;
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.qp.operator.IncompatibleRowException;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.explain.*;
+import com.foundationdb.server.types.value.ValueSource;
 
 public abstract class RowType
 {
@@ -168,4 +170,21 @@ public abstract class RowType
 
     private final int typeId;
     private TypeComposition typeComposition;
+
+    public final static class InconsistentRowTypeException extends RuntimeException{
+
+        /**
+         * Expected null value
+         * @param i the index in the row
+         * @param value the value in the actual row
+         */
+        public InconsistentRowTypeException(int i, Object value) {
+            super("Value at " + i + " should be null, but was " + value);
+        }
+
+        public InconsistentRowTypeException(int i, TInstance rowType, TInstance valueType, ValueSource value) {
+            super("value at index " + i + " expected type " + rowType
+                    + ", but UnderlyingType was " + valueType + ": " + value);
+        }
+    }
 }

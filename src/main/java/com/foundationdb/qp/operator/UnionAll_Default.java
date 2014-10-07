@@ -101,18 +101,16 @@ final class UnionAll_Default extends SetOperatorBase {
         return new CompoundExplainer(Type.UNION, att);
     }
 
-    private class Execution extends OperatorCursor {
+    private class Execution extends MultiChainedCursor {
 
         @Override
         public void open() {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-                idle = false;
                 if (openBoth) {
-                    for (int i = 0; i < cursors.length; i++) {
-                        cursors[i].open();
-                    }
+                    super.open();
+                } else {
+                    state = CursorLifecycle.CursorState.ACTIVE;
                 }
             } finally {
                 TAP_OPEN.out();
@@ -134,13 +132,12 @@ final class UnionAll_Default extends SetOperatorBase {
                 } else {
                     next = currentCursor.next();
                     if (next == null) {
-                        currentCursor.close();
+                        currentCursor.setIdle();
                         next = nextCursorFirstRow();
                     }
                 }
                 if (next == null) {
-                    close();
-                    idle = true;
+                    setIdle();
                 } else {
                     next = wrapped(next);
                 }
@@ -157,89 +154,29 @@ final class UnionAll_Default extends SetOperatorBase {
 
         @Override
         public void close() {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (currentCursor != null) {
-                currentCursor.close();
-                currentCursor = null;
+            if (!leftInput.isClosed()) {
+                leftInput.close();
             }
-            if (openBoth) {
-                while (++inputOperatorsIndex < getInputSize()) {
-                    cursors[inputOperatorsIndex].close();
-                }
+            if (!rightInput.isClosed()) {
+                rightInput.close();
             }
-            inputOperatorsIndex = -1;
+            currentCursor = null;
             currentInputRowType = null;
-            idle = true;
+            state = CursorLifecycle.CursorState.CLOSED;
         }
 
+        @Override 
+        protected Operator left() {
+            return UnionAll_Default.this.left();
+        }
+        
         @Override
-        public void destroy() {
-            close();
-            for (Cursor cursor : cursors) {
-                if (cursor != null) {
-                    cursor.destroy();
-                }
-            }
-            destroyed = true;
+        protected Operator right() {
+            return UnionAll_Default.this.right();
         }
-
-        @Override
-        public boolean isIdle() {
-            return !destroyed && idle;
-        }
-
-        @Override
-        public boolean isActive() {
-            return !destroyed && !idle;
-        }
-
-        @Override
-        public boolean isDestroyed() {
-            return destroyed;
-        }
-
-        @Override
-        public void openBindings() {
-            bindingsCursor.openBindings();
-            for (int i = 0; i < cursors.length; i++) {
-                cursors[i].openBindings();
-            }//recursivly open bidings
-        }
-
-        @Override
-        public QueryBindings nextBindings() {
-            QueryBindings bindings = bindingsCursor.nextBindings();
-            for (int i = 0; i < cursors.length; i++) {
-                QueryBindings other = cursors[i].nextBindings();
-                assert (bindings == other);
-            }
-            return bindings;
-        }
-
-        @Override
-        public void closeBindings() {
-            bindingsCursor.closeBindings();
-            for (int i = 0; i < cursors.length; i++) {
-                cursors[i].closeBindings();
-            }
-        }
-
-        @Override
-        public void cancelBindings(QueryBindings bindings) {
-            for (int i = 0; i < cursors.length; i++) {
-                cursors[i].cancelBindings(bindings);
-            }
-            bindingsCursor.cancelBindings(bindings);
-        }
-
+        
         private Execution(QueryContext context, QueryBindingsCursor bindingsCursor) {
-            super(context);
-            MultipleQueryBindingsCursor multiple = new MultipleQueryBindingsCursor(bindingsCursor);
-            this.bindingsCursor = multiple;
-            cursors = new Cursor[getInputSize()];
-            for (int i = 0; i < cursors.length; i++) {
-                cursors[i] = operator(i).cursor(context, multiple.newCursor());
-            }
+            super(context, bindingsCursor);
         }
 
         /**
@@ -250,21 +187,28 @@ final class UnionAll_Default extends SetOperatorBase {
          * @return the first row of the next cursor that has a non-null row, or null if no such cursors remain
          */
         private Row nextCursorFirstRow() {
-            while (++inputOperatorsIndex < getInputSize()) {
-                Cursor nextCursor = cursors[inputOperatorsIndex];
-                if (!openBoth) {
-                    nextCursor.open();
+            if (currentCursor == null) {
+                currentCursor = leftInput;
+                currentInputRowType = inputRowType(0);
+                if (currentCursor.isClosed()) {
+                    currentCursor.open();
                 }
-                Row nextRow = nextCursor.next();
-                if (nextRow == null) {
-                    nextCursor.close();
-                } else {
-                    currentCursor = nextCursor;
-                    this.currentInputRowType = inputRowType(inputOperatorsIndex);
-                    return nextRow;
+            } else if (currentCursor == leftInput) { 
+                currentCursor = rightInput;
+                currentInputRowType = inputRowType(1);
+                if (currentCursor.isClosed()) {
+                    currentCursor.open();
                 }
+            } else if (currentCursor == rightInput) {
+                // we're done, 
+                return null;
             }
-            return null;
+            Row nextRow = currentCursor.next(); 
+            
+            if (nextRow == null) {
+                return nextCursorFirstRow();
+            }
+            return nextRow;
         }
 
         private Row wrapped(Row inputRow) {
@@ -279,13 +223,8 @@ final class UnionAll_Default extends SetOperatorBase {
             return row;
         }
 
-        private final QueryBindingsCursor bindingsCursor;
-        private int inputOperatorsIndex = -1; // right before the first operator
-        private Cursor[] cursors;
         private Cursor currentCursor;
         private RowType currentInputRowType;
-        private boolean idle = true;
-        private boolean destroyed = false;
     }
 
     static class WrongRowTypeException extends AkibanInternalException {

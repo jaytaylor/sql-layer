@@ -351,8 +351,7 @@ class GroupLookup_Default extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-                input.open();
+                super.open();
                 lookupState = LookupState.BETWEEN;
             } finally {
                 TAP_OPEN.out();
@@ -388,23 +387,12 @@ class GroupLookup_Default extends Operator
         @Override
         public void close()
         {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (input.isActive()) {
-                input.close();
+            if (!lookupCursor.isClosed())
                 lookupCursor.close();
-                lookupRow = null;
-                pending.clear();
-            }
+            lookupRow = null;
+            pending.clear();
+            super.close();
         }
-
-        @Override
-        public void destroy()
-        {
-            close();
-            input.destroy();
-            lookupCursor.destroy();
-        }
-
         // Execution interface
 
         Execution(QueryContext context, Cursor input)
@@ -435,6 +423,9 @@ class GroupLookup_Default extends Operator
             case BRANCH:
                 advanceBranch();
                 break;
+            case EXHAUSTED:
+            default:
+                assert false: "GroupLookup_Default$Execution lookup state is bad: " + lookupState;
             }
         }
 
@@ -460,26 +451,25 @@ class GroupLookup_Default extends Operator
         {
             assert pending.isEmpty();
             for (int i = 0; i < ancestors.size(); i++) {
-                readAncestorRow(inputRow.ancestorHKey(ancestors.get(i)));
+                lookupRow = readAncestorRow(inputRow.ancestorHKey(ancestors.get(i)));
                 if (lookupRow != null) {
                     pending.add(lookupRow);
                 }
             }
         }
 
-        private void readAncestorRow(HKey hKey)
+        private Row readAncestorRow(HKey hKey)
         {
             try {
                 lookupCursor.rebind(hKey, false);
                 lookupCursor.open();
                 Row retrievedRow = lookupCursor.next();
-                if (retrievedRow == null) {
-                    lookupRow = null;
-                } else {
+                if (retrievedRow != null) {
                     // Retrieved row might not actually be what we were looking for -- not all ancestors are present,
                     // (there are orphan rows).
-                    lookupRow = hKey.equals(retrievedRow.hKey()) ? retrievedRow : null;
+                    retrievedRow = hKey.equals(retrievedRow.hKey()) ? retrievedRow : null;
                 }
+                return retrievedRow;
             } finally {
                 lookupCursor.close();
             }
@@ -513,6 +503,7 @@ class GroupLookup_Default extends Operator
             lookupRow = null;
             if (currentLookupRow == null) {
                 lookupState = LookupState.BETWEEN;
+                lookupCursor.close();
             } else if (branchOutputRowTypes.contains(currentLookupRow.rowType())) {
                 lookupRow = currentLookupRow;
             }
@@ -538,8 +529,7 @@ class GroupLookup_Default extends Operator
         public void open() {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-                closed = false;
+                super.open();
                 cursorIndex = 0;
             } finally {
                 TAP_OPEN.out();
@@ -558,11 +548,11 @@ class GroupLookup_Default extends Operator
                 }
                 checkQueryCancelation();
                 Row outputRow = null;
-                while (!closed && outputRow == null) {
+                while (isActive() && outputRow == null) {
                     // Get some more input rows, crossing bindings boundaries as
                     // necessary, and open cursors for them.
                     pipeline:
-                    while (!bindingsExhausted && inputRows[nextIndex] == null) {
+                    while (!bindingsExhausted && inputs[nextIndex].inputRow == null) {
                         if (nextBindings == null) {
                             if (newBindings) {
                                 nextBindings = currentBindings;
@@ -581,59 +571,61 @@ class GroupLookup_Default extends Operator
                         }
                         Row row = input.next();
                         if (row == null) {
+                            // This is correct, close the input to allow
+                            // nextBindings() to process correctly. 
                             input.close();
                             nextBindings = null;
                         }
                         else {
-                            inputRows[nextIndex] = row;
+                            InputState inputState = inputs[nextIndex];
+                            inputState.inputRow = row;
                             if (LOG_EXECUTION) {
                                 LOG.debug("GroupLookup: new input {}", row);
                             }
-                            inputRowBindings[nextIndex] = nextBindings;
+                            inputState.queryBindings = nextBindings;
                             for (int i = 0; i < ncursors; i++) {
                                 if (i == keepInputCursorIndex) continue;
-                                int index = nextIndex * ncursors + i;
                                 boolean deep = false;
                                 if (i == branchCursorIndex) {
-                                    row.hKey().copyTo(lookupHKeys[index]);
+                                    row.hKey().copyTo(inputState.lookupHKeys[i]);
                                     if (branchRootOrdinal != -1) {
-                                        lookupHKeys[index].extendWithOrdinal(branchRootOrdinal);
+                                        inputState.lookupHKeys[i].extendWithOrdinal(branchRootOrdinal);
                                     }
                                     deep = true;
                                 }
                                 else {
-                                    lookupHKeys[index] = row.ancestorHKey(ancestors.get(i));
+                                    inputState.lookupHKeys[i] = row.ancestorHKey(ancestors.get(i));
                                 }
-                                cursors[index].rebind(lookupHKeys[index], deep);
-                                cursors[index].open();
+                                inputState.cursors[i].rebind(inputState.lookupHKeys[i], deep);
+                                inputState.cursors[i].open();
                             }
                             nextIndex = (nextIndex + 1) % quantum;
                         }                        
                     }
                     // Now take ancestor rows from the front of those.
-                    if (inputRows[currentIndex] == null) {
-                        closed = true; // No more rows loaded.
+                    if (inputs[currentIndex].inputRow == null) {
+                        setIdle(); // No more rows loaded.
                     }
-                    else if (inputRowBindings[currentIndex] != currentBindings) {
-                        closed = true; // Row came from another bindings.
+                    else if (inputs[currentIndex].queryBindings != currentBindings) {
+                        setIdle(); // Row came from another bindings.
                     }
                     else if (cursorIndex >= ncursors) {
                         // Done with this row.
-                        inputRows[currentIndex] = null;
-                        inputRowBindings[currentIndex] = null;
+                        inputs[currentIndex].inputRow = null;
+                        inputs[currentIndex].queryBindings = null;
                         currentIndex = (currentIndex + 1) % quantum;
                         cursorIndex = 0;
                     }
                     else if (cursorIndex == keepInputCursorIndex) {
-                        outputRow = inputRows[currentIndex];
+                        outputRow = inputs[currentIndex].inputRow; 
                         cursorIndex++;
                     }
                     else {
-                        int index = currentIndex * ncursors + cursorIndex;
-                        outputRow = cursors[index].next();
+                        outputRow = inputs[currentIndex].cursors[cursorIndex].next();
                         if (cursorIndex == branchCursorIndex) {
                             // Get all matching rows from branch.
                             if (outputRow == null) {
+                                inputs[currentIndex].cursors[cursorIndex].close();
                                 cursorIndex++;
                             }
                             else if (!branchOutputRowTypes.contains(outputRow.rowType())) {
@@ -641,13 +633,13 @@ class GroupLookup_Default extends Operator
                             }
                         }
                         else {
-                            cursors[index].close();
+                            inputs[currentIndex].cursors[cursorIndex].close();
                             if ((outputRow != null) && 
-                                !lookupHKeys[index].equals(outputRow.hKey())) {
+                                !inputs[currentIndex].lookupHKeys[cursorIndex].equals(outputRow.hKey())) {
                                 // Not the row we wanted; no matching ancestor.
                                 outputRow = null;
                             }
-                            lookupHKeys[index] = null;
+                            inputs[currentIndex].lookupHKeys[cursorIndex] = null;
                             cursorIndex++;
                         }
                     }
@@ -665,50 +657,16 @@ class GroupLookup_Default extends Operator
 
         @Override
         public void close() {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (!closed) {
                 // Any rows for the current bindings being closed need to be discarded.
-                while (currentBindings == inputRowBindings[currentIndex]) {
-                    inputRows[currentIndex] = null;
-                    inputRowBindings[currentIndex] = null;
-                    for (int i = 0; i < ncursors; i++) {
-                        if (i == keepInputCursorIndex) continue;
-                        int index = currentIndex * ncursors + i;
-                        cursors[index].close();
-                        lookupHKeys[index] = null;
-                    }
-                    currentIndex = (currentIndex + 1) % quantum;
-                }
-                closed = true;
+            while (currentBindings == inputs[currentIndex].queryBindings) {
+                inputs[currentIndex].clearState();
+                currentIndex = (currentIndex + 1) % quantum;
             }
-        }
-
-        @Override
-        public void destroy() {
-            pendingBindings.clear();
-            Arrays.fill(inputRowBindings, null);
-            Arrays.fill(inputRows, null);
-            for (GroupCursor ancestorCursor : cursors) {
-                if (ancestorCursor != null) {
-                    ancestorCursor.destroy();
-                }
+            if (inputs[nextIndex].inputRow == null && !input.isClosed()) {
+                input.close();
+                nextBindings = null;
             }
-            input.destroy();
-        }
-
-        @Override
-        public boolean isIdle() {
-            return !input.isDestroyed() && closed;
-        }
-
-        @Override
-        public boolean isActive() {
-            return !input.isDestroyed() && !closed;
-        }
-
-        @Override
-        public boolean isDestroyed() {
-            return input.isDestroyed();
+            super.close();
         }
 
         @Override
@@ -721,7 +679,7 @@ class GroupLookup_Default extends Operator
                 
         @Override
         public QueryBindings nextBindings() {
-            CursorLifecycle.checkIdle(this);
+            CursorLifecycle.checkClosed(this);
             currentBindings = pendingBindings.poll();
             if (currentBindings == null) {
                 currentBindings = input.nextBindings();
@@ -741,22 +699,17 @@ class GroupLookup_Default extends Operator
 
         @Override
         public void cancelBindings(QueryBindings bindings) {
+            CursorLifecycle.checkClosed(this);
             while (true) {
                 QueryBindings pending = pendingBindings.peek();
                 if (pending == null) break;
                 if (!pending.isAncestor(bindings)) break;
                 pendingBindings.remove();
             }
-            while ((inputRowBindings[currentIndex] != null) &&
-                   inputRowBindings[currentIndex].isAncestor(bindings)) {
-                inputRows[currentIndex] = null;
-                inputRowBindings[currentIndex] = null;
-                for (int i = 0; i < ncursors; i++) {
-                    if (i == keepInputCursorIndex) continue;
-                    int index = currentIndex * ncursors + i;
-                    cursors[index].close();
-                    lookupHKeys[index] = null;
-                }
+            
+            while ((inputs[currentIndex].queryBindings != null) &&
+                        inputs[currentIndex].queryBindings.isAncestor(bindings)) {
+                inputs[currentIndex].clearState();
                 currentIndex = (currentIndex + 1) % quantum;
             }
             currentBindings = null;
@@ -765,7 +718,6 @@ class GroupLookup_Default extends Operator
             if ((nextBindings != null) && nextBindings.isAncestor(bindings)) {
                 nextBindings = null;
             }
-            closed = true;
         }
 
         // LookaheadExecution interface
@@ -793,46 +745,72 @@ class GroupLookup_Default extends Operator
             // Convert from number of cursors to number of input rows, rounding up.
             quantum = (quantum + ncursors - 1) / ncursors;
             this.quantum = quantum;
-            this.inputRows = new Row[quantum];
-            this.inputRowBindings = new QueryBindings[quantum];
             this.ncursors = nindex;
-            this.cursors = new GroupCursor[quantum * nindex];
-            this.lookupHKeys = new HKey[quantum * nindex];
+            this.inputs = new InputState[quantum];
             for (int j = 0; j < quantum; j++) {
-                for (int i = 0; i < nindex; i++) {
-                    int index = j * nindex + i;
-                    if (i != keepInputCursorIndex)
-                        this.cursors[index] = adapter().newGroupCursor(group);
-                    if (i == branchCursorIndex)
-                        this.lookupHKeys[index] = adapter().newHKey(inputRowType.hKey());
-                }
+                this.inputs[j] = new InputState (nindex, keepInputCursorIndex, branchCursorIndex);
             }
         }
 
         // For use by this class
 
         private void clearBindings() {
-            if (nextBindings != null) {
-                input.close();  // Starting over.
+            CursorLifecycle.checkClosed(this);
+            for (InputState in : inputs) {
+                in.inputRow = null;
+                in.queryBindings = null;
             }
-            Arrays.fill(inputRows, null);
             pendingBindings.clear();
-            Arrays.fill(inputRowBindings, null);
             currentBindings = nextBindings = null;
         }
-
+        
+        private class InputState 
+        {
+            public Row inputRow;
+            public QueryBindings queryBindings;
+            public final GroupCursor[] cursors;
+            public final HKey[] lookupHKeys;
+            //public final GroupCursor keepIndexCursor;
+            
+            public InputState (int slots, int keepInputCursorIndex, int branchCursorIndex) {
+                inputRow = null;
+                queryBindings = null;
+                cursors = new GroupCursor[slots];
+                lookupHKeys = new HKey[slots];
+                for (int i = 0; i < slots; i++) {
+                    if (i != keepInputCursorIndex)
+                        this.cursors[i] = adapter().newGroupCursor(group);
+                    if (i == branchCursorIndex)
+                        this.lookupHKeys[i] = adapter().newHKey(inputRowType.hKey());
+                }
+            }
+            
+            public void clearState() {
+                inputRow = null;
+                queryBindings = null;
+                for (int i = 0; i < cursors.length; i++) {
+                    if (i == keepInputCursorIndex) continue;
+                    if (!cursors[i].isClosed()) { cursors[i].close();}
+                    lookupHKeys[i] = null;
+                }
+            }
+        }
+        
         // Object state
 
         private final Cursor input;
         private final Queue<QueryBindings> pendingBindings;
         private final int quantum;
-        private final Row[] inputRows;
-        private final QueryBindings[] inputRowBindings;
+        private final InputState[] inputs;
+        
+        
+        //private final Row[] inputRows;
+        //private final QueryBindings[] inputRowBindings;
+        //private final GroupCursor[][] cursors;
+        //private final HKey[][] lookupHKeys;
         private final int ncursors, keepInputCursorIndex, branchCursorIndex;
-        private final GroupCursor[] cursors;
-        private final HKey[] lookupHKeys;
         private int currentIndex, nextIndex, cursorIndex;
         private QueryBindings currentBindings, nextBindings;
-        private boolean bindingsExhausted, closed = true, newBindings;
+        private boolean bindingsExhausted, newBindings;
     }
 }

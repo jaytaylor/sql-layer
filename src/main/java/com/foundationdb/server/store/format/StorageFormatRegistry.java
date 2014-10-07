@@ -48,14 +48,13 @@ public abstract class StorageFormatRegistry
     private final ConfigurationService configService;
     private String defaultIdentifier;
 
-    public StorageFormatRegistry(String identifier) {
+    public StorageFormatRegistry(String defaultIdentifier) {
         this.configService = null;
-        this.defaultIdentifier = identifier;
+        this.defaultIdentifier = defaultIdentifier;
     }
 
-    public StorageFormatRegistry(ConfigurationService configService, String identifier) {
+    public StorageFormatRegistry(ConfigurationService configService) {
         this.configService = configService;
-        this.defaultIdentifier = identifier;
     }
 
     static class Format<T extends StorageDescription> implements Comparable<Format<?>> {
@@ -202,13 +201,12 @@ public abstract class StorageFormatRegistry
         return format.storageFormat.parseSQL(node, forObject);
     }
 
-
-        public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
+    public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
         if (object.getStorageDescription() == null) {
             if (object instanceof Group) {
                 MemoryTableFactory factory = memoryTableFactories.get(((Group)object).getName());
                 if (factory != null) {
-                    object.setStorageDescription(new MemoryTableStorageDescription(object, factory, defaultIdentifier));
+                    object.setStorageDescription(new MemoryTableStorageDescription(object, factory, MemoryTableStorageFormat.identifier));
                 }
                 else {
                     object.setStorageDescription(getDefaultStorageDescription(object));
@@ -216,9 +214,9 @@ public abstract class StorageFormatRegistry
             }
             else if (object instanceof FullTextIndex) {
                 File path = new File(nameGenerator.generateFullTextIndexPath((FullTextIndex)object));
-                object.setStorageDescription(new FullTextIndexFileStorageDescription(object, path, defaultIdentifier));
+                object.setStorageDescription(new FullTextIndexFileStorageDescription(object, path, FullTextIndexFileStorageFormat.identifier));
             }
-            else {
+            else { // Index or Sequence
                 object.setStorageDescription(getDefaultStorageDescription(object));
             }
         }

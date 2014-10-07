@@ -161,9 +161,8 @@ class Distinct_Partial extends Operator
         {
             TAP_OPEN.in();
             try {
-                input.open();
+                super.open();
                 nvalid = 0;
-                idle = false;
             } finally {
                 TAP_OPEN.out();
             }
@@ -183,7 +182,7 @@ class Distinct_Partial extends Operator
                     if (isDistinctP(row)) break;
                 }
                 if (row == null) {
-                    close();
+                    setIdle();
                 }
                 if (LOG_EXECUTION) {
                     LOG.debug("Distinct_Partial: yield {}", row);
@@ -199,35 +198,8 @@ class Distinct_Partial extends Operator
         @Override
         public void close()
         {
-            if (!idle) {
-                input.close();
-                currentRow = null;
-                idle = true;
-            }
-        }
-
-        @Override
-        public void destroy()
-        {
-            destroyed = true;
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return !destroyed && idle;
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return !destroyed && !idle;
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return destroyed;
+            super.close();
+            currentRow = null;
         }
 
         // Execution interface
@@ -279,7 +251,7 @@ class Distinct_Partial extends Operator
                     return collator.compare(x, y) == 0;
                 }
             }
-            return ValueSources.areEqual(x, y, type);
+            return ValueSources.areEqual(x, y);
         }
 
         // Object state
@@ -290,7 +262,5 @@ class Distinct_Partial extends Operator
         // filled as needed.
         private int nvalid;
         private final Value[] currentValues;
-        private boolean idle = true;
-        private boolean destroyed = false;
     }
 }

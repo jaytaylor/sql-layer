@@ -17,8 +17,10 @@
 
 package com.foundationdb.util;
 
+import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.error.InvalidOperationException;
 
+import java.sql.SQLException;
 import java.util.List;
 
 public final class Exceptions {
@@ -60,6 +62,16 @@ public final class Exceptions {
     }
 
     public static boolean isRollbackException(Throwable t) {
+        if(t instanceof SQLException) {
+            String sqlState = ((SQLException)t).getSQLState();
+            try {
+                ErrorCode code = ErrorCode.valueOfCode(sqlState);
+                return code.isRollbackClass();
+            } catch(IllegalArgumentException e) {
+                // Not a valid SQLState
+                return false;
+            }
+        }
         return (t instanceof InvalidOperationException) &&
                ((InvalidOperationException)t).getCode().isRollbackClass();
     }

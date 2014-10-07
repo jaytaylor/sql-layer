@@ -58,6 +58,10 @@ public final class TPreptimeValue {
         this(type, null);
     }
 
+    public TPreptimeValue(ValueSource value) {
+        this(value.getType(), value);
+    }
+
     public TPreptimeValue(TInstance type, ValueSource value) {
         this.type = type;
         this.value = value;
@@ -87,7 +91,7 @@ public final class TPreptimeValue {
             return false;
         if (value == null)
             return that.value == null;
-        return that.value != null && ValueSources.areEqual(value, that.value, type);
+        return that.value != null && ValueSources.areEqual(value, that.value);
     }
 
     @Override
@@ -95,8 +99,7 @@ public final class TPreptimeValue {
         int result = type != null ? type.hashCode() : 0;
         AkCollator collator;
         if (type != null && type.typeClass() instanceof TString) {
-            int charsetId = type.attribute(StringAttribute.CHARSET);
-            collator = AkCollatorFactory.getAkCollator(charsetId);
+            collator = AkCollatorFactory.getAkCollator(type.attribute(StringAttribute.COLLATION));
         }
         else {
             collator = null;

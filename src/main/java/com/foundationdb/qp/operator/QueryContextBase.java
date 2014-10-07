@@ -18,6 +18,7 @@
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.server.error.*;
+import com.foundationdb.sql.server.ServerTransaction;
 
 import java.util.Date;
 
@@ -72,8 +73,8 @@ public abstract class QueryContextBase implements QueryContext
     }
 
     @Override
-    public boolean isTransactionPeriodicallyCommit() {
-        return false;
+    public ServerTransaction.PeriodicallyCommit getTransactionPeriodicallyCommit() {
+        return ServerTransaction.PeriodicallyCommit.OFF;
     }
 
     @Override

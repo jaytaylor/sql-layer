@@ -215,7 +215,7 @@ public class TableDDL
             else if (tableElement instanceof ConstraintDefinitionNode) {
                 addIndex (namer, builder, (ConstraintDefinitionNode)tableElement, schemaName, tableName, context);
             } else if (tableElement instanceof IndexDefinitionNode) {
-                addIndex (namer, builder, (IndexDefinitionNode)tableElement, schemaName, tableName, context);
+                addIndex (namer, builder, (IndexDefinitionNode)tableElement, schemaName, tableName, context, ddlFunctions);
             } else if (!(tableElement instanceof ColumnDefinitionNode)) {
                 throw new UnsupportedSQLException("Unexpected TableElement", tableElement);
             }
@@ -364,12 +364,7 @@ public class TableDDL
             object.setStorageDescription(ddlFunctions.getStorageFormatRegistry().parseSQL(storage, object));
             return;
         }
-        object.setStorageDescription(ddlFunctions.getStorageFormatRegistry().
-                getDefaultStorageDescription(object));
-        if (object.getStorageDescription() instanceof TupleStorageDescription) {
-            TupleStorageDescription tsd = (TupleStorageDescription) object.getStorageDescription();
-            tsd.setUsage(TupleUsage.KEY_AND_ROW);
-        }
+        object.setStorageDescription(ddlFunctions.getStorageFormatRegistry().getDefaultStorageDescription(object));
     }
 
     static void addColumn (final AISBuilder builder, final TypesTranslator typesTranslator, final ColumnDefinitionNode cdn,
@@ -529,13 +524,14 @@ public class TableDDL
                                   IndexDefinitionNode idn,
                                   String schemaName,
                                   String tableName,
-                                  QueryContext context) {
+                                  QueryContext context,
+                                  DDLFunctions ddl) {
         if(idn.getJoinType() != null) {
             throw new UnsupportedSQLException("CREATE TABLE containing group index");
         }
         String indexName = idn.getName();
         Table table = builder.akibanInformationSchema().getTable(schemaName, tableName);
-        return generateTableIndex(namer, builder, idn, indexName, table, context);
+        return generateTableIndex(namer, builder, idn, indexName, table, context, ddl);
     }
 
     public static TableName getReferencedName(String schemaName, FKConstraintDefinitionNode fkdn) {
@@ -628,7 +624,9 @@ public class TableDDL
             IndexDefinition id,
             String indexName,
             Table table,
-            QueryContext context) {
+            QueryContext context,
+            DDLFunctions ddl
+            ) {
         IndexColumnList columnList = id.getIndexColumnList();
         Index tableIndex;
         TableName constraintName = null;
@@ -638,7 +636,6 @@ public class TableDDL
         if(id.isUnique()) {
             constraintName = builder.getNameGenerator().generateUniqueConstraintName(table.getName().getSchemaName(), indexName);
         }
-        
         if (columnList.functionType() == IndexColumnList.FunctionType.FULL_TEXT) {
             logger.debug ("Building Full text index on table {}", table.getName()) ;
             tableIndex = IndexDDL.buildFullTextIndex(builder, table.getName(), indexName, id, null, null);
@@ -654,6 +651,10 @@ public class TableDDL
         // Can't check isSpatialCompatible before the index columns have been added.
         if (indexIsSpatial && !Index.isSpatialCompatible(tableIndex)) {
             throw new BadSpatialIndexException(tableIndex.getIndexName().getTableName(), null);
+        }
+        StorageFormatNode sfn = id.getStorageFormat();
+        if (sfn != null) {
+            tableIndex.setStorageDescription(ddl.getStorageFormatRegistry().parseSQL(sfn, tableIndex));
         }
         return tableIndex.getIndexName().getName();
     }

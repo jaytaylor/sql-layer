@@ -1,0 +1,65 @@
+---
+- CreateTable: T1 (C1 INT, C2 CHAR(100), notNull INT NOT NULL);
+---
+- Statement: INSERT INTO t1 VALUES (null,null,0);
+---
+- Statement: INSERT INTO t1 VALUES (1,'',1);
+---
+- Statement: INSERT INTO t1 VALUES (2,'abcde',2);
+---
+- Statement: INSERT INTO t1 VALUES (100,'abcdefghij',100);
+---
+- CreateTable: T2 (C1 INT, notNull INT NOT NULL);
+---
+- Statement: INSERT INTO t2 VALUES (null, 0);
+---
+- Statement: INSERT INTO t2 VALUES (2, 2);
+---
+- Statement: INSERT INTO t2 VALUES (100, 100);
+---
+- Statement: SELECT c1 FROM t1 WHERE c1 NOT IN (1);
+- output: [[2],[100]]
+---
+- Statement: SELECT c1 FROM t1 WHERE c1 NOT IN (1,NULL,34);
+- row_count: 0
+---
+# neither side nullable
+- Statement: SELECT notNull FROM t1 WHERE notNull NOT IN (SELECT notNull FROM t2);
+- output: [[1]]
+---
+# both sides nullable
+- Statement: SELECT c1 FROM t1 WHERE c1 NOT IN (SELECT c1 FROM t2);
+- row_count: 0
+---
+# left side nullable
+- Statement: SELECT c1 FROM t1 WHERE c1 NOT IN (SELECT notNull FROM t2);
+- output: [[1]]
+---
+# right side nullable
+- Statement: SELECT notNull FROM t1 WHERE notNull NOT IN (SELECT c1 FROM t2);
+- row_count: 0
+---
+# right side nullable with function
+- Statement: SELECT notNull FROM t1 WHERE notNull NOT IN (SELECT plus(c1,1) FROM t2);
+- row_count: 0
+---
+# left1 nullable
+- Statement: SELECT c1 FROM t1 WHERE (c1, notNull) NOT IN (SELECT notNull, notNull FROM t2)
+- output: [[1]]
+---
+# left2 nullable
+- Statement: SELECT c1 FROM t1 WHERE (notNull, c1) NOT IN (SELECT notNull, notNull FROM t2)
+- output: [[1]]
+---
+# right1 nullable
+- Statement: SELECT notNull FROM t1 WHERE (notNull, notNull) NOT IN (SELECT c1, notNull FROM t2)
+- output: [[1]]
+---
+# right2 nullable
+- Statement: SELECT notNull FROM t1 WHERE (notNull, notNull) NOT IN (SELECT notNull, c1 FROM t2)
+- output: [[1]]
+---
+# right both nullable
+- Statement: SELECT notNull FROM t1 WHERE (notNull, notNull) NOT IN (SELECT c1, c1 FROM t2)
+- row_count: 0
+...

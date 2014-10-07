@@ -1075,6 +1075,11 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     }
                     return false;
                 }
+
+                @Override
+                public boolean isSelected(ForeignKey foreignKey) {
+                    return false;
+                }
             }
         );
 

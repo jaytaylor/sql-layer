@@ -858,7 +858,9 @@ public class ApiTestBase {
 
     public int loadDatabase(String schemaName, File dir) throws Exception {
         int rootTableID = loadSchemaFile(schemaName, new File(dir, "schema.ddl"));
-        for (File data : dir.listFiles(new RegexFilenameFilter(".*\\.dat"))) {
+        File[] files = dir.listFiles(new RegexFilenameFilter(".*\\.dat"));
+        Arrays.sort(files);
+        for (File data : files) {
             loadDataFile(schemaName, data);
         }
         return rootTableID;

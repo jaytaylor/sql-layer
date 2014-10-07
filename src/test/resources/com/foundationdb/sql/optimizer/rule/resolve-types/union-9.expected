@@ -7,6 +7,6 @@ DMLStatement@159f52fa(customers)
             Select@5fb9b9e3[]
               TableSource@1a5b172e(customers)
         ResultSet@524eda86[iid, oid]
-          Project@36ecbda1[Cast(items.iid AS MCOMPAT_ BIGINT(21) NOT NULL), Cast(items.oid AS MCOMPAT_ INT(11) NOT NULL)]
+          Project@36ecbda1[Cast(items.iid AS MCOMPAT_ BIGINT(21) NOT NULL), items.oid]
             Select@7095b132[]
               TableSource@73a4835c(items)

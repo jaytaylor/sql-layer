@@ -164,7 +164,7 @@ class Union_Ordered extends SetOperatorBase
 
     // Inner classes
 
-    private class Execution extends OperatorCursor
+    private class Execution extends MultiChainedCursor 
     {
         // Cursor interface
 
@@ -173,14 +173,11 @@ class Union_Ordered extends SetOperatorBase
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-                leftInput.open();
-                rightInput.open();
+                super.open();
                 nextLeftRow();
                 nextRightRow();
-                closed = false;
                 if (leftRow == null && rightRow == null) {
-                    close();
+                    setIdle();
                 }
                 leftSkipRowFixed = rightSkipRowFixed = false; // Fixed fields are per iteration.
             } finally {
@@ -217,7 +214,7 @@ class Union_Ordered extends SetOperatorBase
                             nextRightRow();
                     }
                     if (leftRow == null && rightRow == null) {
-                        close();
+                        setIdle();
                     }
                 }
                 if (LOG_EXECUTION) {
@@ -241,96 +238,39 @@ class Union_Ordered extends SetOperatorBase
         @Override
         public void jump(Row jumpRow, ColumnSelector jumpRowColumnSelector)
         {
+            if (CURSOR_LIFECYCLE_ENABLED) {
+                CursorLifecycle.checkIdleOrActive(this);
+            }
+            state = CursorLifecycle.CursorState.ACTIVE;
             nextLeftRowSkip(jumpRow, fixedFields, jumpRowColumnSelector);
             nextRightRowSkip(jumpRow, fixedFields, jumpRowColumnSelector);
             if (leftRow == null && rightRow == null) {
-                close();
+                setIdle();
             }
         }
-
-
-
 
         @Override
         public void close()
         {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (!closed) {
-                leftRow = null;
-                rightRow = null;
-                leftInput.close();
-                rightInput.close();
-                closed = true;
-            }
+            super.close();
+            leftRow = null;
+            rightRow = null;
         }
 
         @Override
-        public void destroy()
-        {
-            close();
-            leftInput.destroy();
-            rightInput.destroy();
+        protected Operator left() {
+            return Union_Ordered.this.left();
         }
-
+        
         @Override
-        public boolean isIdle()
-        {
-            return closed;
+        protected Operator right() {
+            return Union_Ordered.this.right();
         }
-
-        @Override
-        public boolean isActive()
-        {
-            return !closed;
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            assert leftInput.isDestroyed() == rightInput.isDestroyed();
-            return leftInput.isDestroyed();
-        }
-
-        @Override
-        public void openBindings() {
-            bindingsCursor.openBindings();
-            leftInput.openBindings();
-            rightInput.openBindings();
-        }
-
-        @Override
-        public QueryBindings nextBindings() {
-            QueryBindings bindings = bindingsCursor.nextBindings();
-            QueryBindings other = leftInput.nextBindings();
-            assert (bindings == other);
-            other = rightInput.nextBindings();
-            assert (bindings == other);
-            return bindings;
-        }
-
-        @Override
-        public void closeBindings() {
-            bindingsCursor.closeBindings();
-            leftInput.closeBindings();
-            rightInput.closeBindings();
-        }
-
-        @Override
-        public void cancelBindings(QueryBindings bindings) {
-            leftInput.cancelBindings(bindings);
-            rightInput.cancelBindings(bindings);
-            bindingsCursor.cancelBindings(bindings);
-        }
-
         // Execution interface
 
         Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
-            super(context);
-            MultipleQueryBindingsCursor multiple = new MultipleQueryBindingsCursor(bindingsCursor);
-            this.bindingsCursor = multiple;
-            this.leftInput = left().cursor(context, multiple.newCursor());
-            this.rightInput = right().cursor(context, multiple.newCursor());
+            super(context, bindingsCursor);
         }
         
         // For use by this class
@@ -356,7 +296,7 @@ class Union_Ordered extends SetOperatorBase
         private int compareRows()
         {
             int c;
-            assert !closed;
+            assert isActive();
             assert !(leftRow == null && rightRow == null);
             if (leftRow == null) {
                 c = 1;
@@ -468,10 +408,6 @@ class Union_Ordered extends SetOperatorBase
 
         // Object state
 
-        private boolean closed = true;
-        private final QueryBindingsCursor bindingsCursor;
-        private final Cursor leftInput;
-        private final Cursor rightInput;
         private Row leftRow;
         private Row rightRow;
         private ValuesHolderRow leftSkipRow;

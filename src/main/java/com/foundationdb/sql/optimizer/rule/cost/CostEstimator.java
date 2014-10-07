@@ -1093,6 +1093,33 @@ public abstract class CostEstimator implements TableRowCounts
         return adjustCostEstimate(estimate);
     }
 
+    public CostEstimate costHashLookup(CostEstimate equivalentCost,
+                                       int joinColumns,
+                                       int columnCount) {
+        long nrows = equivalentCost.getRowCount();
+        CostEstimate estimate = new CostEstimate(nrows,
+                                                 model.unloadHashTable((int)nrows,
+                                                                       joinColumns,
+                                                                       columnCount));
+        return adjustCostEstimate(estimate);
+    }
+
+    public CostEstimate costHashJoin(CostEstimate loaderCost,
+                                     CostEstimate outerCost,
+                                     CostEstimate lookupCost,
+                                     int joinColumns,
+                                     int outerColumnCount,
+                                     int innerColumnCount) {
+        CostEstimate estimate = outerCost.nest(lookupCost);
+        estimate = new CostEstimate(estimate.getRowCount(),
+                                    loaderCost.getCost() +
+                                    model.loadHashTable((int)loaderCost.getRowCount(),
+                                                        joinColumns,
+                                                        outerColumnCount) +
+                                    estimate.getCost());
+        return adjustCostEstimate(estimate);
+    }
+
     protected void missingStats(Index index, Column column) {
     }
 

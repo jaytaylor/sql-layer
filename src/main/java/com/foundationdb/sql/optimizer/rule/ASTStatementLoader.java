@@ -23,15 +23,14 @@ import com.foundationdb.sql.optimizer.plan.JoinNode.JoinType;
 import com.foundationdb.sql.optimizer.plan.ResultSet.ResultField;
 import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
 import com.foundationdb.sql.optimizer.plan.UpdateStatement.UpdateColumn;
+
 import static com.foundationdb.sql.optimizer.rule.PlanContext.*;
 
 import com.foundationdb.sql.optimizer.*;
-
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.parser.*;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
-
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Routine;
@@ -973,6 +972,7 @@ public class ASTStatementLoader extends BaseRule
             //ConditionList innerConds = null;
             switch (subqueryNode.getSubqueryType()) {
             case EXISTS:
+            case EXPRESSION:
                 break;
             case NOT_EXISTS:
                 negate = true;
@@ -1146,6 +1146,11 @@ public class ASTStatementLoader extends BaseRule
                 TInstance type = typesTranslator.typeForSQLType(subqueryNode.getType());
                 condition = new AnyCondition(new Subquery(subquery, peekEquivalenceFinder()),
                                              subqueryNode.getType(), subqueryNode, type);
+            }
+            else if (subqueryNode.getSubqueryType() == SubqueryNode.SubqueryType.EXPRESSION) {
+                ExpressionNode expression = toExpression(subqueryNode);
+                condition = new BooleanCastExpression(expression, subqueryNode.getType(),
+                        subqueryNode, expression.getType());
             }
             else {
                 TInstance type = typesTranslator.typeForSQLType(subqueryNode.getType());
@@ -1804,12 +1809,12 @@ public class ASTStatementLoader extends BaseRule
                 // Extract the (potential) schema name as the first parameter
                 TInstance schemaType = typesTranslator.typeForString(schema);
                 params.add(new ConstantExpression(
-                        new TPreptimeValue(schemaType, new Value(schemaType, schema))));
+                        new TPreptimeValue(new Value(schemaType, schema))));
                 // Extract the schema name as the second parameter
                 String sequence = seqNode.getSequenceName().getTableName();
                 TInstance sequenceType = typesTranslator.typeForString(sequence);
                 params.add(new ConstantExpression(
-                        new TPreptimeValue(sequenceType, new Value(sequenceType, sequence))));
+                        new TPreptimeValue(new Value(sequenceType, sequence))));
                 
                 return new FunctionExpression ("nextval", params,
                         sqlType, valueNode, type);
@@ -1824,12 +1829,12 @@ public class ASTStatementLoader extends BaseRule
                 // Extract the (potential) schema name as the first parameter
                 TInstance schemaType = typesTranslator.typeForString(schema);
                 params.add(new ConstantExpression(
-                        new TPreptimeValue(schemaType, new Value(schemaType, schema))));
+                        new TPreptimeValue(new Value(schemaType, schema))));
                 // Extract the schema name as the second parameter
                 String sequence = seqNode.getSequenceName().getTableName();
                 TInstance sequenceType = typesTranslator.typeForString(sequence);
                 params.add(new ConstantExpression(
-                        new TPreptimeValue(sequenceType, new Value(sequenceType, sequence))));
+                        new TPreptimeValue(new Value(sequenceType, sequence))));
                 
                 return new FunctionExpression ("currval", params,
                         sqlType, valueNode, type);

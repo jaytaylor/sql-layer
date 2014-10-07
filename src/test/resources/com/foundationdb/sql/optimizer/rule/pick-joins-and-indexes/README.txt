@@ -167,3 +167,13 @@ update-covering-2: Update with subquery on same table does not.
 uncorrelated-semi-join: An EXISTS with no relation to the rest
 
 uncorrelated-anti-join: NOT EXISTS with no relation to the rest
+
+left-cross: LEFT join with cross join
+
+hash-multiple-1: Multiple columns handled by same hash table
+
+hash-multiple-2: Some conditions not handled by hash table
+
+hash-left: Hash LEFT join
+
+hash-semi: Hash SEMI join

@@ -97,6 +97,14 @@ final class TUtils {
         return RangeEndpoint.exclusive(constant(value));
     }
 
+    public static RangeEndpoint nullInclusive(String value) {
+        return RangeEndpoint.nullInclusive(constant(value));
+    }
+
+    public static RangeEndpoint nullExclusive(String value) {
+        return RangeEndpoint.nullExclusive(constant(value));
+    }
+
     public static final ColumnExpression lastName;
     public static final ColumnExpression firstName;
 

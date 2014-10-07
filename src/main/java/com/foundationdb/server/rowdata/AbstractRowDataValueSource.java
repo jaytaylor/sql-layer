@@ -135,10 +135,7 @@ abstract class AbstractRowDataValueSource implements ValueSource {
     @Override
     public Object getObject() {
         if (fieldDef().column().getType().typeClass() instanceof TString) {
-            final long location = getRawOffsetAndWidth();
-            return location == 0
-                    ? null
-                    : AkServerUtil.byteSourceForMySQLString(bytes(), (int) location, (int) (location >>> 32), fieldDef());
+            return getString();
         } else if (fieldDef().column().getType().typeClass() instanceof TBigDecimal) {
             return getDecimal();
         } else if (fieldDef().column().getType().typeClass() instanceof AkGUID) {

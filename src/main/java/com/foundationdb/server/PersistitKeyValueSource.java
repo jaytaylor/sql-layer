@@ -165,12 +165,11 @@ public class PersistitKeyValueSource implements ValueSource {
         return compareOneKeySegment(that.key.getEncodedBytes(), thatPosition, thatEnd);
     }
 
-    public int compare(AkCollator collator, String string)
+    public int compare(byte[] bytes)
     {
-        assert collator != null;
         Key thatKey = new Key(key);
         thatKey.clear();
-        collator.append(thatKey, string);
+        thatKey.append(bytes);
         thatKey.indexTo(0);
         int thatPosition = thatKey.getIndex();
         thatKey.indexTo(1);

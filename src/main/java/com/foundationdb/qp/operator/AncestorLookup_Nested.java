@@ -26,7 +26,6 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
-import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.explain.std.LookUpOperatorExplainer;
 import com.foundationdb.util.ArgumentValidation;
@@ -263,13 +262,12 @@ class AncestorLookup_Nested extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
+                super.open();
                 Row rowFromBindings = bindings.getRow(inputBindingPosition);
                 if (LOG_EXECUTION) {
                     LOG.debug("AncestorLookup_Nested: open using {}", rowFromBindings);
                 }
                 findAncestors(rowFromBindings);
-                closed = false;
             } finally {
                 TAP_OPEN.out();
             }
@@ -291,7 +289,7 @@ class AncestorLookup_Nested extends Operator
                     LOG.debug("AncestorLookup: {}", row);
                 }
                 if (row == null) {
-                    close();
+                    setIdle();
                 }
                 return row;
             } finally {
@@ -304,37 +302,9 @@ class AncestorLookup_Nested extends Operator
         @Override
         public void close()
         {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (!closed) {
-                pending.clear();
-                ancestorCursor.close();
-                closed = true;
-            }
-        }
-
-        @Override
-        public void destroy()
-        {
-            close();
-            ancestorCursor.destroy();
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return closed;
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return !closed;
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return ancestorCursor.isDestroyed();
+            super.close();
+            pending.clear();
+            assert ancestorCursor.isClosed() : "Failed to close ancestorCursor"; 
         }
 
         // Execution interface
@@ -362,7 +332,6 @@ class AncestorLookup_Nested extends Operator
         private Row readAncestorRow(HKey hKey)
         {
             Row row;
-            ancestorCursor.close();
             ancestorCursor.rebind(hKey, false);
             ancestorCursor.open();
             row = ancestorCursor.next();
@@ -371,6 +340,7 @@ class AncestorLookup_Nested extends Operator
             if (row != null && !hKey.equals(row.hKey())) {
                 row = null;
             }
+            ancestorCursor.close();
             return row;
         }
 
@@ -378,15 +348,15 @@ class AncestorLookup_Nested extends Operator
 
         private final GroupCursor ancestorCursor;
         private final Queue<Row> pending;
-        private boolean closed = true;
     }
 
-    private class AncestorCursor implements BindingsAwareCursor
+    private class AncestorCursor extends RowCursorImpl implements BindingsAwareCursor
     {
         // BindingsAwareCursor interface
 
         @Override
         public void open() {
+            super.open();
             Row rowFromBindings = bindings.getRow(inputBindingPosition);
             assert rowFromBindings.rowType() == rowType : rowFromBindings;
             for (int i = 0; i < hKeys.length; i++) {
@@ -402,7 +372,7 @@ class AncestorLookup_Nested extends Operator
             Row row = null;
             while ((row == null) && (cursorIndex < cursors.length)) {
                 row = cursors[cursorIndex].next();
-                cursors[cursorIndex].close();
+                cursors[cursorIndex].setIdle();
                 if (row != null && !hKeys[cursorIndex].equals(row.hKey())) {
                     row = null;
                 }
@@ -411,23 +381,13 @@ class AncestorLookup_Nested extends Operator
             return row;
         }
 
-        @Override
-        public void jump(Row row, ColumnSelector columnSelector) {
-            throw new UnsupportedOperationException(getClass().getName());
-        }
 
         @Override
         public void close() {
             for (GroupCursor cursor : cursors) {
                 cursor.close();
             }
-        }
-
-        @Override
-        public void destroy() {
-            for (GroupCursor cursor : cursors) {
-                cursor.destroy();
-            }
+            super.close();
         }
 
         @Override
@@ -440,11 +400,6 @@ class AncestorLookup_Nested extends Operator
             return ((cursorIndex < cursors.length) && cursors[cursorIndex].isActive());
         }
 
-        @Override
-        public boolean isDestroyed() {
-            return cursors[0].isDestroyed();
-        }
-        
         @Override
         public void rebind(QueryBindings bindings) {
             this.bindings = bindings;

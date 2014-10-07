@@ -60,6 +60,7 @@ public class MultipleQueryBindingsCursor implements QueryBindingsCursor
 
     @Override
     public void cancelBindings(QueryBindings bindings) {
+        cursors.get(0).cancelBindings(bindings);
         input.cancelBindings(bindings);
     }
 
@@ -98,7 +99,8 @@ public class MultipleQueryBindingsCursor implements QueryBindingsCursor
 
         @Override
         public QueryBindings nextBindings() {
-            assert (open && (index >= offset));
+            assert (open);
+            assert (index >= offset);
             while (index - offset >= buffer.size()) {
                 if (exhausted) {
                     return null;

@@ -736,9 +736,9 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         checkIndexesInstead(O_NAME, "PRIMARY", "cid");
         compareRows(
             new Object[][] {
-                { "110", 1, 1, 10, 100 },
-                { "111", 1, 1, 10, 101 },
-                { "122", 1, 1, 11, 111 }
+                { "110", "1", "1", 10, 100 },
+                { "111", "1", "1", 10, 101 },
+                { "122", "1", "1", 11, 111 }
             },
             ais().getGroup(C_NAME).getIndex("oo_ii_cc")
         );

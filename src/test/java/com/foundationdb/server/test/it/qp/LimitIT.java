@@ -126,6 +126,17 @@ public class LimitIT extends OperatorITBase
         compareRows(expected, cursor);
     }
 
+    @Test(expected=NegativeLimitException.class)
+    public void testOffsetFromBadBinding () 
+    {
+        Operator plan = limit_Default(groupScan_Default(coi),
+                0, true, 0, false);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
+        queryBindings.setValue(0, new Value(MNumeric.INT.instance(false), -1));
+        Row[] expected = new Row[]{};
+        compareRows(expected, cursor);
+    }
+
     @Test
     public void testCursor()
     {

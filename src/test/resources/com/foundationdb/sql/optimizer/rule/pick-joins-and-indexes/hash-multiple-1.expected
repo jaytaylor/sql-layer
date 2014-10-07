@@ -1,0 +1,11 @@
+SelectQuery@4da39ca9
+  ResultSet@6a9344f5[c1, c2, c3, c1, c2, c3]
+    Project@5584d9c6[t1.c1, t1.c2, t1.c3, t2.c1, t2.c2, t2.c3]
+      Select@3c9c6245[]
+        HashJoinNode@6ef60295(INNER/HASH_TABLE[t2.c1, t2.c2] = [t1.c1, t1.c2])
+          TableGroupJoinTree@3127cb44(TableGroup@3234474(t2), t2 - GroupScan@631cb129(Group(test.t2), rows = 1, cost = 0.00000))
+            TableSource@309cedb6(t2 - TableGroup@3234474(t2))
+          TableGroupJoinTree@35c4e864(TableGroup@3d20e575(t1), t1 - GroupScan@3252747e(Group(test.t1), rows = 1, cost = 0.00000))
+            TableSource@21b6c9c2(t1 - TableGroup@3d20e575(t1))
+          HashTableLookup@2b4b96a4(HashTable@2dd8ff1d, [t1.c1, t1.c2])
+            TableSource@309cedb6(t2 - TableGroup@3234474(t2))

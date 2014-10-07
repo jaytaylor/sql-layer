@@ -20,11 +20,49 @@ package com.foundationdb.qp.operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.ColumnSelector;
 
+/**
+ * The first of the three complete implementations of the CursorBase
+ * interface. 
+ * 
+ * The ChainedCursor works in the middle of the operator tree, taking
+ * input from the input operator and passing along rows to the caller to next().
+ * 
+ * The ChainedCursor assumes nothing about the QueryBindings, 
+ * in general does not use them, and only passes them along to either
+ * parent or child. 
+ * 
+ * @See LeafCursor
+ * @see MultiChainedCursor
+ *
+ * Used by:
+ * @see Aggregate_Partial
+ * @see BranchLookup_Default
+ * @see Buffer_Default
+ * @see Count_Default
+ * @see Delete_Returning
+ * @see Distinct_Partial
+ * @see Filter_Default
+ * @see Flatten_HKeyOrdered
+ * @see GroupLookup_Default (non-lookahead)
+ * @see IfEmpty_Default
+ * @see Insert_Returning
+ * @see Limit_Default
+ * @see Product_Nested
+ * @see Project_Default
+ * @see Select_BloomFilter (non-lookahead)
+ * @see Select_HKeyOrdered
+ * @see Sort_General
+ * @see Sort_InsertLimited
+ * @see Update_Returning
+ * @see Using_BloomFilter
+ * @see Using_HashTable
+ * 
+ */
 public class ChainedCursor extends OperatorCursor
 {
     protected final Cursor input;
     protected QueryBindings bindings;
-
+    
     protected ChainedCursor(QueryContext context, Cursor input) {
         super(context);
         this.input = input;
@@ -36,48 +74,27 @@ public class ChainedCursor extends OperatorCursor
 
     @Override
     public void open() {
+        super.open();
         input.open();
     }
-
     @Override
-    public Row next()
-    {
+    public Row next() {
         return input.next();
     }
 
     @Override
-    public void jump(Row row, ColumnSelector columnSelector)
-    {
+    public void jump(Row row, ColumnSelector columnSelector) {
+        if (CURSOR_LIFECYCLE_ENABLED) {
+            CursorLifecycle.checkIdleOrActive(this);
+        }
         input.jump(row, columnSelector);
+        state = CursorLifecycle.CursorState.ACTIVE;
     }
-
+    
     @Override
     public void close() {
         input.close();
-    }
-
-    @Override
-    public void destroy()
-    {
-        input.destroy();
-    }
-
-    @Override
-    public boolean isIdle()
-    {
-        return input.isIdle();
-    }
-
-    @Override
-    public boolean isActive()
-    {
-        return input.isActive();
-    }
-
-    @Override
-    public boolean isDestroyed()
-    {
-        return input.isDestroyed();
+        super.close();
     }
 
     @Override
@@ -87,6 +104,7 @@ public class ChainedCursor extends OperatorCursor
 
     @Override
     public QueryBindings nextBindings() {
+        CursorLifecycle.checkClosed(this);
         bindings = input.nextBindings();
         return bindings;
     }
@@ -98,7 +116,7 @@ public class ChainedCursor extends OperatorCursor
 
     @Override
     public void cancelBindings(QueryBindings ancestor) {
+        CursorLifecycle.checkClosed(this);
         input.cancelBindings(ancestor);
-        close();                // In case override maintains some additional state.
     }
 }

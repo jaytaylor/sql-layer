@@ -103,7 +103,7 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
 
     protected void close() {
         if (cursor != null) {
-            cursor.destroy();
+            cursor.close();
             cursor = null;
             state = State.EXHAUSTED;
         }        

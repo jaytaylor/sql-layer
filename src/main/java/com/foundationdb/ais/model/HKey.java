@@ -108,23 +108,25 @@ public class HKey
                             columnList.add(hKeyColumn.column());
                         }
                     }
-                    columns = new Column[columnList.size()];
+                    Column[] columnsTmp = new Column[columnList.size()];
                     int c = 0;
                     for (Column column : columnList) {
-                        columns[c] = column;
+                        columnsTmp[c] = column;
                         c++;
                     }
                     // keyDepth
-                    keyDepth = new int[segments.size() + 1];
+                    int[] keyDepthTmp = new int[segments.size() + 1];
                     int hKeySegments = segments.size();
                     for (int hKeySegment = 0; hKeySegment < hKeySegments; hKeySegment++) {
-                        this.keyDepth[hKeySegment] =
+                        keyDepthTmp[hKeySegment] =
                             hKeySegment == 0
                             ? 1
                             // + 1 to account for the ordinal
-                            : keyDepth[hKeySegment - 1] + 1 + segments.get(hKeySegment - 1).columns().size();
+                            : keyDepthTmp[hKeySegment - 1] + 1 + segments.get(hKeySegment - 1).columns().size();
                     }
-                    keyDepth[hKeySegments] = columns.length + hKeySegments;
+                    keyDepthTmp[hKeySegments] = columnsTmp.length + hKeySegments;
+                    keyDepth = keyDepthTmp;
+                    columns = columnsTmp;
                 }
             }
         }
@@ -137,6 +139,6 @@ public class HKey
     // keyDepth[n] is the number of key segments (ordinals + key values) comprising an hkey of n parts.
     // E.g. keyDepth[1] for the number of segments of the root hkey.
     //      keyDepth[2] for the number of key segments of the root's child + keyDepth[1].
-    private int[] keyDepth;
-    private Column[] columns;
+    private volatile int[] keyDepth;
+    private volatile Column[] columns;
 }

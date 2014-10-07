@@ -4,7 +4,7 @@ SelectQuery@4a49cb6d
       ResultSet@10479dc9[name]
         Union@4dc7ff78
           ResultSet@555472d[name]
-            Project@21b3de17[Cast(parent.name AS MCOMPAT_ VARCHAR(256, UTF8, UCS_BINARY) NOT NULL)]
+            Project@21b3de17[parent.name]
               Select@27b9c94a[]
                 TableSource@5caece38(parent)
           ResultSet@164e2da6[name]

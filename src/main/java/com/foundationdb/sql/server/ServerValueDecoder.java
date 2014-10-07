@@ -18,6 +18,7 @@
 package com.foundationdb.sql.server;
 
 import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.UnsupportedCharsetException;
 import com.foundationdb.server.types.TExecutionContext;
@@ -49,7 +50,8 @@ public class ServerValueDecoder
     /** Decode the given value into a the given bindings at the given position.
      */
     public void decodeValue(byte[] encoded, ServerType type, boolean binary,
-                            QueryBindings bindings, int index) {
+                            QueryBindings bindings, int index,
+                            QueryContext queryContext) {
        
         TInstance targetType = type != null ? type.getType() : null;
         if (targetType == null)
@@ -210,14 +212,15 @@ public class ServerValueDecoder
                 TExecutionContext context =
                     new TExecutionContext(Collections.singletonList(source.getType()),
                                           targetType,
-                                          null);
+                                          queryContext);
                 TInstance.tClass(targetType).fromObject(context, source, target);
                 bindings.setValue(index, target);
                 return;
             }
         }
 
-        ValueSource source = ValueSources.valuefromObject(value, targetType);
+        ValueSource source = ValueSources.valuefromObject(value, targetType,
+                                                          queryContext);
         bindings.setValue(index, source);
     }
 
