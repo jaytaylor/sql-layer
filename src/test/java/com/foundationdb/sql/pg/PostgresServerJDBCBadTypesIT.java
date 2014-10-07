@@ -83,6 +83,11 @@ public class PostgresServerJDBCBadTypesIT extends PostgresServerITBase
         createTableFromTypes(SCHEMA_NAME, "types", false, false, columns);
     }
 
+    @Before
+    public void ensureCorrectConnectionType() throws Exception {
+        forgetConnection();
+    }
+
 
     @Parameters(name="{0}")
     public static Iterable<Object[]> types() throws Exception {
@@ -147,7 +152,7 @@ public class PostgresServerJDBCBadTypesIT extends PostgresServerITBase
         set.executeUpdate();
         // It looks like the code currently does a cast, so (short)longValue
         // The key for right now is to not crash.
-        checkValue("col_smallint", (short)18425, Types.SMALLINT);
+        checkValue("col_smallint", Short.MAX_VALUE, Types.SMALLINT);
     }
 
     @Test
@@ -165,7 +170,7 @@ public class PostgresServerJDBCBadTypesIT extends PostgresServerITBase
         set.executeUpdate();
         // Double's aren't integers, so it parses the double, then calls longValue(), which clamps, then casts
         // which results in -1. The key for right now is to not crash.
-        checkValue("col_smallint", (short)-1, Types.SMALLINT);
+        checkValue("col_smallint", Short.MAX_VALUE, Types.SMALLINT);
     }
 
     @Test
@@ -180,14 +185,8 @@ public class PostgresServerJDBCBadTypesIT extends PostgresServerITBase
     public void testSetVarcharWithShort() throws Exception {
         PreparedStatement set = setStmt("col_varchar");
         set.setShort(1, (short)52);
-        try {
-            set.executeUpdate();
-            fail("Expected exception to be thrown");
-        } catch (PSQLException e) {
-            assertThat(e.getMessage(), containsString("52"));
-            assertEquals("22023", e.getSQLState());
-        }
-        checkNoneSet();
+        set.executeUpdate();
+        checkValue("col_varchar", "52", Types.VARCHAR);
     }
 
     @Override
