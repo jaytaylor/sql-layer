@@ -133,8 +133,10 @@ public interface Store extends KeyCreator {
      */
     void dropSchema(Session session, com.foundationdb.ais.model.Schema schema);
 
-    /** (Test helper) Drop all non-system schemas */
-    void dropNonSystemSchemas(Session session, Collection<com.foundationdb.ais.model.Schema> schemas);
+    /** (Test helper) Drop all non-system schemas
+     * @param allSchemas A list of all the schemas in the system, can include system schemas
+     */
+    void dropNonSystemSchemas(Session session, Collection<com.foundationdb.ais.model.Schema> allSchemas);
 
     /**
      * Truncate the given group. This includes indexes from all tables, group

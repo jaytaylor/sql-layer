@@ -673,8 +673,8 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     }
 
     @Override
-    public void dropNonSystemSchemas(Session session, Collection<Schema> schemas) {
-        for (Schema schema : schemas) {
+    public void dropNonSystemSchemas(Session session, Collection<Schema> allSchemas) {
+        for (Schema schema : allSchemas) {
             if (!TableName.inSystemSchema(schema.getName())) {
                 dropSchema(session, schema);
             }
