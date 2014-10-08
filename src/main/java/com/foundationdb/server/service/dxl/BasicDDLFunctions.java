@@ -419,6 +419,15 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         txnService.beginTransaction(session);
         try {
             Collection<Schema> schemas = new ArrayList<>(getAIS(session).getSchemas().values());
+            for (Schema schema : schemas) {
+                if (!TableName.inSystemSchema(schema.getName())) {
+                    for (Table table : schema.getTables().values()) {
+                        for (TableListener listener : listenerService.getTableListeners()) {
+                            listener.onDrop(session, table);
+                        }
+                    }
+                }
+            }
             schemaManager().dropNonSystemSchemas(session);
             store().dropNonSystemSchemas(session, schemas);
             txnService.commitTransaction(session);
@@ -440,7 +449,8 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         // Find all groups and tables in the schema
         Set<Group> groupsToDrop = new HashSet<>();
-        List<Table> tablesToDrop = new ArrayList<>();
+        List<Table> explicitlyDroppedTables = new ArrayList<>();
+        List<Table> implicitlyDroppedTables = new ArrayList<>();
 
         for(Table table : schema.getTables().values()) {
             groupsToDrop.add(table.getGroup());
@@ -449,8 +459,12 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             if(parentJoin != null) {
                 final Table parentTable = parentJoin.getParent();
                 if(!parentTable.getName().getSchemaName().equals(schemaName)) {
-                    tablesToDrop.add(table);
+                    explicitlyDroppedTables.add(table);
+                } else {
+                    implicitlyDroppedTables.add(table);
                 }
+            } else {
+                implicitlyDroppedTables.add(table);
             }
             // All children must be in the same schema
             for(Join childJoin : table.getChildJoins()) {
@@ -474,8 +488,13 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 }
             }
         }
-        for (Table table : tablesToDrop) {
+        for (Table table : explicitlyDroppedTables) {
             dropTableAndChildren(session, table);
+        }
+        for (Table table : implicitlyDroppedTables) {
+            for(TableListener listener : listenerService.getTableListeners()) {
+                listener.onDrop(session, table);
+            }
         }
         schemaManager().dropSchema(session, schemaName);
         store().dropSchema(session, schema);

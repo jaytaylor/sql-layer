@@ -179,6 +179,29 @@ public class FullTextIndexServiceIT extends FullTextIndexServiceITBase
     }
 
     @Test
+    public void respondsToDropSchema() throws Exception {
+        FullTextIndex index = createFullTextIndex(
+                SCHEMA, "c", "idx_c",
+                "name", "i.sku", "a.state");
+        RowType rowType = rowType("c");
+        Row[] expected = new Row[] {
+                row(rowType, 1L),
+                row(rowType, 3L)
+        };
+        FullTextQueryBuilder builder = new FullTextQueryBuilder(index, ais(), queryContext);
+        ftScanAndCompare(builder, "flintstone", 10, expected);
+        ftScanAndCompare(builder, "state:MA", 10, expected);
+        ddl().dropSchema(session(), SCHEMA);
+        c = createTable(SCHEMA, "c",
+                "cid INT PRIMARY KEY NOT NULL",
+                "name VARCHAR(128) COLLATE en_us_ci");
+        index = createFullTextIndex(SCHEMA, "c", "idx_c", "name");
+        expected = new Row[] {};
+        builder = new FullTextQueryBuilder(index, ais(), queryContext);
+        ftScanAndCompare(builder, "flintstone", 10, expected);
+    }
+
+    @Test
     public void oUpDown() throws InterruptedException {
         FullTextIndex index = createFullTextIndex(
                                                   SCHEMA, "o", "idx_o",
