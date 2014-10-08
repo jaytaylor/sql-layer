@@ -147,7 +147,6 @@ public class ServerValueDecoder
 
     private ValueSource decodeTimestampInt64Micros2000NoTZ(byte[] encoded) throws IOException {
         long micros = getDataStream(encoded).readLong();
-        // TODO data loss here, why do we convert from micros to seconds to milliseconds
         long secs = micros / 1000000;
         long milliseconds = seconds2000NoTZ(secs);
         int nanos = (int) (micros - secs * 1000000) * 1000;
@@ -157,7 +156,6 @@ public class ServerValueDecoder
     }
 
     public ValueSource decodeIntegerType(byte[] encoded) throws IOException {
-        // TODO unsigned?
         switch (encoded.length) {
         case 1:
             return new Value(MNumeric.TINYINT.instance(false), getDataStream(encoded).read());
