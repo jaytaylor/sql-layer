@@ -1,0 +1,1 @@
+INSERT INTO test.c1(name) VALUES('thomas'),('fred'),('david') RETURNING(cid)
