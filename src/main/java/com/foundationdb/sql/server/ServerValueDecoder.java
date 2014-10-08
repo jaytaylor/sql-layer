@@ -63,9 +63,9 @@ public class ServerValueDecoder
                             QueryContext queryContext, TypesRegistryService typesRegistryService) {
        
         TInstance targetType = type != null ? type.getType() : null;
-        // TODO: is this correct, try to write a test that executes this path, probably `SELECT ?`
-        if (targetType == null)
-            targetType = typesTranslator.typeForString();
+        if (targetType == null && encoded != null) {
+            throw new UnknownDataTypeException(null);
+        }
         ValueSource source;
         if (encoded == null) {
             Value value = new Value(targetType);
