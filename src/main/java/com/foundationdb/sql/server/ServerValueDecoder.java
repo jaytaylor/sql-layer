@@ -104,35 +104,26 @@ public class ServerValueDecoder
                 case FLOAT_64:
                     source = new Value(MApproximateNumber.DOUBLE.instance(false), getDataStream(encoded).readDouble());
                     break;
-                case STRING_BYTES:
-                    source = decodeString(encoded);
-                    break;
                 case BOOLEAN_C:
                     source = new Value(AkBool.INSTANCE.instance(false), encoded[0] != 0);
                     break;
-                case TIMESTAMP_FLOAT64_SECS_2000_NOTZ: // Types.TIMESTAMP
-                    source = decodeTimestampFloat64Secs2000NoTZ(encoded);
-                    break;
                 case TIMESTAMP_INT64_MICROS_2000_NOTZ: // Types.TIMESTAMP
                     source = decodeTimestampInt64Micros2000NoTZ(encoded);
-                    break;
-                case DAYS_2000: // DATE
-                    source = decodeDays2000(encoded);
-                    break;
-                case TIME_FLOAT64_SECS_NOTZ: // TIME
-                    source = decodeTimeFloat64SecsNoTZ(encoded);
-                    break;
-                case TIME_INT64_MICROS_NOTZ: // TIME
-                    source = decodeTimeInt64MicrosNoTZ(encoded);
-                    break;
-                case DECIMAL_PG_NUMERIC_VAR:
-                    source = decodeDecimalPgNumericVar(encoded);
                     break;
                 case UUID:
                     Value value = new Value(AkGUID.INSTANCE.instance(false));
                     value.putObject(AkGUID.bytesToUUID(encoded, 0));
                     source = value;
                     break;
+                // Note: these types had previous implementations, but I couldn't exercise them in tests to verify
+                // either with jdbc or pg8000. If you run into them, try looking at the log for this file, it most
+                // likely has a correct starting point
+                case STRING_BYTES:
+                case TIMESTAMP_FLOAT64_SECS_2000_NOTZ: // Types.TIMESTAMP
+                case DAYS_2000: // DATE
+                case TIME_FLOAT64_SECS_NOTZ: // TIME
+                case TIME_INT64_MICROS_NOTZ: // TIME
+                case DECIMAL_PG_NUMERIC_VAR:
                 default:
                     throw new UnknownDataTypeException(type.toString());
                 }
@@ -144,66 +135,6 @@ public class ServerValueDecoder
                 throw new AkibanInternalException("IO error reading from byte array", ex);
             }
         }
-//        if (lvalueType != Types.NULL) {
-//            // lvalue will self-identify as a BIGINT, so valueFromObject
-//            // is only okay for integer types.
-//            int targetJDBCType = typesTranslator.jdbcType(targetType);
-//            if (lvalueType == Types.BIGINT) {
-//                boolean isIntegerType;
-//                switch (targetJDBCType) {
-//                case Types.TINYINT:
-//                case Types.SMALLINT:
-//                case Types.INTEGER:
-//                case Types.BIGINT:
-//                    isIntegerType = true;
-//                    break;
-//                default:
-//                    isIntegerType = false;
-//                }
-//                if (isIntegerType) {
-//                    // Can still optimize this case.
-//                    Value source = new Value(targetType);
-//                    typesTranslator.setIntegerValue(source, lvalue);
-//                    bindings.setValue(index, source);
-//                    return;
-//                }
-//                // Fall through to valueFromObject with Long.
-//                value = lvalue;
-//            }
-//            else if (lvalueType == targetJDBCType) {
-//                // Matches; can set directly.
-//                Value source = new Value(targetType);
-//                typesTranslator.setTimestampMillisValue(source, lvalue, nanos);
-//                bindings.setValue(index, source);
-//                return;
-//            }
-//            else {
-//                // Otherwise need to make sure fromObject is given
-//                // something tagged as date-like.
-//                // TODO: When Postgres takes parameter type into
-//                // account in optimization, might not be as necessary.
-//                Value source = new Value(typesTranslator.typeClassForJDBCType(lvalueType)
-//                                         .instance(true));
-//                typesTranslator.setTimestampMillisValue(source, lvalue, nanos);
-//                Value target = new Value(targetType);
-//                TExecutionContext context =
-//                    new TExecutionContext(Collections.singletonList(source.getType()),
-//                                          targetType,
-//                                          queryContext);
-//                TInstance.tClass(targetType).fromObject(context, source, target);
-//                bindings.setValue(index, target);
-//                return;
-//            }
-//        }
-//        switch (TInstance.underlyingType(targetType)) {
-//            case STRING:
-//                if (!(value instanceof String)) {
-//                    throw new InvalidParameterValueException(value.toString());
-//                }
-//        }
-//
-//        source = ValueSources.valuefromObject(value, targetType,
-//                queryContext);
         TCast cast = typesRegistryService.getCastsResolver().cast(source.getType(), targetType);
         TExecutionContext context =
                 new TExecutionContext(Collections.singletonList(source.getType()),
@@ -212,49 +143,6 @@ public class ServerValueDecoder
         Value target = new Value(targetType);
         cast.evaluate(context, source, target);
         bindings.setValue(index, target);
-    }
-
-    private ValueSource decodeTimeInt64MicrosNoTZ(byte[] encoded) {
-        // lvalue = timeSecsNoTZ((int)(getDataStream(encoded).readLong() / 1000000L));
-        // lvalueType = Types.TIME;
-
-        assert false : "handle decodeTimeInt64MicrosNoTZ";
-        return null;
-    }
-
-    private ValueSource decodeTimeFloat64SecsNoTZ(byte[] encoded) {
-        // lvalue = timeSecsNoTZ((int)getDataStream(encoded).readDouble());
-        // lvalueType = Types.TIME;
-        assert false : "handle decodeTimeFloat64SecsNoTZ";
-        return null;
-    }
-
-    private ValueSource decodeDays2000(byte[] encoded) {
-        // lvalue = days2000(getDataStream(encoded).readInt());
-
-        assert false : "handle decodeDays2000";
-        return null;
-    }
-
-    private ValueSource decodeString(byte[] encoded) {
-        // new String(encoded, encoding)
-
-        assert false : "handle decodeString";
-        return null;
-    }
-
-    private ValueSource decodeDecimalPgNumericVar(byte[] encoded) {
-//
-//        DataInputStream dstr = getDataStream(encoded);
-//        short ndigits = dstr.readShort();
-//        short[] digits = new short[ndigits + 4];
-//        digits[0] = ndigits;
-//        for (int i = 1; i < digits.length; i++) {
-//            digits[i] = dstr.readShort();
-//        }
-//        value = pgNumericVar(digits);
-        assert false : "handle decodeDecimalPgNumericVar";
-        return null;
     }
 
     private ValueSource decodeTimestampInt64Micros2000NoTZ(byte[] encoded) throws IOException {
@@ -266,18 +154,6 @@ public class ServerValueDecoder
         Value source = new Value(MDateAndTime.TIMESTAMP.instance(false));
         typesTranslator.setTimestampMillisValue(source, milliseconds, nanos);
         return source;
-    }
-
-    private ValueSource decodeTimestampFloat64Secs2000NoTZ(byte[] encoded) {
-//
-//            double dsecs = getDataStream(encoded).readDouble();
-//            long secs = (long)dsecs;
-//            lvalue = seconds2000NoTZ(secs);
-//            nanos = (int)((dsecs - secs) * 1.0e9);
-//            lvalueType = Types.TIMESTAMP;
-
-        assert false : "handle decodeTimestampFloat64Secs2000NoTZ";
-        return null;
     }
 
     public ValueSource decodeIntegerType(byte[] encoded) throws IOException {
@@ -305,38 +181,6 @@ public class ServerValueDecoder
         DateTimeZone dtz = DateTimeZone.getDefault();
         millis -= dtz.getOffset(millis);
         return millis;
-    }
-
-    private static long days2000(int days) {
-        return seconds2000NoTZ(days * 86400);
-    }
-
-    private static long timeSecsNoTZ(int secs) {
-        int h = secs / 3600;
-        int m = (secs / 60) % 60;
-        int s = secs % 60;
-        DateTime dt = new DateTime(1970, 1, 1, h, m, s);
-        return dt.getMillis();
-    }
-
-    private static final short NUMERIC_POS = 0x0000;
-    private static final short NUMERIC_NEG = 0x4000;
-    private static final short NUMERIC_NAN = (short)0xC000;
-
-    private static BigDecimal pgNumericVar(short[] digits) {
-        short ndigits, weight, sign, dscale;
-        ndigits = digits[0];
-        weight = digits[1];
-        sign = digits[2];
-        dscale = digits[3];
-        BigDecimal result = BigDecimal.ZERO;
-        for (int i = 0; i < ndigits; i++) {
-            BigDecimal digit = new BigDecimal(digits[i + 4]);
-            result = result.add(digit.scaleByPowerOfTen((weight - i) * 4));
-        }
-        if (sign == NUMERIC_NEG)
-            result = result.negate();
-        return result;
     }
 
 }
