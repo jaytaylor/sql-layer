@@ -20,6 +20,7 @@ package com.foundationdb.sql.pg;
 import com.foundationdb.sql.server.ServerCallContextStack;
 import com.foundationdb.sql.server.ServerCallInvocation;
 
+import com.foundationdb.ais.model.Column;
 import com.foundationdb.qp.loadableplan.LoadableOperator;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.util.tap.InOutTap;
@@ -36,11 +37,11 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
 
     protected PostgresLoadableOperator(LoadableOperator loadableOperator, 
                                        ServerCallInvocation invocation,
-                                       List<String> columnNames, List<PostgresType> columnTypes, 
+                                       List<String> columnNames, List<PostgresType> columnTypes, List<Column> aisColumns,
                                        PostgresType[] parameterTypes)
     {
         super(null);
-        super.init(loadableOperator.plan(), null, columnNames, columnTypes, parameterTypes, null);
+        super.init(loadableOperator.plan(), null, columnNames, columnTypes, aisColumns, parameterTypes, null);
         setSchema(loadableOperator.schema());
         this.invocation = invocation;
     }

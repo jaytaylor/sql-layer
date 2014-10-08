@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.pg;
 
+import com.foundationdb.ais.model.Column;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.sql.server.ServerCallContextStack;
 import com.foundationdb.sql.server.ServerCallInvocation;
@@ -43,10 +44,10 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
 
     protected PostgresLoadableDirectObjectPlan(LoadableDirectObjectPlan loadablePlan,
                                                ServerCallInvocation invocation,
-                                               List<String> columnNames, List<PostgresType> columnTypes, 
+                                               List<String> columnNames, List<PostgresType> columnTypes, List<Column> aisColumns,
                                                PostgresType[] parameterTypes)
     {
-        super.init(null, columnNames, columnTypes, parameterTypes);
+        super.init(null, columnNames, columnTypes, aisColumns, parameterTypes);
         this.invocation = invocation;
         plan = loadablePlan.plan();
         outputMode = plan.getOutputMode();

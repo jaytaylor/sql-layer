@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.pg;
 
+import com.foundationdb.ais.model.Column;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.sql.server.ServerOperatorCompiler;
@@ -80,14 +81,20 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
 
     static class PostgresResultColumn extends PhysicalResultColumn {
         private PostgresType type;
+        private Column aisColumn;
         
-        public PostgresResultColumn(String name, PostgresType type) {
+        public PostgresResultColumn(String name, PostgresType type, Column aisColumn) {
             super(name);
             this.type = type;
+            this.aisColumn = aisColumn;
         }
 
         public PostgresType getType() {
             return type;
+        }
+
+        public Column getAISColumn() {
+            return aisColumn;
         }
 
         @Override
@@ -113,7 +120,7 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
             pgType = new PostgresType(PostgresType.TypeOid.UNKNOWN_TYPE_OID,
                                       (short)-1, -1, null);
         }
-        return new PostgresResultColumn(field.getName(), pgType);
+        return new PostgresResultColumn(field.getName(), pgType, field.getAIScolumn());
     }
 
     @Override
@@ -149,16 +156,18 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
             int ncols = update.getResultColumns().size();
             List<String> columnNames = new ArrayList<>(ncols);
             List<PostgresType> columnTypes = new ArrayList<>(ncols);
+            List<Column> aisColumns = new ArrayList<>(ncols);
             for (PhysicalResultColumn physColumn : update.getResultColumns()) {
                 PostgresResultColumn resultColumn = (PostgresResultColumn)physColumn;
                 columnNames.add(resultColumn.getName());
                 columnTypes.add(resultColumn.getType());
+                aisColumns.add(resultColumn.getAISColumn());
             }
 
             pmstmt.init(statementType,
                         (Operator) update.getPlannable(),
                         update.getResultRowType(),
-                        columnNames, columnTypes,
+                        columnNames, columnTypes, aisColumns,
                         parameterTypes,
                         update.getCostEstimate(),
                         update.putInCache());
@@ -184,14 +193,16 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
         int ncols = select.getResultColumns().size();
         List<String> columnNames = new ArrayList<>(ncols);
         List<PostgresType> columnTypes = new ArrayList<>(ncols);
+        List<Column> aisColumns = new ArrayList<>(ncols);
         for (PhysicalResultColumn physColumn : select.getResultColumns()) {
             PostgresResultColumn resultColumn = (PostgresResultColumn)physColumn;
             columnNames.add(resultColumn.getName());
             columnTypes.add(resultColumn.getType());
+            aisColumns.add(resultColumn.getAISColumn());
         }
         postmt.init(select.getResultOperator(),
                     select.getResultRowType(),
-                    columnNames, columnTypes,
+                    columnNames, columnTypes, aisColumns,
                     parameterTypes,
                     select.getCostEstimate());
         return postmt;

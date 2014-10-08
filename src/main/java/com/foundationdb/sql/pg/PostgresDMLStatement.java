@@ -20,6 +20,7 @@ package com.foundationdb.sql.pg;
 import java.io.IOException;
 import java.util.List;
 
+import com.foundationdb.ais.model.Column;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 
@@ -31,6 +32,7 @@ public abstract class PostgresDMLStatement extends PostgresBaseStatement
     private RowType resultRowType;
     private List<String> columnNames;
     private List<PostgresType> columnTypes;
+    private List<Column> aisColumns;
     private PostgresType[] parameterTypes;
 
     protected PostgresDMLStatement() {
@@ -43,10 +45,12 @@ public abstract class PostgresDMLStatement extends PostgresBaseStatement
     protected void init(RowType resultsRowType,
                         List<String> columnNames,
                         List<PostgresType> columnTypes,
+                        List<Column> aisColumns,
                         PostgresType[] parameterTypes) {
         this.resultRowType = resultsRowType;
         this.columnNames = columnNames;
         this.columnTypes = columnTypes;
+        this.aisColumns = aisColumns;
         this.parameterTypes = parameterTypes;
     }
 
@@ -98,9 +102,10 @@ public abstract class PostgresDMLStatement extends PostgresBaseStatement
             messenger.writeShort(ncols);
             for (int i = 0; i < ncols; i++) {
                 PostgresType type = columnTypes.get(i);
+                Column aisColumn = aisColumns.get(i);
                 messenger.writeString(columnNames.get(i)); // attname
-                messenger.writeInt(0);    // attrelid
-                messenger.writeShort(0);  // attnum
+                messenger.writeInt((aisColumn == null) ? 0 : aisColumn.getTable().getTableId());    // attrelid
+                messenger.writeShort((aisColumn == null) ? 0 : aisColumn.getPosition());  // attnum
                 messenger.writeInt(type.getOid()); // atttypid
                 messenger.writeShort(type.getLength()); // attlen
                 messenger.writeInt(type.getModifier()); // atttypmod

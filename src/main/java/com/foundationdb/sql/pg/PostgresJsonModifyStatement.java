@@ -21,6 +21,7 @@ import com.foundationdb.sql.optimizer.plan.CostEstimate;
 import static com.foundationdb.sql.pg.PostgresJsonCompiler.JsonResultColumn;
 import static com.foundationdb.sql.pg.PostgresJsonStatement.jsonColumnNames;
 import static com.foundationdb.sql.pg.PostgresJsonStatement.jsonColumnTypes;
+import static com.foundationdb.sql.pg.PostgresJsonStatement.jsonAISColumns;
 
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
@@ -46,7 +47,7 @@ public class PostgresJsonModifyStatement extends PostgresModifyOperatorStatement
                      boolean putInCache) {
         super.init(statementType, resultOperator, resultRowType,
                    // Looks like just one unlimited VARCHAR to the client.
-                   jsonColumnNames(), jsonColumnTypes(colTInstance),
+                   jsonColumnNames(), jsonColumnTypes(colTInstance), jsonAISColumns(),
                    parameterTypes, costEstimate,  
                    putInCache);
         this.resultColumns = resultColumns;

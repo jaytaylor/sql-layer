@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.pg;
 
+import com.foundationdb.ais.model.Column;
 import com.foundationdb.sql.optimizer.plan.CostEstimate;
 import com.foundationdb.qp.operator.*;
 import com.foundationdb.qp.row.Row;
@@ -52,9 +53,10 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
                      RowType resultRowType,
                      List<String> columnNames,
                      List<PostgresType> columnTypes,
+                     List<Column> aisColumns,
                      PostgresType[] parameterTypes,
                      CostEstimate costEstimate) {
-        super.init(resultRowType, columnNames, columnTypes, parameterTypes);
+        super.init(resultRowType, columnNames, columnTypes, aisColumns, parameterTypes);
         this.resultOperator = resultOperator;
         this.costEstimate = costEstimate;
     }
