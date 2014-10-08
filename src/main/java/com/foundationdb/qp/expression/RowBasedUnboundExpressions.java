@@ -68,7 +68,7 @@ public final class RowBasedUnboundExpressions implements UnboundExpressions {
             }
         }
         this.pExprs = pExprs;
-        this.rowType = rowType;
+        this.rowType = rowType.schema().newProjectType(pExprs);
     }
 
     private final List<TPreparedExpression> pExprs;

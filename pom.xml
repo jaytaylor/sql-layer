@@ -162,19 +162,9 @@
         </dependency>
         <!-- REST -->
         <dependency>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-core</artifactId>
-            <version>1.13</version>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-bundle</artifactId>
-            <version>1.13</version>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-server</artifactId>
-            <version>1.13</version>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-jetty-servlet</artifactId>
+            <version>2.13</version>
         </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>
@@ -201,12 +191,6 @@
           <artifactId>httpclient</artifactId>
           <version>4.3.4</version>
           <scope>test</scope>
-        </dependency>
-        <!-- Akiban Direct -->
-         <dependency>
-            <groupId>org.javassist</groupId>
-            <artifactId>javassist</artifactId>
-            <version>3.16.1-GA</version>
         </dependency>
         <dependency>
             <groupId>com.foundationdb</groupId>

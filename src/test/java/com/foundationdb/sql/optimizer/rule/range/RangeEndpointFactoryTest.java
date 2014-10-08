@@ -26,6 +26,7 @@ import java.util.Arrays;
 import static com.foundationdb.sql.optimizer.rule.range.TUtils.constant;
 import static com.foundationdb.sql.optimizer.rule.range.TUtils.exclusive;
 import static com.foundationdb.sql.optimizer.rule.range.TUtils.inclusive;
+import static com.foundationdb.sql.optimizer.rule.range.TUtils.nullExclusive;
 import static com.foundationdb.sql.optimizer.rule.range.TUtils.segment;
 import static org.junit.Assert.assertEquals;
 
@@ -34,7 +35,7 @@ public final class RangeEndpointFactoryTest {
     public void nameLtJoe() {
         check(  Comparison.LT,
                 constant("Joe"),
-                segment(RangeEndpoint.NULL_EXCLUSIVE, exclusive("Joe"))
+                segment(nullExclusive("Joe"), exclusive("Joe"))
         );
     }
 
@@ -42,7 +43,7 @@ public final class RangeEndpointFactoryTest {
     public void nameLeJoe() {
         check(  Comparison.LE,
                 constant("Joe"),
-                segment(RangeEndpoint.NULL_EXCLUSIVE, inclusive("Joe"))
+                segment(nullExclusive("Joe"), inclusive("Joe"))
         );
     }
 
@@ -74,7 +75,7 @@ public final class RangeEndpointFactoryTest {
     public void nameNeJoe() {
         check(  Comparison.NE,
                 constant("Joe"),
-                segment(RangeEndpoint.NULL_EXCLUSIVE, exclusive("Joe")),
+                segment(nullExclusive("Joe"), exclusive("Joe")),
                 segment(exclusive("Joe"), RangeEndpoint.UPPER_WILD)
         );
     }

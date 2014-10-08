@@ -65,12 +65,12 @@ public class ResultSetSubqueryTExpression extends SubqueryTExpression
             this.bindings = bindings;
         }
 
-        InnerEvaluation(Operator subquery, RowType outerRowType, int bindingPosition)
+        InnerEvaluation(Operator subquery, RowType outerRowType, int bindingPosition, TInstance type)
         {
             this.subquery = subquery;
             this.outerRowType = outerRowType;
             this.bindingPosition = bindingPosition;
-            this.value = new Value();
+            this.value = new Value(type);
         }
 
         private final Operator subquery;
@@ -100,7 +100,7 @@ public class ResultSetSubqueryTExpression extends SubqueryTExpression
     @Override
     public TEvaluatableExpression build()
     {
-        return new InnerEvaluation(subquery(), outerRowType(), bindingPosition());
+        return new InnerEvaluation(subquery(), outerRowType(), bindingPosition(), type);
     }
 
     private final TInstance type;

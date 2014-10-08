@@ -27,13 +27,6 @@ import com.foundationdb.util.AkibanAppender;
 
 public abstract class AbstractRow implements Row
 {
-    /**
-     * Setting this to true causes every value type to be checked against the rowtype,
-     * to make sure they're the same. This can be rather expensive, and happens for every
-     * value examined. Generally speeking the rest of the code does a good enough job that
-     * this is rare at best, but it can act as a canary for bigger problems.
-     */
-    private static final boolean DEBUG_ROWTYPE = Boolean.getBoolean("fdbsql.test.debug_rowtype");
     // ValueRecord interface
 
     /**
@@ -138,10 +131,10 @@ public abstract class AbstractRow implements Row
         if (DEBUG_ROWTYPE) {
             TInstance nextValueType = nextValue.getType();
             TInstance expectedTInst = rowType().typeAt(i);
+            if (expectedTInst == null && !nextValue.isNull())
+                throw new RowType.InconsistentRowTypeException(i, nextValue.getObject());
             if (TInstance.tClass(nextValueType) != TInstance.tClass(expectedTInst))
-                throw new IllegalArgumentException(
-                        "value at index " + i + " expected type " + rowType().typeAt(i)
-                                + ", but UnderlyingType was " + nextValueType + ": " + nextValue);
+                throw new RowType.InconsistentRowTypeException(i, expectedTInst, nextValueType, nextValue);
         }
         return nextValue;
     }
