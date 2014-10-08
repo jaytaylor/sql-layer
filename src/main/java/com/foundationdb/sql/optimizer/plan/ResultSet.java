@@ -75,7 +75,7 @@ public class ResultSet extends BasePlanWithInput
         }
 
         public String toString() {
-            return name;
+            return "(" + name + ":" + type + ")";
         }
     }
 
