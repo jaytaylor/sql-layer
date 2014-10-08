@@ -86,14 +86,8 @@ public abstract class PostgresServerJDBCTypesIT extends PostgresServerITBase
     protected abstract boolean binaryTransfer();
 
     /**
-     *
-     * @param name
-     * @param jdbcType
-     * @param colName
-     * @param value
      * @param unparseable some sort of string that couldn't possibly be parsed (e.g. an int of value "Suzie")
      * @param defaultValue the default value that should come back if you pass in a wildly incorrect string
-     * @return
      */
     static Object[] tc(String name, int jdbcType, String colName, Object value,
                        String unparseable, Object defaultValue) {
