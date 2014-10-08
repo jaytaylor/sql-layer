@@ -53,7 +53,6 @@ public abstract class PostgresServerJDBCTypesIT extends PostgresServerITBase
 
     @Before
     public void createTable() throws Exception {
-        // TODO unsigned
         SimpleColumn columns[] = {
             new SimpleColumn("col_boolean", "AKSQL_ boolean"),
             new SimpleColumn("col_tinyint", "MCOMPAT_ tinyint"),
@@ -94,7 +93,6 @@ public abstract class PostgresServerJDBCTypesIT extends PostgresServerITBase
      * @param value
      * @param unparseable some sort of string that couldn't possibly be parsed (e.g. an int of value "Suzie")
      * @param defaultValue the default value that should come back if you pass in a wildly incorrect string
-     *                     TODO: is this different if the column is NOT NULL
      * @return
      */
     static Object[] tc(String name, int jdbcType, String colName, Object value,
