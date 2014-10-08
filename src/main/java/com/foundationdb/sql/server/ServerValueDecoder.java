@@ -30,6 +30,7 @@ import com.foundationdb.server.types.common.types.TBinary;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
+import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.service.TypesRegistryService;
@@ -251,16 +252,15 @@ public class ServerValueDecoder
         return null;
     }
 
-    private ValueSource decodeTimestampInt64Micros2000NoTZ(byte[] encoded) {
-//
-//        long micros = getDataStream(encoded).readLong();
-//        long secs = micros / 1000000;
-//        lvalue = seconds2000NoTZ(secs);
-//        nanos = (int)(micros - secs * 1000000) * 1000;
-//        lvalueType = Types.TIMESTAMP;
-
-        assert false : "handle decodeTimestampInt64Micros2000NoTZ";
-        return null;
+    private ValueSource decodeTimestampInt64Micros2000NoTZ(byte[] encoded) throws IOException {
+        long micros = getDataStream(encoded).readLong();
+        // TODO data loss here, why do we convert from micros to seconds to milliseconds
+        long secs = micros / 1000000;
+        long milliseconds = seconds2000NoTZ(secs);
+        int nanos = (int) (micros - secs * 1000000) * 1000;
+        Value source = new Value(MDateAndTime.TIMESTAMP.instance(false));
+        typesTranslator.setTimestampMillisValue(source, milliseconds, nanos);
+        return source;
     }
 
     private ValueSource decodeTimestampFloat64Secs2000NoTZ(byte[] encoded) {
