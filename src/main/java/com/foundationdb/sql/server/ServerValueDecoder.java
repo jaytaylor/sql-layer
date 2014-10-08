@@ -26,6 +26,7 @@ import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
+import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 import com.foundationdb.server.types.common.types.TBinary;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
@@ -127,7 +128,11 @@ public class ServerValueDecoder
                 case DECIMAL_PG_NUMERIC_VAR:
                     source = decodeDecimalPgNumericVar(encoded);
                     break;
-                // TODO GUID
+                case UUID:
+                    Value value = new Value(AkGUID.INSTANCE.instance(false));
+                    value.putObject(AkGUID.bytesToUUID(encoded, 0));
+                    source = value;
+                    break;
                 default:
                     throw new UnknownDataTypeException(type.toString());
                 }
