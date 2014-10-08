@@ -497,7 +497,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
             int updateCount = s.getUpdateCount();
             
             if (results != null && !results.isClosed()) {
-                collectResults((JDBCResultSet)s.getResultSet(), appender, options);
+                collectResults(results, appender, options);
                 // Force close the result set here because if you execute "SELECT...;INSERT..." 
                 // the call to s.getResultSet() returns the (now empty) SELECT result set
                 // giving bad results
@@ -505,6 +505,12 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
             } else {
                 appender.append("\n{\"update_count\":");
                 appender.append(updateCount);
+                results = (JDBCResultSet) s.getGeneratedKeys();
+                if (results != null) {
+                    appender.append(",\n\"returning\":[");
+                    collectResults(results, appender, options);
+                    appender.append("]\n");
+                }
                 appender.append("}\n");
             }
             if(useSubArrays) {
