@@ -66,9 +66,6 @@ public class ServerValueDecoder
         // TODO: is this correct, try to write a test that executes this path, probably `SELECT ?`
         if (targetType == null)
             targetType = typesTranslator.typeForString();
-        long lvalue = 0;
-        int nanos = 0;
-        int lvalueType = Types.NULL;
         ValueSource source;
         if (encoded == null) {
             Value value = new Value(targetType);
