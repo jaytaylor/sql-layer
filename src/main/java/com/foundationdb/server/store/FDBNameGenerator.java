@@ -119,6 +119,13 @@ public class FDBNameGenerator implements NameGenerator
         return dataPath(tableName.getSchemaName(), tableName.getTableName());
     }
 
+    public static List<String> dataPathSchemaTable(String schemaName) {
+        return dataPathSchema(schemaName, TABLE_PATH_NAME);
+    }
+    public static List<String> dataPathSchemaSequence(String schemaName) {
+        return dataPathSchema(schemaName, SEQUENCE_PATH_NAME);
+    }
+
     public static List<String> dataPath(String schemaName, String tableName) {
         return makeTablePath(DATA_PATH_NAME, schemaName, tableName);
     }
@@ -136,6 +143,9 @@ public class FDBNameGenerator implements NameGenerator
         return makeSequencePath(DATA_PATH_NAME, schemaName, sequenceName);
     }
 
+    public static List<String> dataPathSchema(String schemaName, String typeName) {
+        return Arrays.asList(DATA_PATH_NAME, typeName, schemaName);
+    }
 
     //
     // ONLINE_PATH_NAME helpers

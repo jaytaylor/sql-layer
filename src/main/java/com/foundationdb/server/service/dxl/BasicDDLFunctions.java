@@ -20,7 +20,6 @@ package com.foundationdb.server.service.dxl;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +44,7 @@ import com.foundationdb.ais.model.Index.IndexType;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.Schema;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Table;
@@ -76,6 +76,7 @@ import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.NoSuchTableIdException;
 import com.foundationdb.server.error.NotAllowedByConfigException;
 import com.foundationdb.server.error.ProtectedIndexException;
+import com.foundationdb.server.error.ReferencedSQLJJarException;
 import com.foundationdb.server.error.RowDefNotFoundException;
 import com.foundationdb.server.error.UnsupportedDropException;
 import com.foundationdb.server.error.ViewReferencesExist;
@@ -309,7 +310,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             listener.onDrop(session, table);
         }
         schemaManager().dropTableDefinition(session, tableName.getSchemaName(), tableName.getTableName(),
-                                            SchemaManager.DropBehavior.RESTRICT);
+                SchemaManager.DropBehavior.RESTRICT);
         checkCursorsForDDLModification(session, table);
     }
 
@@ -412,6 +413,29 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
     }
 
+    @Override
+    public void dropNonSystemSchemas(Session session) {
+        logger.trace("dropping non system schemas");
+        txnService.beginTransaction(session);
+        try {
+            Collection<Schema> schemas = new ArrayList<>(getAIS(session).getSchemas().values());
+            for (Schema schema : schemas) {
+                if (!TableName.inSystemSchema(schema.getName())) {
+                    for (Table table : schema.getTables().values()) {
+                        for (TableListener listener : listenerService.getTableListeners()) {
+                            listener.onDrop(session, table);
+                        }
+                    }
+                }
+            }
+            schemaManager().dropNonSystemSchemas(session);
+            store().dropNonSystemSchemas(session, schemas);
+            txnService.commitTransaction(session);
+        } finally {
+            txnService.rollbackTransactionIfOpen(session);
+        }
+    }
+
     private void dropSchemaInternal(Session session, String schemaName) {
         final com.foundationdb.ais.model.Schema schema = getAIS(session).getSchema(schemaName);
         if (schema == null)
@@ -425,7 +449,8 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         // Find all groups and tables in the schema
         Set<Group> groupsToDrop = new HashSet<>();
-        List<Table> tablesToDrop = new ArrayList<>();
+        List<Table> explicitlyDroppedTables = new ArrayList<>();
+        List<Table> implicitlyDroppedTables = new ArrayList<>();
 
         for(Table table : schema.getTables().values()) {
             groupsToDrop.add(table.getGroup());
@@ -434,8 +459,12 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             if(parentJoin != null) {
                 final Table parentTable = parentJoin.getParent();
                 if(!parentTable.getName().getSchemaName().equals(schemaName)) {
-                    tablesToDrop.add(table);
+                    explicitlyDroppedTables.add(table);
+                } else {
+                    implicitlyDroppedTables.add(table);
                 }
+            } else {
+                implicitlyDroppedTables.add(table);
             }
             // All children must be in the same schema
             for(Join childJoin : table.getChildJoins()) {
@@ -452,58 +481,30 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 }
             }
         }
-        List<Sequence> sequencesToDrop = new ArrayList<>();
-        for (Sequence sequence : schema.getSequences().values()) {
-            // Drop the sequences in this schema, but not the 
-            // generator sequences, which will be dropped with the table.
-            if(!isIdentitySequence(schema.getTables().values(), sequence)) {
-                sequencesToDrop.add(sequence);
-            }
-        }
-        // Remove groups that contain tables in multiple schemas
-        for(Table table : tablesToDrop) {
-            groupsToDrop.remove(table.getGroup());
-        }
-        // Sort table IDs so higher (i.e. children) are first
-        Collections.sort(tablesToDrop, new Comparator<Table>() {
-            @Override
-            public int compare(Table o1, Table o2) {
-
-                return o2.getTableId().compareTo(o1.getTableId());
-            }
-        });
-        List<Routine> routinesToDrop = new ArrayList<>(schema.getRoutines().values());
-        List<SQLJJar> jarsToDrop = new ArrayList<>();
         for (SQLJJar jar : schema.getSQLJJars().values()) {
-            boolean anyOutside = false;
             for (Routine routine : jar.getRoutines()) {
                 if (!routine.getName().getSchemaName().equals(schemaName)) {
-                    anyOutside = true;
-                    break;
+                    throw new ReferencedSQLJJarException(jar);
                 }
             }
-            if (!anyOutside)
-                jarsToDrop.add(jar);
         }
-        // Do the actual dropping
-        for(View view : viewsToDrop) {
-            dropView(session, view.getName());
+        for (Table table : explicitlyDroppedTables) {
+            dropTableAndChildren(session, table);
         }
-        for(Table table : tablesToDrop) {
-            dropTableInternal(session, table.getName());
+        for (Table table : implicitlyDroppedTables) {
+            for(TableListener listener : listenerService.getTableListeners()) {
+                listener.onDrop(session, table);
+            }
         }
-        for(Group group : groupsToDrop) {
-            dropGroupInternal(session, group.getName());
+        schemaManager().dropSchema(session, schemaName);
+        store().dropSchema(session, schema);
+    }
+
+    private void dropTableAndChildren(Session session, Table table) {
+        for (Join childJoin : table.getChildJoins()) {
+            dropTableAndChildren(session, childJoin.getChild());
         }
-        for (Sequence sequence : sequencesToDrop) {
-            dropSequence(session, sequence.getSequenceName());
-        }
-        for (Routine routine : routinesToDrop) {
-            dropRoutine(session, routine.getName());
-        }
-        for (SQLJJar jar : jarsToDrop) {
-            dropSQLJJar(session, jar.getName());
-        }
+        dropTableInternal(session, table.getName());
     }
 
     private void addView(View view, Collection<View> into, Collection<View> seen, 

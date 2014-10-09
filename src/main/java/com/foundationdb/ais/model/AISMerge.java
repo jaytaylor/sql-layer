@@ -640,8 +640,12 @@ public class AISMerge {
         }
     }
 
+    /** Adds **NEW** sequence with same properties (except name & schema) as the given sequence. */
     private void addIdentitySequence(AISBuilder builder, String schemaName, String tableName, String column,
                                      boolean defaultIdentity, Sequence sequence) {
+        // This enforces that the sequence is always in the same schema as the table. Some things depend on that
+        // such as dropSchema. If you change this to allow a different schema, make sure to test the behavior
+        // of those things when the sequence is not in the same schema.
         TableName sequenceName = nameGenerator.generateIdentitySequenceName(builder.akibanInformationSchema(),
                                                                             new TableName(schemaName, tableName),
                                                                             column);
