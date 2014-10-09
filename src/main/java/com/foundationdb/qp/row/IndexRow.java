@@ -47,4 +47,8 @@ public abstract class IndexRow extends AbstractRow
 
     public abstract void close(Session session, Store store, boolean forInsert);
 
+    @Override
+    public boolean isBindingsSensitive() {
+        return false;
+    }
 }

@@ -46,7 +46,7 @@ public class AISCollationValidationTest {
     public void testSupportedCollation() {
         final TestAISBuilder builder = new TestAISBuilder(typesRegistry);
         builder.table("test", "t1");
-        builder.column("test", "t1", "c1", 0, "MCOMPAT", "VARCHAR", 16L, true, null, "latin1_swedish_ci");
+        builder.column("test", "t1", "c1", 0, "MCOMPAT", "VARCHAR", 16L, true, null, "en_us");
         builder.basicSchemaIsComplete();
         Assert.assertEquals("Expect no validation failure for supported collation", 0, builder
                 .akibanInformationSchema().validate(validations).failures().size());

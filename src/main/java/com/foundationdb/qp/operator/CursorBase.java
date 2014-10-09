@@ -22,35 +22,34 @@ package com.foundationdb.qp.operator;
 A Cursor is used to scan a sequence of rows resulting from the execution of an operator.
 The same cursor may be used for multiple executions of the operator, possibly with different bindings.
 
-A Cursor is always in one of three states:
+A Cursor is always in one of four states:
 
-- IDLE: The cursor is not currently involved in a scan. The cursor is in this state when one
-      of the following is true:
-      - open() has never been called.
-      - The most recent method invocation was to next(), which returned null.
-      - The most recent method invocation was to close().
+- CLOSED: The cursor is not currently involved in a scan. Invocations of next() on 
+        the cursor will raise an exception. The cursor is in this state when one of
+        the following is true:
+        - open() has never been called.
+        - The most recent method invocation was to close().
 
 - ACTIVE: The cursor is currently involved in a scan. The cursor is in this state when one
       of the following is true:
       - The most recent method invocation was to open().
       - The most recent method invocation was to next(), which returned a non-null value.
 
-- DESTROYED: The cursor has been destroyed. Invocations of open, next, or close on such a cursor
-      will raise an exception. The only way to get into this state is to call destroy().
+- IDLE: The cursor is currently involved in a scan. The cursor is in this state when one
+      of the following is true:
+      - The most recent method invocation was to next(), which returned null.
 
 The Cursor lifecycle is as follows:
 
-   next/jump == null  next/jump != null
-        +-+               +-+
-        | |               | |
-        | V     open      | V     destroy
-    --> IDLE ----------> ACTIVE ----------> DESTROYED
-         |   <----------                        ^
-         |      next/jump = null,                    |
-         |      close                           |
-         |                                      |
-         +--------------------------------------+
-                         destroy
+                close                  
+        +-------------------+          
+        |                   |          
+        v       open        +          
+        CLOSED +-----> ACTIVE <-------+
+        ^                   +         |
+        |close      next    | next    |
+        |           == null | != null |
+        +-+ IDLE <----------v---------+
  */
 
 public interface CursorBase<T>
@@ -72,11 +71,6 @@ public interface CursorBase<T>
     void close();
 
     /**
-     * Destroys the cursor. No further operations on the cursor are permitted.
-     */
-    void destroy();
-
-    /**
      * Indicates whether the cursor is in the IDLE state.
      * @return true iff the cursor is IDLE.
      */
@@ -89,8 +83,14 @@ public interface CursorBase<T>
     boolean isActive();
 
     /**
-     * Indicates whether the cursor is in the DESTROYED state.
-     * @return true iff the cursor is DESTROYED.
+     * Indicates whether the cursor is in the CLOSED state.
+     * @return true iff the cursor is CLOSED.
      */
-    boolean isDestroyed();
+    boolean isClosed();
+    
+    /**
+     * sets the cursor into an IDLE state when all active records 
+     * are returned. 
+     */
+    void setIdle();
 }

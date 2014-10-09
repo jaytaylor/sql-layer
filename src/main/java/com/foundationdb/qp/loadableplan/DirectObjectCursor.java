@@ -31,7 +31,7 @@ public abstract class DirectObjectCursor implements CursorBase<List<?>>
     // These cursors are used outside of execution plans. These methods should not be called.
 
     @Override
-    public void destroy()
+    public void close()
     {
         throw new UnsupportedOperationException(getClass().getName());
     }
@@ -49,7 +49,12 @@ public abstract class DirectObjectCursor implements CursorBase<List<?>>
     }
 
     @Override
-    public boolean isDestroyed()
+    public boolean isClosed()
+    {
+        throw new UnsupportedOperationException(getClass().getName());
+    }
+    @Override
+    public void setIdle()
     {
         throw new UnsupportedOperationException(getClass().getName());
     }

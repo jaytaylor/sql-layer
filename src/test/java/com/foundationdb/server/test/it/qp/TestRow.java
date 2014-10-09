@@ -40,7 +40,12 @@ public class TestRow extends AbstractRow
     }
 
      @Override
-     public ValueSource value(int i) {
+     public boolean isBindingsSensitive() {
+         return false;
+     }
+
+     @Override
+     public ValueSource uncheckedValue(int i) {
          return valueRow.value(i);
      }
 

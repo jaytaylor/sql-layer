@@ -32,7 +32,7 @@ public class PersistitStorageFormatRegistry extends StorageFormatRegistry
 {
 
     public PersistitStorageFormatRegistry(ConfigurationService configService) {
-        super(configService, PersistitStorageFormat.identifier);
+        super(configService);
     }
 
     @Override

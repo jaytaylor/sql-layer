@@ -114,7 +114,7 @@ public class ProtobufReaderWriterTest {
         type = type.typeClass().instance(
                         type.attribute(StringAttribute.MAX_LENGTH),
                         StringFactory.Charset.LATIN1.ordinal(),
-                        AkCollatorFactory.getAkCollator("latin1_swedish_ci").getCollationId(),
+                        AkCollatorFactory.getAkCollator("en_us").getCollationId(),
                         type.nullability());
         column.setType(type);
         inAIS.freeze();

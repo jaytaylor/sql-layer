@@ -57,6 +57,14 @@ public class FDBProtobufStorageDescription extends TupleStorageDescription imple
     public StorageDescription cloneForObject(HasStorage forObject) {
         return new FDBProtobufStorageDescription(forObject, this, storageFormat);
     }
+    
+    @Override
+    public StorageDescription cloneForObjectWithoutState(HasStorage forObject) {
+        FDBProtobufStorageDescription sd = new FDBProtobufStorageDescription(forObject, storageFormat);
+        sd.setUsage(this.getUsage());
+        sd.setFormatType(this.formatType);
+        return sd;
+    }
 
     @Override
     public FileDescriptorProto getFileProto() {

@@ -28,6 +28,7 @@ import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -293,6 +294,7 @@ class IndexScan_Default extends Operator
         {
             TAP_OPEN.in();
             try {
+                super.open();
                 cursor.open();
             } finally {
                 TAP_OPEN.out();
@@ -309,10 +311,10 @@ class IndexScan_Default extends Operator
                 checkQueryCancelation();
                 Row row = cursor.next();
                 if (row == null) {
-                    close();
+                    setIdle();
                 }
                 if (LOG_EXECUTION) {
-                    LOG.debug("IndexScan: yield {}", row);
+                    LOG.debug("IndexScan_Default$Execution: yield {}", row);
                 }
                 return row;
             } finally {
@@ -325,37 +327,17 @@ class IndexScan_Default extends Operator
         @Override
         public void jump(Row row, ColumnSelector columnSelector)
         {
+            if (CURSOR_LIFECYCLE_ENABLED) {
+                CursorLifecycle.checkIdleOrActive(this);
+            }
             cursor.jump(row, columnSelector);
+            state = CursorLifecycle.CursorState.ACTIVE;
         }
 
         @Override
-        public void close()
-        {
+        public void close() {
             cursor.close();
-        }
-
-        @Override
-        public void destroy()
-        {
-            cursor.destroy();
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return cursor.isIdle();
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return cursor.isActive();
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return cursor.isDestroyed();
+            super.close();
         }
 
         @Override
@@ -402,7 +384,7 @@ class IndexScan_Default extends Operator
             try {
                 Row row = super.next();
                 if (LOG_EXECUTION) {
-                    LOG.debug("IndexScan: yield {}", row);
+                    LOG.debug(IndexScan_Default.this.toString() + ": yield {}", row);
                 }
                 return row;
             } finally {
@@ -422,7 +404,7 @@ class IndexScan_Default extends Operator
         @Override
         protected BindingsAwareCursor openACursor(QueryBindings bindings, boolean lookahead) {
             if (LOG_EXECUTION) {
-                LOG.debug("IndexScan: open{} for {}", lookahead ? " lookahead" : "", bindings);
+                LOG.debug(IndexScan_Default.this.toString() + ": open{} for {}", lookahead ? " lookahead" : "", bindings);
             }
             return super.openACursor(bindings, lookahead);
         }
@@ -432,6 +414,11 @@ class IndexScan_Default extends Operator
         LookaheadExecution(QueryContext context, QueryBindingsCursor bindingsCursor, 
                            StoreAdapter adapter, int quantum) {
             super(context, bindingsCursor, adapter, quantum);
+        }
+        
+        @Override
+        public String toString() {
+            return "LookaheadExecution for " + IndexScan_Default.this.toString();
         }
     }
 }

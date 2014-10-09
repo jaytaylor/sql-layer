@@ -26,10 +26,9 @@ import com.foundationdb.server.types.TAggregator;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.aggr.MCount;
 import com.foundationdb.server.types.value.*;
-import com.foundationdb.server.types.value.Value;
-import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -278,7 +277,7 @@ final class Aggregate_Partial extends Operator
 
     // nested classes
 
-    private class AggregateCursor extends OperatorCursor
+    private class AggregateCursor extends ChainedCursor
     {
 
         // Cursor interface
@@ -287,10 +286,7 @@ final class Aggregate_Partial extends Operator
         public void open() {
             TAP_OPEN.in();
             try {
-                if (cursorState != CursorState.CLOSED)
-                    throw new IllegalStateException("can't open cursor: already open");
-                inputCursor.open();
-                cursorState = CursorState.OPENING;
+                super.open();
             } finally {
                 TAP_OPEN.out();
             }
@@ -304,36 +300,33 @@ final class Aggregate_Partial extends Operator
             try {
                 // CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
-                if (cursorState == CursorState.CLOSED)
-                    throw new IllegalStateException("cursor not open");
-                if (cursorState == CursorState.CLOSING) {
-                    close();
+                if (CURSOR_LIFECYCLE_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
+                if (isIdle()) {
                     if (LOG_EXECUTION) {
-                        LOG.debug("Aggregate_Partial null");
+                        LOG.debug("Aggregate_Partial: null");
                     }
                     return null;
                 }
-
-                assert cursorState == CursorState.OPENING || cursorState == CursorState.RUNNING : cursorState;
+                
                 while (true) {
                     Row input = nextInput();
                     Row output;
                     if (input == null) {
                         if (everSawInput) {
-                            cursorState = CursorState.CLOSING;
                             output = createOutput();
                         }
                         else if (noGroupBy()) {
-                            cursorState = CursorState.CLOSING;
                             output = createEmptyOutput();
                         }
                         else {
-                            close();
                             output = null;
                         }
                         if (LOG_EXECUTION) {
                             LOG.debug("Aggregate_Partial: yield {}", output);
                         }
+                        setIdle();
                         return output;
                     }
                     if (!input.rowType().equals(inputRowType)) {
@@ -358,64 +351,6 @@ final class Aggregate_Partial extends Operator
                     TAP_NEXT.out();
                 }
             }
-        }
-
-        @Override
-        public void close() {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (cursorState != CursorState.CLOSED) {
-                holder = null;
-                inputCursor.close();
-                cursorState = CursorState.CLOSED;
-            }
-        }
-
-        @Override
-        public void destroy()
-        {
-            close();
-            inputCursor.destroy();
-            cursorState = CursorState.DESTROYED;
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return cursorState == CursorState.CLOSED;
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return cursorState != CursorState.DESTROYED && cursorState != CursorState.CLOSED;
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return cursorState == CursorState.DESTROYED;
-        }
-
-
-        @Override
-        public void openBindings() {
-            inputCursor.openBindings();
-        }
-
-        @Override
-        public QueryBindings nextBindings() {
-            return inputCursor.nextBindings();
-        }
-
-        @Override
-        public void closeBindings() {
-            inputCursor.closeBindings();
-        }
-
-        @Override
-        public void cancelBindings(QueryBindings bindings) {
-            inputCursor.cancelBindings(bindings);
-            cursorState = CursorState.CLOSED;
         }
 
         // for use in this class
@@ -465,28 +400,27 @@ final class Aggregate_Partial extends Operator
 
         private boolean outputNeeded(Row givenInput) {
             if (noGroupBy()) {
-                cursorState = CursorState.RUNNING;
+                this.gatheringRows = false;
                 return false;   // no GROUP BYs, so aggregate until givenInput is null
             }
 
             // check for any changes to keys
             // Coming into this code, we're either RUNNING (within a GROUP BY run) or OPENING (about to start
             // a new run).
-            if (cursorState == CursorState.OPENING) {
+            if (gatheringRows) {
                 for (int i = 0; i < keyValues.size(); ++i) {
                     ValueTargets.copyFrom(givenInput.value(i), keyValues.get(i));
                 }
-                cursorState = CursorState.RUNNING;
+                gatheringRows = false;
                 return false;
             }
             else {
-                assert cursorState == CursorState.RUNNING : cursorState;
                 // If any keys are different, switch mode to OPENING and return true; else return false.
                 for (int i = 0; i < keyValues.size(); ++i) {
                     Value key = keyValues.get(i);
                     ValueSource input = givenInput.value(i);
-                    if (!ValueSources.areEqual(key, input, inputRowType.typeAt(i))) {
-                        cursorState = CursorState.OPENING;
+                    if (!ValueSources.areEqual(key, input)) {
+                        gatheringRows = true;
                         return true;
                     }
                 }
@@ -501,14 +435,13 @@ final class Aggregate_Partial extends Operator
                 holder = null;
             }
             else {
-                result = inputCursor.next();
+                result = input.next();
             }
             return result;
         }
 
         private void saveInput(Row input) {
             assert holder == null : holder;
-            assert cursorState == CursorState.OPENING : cursorState;
             holder = input;
         }
 
@@ -519,8 +452,7 @@ final class Aggregate_Partial extends Operator
         // AggregateCursor interface
 
         private AggregateCursor(QueryContext context, QueryBindingsCursor bindingsCursor) {
-            super(context);
-            this.inputCursor = inputOperator.cursor(context, bindingsCursor);
+            super(context, inputOperator.cursor(context, bindingsCursor));
             keyValues = new ArrayList<>(inputsIndex);
             for (int i = 0; i < inputsIndex; ++i) {
                 keyValues.add(new Value(outputType.typeAt(i)));
@@ -536,36 +468,11 @@ final class Aggregate_Partial extends Operator
 
         // object state
 
-        private final Cursor inputCursor;
         private final List<Value> keyValues;
         private final List<Value> pAggrsStates;
         private Row holder;
-        private CursorState cursorState = CursorState.CLOSED;
         private boolean everSawInput = false;
-    }
-
-    private enum CursorState {
-        /**
-         * Freshly opened, or about to start a new run of group-bys
-         */
-        OPENING,
-        /**
-         * Within a run of group-bys
-         */
-        RUNNING,
-        /**
-         * The last row we returned (or the row we're about to return) is the last row; the next row will be
-         * null, and will set the state to closing.
-         */
-        CLOSING,
-        /**
-         * The cursor is closed.
-         */
-        CLOSED,
-        /**
-         * The cursor is destroyed.
-         */
-        DESTROYED
+        private boolean gatheringRows = true;
     }
 
 }

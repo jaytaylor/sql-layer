@@ -42,14 +42,14 @@ public abstract class TComparisonExpressionBase implements TPreparedExpression {
         ValueSource oneVal = leftPrep.value();
         if (oneVal != null && oneVal.isNull()) {
             TInstance type = AkBool.INSTANCE.instance(true);
-            return new TPreptimeValue(type, ValueSources.getNullSource(type));
+            return new TPreptimeValue(ValueSources.getNullSource(type));
         }
 
         TPreptimeValue rightPrep = right.evaluateConstant(queryContext);
         ValueSource twoVal = rightPrep.value();
         if (twoVal != null && twoVal.isNull()) {
             TInstance type = AkBool.INSTANCE.instance(true);
-            return new TPreptimeValue(type, ValueSources.getNullSource(type));
+            return new TPreptimeValue(ValueSources.getNullSource(type));
         }
 
         // Neither side is constant null. If both sides are constant, evaluate

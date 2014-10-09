@@ -113,6 +113,14 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         return tables;
     }
 
+    public Collection<? extends ColumnSource> getTableColumnSources() {
+        List<TableSource> result = new ArrayList<>();
+        for (TableGroupJoinNode table : tables) {
+            result.add(table.getTable());
+        }
+        return result;
+    }
+
     /**
      * @param boundTables Tables already bound by the outside
      * @param queryJoins Joins that come from the query, or part of the query, that an index is being searched for.

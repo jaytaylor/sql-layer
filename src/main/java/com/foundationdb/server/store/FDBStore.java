@@ -126,7 +126,14 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     @Override
     public long nextSequenceValue(Session session, Sequence sequence) {
-        SequenceCache cache = sequenceCache.getOrCreateAndPut(SequenceCache.cacheKey(sequence), SEQUENCE_CACHE_VALUE_CREATOR);
+        Map<Object, SequenceCache> sessionMap = session.get(SEQ_UPDATES_KEY);
+        SequenceCache cache = null;
+        if(sessionMap != null) {
+            cache = sessionMap.get(SequenceCache.cacheKey(sequence));
+        }
+        if(cache == null) {
+            cache = sequenceCache.getOrCreateAndPut(SequenceCache.cacheKey(sequence), SEQUENCE_CACHE_VALUE_CREATOR);
+        }
         long rawValue = cache.nextCacheValue();
         if(rawValue < 0) {
             rawValue = updateSequenceCache(session, sequence);
@@ -767,17 +774,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
 
     private long updateSequenceCache(Session session, Sequence s) {
-        Map<Object, SequenceCache> sessionMap = session.get(SEQ_UPDATES_KEY);
-        if(sessionMap != null) {
-            SequenceCache cache = sessionMap.get(SequenceCache.cacheKey(s));
-            if(cache != null) {
-                long rawValue = cache.nextCacheValue();
-                if(rawValue > 0) {
-                    return rawValue;
-                }
-            }
-        }
-
         Transaction tr = txnService.getTransaction(session).getTransaction();
         byte[] prefixBytes = prefixBytes(s);
         byte[] byteValue = tr.get(prefixBytes).get();
@@ -790,6 +786,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         }
         tr.set(prefixBytes, Tuple2.from(rawValue + sequenceCacheSize).pack());
 
+        Map<Object, SequenceCache> sessionMap = session.get(SEQ_UPDATES_KEY);
         if(sessionMap == null) {
             txnService.addCallback(session, TransactionService.CallbackType.COMMIT, SEQUENCE_UPDATES_PUT_CALLBACK);
             txnService.addCallback(session, TransactionService.CallbackType.END, SEQUENCE_UPDATES_CLEAR_CALLBACK);

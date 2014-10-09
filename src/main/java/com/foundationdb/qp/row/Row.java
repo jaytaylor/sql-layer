@@ -23,12 +23,21 @@ import com.foundationdb.qp.rowtype.RowType;
 
 public interface Row extends ValueRecord
 {
+    /**
+     * Setting this to true causes every value type to be checked against the rowtype,
+     * to make sure they're the same. This can be rather expensive, and happens for every
+     * value examined. Generally speeking the rest of the code does a good enough job that
+     * this is rare at best, but it can act as a canary for bigger problems.
+     */
+    final boolean DEBUG_ROWTYPE = Boolean.getBoolean("fdbsql.test.debug_rowtype");
+
     RowType rowType();
     HKey hKey();
     HKey ancestorHKey(Table table);
     boolean ancestorOf(Row that);
     boolean containsRealRowOf(Table table);
     Row subRow(RowType subRowType);
+    boolean isBindingsSensitive();
 
     /**
      * Compares two rows and indicates if and where they differ.

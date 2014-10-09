@@ -21,14 +21,12 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.*;
-import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.explain.std.LookUpOperatorExplainer;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -308,10 +306,8 @@ public class BranchLookup_Default extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-                input.open();
+                super.open();
                 advanceInput();
-                idle = false;
             } finally {
                 TAP_OPEN.out();
             }
@@ -328,6 +324,12 @@ public class BranchLookup_Default extends Operator
                     CursorLifecycle.checkIdleOrActive(this);
                 }
                 checkQueryCancelation();
+                if (isIdle()) {
+                    if (LOG_EXECUTION) {
+                        LOG.debug("BranchLookup_Default: null");
+                    }
+                    return null;
+                }
                 Row nextRow = null;
                 while (nextRow == null && inputRow != null) {
                     switch (lookupState) {
@@ -355,7 +357,7 @@ public class BranchLookup_Default extends Operator
                     LOG.debug("BranchLookup_Default: {}", nextRow);
                 }
                 if (nextRow == null) {
-                    close();
+                    setIdle();
                 }
                 return nextRow;
             } finally {
@@ -368,40 +370,10 @@ public class BranchLookup_Default extends Operator
         @Override
         public void close()
         {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (!idle) {
-                input.close();
-                inputRow = null;
-                lookupCursor.close();
-                lookupRow = null;
-                idle = true;
-            }
-        }
-
-        @Override
-        public void destroy()
-        {
-            close();
-            input.destroy();
-            lookupCursor.destroy();
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return idle;
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return !idle;
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return input.isDestroyed();
+            super.close();
+            inputRow = null;
+            lookupCursor.close();
+            lookupRow = null;
         }
 
         // Execution interface
@@ -467,7 +439,6 @@ public class BranchLookup_Default extends Operator
         private Row lookupRow;
         private final HKey lookupRowHKey;
         private LookupState lookupState;
-        private boolean idle = true;
     }
 
     // Inner classes

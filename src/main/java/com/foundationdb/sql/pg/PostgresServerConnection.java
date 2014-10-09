@@ -748,7 +748,7 @@ public class PostgresServerConnection extends ServerSessionBase
                     rowsProcessed = executeStatement(pstmt, context, bindings, -1);
                     success = true;
                 } finally {
-                    afterExecute(pstmt, local, success);
+                    afterExecute(pstmt, local, success, true);
                 }
             }
         }
@@ -825,7 +825,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 pstmt = finishGenerating(context, pstmt, sql, stmt, params, paramTypes);
                 success = true;
             } finally {
-                afterExecute(pstmt, local, success);
+                afterExecute(pstmt, local, success, false);
             }
             if ((statementCache != null) && pstmt.putInCache()) {
                 statementCache.put(sql, pstmt);
@@ -905,7 +905,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 boolean binary = false;
                 if ((paramsBinary != null) && (i < paramsBinary.length))
                     binary = paramsBinary[i];
-                valueDecoder.decodeValue(params[i], pgType, binary, bindings, i);
+                valueDecoder.decodeValue(params[i], pgType, binary, bindings, i, bound);
             }
             logger.debug("Bound params: {}", bindings);
         }
@@ -1147,7 +1147,7 @@ public class PostgresServerConnection extends ServerSessionBase
             success = true;
         }
         finally {
-            afterExecute(pstmt, localTransaction, success);
+            afterExecute(pstmt, localTransaction, success, true);
             sessionMonitor.leaveStage();
         }
         return rowsProcessed;
@@ -1192,7 +1192,7 @@ public class PostgresServerConnection extends ServerSessionBase
             success = true;
         } 
         finally {
-            afterExecute(pstmt, local, success);
+            afterExecute(pstmt, local, success, false);
         }
         PostgresPreparedStatement ppstmt = new PostgresPreparedStatement(this, name, 
                                                                          sql, pstmt,
@@ -1238,7 +1238,7 @@ public class PostgresServerConnection extends ServerSessionBase
             success = true;
         } 
         finally {
-            afterExecute(pstmt, local, success);
+            afterExecute(pstmt, local, success, false);
         }
         PostgresPreparedStatement ppstmt;
         PostgresExecuteStatement estmt = null;

@@ -41,7 +41,7 @@ class AbstractValuesHolderRow extends AbstractRow {
     }
 
     @Override
-    public ValueSource value(int i) {
+    public ValueSource uncheckedValue(int i) {
         Value value = values.get(i);
         if (!value.hasAnyValue())
             throw new IllegalStateException("value at index " + i + " was never set");
@@ -80,7 +80,7 @@ class AbstractValuesHolderRow extends AbstractRow {
             TInstance expectedTInst = rowType.typeAt(i);
             if (TInstance.tClass(nextValueType) != TInstance.tClass(expectedTInst))
                 throw new IllegalArgumentException(
-                        "value at index " + i + " expected type " + rowType.typeAt(i)
+                        "value at index " + i + " expected type " + expectedTInst
                                 + ", but UnderlyingType was " + nextValueType + ": " + nextValue);
             ValueTargets.copyFrom(nextValue, values.get(i++));
         }
@@ -100,6 +100,11 @@ class AbstractValuesHolderRow extends AbstractRow {
     private void checkMutable() {
         if (!isMutable)
             throw new IllegalStateException("can't invoke method on an immutable AbstractValuesHolderRow");
+    }
+
+    @Override
+    public boolean isBindingsSensitive() {
+        return false;
     }
 
     private final RowType rowType;

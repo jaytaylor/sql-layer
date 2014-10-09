@@ -25,7 +25,7 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 
 /** A set operation on two input streams.(UNION, INTERSECT, EXCEPT )*/
-public class SetPlanNode extends BasePlanNode implements PlanWithInput, TypedPlan
+public class SetPlanNode extends BasePlanNode implements PlanWithInput, TypedPlan, ColumnSource
 {
     public enum opEnum { UNION, INTERSECT, EXCEPT, NULL }
 
@@ -92,10 +92,14 @@ public class SetPlanNode extends BasePlanNode implements PlanWithInput, TypedPla
 
     @Override
     public void replaceInput(PlanNode oldInput, PlanNode newInput) {
-        if (left == oldInput)
+        if (left == oldInput) {
             left = newInput;
-        if (right == oldInput)
+            left.setOutput(this);
+        }
+        if (right == oldInput) {
             right = newInput;
+            right.setOutput(this);
+        }
     }
 
     @Override

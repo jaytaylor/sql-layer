@@ -86,7 +86,7 @@ public final class OperatorTestHelper {
         assertTrue(expectedType + " != " + actualType, expectedType.equalsExcludingNullable(actualType));
 
         
-        if(!ValueSources.areEqual(actualSource, expectedSource, expectedType) &&
+        if(!ValueSources.areEqual(actualSource, expectedSource) &&
            !(actualSource.isNull() && expectedSource.isNull())) {
             Assert.assertEquals(
                     String.format("row[%d] field[%d]", rowCount, i),

@@ -21,15 +21,16 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.server.types.value.ValueRecord;
-import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.CursorLifecycle;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.types.TInstance;
+import com.persistit.Key;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +57,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             success = true;
         } finally {
             if(!success) {
-                close();
+                setIdle();
             }
         }
     }
@@ -76,12 +77,9 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             }
             if (more) {
                 next = row();
-                // If we're scanning a unique key index, then the row format has the declared key in the
-                // Persistit key, and undeclared hkey columns in the Persistit value. An index scan may actually
-                // restrict the entire declared key and leading hkeys fields. If this happens, then the first
-                // row found by exchange.traverse may actually not qualify -- those values may be lower than
-                // startKey. This can happen at most once per scan. pastStart indicates whether we have gotten
-                // past the startKey.
+                // Two cases where traverse would return a row outside of bound:
+                // 1) Index row that contains columns in both key and value (traverse only handles key)
+                // 2) jump() put us outside of bound after traversing
                 if (!pastStart) {
                     while (beforeStart(next)) {
                         next = null;
@@ -92,22 +90,22 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
                             assert next != startKey;
                             assert next != endKey;
                         } else {
-                            close();
+                            setIdle();
                         }
                     }
                     pastStart = true;
                 }
                 if (next != null && pastEnd(next)) {
                     next = null;
-                    close();
+                    setIdle();
                 }
             } else {
-                close();
+                setIdle();
             }
             success = true;
         } finally {
             if(!success) {
-                close();
+                setIdle();
             }
         }
         return next;
@@ -116,9 +114,11 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     @Override
     public void jump(Row row, ColumnSelector columnSelector)
     {
+        assert keyRange != null; // keyRange is null when used from a Sorter
+        CursorLifecycle.checkIdleOrActive(this);
+        state = CursorLifecycle.CursorState.ACTIVE;
         // Reposition cursor by delegating jump to each MixedOrderScanState. Also recompute
         // startKey so that beforeStart() works.
-        assert keyRange != null; // keyRange is null when used from a Sorter
         clear();
         boolean success = false;
         int field = 0;
@@ -143,27 +143,27 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
                     }
                     if (startKey != null) {
                         startKey.append(fieldValue, typeAt(field));
-                        loBoundColumns = field + 1;
+                        startBoundColumns = field + 1;
                     }
                 } else {
                     more = scanState.startScan();
                 }
                 field++;
             }
-            loInclusive = true;
+            startInclusive = true;
             justOpened = true;
             success = true;
         } finally {
             if(!success) {
-                close();
+                setIdle();
             }
         }
     }
 
     @Override
-    public void destroy()
+    public void close()
     {
-        super.destroy();
+        super.close();
         if (startKey != null) {
             adapter.returnIndexRow(startKey);
             startKey = null;
@@ -188,11 +188,8 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     public void initializeScanStates()
     {
         int f = 0;
-        // Use maxSegments to limit MixedOrderScanStates to just those corresponding to the columns
-        // stored in a Persistit key. The off-by-one-row problems due to columns in the Persistit value
-        // are dealt with in IndexCursorMixedOrder.
         int maxSegments = (keyRange == null /* sorting */) ? Integer.MAX_VALUE : index().getAllColumns().size();
-        while (f < min(loBoundColumns, maxSegments)) {
+        while (f < min(startBoundColumns, maxSegments)) {
             ValueRecord lo = keyRange.lo().boundExpressions(context, bindings);
             ValueRecord hi = keyRange.hi().boundExpressions(context, bindings);
             S loSource = sortKeyAdapter.get(lo, f);
@@ -208,7 +205,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
              * The key range's loInclusive and hiInclusive flags apply to b. For a, the comparisons
              * are always inclusive. E.g. if the range is >(x, y, p) and <(x, y, q), then the bounds
              * on the individual fields are (>=x, <=x), (>=y, <=y) and (>p, <q). So we want inclusive for
-             * a, and whatever the key range specified for inclusivity for b. Checking the type of scan state f + 1
+             * a, and whatever the key range specified for inclusiveness for b. Checking the type of scan state f + 1
              * is how we distinguish cases a and b.
              *
              * The observant reader will wonder: what about >(x, y, p) and <(x, z, q)? This is a violation of condition
@@ -224,7 +221,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             boolean loInclusive;
             boolean hiInclusive;
             boolean singleValue;
-            if (f < loBoundColumns - 1) {
+            if (f < startBoundColumns - 1) {
                 loInclusive = true;
                 hiInclusive = true;
                 singleValue = true;
@@ -241,14 +238,14 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
                                                      hiSource,
                                                      hiInclusive,
                                                      singleValue,
-                                                     f >= orderingColumns() || ordering.ascending(f),
+                                                     ascending[f],
                                                      sortKeyAdapter);
             scanStates.add(scanState);
             f++;
         }
         while (f < min(orderingColumns(), maxSegments)) {
             MixedOrderScanStateSingleSegment<S, E> scanState =
-                new MixedOrderScanStateSingleSegment<>(this, f, ordering.ascending(f), sortKeyAdapter);
+                new MixedOrderScanStateSingleSegment<>(this, f, ascending[f], sortKeyAdapter);
             scanStates.add(scanState);
             f++;
         }
@@ -270,17 +267,23 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
         super(context, iterationHelper);
         this.keyRange = keyRange;
         this.ordering = ordering;
-        this.ascending = new boolean[ordering.sortColumns()];
-        for (int f = 0; f < orderingColumns(); f++) {
-            this.ascending[f] = ordering.ascending(f);
+        int keyRangeSize = (keyRange != null) ? keyRange.indexRowType().nFields() : 0;
+        int orderingSize = ordering.sortColumns();
+        this.ascending = new boolean[Math.max(keyRangeSize, orderingSize)];
+        for (int f = 0; f < ascending.length; f++) {
+            if(f >= orderingSize) {
+                this.ascending[f] = index().getAllColumns().get(f).isAscending();
+            } else {
+                this.ascending[f] = ordering.ascending(f);
+            }
         }
         this.sortKeyAdapter = sortKeyAdapter;
         // keyRange == null occurs when Sorter is used, (to sort an arbitrary input stream). There is no
         // IndexRowType in that case, so an IndexKeyRange can't be created.
-        int orderingColumns = orderingColumns();
         if (keyRange == null) {
+            int orderingColumns = orderingColumns();
             keyColumns = ordering.sortColumns();
-            loBoundColumns = 0;
+            startBoundColumns = 0;
             types = sortKeyAdapter.createTInstances(orderingColumns);
             for (int i = 0; i < orderingColumns; ++i) {
                 sortKeyAdapter.setOrderingMetadata(ordering, i, types);
@@ -288,7 +291,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
         } else {
             Index index = keyRange.indexRowType().index();
             keyColumns = index.indexRowComposition().getLength();
-            loBoundColumns = keyRange.boundColumns();
+            startBoundColumns = keyRange.boundColumns();
             List<IndexColumn> indexColumns = index.getAllColumns();
             int nColumns = indexColumns.size();
             types = sortKeyAdapter.createTInstances(nColumns);
@@ -296,19 +299,11 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
                 Column column = indexColumns.get(f).getColumn();
                 sortKeyAdapter.setColumnMetadata(column, f, types);
             }
-            if (index.isUnique()) {
-                startKey = adapter.takeIndexRow(keyRange.indexRowType());
-                endKey = adapter.takeIndexRow(keyRange.indexRowType());
-            }
+            startKey = adapter.takeIndexRow(keyRange.indexRowType());
+            endKey = adapter.takeIndexRow(keyRange.indexRowType());
         }
-        hiBoundColumns = loBoundColumns;
-    }
-
-    // For use by this package
-
-    API.Ordering ordering()
-    {
-        return ordering;
+        endBoundColumns = startBoundColumns;
+        assert keyColumns >= ordering.sortColumns();
     }
 
     // For use by subclasses
@@ -355,31 +350,57 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
 
     private void setBoundaries()
     {
-        if (keyRange != null && !loUnbounded() && index().isUnique()) {
-            assert startKey != null : index();
-            assert endKey != null : index();
-            IndexBound lo = keyRange.lo();
-            IndexBound hi = keyRange.hi();
-            ValueRecord loExpressions = lo.boundExpressions(context, bindings);
-            ValueRecord hiExpressions = hi.boundExpressions(context, bindings);
-            int nColumns = keyRange.boundColumns();
+        if((keyRange != null) && (keyRange.boundColumns() > 0)) {
+            assert startBoundColumns == endBoundColumns;
+
             clear(startKey);
             clear(endKey);
-            for (int f = 0; f < nColumns; f++) {
-                ValueRecord startExpressions;
-                ValueRecord endExpressions;
-                if (ordering().ascending(f)) {
-                    startExpressions = loExpressions;
-                    endExpressions = hiExpressions;
-                } else {
-                    startExpressions = hiExpressions;
-                    endExpressions = loExpressions;
-                }
+
+            ValueRecord startExpressions = keyRange.lo().boundExpressions(context, bindings);
+            ValueRecord endExpressions = keyRange.hi().boundExpressions(context, bindings);
+            int f = 0;
+            while (f < keyRange.boundColumns() - 1) {
+                sortKeyAdapter.checkConstraints(startExpressions, endExpressions, f, null, types);
                 startKey.append(sortKeyAdapter.get(startExpressions, f), typeAt(f));
                 endKey.append(sortKeyAdapter.get(endExpressions, f), typeAt(f));
+                f++;
             }
-            loInclusive = keyRange.loInclusive();
-            hiInclusive = keyRange.hiInclusive();
+
+            startInclusive = keyRange.loInclusive();
+            endInclusive = keyRange.hiInclusive();
+
+            // See IndexCursorUnidirectional#evaluateBoundaries() for case numbers
+
+            // Start value
+            S sVal = sortKeyAdapter.get(startExpressions, f);
+            startKey.append(sVal, typeAt(f));
+            // End value
+            S eVal = sortKeyAdapter.get(endExpressions, f);
+            if(endInclusive) {
+                if(sortKeyAdapter.isNull(eVal) && (!startInclusive || !sortKeyAdapter.isNull(sVal))) {
+                    // 2, 6, 14
+                    throw new IllegalArgumentException();
+                }
+                // 3, 7, 10, 11, 15
+                endKey.append(eVal, typeAt(f));
+            } else {
+                if(sortKeyAdapter.isNull(eVal)) {
+                    // 0, 4, 8, 12
+                    endKey.append(Key.AFTER);
+                } else {
+                    // 1, 5, 9, 13
+                    endKey.append(eVal, typeAt(f));
+                }
+            }
+
+            // Swap for DESC (only last column matters as they must match until then)
+            if(!ascending[f]) {
+                startInclusive = keyRange.hiInclusive();
+                endInclusive = keyRange.loInclusive();
+                PersistitIndexRow tmpKey = startKey;
+                startKey = endKey;
+                endKey = tmpKey;
+            }
         }
     }
 
@@ -392,12 +413,12 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     private boolean beforeStart(Row row)
     {
         boolean beforeStart;
-        if (startKey == null || row == null || loUnbounded()) {
+        if (startKey == null || row == null || startUnbounded()) {
             beforeStart = false;
         } else {
             PersistitIndexRow current = (PersistitIndexRow) row;
-            int c = current.compareTo(startKey, ascending);
-            beforeStart = c < 0 || c == 0 && !loInclusive;
+            int c = current.compareTo(startKey, startBoundColumns, ascending);
+            beforeStart = c < 0 || c == 0 && !startInclusive;
         }
         return beforeStart;
     }
@@ -405,24 +426,24 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     private boolean pastEnd(Row row)
     {
         boolean pastEnd;
-        if (endKey == null || hiUnbounded()) {
+        if (endKey == null || endUnbounded()) {
             pastEnd = false;
         } else {
             PersistitIndexRow current = (PersistitIndexRow) row;
-            int c = current.compareTo(endKey, ascending);
-            pastEnd = c > 0 || c == 0 && !keyRange.hiInclusive();
+            int c = current.compareTo(endKey, endBoundColumns, ascending);
+            pastEnd = c > 0 || c == 0 && !endInclusive;
         }
         return pastEnd;
     }
 
-    private boolean loUnbounded()
+    private boolean startUnbounded()
     {
-        return loBoundColumns == 0;
+        return startBoundColumns == 0;
     }
 
-    private boolean hiUnbounded()
+    private boolean endUnbounded()
     {
-        return hiBoundColumns == 0;
+        return endBoundColumns == 0;
     }
 
     public TInstance typeAt(int field) {
@@ -435,17 +456,17 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     protected final API.Ordering ordering;
     protected final List<MixedOrderScanState<S>> scanStates = new ArrayList<>();
     private final SortKeyAdapter<S, E> sortKeyAdapter;
-    private final int keyColumns; // Number of columns in the key. keyFields >= orderingColumns.
-    private int loBoundColumns;
-    private int hiBoundColumns;
-    private boolean loInclusive;
-    private boolean hiInclusive;
+    // Number of columns in the key. keyFields >= orderingColumns.
+    private final int keyColumns;
+    private int startBoundColumns;
+    private int endBoundColumns;
+    private boolean startInclusive;
+    private boolean endInclusive;
     private boolean more;
     private boolean justOpened;
     private TInstance[] types;
+    // Entry for every column in the index (larger than ordering.sortColumns() if under-specified)
     private boolean[] ascending;
-    // Used for checking first and last row in case of unique indexes. These indexes have some key state in
-    // the Persistit value, and are therefore not visible to the ICMO implementation.
     private PersistitIndexRow startKey;
     private PersistitIndexRow endKey;
     private boolean pastStart;

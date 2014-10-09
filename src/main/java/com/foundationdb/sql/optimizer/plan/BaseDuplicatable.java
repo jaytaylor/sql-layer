@@ -56,7 +56,7 @@ public abstract class BaseDuplicatable implements Duplicatable, Cloneable
     }
 
     @SuppressWarnings("unchecked")
-    protected static <T extends Duplicatable> List<T> duplicateList(List<T> list,
+    protected static <T extends Duplicatable> List<T> duplicateList(Collection<? extends T> list,
                                                                     DuplicateMap map) {
         List<T> copy = new ArrayList<>(list.size());
         for (T elem : list) {
@@ -66,7 +66,7 @@ public abstract class BaseDuplicatable implements Duplicatable, Cloneable
     }
 
     @SuppressWarnings("unchecked")
-    protected static <T extends Duplicatable> Set<T> duplicateSet(Set<T> set,
+    protected static <T extends Duplicatable> Set<T> duplicateSet(Collection<? extends T> set,
                                                                   DuplicateMap map) {
         Set<T> copy = new HashSet<>(set.size());
         for (T elem : set) {

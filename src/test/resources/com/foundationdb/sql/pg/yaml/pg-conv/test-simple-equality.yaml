@@ -1,0 +1,82 @@
+---
+- CreateTable: t1(id INT PRIMARY KEY, a INT)
+---
+- Statement: INSERT INTO t1 VALUES (1,1), (2,2), (3,3), (4,4), (5,5)
+
+--- # scan on primary key
+- Statement: SELECT id FROM t1 where id > 3
+- output: [[4], [5]]
+---
+- Statement: SELECT id FROM t1 where id >= 3
+- output: [[3],[4], [5]]
+---
+- Statement: SELECT id FROM t1 where id < 3
+- output: [[1], [2]]
+---
+- Statement: SELECT id FROM t1 where id <= 3
+- output: [[1], [2], [3]]
+---
+- Statement: SELECT id FROM t1 where id > 3 ORDER BY id DESC
+- output: [[5], [4]]
+---
+- Statement: SELECT id FROM t1 where id >= 3 ORDER BY id DESC
+- output: [[5], [4], [3]]
+---
+- Statement: SELECT id FROM t1 where id < 3 ORDER BY id DESC
+- output: [[2], [1]]
+---
+- Statement: SELECT id FROM t1 where id <= 3 ORDER BY id DESC
+- output: [[3], [2], [1]]
+
+--- # scan on no index
+- Statement: SELECT a FROM t1 where a > 3
+- output: [[4], [5]]
+---
+- Statement: SELECT a FROM t1 where a >= 3
+- output: [[3],[4], [5]]
+---
+- Statement: SELECT a FROM t1 where a < 3
+- output: [[1], [2]]
+---
+- Statement: SELECT a FROM t1 where a <= 3
+- output: [[1], [2], [3]]
+---
+- Statement: SELECT a FROM t1 where a > 3 ORDER BY a DESC
+- output: [[5], [4]]
+---
+- Statement: SELECT a FROM t1 where a >= 3 ORDER BY a DESC
+- output: [[5], [4], [3]]
+---
+- Statement: SELECT a FROM t1 where a < 3 ORDER BY a DESC
+- output: [[2], [1]]
+---
+- Statement: SELECT a FROM t1 where a <= 3 ORDER BY a DESC
+- output: [[3], [2], [1]]
+
+--- # scan on index
+- Statement: CREATE INDEX ind_on_a ON t1(a)
+---
+- Statement: SELECT a FROM t1 where a > 3
+- output: [[4], [5]]
+---
+- Statement: SELECT a FROM t1 where a >= 3
+- output: [[3],[4], [5]]
+---
+- Statement: SELECT a FROM t1 where a < 3
+- output: [[1], [2]]
+---
+- Statement: SELECT a FROM t1 where a <= 3
+- output: [[1], [2], [3]]
+---
+- Statement: SELECT a FROM t1 where a > 3 ORDER BY a DESC
+- output: [[5], [4]]
+---
+- Statement: SELECT a FROM t1 where a >= 3 ORDER BY a DESC
+- output: [[5], [4], [3]]
+---
+- Statement: SELECT a FROM t1 where a < 3 ORDER BY a DESC
+- output: [[2], [1]]
+---
+- Statement: SELECT a FROM t1 where a <= 3 ORDER BY a DESC
+- output: [[3], [2], [1]]
+...

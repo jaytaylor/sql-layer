@@ -32,3 +32,5 @@ SET JVM_OPTS=%JVM_OPTS% -Dcom.sun.management.jmxremote.authenticate=false
 REM Debugging
 SET JVM_OPTS=%JVM_OPTS% -Xrunjdwp:transport=dt_socket,address=8000,suspend=n,server=y
 
+REM Completely disable preallocated exceptions, which don't have stack traces
+SET JVM_OPTS=%JVM_OPTS% -XX:-OmitStackTraceInFastThrow

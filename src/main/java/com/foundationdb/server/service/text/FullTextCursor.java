@@ -17,9 +17,9 @@
 
 package com.foundationdb.server.service.text;
 
-import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.operator.CursorLifecycle;
 import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.RowCursorImpl;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.row.HKey;
@@ -27,7 +27,6 @@ import com.foundationdb.qp.row.HKeyRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.HKeyRowType;
 import com.foundationdb.qp.util.HKeyCache;
-import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.persistit.Key;
 
@@ -38,13 +37,12 @@ import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.TopDocs;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-public class FullTextCursor implements RowCursor
+public class FullTextCursor extends RowCursorImpl
 {
     private final QueryContext context;
     private final HKeyRowType rowType;
@@ -53,7 +51,7 @@ public class FullTextCursor implements RowCursor
     private final int limit;
     private final StoreAdapter adapter;
     private IndexSearcher searcher;
-    private TopDocs results;
+    private TopDocs results = null;
     private int position;
 
     public static final Sort SORT = new Sort(SortField.FIELD_SCORE,
@@ -75,10 +73,10 @@ public class FullTextCursor implements RowCursor
 
     @Override
     public void open() {
-        CursorLifecycle.checkIdle(this);
+        super.open();
         logger.debug("FullTextCursor: open {}", query);
         if (query == null) {
-            results = null;
+            setIdle();
         }
         else {
             try {
@@ -94,9 +92,10 @@ public class FullTextCursor implements RowCursor
     @Override
     public Row next() {
         CursorLifecycle.checkIdleOrActive(this);
-        if (results == null)
+        if (isIdle())
             return null;
         if (position >= results.scoreDocs.length) {
+            setIdle();
             results = null;
             return null;
         }
@@ -115,13 +114,8 @@ public class FullTextCursor implements RowCursor
 
     @Override
     public void close() {
-        CursorLifecycle.checkIdleOrActive(this);
+        super.close();
         results = null;
-    }
-    
-    @Override
-    public void destroy() {
-        close();
         try {
             searcherManager.release(searcher);
         }
@@ -129,29 +123,6 @@ public class FullTextCursor implements RowCursor
             throw new AkibanInternalException("Error releasing searcher", ex);
         }
         searcher = null;
-    }
-    
-    @Override
-    public boolean isIdle()
-    {
-        return (results == null);
-    }
-    
-    @Override
-    public boolean isActive()
-    {
-        return (results != null);
-    }
-    
-    @Override
-    public boolean isDestroyed()
-    {
-        return (searcher == null);
-    }
-
-    @Override
-    public void jump(Row row, ColumnSelector columnSelector) {
-        throw new UnsupportedOperationException();
     }
 
     /* Allocate a new <code>PersistitHKey</code> and copy the given

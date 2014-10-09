@@ -156,6 +156,7 @@ public class PostgresServerITBase extends ITBase
                             List<Object> row = new ArrayList<>(ncols);
                             for (int i = 0; i < ncols; ++i)
                                 row.add(rs.getObject(i+1));
+                            results.add(row);
                         }
                     }
                     if (statement.getMoreResults())

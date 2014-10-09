@@ -42,7 +42,7 @@ public class HKeyRow extends AbstractRow
     }
 
     @Override
-    public ValueSource value(int i) {
+    public ValueSource uncheckedValue(int i) {
         return hKey.pEval(i);
     }
 
@@ -67,6 +67,11 @@ public class HKeyRow extends AbstractRow
     public Row subRow(RowType subRowType)
     {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isBindingsSensitive() {
+        return false;
     }
 
     // HKeyRow interface

@@ -22,21 +22,18 @@ import com.foundationdb.rest.resources.*;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.dxl.DXLService;
-import com.foundationdb.server.service.restdml.DirectService;
 import com.foundationdb.server.service.restdml.RestDMLService;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.Store;
 import com.google.inject.Inject;
-import com.sun.jersey.api.core.DefaultResourceConfig;
-import com.sun.jersey.api.core.ResourceConfig;
-import com.sun.jersey.spi.container.servlet.ServletContainer;
-
+import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.servlet.ServletContainer;
 import org.eclipse.jetty.servlet.ServletHolder;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class RestServiceImpl implements RestService, Service {
     private final ConfigurationService configService;
@@ -53,7 +50,6 @@ public class RestServiceImpl implements RestService, Service {
     public RestServiceImpl(ConfigurationService configService,
                            HttpConductor http,
                            RestDMLService restDMLService,
-                           DirectService directService,
                            SessionService sessionService,
                            TransactionService transactionService,
                            SecurityService securityService,
@@ -64,7 +60,6 @@ public class RestServiceImpl implements RestService, Service {
         this.reqs = new ResourceRequirements(
             dxlService,
             restDMLService,
-            directService,
             securityService,
             sessionService,
             transactionService,
@@ -103,7 +98,7 @@ public class RestServiceImpl implements RestService, Service {
     private ResourceConfig createResourceConfigV1() {
         String resource_list = configService.getProperty(RESOURCE_LIST);
         
-        List<Object> resources = new ArrayList<>();
+        Set<Object> resources = new HashSet<>();
         if (resource_list.contains("entity")) {
             resources.add(new EntityResource(reqs));
         }
@@ -122,9 +117,6 @@ public class RestServiceImpl implements RestService, Service {
         if (resource_list.contains("version")) {
             resources.add(new VersionResource(reqs));
         }
-        if (resource_list.contains("direct")) {
-            resources.add(new DirectResource(reqs));
-        }
         if (resource_list.contains("view")) {
             resources.add(new ViewResource(reqs));
         }
@@ -132,8 +124,8 @@ public class RestServiceImpl implements RestService, Service {
         resources.add(new DefaultResource());
 
         
-        DefaultResourceConfig config = new DefaultResourceConfig();
-        config.getSingletons().addAll(resources);
+        ResourceConfig config = new ResourceConfig();
+        config.registerInstances(resources);
         return config;
     }
 }

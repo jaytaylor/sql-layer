@@ -62,6 +62,11 @@
 - CreateTable: pk_is_bigint_u(pid bigint unsigned not null primary key)
 ---
 - CreateTable: fk_is_bigint_u(cid int not null primary key, pid bigint unsigned not null, grouping foreign key(pid) references pk_is_bigint_u(pid))
+---
+- Statement: create table foo(x int, index(x) STORAGE_FORMAT rowdata )
+---
+- Statement: select storage_format from information_schema.indexes where table_name = 'foo' and index_name = 'x';
+- output: [['rowdata']]
 
 ...
 

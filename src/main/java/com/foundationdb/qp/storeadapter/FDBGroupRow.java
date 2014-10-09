@@ -63,7 +63,7 @@ public class FDBGroupRow extends AbstractRow {
     }
 
     @Override
-    public ValueSource value(int i) {
+    public ValueSource uncheckedValue(int i) {
         FieldDef fieldDef = rowDef().getFieldDef(i);
         RowData rowData = rowData();
         RowDataValueSource valueSource = ValueSource(i);
@@ -120,5 +120,10 @@ public class FDBGroupRow extends AbstractRow {
             };
         }
         return valueSources.get(i);
+    }
+
+    @Override
+    public boolean isBindingsSensitive() {
+        return false;
     }
 }

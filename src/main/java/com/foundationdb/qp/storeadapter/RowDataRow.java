@@ -50,7 +50,12 @@ public class RowDataRow extends AbstractRow
     }
 
     @Override
-    public ValueSource value(int i) {
+    public boolean isBindingsSensitive() {
+        return false;
+    }
+
+    @Override
+    public ValueSource uncheckedValue(int i) {
         FieldDef fieldDef = rowType.table().rowDef().getFieldDef(i);
         RowDataValueSource valueSource = valueSource(i);
         valueSource.bind(fieldDef, rowData);

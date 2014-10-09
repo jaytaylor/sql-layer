@@ -1,0 +1,12 @@
+SelectQuery@6bfe8c5b
+  ResultSet@14b0e1c1[c1, c2, c3, c1, c2, c3, c1, c2, c3]
+    Project@68b55083[t1.c1, t1.c2, t1.c3, t2.c1, t2.c2, t2.c3, t3.c1, t3.c2, t3.c3]
+      Select@57b8fe29[]
+        JoinNode@1c5651e9(INNER/NESTED_LOOPS[t3.c2 == t1.c2])
+          TableGroupJoinTree@61c6408d(TableGroup@1eb81b21(t3), t3 - GroupScan@d1e0abe(Group(test.t3), rows = 1, cost = 0.00000))
+            TableSource@235b96d(t3 - TableGroup@1eb81b21(t3))
+          JoinNode@671ba687(LEFT/NESTED_LOOPS[t2.c1 == t1.c1])
+            TableGroupJoinTree@18acd52c(TableGroup@7adf485b(t1), t1 - GroupScan@7bf9d1a0(Group(test.t1), rows = 1, cost = 0.00000))
+              TableSource@782a9c50(t1 - TableGroup@7adf485b(t1))
+            TableGroupJoinTree@59078d62(TableGroup@7ed34a97(t2), t2 - GroupScan@444de7a(Group(test.t2), rows = 1, cost = 0.820000))
+              TableSource@357c85d2(t2 - TableGroup@7ed34a97(t2))

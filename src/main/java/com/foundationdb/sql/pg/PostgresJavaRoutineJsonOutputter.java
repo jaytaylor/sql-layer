@@ -205,7 +205,7 @@ public class PostgresJavaRoutineJsonOutputter extends PostgresOutputter<ServerJa
         encoder.appendString("\"");
         encoder.appendString(",\"oid\":");
         encoder.getWriter().print(pgType.getOid());
-        encoder.appendString(",\"type\":");
+        encoder.appendString(",\"type\":\"");
         Quote.DOUBLE_QUOTE.append(appender, param.getTypeDescription());
         encoder.appendString("\"");
         if (pgType.getModifier() > 0) {
@@ -244,7 +244,7 @@ public class PostgresJavaRoutineJsonOutputter extends PostgresOutputter<ServerJa
             encoder.appendString("\"");
             encoder.appendString(",\"oid\":");
             encoder.getWriter().print(pgType.getOid());
-            encoder.appendString(",\"type\":");
+            encoder.appendString(",\"type\":\"");
             Quote.DOUBLE_QUOTE.append(appender, sqlType.toString());
             encoder.appendString("\"");
             if (sqlType.getTypeId().isDecimalTypeId()) {

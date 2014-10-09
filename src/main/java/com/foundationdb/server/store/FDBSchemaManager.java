@@ -37,8 +37,9 @@ import com.foundationdb.directory.DirectorySubspace;
 import com.foundationdb.directory.PathUtil;
 import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.server.FDBTableStatusCache;
-import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.error.FDBAdapterException;
+import com.foundationdb.server.error.MetadataVersionNewerException;
+import com.foundationdb.server.error.MetadataVersionTooOldException;
 import com.foundationdb.server.rowdata.RowDefBuilder;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
@@ -60,6 +61,7 @@ import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple2;
 import com.google.inject.Inject;
 import com.persistit.Key;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -191,8 +193,6 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     @Override
     public void start() {
         super.start();
-        AkCollatorFactory.setUseKeyCoder(false);
-
         final boolean clearIncompatibleData = Boolean.parseBoolean(config.getProperty(CLEAR_INCOMPATIBLE_DATA_PROP));
 
         initSchemaManagerDirectory();
@@ -838,10 +838,11 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         long storedMetaVer = Tuple2.fromBytes(metaVerValue).getLong(0);
         if((storedDataVer != CURRENT_DATA_VERSION) || (storedMetaVer != CURRENT_META_VERSION)) {
             if(throwIfIncompatible) {
-                throw new FDBAdapterException(String.format(
-                    "Unsupported (meta,data) versions: Supported(%d,%d) vs Present(%d,%d)",
-                    CURRENT_META_VERSION, CURRENT_DATA_VERSION, storedMetaVer, storedDataVer
-                ));
+                if ((storedDataVer >= CURRENT_DATA_VERSION) || (storedMetaVer >= CURRENT_META_VERSION)) {
+                    throw new MetadataVersionNewerException (CURRENT_META_VERSION, CURRENT_DATA_VERSION, storedMetaVer, storedDataVer);
+                } else {
+                    throw new MetadataVersionTooOldException(CURRENT_META_VERSION, CURRENT_DATA_VERSION, storedMetaVer, storedDataVer);
+                }
             }
             return Boolean.FALSE;
         }

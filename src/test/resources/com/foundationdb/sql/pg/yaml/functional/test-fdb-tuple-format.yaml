@@ -94,4 +94,11 @@
 ---
 - Statement: SELECT id, n FROM t5 WHERE n >= 0 ORDER BY n DESC
 - output_already_ordered: [[2, 234],[1, 123],[4, 0]]
+---
+- Statement: CREATE TABLE td(id INT PRIMARY KEY, d DECIMAL(6,2))
+---
+- Statement: INSERT INTO td VALUES(1, -1.28), (2, -1.29)
+---
+- Statement: SELECT * FROM td ORDER BY d
+- output_already_ordered: [[2, -1.29], [1, -1.28]]
 ...

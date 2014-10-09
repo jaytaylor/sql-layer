@@ -26,9 +26,6 @@ import java.sql.*;
 import java.util.Calendar;
 import java.util.Map;
 
-import com.foundationdb.direct.AbstractDirectObject;
-import com.foundationdb.direct.Direct;
-import com.foundationdb.direct.DirectResultSet;
 import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.types.TInstance;
@@ -36,7 +33,7 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.sql.server.ServerJavaValues;
 import com.foundationdb.sql.server.ServerQueryContext;
 
-public class JDBCResultSet implements DirectResultSet
+public class JDBCResultSet implements ResultSet
 {
     protected final JDBCStatement statement;
     protected final JDBCResultSetMetaData metaData;
@@ -147,7 +144,7 @@ public class JDBCResultSet implements DirectResultSet
         statement.closingResultSet(this);
         try {
             if (cursor != null) {
-                cursor.destroy();
+                cursor.close();
                 cursor = null;
             }
         }
@@ -1496,16 +1493,6 @@ public class JDBCResultSet implements DirectResultSet
     @Override
     public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
         return getObject(findColumn(columnLabel), type);
-    }
-    
-    public AbstractDirectObject getEntity(final Class<?> c) throws SQLException {
-
-        AbstractDirectObject o = Direct.objectForRow(c);
-        if (o != null) {
-            o.setResults(this);
-            return o;
-        }
-        throw new JDBCException("No entity class for row");
     }
     
     public boolean hasRow() {

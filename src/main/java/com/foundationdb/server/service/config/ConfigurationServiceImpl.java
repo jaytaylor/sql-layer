@@ -34,15 +34,12 @@ import com.foundationdb.server.error.ConfigurationPropertiesLoadException;
 import com.foundationdb.server.error.ServiceNotStartedException;
 import com.foundationdb.server.error.ServiceStartupException;
 import com.foundationdb.server.service.Service;
-import com.foundationdb.server.service.jmx.JmxManageable;
 import com.foundationdb.server.service.plugins.Plugin;
 import com.foundationdb.server.service.plugins.PluginsFinder;
 import com.foundationdb.util.tap.Tap;
 import com.google.inject.Inject;
 
-public class ConfigurationServiceImpl implements ConfigurationService,
-        ConfigurationServiceMXBean, JmxManageable,
-        Service {
+public class ConfigurationServiceImpl implements ConfigurationService, Service {
     private final static String CONFIG_DEFAULTS_RESOURCE = "configuration-defaults.properties";
     private static final String INITIALLY_ENABLED_TAPS = "taps.initiallyenabled";
 
@@ -105,18 +102,6 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     }
 
     @Override
-    public long getQueryTimeoutMilli()
-    {
-        return queryTimeoutMilli();
-    }
-
-    @Override
-    public void setQueryTimeoutMilli(long queryTimeoutMilli)
-    {
-        queryTimeoutMilli(queryTimeoutMilli);
-    }
-
-    @Override
     public Properties deriveProperties(String withPrefix) {
         Properties properties = new Properties();
         for (Map.Entry<String,String> configProp : internalGetProperties().entrySet()) {
@@ -158,12 +143,6 @@ public class ConfigurationServiceImpl implements ConfigurationService,
         properties = null;
     }
 
-    @Override
-    public final JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("Configuration", this,
-                ConfigurationServiceMXBean.class);
-    }
-
     private Map<String, String> internalLoadProperties()
             throws ServiceStartupException {
         Map<String, String> ret = loadProperties();
@@ -183,7 +162,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
 
         return ret;
     }
-
+    
     /**
      * Load and return a set of configuration properties. Override this method
      * for customization in unit tests. For example, some unit tests create data

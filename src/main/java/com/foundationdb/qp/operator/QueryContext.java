@@ -24,6 +24,7 @@ import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.sql.server.ServerTransaction;
 
 import java.util.Date;
 
@@ -118,7 +119,7 @@ public interface QueryContext
     public void checkQueryCancelation();
 
     /** Does this context commit periodically? */
-    public boolean isTransactionPeriodicallyCommit();
+    public ServerTransaction.PeriodicallyCommit getTransactionPeriodicallyCommit();
 
     /**
      * Create a new empty set of bindings.

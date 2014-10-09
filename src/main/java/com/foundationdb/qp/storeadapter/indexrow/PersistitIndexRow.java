@@ -68,7 +68,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     }
 
     @Override
-    public final ValueSource value(int i)
+    public final ValueSource uncheckedValue(int i)
     {
         TInstance type = types[i];
         PersistitKeyValueSource keySource = keyPSource(i, type);

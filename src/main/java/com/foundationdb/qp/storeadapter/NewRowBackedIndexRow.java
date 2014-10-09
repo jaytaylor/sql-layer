@@ -19,11 +19,14 @@ package com.foundationdb.qp.storeadapter;
 
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.rowdata.FieldDef;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TypeDeclarationException;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 
@@ -82,7 +85,12 @@ public class NewRowBackedIndexRow implements Row
     public ValueSource value(int i) {
         FieldDef fieldDef = index.getAllColumns().get(i).getColumn().getFieldDef();
         int fieldPos = fieldDef.getFieldIndex();
-        return ValueSources.valuefromObject(row.get(fieldPos), rowType.typeAt(fieldPos));
+        Object value = row.get(fieldPos);
+        TInstance type = rowType.typeAt(fieldPos);
+        if (DEBUG_ROWTYPE && type == null && value != null) {
+            throw new RowType.InconsistentRowTypeException(i, value);
+        }
+        return ValueSources.valuefromObject(value, type);
     }
 
     @Override
@@ -96,4 +104,9 @@ public class NewRowBackedIndexRow implements Row
     private final NewRow row;
     private final RowType rowType;
     private final TableIndex index;
+
+    @Override
+    public boolean isBindingsSensitive() {
+        return false;
+    }
 }

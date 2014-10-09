@@ -24,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.foundationdb.server.error.UnsupportedCollationException;
+
 import org.junit.Test;
 
 import com.ibm.icu.text.Collator;
@@ -67,8 +68,8 @@ public class AkCollatorFactoryTest {
         AkCollatorFactory.Mode saveMode = AkCollatorFactory.getCollationMode();
         try {
             AkCollatorFactory.setCollationMode(DEFAULT_MODE);
-            final AkCollator collator = AkCollatorFactory.getAkCollator("latin1_swedish_ci");
-            assertEquals("Collector should have correct name", "latin1_swedish_ci", collator.getName());
+            final AkCollator collator = AkCollatorFactory.getAkCollator("sv_se_ci");
+            assertEquals("Collector should have correct name", "sv_se_ci_co", collator.getScheme());
         } finally {
             AkCollatorFactory.setCollationMode(saveMode);
         }
@@ -82,10 +83,6 @@ public class AkCollatorFactoryTest {
             AkCollator collator = AkCollatorFactory.getAkCollator(0);
             assertEquals("Should be the AkCollatorBinary singleton",
                     AkCollatorFactory.UCS_BINARY_COLLATOR, collator);
-
-            collator = AkCollatorFactory.getAkCollator(1);
-            assertEquals("Should be the latin1_general_ci collator",
-                    "latin1_general_ci", collator.getName());
         } finally {
             AkCollatorFactory.setCollationMode(saveMode);
         }
@@ -113,6 +110,12 @@ public class AkCollatorFactoryTest {
         }
     }
 
+    @Test(expected = UnsupportedCollationException.class)
+    public void collationBadScheme() throws Exception {
+        CollationSpecifier collationSpecifier = new CollationSpecifier("en_us_bad_arguments");
+        AkCollatorFactory.forScheme(collationSpecifier);
+    }
+
     @Test
     public void collationLooseMode() throws Exception {
         AkCollatorFactory.Mode saveMode = AkCollatorFactory.getCollationMode();
@@ -120,8 +123,8 @@ public class AkCollatorFactoryTest {
             AkCollatorFactory.setCollationMode("LOOSE");
             assertEquals("Should be binary", AkCollatorFactory.UCS_BINARY_COLLATOR, AkCollatorFactory
                     .getAkCollator("fricostatic_sengalese_ci"));
-            assertEquals("Collector should have correct name", "latin1_swedish_ci", AkCollatorFactory.getAkCollator(
-                    "latin1_swedish_ci").getName());
+            assertEquals("Collector should have correct name", "en_ie_ci_cx", AkCollatorFactory.getAkCollator(
+                    "en_ie_ci_cx").getScheme());
 
         } finally {
             AkCollatorFactory.setCollationMode(saveMode);
@@ -149,11 +152,11 @@ public class AkCollatorFactoryTest {
         AkCollatorFactory.Mode saveMode = AkCollatorFactory.getCollationMode();
         try {
             AkCollatorFactory.setCollationMode(DEFAULT_MODE);
-            AkCollator c = AkCollatorFactory.getAkCollator("latin1_swedish_ci");
+            AkCollator c = AkCollatorFactory.getAkCollator("sv_se_ci");
             int cid = c.getCollationId();
             int hits = AkCollatorFactory.getCacheHits();
             for (int i = 0; i < 10; i++) {
-                c = AkCollatorFactory.getAkCollator("latin1_swedish_ci");
+                c = AkCollatorFactory.getAkCollator("sv_se_ci");
             }
             assertEquals("Should have used cache", hits + 10, AkCollatorFactory.getCacheHits());
 

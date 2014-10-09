@@ -125,6 +125,8 @@ public class SortSplitter extends BaseRule
         public boolean visit(PlanNode n) {
             if (n instanceof MapJoin) {
                 PlanNode output = n.getOutput();
+                if (output instanceof UsingHashTable)
+                    output = output.getOutput();
                 if (output instanceof Select)
                     output = output.getOutput();
                 if (output instanceof Sort)

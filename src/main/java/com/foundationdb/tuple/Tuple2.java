@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
 import com.foundationdb.Range;
 
@@ -81,7 +82,8 @@ public class Tuple2 extends Tuple {
                 !(o instanceof Boolean) &&
                 !(o instanceof String) &&
                 !(o instanceof byte[]) &&
-                !(o instanceof Number)) {
+                !(o instanceof Number) &&
+                !(o instanceof UUID)) {
             throw new IllegalArgumentException("Parameter type (" + o.getClass().getName() + ") not recognized");
         }
         return new Tuple2(this.elements, o);
@@ -123,7 +125,11 @@ public class Tuple2 extends Tuple {
     public Tuple2 add(Double b) {
         return new Tuple2(this.elements, b);
     }
-    
+
+    public Tuple2 add(UUID u) {
+        return new Tuple2(this.elements, u);
+    }
+       
     public Tuple2 add(Float b) {
         return new Tuple2(this.elements, b);
     }

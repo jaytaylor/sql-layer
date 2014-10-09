@@ -1,0 +1,17 @@
+SelectQuery@34df65f9
+  ResultSet@19594d7d[name, quan]
+    Union@56d32755
+      ResultSet@35ee568b[name, quan]
+        Union@36c767ae
+          ResultSet@5d67ec9a[name, quan]
+            Project@51dea25e[parent.name, Cast(NULL AS MCOMPAT_ INT(11) NULL)]
+              Select@6f75f34f[]
+                TableSource@28b900b4(parent)
+          ResultSet@9dd3e4f[name, quan]
+            Project@1c25b998[Cast(customers.name AS MCOMPAT_ VARCHAR(256, UTF8, UCS_BINARY) NOT NULL), Cast(NULL AS MCOMPAT_ INT(11) NULL)]
+              Select@70bbb897[]
+                TableSource@3453fb53(customers)
+      ResultSet@759920fb[name, quan]
+        Project@18447b0e[Cast(items.sku AS MCOMPAT_ VARCHAR(256, UTF8, UCS_BINARY) NOT NULL), Cast(items.quan AS MCOMPAT_ INT(11) NULL)]
+          Select@37eae094[]
+            TableSource@1d3e313a(items)

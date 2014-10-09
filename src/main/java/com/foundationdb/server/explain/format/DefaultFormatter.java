@@ -264,6 +264,9 @@ public class DefaultFormatter
         case BLOOM_FILTER:
             appendBloomFilterOperator(name, atts);
             break;
+        case HASH_JOIN:
+            appendHashTableOperator(name, atts);
+            break;
         case DISTINCT:
             appendDistinctOperator(name, atts);
             break;
@@ -547,7 +550,7 @@ public class DefaultFormatter
                 append(table);
                 sb.append(", ");
             }
-            sb.setLength(sb.length()-2);
+            sb.setLength(sb.length() - 2);
         }
     }
 
@@ -756,6 +759,24 @@ public class DefaultFormatter
                 } else if (atts.containsKey(Label.EXPRESSIONS) && atts.get(Label.EXPRESSIONS).size() > 0){
                     sb.setLength(sb.length() - 2);
                 }
+            }
+        }
+    }
+
+    protected void appendHashTableOperator(String name, Attributes atts) {
+        if (levelOfDetail != LevelOfDetail.BRIEF) {
+            if (levelOfDetail != LevelOfDetail.NORMAL) {
+                for (Explainer ex : atts.get(Label.BINDING_POSITION)) {
+                    append(ex);
+                    sb.append(", ");
+                }
+            }
+            if (atts.containsKey(Label.EXPRESSIONS)) {
+                for (Explainer ex : atts.get(Label.EXPRESSIONS)) {
+                    append(ex);
+                    sb.append(", ");
+                }
+                sb.setLength(sb.length() - 2);
             }
         }
     }

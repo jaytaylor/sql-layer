@@ -1,0 +1,1 @@
+select * from t1 join t2 on t1.c1  = t2.c1 join t3 on t3.c1 =1 and t3.c1=t2.c1

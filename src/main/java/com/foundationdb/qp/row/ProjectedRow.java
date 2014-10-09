@@ -28,7 +28,6 @@ import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.util.AkibanAppender;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public class ProjectedRow extends AbstractRow
@@ -44,13 +43,17 @@ public class ProjectedRow extends AbstractRow
         boolean first = true;
         for (int i = 0, pEvalsSize = pEvaluatableExpressions.size(); i < pEvalsSize; i++) {
             ValueSource evaluation = value(i);
-            TInstance type = types.get(i);
+            TInstance type = rowType.typeAt(i);
             if (first) {
                 first = false;
             } else {
                 buffer.append(", ");
             }
-            type.format(evaluation, appender);
+            if (type != null) {
+                type.format(evaluation, appender);
+            } else {
+                buffer.append("NULL");
+            }
         }
         buffer.append(')');
         return buffer.toString();
@@ -65,7 +68,7 @@ public class ProjectedRow extends AbstractRow
     }
 
     @Override
-    public ValueSource value(int index) {
+    public ValueSource uncheckedValue(int index) {
         TEvaluatableExpression evaluatableExpression = pEvaluatableExpressions.get(index);
         if (!evaluated[index]) {
             evaluatableExpression.with(context);
@@ -89,8 +92,7 @@ public class ProjectedRow extends AbstractRow
                         Row row,
                         QueryContext context,
                         QueryBindings bindings,
-                        List<TEvaluatableExpression> pEvaluatableExprs,
-                        List<? extends TInstance> types)
+                        List<TEvaluatableExpression> pEvaluatableExprs)
     {
         this.context = context;
         this.bindings = bindings;
@@ -101,24 +103,7 @@ public class ProjectedRow extends AbstractRow
             evaluated = null;
         else
             evaluated = new boolean[pEvaluatableExpressions.size()];
-        this.types = types;
     }
-
-    public Iterator<ValueSource> getValueSources()
-    {
-        if (pEvaluatableExpressions == null)
-            return null;
-        else
-        {
-            int size = pEvaluatableExpressions.size();
-            List<ValueSource> ret = new ArrayList<>(size);
-            for (int i = 0; i < size; ++i)
-                ret.add(value(i));
-            return ret.iterator();
-        }
-    }
-    // For use by this class
-
 
     public static List<TEvaluatableExpression> createTEvaluatableExpressions
         (List<? extends TPreparedExpression> pExpressions)
@@ -143,5 +128,4 @@ public class ProjectedRow extends AbstractRow
     private final Row row;
     private final List<TEvaluatableExpression> pEvaluatableExpressions;
     private final boolean[] evaluated;
-    private final List<? extends TInstance> types;
 }

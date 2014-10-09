@@ -17,5 +17,14 @@
 
 package com.foundationdb.qp.operator;
 
+/**
+ * 
+ * Used by
+ * @see MemoryGroupCursor
+ * @see FDBGroupCursor
+ * @see PersistitGroupCursor
+ *
+ */
+
 public interface GroupCursor extends RowCursor, Rebindable {
 }

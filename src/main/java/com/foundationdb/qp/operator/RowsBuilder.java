@@ -124,7 +124,7 @@ public final class RowsBuilder {
         }
 
         @Override
-        public ValueSource value(int i) {
+        public ValueSource uncheckedValue(int i) {
             return values.get(i);
         }
 
@@ -136,6 +136,11 @@ public final class RowsBuilder {
         private InternalValuesRow(RowType rowType, List<? extends ValueSource> values) {
             this.rowType = rowType;
             this.values = new ArrayList<>(values);
+        }
+
+        @Override
+        public boolean isBindingsSensitive() {
+            return false;
         }
 
         private final RowType rowType;

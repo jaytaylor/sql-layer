@@ -21,36 +21,21 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.error.QueryCanceledException;
 
-public abstract class OperatorExecutionBase extends ExecutionBase implements RowOrientedCursorBase<Row>
+/**
+ *  Abstract implementation of RowCursor. 
+ *  
+ *  Implements the state checking for the CursorBase, but not any of the
+ *  operations methods. If you change this, also change @See RowCursorImpl, 
+ *  as the two set of state implementations should match. 
+ *
+ */
+
+public abstract class OperatorExecutionBase extends ExecutionBase implements RowCursor
 {
     @Override
-    public void destroy()
-    {
-        throw new UnsupportedOperationException(getClass().getName());
-    }
-
-    @Override
-    public boolean isIdle()
-    {
-        throw new UnsupportedOperationException(getClass().getName());
-    }
-
-    @Override
-    public boolean isActive()
-    {
-        throw new UnsupportedOperationException(getClass().getName());
-    }
-
-    @Override
-    public boolean isDestroyed()
-    {
-        throw new UnsupportedOperationException(getClass().getName());
-    }
-
-    @Override
-    public void open()
-    {
-        throw new UnsupportedOperationException(getClass().getName());
+    public void open() {
+        CursorLifecycle.checkClosed(this);
+        state = CursorLifecycle.CursorState.ACTIVE;
     }
 
     @Override
@@ -68,15 +53,42 @@ public abstract class OperatorExecutionBase extends ExecutionBase implements Row
     @Override
     public void close()
     {
-        throw new UnsupportedOperationException(getClass().getName());
+        if (CURSOR_LIFECYCLE_ENABLED) {
+            CursorLifecycle.checkIdleOrActive(this);
+        }
+        state = CursorLifecycle.CursorState.CLOSED;
     }
 
+    @Override
+    public void setIdle() {
+        state = CursorLifecycle.CursorState.IDLE;
+    }
+
+    @Override
+    public boolean isIdle()
+    {
+        return state == CursorLifecycle.CursorState.IDLE;
+    }
+
+    @Override
+    public boolean isActive()
+    {
+        return state == CursorLifecycle.CursorState.ACTIVE;
+    }
+
+    @Override
+    public boolean isClosed()
+    {
+        return state == CursorLifecycle.CursorState.CLOSED;
+    }
+
+    
     protected void checkQueryCancelation()
     {
         try {
             context.checkQueryCancelation();
         } catch (QueryCanceledException e) {
-            close();
+            //close();
             throw e;
         }
     }
@@ -85,4 +97,7 @@ public abstract class OperatorExecutionBase extends ExecutionBase implements Row
     {
         super(context);
     }
+    
+    protected CursorLifecycle.CursorState state = CursorLifecycle.CursorState.CLOSED;
+
 }

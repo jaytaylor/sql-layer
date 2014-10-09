@@ -122,6 +122,15 @@ public class InConditionReverser extends BaseRule
                 // Include inside WHERE in outer join.
                 joinConditions.addAll(insideJoinConditions);
             }
+            // ANTI joins don't handle NOT IN with null values on the right side very well, so for now
+            // leave it in the less efficient, but correct subquery check.
+            if (negated) {
+                for (ConditionExpression condition : joinConditions) {
+                    if (condition.getType().nullability()) {
+                        return;
+                    }
+                }
+            }
             convertToSemiJoin(select, selectElement, selectInput, 
                               (Joinable)input, joinConditions, 
                               (negated) ? JoinType.ANTI : JoinType.SEMI);
@@ -259,8 +268,14 @@ public class InConditionReverser extends BaseRule
                     if (!(cond instanceof ComparisonCondition))
                         return;
                     ComparisonCondition ccond = (ComparisonCondition)cond;
-                    ccond.setRight(project.getFields().get(
-                            ((ColumnExpression)ccond.getRight()).getPosition()));
+                    // if the right side points to the subquery source, align the columns correctly
+                    if (ccond.getRight() instanceof ColumnExpression) {
+                        ColumnExpression rightColumnExpression = (ColumnExpression) ccond.getRight();
+                        if (rightColumnExpression.getTable().equals(right)) {
+                            ccond.setRight(project.getFields().get(
+                                    rightColumnExpression.getPosition()));
+                        }
+                    }
                 }
                 if (select != null)
                     conds.addAll(select.getConditions());

@@ -24,6 +24,7 @@ import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.CursorLifecycle;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.rowtype.InternalIndexTypes;
 import com.foundationdb.qp.storeadapter.SpatialHelper;
@@ -44,8 +45,13 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     {
         super.open();
         keyRange = initialKeyRange;
-        if (keyRange != null)
+        if (keyRange != null) {
             initializeCursor();
+            // end state never changes while cursor is open
+            // start state can change on a jump, so it is set in initializeCursor.
+            this.endBoundColumns = keyRange.boundColumns();
+            this.endKey = endBoundColumns == 0 ? null : adapter.takeIndexRow(keyRange.indexRowType());
+        }
         evaluateBoundaries(context, sortKeyAdapter);
         initializeForOpen();
     }
@@ -63,53 +69,50 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                 // Guard against bug 1046053
                 assert next != startKey;
                 assert next != endKey;
-                // If we're scanning a unique key index, then the row format has the declared key in the
-                // Persistit key, and undeclared hkey columns in the Persistit value. An index scan may actually
-                // restrict the entire declared key and leading hkeys fields. If this happens, then the first
-                // row found by exchange.traverse may actually not qualify -- those values may be lower than
-                // startKey. This can happen at most once per scan. pastStart indicates whether we have gotten
-                // past the startKey.
+                // Two cases where traverse would return a row outside of bound:
+                // 1) Index row that contains columns in both key and value (traverse only handles key)
+                // 2) jump() put us outside of bound after traversing
                 if (!pastStart) {
                     while (beforeStart(next)) {
                         next = null;
                         if (traverse(subsequentKeyComparison, true)) {
                             next = row();
                         } else {
-                            close();
+                            setIdle();
                         }
                     }
                     pastStart = true;
                 }
                 if (next != null && pastEnd(next)) {
                     next = null;
-                    close();
+                    setIdle();
                 }
             } else {
-                close();
+                setIdle();
             }
             success = true;
         } finally {
             if(!success) {
-                close();
+                setIdle();
             }
         }
         keyComparison = subsequentKeyComparison;
         return next;
     }
 
+    
     @Override
-    public void close()
-    {
-        super.close();
+    public void setIdle() {
+        super.setIdle();
         if (startKey != null) {
             clearStart();
         }
     }
-
+    
     @Override
-    public void destroy()
+    public void close()
     {
-        super.destroy();
+        super.close();
         if (startKey != null) {
             adapter.returnIndexRow(startKey);
             startKey = null;
@@ -124,6 +127,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     public void jump(Row row, ColumnSelector columnSelector)
     {
         assert keyRange != null;
+        CursorLifecycle.checkIdleOrActive(this);
         keyRange =
             direction == FORWARD
             ? keyRange.resetLo(new IndexBound(row, columnSelector))
@@ -131,6 +135,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         initializeCursor();
         reevaluateBoundaries(context, sortKeyAdapter);
         initializeForOpen();
+        state = CursorLifecycle.CursorState.ACTIVE;
     }
 
     // IndexCursorUnidirectional interface
@@ -158,9 +163,6 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         super(context, iterationHelper);
         this.initialKeyRange = keyRange;
         this.ordering = ordering;
-        // end state never changes. start state can change on a jump, so it is set in initializeCursor.
-        this.endBoundColumns = keyRange.boundColumns();
-        this.endKey = endBoundColumns == 0 ? null : adapter.takeIndexRow(keyRange.indexRowType());
         this.sortKeyAdapter = sortKeyAdapter;
     }
 
@@ -330,9 +332,9 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     protected boolean beforeStart(Row row)
     {
         boolean beforeStart = false;
-        if (startKey != null && row != null) {
+        if (startKey != null && row != null && startBoundColumns != 0) {
             PersistitIndexRow current = (PersistitIndexRow) row;
-            int c = current.compareTo(startKey) * direction;
+            int c = current.compareTo(startKey, startBoundColumns) * direction;
             beforeStart = c < 0 || c == 0 && !startInclusive;
         }
         return beforeStart;
@@ -341,11 +343,11 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     protected boolean pastEnd(Row row)
     {
         boolean pastEnd;
-        if (endKey == null) {
+        if (endKey == null || endBoundColumns == 0) {
             pastEnd = false;
         } else {
             PersistitIndexRow current = (PersistitIndexRow) row;
-            int c = current.compareTo(endKey) * direction;
+            int c = current.compareTo(endKey, endBoundColumns) * direction;
             pastEnd = c > 0 || c == 0 && !endInclusive;
         }
         return pastEnd;
@@ -397,8 +399,9 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         }
         this.startKey = adapter.takeIndexRow(keyRange.indexRowType());
         this.startKeyKey = adapter.createKey();
-        this.endKeyKey = adapter.createKey();
         this.startBoundColumns = keyRange.boundColumns();
+
+        this.endKeyKey = adapter.createKey();
         // Set up type info, allowing for spatial indexes
         //this.collators = sortKeyAdapter.createAkCollators(startBoundColumns);
         this.types = sortKeyAdapter.createTInstances(startBoundColumns);

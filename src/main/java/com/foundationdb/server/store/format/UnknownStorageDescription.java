@@ -19,12 +19,8 @@ package com.foundationdb.server.store.format;
 
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.StorageDescription;
-import com.foundationdb.ais.model.validation.AISValidationFailure;
 import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
-import com.foundationdb.ais.protobuf.CommonProtobuf;
-import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
-import com.foundationdb.server.error.StorageDescriptionInvalidException;
 
 public class UnknownStorageDescription extends StorageDescription
 {
@@ -39,6 +35,11 @@ public class UnknownStorageDescription extends StorageDescription
     @Override
     public StorageDescription cloneForObject(HasStorage forObject) {
         return new UnknownStorageDescription(forObject, this, storageFormat);
+    }
+
+    @Override
+    public StorageDescription cloneForObjectWithoutState(HasStorage forObject) {
+        return new UnknownStorageDescription( forObject, storageFormat);
     }
 
     @Override

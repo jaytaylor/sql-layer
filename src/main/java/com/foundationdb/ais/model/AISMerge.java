@@ -64,15 +64,18 @@ public class AISMerge {
         public final TableName newChildName;
         public final Map<String,String> childCols;
         public final boolean isNewGroup;
-
+        public final StorageDescription storage;
+        
         private JoinChange(Join join, TableName newParentName, Map<String, String> parentCols,
-                           TableName newChildName, Map<String, String> childCols, boolean isNewGroup) {
+                           TableName newChildName, Map<String, String> childCols, boolean isNewGroup,
+                           StorageDescription storage) {
             this.join = join;
             this.newParentName = newParentName;
             this.parentCols = parentCols;
             this.newChildName = newChildName;
             this.childCols = childCols;
             this.isNewGroup = isNewGroup;
+            this.storage = storage;
         }
     }
 
@@ -199,14 +202,14 @@ public class AISMerge {
                 case UPDATE: {
                     Join join = (newTable != null) ? newTable.getParentJoin() : oldTable.getParentJoin();
                     joinsToFix.add(new JoinChange(join, desc.getParentName(), desc.getParentColNames(),
-                                                  desc.getNewName(), desc.getColNames(), false));
+                                                  desc.getNewName(), desc.getColNames(), false, null));
                 } break;
                 case ADD:
                     if(newTable == null) {
                         throw new IllegalArgumentException("Invalid change description: " + desc);
                     }
                     joinsToFix.add(new JoinChange(null, null, desc.getParentColNames(),
-                                                  desc.getNewName(), desc.getColNames(), false));
+                                                  desc.getNewName(), desc.getColNames(), false, null));
                 break;
                 case DROP: {
                     final Join join;
@@ -216,8 +219,10 @@ public class AISMerge {
                     } else {
                         join = oldTable.getParentJoin();
                     }
+                    Group groupParent = oldTable.getGroup();
                     joinsToFix.add(new JoinChange(join, null, desc.getParentColNames(),
-                                                  desc.getNewName(), desc.getColNames(), true));
+                                                  desc.getNewName(), desc.getColNames(), true,
+                                                  groupParent.getStorageDescription().cloneForObjectWithoutState(groupParent)));
                 } break;
                 default:
                     throw new IllegalStateException("Unhandled GroupChange: " + desc.getParentChange());
@@ -231,14 +236,17 @@ public class AISMerge {
             }
 
             for(Index newIndex : indexSearchTable.getIndexesIncludingInternal()) {
-                String oldName = desc.getPreserveIndexes().get(newIndex.getIndexName().getName());
+                String newName = newIndex.getIndexName().getName();
+                String oldName = desc.getPreserveIndexes().get(newName);
                 Index oldIndex = (oldName != null) ? oldTable.getIndexIncludingInternal(oldName) : null;
                 if(oldIndex != null) {
                     indexesToFix.put(newIndex.getIndexName(), new IndexInfo(oldIndex.getIndexId(), oldIndex.getStorageDescription()));
+                } else if(desc.getIndexesAdded().contains(newName)) {
+                    indexesToFix.put(newIndex.getIndexName(), new IndexInfo(null, newIndex.getStorageDescription()));
                 } else {
                     indexesToFix.put(newIndex.getIndexName(), new IndexInfo(null, null));
                 }
-                LOG.debug("Indexes to fix: {} -> {}", oldName,  newIndex.getIndexName() );
+                LOG.debug("Indexes to fix: {} -> {}", oldName,  newIndex.getIndexName());
             }
 
             for(TableName name : desc.getDroppedSequences()) {
@@ -476,7 +484,8 @@ public class AISMerge {
                     indexName.getName(), 
                     index.isUnique(), 
                     index.isPrimaryKey(),
-                    index.getConstraintName());
+                    index.getConstraintName(),
+                    index.getStorageDescription());
             for (IndexColumn col : index.getKeyColumns()) {
                     builder.indexColumn(sourceTable.getName().getSchemaName(), 
                             sourceTable.getName().getTableName(),
@@ -530,7 +539,7 @@ public class AISMerge {
         for(JoinChange tnj : changedJoins) {
             final Table table = targetAIS.getTable(tnj.newChildName);
             if(tnj.isNewGroup) {
-                addNewGroup(builder, table, null);
+                addNewGroup(builder, table, tnj.storage);
             } else if(tnj.newParentName != null) {
                 addJoin(builder, tnj.newParentName, tnj.parentCols, tnj.join, tnj.childCols, table);
             }
@@ -538,8 +547,8 @@ public class AISMerge {
 
         for(TableName name : groupsToClear) {
             Group group = targetAIS.getGroup(name);
-            if(group != null) {
-                group.setStorageDescription(null);
+            if(group != null && group.getStorageDescription() != null) {
+                group.setStorageDescription((group.getStorageDescription()).cloneForObjectWithoutState(group));
             }
         }
 
@@ -571,11 +580,8 @@ public class AISMerge {
             Table table = targetAIS.getTable(name.getSchemaName(), name.getTableName());
             Index index = table.getIndexIncludingInternal(name.getName());
             index.setIndexId((info.id != null) ? info.id : newIndexID(table.getGroup()));
-            if(info.storage == null && !index.isPrimaryKey()) {
-                getStorageFormatRegistry().finishStorageDescription(index, nameGenerator);
-            }
+            getStorageFormatRegistry().finishStorageDescription(index, nameGenerator);
         }
-
 
         builder.akibanInformationSchema().validate(AISValidations.BASIC_VALIDATIONS).throwIfNecessary();
         builder.akibanInformationSchema().freeze();

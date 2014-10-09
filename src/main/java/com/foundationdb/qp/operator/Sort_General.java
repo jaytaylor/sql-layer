@@ -25,6 +25,7 @@ import com.foundationdb.server.explain.std.SortOperatorExplainer;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.qp.storeadapter.Sorter;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -162,8 +163,7 @@ class Sort_General extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-                input.open();
+                super.open();
                 output = new SorterToCursorAdapter(adapter(), context, bindings, input, sortType, ordering, sortOption, TAP_LOAD);
                 output.open();
             } finally {
@@ -181,12 +181,11 @@ class Sort_General extends Operator
             try {
                 if (CURSOR_LIFECYCLE_ENABLED) {
                     CursorLifecycle.checkIdleOrActive(this);
-                    CursorLifecycle.checkIdle(input);
                 }
                 checkQueryCancelation();
                 row = output.next();
                 if (row == null) {
-                    close();
+                    setIdle();
                 }
             } finally {
                 if (TAP_NEXT_ENABLED) {
@@ -202,42 +201,13 @@ class Sort_General extends Operator
         @Override
         public void close()
         {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (output != null) {
-                input.close();
-                output.close();
-                output = null;
+            //NOTE: Not calling super.close() because the
+            // sorter has already closed the input. 
+            if (CURSOR_LIFECYCLE_ENABLED) {
+                CursorLifecycle.checkIdleOrActive(this);
             }
-        }
-
-        @Override
-        public void destroy()
-        {
-            close();
-            input.destroy();
-            if (output != null) {
-                output.destroy();
-                output = null;
-            }
-            destroyed = true;
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return !destroyed && output == null;
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return !destroyed && output != null;
-        }
-
-        @Override
-        public boolean isDestroyed()
-        {
-            return destroyed;
+            state = CursorLifecycle.CursorState.CLOSED;
+            output.close();
         }
 
         // Execution interface
@@ -250,6 +220,5 @@ class Sort_General extends Operator
         // Object state
 
         private RowCursor output;
-        private boolean destroyed = false;
     }
 }

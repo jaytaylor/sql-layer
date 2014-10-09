@@ -19,6 +19,7 @@ package com.foundationdb.server.service.text;
 
 import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.CursorLifecycle;
 import com.foundationdb.qp.operator.LeafCursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryBindingsCursor;
@@ -64,7 +65,6 @@ public class IndexScan_FullText extends Operator
     protected class Execution extends LeafCursor {
         private final FullTextIndexService service;
         private RowCursor cursor;
-        private boolean destroyed;
 
         public Execution(QueryContext context, QueryBindingsCursor bindingsCursor) {
             super(context, bindingsCursor);
@@ -79,6 +79,7 @@ public class IndexScan_FullText extends Operator
         @Override
         public void open()
         {
+            super.open();
             if (queryExpression.needsBindings()) {
                 Query query = queryExpression.getQuery(context, bindings);
                 cursor = service.searchIndex(context, index, query, limit);
@@ -89,6 +90,9 @@ public class IndexScan_FullText extends Operator
         @Override
         public Row next()
         {
+            if (CURSOR_LIFECYCLE_ENABLED) {
+                CursorLifecycle.checkIdleOrActive(this);
+            }
             checkQueryCancelation();
             return cursor.next();
         }
@@ -96,37 +100,35 @@ public class IndexScan_FullText extends Operator
         @Override
         public void jump(Row row, ColumnSelector columnSelector)
         {
+            if (CURSOR_LIFECYCLE_ENABLED) {
+                CursorLifecycle.checkIdleOrActive(this);
+            }
             cursor.jump(row, columnSelector);
+            state = CursorLifecycle.CursorState.ACTIVE;
         }
 
         @Override
         public void close()
         {
             if (cursor != null) {
+                cursor.close();
+                cursor = null;
+                /*
                 if (queryExpression.needsBindings()) {
-                    cursor.destroy();
                     cursor = null;
                 }
                 else {
                     cursor.close();
                 }
+                */
             }
-        }
-
-        @Override
-        public void destroy()
-        {
-            if (cursor != null) {
-                cursor.destroy();
-                cursor = null;
-            }
-            destroyed = true;
+            super.close();
         }
 
         @Override
         public boolean isIdle()
         {
-            return (cursor == null) ? !destroyed : cursor.isIdle();
+            return (cursor == null) ? super.isIdle() : cursor.isIdle();
         }
 
         @Override
@@ -136,9 +138,9 @@ public class IndexScan_FullText extends Operator
         }
 
         @Override
-        public boolean isDestroyed()
+        public boolean isClosed()
         {
-            return destroyed;
+            return (cursor == null) ? super.isClosed() : cursor.isClosed();
         }
     }
 

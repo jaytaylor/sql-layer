@@ -199,9 +199,7 @@ class IfEmpty_Default extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
-                this.input.open();
-                this.closed = false;
+                super.open();
                 this.inputState = InputState.UNKNOWN;
             } finally {
                 TAP_OPEN.out();
@@ -241,7 +239,7 @@ class IfEmpty_Default extends Operator
                         break;
                 }
                 if (row == null) {
-                    close();
+                    setIdle();
                 }
                 if (LOG_EXECUTION) {
                     LOG.debug("IfEmpty_Default: yield {}", row);
@@ -254,35 +252,7 @@ class IfEmpty_Default extends Operator
             }
         }
 
-        @Override
-        public void close()
-        {
-            CursorLifecycle.checkIdleOrActive(this);
-            if (!closed) {
-                input.close();
-                closed = true;
-            }
-        }
-
-        @Override
-        public void destroy()
-        {
-            input.destroy();
-        }
-
-        @Override
-        public boolean isIdle()
-        {
-            return closed;
-        }
-
-        @Override
-        public boolean isActive()
-        {
-            return !closed;
-        }
-
-        // Execution interface
+         // Execution interface
 
         Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
@@ -315,7 +285,6 @@ class IfEmpty_Default extends Operator
         // Object state
 
         private final List<TEvaluatableExpression> pEvaluations;
-        private boolean closed = true;
         private InputState inputState;
     }
 }

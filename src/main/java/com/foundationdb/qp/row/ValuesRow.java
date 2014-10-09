@@ -32,13 +32,18 @@ public final class ValuesRow extends AbstractRow {
     }
 
     @Override
-    public ValueSource value(int i) {
+    public ValueSource uncheckedValue(int i) {
         return values[i];
     }
 
     @Override
     public HKey hKey() {
         return null;
+    }
+
+    @Override
+    public boolean isBindingsSensitive() {
+        return false;
     }
 
     public ValuesRow(RowType rowType, ValueSource... values) {

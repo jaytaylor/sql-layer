@@ -89,18 +89,16 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
         this.keyTarget.attach(cursor.key());
         this.keySource = sortKeyAdapter.createSource(fieldTInstance);
         this.sortKeyAdapter = sortKeyAdapter;
-        boolean loNull = sortKeyAdapter.isNull(lo);
-        boolean hiNull = sortKeyAdapter.isNull(hi);
-        assert !(loNull && hiNull);
         this.loSource = lo;
         this.hiSource = hi;
         this.endComparison = null;
         this.loInclusive = loInclusive;
         this.hiInclusive = hiInclusive;
         this.singleValue = singleValue;
-        if (singleValue) {
-            assert !loNull;
-            assert !hiNull;
+        // Must match or both be null (areEqual() does not like both null)
+        boolean loNull = sortKeyAdapter.isNull(lo);
+        boolean hiNull = sortKeyAdapter.isNull(hi);
+        if (singleValue && !(loNull && hiNull)) {
             boolean loEQHi = sortKeyAdapter.areEqual(fieldTInstance, loSource, hiSource, cursor.context);
             if (!loEQHi) {
                 throw new IllegalArgumentException();
@@ -157,32 +155,27 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
         // About null handling: See comment in IndexCursorUnidirectional.evaluateBoundaries.
         Key.Direction direction;
         if (ascending) {
-            if (sortKeyAdapter.isNull(loSource)) {
-                cursor.key().append(null);
-                direction = Key.GT;
-            } else {
-                keyTarget.append(loSource, fieldTInstance);
-                direction = loInclusive ? Key.GTEQ : Key.GT;
-            }
+            // Start always means literal, regardless of null
+            keyTarget.append(loSource, fieldTInstance);
+            direction = loInclusive ? Key.GTEQ : Key.GT;
+            // Cannot LE/LT against NULL, end double checked in cursor
             if (!sortKeyAdapter.isNull(hiSource)) {
                 setupEndComparison(hiInclusive ? Comparison.LE : Comparison.LT, hiSource);
             }
             // else: endComparison stays null, which causes pastEnd() to always return false.
         } else {
-            if (sortKeyAdapter.isNull(hiSource)) {
-                if (sortKeyAdapter.isNull(loSource)) {
-                    cursor.key().append(null);
-                } else {
-                    cursor.key().append(Key.AFTER);
-                }
-                direction = Key.LT;
-            } else {
+            if(singleValue || !sortKeyAdapter.isNull(hiSource)) {
                 keyTarget.append(hiSource, fieldTInstance);
                 direction = hiInclusive ? Key.LTEQ : Key.LT;
+            } else {
+                cursor.key().append(Key.AFTER);
+                direction = Key.LT;
             }
+            // Cannot GE/GT against NULL, end double checked in cursor
             if (!sortKeyAdapter.isNull(loSource)) {
                 setupEndComparison(loInclusive ? Comparison.GE : Comparison.GT, loSource);
             }
+            // else: endComparison stays null, which causes pastEnd() to always return false.
         }
         INDEX_TRAVERSE.hit();
         return direction;

@@ -45,5 +45,5 @@ public abstract class ExecutionBase
 
     protected static final boolean LOG_EXECUTION = false;
     protected static final boolean TAP_NEXT_ENABLED = false;
-    protected static final boolean CURSOR_LIFECYCLE_ENABLED = false;
+    public static final boolean CURSOR_LIFECYCLE_ENABLED = false;
 }

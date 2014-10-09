@@ -1,4 +1,25 @@
+# Modifies connection state
+---
+- Properties: random-context
+- suppressed: true
+
 # Test the CURRENT_SETTING function
 - Statement: SELECT CURRENT_SETTING('server_encoding'), CURRENT_SETTING('server_version'), CURRENT_SETTING('session_authorization');
 - output: [[!re 'UTF-?8','8.4.7', !select-engine { all: 'auser', fdb-sql: 'test' } ]]
+---
+- Statement: PREPARE foo AS SELECT current_Setting('application_name');
+---
+- Statement: SELECT current_setting('application_name');
+- output: [[null]]
+---
+- Statement: EXECUTE foo();
+- output: [[null]]
+---
+- Statement: SET application_name to 'foo';
+---
+- Statement: SELECT current_setting('application_name');
+- output: [[foo]]
+---
+- Statement: EXECUTE foo();
+- output: [[foo]]
 ...

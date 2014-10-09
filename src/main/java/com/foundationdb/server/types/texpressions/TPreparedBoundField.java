@@ -87,6 +87,7 @@ public final class TPreparedBoundField implements TPreparedExpression {
 
         @Override
         public void with(QueryContext context) {
+            fieldEvaluation.with(context);
         }
 
         @Override

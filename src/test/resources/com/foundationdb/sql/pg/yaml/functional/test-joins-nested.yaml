@@ -23,6 +23,14 @@
 ---
 - Statement: INSERT INTO table2 (id, col2, name) VALUES (2, 2, 'T2value 2');
 ---
+- CreateTable: table3 (id int PRIMARY KEY, col3 int, name varchar(255));
+---
+- Statement: INSERT INTO table3 (id, col3, name) VALUES (0, 0, 'T3value 0');
+---
+- Statement: INSERT INTO table3 (id, col3, name) VALUES (1, 1, 'T3value 1');
+---
+- Statement: INSERT INTO table3 (id, col3, name) VALUES (2, 2, 'T3value 2');
+---
 - Statement: Select table0.name as name0, table1.name as name1, table2.name as name2
              FROM table0 JOIN table1 ON table0.id = table1.col1 JOIN table2 ON table1.id = table2.col2 WHERE
               table0.col0 + table1.col1 + table2.col2 = 6;
@@ -37,4 +45,29 @@
              FROM table2 JOIN table1 ON table2.id = table1.col1 JOIN table0 ON table2.id + table1.id = table0.col0;
 - output: [['T0value 0', 'T1value 0', 'T2value 0'],
            ['T0value 2', 'T1value 1', 'T2value 1']]
+---
+- Statement: Select table0.name as name0, table1.name as name1, table2.name as name2, table3.name as name3
+             FROM table0 JOIN table1 ON table0.id = table1.col1 JOIN table2 ON table1.id = table2.col2 JOIN table3 ON table2.id = table3.col3
+             WHERE table0.col0 + table1.col1 + table2.col2 + table3.col3 = 8;
+- output: [['T0value 2', 'T1value 2', 'T2value 2', 'T3value 2']]
+---
+- Statement: Select table0.name as name0, table1.name as name1, table2.name as name2, table3.name as name3
+             FROM table0 JOIN table1 ON table0.id = table1.col1 JOIN table2 ON table1.id = table2.col2 JOIN table3 ON table2.id = table3.col3
+             WHERE table1.col1 + table2.col2  = 8 -  table3.col3 - table0.col0;
+- output: [['T0value 2', 'T1value 2', 'T2value 2', 'T3value 2']]
+---
+- Statement: Select table0.name as name0, table1.name as name1, table2.name as name2, table3.name as name3
+             FROM table0 JOIN table1 ON table0.id = table1.col1 JOIN table2 ON table1.id = table2.col2 JOIN table3 ON table2.id = table3.col3
+             WHERE table1.col1 = 8 -  table3.col3 - table0.col0 - table2.col2;
+- output: [['T0value 2', 'T1value 2', 'T2value 2', 'T3value 2']]
+---
+- Statement: Select table0.name as name0, table1.name as name1, table2.name as name2, table3.name as name3
+             FROM table0 JOIN table1 ON table0.id = table1.col1 JOIN table2 ON table1.id = table2.col2 JOIN table3 ON table2.id = table3.col3
+             WHERE table3.col3 + table0.col0 = 8 -  table1.col1  - table2.col2;
+- output: [['T0value 2', 'T1value 2', 'T2value 2', 'T3value 2']]
+---
+- Statement: Select table0.name as name0, table1.name as name1, table2.name as name2, table3.name as name3
+             FROM table0 JOIN table1 ON true JOIN table2 ON true JOIN table3 ON true
+             WHERE table3.col3 + table1.col1  = 8- table0.col0 - table2.col2;
+- output: [['T0value 2', 'T1value 2', 'T2value 2', 'T3value 2']]
 ...

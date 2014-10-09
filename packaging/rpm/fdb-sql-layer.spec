@@ -26,8 +26,9 @@ Requires(pre):  /usr/sbin/useradd, /usr/sbin/groupadd, /usr/bin/getent
 BuildArch:      noarch
 
 %description
-FoundationDB SQL Layer.
-
+The FoundationDB SQL Layer is a fault-tolerant and scalable open source RDBMS,
+best suited for applications with high concurrency and short transactional
+workloads.
 
 # Don't touch jar files
 %define __jar_repack %{nil}

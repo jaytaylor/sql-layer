@@ -62,4 +62,9 @@ public class CurrentSetting extends TScalarBase
             output.putString(value, null);
     }
 
+    @Override
+    protected boolean neverConstant() {
+        return true;
+    }
+
 }
