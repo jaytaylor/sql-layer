@@ -19,30 +19,13 @@ package com.foundationdb.sql.optimizer.plan;
 
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
-import com.foundationdb.sql.NamedParamsTestBase;
-import com.foundationdb.sql.optimizer.OptimizerTestBase;
-import com.foundationdb.sql.optimizer.rule.ASTStatementLoader;
-import com.foundationdb.sql.optimizer.rule.BaseRule;
-import com.foundationdb.sql.optimizer.rule.PlanContext;
-import com.foundationdb.sql.optimizer.rule.RulesTestContext;
-import com.foundationdb.sql.parser.DMLStatementNode;
-import com.foundationdb.sql.parser.JoinNode.JoinType;
-import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
-import com.foundationdb.junit.NamedParameterizedRunner;
-import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
-import com.foundationdb.junit.Parameterization;
 
-import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.*;
-
-import java.io.File;
-import java.util.*;
 
 public class JoinNodeTest {
     @Test
