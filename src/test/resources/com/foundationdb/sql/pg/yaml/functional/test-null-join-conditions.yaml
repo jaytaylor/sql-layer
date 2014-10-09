@@ -1,0 +1,7 @@
+---
+- Statement: create table reports(id INTEGER PRIMARY KEY NOT NULL)
+---
+- Statement: create table metadata(name VARCHAR(30), value VARCHAR(30), report_id INTEGER,  GROUPING FOREIGN KEY (report_id) REFERENCES reports(id))
+---
+- Statement: select * from (select report_id from metadata m1, reports r1 where m1.name = 'runid' and lower(m1.value) like '%nightly%' and r1.id=report_id intersect select report_id from metadata m2, reports r2 where m2.name = 'user' and lower(m2.value) like '%fdb%' and r2.id=report_id intersect select report_id from metadata m3, reports r3 where m3.name = 'name' and m3.value like '%e%' and r3.id=report_id) as t;
+...
