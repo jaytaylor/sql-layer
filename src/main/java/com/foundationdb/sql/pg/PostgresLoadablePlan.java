@@ -20,6 +20,7 @@ package com.foundationdb.sql.pg;
 import com.foundationdb.sql.server.ServerCallExplainer;
 import com.foundationdb.sql.server.ServerCallInvocation;
 
+import com.foundationdb.ais.model.Column;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.SparseArrayQueryBindings;
 import com.foundationdb.qp.loadableplan.LoadableDirectObjectPlan;
@@ -36,6 +37,7 @@ import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class PostgresLoadablePlan
@@ -48,15 +50,16 @@ public class PostgresLoadablePlan
         List<String> columnNames = loadablePlan.columnNames();
         List<PostgresType> columnTypes = columnTypes(loadablePlan,
                                                      server.typesTranslator());
+        List<Column> aisColumns = Collections.nCopies(columnNames.size(), null);
         if (loadablePlan instanceof LoadableOperator)
             return new PostgresLoadableOperator((LoadableOperator)loadablePlan, 
                                                 invocation,
-                                                columnNames, columnTypes,
+                                                columnNames, columnTypes, aisColumns,
                                                 null);
         if (loadablePlan instanceof LoadableDirectObjectPlan)
             return new PostgresLoadableDirectObjectPlan((LoadableDirectObjectPlan)loadablePlan, 
                                                         invocation,
-                                                        columnNames, columnTypes,
+                                                        columnNames, columnTypes, aisColumns,
                                                         null);
         return null;
     }

@@ -19,11 +19,13 @@ package com.foundationdb.sql.pg;
 
 import static com.foundationdb.sql.pg.PostgresJsonStatement.jsonColumnNames;
 import static com.foundationdb.sql.pg.PostgresJsonStatement.jsonColumnTypes;
+import static com.foundationdb.sql.pg.PostgresJsonStatement.jsonAISColumns;
 
 import com.foundationdb.sql.parser.ParameterNode;
 import com.foundationdb.sql.server.ServerCallInvocation;
 import com.foundationdb.sql.server.ServerJavaRoutine;
 
+import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Parameter;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.qp.operator.QueryBindings;
@@ -35,6 +37,7 @@ import com.foundationdb.util.tap.Tap;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Queue;
 import java.io.IOException;
@@ -52,20 +55,24 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
         Routine routine = invocation.getRoutine();
         List<String> columnNames;
         List<PostgresType> columnTypes;
+        List<Column> aisColumns;
         switch (server.getOutputFormat()) {
         case JSON:
         case JSON_WITH_META_DATA:
             columnNames = jsonColumnNames();
             columnTypes = jsonColumnTypes(server.typesTranslator().typeForString());
+            aisColumns = jsonAISColumns();
             break;
         default:
             columnTypes = columnTypes(routine);
             if (columnTypes.isEmpty()) {
                 columnTypes = null;
                 columnNames = null;
+                aisColumns = null;
             }
             else {
                 columnNames = columnNames(routine);
+                aisColumns = Collections.nCopies(columnTypes.size(), null);
             }
             break;
         }
@@ -77,17 +84,17 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
         switch (routine.getCallingConvention()) {
         case JAVA:
             return PostgresJavaMethod.statement(server, invocation, 
-                                                columnNames, columnTypes,
+                                                columnNames, columnTypes, aisColumns,
                                                 parameterTypes);
         case SCRIPT_FUNCTION_JAVA:
         case SCRIPT_FUNCTION_JSON:
             return PostgresScriptFunctionJavaRoutine.statement(server, invocation, 
-                                                               columnNames, columnTypes,
+                                                               columnNames, columnTypes, aisColumns,
                                                                parameterTypes);
         case SCRIPT_BINDINGS:
         case SCRIPT_BINDINGS_JSON:
             return PostgresScriptBindingsRoutine.statement(server, invocation, 
-                                                           columnNames, columnTypes,
+                                                           columnNames, columnTypes, aisColumns,
                                                            parameterTypes);
         default:
             return null;
@@ -100,8 +107,9 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
     protected PostgresJavaRoutine(ServerCallInvocation invocation,
                                   List<String> columnNames, 
                                   List<PostgresType> columnTypes,
+                                  List<Column> aisColumns,
                                   PostgresType[] parameterTypes) {
-        super.init(null, columnNames, columnTypes, parameterTypes);
+        super.init(null, columnNames, columnTypes, aisColumns, parameterTypes);
         this.invocation = invocation;
     }
 

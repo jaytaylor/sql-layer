@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.pg;
 
+import com.foundationdb.ais.model.Column;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.service.routines.ScriptEvaluator;
 import com.foundationdb.server.service.routines.ScriptPool;
@@ -34,11 +35,12 @@ public class PostgresScriptBindingsRoutine extends PostgresJavaRoutine
                                                           ServerCallInvocation invocation,
                                                           List<String> columnNames, 
                                                           List<PostgresType> columnTypes,
+                                                          List<Column> aisColumns,
                                                           PostgresType[] parameterTypes) {
         ScriptPool<ScriptEvaluator> pool = server.getRoutineLoader()
             .getScriptEvaluator(server.getSession(), invocation.getRoutineName());
         return new PostgresScriptBindingsRoutine(pool, invocation,
-                                                 columnNames, columnTypes,
+                                                 columnNames, columnTypes, aisColumns,
                                                  parameterTypes);
     }
 
@@ -46,8 +48,9 @@ public class PostgresScriptBindingsRoutine extends PostgresJavaRoutine
                                             ServerCallInvocation invocation,
                                             List<String> columnNames, 
                                             List<PostgresType> columnTypes,
+                                            List<Column> aisColumns,
                                             PostgresType[] parameterTypes) {
-        super(invocation, columnNames, columnTypes, parameterTypes);
+        super(invocation, columnNames, columnTypes, aisColumns, parameterTypes);
         this.pool = pool;
     }
 

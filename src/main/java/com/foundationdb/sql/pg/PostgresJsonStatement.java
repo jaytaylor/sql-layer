@@ -20,6 +20,7 @@ package com.foundationdb.sql.pg;
 import com.foundationdb.sql.optimizer.plan.CostEstimate;
 import static com.foundationdb.sql.pg.PostgresJsonCompiler.JsonResultColumn;
 
+import com.foundationdb.ais.model.Column;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
@@ -43,7 +44,7 @@ public class PostgresJsonStatement extends PostgresOperatorStatement
                      CostEstimate costEstimate) {
         super.init(resultOperator, resultRowType,
                    // Looks like just one unlimited VARCHAR to the client.
-                   jsonColumnNames(), jsonColumnTypes(colTInstance),
+                   jsonColumnNames(), jsonColumnTypes(colTInstance), jsonAISColumns(),
                    parameterTypes, costEstimate);
         this.resultColumns = resultColumns;
     }
@@ -56,6 +57,10 @@ public class PostgresJsonStatement extends PostgresOperatorStatement
         return Collections.singletonList(new PostgresType(PostgresType.TypeOid.JSON_TYPE_OID,
                                                           (short)-1, -1,
                                                           colTInstance));
+    }
+
+    public static List<Column> jsonAISColumns() {
+        return Collections.singletonList(null);
     }
 
     @Override

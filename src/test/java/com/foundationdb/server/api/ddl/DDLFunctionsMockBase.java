@@ -91,6 +91,11 @@ public class DDLFunctionsMockBase implements DDLFunctions {
     }
 
     @Override
+    public void dropNonSystemSchemas(Session session) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void dropGroup(Session session, TableName groupName) {
         throw new UnsupportedOperationException();
     }

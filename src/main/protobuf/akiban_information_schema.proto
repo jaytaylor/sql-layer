@@ -86,6 +86,7 @@ message Index {
     optional int32 dimensions = 12;         // For a spatial index, the number of dimensions of the space
     optional Storage storage     = 13;  // storage description
 	optional TableName constraintName = 14; // name for constraint
+    optional int32 lastSpatialArg = 15;    // For a spatial index, the position in the index of the last spatial column
 }
 
 message Group {

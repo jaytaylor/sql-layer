@@ -1,0 +1,16 @@
+[
+  {
+    "update_count": 3,
+    "returning": [
+      {
+        "cid": 1
+      },
+      {
+        "cid": 2
+      },
+      {
+        "cid": 3
+      }
+    ]
+  }
+]

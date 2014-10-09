@@ -51,7 +51,7 @@ public class MTypesTranslatorTest extends TypesTranslatorTest
         testType("DECIMAL(8,0) UNSIGNED", "MCOMPAT_ DECIMAL UNSIGNED(8, 0)");
 
         testType("VARCHAR(16)", "MCOMPAT_ VARCHAR(16, UTF8, UCS_BINARY)");
-        testType("VARCHAR(16) COLLATE EN_CI", "MCOMPAT_ VARCHAR(16, UTF8, en_ci)");
+        testType("VARCHAR(16) COLLATE EN_US_CI_CO", "MCOMPAT_ VARCHAR(16, UTF8, en_us_ci_co)");
         testType("CHAR(2)", "MCOMPAT_ CHAR(2, UTF8, UCS_BINARY)");
 
         testType("DATE", "MCOMPAT_ DATE");

@@ -17,8 +17,10 @@
 
 package com.foundationdb.server.error;
 
-public final class InvalidCollationSchemeException extends InvalidOperationException {
-    public InvalidCollationSchemeException (String collation, String msg) {
-        super(ErrorCode.INVALID_COLLATION_SCHEME, collation, msg);
+import com.foundationdb.ais.model.TableName;
+
+public class InvalidCollationKeywordException extends InvalidOperationException {
+    public InvalidCollationKeywordException(String scheme, String keyword, String value) {
+        super(ErrorCode.INVALID_COLLATION_KEYWORD, scheme, keyword, value);
     }
 }

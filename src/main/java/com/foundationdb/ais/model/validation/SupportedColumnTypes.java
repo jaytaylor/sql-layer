@@ -20,11 +20,13 @@ package com.foundationdb.ais.model.validation;
 import com.foundationdb.ais.model.AbstractVisitor;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.error.GeneratorWrongDatatypeException;
 import com.foundationdb.server.error.UnsupportedColumnDataTypeException;
 import com.foundationdb.server.error.UnsupportedIndexDataTypeException;
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TypeValidator;
 
 class SupportedColumnTypes implements AISValidation {
@@ -60,12 +62,18 @@ class SupportedColumnTypes implements AISValidation {
 
         @Override
         public void visit(IndexColumn indexColumn) {
-            if (!TypeValidator.isSupportedForIndex(indexColumn.getColumn().getType())) {
+            Index index = indexColumn.getIndex();
+            boolean nonPointSpatialIndex =
+                index.isSpatial() &&
+                index.firstSpatialArgument() == index.lastSpatialArgument();
+            TInstance columnType = indexColumn.getColumn().getType();
+            if (!(!nonPointSpatialIndex && TypeValidator.isSupportedForIndex(columnType) ||
+                  nonPointSpatialIndex && TypeValidator.isSupportedForNonPiontSpatialIndex(columnType))) {
                 failures.reportFailure(new AISValidationFailure (
                         new UnsupportedIndexDataTypeException (
-                                new TableName (indexColumn.getIndex().getIndexName().getSchemaName(),
-                                indexColumn.getIndex().getIndexName().getTableName()),
-                                indexColumn.getIndex().getIndexName().getName(),
+                                new TableName (index.getIndexName().getSchemaName(),
+                                index.getIndexName().getTableName()),
+                                index.getIndexName().getName(),
                                 indexColumn.getColumn().getName(),
                                 indexColumn.getColumn().getTypeName())));
             }
