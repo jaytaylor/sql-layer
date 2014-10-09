@@ -15,11 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.http;
+package com.foundationdb.rest;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.Response;
@@ -33,12 +35,15 @@ import java.io.IOException;
 @Provider
 @Priority(Priorities.AUTHENTICATION)
 public class CsrfProtectionFilter implements ContainerRequestFilter {
+    private static final Logger logger = LoggerFactory.getLogger(CsrfProtectionFilter.class);
+
 
     public static final String HEADER_NAME = "X-Requested-By";
     @Override
     public void filter(ContainerRequestContext containerRequestContext) throws IOException {
-        if (!"HEAD".equals(containerRequestContext.getMethod()) || !"OPTIONS".equals(containerRequestContext.getMethod()) &&
+        if (!"HEAD".equals(containerRequestContext.getMethod()) && !"OPTIONS".equals(containerRequestContext.getMethod()) &&
                 containerRequestContext.getHeaderString(HEADER_NAME) == null) {
+            logger.debug("CSRF attempt blocked {} {}", containerRequestContext.getUriInfo().getAbsolutePath(), containerRequestContext.getHeaders());
             containerRequestContext.abortWith(Response.status(Response.Status.BAD_REQUEST).build());
         }
     }

@@ -97,6 +97,7 @@ public class RestServiceImpl implements RestService, Service {
 
     private ResourceConfig createResourceConfigV1() {
         String resource_list = configService.getProperty(RESOURCE_LIST);
+
         
         Set<Object> resources = new HashSet<>();
         if (resource_list.contains("entity")) {
@@ -123,9 +124,10 @@ public class RestServiceImpl implements RestService, Service {
         // This must be last to capture anything not handled above
         resources.add(new DefaultResource());
 
-        
+
         ResourceConfig config = new ResourceConfig();
         config.registerInstances(resources);
+        config.register(CsrfProtectionFilter.class);
         return config;
     }
 }

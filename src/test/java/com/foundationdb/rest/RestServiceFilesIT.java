@@ -246,6 +246,8 @@ public class RestServiceFilesIT extends ITBase {
         loadDatabase(caseParams.subDir, serviceManager().getServiceByClass(FullTextIndexService.class));
         HttpExchange conn = openConnection(getRestURL(caseParams.requestURI), caseParams.requestMethod);
         try {
+
+            conn.setRequestHeader("X-Requested-By", "boo");
             // Request
             if (caseParams.requestMethod.equals("POST") || 
                 caseParams.requestMethod.equals("PUT") || 
