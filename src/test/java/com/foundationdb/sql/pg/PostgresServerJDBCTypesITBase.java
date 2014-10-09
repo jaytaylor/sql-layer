@@ -38,6 +38,7 @@ import org.junit.runners.Parameterized.Parameters;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -345,7 +346,7 @@ public abstract class PostgresServerJDBCTypesITBase extends PostgresServerITBase
 
     protected static void compareObjects(Object expected, Object actual) {
         if (expected instanceof byte[]) {
-            assertTrue("Expected "  + Arrays.toString((byte[])expected) + " but got " + Arrays.toString((byte[])actual), Arrays.equals((byte[])expected, (byte[])actual));
+            assertArrayEquals((byte[]) expected, (byte[]) actual);
         }
         else if (expected instanceof java.util.Date) {
             assertEquals(String.format("%s <> %s", 
