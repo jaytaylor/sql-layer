@@ -240,7 +240,7 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         super.deepCopy(map);
         left = (Joinable)left.duplicate(map);
         right = (Joinable)right.duplicate(map);
-        joinConditions = joinConditions.duplicate(map);
+        if (joinConditions != null) joinConditions = joinConditions.duplicate(map);
     }
 
 }
