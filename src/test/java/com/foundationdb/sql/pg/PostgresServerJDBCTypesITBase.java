@@ -48,7 +48,7 @@ import static org.junit.Assert.fail;
  * Test using various JDBC <code>set</code> and <code>get</code> methods.
  */
 @RunWith(SelectedParameterizedRunner.class)
-public abstract class PostgresServerJDBCTypesIT extends PostgresServerITBase
+public abstract class PostgresServerJDBCTypesITBase extends PostgresServerITBase
 {
 
     @Before
@@ -138,8 +138,8 @@ public abstract class PostgresServerJDBCTypesIT extends PostgresServerITBase
     private final String unparseable;
     private final Object defaultValue;
 
-    public PostgresServerJDBCTypesIT(String caseName, int jdbcType, String colName,
-                                     Object value, String unparseable, Object defaultValue) {
+    public PostgresServerJDBCTypesITBase(String caseName, int jdbcType, String colName,
+                                         Object value, String unparseable, Object defaultValue) {
         this.caseName = caseName;
         this.jdbcType = jdbcType;
         this.colName = colName;

@@ -1,6 +1,6 @@
 package com.foundationdb.sql.pg;
 
-public class PostgresServerJDBCTypesWithBinaryIT extends PostgresServerJDBCTypesIT {
+public class PostgresServerJDBCTypesWithBinaryIT extends PostgresServerJDBCTypesITBase {
 
 
     public PostgresServerJDBCTypesWithBinaryIT(String caseName, int jdbcType, String colName, Object value, String unparseable, Object defaultValue) {

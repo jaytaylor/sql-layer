@@ -1,6 +1,6 @@
 package com.foundationdb.sql.pg;
 
-public class PostgresServerJDBCTypesWithTextIT extends PostgresServerJDBCTypesIT {
+public class PostgresServerJDBCTypesWithTextIT extends PostgresServerJDBCTypesITBase {
 
 
     public PostgresServerJDBCTypesWithTextIT(String caseName, int jdbcType, String colName, Object value, String unparseable, Object defaultValue) {
