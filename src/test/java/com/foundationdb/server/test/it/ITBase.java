@@ -34,7 +34,6 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.test.ApiTestBase;
 import com.foundationdb.server.test.it.qp.TestRow;
 import com.foundationdb.server.types.TClass;
