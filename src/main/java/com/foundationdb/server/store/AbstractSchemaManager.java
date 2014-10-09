@@ -31,6 +31,7 @@ import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
@@ -468,6 +469,68 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         dropTableCommon(session, new TableName(schemaName, tableName), dropBehavior, false, false);
     }
 
+
+    @Override
+    public void dropSchema(Session session, String schemaName) {
+
+        AkibanInformationSchema newAIS = removeSchemaFromAIS(getAISForChange(session), schemaName);
+        saveAISChange(session, newAIS, Collections.singleton(schemaName));
+    }
+
+    @Override
+    public void dropNonSystemSchemas(Session session) {
+        AkibanInformationSchema aisForChange = getAISForChange(session);
+        List<String> affectedSchemas = new ArrayList<>();
+        for (String schemaName : aisForChange.getSchemas().keySet()) {
+            if (!TableName.inSystemSchema(schemaName)) {
+                affectedSchemas.add(schemaName);
+            }
+        }
+        AkibanInformationSchema newAIS = aisCloner.clone(aisForChange,
+                new ProtobufWriter.WriteSelector() {
+                    @Override
+                    public Columnar getSelected(Columnar columnar) {
+                        return columnar.getName().inSystemSchema() ? columnar : null;
+                    }
+
+                    @Override
+                    public boolean isSelected(Group group) {
+                        return group.getName().inSystemSchema();
+                    }
+
+                    @Override
+                    public boolean isSelected(Join parentJoin) {
+                        return parentJoin.getConstraintName().inSystemSchema();
+                    }
+
+                    @Override
+                    public boolean isSelected(Index index) {
+                        return index.getIndexName().getFullTableName().inSystemSchema();
+                    }
+
+                    @Override
+                    public boolean isSelected(Sequence sequence) {
+                        return sequence.getSequenceName().inSystemSchema();
+                    }
+
+                    @Override
+                    public boolean isSelected(Routine routine) {
+                        return routine.getName().inSystemSchema();
+                    }
+
+                    @Override
+                    public boolean isSelected(SQLJJar sqljJar) {
+                        return sqljJar.getName().inSystemSchema();
+                    }
+
+                    @Override
+                    public boolean isSelected(ForeignKey foreignKey) {
+                        return foreignKey.getConstraintName().inSystemSchema();
+                    }
+                });
+        saveAISChange(session, newAIS, affectedSchemas);
+    }
+
     @Override
     public void alterTableDefinitions(Session session, Collection<ChangedTableDescription> alteredTables) {
         ArgumentValidation.notEmpty("alteredTables", alteredTables);
@@ -888,6 +951,51 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             final String schemaName = jarName.getSchemaName();
             saveAISChange(session, newAIS, Collections.singleton(schemaName));
         }
+    }
+
+    private AkibanInformationSchema removeSchemaFromAIS(AkibanInformationSchema oldAIS, final String schemaName) {
+        return aisCloner.clone(oldAIS,
+                new ProtobufWriter.WriteSelector() {
+                    @Override
+                    public Columnar getSelected(Columnar columnar) {
+                        return null;
+                    }
+
+                    @Override
+                    public boolean isSelected(Group group) {
+                        return !group.getSchemaName().equals(schemaName);
+                    }
+
+                    @Override
+                    public boolean isSelected(Join parentJoin) {
+                        return !parentJoin.getGroup().getSchemaName().equals(schemaName);
+                    }
+
+                    @Override
+                    public boolean isSelected(Index index) {
+                        return !index.getSchemaName().equals(schemaName);
+                    }
+
+                    @Override
+                    public boolean isSelected(Sequence sequence) {
+                        return !sequence.getSchemaName().equals(schemaName);
+                    }
+
+                    @Override
+                    public boolean isSelected(Routine routine) {
+                        return !routine.getName().getSchemaName().equals(schemaName);
+                    }
+
+                    @Override
+                    public boolean isSelected(SQLJJar sqljJar) {
+                        return !sqljJar.getName().getSchemaName().equals(schemaName);
+                    }
+
+                    @Override
+                    public boolean isSelected(ForeignKey foreignKey) {
+                        return !foreignKey.getReferencingTable().getGroup().getSchemaName().equals(schemaName);
+                    }
+                });
     }
 
     /** Construct a new AIS from {@code oldAIS} without {@code tableNames} or {@code sequences}. */
