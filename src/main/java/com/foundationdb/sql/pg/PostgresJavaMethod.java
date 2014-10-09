@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.pg;
 
+import com.foundationdb.ais.model.Column;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.sql.server.ServerCallInvocation;
 import com.foundationdb.sql.server.ServerJavaMethod;
@@ -33,11 +34,12 @@ public class PostgresJavaMethod extends PostgresJavaRoutine
                                               ServerCallInvocation invocation,
                                               List<String> columnNames, 
                                               List<PostgresType> columnTypes,
+                                              List<Column> aisColumns,
                                               PostgresType[] parameterTypes) {
         Method method = server.getRoutineLoader()
             .loadJavaMethod(server.getSession(), invocation.getRoutineName());
         return new PostgresJavaMethod(method, invocation,
-                                      columnNames, columnTypes,
+                                      columnNames, columnTypes, aisColumns,
                                       parameterTypes);
     }
 
@@ -49,8 +51,9 @@ public class PostgresJavaMethod extends PostgresJavaRoutine
                                  ServerCallInvocation invocation,
                                  List<String> columnNames, 
                                  List<PostgresType> columnTypes,
+                                 List<Column> aisColumns,
                                  PostgresType[] parameterTypes) {
-        super(invocation, columnNames, columnTypes, parameterTypes);
+        super(invocation, columnNames, columnTypes, aisColumns, parameterTypes);
         this.method = method;
     }
 
