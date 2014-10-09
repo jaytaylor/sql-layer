@@ -31,9 +31,8 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.geophile.Space;
-import com.foundationdb.server.geophile.SpaceLatLon;
-import org.junit.Ignore;
+import com.foundationdb.server.spatial.Spatial;
+import com.geophile.z.Space;
 import org.junit.Test;
 
 import java.math.BigDecimal;
@@ -67,10 +66,10 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
             "grouping foreign key(pid) references parent(pid)");
         groupName = new TableName("schema", "parent");
         createSpatialGroupIndex(groupName, "pbefore_clat_clon_cafter",
-                                1, Space.LAT_LON_DIMENSIONS, Index.JoinType.LEFT,
+                                1, Spatial.LAT_LON_DIMENSIONS, Index.JoinType.LEFT,
                                 "parent.pbefore", "child.clat", "child.clon", "child.cafter");
         createSpatialGroupIndex(groupName, "pbefore_plat_plon_cafter",
-                                1, Space.LAT_LON_DIMENSIONS, Index.JoinType.LEFT,
+                                1, Spatial.LAT_LON_DIMENSIONS, Index.JoinType.LEFT,
                                 "parent.pbefore", "parent.plat", "parent.plon", "child.cafter");
     }
 
@@ -84,7 +83,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
         childOrdinal = childRowType.table().getOrdinal();
         cSpatialIndexRowType = groupIndexType(groupName, "parent.pbefore", "child.clat", "child.clon", "child.cafter");
         pSpatialIndexRowType = groupIndexType(groupName, "parent.pbefore", "parent.plat", "parent.plon", "child.cafter");
-        space = SpaceLatLon.create();
+        space = Spatial.createLatLonSpace();
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
@@ -157,7 +156,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                 int after = (Integer) row.get(2);
                 BigDecimal clat = (BigDecimal) row.get(3);
                 BigDecimal clon = (BigDecimal) row.get(4);
-                long z = space.shuffle(clat, clon);
+                long z = Spatial.shuffle(space, clat.doubleValue(), clon.doubleValue());
                 expected[r++] = new long[]{before(pid), z, after, pid, cid};
             }
             compareRows(rows(cSpatialIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
@@ -172,7 +171,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                 int after = (Integer) row.get(2);
                 BigDecimal plat = plats.get(pid);
                 BigDecimal plon = plons.get(pid);
-                long z = space.shuffle(plat, plon);
+                long z = Spatial.shuffle(space, plat.doubleValue(), plon.doubleValue());
                 expected[r++] = new long[]{before(pid), z, after, pid, cid};
             }
             compareRows(rows(pSpatialIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
@@ -193,7 +192,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                 BigDecimal plon = plons.get(pid);
                 NewRow original = createNewRow(parent, pid, before(pid), plat, plon);
                 NewRow updated = createNewRow(parent, pid, before(pid), plat, plon.add(BigDecimal.ONE));
-                long z = space.shuffle(plat, plon.add(BigDecimal.ONE));
+                long z = Spatial.shuffle(space, plat.doubleValue(), plon.doubleValue() + 1);
                 parentZToPid.put(z, pid);
                 dml().updateRow(session(), original, updated, null);
                 for (int c = 1; c <= CHILDREN_PER_PARENT; c++) {
@@ -203,7 +202,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                     original = createNewRow(child, cid, pid, after(cid), clat, clon);
                     updated = createNewRow(child, cid, pid, after(cid), clat, clon.add(BigDecimal.ONE));
                     dml().updateRow(session(), original, updated, null);
-                    z = space.shuffle(clat, clon.add(BigDecimal.ONE));
+                    z = Spatial.shuffle(space, clat.doubleValue(), clon.doubleValue() + 1);
                     childZToCid.put(z, cid);
                 }
             }
@@ -405,7 +404,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
         for (int i = 0; i < N; i++) {
             BigDecimal queryLat = randomLat();
             BigDecimal queryLon = randomLon();
-            long zStart = space.shuffle(queryLat, queryLon);
+            long zStart = Spatial.shuffle(space, queryLat.doubleValue(), queryLon.doubleValue());
             for (int beforeEQ = 0; beforeEQ <= 2; beforeEQ++) {
                 // Expected
                 SortedMap<Long, Integer> distanceToId = new TreeMap<>();
@@ -442,7 +441,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                     assertEquals(beforeEQ, before);
                     BigDecimal clat = clats.get(cid);
                     BigDecimal clon = clons.get(cid);
-                    long zExpected = space.shuffle(clat, clon);
+                    long zExpected = Spatial.shuffle(space, clat.doubleValue(), clon.doubleValue());
                     assertEquals(zExpected, z);
                     Integer expectedCid = childZToCid.get(z);
                     assertNotNull(expectedCid);
@@ -468,7 +467,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                 BigDecimal plat = new BigDecimal(y);
                 BigDecimal plon = new BigDecimal(x);
                 dml().writeRow(session(), createNewRow(parent, pid, before(pid),  plat, plon));
-                long parentZ = space.shuffle(SpaceLatLon.scaleLat(plat), SpaceLatLon.scaleLon(plon));
+                long parentZ = Spatial.shuffle(space, plat.doubleValue(), plon.doubleValue());
                 parentZToPid.put(parentZ, pid);
                 plats.put(pid, plat);
                 plons.put(pid, plon);
@@ -479,7 +478,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                     BigDecimal clon = clon(plon, cid);
                     clats.put(cid, clat);
                     clons.put(cid, clon);
-                    long childZ = space.shuffle(SpaceLatLon.scaleLat(clat), SpaceLatLon.scaleLon(clon));
+                    long childZ = Spatial.shuffle(space, clat.doubleValue(), clon.doubleValue());
                     childZToCid.put(childZ, cid);
                     // System.out.println(String.format("    child  %016x -> %s", childZ, cid));
                     dml().writeRow(session(), createNewRow(child, cid, pid, after(cid), clat, clon));
@@ -589,7 +588,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
     private int childOrdinal;
     private IndexRowType cSpatialIndexRowType;
     private IndexRowType pSpatialIndexRowType;
-    private SpaceLatLon space;
+    private Space space;
     private Map<Long, Integer> childZToCid = new TreeMap<>();
     private Map<Long, Integer> parentZToPid = new TreeMap<>();
     Map<Integer, BigDecimal> plats = new HashMap<>(); // indexed by pid

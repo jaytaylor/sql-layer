@@ -29,12 +29,13 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.InternalIndexTypes;
 import com.foundationdb.server.api.dml.IndexRowPrefixSelector;
-import com.foundationdb.server.geophile.SpaceLatLon;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.spatial.Spatial;
+import com.geophile.z.Space;
 
 import java.math.BigDecimal;
 
@@ -121,7 +122,7 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         this.iterationHelper = iterationHelper;
         IndexRowType physicalIndexRowType = keyRange.indexRowType().physicalRowType();
         Index index = keyRange.indexRowType().index();
-        SpaceLatLon space = (SpaceLatLon) index.space();
+        Space space = index.space();
         int latColumn = index.firstSpatialArgument();
         int lonColumn = latColumn + 1;
         // The index column selector needs to select all the columns before the z column, and the z column itself.
@@ -133,7 +134,7 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         TInstance lonInstance = index.getAllColumns().get(lonColumn).getColumn().getType();
         BigDecimal lat = TBigDecimal.getWrapper(loExpressions.value(latColumn), latInstance).asBigDecimal();
         BigDecimal lon = TBigDecimal.getWrapper(loExpressions.value(lonColumn), lonInstance).asBigDecimal();
-        zStart = space.shuffle(lat, lon);
+        zStart = Spatial.shuffle(space, lat.doubleValue(), lon.doubleValue());
         // Cursors going forward from starting z value (inclusive), and backward from the same z value (exclusive)
         int indexRowFields = physicalIndexRowType.nFields();
         SpatialIndexValueRecord zForwardRow = new SpatialIndexValueRecord(indexRowFields);

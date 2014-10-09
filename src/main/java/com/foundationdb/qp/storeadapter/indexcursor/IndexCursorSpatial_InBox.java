@@ -18,7 +18,6 @@
 package com.foundationdb.qp.storeadapter.indexcursor;
 
 import com.foundationdb.ais.model.Index;
-import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
@@ -30,16 +29,16 @@ import com.foundationdb.qp.rowtype.InternalIndexTypes;
 import com.foundationdb.qp.util.MultiCursor;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.IndexRowPrefixSelector;
-import com.foundationdb.server.geophile.BoxLatLon;
-import com.foundationdb.server.geophile.Space;
-import com.foundationdb.server.geophile.SpaceLatLon;
+import com.foundationdb.server.spatial.BoxLatLon;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TBigDecimal;
-import com.foundationdb.server.types.value.Value;
-import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.texpressions.TPreparedField;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueRecord;
+import com.foundationdb.server.types.value.ValueSource;
+import com.geophile.z.Space;
+import com.geophile.z.SpatialObject;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -130,15 +129,15 @@ class IndexCursorSpatial_InBox extends IndexCursor
         ValueRecord loExpressions = loBound.boundExpressions(context, bindings);
         ValueRecord hiExpressions = hiBound.boundExpressions(context, bindings);
         // Only 2d, lat/lon supported for now
-        BigDecimal xLo, xHi, yLo, yHi;
+        double xLo, xHi, yLo, yHi;
         TInstance xinst = index.getAllColumns().get(latColumn).getColumn().getType();
         TInstance yinst = index.getAllColumns().get(lonColumn).getColumn().getType();
-        xLo = TBigDecimal.getWrapper(loExpressions.value(latColumn), xinst).asBigDecimal();
-        xHi = TBigDecimal.getWrapper(hiExpressions.value(latColumn), xinst).asBigDecimal();
-        yLo = TBigDecimal.getWrapper(loExpressions.value(lonColumn), yinst).asBigDecimal();
-        yHi = TBigDecimal.getWrapper(hiExpressions.value(lonColumn), yinst).asBigDecimal();
-        BoxLatLon box = BoxLatLon.newBox(xLo, xHi, yLo, yHi);
-        long[] zValues = new long[SpaceLatLon.MAX_DECOMPOSITION_Z_VALUES];
+        xLo = TBigDecimal.getWrapper(loExpressions.value(latColumn), xinst).asBigDecimal().doubleValue();
+        xHi = TBigDecimal.getWrapper(hiExpressions.value(latColumn), xinst).asBigDecimal().doubleValue();
+        yLo = TBigDecimal.getWrapper(loExpressions.value(lonColumn), yinst).asBigDecimal().doubleValue();
+        yHi = TBigDecimal.getWrapper(hiExpressions.value(lonColumn), yinst).asBigDecimal().doubleValue();
+        SpatialObject box = BoxLatLon.newBox(xLo, xHi, yLo, yHi);
+        long[] zValues = new long[box.maxZ()];
         space.decompose(box, zValues);
         for (int i = 0; i < zValues.length; i++) {
             long z = zValues[i];
@@ -158,8 +157,8 @@ class IndexCursorSpatial_InBox extends IndexCursor
                 // lo and hi bounds
                 Value loValue = new Value(InternalIndexTypes.LONG.instance(false));
                 Value hiValue = new Value(InternalIndexTypes.LONG.instance(false));
-                loValue.putInt64(space.zLo(z));
-                hiValue.putInt64(space.zHi(z));
+                loValue.putInt64(Space.zLo(z));
+                hiValue.putInt64(Space.zHi(z));
                 zLoRow.value(latColumn, loValue);
                 zHiRow.value(latColumn, hiValue);
                 IndexKeyRange zKeyRange = IndexKeyRange.bounded(physicalRowType, zLo, true, zHi, true);

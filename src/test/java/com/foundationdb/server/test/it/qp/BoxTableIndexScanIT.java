@@ -30,9 +30,9 @@ import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.OutOfRangeException;
-import com.foundationdb.server.geophile.BoxLatLon;
-import com.foundationdb.server.geophile.Space;
-import com.foundationdb.server.geophile.SpaceLatLon;
+import com.foundationdb.server.spatial.Spatial;
+import com.geophile.z.Space;
+import com.geophile.z.spatialobject.d2.Box;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -84,7 +84,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
         boxRowType = schema.tableRowType(table(box));
         boxOrdinal = boxRowType.table().getOrdinal();
         latLonIndexRowType = indexType(box, "box_blob");
-        space = SpaceLatLon.create();
+        space = Spatial.createLatLonSpace();
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
@@ -257,7 +257,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
                 BigDecimal lon = lons.get(id);
                 NewRow before = createNewRow(box, id, before(id), after(id), lat, lon);
                 NewRow after = createNewRow(box, id, before(id), after(id), lat, lon.add(BigDecimal.ONE));
-                long z = space.shuffle(lat, lon.add(BigDecimal.ONE));
+                long z = Spatial.shuffle(space, lat.doubleValue(), lon.doubleValue() + 1);
                 zToId.put(z, id);
                 dml().updateRow(session(), before, after, null);
             }
@@ -513,7 +513,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
         for (int i = 0; i < N; i++) {
             BigDecimal queryLat = randomLat();
             BigDecimal queryLon = randomLon();
-            long zStart = space.shuffle(queryLat, queryLon);
+            long zStart = Spatial.shuffle(space, queryLat.doubleValue(), queryLon.doubleValue());
             IndexBound zStartBound = new IndexBound(row(latLonIndexRowType, queryLat, queryLon),
                                                     new SetColumnSelector(0, 1));
             IndexKeyRange zStartRange = IndexKeyRange.around(latLonIndexRowType, zStartBound);
@@ -529,7 +529,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
                 int id = getLong(row, 1).intValue();
                 BigDecimal lat = lats.get(id);
                 BigDecimal lon = lons.get(id);
-                long zExpected = space.shuffle(lat, lon);
+                long zExpected = Spatial.shuffle(space, lat.doubleValue(), lon.doubleValue());
                 assertEquals(zExpected, zActual);
                 Integer expectedId = zToId.get(zActual);
                 assertNotNull(expectedId);
@@ -552,7 +552,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
         for (int i = 0; i < N; i++) {
             BigDecimal queryLat = randomLat();
             BigDecimal queryLon = randomLon();
-            long zStart = space.shuffle(queryLat, queryLon);
+            long zStart = Spatial.shuffle(space, queryLat.doubleValue(), queryLon.doubleValue());
             for (int before = 0; before <= 2; before++) {
                 // Expected
                 SortedMap<Long, Integer> distanceToId = new TreeMap<>();
@@ -586,7 +586,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
                     int id = getLong(row, 2).intValue();
                     BigDecimal lat = lats.get(id);
                     BigDecimal lon = lons.get(id);
-                    long zExpected = space.shuffle(lat, lon);
+                    long zExpected = Spatial.shuffle(space, lat.doubleValue(), lon.doubleValue());
                     assertEquals(zExpected, zActual);
                     Integer expectedId = zToId.get(zActual);
                     assertNotNull(expectedId);
@@ -785,7 +785,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
                 BigDecimal lat = new BigDecimal(y);
                 BigDecimal lon = new BigDecimal(x);
                 dml().writeRow(session(), createNewRow(box, id, before(id),  after(id), lat, lon));
-                long z = space.shuffle(SpaceLatLon.scaleLat(lat), SpaceLatLon.scaleLon(lon));
+                long z = Spatial.shuffle(space, lat.doubleValue(), lon.doubleValue());
                 zToId.put(z, id);
                 lats.add(lat);
                 lons.add(lon);
@@ -858,7 +858,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
 
     private void goodBox(int latLo, int latHi, int lonLo, int lonHi)
     {
-        BoxLatLon.newBox(decimal(latLo), decimal(latHi), decimal(lonLo), decimal(lonHi));
+        new Box(latLo, latHi, lonLo, lonHi);
     }
 
     private void badBox(int latLo, int latHi, int lonLo, int lonHi)
@@ -891,7 +891,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
     private IndexRowType beforeLatLonIndexRowType;
     private IndexRowType latLonAfterIndexRowType;
     private IndexRowType beforeLatLonAfterIndexRowType;
-    private SpaceLatLon space;
+    private Space space;
     private Map<Long, Integer> zToId = new TreeMap<>();
     List<BigDecimal> lats = new ArrayList<>(); // indexed by id
     List<BigDecimal> lons = new ArrayList<>(); // indexed by id

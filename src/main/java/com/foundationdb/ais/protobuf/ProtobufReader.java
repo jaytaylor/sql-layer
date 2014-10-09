@@ -20,7 +20,7 @@ package com.foundationdb.ais.protobuf;
 import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.server.error.ProtobufReadException;
-import com.foundationdb.server.geophile.Space;
+import com.foundationdb.server.spatial.Spatial;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.service.TypesRegistry;
@@ -491,7 +491,7 @@ public class ProtobufReader {
                     assert pbIndex.hasFirstSpatialArg() == pbIndex.hasDimensions();
                     int firstSpatialArg = 0;
                     int lastSpatialArg = 0;
-                    int dimensions = Space.LAT_LON_DIMENSIONS;
+                    int dimensions = Spatial.LAT_LON_DIMENSIONS;
                     if (pbIndex.hasFirstSpatialArg()) {
                         firstSpatialArg = pbIndex.getFirstSpatialArg();
                         dimensions = pbIndex.getDimensions();

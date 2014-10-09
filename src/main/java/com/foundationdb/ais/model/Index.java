@@ -19,14 +19,14 @@ package com.foundationdb.ais.model;
 
 import com.foundationdb.ais.model.validation.AISInvariants;
 import com.foundationdb.qp.storeadapter.SpatialHelper;
-import com.foundationdb.server.geophile.Space;
-import com.foundationdb.server.geophile.SpaceLatLon;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.common.types.TBinary;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.spatial.Spatial;
+import com.geophile.z.Space;
 
 import java.util.*;
 
@@ -160,13 +160,13 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
     public void markSpatial(int firstSpatialArgument, int spatialColumns)
     {
         checkMutability();
-        if (spatialColumns != Space.LAT_LON_DIMENSIONS && spatialColumns != 1) {
+        if (spatialColumns != Spatial.LAT_LON_DIMENSIONS && spatialColumns != 1) {
             // Either 1 or 2 is acceptable for now. 1: A blob containing a serialized spatial object. 2: lat/lon
             throw new IllegalArgumentException();
         }
         this.firstSpatialArgument = firstSpatialArgument;
         this.lastSpatialArgument = firstSpatialArgument + spatialColumns - 1;
-        this.space = SpaceLatLon.create();
+        this.space = Spatial.createLatLonSpace();
     }
 
     public int firstSpatialArgument()
@@ -182,7 +182,7 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
     public int dimensions()
     {
         // Only lat/lon for now
-        return Space.LAT_LON_DIMENSIONS;
+        return Spatial.LAT_LON_DIMENSIONS;
     }
 
     public Space space()
@@ -350,7 +350,7 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
         if (indexColumns.size() == 1) {
             // Serialized spatial object
             isSpatialCompatible = isTextOrBinary(indexColumns.get(index.firstSpatialArgument()).getColumn());
-        } else if (indexColumns.size() >= Space.LAT_LON_DIMENSIONS) {
+        } else if (indexColumns.size() >= Spatial.LAT_LON_DIMENSIONS) {
             // Lat/Lon
             isSpatialCompatible = true;
             for (int d = 0; d < index.dimensions(); d++) {

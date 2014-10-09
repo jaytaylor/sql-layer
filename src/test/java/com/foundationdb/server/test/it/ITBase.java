@@ -33,12 +33,13 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.geophile.Space;
+import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.test.ApiTestBase;
 import com.foundationdb.server.test.it.qp.TestRow;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.value.ValueSource;
+import com.geophile.z.Space;
 import org.junit.After;
 
 import java.util.ArrayList;

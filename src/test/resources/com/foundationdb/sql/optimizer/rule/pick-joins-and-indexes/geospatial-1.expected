@@ -10,5 +10,5 @@ SelectQuery@134d36b9
                   Limit@3ffbe014(LIMIT 10)
                     Project@67166e50[places.lat, places.lon]
                       Select@313461dd[]
-                        TableGroupJoinTree@66050d67(TableGroup@5d7c371c(places), places - SingleIndexScan@6063f37(Index(test.places.places_geo[IndexColumn(lat), IndexColumn(lon)])[-90000000:90000000, -180000000:180000000], SORTED, >=_center(42.3583,-71.0603), rows = 10, cost = 78.0976))
+                        TableGroupJoinTree@66050d67(TableGroup@5d7c371c(places), places - SingleIndexScan@6063f37(Index(test.places.places_geo[IndexColumn(lat), IndexColumn(lon)])application space: (-90.0:90.0, -180.0:180.0)  gBits: 28, 29, SORTED, >=_center(42.3583,-71.0603), rows = 10, cost = 78.0976))
                           TableSource@5fa5a49e(places - TableGroup@5d7c371c(places))
