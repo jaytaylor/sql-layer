@@ -30,27 +30,32 @@ import static org.junit.Assert.*;
 
 public class JoinNodeTest {
 
-    TypesTranslator typesTranslator;
-    AkibanInformationSchema ais;
-    Table table;
-    TableNode node;
-    TableSource source;
+    TableSource source1;
+    TableSource source2;
 
     @Before
     public void setup() {
-        typesTranslator = MTypesTranslator.INSTANCE;
-        ais = AISBBasedBuilder.create("s", typesTranslator)
-                              .table("t1").colString("first_name", 32)
-                              .colString("last_name", 32)
-                              .ais();
-        table = ais.getTable("s", "t1");
-        node = new TableNode(table, new TableTree());
-        source = new TableSource(node, true, "t1");
+        TypesTranslator typesTranslator = MTypesTranslator.INSTANCE;
+        AkibanInformationSchema ais = AISBBasedBuilder.create("s", typesTranslator)
+                                                      .table("t1")
+                                                      .colString("first_name", 32)
+                                                      .colString("last_name", 32)
+                                                      .table("t2")
+                                                      .colString("first_name", 32)
+                                                      .colString("last_name", 32)
+                                                      .ais();
+        Table table1 = ais.getTable("s", "t1");
+        TableNode node1 = new TableNode(table1, new TableTree());
+        source1 = new TableSource(node1, true, "t1");
+
+        Table table2 = ais.getTable("s", "t2");
+        TableNode node2 = new TableNode(table2, new TableTree());
+        source2 = new TableSource(node2, true, "t2");
     }
 
     @Test
     public void TestDuplicate() {
-        JoinNode joinNode = new JoinNode((Joinable)source, (Joinable)source, JoinNode.JoinType.LEFT);
+        JoinNode joinNode = new JoinNode((Joinable)source1, (Joinable)source2, JoinNode.JoinType.LEFT);
         JoinNode duplicate = (JoinNode)joinNode.duplicate(); // shouldn't throw null error
         assertEquals(joinNode.getJoinType(), duplicate.getJoinType());
         assertEquals(joinNode.getJoinConditions(), duplicate.getJoinConditions());
