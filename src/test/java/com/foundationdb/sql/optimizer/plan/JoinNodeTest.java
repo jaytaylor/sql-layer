@@ -30,8 +30,8 @@ import static org.junit.Assert.*;
 
 public class JoinNodeTest {
 
-    TableSource source1;
-    TableSource source2;
+    protected TableSource source1;
+    protected TableSource source2;
 
     @Before
     public void setup() {
@@ -56,7 +56,8 @@ public class JoinNodeTest {
     @Test
     public void TestDuplicate() {
         JoinNode joinNode = new JoinNode((Joinable)source1, (Joinable)source2, JoinNode.JoinType.LEFT);
-        JoinNode duplicate = (JoinNode)joinNode.duplicate(); // shouldn't throw null error
+        JoinNode duplicate = (JoinNode)joinNode.duplicate();
+
         assertEquals(joinNode.getJoinType(), duplicate.getJoinType());
         assertEquals(joinNode.getJoinConditions(), duplicate.getJoinConditions());
         assertEquals(joinNode.getImplementation(), duplicate.getImplementation());
