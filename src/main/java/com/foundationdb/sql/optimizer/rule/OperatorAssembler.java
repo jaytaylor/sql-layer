@@ -179,6 +179,9 @@ public class OperatorAssembler extends BaseRule
         }
 
         private void setReturnOutputParameterType(RowStream stream, List<ParameterNode> parameters) {
+            if (parameters == null) {
+                return;
+            }
             for (ParameterNode parameter : parameters) {
                 if (parameter.isReturnOutputParam() && parameter.getType() == null) {
                     if (stream.rowType.nFields() > 0) {
