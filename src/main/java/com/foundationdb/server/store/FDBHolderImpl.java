@@ -19,12 +19,17 @@ package com.foundationdb.server.store;
 import com.foundationdb.NetworkOptions;
 import com.foundationdb.directory.DirectoryLayer;
 import com.foundationdb.directory.DirectorySubspace;
+import com.foundationdb.server.error.ClusterFileNotReadableException;
+import com.foundationdb.server.error.ClusterFileTooLargeException;
+import com.foundationdb.server.error.NoClusterFileException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.Database;
 import com.foundationdb.FDB;
+import com.foundationdb.FDBException;
 import com.foundationdb.util.ArgumentValidation;
 import com.google.inject.Inject;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +81,20 @@ public class FDBHolderImpl implements FDBHolder, Service {
         String clusterFile = configService.getProperty(CONFIG_CLUSTER_FILE);
         boolean isDefault = clusterFile.isEmpty();
         LOG.info("Opening cluster file {}", isDefault ? "DEFAULT" : clusterFile);
-        db = isDefault ? fdb.open() : fdb.open(clusterFile);
+        try {
+            db = isDefault ? fdb.open() : fdb.open(clusterFile);
+        } catch (FDBException e) {
+            if (e.getCode() == 1515) { // no_cluster_file_found
+                throw new NoClusterFileException(isDefault ? "DEFAULT" : clusterFile);
+            }
+            else if (e.getCode() == 1513) { // file_not_readable
+                throw new ClusterFileNotReadableException(isDefault ? "DEFAULT" : clusterFile);
+            }
+            else if (e.getCode() == 1516) { // cluster_file_too_large
+                throw new ClusterFileTooLargeException(isDefault? "DEFAULT" : clusterFile);
+            }
+            throw e;
+        }
         String rootDirName = configService.getProperty(CONFIG_ROOT_DIR);
         List<String> rootDirPath = parseDirString(rootDirName);
         rootDirectory = new DirectoryLayer().createOrOpen(db, rootDirPath).get();
