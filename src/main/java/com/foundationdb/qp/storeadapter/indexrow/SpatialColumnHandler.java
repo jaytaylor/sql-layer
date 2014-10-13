@@ -24,13 +24,19 @@ import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDataSource;
 import com.foundationdb.server.rowdata.RowDataValueSource;
+import com.foundationdb.server.spatial.Spatial;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.types.TBigDecimal;
+import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.spatial.Spatial;
 import com.geophile.z.Space;
+import com.geophile.z.SpatialObject;
+import com.geophile.z.spatialobject.d2.Point;
+import com.geophile.z.spatialobject.jts.JTSBase;
+
+import java.nio.ByteBuffer;
 
 public class SpatialColumnHandler
 {
@@ -39,12 +45,12 @@ public class SpatialColumnHandler
         space = index.space();
         dimensions = space.dimensions();
         assert index.dimensions() == dimensions;
-        tinstances = new TInstance[dimensions];
-        fieldDefs = new FieldDef[dimensions];
-        coords = new double[dimensions];
         rowDataSource = new RowDataValueSource();
         firstSpatialField = index.firstSpatialArgument();
         lastSpatialField = index.lastSpatialArgument();
+        int nColumns = lastSpatialField - firstSpatialField + 1;
+        tinstances = new TInstance[nColumns];
+        fieldDefs = new FieldDef[nColumns];
         int spatialColumns = lastSpatialField - firstSpatialField + 1;
         for (int c = 0; c < spatialColumns; c++) {
             IndexColumn indexColumn = index.getKeyColumns().get(firstSpatialField + c);
@@ -71,24 +77,49 @@ public class SpatialColumnHandler
 
     private void bind(RowData rowData)
     {
-        for (int d = 0; d < dimensions; d++) {
-            rowDataSource.bind(fieldDefs[d], rowData);
+        if (lastSpatialField > firstSpatialField) {
+            // Point coordinates stored in two columns
+            assert dimensions == 2 : dimensions;
+            double coord = Double.NaN;
+            double x = Double.NaN;
+            double y = Double.NaN;
+            for (int d = 0; d < dimensions; d++) {
+                rowDataSource.bind(fieldDefs[d], rowData);
+                RowDataValueSource rowDataValueSource = (RowDataValueSource) rowDataSource;
+                TClass tclass = tinstances[d].typeClass();
+                if (tclass == MNumeric.DECIMAL) {
+                    BigDecimalWrapper wrapper = TBigDecimal.getWrapper(rowDataValueSource, tinstances[d]);
+                    coord = wrapper.asBigDecimal().doubleValue();
+                } else if (tclass == MNumeric.BIGINT) {
+                    coord = rowDataValueSource.getInt64();
+                } else if (tclass == MNumeric.INT) {
+                    coord = rowDataValueSource.getInt32();
+                } else {
+                    assert false : fieldDefs[d].column();
+                }
+                if (d == 0) {
+                    x = coord;
+                } else {
+                    y = coord;
+                }
+                coords[d] = coord;
+            }
+            spatialObject = new Point(x, y);
+        } else {
+            assert false;
+/*
+            // Spatial object encoded in blob
+            rowDataSource.bind(fieldDefs[0], rowData);
+            RowDataValueSource rowDataValueSource = (RowDataValueSource) rowDataSource;
+            TClass tclass = tinstances[0].typeClass();
+            assert tclass == MBinary.BLOB : tclass;
+            // TODO: Is this the place to anticipate GeoJSON also?
+            JTSBase jtsObject = (JTSBase) spatialObject;
 
-            RowDataValueSource rowDataValueSource = (RowDataValueSource)rowDataSource;
-            TClass tclass = tinstances[d].typeClass();
-            if (tclass == MNumeric.DECIMAL) {
-                BigDecimalWrapper wrapper = TBigDecimal.getWrapper(rowDataValueSource, tinstances[d]);
-                coords[d] = wrapper.asBigDecimal().doubleValue();
-            }
-            else if (tclass == MNumeric.BIGINT) {
-                coords[d] = rowDataValueSource.getInt64();
-            }
-            else if (tclass == MNumeric.INT) {
-                coords[d] = rowDataValueSource.getInt32();
-            }
-            else {
-                assert false : fieldDefs[d].column();
-            }
+            ByteBuffer buffer = ByteBuffer.wrap(rowDataValueSource.getBytes());
+            jtsObject.readFrom();
+
+*/
         }
     }
 
@@ -96,8 +127,9 @@ public class SpatialColumnHandler
     private final int dimensions;
     private final TInstance[] tinstances;
     private final FieldDef[] fieldDefs;
-    private final double[] coords;
     private final RowDataSource rowDataSource;
     private final int firstSpatialField;
     private final int lastSpatialField;
+    private SpatialObject spatialObject;
+    private double[] coords = new double[2]; // Going away
 }

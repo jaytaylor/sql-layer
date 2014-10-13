@@ -136,6 +136,12 @@
             <artifactId>geophile</artifactId>
             <version>2.0.1</version>
         </dependency>
+        <!-- jts -->
+        <dependency>
+          <groupId>com.vividsolutions</groupId>
+          <artifactId>jts</artifactId>
+          <version>1.8</version>
+        </dependency>
         <!-- CheckParserUsagesIT -->
         <dependency>
             <groupId>org.ow2.asm</groupId>
