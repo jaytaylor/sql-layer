@@ -186,10 +186,6 @@ public class OperatorAssembler extends BaseRule
                 if (parameter.isReturnOutputParam() && parameter.getType() == null) {
                     if (stream.rowType.nFields() > 0) {
                         try {
-                            // TODO write more tests with more different types of types
-                            // and investigate what it means to be the result output parameter
-                            // what happens if you're returning 0,1,2 columns.
-                            // Double check that you can't have two output parameters
                             parameter.setType(stream.rowType.typeAt(0).dataTypeDescriptor());
                             parameter.setUserData(stream.rowType.typeAt(0));
                         } catch (StandardException e) {
