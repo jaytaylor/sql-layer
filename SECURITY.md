@@ -1,4 +1,4 @@
-## Foundation DB SQL Layer Security
+## FoundationDB SQL Layer Security
 
 We take security very seriously at FoundationDB. 
 We welcome any peer review of our source code to ensure your database and application are never compromised or hacked.
