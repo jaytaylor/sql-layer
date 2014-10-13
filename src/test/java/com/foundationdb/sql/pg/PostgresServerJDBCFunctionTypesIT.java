@@ -61,24 +61,9 @@ public class PostgresServerJDBCFunctionTypesIT extends PostgresServerITBase{
     public void setupFunctions() throws Exception {
         Statement stmt = getConnection().createStatement();
         stmt.execute ("CREATE OR REPLACE FUNCTION testspg__stringToInt(a varchar(20)) RETURNS int" +
-                " LANGUAGE javascript PARAMETER STYLE variables AS $$ 42 $$");
-//        stmt.execute ("CREATE OR REPLACE FUNCTION testspg__getString(a varchar(20)) RETURNS VARCHAR(20)" +
-//                " LANGUAGE javascript PARAMETER STYLE variables AS $$ 'bob' $$");
-//        stmt.execute ("CREATE OR REPLACE FUNCTION testspg__getDouble(a double) RETURNS double" +
-//                " LANGUAGE javascript PARAMETER STYLE variables AS $$ 42.42 $$");
-//        stmt.execute ("CREATE OR REPLACE PROCEDURE testspg__getVoid (IN a float) " +
-//                " LANGUAGE javascript PARAMETER STYLE variables AS ''");
-//
-//        stmt.execute ("CREATE OR REPLACE FUNCTION testspg__getInt (a int) RETURNS int" +
-//                " LANGUAGE javascript PARAMETER STYLE variables AS '42'");
-//        stmt.execute("CREATE OR REPLACE FUNCTION testspg__getShort (a smallint) RETURNS smallint" +
-//                " LANGUAGE javascript PARAMETER STYLE variables AS '42'");
-//        stmt.execute ("CREATE OR REPLACE FUNCTION testspg__getNumeric (a numeric) RETURNS numeric" +
-//                " LANGUAGE javascript PARAMETER STYLE variables AS '42'");
-//
-//        stmt.execute("CREATE OR REPLACE FUNCTION testspg__getNumericWIthoutArg() RETURNS numeric" +
-//                " LANGUAGE javascript PARAMETER STYLE variables AS '42'");
-
+                " LANGUAGE javascript PARAMETER STYLE variables AS $$ 42 + a.length $$");
+        stmt.execute ("CREATE OR REPLACE FUNCTION testspg__intToString(a int) RETURNS varchar(20)" +
+                " LANGUAGE javascript PARAMETER STYLE variables AS $$ 'bob' + a $$");
         stmt.close ();
     }
 
@@ -87,14 +72,7 @@ public class PostgresServerJDBCFunctionTypesIT extends PostgresServerITBase{
         Statement stmt = getConnection().createStatement();
 
         stmt.execute("drop FUNCTION testspg__stringToInt");
-//        stmt.execute("drop FUNCTION testspg__getString");
-//        stmt.execute("drop FUNCTION testspg__getDouble");
-//        stmt.execute("drop PROCEDURE testspg__getVoid");
-//        stmt.execute("drop FUNCTION testspg__getInt");
-//        stmt.execute("drop FUNCTION testspg__getShort");
-//        stmt.execute("DROP FUNCTION testspg__getNumeric");
-//        stmt.execute("drop FUNCTION testspg__getNumericWithoutArg");
-
+        stmt.execute("drop FUNCTION testspg__intToString");
         stmt.close ();
     }
 
@@ -104,6 +82,26 @@ public class PostgresServerJDBCFunctionTypesIT extends PostgresServerITBase{
         call.setString (2, "foo");
         call.registerOutParameter (1, Types.INTEGER);
         call.execute ();
-        assertEquals(42, call.getInt(1));
+        assertEquals(45, call.getInt(1));
     }
+
+    @Test
+    public void testIntToString() throws Exception {
+        CallableStatement call = getConnection().prepareCall("{ ? = call testspg__intToString (?) }");
+        call.setInt(2, 42);
+        call.registerOutParameter (1, Types.VARCHAR);
+        call.execute ();
+        assertEquals("bob42", call.getString(1));
+    }
+
+    @Test
+    public void testIntToStringWithDouble() throws Exception {
+        CallableStatement call = getConnection().prepareCall("{ ? = call testspg__intToString (?) }");
+        call.setDouble(2, 589.32);
+        // JDBC ensures that the OutParameter has the right type
+        call.registerOutParameter (1, Types.VARCHAR);
+        call.execute ();
+        assertEquals("bob589", call.getString(1));
+    }
+
 }
