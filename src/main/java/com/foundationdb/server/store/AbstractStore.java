@@ -42,11 +42,12 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.AbstractRow;
+import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.WriteIndexRow;
 import com.foundationdb.qp.storeadapter.OperatorBasedRowCollector;
 import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.storeadapter.RowDataCreator;
-import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.ColumnSelector;
@@ -77,6 +78,7 @@ import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
 import com.persistit.Key;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -147,13 +149,13 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     /** Delete the key. */
     abstract void clear(Session session, SDType storeData);
 
-    abstract void resetForWrite(SDType storeData, Index index, PersistitIndexRowBuffer indexRowBuffer);
+    abstract void resetForWrite(SDType storeData, Index index, WriteIndexRow indexRowBuffer);
 
     /** Create an iterator to visit all descendants of the current key. */
     protected abstract Iterator<Void> createDescendantIterator(Session session, SDType storeData);
 
     /** Read the index row for the given RowData or null if not present. storeData has been initialized for index. */
-    protected abstract PersistitIndexRowBuffer readIndexRow(Session session,
+    protected abstract IndexRow readIndexRow(Session session,
                                                             Index parentPKIndex,
                                                             SDType storeData,
                                                             RowDef childRowDef,
@@ -186,7 +188,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         int i2hPosition = 0;
         IndexToHKey indexToHKey = null;
         SDType parentStoreData = null;
-        PersistitIndexRowBuffer parentPKIndexRow = null;
+        IndexRow parentPKIndexRow = null;
 
         // All columns of all segments of the HKey
         for(HKeySegment hKeySegment : table.hKey().segments()) {
@@ -805,7 +807,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         }
 
         boolean bumpCount = false;
-        PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
+        WriteIndexRow indexRow = new WriteIndexRow(this);
         for(TableIndex index : indexes) {
             long zValue = -1;
             SpatialColumnHandler spatialColumnHandler = null;
@@ -875,7 +877,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         }
 
         // Remove all indexes (before the group row is gone in-case listener needs it)
-        PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
+        WriteIndexRow indexRow = new WriteIndexRow(this);
         for(TableIndex index : rowDef.getIndexes()) {
             long zValue = -1;
             SpatialColumnHandler spatialColumnHandler = null;
@@ -941,7 +943,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                 listener.onUpdatePost(session, oldRowDef.table(), hKey, oldRow, mergedRow);
             }
 
-            PersistitIndexRowBuffer indexRowBuffer = new PersistitIndexRowBuffer(this);
+            WriteIndexRow indexRowBuffer = new WriteIndexRow(this);
             for(TableIndex index : oldRowDef.getIndexes()) {
                 updateIndex(session, index, oldRowDef, currentRow, newRowDef, mergedRow, hKey, indexRowBuffer);
             }
@@ -983,7 +985,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                                       AkibanInformationSchema ais,
                                       SDType storeData,
                                       BitSet tablesRequiringHKeyMaintenance,
-                                      PersistitIndexRowBuffer indexRowBuffer,
+                                      WriteIndexRow indexRowBuffer,
                                       boolean cascadeDelete)
     {
         Iterator it = createDescendantIterator(session, storeData);
@@ -1072,7 +1074,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                              RowDef newRowDef,
                              RowData newRow,
                              Key hKey,
-                             PersistitIndexRowBuffer indexRowBuffer) {
+                             WriteIndexRow indexRowBuffer) {
         int nkeys = index.getKeyColumns().size();
         IndexRowComposition indexRowComposition = index.indexRowComposition();
         if(!fieldsEqual(oldRowDef, oldRow, newRowDef, newRow, nkeys, indexRowComposition)) {

@@ -21,7 +21,7 @@ import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.QueryContext;
-import com.persistit.Key;
+import com.foundationdb.qp.row.IndexRow.EdgeValue;
 
 // For a lexicographic (mysqlish) index scan
 
@@ -75,12 +75,12 @@ class IndexCursorUnidirectionalLexicographic<S> extends IndexCursorUnidirectiona
                 if (end.columnSelector().includesColumn(f)) {
                     S source = keyAdapter.get(endExpressions, f);
                     if (keyAdapter.isNull(source) && startExpressions != null && !startExpressions.value(f).isNull()) {
-                        endKey.append(Key.AFTER);
+                        endKey.append(EdgeValue.AFTER);
                     } else {
                         endKey.append(source, type(f));
                     }
                 } else {
-                    endKey.append(Key.AFTER);
+                    endKey.append(EdgeValue.AFTER);
                 }
             }
         }

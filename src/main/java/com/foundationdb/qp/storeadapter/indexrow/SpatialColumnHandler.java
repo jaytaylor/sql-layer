@@ -20,6 +20,7 @@ package com.foundationdb.qp.storeadapter.indexrow;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.qp.row.WriteIndexRow;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDataSource;
@@ -54,11 +55,11 @@ public class SpatialColumnHandler
         }
     }
 
-    public boolean handleSpatialColumn(PersistitIndexRowBuffer persistitIndexRowBuffer, int indexField, long zValue)
+    public boolean handleSpatialColumn(WriteIndexRow writeIndexRow, int indexField, long zValue)
     {
         assert zValue >= 0;
         if (indexField == firstSpatialField) {
-            persistitIndexRowBuffer.pKey().append(zValue);
+            writeIndexRow.pKey().append(zValue);
         }
         return indexField >= firstSpatialField && indexField <= lastSpatialField;
     }
