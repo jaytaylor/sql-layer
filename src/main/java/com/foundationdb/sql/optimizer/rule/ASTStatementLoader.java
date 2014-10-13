@@ -404,14 +404,6 @@ public class ASTStatementLoader extends BaseRule
             PlanNode project = ((BasePlanWithInput)node).getInput();
             if (project instanceof Project) {
                 return (Project) project;
-            }
-            else if( project instanceof SetPlanNode) {
-                SetPlanNode setOperator = (SetPlanNode)project;
-                project = getProject(((SetPlanNode)project).getLeft());
-                Project oldProject = (Project)project;
-                Project setProject = (Project) project.duplicate();
-                setProject.replaceInput(oldProject.getInput(), setOperator);
-                return setProject;
             } else if (!(project instanceof BasePlanWithInput))
                 return null;
             project = ((BasePlanWithInput)project).getInput();
