@@ -128,30 +128,26 @@ public class WriteIndexRow extends AbstractRow {
 
     // Group Index Row only - table bitmap stored in index value
     public void tableBitmap(long bitmap) {
-        tableBitmap = bitmap;
         iValue.put(bitmap);
-
     }
 
     public long tableBitmap() {
         throw new UnsupportedOperationException();
     }
 
+    @SuppressWarnings("unchecked")
     public <S> void append(S source, TInstance type) {
         pKeyTarget.append(source, type);
     }
 
     public WriteIndexRow (KeyCreator keyCreator) {
         ArgumentValidation.notNull("keyCreator", keyCreator);
-        this.keyCreator = keyCreator;
     }
     
     private Index index;
     private Key iKey;
     private Key iKeyExtended;
     private Value iValue;
-    private KeyCreator keyCreator;
-    private long tableBitmap;
     private IndexRowType indexRowType;
     private SortKeyTarget pKeyTarget;
     private SortKeyTarget pValueTarget;
