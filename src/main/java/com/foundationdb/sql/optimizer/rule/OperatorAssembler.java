@@ -189,6 +189,8 @@ public class OperatorAssembler extends BaseRule
                             parameter.setType(stream.rowType.typeAt(0).dataTypeDescriptor());
                             parameter.setUserData(stream.rowType.typeAt(0));
                         } catch (StandardException e) {
+                            // setType should never through a StandardException, but if it does
+                            // we might be able to handle not having the type updated.
                             logger.error("ParameterNode.setType threw a StandardException", e);
                         }
                     } else {
