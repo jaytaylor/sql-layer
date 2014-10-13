@@ -19,6 +19,8 @@ package com.foundationdb.rest.resources;
 
 import com.foundationdb.rest.ResourceRequirements;
 import com.foundationdb.rest.RestResponseBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -35,6 +37,7 @@ import static com.foundationdb.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVA
 
 @Path("/sql")
 public class SQLResource {
+    private static final Logger logger = LoggerFactory.getLogger(SQLResource.class);
     private final ResourceRequirements reqs;
 
     public SQLResource(ResourceRequirements reqs) {
@@ -47,6 +50,7 @@ public class SQLResource {
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response query(@Context final HttpServletRequest request,
                           @QueryParam("q") final String query) {
+        logger.debug("/sql/query: {}", query);
         return RestResponseBuilder
                 .forRequest(request)
                 .body(new RestResponseBuilder.BodyGenerator() {
@@ -64,6 +68,7 @@ public class SQLResource {
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response explain(@Context final HttpServletRequest request,
                             @QueryParam("q") final String query) {
+        logger.debug("/sql/explain: {}", query);
         return RestResponseBuilder
                 .forRequest(request)
                 .body(new RestResponseBuilder.BodyGenerator() {
@@ -82,6 +87,7 @@ public class SQLResource {
     public Response execute(@Context final HttpServletRequest request,
                             final byte[] postBytes) {
         String input = new String(postBytes);
+        logger.debug("/sql/execute: {}", input);
         final String[] statements = input.split(";");
         return RestResponseBuilder
                 .forRequest(request)
