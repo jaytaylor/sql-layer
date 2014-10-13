@@ -15,11 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.geophile;
+package com.foundationdb.server.error;
 
-public interface Index
-{
-    boolean add(long z, SpatialObject spatialObject);
-    boolean remove(long z, SpatialObject spatialObject);
-    Scan scan(long z);
+import com.foundationdb.ais.model.TableName;
+
+public class InvalidCollationKeywordException extends InvalidOperationException {
+    public InvalidCollationKeywordException(String scheme, String keyword, String value) {
+        super(ErrorCode.INVALID_COLLATION_KEYWORD, scheme, keyword, value);
+    }
 }

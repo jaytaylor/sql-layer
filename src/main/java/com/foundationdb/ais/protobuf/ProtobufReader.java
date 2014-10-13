@@ -20,7 +20,7 @@ package com.foundationdb.ais.protobuf;
 import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.server.error.ProtobufReadException;
-import com.foundationdb.server.geophile.Space;
+import com.foundationdb.server.spatial.Spatial;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.service.TypesRegistry;
@@ -490,12 +490,19 @@ public class ProtobufReader {
                 case Z_ORDER_LAT_LON:
                     assert pbIndex.hasFirstSpatialArg() == pbIndex.hasDimensions();
                     int firstSpatialArg = 0;
-                    int dimensions = Space.LAT_LON_DIMENSIONS;
+                    int lastSpatialArg = 0;
+                    int dimensions = Spatial.LAT_LON_DIMENSIONS;
                     if (pbIndex.hasFirstSpatialArg()) {
                         firstSpatialArg = pbIndex.getFirstSpatialArg();
                         dimensions = pbIndex.getDimensions();
+                        if (pbIndex.hasLastSpatialArg()) {
+                            lastSpatialArg = pbIndex.getLastSpatialArg();
+                        } else {
+                            // Schema created before spatial object support, when spatial meant just lat/lon.
+                            lastSpatialArg = firstSpatialArg + dimensions - 1;
+                        }
                     }
-                    index.markSpatial(firstSpatialArg, dimensions);
+                    index.markSpatial(firstSpatialArg, lastSpatialArg - firstSpatialArg + 1);
                     break;
             }
         }
@@ -823,6 +830,7 @@ public class ProtobufReader {
                 AISProtobuf.Index.JOINTYPE_FIELD_NUMBER,
                 AISProtobuf.Index.INDEXMETHOD_FIELD_NUMBER,
                 AISProtobuf.Index.FIRSTSPATIALARG_FIELD_NUMBER,
+                AISProtobuf.Index.LASTSPATIALARG_FIELD_NUMBER,
                 AISProtobuf.Index.DIMENSIONS_FIELD_NUMBER,
                 AISProtobuf.Index.STORAGE_FIELD_NUMBER,
                 AISProtobuf.Index.CONSTRAINTNAME_FIELD_NUMBER
@@ -835,6 +843,7 @@ public class ProtobufReader {
                 AISProtobuf.Index.DESCRIPTION_FIELD_NUMBER,
                 AISProtobuf.Index.INDEXMETHOD_FIELD_NUMBER,
                 AISProtobuf.Index.FIRSTSPATIALARG_FIELD_NUMBER,
+                AISProtobuf.Index.LASTSPATIALARG_FIELD_NUMBER,
                 AISProtobuf.Index.DIMENSIONS_FIELD_NUMBER,
                 AISProtobuf.Index.STORAGE_FIELD_NUMBER,
                 AISProtobuf.Index.CONSTRAINTNAME_FIELD_NUMBER

@@ -71,10 +71,14 @@ public class TableName implements Comparable<TableName>
     }
 
     public boolean inSystemSchema() {
+        return inSystemSchema(schemaName);
+    }
+
+    public static boolean inSystemSchema(String schemaName) {
         return INFORMATION_SCHEMA.equals(schemaName) ||
-               SECURITY_SCHEMA.equals(schemaName) ||
-               SQLJ_SCHEMA.equals(schemaName) ||
-               SYS_SCHEMA.equals(schemaName);
+                SECURITY_SCHEMA.equals(schemaName) ||
+                SQLJ_SCHEMA.equals(schemaName) ||
+                SYS_SCHEMA.equals(schemaName);
     }
 
     @Override

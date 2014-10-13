@@ -37,8 +37,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 
 import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import static org.junit.Assert.assertEquals;
@@ -75,20 +73,8 @@ public class AlterTableITBase extends ITBase {
 
     // Added after bug1047977
     @After
-    public void lookForDanglingTrees() throws Exception {
-        // Collect all trees storage currently has
-        Set<String> storeTrees = new TreeSet<>();
-        storeTrees.addAll(store().getStorageDescriptionNames());
-
-        // Collect all trees in AIS
-        Set<String> smTrees = serviceManager().getSchemaManager().getTreeNames(session());
-
-        // Subtract knownTrees from storage trees instead of requiring exact. There may be allocated trees that
-        // weren't materialized (yet), for example.
-        Set<String> difference = new TreeSet<>(storeTrees);
-        difference.removeAll(smTrees);
-
-        assertEquals("Found orphaned trees", "[]", difference.toString());
+    public void lookForDanglingStorage() throws Exception {
+        super.lookForDanglingStorage();
     }
 
     protected void checkIndexesInstead(TableName name, String... indexNames) {

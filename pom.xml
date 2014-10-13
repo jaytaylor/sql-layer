@@ -130,6 +130,12 @@
             <artifactId>jackson-databind</artifactId>
             <version>2.4.0</version>
         </dependency>
+        <!-- Spatial query support -->
+        <dependency>
+            <groupId>com.geophile</groupId>
+            <artifactId>geophile</artifactId>
+            <version>2.0.1</version>
+        </dependency>
         <!-- CheckParserUsagesIT -->
         <dependency>
             <groupId>org.ow2.asm</groupId>
@@ -162,19 +168,9 @@
         </dependency>
         <!-- REST -->
         <dependency>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-core</artifactId>
-            <version>1.13</version>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-bundle</artifactId>
-            <version>1.13</version>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-server</artifactId>
-            <version>1.13</version>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-jetty-servlet</artifactId>
+            <version>2.13</version>
         </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>

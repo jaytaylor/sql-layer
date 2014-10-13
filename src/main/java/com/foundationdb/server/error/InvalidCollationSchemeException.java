@@ -18,7 +18,7 @@
 package com.foundationdb.server.error;
 
 public final class InvalidCollationSchemeException extends InvalidOperationException {
-    public InvalidCollationSchemeException (String collation) {
-        super(ErrorCode.INVALID_COLLATION_SCHEME, collation);
+    public InvalidCollationSchemeException (String collation, String msg) {
+        super(ErrorCode.INVALID_COLLATION_SCHEME, collation, msg);
     }
 }

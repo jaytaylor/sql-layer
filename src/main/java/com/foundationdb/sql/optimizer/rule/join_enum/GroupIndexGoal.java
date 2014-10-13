@@ -18,6 +18,7 @@
 package com.foundationdb.sql.optimizer.rule.join_enum;
 
 import com.foundationdb.server.error.CorruptedPlanException;
+import com.foundationdb.server.spatial.Spatial;
 import com.foundationdb.sql.optimizer.rule.EquivalenceFinder;
 import com.foundationdb.sql.optimizer.rule.JoinAndIndexPicker;
 import com.foundationdb.sql.optimizer.rule.PlanContext;
@@ -34,7 +35,6 @@ import com.foundationdb.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode
 import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.model.Index.JoinType;
 import com.foundationdb.server.error.UnsupportedSQLException;
-import com.foundationdb.server.geophile.Space;
 import com.foundationdb.server.service.text.FullTextQueryBuilder;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.texpressions.Comparison;
@@ -408,7 +408,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             Index spatialIndex = index.getIndex();
             firstSpatialColumn = spatialIndex.firstSpatialArgument();
             dimensions = spatialIndex.dimensions();
-            assert (dimensions == Space.LAT_LON_DIMENSIONS);
+            assert (dimensions == Spatial.LAT_LON_DIMENSIONS);
             spatialFunction = SpecialIndexExpression.Function.Z_ORDER_LAT_LON;
         }
         else {

@@ -63,12 +63,11 @@ public abstract class AkCollator {
         throw new AssertionError("no value");
     }
 
-    private final String collatorScheme;
-
+    private final String collationScheme;
     private final int collationId;
 
-    protected AkCollator(final String collatorScheme, final int collationId) {
-        this.collatorScheme = collatorScheme;
+    protected AkCollator(final String collationScheme, final int collationId) {
+        this.collationScheme = collationScheme;
         this.collationId = collationId;
     }
 
@@ -157,7 +156,7 @@ public abstract class AkCollator {
 
     @Override
     public String toString() {
-        return collatorScheme;
+        return collationScheme;
     }
 
     public int getCollationId() {
@@ -165,7 +164,7 @@ public abstract class AkCollator {
     }
 
     public String getScheme() {
-        return collatorScheme;
+        return collationScheme;
     }
 
     /** Construct the sort key bytes for the given String value. */

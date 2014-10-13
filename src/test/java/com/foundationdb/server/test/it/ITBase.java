@@ -33,18 +33,22 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.geophile.Space;
+import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.test.ApiTestBase;
 import com.foundationdb.server.test.it.qp.TestRow;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.value.ValueSource;
+import com.geophile.z.Space;
+import org.junit.After;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -267,5 +271,21 @@ public abstract class ITBase extends ApiTestBase {
             }
         }
         return space;
+    }
+
+    public void lookForDanglingStorage() throws Exception {
+        // Collect all trees storage currently has
+        Set<String> storeTrees = new TreeSet<>();
+        storeTrees.addAll(store().getStorageDescriptionNames());
+
+        // Collect all trees in AIS
+        Set<String> smTrees = serviceManager().getSchemaManager().getTreeNames(session());
+
+        // Subtract knownTrees from storage trees instead of requiring exact. There may be allocated trees that
+        // weren't materialized (yet), for example.
+        Set<String> difference = new TreeSet<>(storeTrees);
+        difference.removeAll(smTrees);
+
+        assertEquals("Found orphaned trees", "[]", difference.toString());
     }
 }

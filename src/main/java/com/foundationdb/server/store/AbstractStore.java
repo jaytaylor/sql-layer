@@ -29,9 +29,11 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.IndexRowComposition;
 import com.foundationdb.ais.model.IndexToHKey;
+import com.foundationdb.ais.model.Schema;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
@@ -668,6 +670,20 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     }
 
     @Override
+    public void dropSchema(Session session, Schema schema) {
+        removeTrees(session, schema);
+    }
+
+    @Override
+    public void dropNonSystemSchemas(Session session, Collection<Schema> allSchemas) {
+        for (Schema schema : allSchemas) {
+            if (!TableName.inSystemSchema(schema.getName())) {
+                dropSchema(session, schema);
+            }
+        }
+    }
+
+    @Override
     public void truncateGroup(final Session session, final Group group) {
         group.getRoot().visit(new AbstractVisitor() {
             @Override
@@ -697,6 +713,16 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     public void deleteIndexes(final Session session, final Collection<? extends Index> indexes) {
         for(Index index : indexes) {
             removeTree(session, index);
+        }
+    }
+
+    @Override
+    public void removeTrees(Session session, Schema schema) {
+        for (Sequence sequence : schema.getSequences().values()) {
+            removeTree(session, sequence);
+        }
+        for (Table table : schema.getTables().values()) {
+            removeTrees(session, table);
         }
     }
 

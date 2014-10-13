@@ -19,6 +19,7 @@ package com.foundationdb.server.store;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import com.foundationdb.ais.AISCloner;
@@ -32,6 +33,7 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.util.ChangedTableDescription;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.server.error.NoSuchSchemaException;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.TableChanges.ChangeSet;
@@ -175,6 +177,16 @@ public interface SchemaManager {
      * @param dropBehavior How to handle child tables.
      */
     void dropTableDefinition(Session session, String schemaName, String tableName, DropBehavior dropBehavior);
+
+    /**
+     * Delete the definition for an entire schema, and everything inside that schema, plus the sequences provided.
+     *
+     * @throws NoSuchSchemaException if the schema does not exist
+     */
+    void dropSchema(Session session, String schemaName);
+
+    /** Drops all non-system schemas from the ais. **/
+    void dropNonSystemSchemas(Session session);
 
     /** Change definitions of existing tables. */
     void alterTableDefinitions(Session session, Collection<ChangedTableDescription> alteredTables);

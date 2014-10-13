@@ -381,6 +381,12 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
 
     @Override
+    public void removeTrees(Session session, com.foundationdb.ais.model.Schema schema) {
+        removeIfExists(session, rootDir, FDBNameGenerator.dataPathSchemaTable(schema.getName()));
+        removeIfExists(session, rootDir, FDBNameGenerator.dataPathSchemaSequence(schema.getName()));
+    }
+
+    @Override
     public void removeTree(Session session, HasStorage object) {
         truncateTree(session, object);
     }

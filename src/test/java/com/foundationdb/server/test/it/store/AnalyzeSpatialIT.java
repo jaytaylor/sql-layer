@@ -19,7 +19,7 @@ package com.foundationdb.server.test.it.store;
 
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.server.geophile.Space;
+import com.foundationdb.server.spatial.Spatial;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
@@ -30,7 +30,7 @@ public final class AnalyzeSpatialIT extends ITBase {
     public void onlyGeo() {
         int cid = createTable("schem", "tab", "id int not null primary key", "lat decimal(11,07)", "lon decimal(11,7)");
 
-        createSpatialTableIndex("schem", "tab", "idxgeo", 0, Space.LAT_LON_DIMENSIONS, "lat", "lon");
+        createSpatialTableIndex("schem", "tab", "idxgeo", 0, 2, "lat", "lon");
         writeRow(cid, 10L, "10", "11");
         dml().getTableStatistics(session(), cid, false);
         serviceManager().getDXL().ddlFunctions().updateTableStatistics(session(),
@@ -43,7 +43,7 @@ public final class AnalyzeSpatialIT extends ITBase {
         int cid = createTable("schem", "tab", "id int not null primary key", "lat decimal(11,07)", "lon decimal(11,7)",
                                               "name varchar(32)");
 
-        createSpatialTableIndex("schem", "tab", "idxgeo", 0, Space.LAT_LON_DIMENSIONS, "lat", "lon", "name");
+        createSpatialTableIndex("schem", "tab", "idxgeo", 0, 2, "lat", "lon", "name");
         writeRow(cid, 10L, "10", "11", "foo");
         dml().getTableStatistics(session(), cid, false);
         serviceManager().getDXL().ddlFunctions().updateTableStatistics(session(),
@@ -60,7 +60,7 @@ public final class AnalyzeSpatialIT extends ITBase {
 
         TableName groupName = ais().getTable("schem", "cust").getGroup().getName();
 
-        createSpatialGroupIndex(groupName, "idxgeogrp", 0, Space.LAT_LON_DIMENSIONS, Index.JoinType.LEFT,
+        createSpatialGroupIndex(groupName, "idxgeogrp", 0, Spatial.LAT_LON_DIMENSIONS, Index.JoinType.LEFT,
                                 "cust.lat", "cust.lon", "orders.colour");
         writeRow(cid, 10L, "10", "11", "foo");
         writeRow(oid, 20L, 10L, "red");

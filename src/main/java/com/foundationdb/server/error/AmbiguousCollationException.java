@@ -15,10 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.geophile;
+package com.foundationdb.server.error;
 
-public interface Scan
-{
-    SpatialObject next();
-    void close();
+import com.foundationdb.ais.model.TableName;
+
+public class AmbiguousCollationException extends InvalidOperationException {
+    public AmbiguousCollationException(String userInput, String canonical1, String canonical2) {
+        super(ErrorCode.AMBIGUOUS_COLLATION, userInput, canonical1, canonical2);
+    }
 }

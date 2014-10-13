@@ -19,11 +19,14 @@ package com.foundationdb.ais.model;
 
 import com.foundationdb.ais.model.validation.AISInvariants;
 import com.foundationdb.qp.storeadapter.SpatialHelper;
-import com.foundationdb.server.geophile.Space;
-import com.foundationdb.server.geophile.SpaceLatLon;
+import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TBigDecimal;
+import com.foundationdb.server.types.common.types.TBinary;
+import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.spatial.Spatial;
+import com.geophile.z.Space;
 
 import java.util.*;
 
@@ -154,15 +157,16 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
             return IndexMethod.NORMAL;
     }
 
-    public void markSpatial(int firstSpatialArgument, int dimensions)
+    public void markSpatial(int firstSpatialArgument, int spatialColumns)
     {
         checkMutability();
-        if (dimensions != Space.LAT_LON_DIMENSIONS) {
-            // Only lat/lon for now
+        if (spatialColumns != Spatial.LAT_LON_DIMENSIONS && spatialColumns != 1) {
+            // Either 1 or 2 is acceptable for now. 1: A blob containing a serialized spatial object. 2: lat/lon
             throw new IllegalArgumentException();
         }
         this.firstSpatialArgument = firstSpatialArgument;
-        this.space = SpaceLatLon.create();
+        this.lastSpatialArgument = firstSpatialArgument + spatialColumns - 1;
+        this.space = Spatial.createLatLonSpace();
     }
 
     public int firstSpatialArgument()
@@ -170,10 +174,15 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
         return firstSpatialArgument;
     }
 
+    public int lastSpatialArgument()
+    {
+        return lastSpatialArgument;
+    }
+
     public int dimensions()
     {
         // Only lat/lon for now
-        return Space.LAT_LON_DIMENSIONS;
+        return Spatial.LAT_LON_DIMENSIONS;
     }
 
     public Space space()
@@ -338,7 +347,11 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
     {
         boolean isSpatialCompatible = false;
         List<IndexColumn> indexColumns = index.getKeyColumns();
-        if (indexColumns.size() >= Space.LAT_LON_DIMENSIONS) {
+        if (indexColumns.size() == 1) {
+            // Serialized spatial object
+            isSpatialCompatible = isTextOrBinary(indexColumns.get(index.firstSpatialArgument()).getColumn());
+        } else if (indexColumns.size() >= Spatial.LAT_LON_DIMENSIONS) {
+            // Lat/Lon
             isSpatialCompatible = true;
             for (int d = 0; d < index.dimensions(); d++) {
                 isSpatialCompatible =
@@ -352,6 +365,15 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
     private static boolean isFixedDecimal(Column column) {
         return column.getType().typeClass() instanceof TBigDecimal;
     }
+
+    private static boolean isTextOrBinary(Column column) {
+        TClass columnType = column.getType().typeClass();
+        // TBD: Is this right? What types can store serialized spatial objects?
+        return
+            columnType instanceof TBinary ||
+            columnType instanceof TString;
+    }
+
     public static final String PRIMARY = "PRIMARY";
     private final Boolean isUnique;
     private final Boolean isPrimary;
@@ -368,6 +390,7 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
     // For a spatial index
     private Space space;
     private int firstSpatialArgument;
+    private int lastSpatialArgument;
 
     public enum JoinType {
         LEFT, RIGHT

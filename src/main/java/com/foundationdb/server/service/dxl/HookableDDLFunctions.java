@@ -270,6 +270,21 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
+    public void dropNonSystemSchemas(Session session) {
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.DROP_SCHEMA);
+            delegate.dropNonSystemSchemas(session);
+        } catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.DROP_SCHEMA, t);
+            throw throwAlways(t);
+        } finally {
+            hook.hookFunctionFinally(session, DXLFunction.DROP_SCHEMA, thrown);
+        }
+    }
+
+    @Override
     public void dropGroup(Session session, TableName groupName) {
         Throwable thrown = null;
         try {

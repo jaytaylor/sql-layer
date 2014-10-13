@@ -12,7 +12,10 @@
 - output: [[1],[2],[4]]
 ---
 - CreateTable: t2 (id INT, c CHAR(5) COLLATE foo)
-- error: [2H001]
+- error: [2H000]
+---
+- CreateTable: t2 (id INT, c CHAR(5) COLLATE foo_us)
+- error: [2H000]
 ---
 - CreateTable: t2 (id INT, c CHAR(5) CHARACTER SET foo)
 - error: [2C000]
@@ -110,8 +113,43 @@
 - error: [2H000]
 ---
 - CreateTable: noRegion(c char(5) COLLATE zh__pinyin_ci)
+- error: [2H000]
+---
+- CreateTable: ambiguous(c char(5) COLLATE en_ci)
+- error: [2H002]
+---
+- CreateTable: suggestion1(c char(5) COLLATE en__ci_co)
+---
+- CreateTable: suggestion2(c char(5) COLLATE en_ci_cs_co)
+- error: [2H000]
+---
+- CreateTable: ambiguous(c char(5) COLLATE en_co)
+- error: [2H002]
+---
+- CreateTable: ambiguous(c char(5) COLLATE fr_cx_ci)
+- error: [2H002]
+---
+- CreateTable: noRegion(c char(5) COLLATE zh__pinyin)
+- error: [2H000]
+---
+- CreateTable: noRegion2(c char(5) COLLATE en_)
+---
+- CreateTable: keywords(c char(5) COLLATE "zh_collation=stroke")
+---
+# note: this fails because zh_ is already pinyin, so
+# the pinyin collation keyword is dropped and cannot be validated. 
+- CreateTable: redundantKeyword(c char(5) COLLATE "zh_collation=pinyin")
+- error: [2H003]
+---
+# but this one will work, because zh_Hant_TW uses stroke by default instead of pinyin
+- CreateTable: t987 (c CHAR(5) COLLATE "zh_Hant_TW_collation=pinyin")
+---
+- CreateTable: badKeywords(c char(5) COLLATE "zh_badkeyword=stroke")
+- error: [2H003]
+---
+- CreateTable: keywordsWithShortcuts(c char(5) COLLATE "zh_badkeyword=stroke_ci_cx")
 - error: [2H001]
 ---
-# make sure this doesn't throw an error
-- CreateTable: noRegion(c char(5) COLLATE zh__pinyin)
+- CreateTable: keywordsWithShortcuts(c char(5) COLLATE "zh_badkeyword=stroke_Hant_TW")
+- error: [2H001]
 ...
