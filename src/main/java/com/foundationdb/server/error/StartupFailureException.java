@@ -23,4 +23,7 @@ public class StartupFailureException extends FDBAdapterException {
         super(code, i, j, k, l);
     }
 
+    protected StartupFailureException(ErrorCode code, String msg) {
+        super(code, msg);
+    }
 }
