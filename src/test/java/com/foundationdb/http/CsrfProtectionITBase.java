@@ -89,7 +89,7 @@ public abstract class CsrfProtectionITBase extends ITBase
     @Override
     protected Map<String,String> startupConfigProperties() {
         Map<String,String> config = new HashMap<>(super.startupConfigProperties());
-        config.put("fdbsql.http.csrf_protection.allowed_referers", ",");
+        config.put("fdbsql.http.csrf_protection.allowed_referers", "http://somewhere.com,https://coolest.site.edu:4320");
         return config;
     }
 
@@ -102,6 +102,18 @@ public abstract class CsrfProtectionITBase extends ITBase
         URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
 
         HttpUriRequest request = new HttpGet(uri);
+
+        response = client.execute(request);
+        assertEquals("status", HttpStatus.SC_BAD_REQUEST, response.getStatusLine().getStatusCode());
+        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("server.properties"));
+    }
+
+    @Test
+    public void requestBlockedWithBadHost() throws Exception{
+        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
+
+        HttpUriRequest request = new HttpGet(uri);
+        request.setHeader("Referer", "https://coolest.site.edu.fake.com:4320");
 
         response = client.execute(request);
         assertEquals("status", HttpStatus.SC_BAD_REQUEST, response.getStatusLine().getStatusCode());

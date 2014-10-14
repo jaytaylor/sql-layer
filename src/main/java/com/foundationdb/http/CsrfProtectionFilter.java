@@ -55,6 +55,28 @@ public class CsrfProtectionFilter implements javax.servlet.Filter {
         allowedReferers = parseAllowedReferers(allowedReferersConfigProperty);
     }
 
+    @Override
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+        if (servletRequest instanceof HttpServletRequest) {
+            HttpServletRequest request = (HttpServletRequest) servletRequest;
+            String referer = request.getHeader(REFERER_HEADER);
+            if (!isAllowedUri(allowedReferers, referer)) {
+                logger.debug("CSRF attempt blocked due to invalid referer uri; Request:{} Referer:{}",
+                        request.getRequestURI(),
+                        referer);
+                ((HttpServletResponse)servletResponse).sendError(400,
+                        "CSRF attack prevented. For legit usage see server.properties");
+            }
+        } else {
+            logger.error("Unexpected type of request: {} -- {}", servletRequest.getClass(), servletRequest);
+        }
+    }
+
+    @Override
+    public void destroy() {
+
+    }
+
     public static List<URI> parseAllowedReferers(String allowedReferersConfigProperty) {
         if (allowedReferersConfigProperty == null || allowedReferersConfigProperty.isEmpty()) {
             throw new IllegalArgumentException("Invalid List of allowed csrf referers must not be null or empty");
@@ -78,35 +100,18 @@ public class CsrfProtectionFilter implements javax.servlet.Filter {
         return allowedReferers;
     }
 
-    @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-        if (servletRequest instanceof HttpServletRequest) {
-            HttpServletRequest request = (HttpServletRequest) servletRequest;
-            String referer = request.getHeader(REFERER_HEADER);
-            try {
-                // TODO properties and tests
-                URI uri = URI.create(referer);
-                if (!"http".equals(uri.getScheme()) || !"localhost".equals(uri.getHost()) || 4567 !=uri.getPort()) {
-
-                    logger.debug("CSRF attempt blocked due to invalid referer uri; Request:{} Referer:{}",
-                            request.getRequestURI(),
-                            referer);
-                    ((HttpServletResponse)servletResponse).sendError(403, "CSRF attack prevented. For legit usage see server.properties");
-                }
-            } catch (NullPointerException|IllegalArgumentException e) {
-                logger.info("CSRF attempt blocked due to invalid referer uri; Request:{} Referer:{} - Exception: {}",
-                        request.getRequestURI(),
-                        referer,
-                        e.getMessage());
-                ((HttpServletResponse)servletResponse).sendError(400, "CSRF attack prevented. For legit usage see server.properties");
-            }
-        } else {
-            logger.error("Unexpected type of request: {} -- {}", servletRequest.getClass(), servletRequest);
+    public static boolean isAllowedUri(List<URI> allowedReferers, String referer) {
+        if (referer == null || referer.isEmpty()) {
+            return false;
         }
-    }
-
-    @Override
-    public void destroy() {
-
+        URI refererUri = URI.create(referer);
+        for (URI uri : allowedReferers) {
+            if (uri.getScheme().equals(refererUri.getScheme()) &&
+                    uri.getHost().equals(refererUri.getHost()) &&
+                    uri.getPort() == refererUri.getPort()) {
+                return true;
+            }
+        }
+        return false;
     }
 }
