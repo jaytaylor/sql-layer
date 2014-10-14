@@ -79,6 +79,8 @@ public class CsrfProtectionFilterTest {
     // TODO what about paths
     // TODO are there other parts of the URI?
 
+    // TODO null schemes, hosts, ports, strings
+
     @Test
     public void testParseThreeAllowedReferers() {
         List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my-site.com:45,https://other.site.com,http://wherever.edu");
@@ -88,7 +90,142 @@ public class CsrfProtectionFilterTest {
         assertUri("http", "wherever.edu", -1, uris.get(2));
     }
 
-    // TODO null schemes, hosts, ports, strings
+    @Test
+    public void testParseAllowedReferersWithLeadingComma() {
+        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers(",https://other.site.com,http://wherever.edu");
+        assertEquals(2, uris.size());
+        assertUri("https", "other.site.com", -1, uris.get(0));
+        assertUri("http", "wherever.edu", -1, uris.get(1));
+    }
+
+    @Test
+    public void testParseBlankAllowedRefererInTheMiddle() {
+        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my-site.com:45,,http://wherever.edu");
+        assertEquals(2, uris.size());
+        assertUri("http", "my-site.com", 45, uris.get(0));
+        assertUri("http", "wherever.edu", -1, uris.get(1));
+    }
+
+    @Test
+    public void testParseThreeAllowedReferersWithTrailingComma() {
+        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my-site.com:45,https://other.site.com,http://wherever.edu,");
+        assertEquals(3, uris.size());
+        assertUri("http", "my-site.com", 45, uris.get(0));
+        assertUri("https", "other.site.com", -1, uris.get(1));
+        assertUri("http", "wherever.edu", -1, uris.get(2));
+    }
+
+    @Test
+    public void testLooksLikeARegex() {
+        try {
+            List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my*site.com");
+            fail("Expected an exception to be thrown; " + uris);
+        } catch (IllegalArgumentException e) {
+            /* passing */
+        }
+    }
+
+    @Test
+    public void testLooksLikeARegex2() {
+        try {
+            List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my.*site.com");
+            fail("Expected an exception to be thrown; " + uris);
+        } catch (IllegalArgumentException e) {
+            /* passing */
+        }
+    }
+
+    @Test
+    public void testNoPathsAllowed() {
+        // We don't check the paths on the referer, so don't let it be configured as such
+        try {
+            List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my-site.subdomain.com/wherever?boo=3");
+            fail("Expected an exception to be thrown; " + uris);
+        } catch (IllegalArgumentException e) {
+            /* passing */
+        }
+    }
+
+    @Test
+    public void testBlankPathOk() {
+        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my-site.com/");
+        assertEquals("uri.size()", 1, uris.size());
+        assertUri("http","my-site.com",-1, uris.get(0));
+    }
+
+    @Test
+    public void testNoUserAllowed() {
+        // I don't know what they would be thinking
+        try {
+            List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://user@my-site.com");
+            fail("Expected an exception to be thrown; " + uris);
+        } catch (IllegalArgumentException e) {
+            /* passing */
+        }
+    }
+
+    @Test
+    public void testNoAuthAllowed() {
+        // I don't know what they would be thinking
+        try {
+            List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://user:passw@my-site.com");
+            fail("Expected an exception to be thrown; " + uris);
+        } catch (IllegalArgumentException e) {
+            /* passing */
+        }
+    }
+
+    @Test
+    public void testHostnameRequired() {
+        // I don't know what they would be thinking
+        try {
+            List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("/boo");
+            fail("Expected an exception to be thrown; " + uris);
+        } catch (IllegalArgumentException e) {
+            /* passing */
+        }
+    }
+
+    @Test
+    public void testHostnameRequired2() {
+        // I don't know what they would be thinking
+        try {
+            List<URI> uris = CsrfProtectionFilter.parseAllowedReferers(".");
+            fail("Expected an exception to be thrown; " + uris);
+        } catch (IllegalArgumentException e) {
+            /* passing */
+        }
+    }
+
+    @Test
+    public void testSchemeRequired() {
+        // I don't know what they would be thinking
+        try {
+            List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("foundationdb.com");
+            fail("Expected an exception to be thrown; " + uris);
+        } catch (IllegalArgumentException e) {
+            /* passing */
+        }
+    }
+
+    @Test
+    public void testNullReferer() {
+        // this might seem redundant considering all the tests below, but letting sites
+        // with an empty referer through is a common mistake in referer checking, because
+        // lots of browser or proxies will strip this info out, over privacy concerns.
+        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://somewhere.com");
+        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, null));
+    }
+
+    @Test
+    public void testEmptyReferer() {
+        // this might seem redundant considering all the tests below, but letting sites
+        // with an empty referer through is a common mistake in referer checking, because
+        // lots of browser or proxies will strip this info out, over privacy concerns.
+        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://somewhere.com");
+        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, ""));
+    }
+
     @Test
     public void testChecksScheme() {
         List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my-site.com:45");

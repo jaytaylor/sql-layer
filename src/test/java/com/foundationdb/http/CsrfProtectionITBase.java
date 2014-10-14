@@ -27,6 +27,8 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpOptions;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -109,6 +111,18 @@ public abstract class CsrfProtectionITBase extends ITBase
     }
 
     @Test
+    public void requestBlockedWithEmptyReferer() throws Exception{
+        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
+
+        HttpUriRequest request = new HttpGet(uri);
+        request.setHeader("Referer","");
+
+        response = client.execute(request);
+        assertEquals("status", HttpStatus.SC_BAD_REQUEST, response.getStatusLine().getStatusCode());
+        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("server.properties"));
+    }
+
+    @Test
     public void requestBlockedWithBadHost() throws Exception{
         URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
 
@@ -118,5 +132,84 @@ public abstract class CsrfProtectionITBase extends ITBase
         response = client.execute(request);
         assertEquals("status", HttpStatus.SC_BAD_REQUEST, response.getStatusLine().getStatusCode());
         assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("server.properties"));
+    }
+
+    @Test
+    public void postBlockedWithBadHost() throws Exception{
+        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
+
+        HttpUriRequest request = new HttpPost(uri);
+        request.setHeader("Referer", "https://coolest.site.edu.fake.com:4320");
+
+        response = client.execute(request);
+        assertEquals("status", HttpStatus.SC_BAD_REQUEST, response.getStatusLine().getStatusCode());
+        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("server.properties"));
+    }
+
+    @Test
+    public void putBlockedWithMissingReferer() throws Exception{
+        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
+
+        HttpUriRequest request = new HttpPut(uri);
+
+        response = client.execute(request);
+        assertEquals("status", HttpStatus.SC_BAD_REQUEST, response.getStatusLine().getStatusCode());
+        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("server.properties"));
+    }
+
+
+    @Test
+    public void getAllowed1() throws Exception{
+        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
+
+        HttpUriRequest request = new HttpGet(uri);
+        request.setHeader("Referer","http://somewhere.com");
+
+        response = client.execute(request);
+        assertEquals("status", HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+    }
+
+    @Test
+    public void getAllowed2() throws Exception{
+        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
+
+        HttpUriRequest request = new HttpGet(uri);
+        request.setHeader("Referer","https://coolest.site.edu:4320");
+
+        response = client.execute(request);
+        assertEquals("status", HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+    }
+
+    @Test
+    public void postAllowed() throws Exception{
+        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
+
+        HttpUriRequest request = new HttpPost(uri);
+        request.setHeader("Referer","http://somewhere.com");
+
+        response = client.execute(request);
+        assertEquals("status", HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+    }
+
+    @Test
+    public void putAllowed() throws Exception{
+        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
+
+        HttpUriRequest request = new HttpPut(uri);
+        request.setHeader("Referer","http://somewhere.com");
+
+        response = client.execute(request);
+        assertEquals("status", HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+    }
+
+    @Test
+    public void deleteAllowed() throws Exception{
+        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
+
+        HttpUriRequest request = new HttpDelete(uri);
+        request.setHeader("Referer","http://somewhere.com");
+
+        response = client.execute(request);
+        assertEquals("status", HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
     }
 }

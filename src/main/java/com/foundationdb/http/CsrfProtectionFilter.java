@@ -87,11 +87,25 @@ public class CsrfProtectionFilter implements javax.servlet.Filter {
             if (allowedReferer == null || allowedReferer.isEmpty()) {
                 continue;
             } else {
-                try {
-                    allowedReferers.add(URI.create(allowedReferer));
-                } catch (NullPointerException|IllegalArgumentException e) {
-                    throw new IllegalArgumentException("Invalid URI in list of csrf referers: " + allowedReferer + ";", e);
+                if (allowedReferer.contains("*")) {
+                    throw new IllegalArgumentException("Allowed referers do not support regexs (*): " + allowedReferer);
                 }
+                URI uri;
+                try {
+                    uri = URI.create(allowedReferer);
+                } catch (NullPointerException | IllegalArgumentException e) {
+                    throw new IllegalArgumentException("Invalid URI in list of csrf referers: " + allowedReferer, e);
+                }
+                if (uri == null) {
+                    throw new IllegalArgumentException("Invalid URI in list of csrf referers: " + allowedReferer);
+                }
+                if (uri.getUserInfo() != null) {
+                    throw new IllegalArgumentException("Allowed referers do not support user information: " + allowedReferer);
+                }
+                if (uri.getPath() != null && !uri.getPath().isEmpty() && !uri.getPath().equals("/")) {
+                    throw new IllegalArgumentException("Allowed referers do not support restricting by path: " + allowedReferer);
+                }
+                allowedReferers.add(uri);
             }
         }
         if (allowedReferers.isEmpty()) {
