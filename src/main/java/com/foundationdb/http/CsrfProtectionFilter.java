@@ -29,12 +29,11 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Priorities;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerRequestFilter;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This is similar to the builtin CsrfProtectionFilter, but does not allow GET requests either, because
@@ -46,10 +45,37 @@ public class CsrfProtectionFilter implements javax.servlet.Filter {
     private static final Logger logger = LoggerFactory.getLogger(CsrfProtectionFilter.class);
 
     public static final String REFERER_HEADER = "Referer";
+    public static final String ALLOWED_REFERERS_PARAM = "AllowedReferersInitParam";
+
+    private List<URI> allowedReferers;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
+        String allowedReferersConfigProperty = filterConfig.getInitParameter(ALLOWED_REFERERS_PARAM);
+        allowedReferers = parseAllowedReferers(allowedReferersConfigProperty);
+    }
 
+    public static List<URI> parseAllowedReferers(String allowedReferersConfigProperty) {
+        if (allowedReferersConfigProperty == null || allowedReferersConfigProperty.isEmpty()) {
+            throw new IllegalArgumentException("Invalid List of allowed csrf referers must not be null or empty");
+        }
+        String[] split = allowedReferersConfigProperty.split("\\,");
+        List<URI> allowedReferers = new ArrayList<>();
+        for (String allowedReferer : split) {
+            if (allowedReferer == null || allowedReferer.isEmpty()) {
+                continue;
+            } else {
+                try {
+                    allowedReferers.add(URI.create(allowedReferer));
+                } catch (NullPointerException|IllegalArgumentException e) {
+                    throw new IllegalArgumentException("Invalid URI in list of csrf referers: " + allowedReferer + ";", e);
+                }
+            }
+        }
+        if (allowedReferers.isEmpty()) {
+            throw new IllegalArgumentException("Invalid List of allowed csrf referers must not be null or empty");
+        }
+        return allowedReferers;
     }
 
     @Override

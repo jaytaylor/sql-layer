@@ -44,28 +44,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.CoreMatchers.containsString;
 
-/**
- *
- * Simple Request:
- *     Method: GET, POST, HEAD
- *     Headers: Origin = foo
- *              [other "simple" headers]
- * Simple Response:
- *     Headers: Access-Control-Allow-Origin = foo
- *              Access-Control-Allow-Credentials = true (if enabled)
- *
- * Non-Simple: Simple + other methods, headers
- *
- * PreFlight Request:
- *     Method: OPTIONS
- *     Headers: Origin = foo
- *              Access-Control-Request-Method = GET
- *              Note: No auth
- * PreFlight Response:
- *     Headers: Access-Control-Allow-Origin = foo
- *              Access-Control-Allow-Methods = ...
- *              Access-Control-Allow-Headers = ...
- */
 public abstract class CsrfProtectionITBase extends ITBase
 {
     private static final String SCHEMA = "test";
@@ -111,9 +89,7 @@ public abstract class CsrfProtectionITBase extends ITBase
     @Override
     protected Map<String,String> startupConfigProperties() {
         Map<String,String> config = new HashMap<>(super.startupConfigProperties());
-        config.put("fdbsql.http.cross_origin.enabled", "true");
-        config.put("fdbsql.http.cross_origin.allowed_methods", ALLOWED_METHODS);
-        config.put("fdbsql.http.cross_origin.allowed_origins", "*");
+        config.put("fdbsql.http.csrf_protection.allowed_referers", ",");
         return config;
     }
 
@@ -121,14 +97,9 @@ public abstract class CsrfProtectionITBase extends ITBase
         return String.format("%s/entity/%s.%s", restContext, SCHEMA, TABLE);
     }
 
-    private static String headerValue(HttpResponse response, String key) {
-        Header header = response.getFirstHeader(key);
-        return (header != null) ? header.getValue() : null;
-    }
-
     @Test
     public void requestBlockedWithMissingReferer() throws Exception{
-        URI uri = new URI("http", null /*preflight requires no auth*/, "localhost", port, entityEndpoint(), null, null);
+        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
 
         HttpUriRequest request = new HttpGet(uri);
 
