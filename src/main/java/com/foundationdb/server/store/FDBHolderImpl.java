@@ -80,18 +80,19 @@ public class FDBHolderImpl implements FDBHolder, Service {
         }
         String clusterFile = configService.getProperty(CONFIG_CLUSTER_FILE);
         boolean isDefault = clusterFile.isEmpty();
-        LOG.info("Opening cluster file {}", isDefault ? "DEFAULT" : clusterFile);
+        clusterFile = isDefault ? "DEFAULT" : clusterFile;
+        LOG.info("Opening cluster file {}", clusterFile);
         try {
             db = isDefault ? fdb.open() : fdb.open(clusterFile);
         } catch (FDBException e) {
             if (e.getCode() == 1515) { // no_cluster_file_found
-                throw new NoClusterFileException(isDefault ? "DEFAULT" : clusterFile);
+                throw new NoClusterFileException(clusterFile);
             }
             else if (e.getCode() == 1513) { // file_not_readable
-                throw new ClusterFileNotReadableException(isDefault ? "DEFAULT" : clusterFile);
+                throw new ClusterFileNotReadableException(clusterFile);
             }
             else if (e.getCode() == 1516) { // cluster_file_too_large
-                throw new ClusterFileTooLargeException(isDefault? "DEFAULT" : clusterFile);
+                throw new ClusterFileTooLargeException(clusterFile);
             }
             throw e;
         }
