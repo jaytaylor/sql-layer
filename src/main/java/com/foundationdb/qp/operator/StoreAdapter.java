@@ -77,7 +77,7 @@ public abstract class StoreAdapter implements KeyCreator
         writeRow(newRow, null, null);
     }
 
-    public abstract void writeRow(Row newRow, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes);
+    public abstract void writeRow(Row newRow, Collection<TableIndex> tableIndexes, Collection<GroupIndex> groupIndexes);
     
     public abstract void deleteRow (Row oldRow, boolean cascadeDelete);
 

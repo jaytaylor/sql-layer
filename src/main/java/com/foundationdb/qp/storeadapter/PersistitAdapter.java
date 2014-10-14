@@ -23,10 +23,7 @@ import com.foundationdb.qp.operator.*;
 import com.foundationdb.qp.storeadapter.indexcursor.IterationHelper;
 import com.foundationdb.qp.storeadapter.indexcursor.MergeJoinSorter;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitGroupIndexRow;
-import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
-import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowPool;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitTableIndexRow;
-import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
@@ -37,7 +34,6 @@ import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.server.store.PersistitStore;
@@ -125,7 +121,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
         }
     }
     @Override
-    public void writeRow(Row newRow, TableIndex[] indexes, Collection<GroupIndex> groupIndexes) {
+    public void writeRow(Row newRow, Collection<TableIndex> indexes, Collection<GroupIndex> groupIndexes) {
         RowDef rowDef = newRow.rowType().table().rowDef();
         try {
             RowData newRowData = rowData (rowDef, newRow, rowDataCreator());
