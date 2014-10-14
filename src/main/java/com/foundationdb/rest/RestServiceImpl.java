@@ -127,6 +127,7 @@ public class RestServiceImpl implements RestService, Service {
 
         ResourceConfig config = new ResourceConfig();
         config.registerInstances(resources);
+        // TODO change to instance and set properties from here
         config.register(CsrfProtectionFilter.class);
         return config;
     }
