@@ -287,6 +287,11 @@ public final class HttpConductorImpl implements HttpConductor, Service {
             if (crossOriginOn) {
                 addCrossOriginFilter(localRootContextHandler);
             }
+
+            // TODO optional
+            // TODO config options
+            FilterRegistration reg = localRootContextHandler.getServletContext().addFilter("CSRFFilter", CsrfProtectionFilter.class);
+            reg.addMappingForServletNames(null, false, "*");
             localServer.setHandler(localRootContextHandler);
             localServer.start();
         }

@@ -21,6 +21,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Priority;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
@@ -35,30 +42,45 @@ import java.net.URI;
  */
 @Provider
 @Priority(Priorities.AUTHENTICATION)
-public class CsrfProtectionFilter implements ContainerRequestFilter {
+public class CsrfProtectionFilter implements javax.servlet.Filter {
     private static final Logger logger = LoggerFactory.getLogger(CsrfProtectionFilter.class);
 
     public static final String REFERER_HEADER = "Referer";
-    @Override
-    public void filter(ContainerRequestContext containerRequestContext) throws IOException {
-        String referer = containerRequestContext.getHeaderString(REFERER_HEADER);
-        try {
-            URI uri = URI.create(referer);
-            // TODO switch to server properties
-            // and write TESTS
-            if (!"http".equals(uri.getScheme()) || !"localhost".equals(uri.getHost()) || 4567 !=uri.getPort()) {
 
-                logger.debug("CSRF attempt blocked due to invalid uri {} {}",
-                        containerRequestContext.getUriInfo().getAbsolutePath(),
-                        containerRequestContext.getHeaders());
-                containerRequestContext.abortWith(Response.status(Response.Status.BAD_REQUEST).build());
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+
+    }
+
+    @Override
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+        if (servletRequest instanceof HttpServletRequest) {
+            HttpServletRequest request = (HttpServletRequest) servletRequest;
+            String referer = request.getHeader(REFERER_HEADER);
+            try {
+                // TODO properties and tests
+                URI uri = URI.create(referer);
+                if (!"http".equals(uri.getScheme()) || !"localhost".equals(uri.getHost()) || 4567 !=uri.getPort()) {
+
+                    logger.debug("CSRF attempt blocked due to invalid referer uri; Request:{} Referer:{}",
+                            request.getRequestURI(),
+                            referer);
+                    ((HttpServletResponse)servletResponse).sendError(403, "CSRF attack prevented. For legit usage see server.properties");
+                }
+            } catch (NullPointerException|IllegalArgumentException e) {
+                logger.info("CSRF attempt blocked due to invalid referer uri; Request:{} Referer:{} - Exception: {}",
+                        request.getRequestURI(),
+                        referer,
+                        e.getMessage());
+                ((HttpServletResponse)servletResponse).sendError(400, "CSRF attack prevented. For legit usage see server.properties");
             }
-        } catch (NullPointerException|IllegalArgumentException e) {
-            logger.debug("CSRF attempt blocked due to invalid uri {} {} - {}",
-                    containerRequestContext.getUriInfo().getAbsolutePath(),
-                    containerRequestContext.getHeaders(),
-                    e.getMessage());
-            containerRequestContext.abortWith(Response.status(Response.Status.BAD_REQUEST).build());
+        } else {
+            logger.error("Unexpected type of request: {} -- {}", servletRequest.getClass(), servletRequest);
         }
+    }
+
+    @Override
+    public void destroy() {
+
     }
 }
