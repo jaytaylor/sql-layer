@@ -1,0 +1,27 @@
+/* AUTOMATICALLY GENERATED ON Tue Oct 14 10:49:35 EDT 2014*/
+/* DO NOT EDIT */
+
+grant codeBase "file:/Users/Sytze/GH/sql-layer/target/-" {
+  permission java.security.AllPermission;
+};
+
+grant codeBase "file:/Users/Sytze/bin/apache-maven-3.2.1/-" {
+  permission java.security.AllPermission;
+};
+
+grant codeBase "file:/Users/Sytze/GH/RoutineFirewall/target/*" {
+  permission java.security.AllPermission;
+};
+
+grant codeBase "file:/Users/Sytze/.m2/repository/-" {
+  permission java.security.AllPermission;
+};
+
+grant codeBase "file:/Users/Sytze/bin/apache-ant-1.9.3/-" {
+  permission java.security.AllPermission;
+};
+
+grant codeBase "file:/Applications/-" {
+  permission java.security.AllPermission;
+};
+

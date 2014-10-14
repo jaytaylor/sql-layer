@@ -178,8 +178,9 @@ launch_service()
     fdbsql_parms="$fdbsql_parms -Dfdbsql.home=$FDBSQL_HOME -Dfdbsql.config_dir=$FDBSQL_CONF"
     fdbsql_parms="$fdbsql_parms -Dlog4j.configuration=file:$FDBSQL_CONF/log4j.properties"
     fdbsql_parms="$fdbsql_parms $print_compilation $props"
+    fdbsql_parms="$fdbsql_parms -Djava.security.manager -Djava.security.policy=$FDBSQL_HOME/sql-layer.policy"
 
-    CLASSPATH=$JAR_FILE:$DEP_DIR/*
+    CLASSPATH=$JAR_FILE:$DEP_DIR/*:/Users/Sytze/GH/RoutineFirewall/target/routinefirewall.jar
     main_class="com.foundationdb.sql.Main"
     if [ -n "$mode" ]; then
         if [ "$mode" == "window" ]; then

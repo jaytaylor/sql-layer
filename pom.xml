@@ -40,6 +40,13 @@
     
     <dependencies>
         <dependency>
+            <groupId>routinefrwll.routinefrwll</groupId>
+            <artifactId>routinefirewall</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>/Users/Sytze/GH/routinefrwll/target/routinefirewall-1.0-SNAPSHOT.jar</systemPath>
+        </dependency>
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math</artifactId>
             <version>2.2</version>
@@ -327,7 +334,7 @@
                         <fdbsql.port>${fdbsql.port}</fdbsql.port>
                         <fdbsql.postgres.port>${fdbsql.postgres.port}</fdbsql.postgres.port>
                     </systemPropertyVariables>
-                    <argLine>-Xmx512m ${fdbsql.test.extraJvmArgs} ${fdbsql.test.JmxJvmArgs} ${surefireJacocoArg}</argLine>
+                    <argLine>-Xmx512m ${fdbsql.test.extraJvmArgs} ${fdbsql.test.JmxJvmArgs} ${surefireJacocoArg} -Djava.security.manager -Djava.security.policy=/Users/Sytze/GH/sql-layer/sql-layer.policy</argLine>
                     <includes>
                         <include>**/*Test.java</include>
                         <include>**/*Test?.java</include>

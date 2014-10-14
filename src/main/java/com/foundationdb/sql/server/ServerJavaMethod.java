@@ -19,11 +19,11 @@ package com.foundationdb.sql.server;
 
 import com.foundationdb.ais.model.Parameter;
 import com.foundationdb.qp.operator.QueryBindings;
+import routinefrwll.routinefrwll.*;
 import com.foundationdb.server.error.ExternalRoutineInvocationException;
 import com.foundationdb.server.explain.Attributes;
 import com.foundationdb.server.explain.CompoundExplainer;
 import com.foundationdb.server.explain.ExplainContext;
-import com.foundationdb.server.explain.Explainable;
 import com.foundationdb.server.explain.Label;
 import com.foundationdb.server.explain.PrimitiveExplainer;
 
@@ -80,7 +80,7 @@ public class ServerJavaMethod extends ServerJavaRoutine
     }
 
     @Override
-    public void invoke() {
+    public void invokeShielded() {
         try {
             methodResult = method.invoke(null, methodArgs);
         }

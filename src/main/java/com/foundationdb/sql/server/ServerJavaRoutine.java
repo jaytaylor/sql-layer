@@ -25,9 +25,11 @@ import com.foundationdb.ais.model.CacheValueGenerator;
 import com.foundationdb.ais.model.Parameter;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.explain.Explainable;
+import routinefrwll.routinefrwll.ShieldedInvokable;
+import routinefrwll.routinefrwll.RoutineFirewall;
 
 /** A Routine that uses Java native data types in its invocation API. */
-public abstract class ServerJavaRoutine implements Explainable
+public abstract class ServerJavaRoutine implements Explainable, ShieldedInvokable
 {
     private ServerQueryContext context;
     private QueryBindings bindings;
@@ -50,7 +52,7 @@ public abstract class ServerJavaRoutine implements Explainable
     }
 
     public abstract void setInParameter(Parameter parameter, ServerJavaValues values, int index);
-    public abstract void invoke();
+    public abstract void invokeShielded();
     public abstract Object getOutParameter(Parameter parameter, int index);
     public abstract Queue<ResultSet> getDynamicResultSets();
 
@@ -62,6 +64,10 @@ public abstract class ServerJavaRoutine implements Explainable
         ServerCallContextStack.get().pop(context, invocation, success);
     }
 
+    public void invoke() {
+        RoutineFirewall.callInvoke(this);
+    }
+    
     public void setInputs() {
         int nargs = invocation.size();
         ServerJavaValues values = invocation.asValues(context, bindings);

@@ -20,7 +20,6 @@ package com.foundationdb.sql.script;
 import com.foundationdb.ais.model.Parameter;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.qp.operator.QueryBindings;
-import com.foundationdb.server.error.ExternalRoutineInvocationException;
 import com.foundationdb.sql.server.ServerCallExplainer;
 import com.foundationdb.sql.server.ServerJavaRoutine;
 import com.foundationdb.sql.server.ServerJavaValues;
@@ -29,7 +28,6 @@ import com.foundationdb.sql.server.ServerRoutineInvocation;
 import com.foundationdb.server.explain.Attributes;
 import com.foundationdb.server.explain.CompoundExplainer;
 import com.foundationdb.server.explain.ExplainContext;
-import com.foundationdb.server.explain.Explainable;
 import com.foundationdb.server.explain.Label;
 import com.foundationdb.server.explain.PrimitiveExplainer;
 import com.foundationdb.server.service.routines.ScriptInvoker;
@@ -93,8 +91,8 @@ public class ScriptFunctionJavaRoutine extends ServerJavaRoutine
         }
     }
 
-    @Override
-    public void invoke() {
+    @Override    
+    public void invokeShielded() {
         ScriptInvoker invoker = pool.get();
         boolean success = false;
         try {

@@ -75,8 +75,8 @@ public class ScriptBindingsRoutine extends ServerJavaRoutine
         bindings.put(var, values.getObject(index));
     }
 
-    @Override
-    public void invoke() {
+    @Override    
+    public void invokeShielded() {
         evalResult = evaluator.eval(bindings);
     }
 
