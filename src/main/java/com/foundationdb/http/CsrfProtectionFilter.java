@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.rest;
+package com.foundationdb.http;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

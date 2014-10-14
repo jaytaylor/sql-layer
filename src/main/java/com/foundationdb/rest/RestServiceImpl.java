@@ -17,6 +17,7 @@
 
 package com.foundationdb.rest;
 
+import com.foundationdb.http.CsrfProtectionFilter;
 import com.foundationdb.http.HttpConductor;
 import com.foundationdb.rest.resources.*;
 import com.foundationdb.server.service.Service;
