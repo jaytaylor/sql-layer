@@ -219,7 +219,6 @@ public class RestServiceFilesIT extends ITBase {
     public void checkRequest() throws Exception {
         if (caseParams.checkURI != null && caseParams.checkExpected != null) {
             HttpExchange httpConn = openConnection(getRestURL(caseParams.checkURI.trim()), "GET");
-            httpConn.setRequestHeader("X-Requested-By", "boo");
             httpClient.send(httpConn);
             httpConn.waitForDone();
             try {
@@ -248,7 +247,6 @@ public class RestServiceFilesIT extends ITBase {
         HttpExchange conn = openConnection(getRestURL(caseParams.requestURI), caseParams.requestMethod);
         try {
 
-            conn.setRequestHeader("X-Requested-By", "boo");
             // Request
             if (caseParams.requestMethod.equals("POST") || 
                 caseParams.requestMethod.equals("PUT") || 
