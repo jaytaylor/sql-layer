@@ -1,3 +1,5 @@
+
+
 --- # create file
 - Statement: CREATE OR REPLACE FUNCTION js_function1 ()
     RETURNS INT LANGUAGE javascript PARAMETER STYLE variables    AS $$
@@ -16,7 +18,7 @@
 ---
 - Statement: DROP FUNCTION IF EXISTS js_function2;
 ---
-- Statement: CALL sqlj.install_jar('file:/Users/Sytze/GH/SandBox/target/SandBox-1.0-SNAPSHOT.jar', 'hello', 0);
+- Statement: CALL sqlj.install_jar('/Users/Sytze/GH/SandBox/target/SandBox-1.0-SNAPSHOT.jar', 'hello', 0);
 ---
 - Statement: CREATE OR REPLACE PROCEDURE js_procedure2(OUT a VARCHAR(100)) LANGUAGE JAVA PARAMETER STYLE java  EXTERNAL NAME 'hello:dev.hello.HelloWorld.helloName' ;
 ---

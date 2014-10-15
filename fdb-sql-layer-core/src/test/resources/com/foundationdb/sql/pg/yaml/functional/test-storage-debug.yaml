@@ -1,0 +1,97 @@
+# Test STORAGE_FORMAT tuple
+# Tests for VARCHAR, REAL
+---
+- CreateTable: t1 (id INT PRIMARY KEY NOT NULL, s VARCHAR(16), r REAL) STORAGE_FORMAT column_keys
+---
+- Statement: INSERT INTO t1 VALUES(1,'Fred', -1.5),(2,'Wilma', 4),(3,'Pebbles', 1.5),(4,'Dino', 5)
+---
+- Statement: SELECT * FROM t1
+- output: [[1,'Fred', -1.5],[2,'Wilma', 4.0],[3,'Pebbles', 1.5],[4,'Dino', 5.0]]
+---
+- Statement: CREATE INDEX t1_s ON t1(s, r) STORAGE_FORMAT tuple
+---
+- Statement: ALTER TABLE t1 ALL UPDATE STATISTICS
+---
+- Statement: CREATE INDEX t1_r ON t1(r) STORAGE_FORMAT tuple
+---
+- Statement: SELECT * FROM t1 where id <=4
+- output: [[4,'Dino', 5.0],[1,'Fred', -1.5],[3,'Pebbles', 1.5],[2,'Wilma', 4.0]]
+---
+- Statement: SELECT * FROM t1 WHERE s >= 'M'
+- output: [[3,'Pebbles', 1.5],[2,'Wilma', 4.0]]
+---
+- Statement: SELECT * FROM t1 WHERE s >= 'M' ORDER BY s DESC
+- output_already_ordered: [[2,'Wilma', 4.0],[3,'Pebbles', 1.5]]
+---
+- Statement: SELECT * FROM t1 WHERE id = 2
+- output: [[2,'Wilma', 4.0]]
+---
+- Statement: SELECT id, r FROM t1 WHERE r > 0
+- output: [[3, 1.5],[2, 4.0],[4, 5.0]]
+---
+- Statement: SELECT id, r FROM t1 WHERE r > 0 ORDER BY r DESC
+- output_already_ordered: [[4, 5.0],[2, 4.0],[3, 1.5]]
+---
+# Tests for FLOAT, DOUBLE
+- CreateTable: t2 (id INT PRIMARY KEY NOT NULL, r FLOAT(23), d DOUBLE) STORAGE_FORMAT column_keys
+---
+- Statement: INSERT INTO t2 VALUES(1, -1.5, 5),(2, 4, 1.5),(3, 1.5, 4), (4, 5, -1.5)
+---
+- Statement: SELECT * FROM t2
+- output: [[1, -1.5, 5.0],[2, 4.0, 1.5], [3, 1.5, 4.0], [4, 5.0, -1.5]]
+---
+- Statement: CREATE INDEX t2_r ON t2(r) STORAGE_FORMAT tuple
+---
+- Statement: CREATE INDEX t2_d ON t2(d, r) STORAGE_FORMAT tuple
+---
+- Statement: ALTER TABLE t2 ALL UPDATE STATISTICS
+---
+- Statement: SELECT id, r FROM t2
+- output: [[1, -1.5],[3, 1.5],[2, 4.0],[4, 5.0]]
+---
+- Statement: SELECT id, r FROM t2 WHERE r > 0
+- output: [[3, 1.5],[2, 4.0],[4, 5.0]]
+---
+- Statement: SELECT id, r FROM t2 WHERE r > 0 ORDER BY r DESC
+- output_already_ordered: [[4, 5.0], [2, 4.0], [3, 1.5]]
+---
+- Statement: SELECT * FROM t2 WHERE d > 0
+- output: [[2, 4.0, 1.5],[3, 1.5, 4.0],[1, -1.5, 5.0]]
+---
+- Statement: SELECT * FROM t2 WHERE d > 0 ORDER BY d DESC
+- output_already_ordered: [[1, -1.5, 5.0],[3, 1.5, 4.0],[2, 4.0, 1.5]]
+---
+# Tests for DECIMAL, NUMERIC
+- CreateTable: t5 (id INT PRIMARY KEY NOT NULL, r DECIMAL(5, 2), n NUMERIC(3)) STORAGE_FORMAT column_keys
+---
+- Statement: INSERT INTO t5 VALUES(1, -1.11, 123),(2, 4.44, 234),(3, 1.11, -123), (4, 5.55, 0)
+---
+- Statement: SELECT * FROM t5
+- output: [[1, -1.11, 123],[2, 4.44, 234], [3, 1.11, -123], [4, 5.55, 0]]
+---
+- Statement: CREATE INDEX t5_r ON t5(r) STORAGE_FORMAT tuple
+---
+- Statement: ALTER TABLE t5 ALL UPDATE STATISTICS
+---
+- Statement: SELECT id, r FROM t5
+- output: [[1, -1.11],[3, 1.11],[2, 4.44],[4, 5.55]]
+---
+- Statement: SELECT id, r FROM t5 WHERE r > 0
+- output: [[3, 1.11],[2, 4.44],[4, 5.55]]
+---
+- Statement: SELECT id, r FROM t5 WHERE r > 0 ORDER BY r DESC
+- output_already_ordered: [[4, 5.55], [2, 4.44], [3, 1.11]]
+---
+- Statement: CREATE INDEX t5_n ON t5(n) STORAGE_FORMAT tuple
+---
+- Statement: ALTER TABLE t5 ALL UPDATE STATISTICS
+---
+- Statement: SELECT n FROM t5
+- output: [[-123],[0],[123],[234]]
+---
+- Statement: SELECT id, n FROM t5 WHERE n >= 0
+- output: [[4, 0],[1, 123],[2, 234]]
+---
+- Statement: SELECT id, n FROM t5 WHERE n >= 0 ORDER BY n DESC
+- output_already_ordered: [[2, 234],[1, 123],[4, 0]]
+...
