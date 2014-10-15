@@ -37,35 +37,29 @@ public class CsrfProtectionFilterTest {
         assertEquals("port", port, actualUri.getPort());
     }
 
-
-    @Test
-    public void testParseNullAllowedReferers() {
+    private void assertIllegalAllowedReferers(String allowedReferers) {
         try {
-            CsrfProtectionFilter.parseAllowedReferers(null);
-            fail("ExpectedException");
+            List<URI> uris = CsrfProtectionFilter.parseAllowedReferers(allowedReferers);
+            fail("Expected an exception to be thrown; " + uris);
         } catch (IllegalArgumentException e) {
             /* passing */
         }
+    }
+
+
+    @Test
+    public void testParseNullAllowedReferers() {
+        assertIllegalAllowedReferers(null);
     }
 
     @Test
     public void testParseEmptyAllowedReferers() {
-        try {
-            CsrfProtectionFilter.parseAllowedReferers("");
-            fail("ExpectedException");
-        } catch (IllegalArgumentException e) {
-            /* passing */
-        }
+        assertIllegalAllowedReferers("");
     }
 
     @Test
     public void testParseEmptyListOfAllowedReferers() {
-        try {
-            CsrfProtectionFilter.parseAllowedReferers(",,,");
-            fail("ExpectedException");
-        } catch (IllegalArgumentException e) {
-            /* passing */
-        }
+        assertIllegalAllowedReferers(",,,");
     }
 
     @Test
@@ -119,33 +113,18 @@ public class CsrfProtectionFilterTest {
 
     @Test
     public void testLooksLikeARegex() {
-        try {
-            List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my*site.com");
-            fail("Expected an exception to be thrown; " + uris);
-        } catch (IllegalArgumentException e) {
-            /* passing */
-        }
+        assertIllegalAllowedReferers("http://my*site.com");
     }
 
     @Test
     public void testLooksLikeARegex2() {
-        try {
-            List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my.*site.com");
-            fail("Expected an exception to be thrown; " + uris);
-        } catch (IllegalArgumentException e) {
-            /* passing */
-        }
+        assertIllegalAllowedReferers("http://my.*site.com");
     }
 
     @Test
     public void testNoPathsAllowed() {
         // We don't check the paths on the referer, so don't let it be configured as such
-        try {
-            List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my-site.subdomain.com/wherever?boo=3");
-            fail("Expected an exception to be thrown; " + uris);
-        } catch (IllegalArgumentException e) {
-            /* passing */
-        }
+        assertIllegalAllowedReferers("http://my-site.subdomain.com/wherever?boo=3");
     }
 
     @Test
@@ -159,24 +138,14 @@ public class CsrfProtectionFilterTest {
     public void testNoUserAllowed() {
         // I don't know what they would be thinking
         // Also, according to the spec, the referer is not supposed to include user info or fragment components
-        try {
-            List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://user@my-site.com");
-            fail("Expected an exception to be thrown; " + uris);
-        } catch (IllegalArgumentException e) {
-            /* passing */
-        }
+        assertIllegalAllowedReferers("http://user@my-site.com");
     }
 
     @Test
     public void testNoAuthAllowed() {
         // I don't know what they would be thinking
         // Also, according to the spec, the referer is not supposed to include user info or fragment components
-        try {
-            List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://user:passw@my-site.com");
-            fail("Expected an exception to be thrown; " + uris);
-        } catch (IllegalArgumentException e) {
-            /* passing */
-        }
+        assertIllegalAllowedReferers("http://user:passw@my-site.com");
     }
 
     @Test
@@ -186,45 +155,25 @@ public class CsrfProtectionFilterTest {
         //     own URI (e.g., input from the user keyboard, or an entry within the
         //     user's bookmarks/favorites), the user agent MUST either exclude the
         //     Referer field or send it with a value of "about:blank".
-        try {
-            List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("about:blank");
-            fail("Expected an exception to be thrown; " + uris);
-        } catch (IllegalArgumentException e) {
-            /* passing */
-        }
+        assertIllegalAllowedReferers("about:blank");
     }
 
     @Test
     public void testHostnameRequired() {
         // I don't know what they would be thinking
-        try {
-            List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("/boo");
-            fail("Expected an exception to be thrown; " + uris);
-        } catch (IllegalArgumentException e) {
-            /* passing */
-        }
+        assertIllegalAllowedReferers("/boo");
     }
 
     @Test
     public void testHostnameRequired2() {
         // I don't know what they would be thinking
-        try {
-            List<URI> uris = CsrfProtectionFilter.parseAllowedReferers(".");
-            fail("Expected an exception to be thrown; " + uris);
-        } catch (IllegalArgumentException e) {
-            /* passing */
-        }
+        assertIllegalAllowedReferers(".");
     }
 
     @Test
     public void testSchemeRequired() {
         // I don't know what they would be thinking
-        try {
-            List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("foundationdb.com");
-            fail("Expected an exception to be thrown; " + uris);
-        } catch (IllegalArgumentException e) {
-            /* passing */
-        }
+        assertIllegalAllowedReferers("foundationdb.com");
     }
 
     @Test
