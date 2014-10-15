@@ -44,8 +44,8 @@ import java.util.UUID;
  */
 @Provider
 @Priority(Priorities.AUTHENTICATION)
-public class CsrfProtectionFilter implements javax.servlet.Filter {
-    private static final Logger logger = LoggerFactory.getLogger(CsrfProtectionFilter.class);
+public class CsrfProtectionRefererFilter implements javax.servlet.Filter {
+    private static final Logger logger = LoggerFactory.getLogger(CsrfProtectionRefererFilter.class);
 
     public static final String REFERER_HEADER = "Referer";
     public static final String ALLOWED_REFERERS_PARAM = "AllowedReferersInitParam";

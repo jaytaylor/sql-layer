@@ -32,7 +32,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.matchers.JUnitMatchers.containsString;
 
-public class CsrfProtectionFilterTest {
+public class CsrfProtectionRefererFilterTest {
 
 
     private void assertUri(String scheme, String host, int port, URI actualUri) {
@@ -43,14 +43,14 @@ public class CsrfProtectionFilterTest {
     }
 
     private void assertSingleUri(String referer, String scheme, String host, int port) {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers(referer);
+        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers(referer);
         assertEquals(1, uris.size());
         assertUri(scheme, host, port, uris.get(0));
     }
 
     private Exception assertIllegalAllowedReferers(String allowedReferers) {
         try {
-            List<URI> uris = CsrfProtectionFilter.parseAllowedReferers(allowedReferers);
+            List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers(allowedReferers);
             fail("Expected an exception to be thrown; " + uris);
         } catch (IllegalArgumentException e) {
             return e;
@@ -80,7 +80,7 @@ public class CsrfProtectionFilterTest {
 
     @Test
     public void testParseThreeAllowedReferers() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my-site.com:45,https://other.site.com,http://wherever.edu");
+        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers("http://my-site.com:45,https://other.site.com,http://wherever.edu");
         assertEquals(3, uris.size());
         assertUri("http", "my-site.com", 45, uris.get(0));
         assertUri("https", "other.site.com", -1, uris.get(1));
@@ -89,7 +89,7 @@ public class CsrfProtectionFilterTest {
 
     @Test
     public void testParseAllowedReferersWithLeadingComma() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers(",https://other.site.com,http://wherever.edu");
+        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers(",https://other.site.com,http://wherever.edu");
         assertEquals(2, uris.size());
         assertUri("https", "other.site.com", -1, uris.get(0));
         assertUri("http", "wherever.edu", -1, uris.get(1));
@@ -97,7 +97,7 @@ public class CsrfProtectionFilterTest {
 
     @Test
     public void testParseBlankAllowedRefererInTheMiddle() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my-site.com:45,,http://wherever.edu");
+        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers("http://my-site.com:45,,http://wherever.edu");
         assertEquals(2, uris.size());
         assertUri("http", "my-site.com", 45, uris.get(0));
         assertUri("http", "wherever.edu", -1, uris.get(1));
@@ -105,7 +105,7 @@ public class CsrfProtectionFilterTest {
 
     @Test
     public void testParseThreeAllowedReferersWithTrailingComma() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my-site.com:45,https://other.site.com,http://wherever.edu,");
+        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers("http://my-site.com:45,https://other.site.com,http://wherever.edu,");
         assertEquals(3, uris.size());
         assertUri("http", "my-site.com", 45, uris.get(0));
         assertUri("https", "other.site.com", -1, uris.get(1));
@@ -239,14 +239,14 @@ public class CsrfProtectionFilterTest {
 
     @Test
     public void testAutoConfigure() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("MUST_BE_CONFIGURED");
+        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers("MUST_BE_CONFIGURED");
         assertEquals(1, uris.size());
         URI actualUri = uris.get(0);
         String firstHost =  actualUri.getHost();
         assertEquals("scheme", "https", actualUri.getScheme());
         assertThat(actualUri.getHost().length(), greaterThan(20));
         assertEquals("port", -1, actualUri.getPort());
-        uris = CsrfProtectionFilter.parseAllowedReferers("MUST_BE_CONFIGURED");
+        uris = CsrfProtectionRefererFilter.parseAllowedReferers("MUST_BE_CONFIGURED");
         assertEquals(1, uris.size());
         assertNotEquals(firstHost, uris.get(0).getHost());
     }
@@ -325,8 +325,8 @@ public class CsrfProtectionFilterTest {
         // this might seem redundant considering all the tests below, but letting sites
         // with an empty referer through is a common mistake in referer checking, because
         // lots of browser or proxies will strip this info out, over privacy concerns.
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://somewhere.com");
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, null));
+        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers("http://somewhere.com");
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, null));
     }
 
     @Test
@@ -334,142 +334,142 @@ public class CsrfProtectionFilterTest {
         // this might seem redundant considering all the tests below, but letting sites
         // with an empty referer through is a common mistake in referer checking, because
         // lots of browser or proxies will strip this info out, over privacy concerns.
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://somewhere.com");
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, ""));
+        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers("http://somewhere.com");
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, ""));
     }
 
     @Test
     public void testChecksScheme() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my-site.com:45");
-        assertTrue(CsrfProtectionFilter.isAllowedUri(uris, "http://my-site.com:45"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "https://my-site.com:45"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "my-site.com:45"));
+        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers("http://my-site.com:45");
+        assertTrue(CsrfProtectionRefererFilter.isAllowedUri(uris, "http://my-site.com:45"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "https://my-site.com:45"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "my-site.com:45"));
     }
 
     @Test
     public void testChecksScheme2() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://my-site.com:45");
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "http://my-site.com:45"));
-        assertTrue(CsrfProtectionFilter.isAllowedUri(uris, "https://my-site.com:45"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "my-site.com:45"));
+        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers("https://my-site.com:45");
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "http://my-site.com:45"));
+        assertTrue(CsrfProtectionRefererFilter.isAllowedUri(uris, "https://my-site.com:45"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "my-site.com:45"));
     }
 
     @Test
     public void testChecksHost() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my-site.com:45");
-        assertTrue(CsrfProtectionFilter.isAllowedUri(uris, "http://my-site.com:45"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "http://mysite.com:45"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "http://my-site:45"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "http://my-site.com.elsewhere.com:45"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "http://site.com:45"));
+        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers("http://my-site.com:45");
+        assertTrue(CsrfProtectionRefererFilter.isAllowedUri(uris, "http://my-site.com:45"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "http://mysite.com:45"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "http://my-site:45"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "http://my-site.com.elsewhere.com:45"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "http://site.com:45"));
     }
 
     @Test
     public void testChecksPort() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my-site.com:45");
-        assertTrue(CsrfProtectionFilter.isAllowedUri(uris, "http://my-site.com:45"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "http://my-site.com:450"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "http://my-site.com:145"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "http://my-site.com"));
+        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers("http://my-site.com:45");
+        assertTrue(CsrfProtectionRefererFilter.isAllowedUri(uris, "http://my-site.com:45"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "http://my-site.com:450"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "http://my-site.com:145"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "http://my-site.com"));
     }
 
     @Test
     public void testChecksDefaultPort() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my-site.com:80");
-        assertTrue(CsrfProtectionFilter.isAllowedUri(uris, "http://my-site.com:80"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "http://my-site.com"));
+        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers("http://my-site.com:80");
+        assertTrue(CsrfProtectionRefererFilter.isAllowedUri(uris, "http://my-site.com:80"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "http://my-site.com"));
     }
 
     @Test
     public void testChecksDefaultPort2() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my-site.com");
-        assertTrue(CsrfProtectionFilter.isAllowedUri(uris, "http://my-site.com"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "http://my-site.com:80"));
+        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers("http://my-site.com");
+        assertTrue(CsrfProtectionRefererFilter.isAllowedUri(uris, "http://my-site.com"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "http://my-site.com:80"));
     }
 
     @Test
     public void testCheckUuidUri() {
         String uuid = UUID.randomUUID().toString();
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://" + uuid + ".com");
-        assertTrue(CsrfProtectionFilter.isAllowedUri(uris, "https://" + uuid + ".com"));
+        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers("https://" + uuid + ".com");
+        assertTrue(CsrfProtectionRefererFilter.isAllowedUri(uris, "https://" + uuid + ".com"));
     }
 
     @Test
     public void testChecksIPGlobal() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://54.221.210.62");
-        assertTrue(CsrfProtectionFilter.isAllowedUri(uris, "https://54.221.210.62"));
+        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers("https://54.221.210.62");
+        assertTrue(CsrfProtectionRefererFilter.isAllowedUri(uris, "https://54.221.210.62"));
     }
 
     @Test
     public void testChecksIPV6GlobalWithPort() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:4322");
-        assertTrue(CsrfProtectionFilter.isAllowedUri(uris, "https://[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:4322"));
+        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers("https://[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:4322");
+        assertTrue(CsrfProtectionRefererFilter.isAllowedUri(uris, "https://[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:4322"));
     }
 
     @Test
     public void testChecksIPV6VsIPV4() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://[::ffff:c000:0280]");
-        assertTrue(CsrfProtectionFilter.isAllowedUri(uris, "https://[::ffff:c000:0280]"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "https://192.0.2.128"));
+        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers("https://[::ffff:c000:0280]");
+        assertTrue(CsrfProtectionRefererFilter.isAllowedUri(uris, "https://[::ffff:c000:0280]"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "https://192.0.2.128"));
     }
 
     @Test
     public void testChecksIPV4VsIPV6() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://192.0.2.128");
-        assertTrue(CsrfProtectionFilter.isAllowedUri(uris, "https://192.0.2.128"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "https://[::ffff:c000:0280]"));
+        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers("https://192.0.2.128");
+        assertTrue(CsrfProtectionRefererFilter.isAllowedUri(uris, "https://192.0.2.128"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "https://[::ffff:c000:0280]"));
     }
 
     @Test
     public void testChecksIPV4VsLocalhost() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://127.0.0.1");
-        assertTrue(CsrfProtectionFilter.isAllowedUri(uris, "https://127.0.0.1"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "https://localhost"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "https://[::1]"));
+        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers("https://127.0.0.1");
+        assertTrue(CsrfProtectionRefererFilter.isAllowedUri(uris, "https://127.0.0.1"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "https://localhost"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "https://[::1]"));
     }
 
     @Test
     public void testChecksIPV6VsLocalhost() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://[::1]");
-        assertTrue(CsrfProtectionFilter.isAllowedUri(uris, "https://[::1]"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "https://127.0.0.1"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "https://localhost"));
+        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers("https://[::1]");
+        assertTrue(CsrfProtectionRefererFilter.isAllowedUri(uris, "https://[::1]"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "https://127.0.0.1"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "https://localhost"));
     }
 
     @Test
     public void testChecksIgnoresPath() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my-site.com");
-        assertTrue(CsrfProtectionFilter.isAllowedUri(uris, "http://my-site.com/somewhere/specific"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "http://not-my-site.com/my-site.com"));
+        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers("http://my-site.com");
+        assertTrue(CsrfProtectionRefererFilter.isAllowedUri(uris, "http://my-site.com/somewhere/specific"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "http://not-my-site.com/my-site.com"));
     }
 
     @Test
     public void testChecksIgnoresQuery() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my-site.com");
-        assertTrue(CsrfProtectionFilter.isAllowedUri(uris, "http://my-site.com/?q=somewhere-specific"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "http://not-my-site.com?q=my-site.com"));
+        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers("http://my-site.com");
+        assertTrue(CsrfProtectionRefererFilter.isAllowedUri(uris, "http://my-site.com/?q=somewhere-specific"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "http://not-my-site.com?q=my-site.com"));
     }
 
     @Test
     public void testChecksIgnoresFragment() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my-site.com");
-        assertTrue(CsrfProtectionFilter.isAllowedUri(uris, "http://my-site.com/#somewhere-specific"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "http://not-my-site.com/#my-site.com"));
+        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers("http://my-site.com");
+        assertTrue(CsrfProtectionRefererFilter.isAllowedUri(uris, "http://my-site.com/#somewhere-specific"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "http://not-my-site.com/#my-site.com"));
     }
 
 
     @Test
     public void testChecksAgainstMultipleAllowed() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my-site.com,https://other-site.com:48");
-        assertTrue(CsrfProtectionFilter.isAllowedUri(uris, "http://my-site.com"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "https://my-site.com"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "http://my-site.com:48"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "http://other-site.com"));
+        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers("http://my-site.com,https://other-site.com:48");
+        assertTrue(CsrfProtectionRefererFilter.isAllowedUri(uris, "http://my-site.com"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "https://my-site.com"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "http://my-site.com:48"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "http://other-site.com"));
 
-        assertTrue(CsrfProtectionFilter.isAllowedUri(uris, "https://other-site.com:48"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "https://other-site.com"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "https://my-site.com:48"));
-        assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "http://other-site.com:48"));
+        assertTrue(CsrfProtectionRefererFilter.isAllowedUri(uris, "https://other-site.com:48"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "https://other-site.com"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "https://my-site.com:48"));
+        assertFalse(CsrfProtectionRefererFilter.isAllowedUri(uris, "http://other-site.com:48"));
     }
 
 }

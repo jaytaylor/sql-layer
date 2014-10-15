@@ -353,9 +353,9 @@ public final class HttpConductorImpl implements HttpConductor, Service {
             case NONE:
                 break;
             case REFERER:
-                FilterRegistration reg = handler.getServletContext().addFilter("CSRFFilter", CsrfProtectionFilter.class);
+                FilterRegistration reg = handler.getServletContext().addFilter("CSRFFilter", CsrfProtectionRefererFilter.class);
                 reg.addMappingForServletNames(null, false, "*");
-                reg.setInitParameter(CsrfProtectionFilter.ALLOWED_REFERERS_PARAM,
+                reg.setInitParameter(CsrfProtectionRefererFilter.ALLOWED_REFERERS_PARAM,
                         configurationService.getProperty(CONFIG_CSRF_ALLOWED_REFERERS));
                 break;
             default:
