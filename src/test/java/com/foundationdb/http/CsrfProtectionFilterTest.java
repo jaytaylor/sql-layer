@@ -23,8 +23,10 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -71,9 +73,6 @@ public class CsrfProtectionFilterTest {
         assertEquals(1, uris.size());
         assertUri("http", "my-site.com", 45, uris.get(0));
     }
-
-    // TODO what about localhost or local ips -- local ips could be a real threat, if you get onto a wifi or something
-    // like that, perhaps we should pervent or warn or require an additional config
 
     @Test
     public void testParseThreeAllowedReferers() {
@@ -218,6 +217,18 @@ public class CsrfProtectionFilterTest {
     }
 
     @Test
+    public void testHostnameRequiredHttp() {
+        // I don't know what they would be thinking
+        assertIllegalAllowedReferers("http://");
+    }
+
+    @Test
+    public void testHostnameRequiredHttps() {
+        // I don't know what they would be thinking
+        assertIllegalAllowedReferers("http://");
+    }
+
+    @Test
     public void testHostnameRequired2() {
         assertIllegalAllowedReferers(".");
     }
@@ -233,8 +244,25 @@ public class CsrfProtectionFilterTest {
     }
 
     @Test
-    public void testMustBeConfigured() {
-        assertIllegalAllowedReferers("MUST_BE_CONFIGURED");
+    public void testAutoConfigure() {
+        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("MUST_BE_CONFIGURED");
+        assertEquals(1, uris.size());
+        URI actualUri = uris.get(0);
+        String firstHost =  actualUri.getHost();
+        assertEquals("scheme", "https", actualUri.getScheme());
+        assertThat(actualUri.getHost().length(), greaterThan(20));
+        assertEquals("port", -1, actualUri.getPort());
+        uris = CsrfProtectionFilter.parseAllowedReferers("MUST_BE_CONFIGURED");
+        assertEquals(1, uris.size());
+        assertNotEquals(firstHost, uris.get(0).getHost());
+    }
+
+    @Test
+    public void testEncodedCharacters() {
+        // My understanding of the URI spec allows % encoded characters in the host name
+        // but URI refuses to parse them. For now work under the assumption that host's
+        // do not have weird characters.
+        assertIllegalAllowedReferers("https://here%20is%20my%2Asweet%20uri.com");
     }
 
     @Test
@@ -243,6 +271,79 @@ public class CsrfProtectionFilterTest {
         List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://" + uuid + ".com");
         assertEquals(1, uris.size());
         assertUri("https", uuid + ".com", -1, uris.get(0));
+    }
+
+    @Test
+    public void testLocalhost() {
+        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://localhost");
+        assertEquals(1, uris.size());
+        assertUri("https", "localhost", -1, uris.get(0));
+    }
+
+    @Test
+    public void testLocalhostWithPort() {
+        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://localhost:4567");
+        assertEquals(1, uris.size());
+        assertUri("http", "localhost", 4567, uris.get(0));
+    }
+
+    @Test
+    public void testIPLocalhost() {
+        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://127.0.0.1");
+        assertEquals(1, uris.size());
+        assertUri("https", "127.0.0.1", -1, uris.get(0));
+    }
+
+    @Test
+    public void testIPLocal192() {
+        // RFC-1918: Private Address Space: 192.168.0.0     -   192.168.255.255 (192.168/16 prefix)
+        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://192.168.1.100:9342");
+        assertEquals(1, uris.size());
+        assertUri("http", "192.168.1.100", 9342, uris.get(0));
+    }
+
+    @Test
+    public void testIPLocal10() {
+        // RFC-1918: Private Address Space: 10.0.0.0        -   10.255.255.255  (10/8 prefix)
+        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://10.3.174.28:80");
+        assertEquals(1, uris.size());
+        assertUri("http", "10.3.174.28", 80, uris.get(0));
+    }
+
+    @Test
+    public void testIPLocal172() {
+        // RFC-1918: Private Address Space: 172.16.0.0      -   172.31.255.255  (172.16/12 prefix)
+        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://172.16.38.254");
+        assertEquals(1, uris.size());
+        assertUri("http", "172.16.38.254", -1, uris.get(0));
+    }
+
+    @Test
+    public void testIPGlobal() {
+        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://54.221.210.62");
+        assertEquals(1, uris.size());
+        assertUri("https", "54.221.210.62", -1, uris.get(0));
+    }
+
+    @Test
+    public void testIPV6Localhost() {
+        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://[::1]");
+        assertEquals(1, uris.size());
+        assertUri("https", "[::1]", -1, uris.get(0));
+    }
+
+    @Test
+    public void testIPV6Global() {
+        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://[2001:0db8:85a3:0000:0000:8a2e:0370:7334]");
+        assertEquals(1, uris.size());
+        assertUri("https", "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]", -1, uris.get(0));
+    }
+
+    @Test
+    public void testIPV6GlobalWithPort() {
+        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:4322");
+        assertEquals(1, uris.size());
+        assertUri("https", "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]", 4322, uris.get(0));
     }
 
     @Test

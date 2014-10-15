@@ -32,7 +32,9 @@ import javax.ws.rs.Priorities;
 import javax.ws.rs.ext.Provider;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -83,7 +85,11 @@ public class CsrfProtectionFilter implements javax.servlet.Filter {
             throw new IllegalAllowedReferersException("must not be null or empty", allowedReferersConfigProperty);
         }
         if (allowedReferersConfigProperty.equals("MUST_BE_CONFIGURED")) {
-            throw IllegalAllowedReferersException.mustBeConfigured();
+            logger.warn("CSRF allowed referers config property should have been set by the installers, using random UUID");
+            // I was going to use the URI constructor that takes a bunch of parameters here, but that just creates a
+            // string and passes it to the URI constructor that takes a string. So, use URI.create because we know this
+            // is a valid uri.
+            return Arrays.asList(URI.create("https://" + UUID.randomUUID().toString() + ".com"));
         }
         String[] split = allowedReferersConfigProperty.split("\\,");
         List<URI> allowedReferers = new ArrayList<>();
@@ -96,8 +102,8 @@ public class CsrfProtectionFilter implements javax.servlet.Filter {
                 }
                 URI uri;
                 try {
-                    uri = URI.create(allowedReferer);
-                } catch (NullPointerException | IllegalArgumentException e) {
+                    uri = new URI(allowedReferer);
+                } catch (NullPointerException | IllegalArgumentException | URISyntaxException e) {
                     throw new IllegalAllowedReferersException("includes invalid referer", allowedReferer, e);
                 }
                 if (uri == null) {
@@ -116,7 +122,7 @@ public class CsrfProtectionFilter implements javax.servlet.Filter {
                     throw new IllegalAllowedReferersException("must be http or https", allowedReferer);
                 }
                 if (uri.getAuthority() == null || uri.getHost() == null) {
-                    throw new IllegalAllowedReferersException("must be hierchical (e.g. http://example.com)", allowedReferer);
+                    throw new IllegalAllowedReferersException("must be hierarchical (e.g. http://example.com)", allowedReferer);
                 }
                 allowedReferers.add(uri);
             }
