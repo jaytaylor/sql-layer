@@ -16,10 +16,12 @@
  */
 package com.foundationdb.server.error;
 
+import com.foundationdb.sql.parser.AggregateNode;
 import com.foundationdb.sql.parser.ValueNode;
 
 public class NoAggregateWithGroupByException extends InvalidOperationException {
     public NoAggregateWithGroupByException (ValueNode column) {
-        super(ErrorCode.NO_AGGREGATE_WITH_GROUP_BY, column.getColumnName());
+        super(ErrorCode.NO_AGGREGATE_WITH_GROUP_BY, column instanceof AggregateNode ? ((AggregateNode)column).getAggregateName() 
+                                                                                    : column.getColumnName());
     }
 }
