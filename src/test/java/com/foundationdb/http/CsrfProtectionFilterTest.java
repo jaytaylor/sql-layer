@@ -24,8 +24,10 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.matchers.JUnitMatchers.containsString;
 
 public class CsrfProtectionFilterTest {
 
@@ -37,15 +39,15 @@ public class CsrfProtectionFilterTest {
         assertEquals("port", port, actualUri.getPort());
     }
 
-    private void assertIllegalAllowedReferers(String allowedReferers) {
+    private Exception assertIllegalAllowedReferers(String allowedReferers) {
         try {
             List<URI> uris = CsrfProtectionFilter.parseAllowedReferers(allowedReferers);
             fail("Expected an exception to be thrown; " + uris);
         } catch (IllegalArgumentException e) {
-            /* passing */
+            return e;
         }
+        throw new RuntimeException("it can't actually get here, but the compiler's not smart enough to figure that out.");
     }
-
 
     @Test
     public void testParseNullAllowedReferers() {
@@ -71,11 +73,6 @@ public class CsrfProtectionFilterTest {
 
     // TODO what about localhost or local ips -- local ips could be a real threat, if you get onto a wifi or something
     // like that, perhaps we should pervent or warn or require an additional config
-    // TODO what about null scheme or null port
-    // TODO what about paths
-    // TODO are there other parts of the URI?
-
-    // TODO null schemes, hosts, ports, strings
 
     @Test
     public void testParseThreeAllowedReferers() {
@@ -117,6 +114,12 @@ public class CsrfProtectionFilterTest {
     }
 
     @Test
+    public void testErrorContainsBadURI() {
+        Exception exception = assertIllegalAllowedReferers("http://site1.com,not-http.com,https://site2.com");
+        assertThat(exception.getMessage(), containsString("not-http.com"));
+    }
+
+    @Test
     public void testLooksLikeARegex2() {
         assertIllegalAllowedReferers("http://my.*site.com");
     }
@@ -131,7 +134,13 @@ public class CsrfProtectionFilterTest {
     public void testBlankPathOk() {
         List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my-site.com/");
         assertEquals("uri.size()", 1, uris.size());
-        assertUri("http","my-site.com",-1, uris.get(0));
+        assertUri("http", "my-site.com", -1, uris.get(0));
+    }
+
+    @Test
+    public void testFragmentProhibited() {
+        // We don't check the fragments on the referer, so don't let it be configured as such
+        assertIllegalAllowedReferers("http://my-site.subdomain.com#earth");
     }
 
     @Test
@@ -159,6 +168,49 @@ public class CsrfProtectionFilterTest {
     }
 
     @Test
+    public void testMustBeHttpOrHttpsFile() {
+        assertIllegalAllowedReferers("file:///~/calendar");
+    }
+
+    @Test
+    public void testMustBeHttpOrHttpsRandom() {
+        assertIllegalAllowedReferers("mynewscheme://somewhere.com");
+    }
+
+    @Test
+    public void testCanBeHttp() {
+        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my-site.com:45");
+        assertEquals(1, uris.size());
+        assertUri("http", "my-site.com", 45, uris.get(0));
+    }
+
+    @Test
+    public void testCanBeHttps() {
+        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://my-site.com:45");
+        assertEquals(1, uris.size());
+        assertUri("https", "my-site.com", 45, uris.get(0));
+    }
+
+    @Test
+    public void testPortOptionalThere() {
+        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://my-site.com:445");
+        assertEquals(1, uris.size());
+        assertUri("https", "my-site.com", 445, uris.get(0));
+    }
+
+    @Test
+    public void testPortOptionalNotThere() {
+        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://my-site.com");
+        assertEquals(1, uris.size());
+        assertUri("https", "my-site.com", -1, uris.get(0));
+    }
+
+    @Test
+    public void testMustBeHierarchical() {
+        assertIllegalAllowedReferers("http:my-site.com");
+    }
+
+    @Test
     public void testHostnameRequired() {
         // I don't know what they would be thinking
         assertIllegalAllowedReferers("/boo");
@@ -166,13 +218,16 @@ public class CsrfProtectionFilterTest {
 
     @Test
     public void testHostnameRequired2() {
-        // I don't know what they would be thinking
         assertIllegalAllowedReferers(".");
     }
 
     @Test
+    public void testHostnameRequired3() {
+        assertIllegalAllowedReferers("boo");
+    }
+
+    @Test
     public void testSchemeRequired() {
-        // I don't know what they would be thinking
         assertIllegalAllowedReferers("foundationdb.com");
     }
 

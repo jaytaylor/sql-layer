@@ -79,7 +79,7 @@ public class CsrfProtectionFilter implements javax.servlet.Filter {
 
     public static List<URI> parseAllowedReferers(String allowedReferersConfigProperty) {
         if (allowedReferersConfigProperty == null || allowedReferersConfigProperty.isEmpty()) {
-            throw new IllegalArgumentException("Invalid List of allowed csrf referers must not be null or empty");
+            throw new IllegalAllowedReferersException("must not be null or empty", allowedReferersConfigProperty);
         }
         String[] split = allowedReferersConfigProperty.split("\\,");
         List<URI> allowedReferers = new ArrayList<>();
@@ -88,31 +88,38 @@ public class CsrfProtectionFilter implements javax.servlet.Filter {
                 continue;
             } else {
                 if (allowedReferer.contains("*")) {
-                    throw new IllegalArgumentException("Allowed referers do not support regexs (*): " + allowedReferer);
+                    throw new IllegalAllowedReferersException("do not support regexs (*)", allowedReferer);
                 }
                 URI uri;
                 try {
                     uri = URI.create(allowedReferer);
                 } catch (NullPointerException | IllegalArgumentException e) {
-                    throw new IllegalArgumentException("Invalid URI in list of csrf referers: " + allowedReferer, e);
+                    throw new IllegalAllowedReferersException("includes invalid referer", allowedReferer, e);
                 }
                 if (uri == null) {
-                    throw new IllegalArgumentException("Invalid URI in list of csrf referers: " + allowedReferer);
+                    throw new IllegalAllowedReferersException("must not be null", allowedReferer);
                 }
                 if (uri.getUserInfo() != null) {
-                    throw new IllegalArgumentException("Allowed referers do not support user information: " + allowedReferer);
+                    throw new IllegalAllowedReferersException("must not contain user information", allowedReferer);
                 }
                 if (uri.getPath() != null && !uri.getPath().isEmpty() && !uri.getPath().equals("/")) {
-                    throw new IllegalArgumentException("Allowed referers do not support restricting by path: " + allowedReferer);
+                    throw new IllegalAllowedReferersException("do not support restricting by path", allowedReferer);
                 }
-                if (uri.getScheme() != null && uri.getScheme().equals("about")) {
-                    throw new IllegalArgumentException("Allowed referers must not use the about scheme: " + allowedReferer);
+                if (uri.getFragment() != null) {
+                    throw new IllegalAllowedReferersException("do not support restricting by fragment", allowedReferer);
+                }
+                if (uri.getScheme() == null || (!uri.getScheme().equals("http") && !uri.getScheme().equals("https"))) {
+                    throw new IllegalAllowedReferersException("must be http or https", allowedReferer);
+                }
+                if (uri.getAuthority() == null || uri.getHost() == null) {
+                    throw new IllegalAllowedReferersException("must be hierchical (e.g. http://example.com)", allowedReferer);
                 }
                 allowedReferers.add(uri);
             }
         }
         if (allowedReferers.isEmpty()) {
-            throw new IllegalArgumentException("Invalid List of allowed csrf referers must not be null or empty");
+            throw new IllegalAllowedReferersException("Invalid List of allowed csrf referers must not be null or empty",
+                    allowedReferersConfigProperty);
         }
         return allowedReferers;
     }
@@ -130,5 +137,14 @@ public class CsrfProtectionFilter implements javax.servlet.Filter {
             }
         }
         return false;
+    }
+
+    public static class IllegalAllowedReferersException extends IllegalArgumentException {
+        public IllegalAllowedReferersException(String message, String referer) {
+            super("Csrf allowed referers " + message + ": " + referer);
+        }
+        public IllegalAllowedReferersException(String message, String referer, Exception cause) {
+            super("Csrf allowed referers " + message + ": " + referer, cause);
+        }
     }
 }
