@@ -120,6 +120,8 @@ public class RestServiceFilesIT extends ITBase {
     protected Map<String,String> startupConfigProperties() {
         Map<String,String> config = new HashMap<>(super.startupConfigProperties());
         config.put("fdbsql.rest.resource", "entity,fulltext,procedurecall,sql,security,version,direct,view");
+
+        config.put("fdbsql.http.csrf_protection.allowed_referers", "https://somewhere.com");
         if ( caseParams.properties != null) {
             for (String line : caseParams.properties.split("\\r?\\n")) {
                 String[] property = line.split("\\t");
@@ -219,6 +221,7 @@ public class RestServiceFilesIT extends ITBase {
     public void checkRequest() throws Exception {
         if (caseParams.checkURI != null && caseParams.checkExpected != null) {
             HttpExchange httpConn = openConnection(getRestURL(caseParams.checkURI.trim()), "GET");
+            httpConn.setRequestHeader("Referer", "https://somewhere.com");
             httpClient.send(httpConn);
             httpConn.waitForDone();
             try {
@@ -247,6 +250,7 @@ public class RestServiceFilesIT extends ITBase {
         HttpExchange conn = openConnection(getRestURL(caseParams.requestURI), caseParams.requestMethod);
         try {
 
+            conn.setRequestHeader("Referer", "https://somewhere.com");
             // Request
             if (caseParams.requestMethod.equals("POST") || 
                 caseParams.requestMethod.equals("PUT") || 
