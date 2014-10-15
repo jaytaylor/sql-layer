@@ -21,6 +21,7 @@ import org.junit.Test;
 
 import java.net.URI;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -232,6 +233,19 @@ public class CsrfProtectionFilterTest {
     }
 
     @Test
+    public void testMustBeConfigured() {
+        assertIllegalAllowedReferers("MUST_BE_CONFIGURED");
+    }
+
+    @Test
+    public void testUuidUri() {
+        String uuid = UUID.randomUUID().toString();
+        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://" + uuid + ".com");
+        assertEquals(1, uris.size());
+        assertUri("https", uuid + ".com", -1, uris.get(0));
+    }
+
+    @Test
     public void testNullReferer() {
         // this might seem redundant considering all the tests below, but letting sites
         // with an empty referer through is a common mistake in referer checking, because
@@ -296,6 +310,13 @@ public class CsrfProtectionFilterTest {
         List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my-site.com");
         assertTrue(CsrfProtectionFilter.isAllowedUri(uris, "http://my-site.com"));
         assertFalse(CsrfProtectionFilter.isAllowedUri(uris, "http://my-site.com:80"));
+    }
+
+    @Test
+    public void testCheckUuidUri() {
+        String uuid = UUID.randomUUID().toString();
+        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://" + uuid + ".com");
+        assertTrue(CsrfProtectionFilter.isAllowedUri(uris, "https://" + uuid + ".com"));
     }
 
 }
