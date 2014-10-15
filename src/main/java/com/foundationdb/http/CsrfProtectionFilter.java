@@ -150,9 +150,6 @@ public class CsrfProtectionFilter implements javax.servlet.Filter {
     }
 
     public static class IllegalAllowedReferersException extends IllegalArgumentException {
-        private IllegalAllowedReferersException(String message) {
-            super(message);
-        }
         public IllegalAllowedReferersException(String message, String referer) {
             super("CSRF allowed referers " + message + ": " + referer);
         }
@@ -160,10 +157,5 @@ public class CsrfProtectionFilter implements javax.servlet.Filter {
             super("CSRF allowed referers " + message + ": " + referer, cause);
         }
 
-        public static IllegalAllowedReferersException mustBeConfigured() {
-            return new IllegalAllowedReferersException(
-                    "CSRF allowed referers config property should have been set by the installers, set it to: http://"
-                            + UUID.randomUUID().toString() + ".com");
-        }
     }
 }
