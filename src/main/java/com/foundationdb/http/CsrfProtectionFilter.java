@@ -63,7 +63,9 @@ public class CsrfProtectionFilter implements javax.servlet.Filter {
         if (servletRequest instanceof HttpServletRequest) {
             HttpServletRequest request = (HttpServletRequest) servletRequest;
             String referer = request.getHeader(REFERER_HEADER);
-            if (!isAllowedUri(allowedReferers, referer)) {
+            if (isAllowedUri(allowedReferers, referer)) {
+                filterChain.doFilter(servletRequest,  servletResponse);
+            } else {
                 logger.debug("CSRF attempt blocked due to invalid referer uri; Request:{} Referer:{}",
                         request.getRequestURI(),
                         referer);
