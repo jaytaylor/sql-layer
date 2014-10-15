@@ -36,6 +36,8 @@ public class CsrfProtectionFilterTest {
         assertEquals("host", host, actualUri.getHost());
         assertEquals("port", port, actualUri.getPort());
     }
+
+
     @Test
     public void testParseNullAllowedReferers() {
         try {
@@ -156,6 +158,7 @@ public class CsrfProtectionFilterTest {
     @Test
     public void testNoUserAllowed() {
         // I don't know what they would be thinking
+        // Also, according to the spec, the referer is not supposed to include user info or fragment components
         try {
             List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://user@my-site.com");
             fail("Expected an exception to be thrown; " + uris);
@@ -167,8 +170,24 @@ public class CsrfProtectionFilterTest {
     @Test
     public void testNoAuthAllowed() {
         // I don't know what they would be thinking
+        // Also, according to the spec, the referer is not supposed to include user info or fragment components
         try {
             List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://user:passw@my-site.com");
+            fail("Expected an exception to be thrown; " + uris);
+        } catch (IllegalArgumentException e) {
+            /* passing */
+        }
+    }
+
+    @Test
+    public void testAboutBlankProhibited() {
+        // From the spec:
+        //     If the target URI was obtained from a source that does not have its
+        //     own URI (e.g., input from the user keyboard, or an entry within the
+        //     user's bookmarks/favorites), the user agent MUST either exclude the
+        //     Referer field or send it with a value of "about:blank".
+        try {
+            List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("about:blank");
             fail("Expected an exception to be thrown; " + uris);
         } catch (IllegalArgumentException e) {
             /* passing */

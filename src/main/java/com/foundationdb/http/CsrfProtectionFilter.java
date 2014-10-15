@@ -105,6 +105,9 @@ public class CsrfProtectionFilter implements javax.servlet.Filter {
                 if (uri.getPath() != null && !uri.getPath().isEmpty() && !uri.getPath().equals("/")) {
                     throw new IllegalArgumentException("Allowed referers do not support restricting by path: " + allowedReferer);
                 }
+                if (uri.getScheme() != null && uri.getScheme().equals("about")) {
+                    throw new IllegalArgumentException("Allowed referers must not use the about scheme: " + allowedReferer);
+                }
                 allowedReferers.add(uri);
             }
         }
