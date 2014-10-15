@@ -42,6 +42,12 @@ public class CsrfProtectionFilterTest {
         assertEquals("port", port, actualUri.getPort());
     }
 
+    private void assertSingleUri(String referer, String scheme, String host, int port) {
+        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers(referer);
+        assertEquals(1, uris.size());
+        assertUri(scheme, host, port, uris.get(0));
+    }
+
     private Exception assertIllegalAllowedReferers(String allowedReferers) {
         try {
             List<URI> uris = CsrfProtectionFilter.parseAllowedReferers(allowedReferers);
@@ -69,9 +75,7 @@ public class CsrfProtectionFilterTest {
 
     @Test
     public void testParseOneAllowedReferers() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my-site.com:45");
-        assertEquals(1, uris.size());
-        assertUri("http", "my-site.com", 45, uris.get(0));
+        assertSingleUri("http://my-site.com:45", "http", "my-site.com", 45);
     }
 
     @Test
@@ -132,9 +136,7 @@ public class CsrfProtectionFilterTest {
 
     @Test
     public void testBlankPathOk() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my-site.com/");
-        assertEquals("uri.size()", 1, uris.size());
-        assertUri("http", "my-site.com", -1, uris.get(0));
+        assertSingleUri("http://my-site.com/", "http", "my-site.com", -1);
     }
 
     @Test
@@ -179,30 +181,22 @@ public class CsrfProtectionFilterTest {
 
     @Test
     public void testCanBeHttp() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://my-site.com:45");
-        assertEquals(1, uris.size());
-        assertUri("http", "my-site.com", 45, uris.get(0));
+        assertSingleUri("http://my-site.com:45", "http", "my-site.com", 45);
     }
 
     @Test
     public void testCanBeHttps() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://my-site.com:45");
-        assertEquals(1, uris.size());
-        assertUri("https", "my-site.com", 45, uris.get(0));
+        assertSingleUri("https://my-site.com:45", "https", "my-site.com", 45);
     }
 
     @Test
     public void testPortOptionalThere() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://my-site.com:445");
-        assertEquals(1, uris.size());
-        assertUri("https", "my-site.com", 445, uris.get(0));
+        assertSingleUri("https://my-site.com:445", "https", "my-site.com", 445);
     }
 
     @Test
     public void testPortOptionalNotThere() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://my-site.com");
-        assertEquals(1, uris.size());
-        assertUri("https", "my-site.com", -1, uris.get(0));
+        assertSingleUri("https://my-site.com", "https", "my-site.com", -1);
     }
 
     @Test
@@ -268,82 +262,62 @@ public class CsrfProtectionFilterTest {
     @Test
     public void testUuidUri() {
         String uuid = UUID.randomUUID().toString();
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://" + uuid + ".com");
-        assertEquals(1, uris.size());
-        assertUri("https", uuid + ".com", -1, uris.get(0));
+        assertSingleUri("https://" + uuid + ".com", "https", uuid + ".com", -1);
     }
 
     @Test
     public void testLocalhost() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://localhost");
-        assertEquals(1, uris.size());
-        assertUri("https", "localhost", -1, uris.get(0));
+        assertSingleUri("https://localhost", "https", "localhost", -1);
     }
 
     @Test
     public void testLocalhostWithPort() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://localhost:4567");
-        assertEquals(1, uris.size());
-        assertUri("http", "localhost", 4567, uris.get(0));
+        assertSingleUri("http://localhost:4567", "http", "localhost", 4567);
     }
 
     @Test
     public void testIPLocalhost() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://127.0.0.1");
-        assertEquals(1, uris.size());
-        assertUri("https", "127.0.0.1", -1, uris.get(0));
+        assertSingleUri("https://127.0.0.1", "https", "127.0.0.1", -1);
     }
 
     @Test
     public void testIPLocal192() {
         // RFC-1918: Private Address Space: 192.168.0.0     -   192.168.255.255 (192.168/16 prefix)
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://192.168.1.100:9342");
-        assertEquals(1, uris.size());
-        assertUri("http", "192.168.1.100", 9342, uris.get(0));
+        assertSingleUri("http://192.168.1.100:9342", "http", "192.168.1.100", 9342);
     }
 
     @Test
     public void testIPLocal10() {
         // RFC-1918: Private Address Space: 10.0.0.0        -   10.255.255.255  (10/8 prefix)
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://10.3.174.28:80");
-        assertEquals(1, uris.size());
-        assertUri("http", "10.3.174.28", 80, uris.get(0));
+        assertSingleUri("http://10.3.174.28:80", "http", "10.3.174.28", 80);
     }
 
     @Test
     public void testIPLocal172() {
         // RFC-1918: Private Address Space: 172.16.0.0      -   172.31.255.255  (172.16/12 prefix)
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("http://172.16.38.254");
-        assertEquals(1, uris.size());
-        assertUri("http", "172.16.38.254", -1, uris.get(0));
+        assertSingleUri("http://172.16.38.254", "http", "172.16.38.254", -1);
     }
 
     @Test
     public void testIPGlobal() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://54.221.210.62");
-        assertEquals(1, uris.size());
-        assertUri("https", "54.221.210.62", -1, uris.get(0));
+        assertSingleUri("https://54.221.210.62", "https", "54.221.210.62", -1);
     }
 
     @Test
     public void testIPV6Localhost() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://[::1]");
-        assertEquals(1, uris.size());
-        assertUri("https", "[::1]", -1, uris.get(0));
+        assertSingleUri("https://[::1]", "https", "[::1]", -1);
     }
 
     @Test
     public void testIPV6Global() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://[2001:0db8:85a3:0000:0000:8a2e:0370:7334]");
-        assertEquals(1, uris.size());
-        assertUri("https", "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]", -1, uris.get(0));
+        assertSingleUri("https://[2001:0db8:85a3:0000:0000:8a2e:0370:7334]",
+                "https", "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]", -1);
     }
 
     @Test
     public void testIPV6GlobalWithPort() {
-        List<URI> uris = CsrfProtectionFilter.parseAllowedReferers("https://[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:4322");
-        assertEquals(1, uris.size());
-        assertUri("https", "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]", 4322, uris.get(0));
+        assertSingleUri("https://[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:4322",
+                "https", "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]", 4322);
     }
 
     @Test
