@@ -27,7 +27,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CsrfProtectionWithAuthIT extends CrossOriginITBase
+public class CsrfProtectionWithAuthIT extends CsrfProtectionITBase
 {
     private static final String ROLE = "rest-user";
     private static final String USER = "u";
