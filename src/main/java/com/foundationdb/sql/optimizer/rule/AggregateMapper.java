@@ -185,9 +185,8 @@ public class AggregateMapper extends BaseRule
                 ColumnSource table = column.getTable();
                 if (table instanceof AggregateSource) {
                     List<AggregateFunctionExpression> aggregateFuncs = ((AggregateSource)table).getAggregates();
-                    if (aggregateFuncs.size() == 1) {
-                        return addAggregate(aggregateFuncs.get(0));
-                    }
+                    assert aggregateFuncs.size() == 1;
+                    return addAggregate(aggregateFuncs.get(0));
                 }
                 if (!aggregated.contains(table) &&
                     !boundElsewhere(table)) {
