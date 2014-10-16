@@ -70,8 +70,8 @@ infer_home_dir()
 
 infer_jar_file()
 {
-    local loc_dev="${FDBSQL_HOME}/target"
-    local loc_home="${FDBSQL_HOME}/fdb-sql-layer.jar"
+    local loc_dev="${FDBSQL_HOME}/fdb-sql-layer-core/target"
+    local loc_home="${FDBSQL_HOME}/fdb-sql-layer-core/fdb-sql-layer.jar"
     local value=""
 
     # Only infer if passed no argument
@@ -93,10 +93,35 @@ infer_jar_file()
     export JAR_FILE="$value"
 }
 
+infer_jar_rf_file()
+{
+    local loc_dev="${FDBSQL_HOME}/routine-firewall/target"
+    local loc_home="${FDBSQL_HOME}/routine-firewall/routine-firewall.jar"
+    local value=""
+
+    # Only infer if passed no argument
+    if [ -z "$1" ]; then
+        # Try dev first so you can develop *and* have a system package installed
+        if [ -d "$loc_dev" ]; then
+            value=$(ls "$loc_dev"/routine-firewall*.jar |grep -v -E '\-sources|\-tests')
+            if [ -z "$value" ]; then
+                echo_die "Developer directory detected but no jar found"
+            fi
+        elif [ -f "$loc_home" ]; then
+            value="$loc_home"
+        else
+            echo_die "Unknown jar location"
+        fi
+    else
+        value="$1"
+    fi
+    export JAR_RF_FILE="$value"
+}
+
 infer_dep_dir()
 {
-    local loc_dev="${FDBSQL_HOME}/target/dependency"
-    local loc_home="${FDBSQL_HOME}/server"
+    local loc_dev="${FDBSQL_HOME}/fdb-sql-layer-core/target/dependency"
+    local loc_home="${FDBSQL_HOME}/fdb-sql-layer/core/server"
     local value=""
 
     # Only infer if passed no argument
@@ -113,6 +138,25 @@ infer_dep_dir()
         value="$1"
     fi
     export DEP_DIR="$value"
+}
+
+infer_policy_file()
+{
+    local value="${FDBSQL_HOME}/sql-layer.policy"
+    if [ -n "$1" ]; then
+       value="$1"
+    fi
+    export POLICY_FILE="-Djava.security.policy=${value}"
+}
+
+SECURITYMAN="true"
+set_security_manager()
+{
+    local value="-Djava.security.manager"
+    if [ ${SECURITYMAN} = "false" ]; then
+        value=""
+    fi
+    export SEC_MAN="$value"
 }
 
 
@@ -158,9 +202,12 @@ launch_service()
     infer_jar_file "$6"
     infer_dep_dir "$7"
     FDBSQL_CONF=$8
+    infer_jar_rf_file 
+    set_security_manager 
+    infer_policy_file "$9"
 
     if [ -z "$FDBSQL_CONF" ]; then
-        FDBSQL_CONF="${FDBSQL_HOME}/conf"
+        FDBSQL_CONF="${FDBSQL_HOME}/fdb-sql-layer-core/conf"
     fi
 
     if [ -n "$pidpath" ]; then
@@ -178,9 +225,9 @@ launch_service()
     fdbsql_parms="$fdbsql_parms -Dfdbsql.home=$FDBSQL_HOME -Dfdbsql.config_dir=$FDBSQL_CONF"
     fdbsql_parms="$fdbsql_parms -Dlog4j.configuration=file:$FDBSQL_CONF/log4j.properties"
     fdbsql_parms="$fdbsql_parms $print_compilation $props"
-    fdbsql_parms="$fdbsql_parms -Djava.security.manager -Djava.security.policy=$FDBSQL_HOME/../sql-layer.policy"
+    fdbsql_parms="$fdbsql_parms $SEC_MAN $POLICY_FILE"
 
-    CLASSPATH=$JAR_FILE:$DEP_DIR/*:/Users/Sytze/GH/RoutineFirewall/target/routinefirewall.jar
+    CLASSPATH=$JAR_FILE:$JAR_RF_FILE:$DEP_DIR/*
     main_class="com.foundationdb.sql.Main"
     if [ -n "$mode" ]; then
         if [ "$mode" == "window" ]; then
@@ -210,7 +257,7 @@ launch_service()
 }
 
 # Parse any command line options.
-args=`getopt c:d:D:fghH:j:kp:qswv "$@"`
+args=`getopt c:d:D:fghH:j:kp:qswv:Mm: "$@"`
 eval set -- "$args"
 
 while true; do
@@ -250,6 +297,8 @@ while true; do
             echo "-H directory to use for home"
             echo "-j specify a jar file to use"
             echo "-k kill an existing SQL layer process"
+	    echo "-m specify a policy file to use"
+            echo "-M switch off the security manager"
             echo "-p specify a pid file"
             echo "-s profile using Solaris Studio"
             echo "-w start console window"
@@ -270,6 +319,14 @@ while true; do
             # they want to quickly kill a running process.
             pgrep -u `whoami` -f fdb-sql-layer | xargs kill -9
             exit 0
+        ;;
+	-m)
+            policyfile="$2"
+            shift 2
+        ;;
+        -M) 
+            SECURITYMAN="false"
+	    shift
         ;;
         -q)
             QUIET="yes"
@@ -301,7 +358,7 @@ while true; do
 done
 
 # Start up the service
-launch_service "$homedir" "$mode" "$properties" "$gui" "$pidfile" "$jarfile" "$depdir" "$conf"
+launch_service "$homedir" "$mode" "$properties" "$gui" "$pidfile" "$jarfile" "$depdir" "$conf" "$policyfile"
 
 exit $?
 

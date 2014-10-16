@@ -1,12 +1,12 @@
 /* Policy file granting limiting the permissions for routines */
 
-grant codeBase "file:/Users/Sytze/GH/sql-layer/fdb-sql-layer-core/target/-" {
+grant codeBase "file:${fdbsql.home}/fdb-sql-layer-core/target/-" {
   permission java.security.AllPermission;
 };
 
 grant codeBase "file:/Users/Sytze/GH/sql-layer/routine-firewall/target/*" {
 };
 
-grant codeBase "file:${HOME}/.m2/repository/-" {
+grant codeBase "file:${user.home}/.m2/repository/-" {
   permission java.security.AllPermission;
 };
