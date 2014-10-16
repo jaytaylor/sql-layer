@@ -4,7 +4,7 @@ grant codeBase "file:${fdbsql.home}/fdb-sql-layer-core/target/-" {
   permission java.security.AllPermission;
 };
 
-grant codeBase "file:/Users/Sytze/GH/sql-layer/routine-firewall/target/*" {
+grant codeBase "file:${fdbsql.home}/routine-firewall/target/*" {
 };
 
 grant codeBase "file:${user.home}/.m2/repository/-" {

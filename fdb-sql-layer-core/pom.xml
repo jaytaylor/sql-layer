@@ -29,8 +29,8 @@
   	    <groupId>routinefrwll.routinefrwll</groupId>
 	    <artifactId>routine-firewall</artifactId>
             <version>1.0-SNAPSHOT</version>
-            <scope>system</scope>
-	    <systemPath>/Users/Sytze/GH/sql-layer/routine-firewall/target/routine-firewall-1.0-SNAPSHOT.jar</systemPath>
+            <scope>provided</scope>
+	    <!--<systemPath>/Users/Sytze/GH/sql-layer/routine-firewall/target/routine-firewall-1.0-SNAPSHOT.jar</systemPath>i-->
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -199,6 +199,22 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>version/fdbsql_version.properties</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <excludes>
+                    <exclude>version/fdbsql_version.properties</exclude>
+                </excludes>
+            </resource>
+        </resources>
 	<plugins>
             <plugin>
                 <groupId>com.github.igor-petruk.protobuf</groupId>
@@ -268,7 +284,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
+                    <dotGitDirectory>${project.parent.basedir}/.git</dotGitDirectory>
                     <dateFormat>yyyy-MM-dd'T'HH:mm:ssXXX</dateFormat>
                     <generateGitPropertiesFile>false</generateGitPropertiesFile>
                     <failOnNoGitDirectory>false</failOnNoGitDirectory>
