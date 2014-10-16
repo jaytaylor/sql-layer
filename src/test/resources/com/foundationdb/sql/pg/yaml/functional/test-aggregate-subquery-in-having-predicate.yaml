@@ -75,6 +75,6 @@
 ---
 - Statement: insert into orders values (1024,'mar','c006','a06','p01',800,400.00);
 ---
-- Statement: SELECT cid,COUNT(*) FROM (SELECT cid,pid FROM orders WHERE pid IN (SELECT pid FROM products) GROUP BY pid,cid) as T GROUP BY cid HAVING COUNT(*) = (SELECT COUNT(*) FROM products);
+- Statement: SELECT cid FROM (SELECT cid,pid FROM orders WHERE pid IN (SELECT pid FROM products) GROUP BY pid,cid) as T GROUP BY cid HAVING COUNT(*) = (SELECT COUNT(*) FROM products);
 - output: [['c001']]
----
+...
