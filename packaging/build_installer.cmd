@@ -105,7 +105,7 @@ COPY bin\*.cmd target\isstage\layer\bin
 FOR %%f in (target\isstage\layer\conf\*) DO MOVE "%%f" "%%f.new"
 XCOPY fdb-sql-layer-core\target\fdb-sql-layer-*.jar target\isstage\layer\lib /EXCLUDE:target\xclude
 XCOPY fdb-sql-layer-core\target\dependency\* target\isstage\layer\lib\server
-XCOPY routine-firewall\target\routine-firewall*.jar target\isstage\lib\routine-firewall /EXCLUDE:target\xclude
+XCOPY routine-firewall\target\routine-firewall*.jar target\isstage\lib\routine-firewall\ /EXCLUDE:target\xclude
 COPY %TOP_DIR%\sql-layer.policy target\isstage\lib
 
 CD target\isstage\layer
