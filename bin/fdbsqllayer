@@ -297,7 +297,7 @@ while true; do
             echo "-H directory to use for home"
             echo "-j specify a jar file to use"
             echo "-k kill an existing SQL layer process"
-	    echo "-m specify a policy file to use"
+            echo "-m specify a policy file to use"
             echo "-M switch off the security manager"
             echo "-p specify a pid file"
             echo "-s profile using Solaris Studio"
@@ -326,7 +326,7 @@ while true; do
         ;;
         -M) 
             SECURITYMAN="false"
-	    shift
+            shift
         ;;
         -q)
             QUIET="yes"
