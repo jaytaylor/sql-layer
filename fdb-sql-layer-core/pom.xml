@@ -26,11 +26,10 @@
     
     <dependencies>
 	<dependency>
-  	    <groupId>routinefrwll.routinefrwll</groupId>
+  	    <groupId>com.foundationdb</groupId>
 	    <artifactId>routine-firewall</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>provided</scope>
-	    <!--<systemPath>/Users/Sytze/GH/sql-layer/routine-firewall/target/routine-firewall-1.0-SNAPSHOT.jar</systemPath>i-->
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
