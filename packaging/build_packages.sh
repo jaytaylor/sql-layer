@@ -96,6 +96,7 @@ build_sql_layer() {
     cp "fdb-sql-layer-core/target/${LAYER_JAR_NAME}" "${2}/"
     cp fdb-sql-layer-core/target/dependency/* "${2}/server/"
     cp "routine-firewall/target/${RF_JAR_NAME}" "${2}/routine-firewall/"
+    cp "sql-layer.policy" "${2}/"
     popd
 }
 
