@@ -39,8 +39,13 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * This is similar to the builtin CsrfProtectionFilter, but does not allow GET requests either, because
- * those can execute any SQL query.
+ * This blocks any requests with an unknown or blank referer.
+ * There is a filter in Jersey for CSRF protection, but that one uses a custom header as opposed to the
+ * Referer, which has had bugs: https://blog.whitehatsec.com/tag/redirect/
+ * By default the only allowed referer is https://localhost.
+ * Note that this does a STRICT check of the referer and any blank referers are considered an attack
+ * Unfortunately some proxies, browser extensions, and privacy software removes the referer, so
+ * this will not work for a two-tier situation with the browser talking directly to the rest service.
  */
 @Provider
 @Priority(Priorities.AUTHENTICATION)
