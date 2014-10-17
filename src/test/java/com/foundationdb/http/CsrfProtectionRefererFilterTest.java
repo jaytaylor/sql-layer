@@ -238,20 +238,6 @@ public class CsrfProtectionRefererFilterTest {
     }
 
     @Test
-    public void testAutoConfigure() {
-        List<URI> uris = CsrfProtectionRefererFilter.parseAllowedReferers("MUST_BE_CONFIGURED");
-        assertEquals(1, uris.size());
-        URI actualUri = uris.get(0);
-        String firstHost =  actualUri.getHost();
-        assertEquals("scheme", "https", actualUri.getScheme());
-        assertThat(actualUri.getHost().length(), greaterThan(20));
-        assertEquals("port", -1, actualUri.getPort());
-        uris = CsrfProtectionRefererFilter.parseAllowedReferers("MUST_BE_CONFIGURED");
-        assertEquals(1, uris.size());
-        assertNotEquals(firstHost, uris.get(0).getHost());
-    }
-
-    @Test
     public void testEncodedCharacters() {
         // My understanding of the URI spec allows % encoded characters in the host name
         // but URI refuses to parse them. For now work under the assumption that host's
