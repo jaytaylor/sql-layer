@@ -70,7 +70,7 @@ public class CsrfProtectionRefererFilter implements javax.servlet.Filter {
                         request.getRequestURI(),
                         referer);
                 ((HttpServletResponse)servletResponse).sendError(400,
-                        "CSRF attack prevented. For legit usage see server.properties");
+                        "CSRF attack prevented. For legit usage see the configuration documentation");
             }
         } else {
             logger.error("Unexpected type of request: {} -- {}", servletRequest.getClass(), servletRequest);
