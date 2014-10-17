@@ -135,7 +135,6 @@ public class RestResponseBuilder {
             builder.append(jsonp);
             builder.append('(');
         }
-        // TODO add note
         formatJsonError(builder, code, message, null);
         if(isJsonp) {
             builder.append(')');
