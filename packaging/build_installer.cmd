@@ -76,7 +76,7 @@ call mvn clean package -U -D"fdbsql.release=%RELEASE%" -D"skipTests=true"
 IF ERRORLEVEL 1 GOTO EOF
 DEL target\*-sources.jar
 CD ..
-
+CD ..
 CD ..
 
 REM Common files
@@ -84,8 +84,8 @@ MD target
 MD target\isstage
 
 XCOPY /E %EXE_DIR% target\isstage
-ECHO -tests.jar >target\xclude
-ECHO -sources.jar >>target\xclude
+ECHO -tests.jar > target\xclude
+ECHO -sources.jar >> target\xclude
 
 REM SQL Layer component files
 MD target\isstage\layer
@@ -105,7 +105,7 @@ COPY bin\*.cmd target\isstage\layer\bin
 FOR %%f in (target\isstage\layer\conf\*) DO MOVE "%%f" "%%f.new"
 XCOPY fdb-sql-layer-core\target\fdb-sql-layer-*.jar target\isstage\layer\lib /EXCLUDE:target\xclude
 XCOPY fdb-sql-layer-core\target\dependency\* target\isstage\layer\lib\server
-XCOPY routine-firewall\target\routine-firewall*.jar target\isstage\lib\routine-firewall
+XCOPY routine-firewall\target\routine-firewall*.jar target\isstage\lib\routine-firewall /EXCLUDE:target\xclude
 COPY %TOP_DIR%\sql-layer.policy target\isstage\lib
 
 CD target\isstage\layer
