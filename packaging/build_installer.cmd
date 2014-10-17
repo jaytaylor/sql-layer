@@ -66,7 +66,7 @@ IF ERRORLEVEL 1 GOTO EOF
 IF NOT DEFINED TOOLS_LOC SET TOOLS_LOC="git@github.com:FoundationDB/sql-layer-client-tools.git"
 IF NOT DEFINED TOOLS_REF SET TOOLS_REF="master"
 
-CD target
+CD fdb-sql-layer-core/target
 git clone %TOOLS_LOC% client-tools
 IF ERRORLEVEL 1 GOTO EOF
 CD client-tools
@@ -80,6 +80,7 @@ CD ..
 CD ..
 
 REM Common files
+MD target
 MD target\isstage
 
 XCOPY /E %EXE_DIR% target\isstage
@@ -93,6 +94,7 @@ MD target\isstage\layer\bin
 MD target\isstage\layer\lib
 MD target\isstage\layer\lib\plugins
 MD target\isstage\layer\lib\server
+MD target\isstage\layer\lib\routine-firewall
 MD target\isstage\layer\procrun
 
 COPY %TOP_DIR%\LICENSE.txt target\isstage\layer\LICENSE-SQL_LAYER.txt
@@ -101,8 +103,9 @@ DEL target\isstage\layer\conf\jvm.options
 COPY bin\*.cmd target\isstage\layer\bin
 %DOS2UNIX% --verbose --u2d target\isstage\layer\conf\* target\isstage\layer\*.txt target\isstage\layer\bin\*.cmd
 FOR %%f in (target\isstage\layer\conf\*) DO MOVE "%%f" "%%f.new"
-XCOPY target\fdb-sql-layer-*.jar target\isstage\layer\lib /EXCLUDE:target\xclude
-COPY target\dependency\* target\isstage\layer\lib\server
+XCOPY fdb-sql-layer-core\target\fdb-sql-layer-*.jar target\isstage\layer\lib /EXCLUDE:target\xclude
+XCOPY fdb-sql-layer-core\target\dependency\* target\isstage\layer\lib\server
+XCOPY routine-firewall\target\routine-firewall*.jar target\isstage\lib\routine-firewall
 
 CD target\isstage\layer
 curl -o procrun.zip -L http://archive.apache.org/dist/commons/daemon/binaries/windows/commons-daemon-1.0.15-bin-windows.zip
@@ -130,10 +133,10 @@ MD target\isstage\client\bin
 MD target\isstage\client\lib
 MD target\isstage\client\lib\client
 
-COPY target\client-tools\bin\*.cmd target\isstage\client\bin
-XCOPY target\client-tools\target\fdb-sql-layer-client-tools-*.jar target\isstage\client\lib /EXCLUDE:target\xclude
-COPY target\client-tools\target\dependency\* target\isstage\client\lib\client
-COPY target\client-tools\LICENSE.txt target\isstage\client\LICENSE-SQL_LAYER_CLIENT_TOOLS.txt
+COPY fdb-sql-layer-core\target\client-tools\bin\*.cmd target\isstage\client\bin
+XCOPY fdb-sql-layer-core\target\client-tools\target\fdb-sql-layer-client-tools-*.jar target\isstage\client\lib /EXCLUDE:target\xclude
+COPY fdb-sql-layer-core\target\client-tools\target\dependency\* target\isstage\client\lib\client
+COPY fdb-sql-layer-core\target\client-tools\LICENSE.txt target\isstage\client\LICENSE-SQL_LAYER_CLIENT_TOOLS.txt
 
 REM Build the installer
 CD target\isstage
