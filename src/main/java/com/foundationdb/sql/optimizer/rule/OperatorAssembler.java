@@ -18,8 +18,10 @@
 package com.foundationdb.sql.optimizer.rule;
 
 import com.foundationdb.qp.row.ValuesRow;
+import com.foundationdb.server.error.UnknownDataTypeException;
 import com.foundationdb.server.types.*;
 import com.foundationdb.server.types.common.types.TString;
+import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.optimizer.*;
 import com.foundationdb.sql.optimizer.plan.*;
 import com.foundationdb.sql.optimizer.plan.ExpressionsSource.DistinctState;
@@ -168,10 +170,35 @@ public class OperatorAssembler extends BaseRule
             }
             if (explainContext != null)
                 explainSelectQuery(stream.operator, selectQuery);
+            List<ParameterNode> parameters = getParameters();
+            setReturnOutputParameterType(stream, parameters);
             return new PhysicalSelect(stream.operator, stream.rowType, resultColumns, 
-                                      getParameterTypes(), 
+                                      getParameterTypes(parameters),
                                       selectQuery.getCostEstimate(),
                                       affectedTables);
+        }
+
+        private void setReturnOutputParameterType(RowStream stream, List<ParameterNode> parameters) {
+            if (parameters == null) {
+                return;
+            }
+            for (ParameterNode parameter : parameters) {
+                if (parameter.isReturnOutputParam() && parameter.getType() == null) {
+                    if (stream.rowType.nFields() > 0) {
+                        try {
+                            parameter.setType(stream.rowType.typeAt(0).dataTypeDescriptor());
+                            parameter.setUserData(stream.rowType.typeAt(0));
+                        } catch (StandardException e) {
+                            // setType should never through a StandardException, but if it does
+                            // we might be able to handle not having the type updated.
+                            logger.error("ParameterNode.setType threw a StandardException", e);
+                        }
+                    } else {
+                        throw new UnknownDataTypeException(null);
+                    }
+                }
+
+            }
         }
 
         protected void explainSelectQuery(Operator plan, SelectQuery selectQuery) {
@@ -194,7 +221,9 @@ public class OperatorAssembler extends BaseRule
             // Returning rows, if the table is not null, the insert is returning rows 
             // which need to be passed to the user. 
             boolean returning = (statement.getReturningTable() != null);
-            return new PhysicalUpdate(stream.operator, getParameterTypes(),
+            List<ParameterNode> parameters = getParameters();
+            setReturnOutputParameterType(stream, parameters);
+            return new PhysicalUpdate(stream.operator, getParameterTypes(parameters),
                                       stream.rowType,
                                       resultColumns,
                                       returning,
@@ -1786,13 +1815,10 @@ public class OperatorAssembler extends BaseRule
         }
 
         // Get the required type for any parameters to the statement.
-        protected BasePlannable.ParameterType[] getParameterTypes() {
-            AST ast = ASTStatementLoader.getAST(planContext);
-            if (ast == null)
+        protected BasePlannable.ParameterType[] getParameterTypes(List<ParameterNode> params) {
+            if (params == null) {
                 return null;
-            List<ParameterNode> params = ast.getParameters();
-            if ((params == null) || params.isEmpty())
-                return null;
+            }
             int nparams = 0;
             for (ParameterNode param : params) {
                 if (nparams < param.getParameterNumber() + 1)
@@ -1812,6 +1838,16 @@ public class OperatorAssembler extends BaseRule
                 }
             }
             return result;
+        }
+
+        private List<ParameterNode> getParameters() {
+            AST ast = ASTStatementLoader.getAST(planContext);
+            if (ast == null)
+                return null;
+            List<ParameterNode> params = ast.getParameters();
+            if ((params == null) || params.isEmpty())
+                return null;
+            return params;
         }
 
         protected RowStream assembleFullTextScan(FullTextScan textScan) {

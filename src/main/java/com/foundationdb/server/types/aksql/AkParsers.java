@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.types.aksql;
 
+import com.foundationdb.server.error.InvalidGuidFormatException;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TParser;
 import com.foundationdb.server.types.value.ValueSource;
@@ -77,8 +78,12 @@ public class AkParsers
             if (s.startsWith("{") && s.endsWith("}")) {
                 s = s.substring(1, s.length()-1);
             }
-            UUID uuid = UUID.fromString(s);
-            target.putObject(uuid);
+            try {
+                UUID uuid = UUID.fromString(s);
+                target.putObject(uuid);
+            } catch (IllegalArgumentException e) {
+                throw new InvalidGuidFormatException(s);
+            }
         }
     };
     

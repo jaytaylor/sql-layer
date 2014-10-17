@@ -176,6 +176,8 @@ public enum ErrorCode {
         // SubClass 02F - array data, right truncation    
         // SubClass 02G - invalid repeat argument in a sample clause
         // SubClass 02H - invalid sample size 02H
+    INVALID_GUID_FORMAT ("22", "02I", Importance.DEBUG, InvalidGuidFormatException.class),
+
     TABLE_DEFINITION_CHANGED("22", "501", Importance.DEBUG, TableDefinitionChangedException.class),
     NEGATIVE_LIMIT          ("22", "502", Importance.DEBUG, NegativeLimitException.class),
     INVALID_ARGUMENT_TYPE   ("22", "503", Importance.DEBUG, InvalidArgumentTypeException.class),

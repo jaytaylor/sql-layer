@@ -32,11 +32,11 @@
 - output: [['two']]
 ---
 - Statement: SELECT ELT(2, 'one', ?, 'two', 3.5) from all_types;
-- params: [[6]]
+- params: [['6']]
 - output: [['6']]
 ---
 - Statement: SELECT ELT(1, 'one', ?, 'two') from all_types;
-- params: [[3]]
+- params: [['3']]
 - output: [['one']]
 ---
 - Statement: SELECT bigint_field from all_types WHERE ELT(-4, 'one') IS NULL;

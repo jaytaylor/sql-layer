@@ -23,6 +23,7 @@ import com.foundationdb.server.error.ZeroDateTimeException;
 import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
@@ -243,6 +244,9 @@ public class ServerValueEncoder
                 for (short d : pgNumericVar(typesTranslator.getDecimalValue(value))) {
                     getDataStream().writeShort(d);
                 }
+                break;
+            case UUID:
+                getDataStream().write(AkGUID.uuidToBytes((java.util.UUID) value.getObject()));
                 break;
             case NONE:
             default:
