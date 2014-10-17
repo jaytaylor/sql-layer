@@ -77,4 +77,10 @@
 ---
 - Statement: SELECT cid FROM (SELECT cid,pid FROM orders WHERE pid IN (SELECT pid FROM products) GROUP BY pid,cid) as T GROUP BY cid HAVING COUNT(*) = (SELECT COUNT(*) FROM products);
 - output: [['c001']]
+---
+- Statement: SELECT cid FROM (SELECT cid,pid FROM orders WHERE pid IN (SELECT pid FROM products) GROUP BY pid,cid) as T GROUP BY cid HAVING COUNT(*) = AVG(cid) OR COUNT(*) = (SELECT COUNT(*) FROM products);
+- output: [['c001']]
+---
+- Statement: SELECT cid FROM (SELECT cid,pid FROM orders WHERE pid IN (SELECT pid FROM products) GROUP BY pid,cid) as T GROUP BY cid HAVING COUNT(*) = AVG(cid) AND COUNT(*) = (SELECT COUNT(*) FROM products);
+- row_count: 0
 ...
