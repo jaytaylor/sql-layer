@@ -431,6 +431,9 @@ public enum ErrorCode {
     INVALID_VOLUME          ("52", "010", Importance.ERROR, InvalidVolumeException.class),
     INVALID_OPTIMIZER_PROPERTY ("52", "011", Importance.ERROR, InvalidOptimizerPropertyException.class),
     IS_TABLE_VERSION_MISMATCH ("52", "012", Importance.ERROR, ISTableVersionMismatchException.class),
+    NO_CLUSTER_FILE         ("52", "013", Importance.ERROR, NoClusterFileException.class),
+    CLUSTER_FILE_NOT_READABLE ("52", "014", Importance.ERROR, ClusterFileNotReadableException.class),
+    CLUSTER_FILE_TOO_LARGE  ("52", "015", Importance.ERROR, ClusterFileTooLargeException.class),
 
     // Class 53 - Internal error 
     INTERNAL_ERROR          ("53", "000", Importance.ERROR, null),
