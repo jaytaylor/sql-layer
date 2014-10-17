@@ -86,13 +86,6 @@ public class CsrfProtectionRefererFilter implements javax.servlet.Filter {
         if (allowedReferersConfigProperty == null || allowedReferersConfigProperty.isEmpty()) {
             throw new IllegalAllowedReferersException("must not be null or empty", allowedReferersConfigProperty);
         }
-        if (allowedReferersConfigProperty.equals("MUST_BE_CONFIGURED")) {
-            logger.warn("CSRF allowed referers config property should have been set by the installers, using random UUID");
-            // I was going to use the URI constructor that takes a bunch of parameters here, but that just creates a
-            // string and passes it to the URI constructor that takes a string. So, use URI.create because we know this
-            // is a valid uri.
-            return Arrays.asList(URI.create("https://" + UUID.randomUUID().toString() + ".com"));
-        }
         String[] split = allowedReferersConfigProperty.split("\\,");
         List<URI> allowedReferers = new ArrayList<>();
         for (String allowedReferer : split) {
