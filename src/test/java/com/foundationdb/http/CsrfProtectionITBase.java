@@ -30,6 +30,7 @@ import org.apache.http.client.methods.HttpOptions;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
@@ -107,7 +108,7 @@ public abstract class CsrfProtectionITBase extends ITBase
 
         response = client.execute(request);
         assertEquals("status", HttpStatus.SC_BAD_REQUEST, response.getStatusLine().getStatusCode());
-        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("server.properties"));
+        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("CSRF attack prevented."));
     }
 
     @Test
@@ -119,7 +120,7 @@ public abstract class CsrfProtectionITBase extends ITBase
 
         response = client.execute(request);
         assertEquals("status", HttpStatus.SC_BAD_REQUEST, response.getStatusLine().getStatusCode());
-        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("server.properties"));
+        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("CSRF attack prevented."));
     }
 
     @Test
@@ -131,7 +132,7 @@ public abstract class CsrfProtectionITBase extends ITBase
 
         response = client.execute(request);
         assertEquals("status", HttpStatus.SC_BAD_REQUEST, response.getStatusLine().getStatusCode());
-        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("server.properties"));
+        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("CSRF attack prevented."));
     }
 
     @Test
@@ -143,7 +144,7 @@ public abstract class CsrfProtectionITBase extends ITBase
 
         response = client.execute(request);
         assertEquals("status", HttpStatus.SC_BAD_REQUEST, response.getStatusLine().getStatusCode());
-        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("server.properties"));
+        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("CSRF attack prevented."));
     }
 
     @Test
@@ -154,7 +155,7 @@ public abstract class CsrfProtectionITBase extends ITBase
 
         response = client.execute(request);
         assertEquals("status", HttpStatus.SC_BAD_REQUEST, response.getStatusLine().getStatusCode());
-        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("server.properties"));
+        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("CSRF attack prevented."));
     }
 
 
@@ -184,8 +185,10 @@ public abstract class CsrfProtectionITBase extends ITBase
     public void postAllowed() throws Exception{
         URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
 
-        HttpUriRequest request = new HttpPost(uri);
+        HttpPost request = new HttpPost(uri);
         request.setHeader("Referer","http://somewhere.com");
+        request.setHeader("Content-Type", "application/json");
+        request.setEntity(new StringEntity("{\"id\": \"1\"}"));
 
         response = client.execute(request);
         assertEquals("status", HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
@@ -193,10 +196,12 @@ public abstract class CsrfProtectionITBase extends ITBase
 
     @Test
     public void putAllowed() throws Exception{
-        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
+        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint() + "/1", null, null);
 
-        HttpUriRequest request = new HttpPut(uri);
+        HttpPut request = new HttpPut(uri);
         request.setHeader("Referer","http://somewhere.com");
+        request.setHeader("Content-Type", "application/json");
+        request.setEntity(new StringEntity("{\"id\": \"1\"}"));
 
         response = client.execute(request);
         assertEquals("status", HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
@@ -204,12 +209,12 @@ public abstract class CsrfProtectionITBase extends ITBase
 
     @Test
     public void deleteAllowed() throws Exception{
-        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
+        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint() + "/1", null, null);
 
         HttpUriRequest request = new HttpDelete(uri);
         request.setHeader("Referer","http://somewhere.com");
 
         response = client.execute(request);
-        assertEquals("status", HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+        assertEquals("status", HttpStatus.SC_NO_CONTENT, response.getStatusLine().getStatusCode());
     }
 }
