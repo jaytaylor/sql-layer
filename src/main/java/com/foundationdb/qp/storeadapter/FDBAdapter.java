@@ -119,7 +119,7 @@ public class FDBAdapter extends StoreAdapter {
     }
 
     @Override
-    public void writeRow(Row newRow, TableIndex[] indexes, Collection<GroupIndex> groupIndexes) {
+    public void writeRow(Row newRow, Collection<TableIndex> indexes, Collection<GroupIndex> groupIndexes) {
         RowDef rowDef = newRow.rowType().table().rowDef();
         RowData newRowData = rowData(rowDef, newRow, new RowDataCreator());
         try {

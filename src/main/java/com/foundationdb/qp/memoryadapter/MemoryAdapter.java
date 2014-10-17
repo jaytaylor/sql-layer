@@ -105,7 +105,7 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
-    public void writeRow(Row newRow, TableIndex[] indexes, Collection<GroupIndex> groupIndexes) {
+    public void writeRow(Row newRow, Collection<TableIndex> indexes, Collection<GroupIndex> groupIndexes) {
         throw new UnsupportedOperationException();
     }
 

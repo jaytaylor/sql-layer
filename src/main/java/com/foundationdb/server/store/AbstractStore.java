@@ -315,7 +315,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     protected void writeRow(Session session,
                             RowDef rowDef,
                             RowData rowData,
-                            TableIndex[] tableIndexes,
+                            Collection<TableIndex>tableIndexes,
                             BitSet tablesRequiringHKeyMaintenance,
                             boolean propagateHKeyChanges)
     {
@@ -434,14 +434,14 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     }
 
     @Override
-    public void writeRow(Session session, RowData rowData, TableIndex[] tableIndexes,
+    public void writeRow(Session session, RowData rowData, Collection<TableIndex> tableIndexes,
                          Collection<GroupIndex> groupIndexes) {
         RowDef rowDef = getGlobalRowDef(session, rowData);
         writeRow(session, rowDef, rowData, tableIndexes, groupIndexes);
     }
 
     @Override
-    public void writeRow(Session session, RowDef rowDef, RowData rowData, TableIndex[] tableIndexes,
+    public void writeRow(Session session, RowDef rowDef, RowData rowData, Collection<TableIndex> tableIndexes,
                          Collection<GroupIndex> groupIndexes) {
         Table table = rowDef.table();
         trackTableWrite(session, table);
@@ -779,7 +779,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                                   SDType storeData,
                                   RowDef rowDef,
                                   RowData rowData,
-                                  TableIndex[] indexes,
+                                  Collection<TableIndex> indexes,
                                   BitSet tablesRequiringHKeyMaintenance,
                                   boolean propagateHKeyChanges) {
         Key hKey = getKey(session, storeData);
