@@ -80,7 +80,7 @@ build_sql_layer() {
 
     LAYER_MVN_VERSION=$(cd "${TOP_DIR}/fdb-sql-layer-core" ; mvn -B org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version |grep '^[0-9]')
     LAYER_VERSION=${LAYER_MVN_VERSION%-SNAPSHOT}
-    LAYER_JAR_NAME="fdb-sql-layer-${LAYER_MVN_VERSION}.jar"
+    LAYER_JAR_NAME="fdb-sql-layer-core-${LAYER_MVN_VERSION}.jar"
 
     RF_MVN_VERSION=$(cd "${TOP_DIR}/routine-firewall" ; mvn -B org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version |grep '^[0-9]')
     RF_VERSION=${RF_MVN_VERSION%-SNAPSHOT}
@@ -178,6 +178,7 @@ case "${1}" in
         cd usr/share/foundationdb/sql
         ln -s "${LAYER_JAR_NAME}" "fdb-sql-layer.jar"
         cd "${STAGE_DIR}"
+echo pwd
         echo "Installed-Size:" $(du -sx --exclude DEBIAN $STAGE_DIR | awk '{print $1}') >> "${STAGE_DIR}/DEBIAN/control"
         
         fakeroot dpkg-deb --build . "${TOP_DIR}/target"
