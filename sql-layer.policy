@@ -1,5 +1,6 @@
 /* Policy file granting limiting the permissions for routines */
 
+// development:
 grant codeBase "file:${fdbsql.home}/fdb-sql-layer-core/target/-" {
   permission java.security.AllPermission;
 };
@@ -9,4 +10,20 @@ grant codeBase "file:${fdbsql.home}/routine-firewall/target/*" {
 
 grant codeBase "file:${user.home}/.m2/repository/-" {
   permission java.security.AllPermission;
+};
+
+// installation
+grant codeBase "file:/usr/share/foundationdb/sql/*" {
+  permission java.security.AllPermission;
+}
+
+grant codeBase "file:/user/share/foundationdb/sql/server/-" {
+  permission java.security.AllPermission;
+}
+
+grant codeBase "file:/usr/share/foundationdb/sql/plugings/-" {
+  permission java.security.Allpermission;
+} 
+
+grant codeBase "file:/usr/share/foundationdb/sql/routine-firewall/*" {
 };

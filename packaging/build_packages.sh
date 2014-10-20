@@ -177,8 +177,10 @@ case "${1}" in
 
         cd usr/share/foundationdb/sql
         ln -s "${LAYER_JAR_NAME}" "fdb-sql-layer.jar"
+        cd routine-firewall/
+        ln -s "${RF_JAR_NAME}" "routine-firewall.jar"     
+
         cd "${STAGE_DIR}"
-echo pwd
         echo "Installed-Size:" $(du -sx --exclude DEBIAN $STAGE_DIR | awk '{print $1}') >> "${STAGE_DIR}/DEBIAN/control"
         
         fakeroot dpkg-deb --build . "${TOP_DIR}/target"

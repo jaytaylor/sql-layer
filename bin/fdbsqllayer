@@ -71,7 +71,7 @@ infer_home_dir()
 infer_jar_file()
 {
     local loc_dev="${FDBSQL_HOME}/fdb-sql-layer-core/target"
-    local loc_home="${FDBSQL_HOME}/fdb-sql-layer-core/fdb-sql-layer.jar"
+    local loc_home="${FDBSQL_HOME}/fdb-sql-layer.jar"
     local value=""
 
     # Only infer if passed no argument
@@ -121,7 +121,7 @@ infer_jar_rf_file()
 infer_dep_dir()
 {
     local loc_dev="${FDBSQL_HOME}/fdb-sql-layer-core/target/dependency"
-    local loc_home="${FDBSQL_HOME}/fdb-sql-layer/core/server"
+    local loc_home="${FDBSQL_HOME}/server"
     local value=""
 
     # Only infer if passed no argument
@@ -146,7 +146,6 @@ infer_policy_file()
     if [ -n "$1" ]; then
        value="$1"
     fi
-echo ${value}
     export POLICY_FILE="-Djava.security.policy=${value}"
 }
 
