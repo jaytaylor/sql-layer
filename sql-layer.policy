@@ -15,15 +15,15 @@ grant codeBase "file:${user.home}/.m2/repository/-" {
 // installation
 grant codeBase "file:/usr/share/foundationdb/sql/*" {
   permission java.security.AllPermission;
-}
+};
 
-grant codeBase "file:/user/share/foundationdb/sql/server/-" {
+grant codeBase "file:/usr/share/foundationdb/sql/server/-" {
   permission java.security.AllPermission;
-}
+};
 
 grant codeBase "file:/usr/share/foundationdb/sql/plugings/-" {
   permission java.security.Allpermission;
-} 
+}; 
 
 grant codeBase "file:/usr/share/foundationdb/sql/routine-firewall/*" {
 };
