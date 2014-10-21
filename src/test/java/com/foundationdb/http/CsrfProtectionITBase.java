@@ -51,9 +51,6 @@ public abstract class CsrfProtectionITBase extends ITBase
 {
     private static final String SCHEMA = "test";
     private static final String TABLE = "t";
-    private static final String ORIGIN = "http://example.com";
-    private static final String ALLOWED_METHODS = "GET,POST,PUT";
-    private static final String HEADER_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
 
 
     private int port;
