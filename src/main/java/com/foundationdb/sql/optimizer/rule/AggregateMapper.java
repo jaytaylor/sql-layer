@@ -185,8 +185,13 @@ public class AggregateMapper extends BaseRule
                 ColumnSource table = column.getTable();
                 if (table instanceof AggregateSource) {
                     ExpressionNode returnNode = null;
-                    for (AggregateFunctionExpression afe : ((AggregateSource)table).getAggregates()) {
-                        returnNode = addAggregate(afe);
+                    List<AggregateFunctionExpression> afes = ((AggregateSource)table).getAggregates();
+                    for (int i = 0; i < afes.size(); i++) {
+                        if (i == column.getPosition() - 1) {
+                            returnNode = addAggregate(afes.get(i));
+                        } else {
+                            addAggregate(afes.get(i));
+                        }
                     }
                     return returnNode;
                 }
