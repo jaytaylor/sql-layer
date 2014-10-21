@@ -15,7 +15,6 @@
 @REM along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @REM
 
-@ECHO OFF
 
 SETLOCAL EnableDelayedExpansion
 
@@ -33,7 +32,7 @@ CALL:findJarFile "%FDBSQL_HOME%\sql\lib"
 SET DEP_DIR=%FDBSQL_HOME%\sql\lib\server
 SET FDBSQL_HOME_DIR=%FDBSQL_HOME%\sql
 SET FDBSQL_RFDIR=%FDBSQL_HOME%\sql\lib\routine-firewall
-SET FDBSQL_POLICY=%FDBSQL_HOME%\sql\sql-layer-win.policy
+SET FDBSQL_POLICY=%FDBSQL_HOME%\sql\lib\sql-layer-win.policy
 @REM Replaced during install
 SET FDBSQL_CONF=${confdir}
 SET FDBSQL_LOGDIR=${logdir}
@@ -65,7 +64,7 @@ SET FDBSQL_CONF=%BUILD_HOME%\conf
 SET FDBSQL_LOGDIR=\tmp\fdbsqllayer
 SET FDBSQL_HOME_DIR=%BUILD_HOME%\fdb-sql-layer-core\target
 SET FDBSQL_RFDIR=%BUILD_HOME%\routine-firewall\target
-SET FDBSQL_POLICY=%BUILD_HOME%\sql-layer-win.policy
+SET FDBSQL_POLICY_LOC=%BUILD_HOME%\sql-layer-win-loc.policy
 SET PRUNSRV=prunsrv
 SET PRUNMGR=prunmgr
 SET SERVICE_MODE=manual
@@ -206,8 +205,8 @@ GOTO EOF
 SET JVM_OPTS=%JVM_OPTS% -Dfdbsql.config_dir="%FDBSQL_CONF%"
 SET JVM_OPTS=%JVM_OPTS% -Dlog4j.configuration="file:%FDBSQL_LOGCONF%"
 SET JVM_OPTS=%JVM_OPTS% -ea
-SET JVM_OPTS=%JVM_OPTS% -Dfdbsql.home="%FDBSQL_HOME_DIR%"
-SET JVM_OPTS=%JVM_OPTS% -Djava.security.manager -Djava.security.policy="%FDBSQL_POLICY%"
+SET JVM_OPTS=%JVM_OPTS% -Dfdbsql.home="%BUILD_HOME%"
+SET JVM_OPTS=%JVM_OPTS% -Djava.security.manager -Djava.security.policy="%FDBSQL_POLICY_LOC%"
 IF DEFINED MAX_HEAP_MB SET JVM_OPTS=%JVM_OPTS% -Xms%MAX_HEAP_MB%M -Xmx%MAX_HEAP_MB%M
 IF "%VERB%"=="window" GOTO WINDOW_CMD
 java %JVM_OPTS% -cp "%CLASSPATH%" com.foundationdb.sql.Main

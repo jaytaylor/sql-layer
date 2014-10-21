@@ -103,11 +103,10 @@ DEL target\isstage\layer\conf\jvm.options
 COPY bin\*.cmd target\isstage\layer\bin
 %DOS2UNIX% --verbose --u2d target\isstage\layer\conf\* target\isstage\layer\*.txt target\isstage\layer\bin\*.cmd
 FOR %%f in (target\isstage\layer\conf\*) DO MOVE "%%f" "%%f.new"
-XCOPY fdb-sql-layer-core\target\fdb-sql-layer-*.jar target\isstage\layer\lib /EXCLUDE:target\xclude
+XCOPY fdb-sql-layer-core\target\fdb-sql-layer-core*.jar target\isstage\layer\lib /EXCLUDE:target\xclude
 XCOPY fdb-sql-layer-core\target\dependency\* target\isstage\layer\lib\server
-XCOPY routine-firewall\target\routine-firewall*.jar target\isstage\lib\routine-firewall\ /EXCLUDE:target\xclude
-COPY %TOP_DIR%\sql-layer.policy target\isstage\lib
-COPY %TOP_DIR%\sql-layer-win.policy target\isstage\lib
+XCOPY routine-firewall\target\routine-firewall*.jar target\isstage\layer\lib\routine-firewall\ /EXCLUDE:target\xclude
+COPY %TOP_DIR%\sql-layer-win.policy target\isstage\layer\lib\sql-layer-win.policy
 
 CD target\isstage\layer
 curl -o procrun.zip -L http://archive.apache.org/dist/commons/daemon/binaries/windows/commons-daemon-1.0.15-bin-windows.zip
