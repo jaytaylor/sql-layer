@@ -481,7 +481,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
      */
     public boolean isAccessible(Session session, String schema) {
         User user = session.get(SESSION_KEY);
-        if (user == null) return true; // Not authenticated = open.
+        if (user == null) return true; // Authentication disabled.
         return isAccessible(user.getName(), schema) || user.hasRole(ADMIN_ROLE);
     }
 
@@ -496,7 +496,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
      */
     public boolean isAccessible(HttpServletRequest request, String schema) {
         Principal user = request.getUserPrincipal();
-        if (user == null) return true; // Not authenticated = open.
+        if (user == null) return true; // Authentication disabled.
         return isAccessible(user.getName(), schema) || request.isUserInRole(ADMIN_ROLE);
     }
 
@@ -513,7 +513,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
      */
     public boolean hasRestrictedAccess(Session session) {
         User user = session.get(SESSION_KEY);
-        if (user == null) return true; // Not authenticated = open.
+        if (user == null) return true; // Authentication disabled.
         return user.hasRole(ADMIN_ROLE);
     }
 
