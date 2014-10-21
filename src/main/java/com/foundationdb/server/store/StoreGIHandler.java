@@ -118,7 +118,7 @@ class StoreGIHandler<SType extends AbstractStore,SDType,SSDType extends StoreSto
                 assert ! irc.isInHKey(f);
                 if(f == firstSpatialColumn) {
                     copyZValueToIndexRow(groupIndex, row, irc);
-                    f += groupIndex.dimensions();
+                    f += groupIndex.spatialColumns();
                 } else {
                     copyFieldToIndexRow(groupIndex, row, irc.getFieldPosition(f++));
                 }

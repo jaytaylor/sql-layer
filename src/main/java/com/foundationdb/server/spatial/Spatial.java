@@ -19,10 +19,14 @@ package com.foundationdb.server.spatial;
 
 import com.geophile.z.Space;
 import com.geophile.z.SpatialObject;
-import com.geophile.z.spatialobject.d2.Point;
-import com.geophile.z.spatialobject.jts.JTSBase;
-
-import java.nio.ByteBuffer;
+import com.geophile.z.spatialobject.jts.JTS;
+import com.geophile.z.spatialobject.jts.JTSSpatialObject;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.Point;
+import com.vividsolutions.jts.io.ParseException;
+import com.vividsolutions.jts.io.WKBReader;
+import com.vividsolutions.jts.io.WKBWriter;
 
 /*
 
@@ -52,9 +56,10 @@ public class Spatial
                               interleave);
     }
 
+    /** @deprecated */
     public static long shuffle(Space space, double x, double y)
     {
-        Point point = new Point(x, y);
+        com.geophile.z.spatialobject.d2.Point point = new com.geophile.z.spatialobject.d2.Point(x, y);
         long[] zValues = new long[1];
         space.decompose(point, zValues);
         long z = zValues[0];
@@ -67,19 +72,26 @@ public class Spatial
         space.decompose(spatialObject, zs);
     }
 
-    public static byte[] serialize(JTSBase spatialObject)
+    public static Object serializeIfSpatial(Object object)
     {
-        ByteBuffer buffer = ByteBuffer.allocate(INITIAL_BUFFER_SIZE);
-        boolean serialized = false;
-        while (!serialized) {
-            try {
-                spatialObject.writeTo(buffer);
-                serialized = true;
-            } catch (Exception e) {
-                buffer = ByteBuffer.allocate(buffer.capacity() * 2);
-            }
-        }
-        return buffer.array();
+        return
+            object instanceof JTSSpatialObject
+            ? serialize((JTSSpatialObject) object)
+            : object;
+    }
+
+    public static byte[] serialize(JTSSpatialObject spatialObject)
+    {
+        return io.get().writer().write(spatialObject.geometry());
+    }
+
+    public static SpatialObject deserialize(Space space, byte[] bytes) throws ParseException
+    {
+        Geometry geometry = io.get().reader().read(bytes);
+        return
+            geometry instanceof Point
+            ? JTS.spatialObject(space, (Point) geometry)
+            : JTS.spatialObject(space, geometry);
     }
 
     public static final int LAT_LON_DIMENSIONS = 2;
@@ -89,22 +101,38 @@ public class Spatial
     public static final double MAX_LON = 180;
     private static final int LAT_BITS = 28;
     private static final int LON_BITS = 29;
-    private static final int INITIAL_BUFFER_SIZE = 50;
+    private static final ThreadLocal<IO> io =
+        new ThreadLocal<IO>()
+        {
+            @Override
+            protected IO initialValue()
+            {
+                return new IO();
+            }
+        };
 
-    public enum SpatialObjectEncoding
+    // Inner classes
+
+    private static class IO
     {
-        WKB(1);
-
-        public int encodingId()
+        public WKBReader reader()
         {
-            return encodingId;
+            if (reader == null) {
+                reader = new WKBReader(factory);
+            }
+            return reader;
         }
 
-        private SpatialObjectEncoding(int encodingId)
+        public WKBWriter writer()
         {
-            this.encodingId = encodingId;
+            if (writer == null) {
+                writer = new WKBWriter();
+            }
+            return writer;
         }
 
-        private final int encodingId;
+        private final GeometryFactory factory = new GeometryFactory();
+        private WKBReader reader;
+        private WKBWriter writer;
     }
 }

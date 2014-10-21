@@ -34,9 +34,7 @@ import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.geophile.z.Space;
 import com.geophile.z.SpatialObject;
 import com.geophile.z.spatialobject.d2.Point;
-import com.geophile.z.spatialobject.jts.JTSBase;
-
-import java.nio.ByteBuffer;
+import com.vividsolutions.jts.io.ParseException;
 
 public class SpatialColumnHandler
 {
@@ -69,10 +67,21 @@ public class SpatialColumnHandler
         return indexField >= firstSpatialField && indexField <= lastSpatialField;
     }
 
+    /** @deprecated */
     public long zValue(RowData rowData)
     {
         bind(rowData);
         return Spatial.shuffle(space, coords[0], coords[1]);
+    }
+
+    public void processSpatialObject(RowData rowData, Operation operation)
+    {
+        bind(rowData);
+        long[] zs = zArray();
+        Spatial.shuffle(space, spatialObject, zs);
+        for (int i = 0; i < zs.length && zs[i] != Space.Z_NULL; i++) {
+            operation.handleZValue(zs[i]);
+        }
     }
 
     private void bind(RowData rowData)
@@ -106,21 +115,27 @@ public class SpatialColumnHandler
             }
             spatialObject = new Point(x, y);
         } else {
-            assert false;
-/*
             // Spatial object encoded in blob
             rowDataSource.bind(fieldDefs[0], rowData);
             RowDataValueSource rowDataValueSource = (RowDataValueSource) rowDataSource;
             TClass tclass = tinstances[0].typeClass();
             assert tclass == MBinary.BLOB : tclass;
-            // TODO: Is this the place to anticipate GeoJSON also?
-            JTSBase jtsObject = (JTSBase) spatialObject;
-
-            ByteBuffer buffer = ByteBuffer.wrap(rowDataValueSource.getBytes());
-            jtsObject.readFrom();
-
-*/
+            try {
+                spatialObject = Spatial.deserialize(space, rowDataValueSource.getBytes());
+            } catch (ParseException e) {
+                assert false; // There must be something better to do here.
+            }
         }
+    }
+
+    private long[] zArray()
+    {
+        assert spatialObject != null;
+        int maxZ = spatialObject.maxZ();
+        if (zs == null || maxZ > zs.length) {
+            zs = new long[maxZ];
+        }
+        return zs;
     }
 
     private final Space space;
@@ -131,5 +146,13 @@ public class SpatialColumnHandler
     private final int firstSpatialField;
     private final int lastSpatialField;
     private SpatialObject spatialObject;
+    private long[] zs;
     private double[] coords = new double[2]; // Going away
+
+    // Inner classes
+
+    public static abstract class Operation
+    {
+        public abstract void handleZValue(long z);
+    }
 }

@@ -272,7 +272,7 @@ public final class SingleIndexScan extends IndexScan implements EqualityColumnsS
             if (i == firstSpatialColumn)
                 return true;
             if (i > firstSpatialColumn)
-                i += index.dimensions() - 1;
+                i += index.spatialColumns() - 1;
         }
         return index.getAllColumns().get(i).isAscending();
     }
@@ -284,7 +284,7 @@ public final class SingleIndexScan extends IndexScan implements EqualityColumnsS
             if (i == firstSpatialColumn)
                 return false;
             if (i > firstSpatialColumn)
-                i += index.dimensions() - 1;
+                i += index.spatialColumns() - 1;
         }
         return index.getAllColumns().get(i).isRecoverable();
     }

@@ -76,6 +76,7 @@ import com.foundationdb.sql.optimizer.rule.PlanGenerator;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
+import com.geophile.z.Space;
 import com.persistit.Key;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -773,14 +774,14 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     // Internal
     //
 
-    private void writeRowInternal(Session session,
+    private void writeRowInternal(final Session session,
                                   SDType storeData,
                                   RowDef rowDef,
-                                  RowData rowData,
+                                  final RowData rowData,
                                   TableIndex[] indexes,
                                   BitSet tablesRequiringHKeyMaintenance,
                                   boolean propagateHKeyChanges) {
-        Key hKey = getKey(session, storeData);
+        final Key hKey = getKey(session, storeData);
         /*
          * About propagateHKeyChanges as second to last argument to constructHKey (i.e. insertingRow):
          * - If true, we're inserting a row and may need to generate a PK (for no-pk tables)
@@ -805,15 +806,23 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         }
 
         boolean bumpCount = false;
-        PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
-        for(TableIndex index : indexes) {
-            long zValue = -1;
-            SpatialColumnHandler spatialColumnHandler = null;
+        final PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(this);
+        for(final TableIndex index : indexes) {
             if (index.isSpatial()) {
-                spatialColumnHandler = new SpatialColumnHandler(index);
-                zValue = spatialColumnHandler.zValue(rowData);
+                final SpatialColumnHandler spatialColumnHandler = new SpatialColumnHandler(index);
+                spatialColumnHandler.processSpatialObject(
+                    rowData,
+                    new SpatialColumnHandler.Operation()
+                    {
+                        @Override
+                        public void handleZValue(long z)
+                        {
+                            writeIndexRow(session, index, rowData, hKey, indexRow, spatialColumnHandler, z, false);
+                        }
+                    });
+            } else {
+                writeIndexRow(session, index, rowData, hKey, indexRow, null, -1L, false);
             }
-            writeIndexRow(session, index, rowData, hKey, indexRow, spatialColumnHandler, zValue, false);
             // Only bump row count if PK row is written (may not be written during an ALTER)
             // Bump row count *after* uniqueness checks. Avoids drift of TableStatus#getApproximateRowCount. See bug1112940.
             bumpCount |= index.isPrimaryKey();

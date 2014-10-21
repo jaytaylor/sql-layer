@@ -407,13 +407,10 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         this.types = sortKeyAdapter.createTInstances(startBoundColumns);
         Index index = keyRange.indexRowType().index();
         int firstSpatialColumn;
-        int dimensions;
         if (index.isSpatial()) {
             firstSpatialColumn = index.firstSpatialArgument();
-            dimensions = index.dimensions();
         } else {
             firstSpatialColumn = Integer.MAX_VALUE;
-            dimensions = 0;
         }
         List<IndexColumn> indexColumns = index().getAllColumns();
         int logicalColumn = 0;
@@ -421,7 +418,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         while (logicalColumn < startBoundColumns) {
             if (logicalColumn == firstSpatialColumn) {
                 types[physicalColumn] = InternalIndexTypes.LONG.instance(SpatialHelper.isNullable(keyRange));
-                logicalColumn += dimensions;
+                logicalColumn += index.spatialColumns();
             } else {
                 Column column = indexColumns.get(logicalColumn).getColumn();
                 sortKeyAdapter.setColumnMetadata(column, physicalColumn, types);

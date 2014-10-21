@@ -185,6 +185,13 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
         return Spatial.LAT_LON_DIMENSIONS;
     }
 
+    public int spatialColumns()
+    {
+        // For lat/lon, this computes 2. For blobs storing spatial objects, 1.
+        // Non-spatial: 0
+        return isSpatial() ? lastSpatialArgument - firstSpatialArgument + 1 : 0;
+    }
+
     public Space space()
     {
         return space;
@@ -309,13 +316,10 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
                 if (types == null) {
                     int physicalColumns;
                     int firstSpatialColumn;
-                    int dimensions;
                     if (isSpatial()) {
-                        dimensions = dimensions();
-                        physicalColumns = allColumns.size() - dimensions + 1;
+                        physicalColumns = allColumns.size() - spatialColumns() + 1;
                         firstSpatialColumn = firstSpatialArgument();
                     } else {
-                        dimensions = 0;
                         physicalColumns = allColumns.size();
                         firstSpatialColumn = Integer.MAX_VALUE;
                     }
@@ -328,7 +332,7 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
                         if (logicalColumn == firstSpatialColumn) {
                             localTInstances[physicalColumn] =
                                 MNumeric.BIGINT.instance(SpatialHelper.isNullable(this));
-                            logicalColumn += dimensions;
+                            logicalColumn += spatialColumns();
                         } else {
                             IndexColumn indexColumn = allColumns.get(logicalColumn);
                             Column column = indexColumn.getColumn();
@@ -353,7 +357,7 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
         } else if (indexColumns.size() >= Spatial.LAT_LON_DIMENSIONS) {
             // Lat/Lon
             isSpatialCompatible = true;
-            for (int d = 0; d < index.dimensions(); d++) {
+            for (int d = 0; d < index.spatialColumns(); d++) {
                 isSpatialCompatible =
                     isSpatialCompatible &&
                     isFixedDecimal(indexColumns.get(index.firstSpatialArgument() + d).getColumn());

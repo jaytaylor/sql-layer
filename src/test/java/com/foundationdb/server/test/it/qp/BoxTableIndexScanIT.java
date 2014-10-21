@@ -27,7 +27,8 @@ import com.foundationdb.server.error.OutOfRangeException;
 import com.foundationdb.server.spatial.Spatial;
 import com.geophile.z.Space;
 import com.geophile.z.spatialobject.d2.Box;
-import com.geophile.z.spatialobject.jts.JTSPolygon;
+import com.geophile.z.spatialobject.jts.JTS;
+import com.geophile.z.spatialobject.jts.JTSSpatialObject;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.LinearRing;
@@ -92,7 +93,8 @@ public class BoxTableIndexScanIT extends OperatorITBase
                         return new long[]{z, id};
                     }
                 });
-            compareRows(rows(boxBlobIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
+            compareRows(rows(boxBlobIndexRowType.physicalRowType(), sort(expected)),
+                        cursor(plan, queryContext, queryBindings));
         }
 /*
         {
@@ -365,14 +367,13 @@ public class BoxTableIndexScanIT extends OperatorITBase
     private void loadDB()
     {
         int id = 0;
-        final int MAX_Z = 4;
-        long[] zs = new long[MAX_Z];
-        for (long y = LAT_LO; y <= LAT_HI; y += DLAT) {
-            for (long x = LON_LO; x < LON_HI; x += DLON) {
-                JTSPolygon box = box(x, x + BOX_WIDTH, y, y + BOX_WIDTH);
+        for (long y = LAT_LO; y + BOX_WIDTH <= LAT_HI; y += DLAT) {
+            for (long x = LON_LO; x + BOX_WIDTH < LON_HI; x += DLON) {
+                JTSSpatialObject box = box(y, y + BOX_WIDTH, x, x + BOX_WIDTH);
                 dml().writeRow(session(), createNewRow(boxTable, id, before(id),  after(id), box));
+                long[] zs = new long[box.maxZ()];
                 Spatial.shuffle(space, box, zs);
-                for (int i = 0; i < MAX_Z; i++) {
+                for (int i = 0; i < zs.length && zs[i] != Space.Z_NULL; i++) {
                     long z = zs[i];
                     zToId.add(z, id);
                     boxes.add(box);
@@ -383,7 +384,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
         }
     }
 
-    private JTSPolygon box(double xLo, double xHi, double yLo, double yHi)
+    private JTSSpatialObject box(double xLo, double xHi, double yLo, double yHi)
     {
         Coordinate[] coords = new Coordinate[5];
         coords[0] = new Coordinate(xLo, yLo);
@@ -392,7 +393,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
         coords[3] = new Coordinate(xHi, yLo);
         coords[4] = coords[0];
         LinearRing ring = FACTORY.createLinearRing(coords);
-        return new JTSPolygon(space, FACTORY.createPolygon(ring, null));
+        return JTS.spatialObject(space, FACTORY.createPolygon(ring, null));
     }
 
     private long before(long id)
@@ -485,7 +486,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
     private IndexRowType beforeLatLonAfterIndexRowType;
     private Space space;
     private ZToIdMapping zToId = new ZToIdMapping();
-    List<JTSPolygon> boxes = new ArrayList<>(); // indexed by id
+    List<JTSSpatialObject> boxes = new ArrayList<>(); // indexed by id
     List<Long> zValues = new ArrayList<>(); // indexed by id
     Random random = new Random(123456);
 }

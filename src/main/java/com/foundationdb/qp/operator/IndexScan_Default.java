@@ -236,7 +236,7 @@ class IndexScan_Default extends Operator
                 } else {
                     atts.put(Label.INDEX_KIND, PrimitiveExplainer.getInstance("SPATIAL"));
                 }
-                int nequals = indexKeyRange.boundColumns() - index.dimensions();
+                int nequals = indexKeyRange.boundColumns() - index.spatialColumns();
                 if (nequals > 0) {
                     for (int i = 0; i < nequals; i++) {
                         atts.put(Label.EQUAL_COMPARAND, loExprs.get(i));

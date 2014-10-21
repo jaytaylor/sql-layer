@@ -362,7 +362,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
                 if (index.isSpatial()) {
                     // A spatial index has a single key column (the z-value), representing the declared spatial key columns.
                     if (indexField > index.firstSpatialArgument())
-                        indexField -= index.dimensions() - 1;
+                        indexField -= index.spatialColumns() - 1;
                 }
                 Key keySource;
                 if (indexField < pKeyFields) {
@@ -424,7 +424,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         }
         this.value = value;
         if (index.isSpatial()) {
-            this.nIndexFields = index.getAllColumns().size() - index.dimensions() + 1;
+            this.nIndexFields = index.getAllColumns().size() - index.spatialColumns() + 1;
             this.pKeyFields = this.nIndexFields;
         } else {
             this.nIndexFields = index.getAllColumns().size();

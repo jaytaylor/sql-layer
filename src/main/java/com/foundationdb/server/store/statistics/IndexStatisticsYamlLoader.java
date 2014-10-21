@@ -189,7 +189,7 @@ public class IndexStatisticsYamlLoader
             else {
                 int offset = i;
                 if (i > firstSpatialColumn) {
-                    offset += index.dimensions() - 1;
+                    offset += index.spatialColumns() - 1;
                 }
                 Column column = index.getKeyColumns().get(firstColumn + offset).getColumn();
                 type = column.getType();
@@ -252,7 +252,7 @@ public class IndexStatisticsYamlLoader
         map.put(SAMPLED_COUNT_KEY, indexStatistics.getSampledCount());
         List<Object> stats = new ArrayList<>();
         int nkeys = index.getKeyColumns().size();
-        if (index.isSpatial()) nkeys -= index.dimensions() - 1;
+        if (index.isSpatial()) nkeys -= index.spatialColumns() - 1;
         // Multi-column histograms
         for (int i = 0; i < nkeys; i++) {
             Histogram histogram = indexStatistics.getHistogram(0, i + 1);
@@ -307,7 +307,7 @@ public class IndexStatisticsYamlLoader
             else {
                 int offset = i;
                 if (i > firstSpatialColumn) {
-                    offset += index.dimensions() - 1;
+                    offset += index.spatialColumns() - 1;
                 }
                 Column column = index.getKeyColumns().get(firstColumn + offset).getColumn();
                 type = column.getType();
