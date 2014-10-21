@@ -471,6 +471,14 @@ public class SecurityServiceImpl implements SecurityService, Service {
     }
 
     @Override
+    /** If this session is authenticated, does it have access to the given schema?
+     *
+     * NOTE: If authentication is enabled, caller must not call this (that is, allow
+     * any queries) without authentication, since that is indistinguishable from
+     * authentication disabled.
+     *
+     * @see com.foundationdb.sql.pg.PostgresServerConnection#authenticationOkay
+     */
     public boolean isAccessible(Session session, String schema) {
         User user = session.get(SESSION_KEY);
         if (user == null) return true; // Not authenticated = open.
@@ -478,6 +486,14 @@ public class SecurityServiceImpl implements SecurityService, Service {
     }
 
     @Override
+    /** If this request is authenticated, does it have access to the given schema?
+     *
+     * NOTE: If authentication is enabled, caller must not call this (that is, allow
+     * any queries) without authentication, since that is indistinguishable from
+     * authentication disabled.
+     *
+     * @see com.foundationdb.http.HttpConductorImpl.AuthenticationType
+     */
     public boolean isAccessible(HttpServletRequest request, String schema) {
         Principal user = request.getUserPrincipal();
         if (user == null) return true; // Not authenticated = open.
@@ -493,6 +509,8 @@ public class SecurityServiceImpl implements SecurityService, Service {
     }
 
     @Override
+    /** If this session is authenticated, does it administrative access?
+     */
     public boolean hasRestrictedAccess(Session session) {
         User user = session.get(SESSION_KEY);
         if (user == null) return true; // Not authenticated = open.
