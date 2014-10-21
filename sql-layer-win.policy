@@ -1,0 +1,30 @@
+/* Policy file granting limiting the permissions for routines */
+
+
+// Development version
+grant codeBase "file:${fdbsql.home}\fdb-sql-layer-core\target\-" {
+  permission java.security.AllPermission;
+};
+
+grant codeBase "file:${user.home}\.m2\repository\-" {
+  permission java.security.AllPermission;
+};
+
+grant codeBase "file:${fdbsql.home}\routine-firewall\target\*" {
+};
+
+
+
+// Installed version
+grant codeBase "file:${fdbsql.home}\sql\lib\*" {
+  permission java.security.AllPermission;
+};
+
+
+grant codeBase "file:${fdbsql.home}\sql\lib\server\-" {
+  permission java.security.AllPermission;
+};
+
+
+grant codeBase "file:${fdbsql.home}\sql\lib\routine-firewall\*" {
+};

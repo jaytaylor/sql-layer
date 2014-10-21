@@ -107,6 +107,7 @@ XCOPY fdb-sql-layer-core\target\fdb-sql-layer-*.jar target\isstage\layer\lib /EX
 XCOPY fdb-sql-layer-core\target\dependency\* target\isstage\layer\lib\server
 XCOPY routine-firewall\target\routine-firewall*.jar target\isstage\lib\routine-firewall\ /EXCLUDE:target\xclude
 COPY %TOP_DIR%\sql-layer.policy target\isstage\lib
+COPY %TOP_DIR%\sql-layer-win.policy target\isstage\lib
 
 CD target\isstage\layer
 curl -o procrun.zip -L http://archive.apache.org/dist/commons/daemon/binaries/windows/commons-daemon-1.0.15-bin-windows.zip
