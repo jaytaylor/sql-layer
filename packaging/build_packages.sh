@@ -258,6 +258,8 @@ case "${1}" in
         cp "${TOP_DIR}/LICENSE.txt" "${STAGE_DIR}/resources/"
         cd "${LAYER_ULOCAL}/foundationdb/sql/"
         ln -s /usr/local/foundationdb/sql/${LAYER_JAR_NAME} fdb-sql-layer.jar
+        cd routine-firewall
+        ln -s /usr/local/foundationdb/sql/routine-firewall/${RF_JAR_NAME} routine-firewall.jar
         #
         # Client Tools
         #

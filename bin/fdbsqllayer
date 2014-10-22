@@ -85,7 +85,7 @@ infer_jar_file()
         elif [ -f "$loc_home" ]; then
             value="$loc_home"
         else
-            echo_die "Unknown jar location"
+            echo_die "Unknown core jar location"
         fi
     else
         value="$1"
@@ -110,7 +110,7 @@ infer_jar_rf_file()
         elif [ -f "$loc_home" ]; then
             value="$loc_home"
         else
-            echo_die "Unknown jar location"
+            echo_die "Unknown rf jar location"
         fi
     else
         value="$1"
