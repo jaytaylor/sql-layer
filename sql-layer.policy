@@ -13,17 +13,17 @@ grant codeBase "file:${user.home}/.m2/repository/-" {
 };
 
 // installation
-grant codeBase "file:/usr/local/foundationdb/sql/*" {
+grant codeBase "file:${fdbsql.home}/*" {
   permission java.security.AllPermission;
 };
 
-grant codeBase "file:/usr/local/foundationdb/sql/server/-" {
+grant codeBase "file:${fdbsql.home}/server/-" {
   permission java.security.AllPermission;
 };
 
-grant codeBase "file:/usr/local/foundationdb/sql/plugings/-" {
+grant codeBase "file:${fdbsql.home}/plugings/-" {
   permission java.security.Allpermission;
 }; 
 
-grant codeBase "file:/usr/local/foundationdb/sql/routine-firewall/*" {
+grant codeBase "file:${fdbsql.home}/routine-firewall/*" {
 };
