@@ -77,11 +77,9 @@ build_sql_layer() {
         echo "Missing argument" >&2
         exit 1
     fi
-
     LAYER_MVN_VERSION=$(cd "${TOP_DIR}/fdb-sql-layer-core" ; mvn -B org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version |grep '^[0-9]')
     LAYER_VERSION=${LAYER_MVN_VERSION%-SNAPSHOT}
     LAYER_JAR_NAME="fdb-sql-layer-core-${LAYER_MVN_VERSION}.jar"
-
     RF_MVN_VERSION=$(cd "${TOP_DIR}/routine-firewall" ; mvn -B org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version |grep '^[0-9]')
     RF_VERSION=${RF_MVN_VERSION%-SNAPSHOT}
     RF_JAR_NAME="routine-firewall-${RF_MVN_VERSION}.jar"    
@@ -194,12 +192,10 @@ case "${1}" in
         if [ ${RELEASE} -gt 0 ]; then
             EPOCH="0"
         fi
-
         STAGE_ROOT="${STAGE_DIR}/rpmbuild"
         BUILD_DIR="${STAGE_ROOT}/BUILD"
         build_sql_layer "${BUILD_DIR}/usr/sbin" "${BUILD_DIR}/usr/share/foundationdb/sql"
         filter_config_files "${BUILD_DIR}/etc/foundationdb/sql" "/var/lib/foundationdb/sql" "/var/log/foundationdb/sql" "/tmp"
-
         mkdir -p "${BUILD_DIR}/etc/rc.d/init.d/"
         cp "${PACKAGING_DIR}/rpm/fdb-sql-layer.init" "${BUILD_DIR}/etc/rc.d/init.d/fdb-sql-layer"
         
@@ -216,7 +212,9 @@ case "${1}" in
             --define "_fdb_sql_version ${LAYER_VERSION}" \
             --define "_fdb_sql_release ${RELEASE}" \
             --define "_fdb_sql_layer_jar ${LAYER_JAR_NAME}" \
+            --define "_fdb_sql_layer_rf_jar ${RF_JAR_NAME}" \
             --define "_fdb_sql_epoch ${EPOCH}"
+            
 
         mv "${STAGE_ROOT}"/RPMS/noarch/* "${TOP_DIR}/target/"
     ;;
