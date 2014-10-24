@@ -54,7 +54,7 @@ public class SQLResource {
     public Response query(@Context final HttpServletRequest request,
                           final MultivaluedMap<String, String> postParams) {
         return RestResponseBuilder
-                .forURLEncodedRequest(request, postParams)
+                .forRequest(request, postParams)
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
@@ -72,7 +72,7 @@ public class SQLResource {
     public Response explain(@Context final HttpServletRequest request,
                             final MultivaluedMap<String, String> postParams) {
         return RestResponseBuilder
-                .forURLEncodedRequest(request, postParams)
+                .forRequest(request, postParams)
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {

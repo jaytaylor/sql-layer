@@ -59,7 +59,8 @@ public class ProcedureCallResource {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
         return RestResponseBuilder
-                .forURLEncodedRequest(request, postParams)
+                //.forURLEncodedRequest(request, postParams)
+                .forRequest(request, postParams)
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {

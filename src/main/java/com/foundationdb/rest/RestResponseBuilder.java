@@ -69,13 +69,15 @@ public class RestResponseBuilder {
         this.status = Response.Status.OK.getStatusCode();
     }
 
-    public static RestResponseBuilder forRequest(HttpServletRequest request) {
-        return new RestResponseBuilder(request, request.getParameter(ResourceHelper.JSONP_ARG_NAME));
+    public static RestResponseBuilder forRequest(HttpServletRequest request, MultivaluedMap<String, String> postParams) {
+        if (postParams == null)
+            return new RestResponseBuilder(request, request.getParameter(ResourceHelper.JSONP_ARG_NAME));
+        else
+            return new RestResponseBuilder(request, postParams.getFirst(ResourceHelper.JSONP_ARG_NAME));
     }
 
-    public static RestResponseBuilder forURLEncodedRequest(HttpServletRequest request, 
-                                                           MultivaluedMap<String, String> postParams) {
-        return new RestResponseBuilder(request, postParams.getFirst(ResourceHelper.JSONP_ARG_NAME));
+    public static RestResponseBuilder forRequest(HttpServletRequest request) {
+        return forRequest(request, null);
     }
 
     public RestResponseBuilder status(Response.Status status) {
