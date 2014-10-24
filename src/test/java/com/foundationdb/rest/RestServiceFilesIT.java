@@ -28,9 +28,7 @@ import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.sql.RegexFilenameFilter;
 import com.foundationdb.util.JsonUtils;
 import com.foundationdb.util.Strings;
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import org.eclipse.jetty.client.ContentExchange;
@@ -46,7 +44,6 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
