@@ -16,7 +16,6 @@
  */
 package com.foundationdb.server.error;
 
-import com.foundationdb.sql.parser.AggregateNode;
 import com.foundationdb.sql.parser.ValueNode;
 
 public class NoAggregateWithGroupByException extends InvalidOperationException {
