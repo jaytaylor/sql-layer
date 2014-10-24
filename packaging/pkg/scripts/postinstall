@@ -13,7 +13,7 @@ done
 for file in "${DIR}"/*.new; do
     WITHOUT_NEW="${file%.new}"
     diff ${file} ${WITHOUT_NEW} > /dev/null
-    if [ $? = 0 ]; then
+    if [ $? -eq 0 ]; then
        rm ${file}
     fi
 done 
