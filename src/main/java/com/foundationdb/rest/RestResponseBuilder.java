@@ -25,14 +25,17 @@ import com.foundationdb.server.error.NoSuchRoutineException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.util.AkibanAppender;
 import com.fasterxml.jackson.core.JsonParseException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
+
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -68,6 +71,11 @@ public class RestResponseBuilder {
 
     public static RestResponseBuilder forRequest(HttpServletRequest request) {
         return new RestResponseBuilder(request, request.getParameter(ResourceHelper.JSONP_ARG_NAME));
+    }
+
+    public static RestResponseBuilder forURLEncodedRequest(HttpServletRequest request, 
+                                                           MultivaluedMap<String, String> postParams) {
+        return new RestResponseBuilder(request, postParams.getFirst(ResourceHelper.JSONP_ARG_NAME));
     }
 
     public RestResponseBuilder status(Response.Status status) {

@@ -26,9 +26,13 @@ import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.text.FullTextIndexServiceImpl;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.sql.RegexFilenameFilter;
+import com.foundationdb.util.JsonUtils;
 import com.foundationdb.util.Strings;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
+
 import org.eclipse.jetty.client.ContentExchange;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpExchange;
@@ -42,6 +46,7 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -53,6 +58,8 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.ws.rs.core.MediaType;
 
 import static com.foundationdb.util.JsonUtils.readTree;
 import static org.junit.Assert.assertEquals;
@@ -175,12 +182,10 @@ public class RestServiceFilesIT extends ITBase {
                 String checkURI = dumpFileIfExists(new File(basePath + ".check"));
                 String checkExpected = dumpFileIfExists(new File(basePath + ".check_expected"));
                 String setParameters = dumpFileIfExists(new File(basePath + ".properties"));
-                if("QUERY".equals(method)) {
-                    method = "GET";
-                    uri = "/sql/query?q=" + trimAndURLEncode(uri);
-                } else if("EXPLAIN".equals(method)) {
-                    method = "GET";
-                    uri = "/sql/explain?q=" + trimAndURLEncode(uri);
+                if("QUERY".equals(method) || "EXPLAIN".equals(method)) {
+                    body = "q=" + trimAndURLEncode(uri);
+                    uri = "QUERY".equals(method) ? "/sql/query" : "/sql/explain";
+                    method = "POST";
                 }
 
                 result.add(new Object[]{
@@ -236,6 +241,12 @@ public class RestServiceFilesIT extends ITBase {
         httpConn.setRequestContentSource(new ByteArrayInputStream(request));
     }
 
+    private static void postURLEncodedContents(HttpExchange httpConn, byte[] request) throws IOException {
+        httpConn.setRequestContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        httpConn.setRequestHeader("Accept", MediaType.APPLICATION_JSON);
+        httpConn.setRequestContentSource(new ByteArrayInputStream(request));
+    }
+
     @After
     public void finish() throws Exception {
         httpClient.stop();
@@ -254,7 +265,11 @@ public class RestServiceFilesIT extends ITBase {
                     throw new UnsupportedOperationException ("PUT/POST/PATCH expects request body (<test>.body)");
                 }
                 LOG.debug(caseParams.requestBody);
-                postContents(conn, caseParams.requestBody.getBytes() );
+                if (isJson(caseParams.requestBody)) {
+                    postContents(conn, caseParams.requestBody.getBytes());
+                } else {
+                    postURLEncodedContents(conn, caseParams.requestBody.getBytes());
+                }
             } // else GET || DELETE
 
             httpClient.send(conn);
@@ -299,7 +314,8 @@ public class RestServiceFilesIT extends ITBase {
             }
         } catch(JsonParseException e) {
             // Note: This case handles the jsonp tests. Somewhat fragile, but not horrible yet.
-            assertEquals(assertMsg, expectedTrimmed.replace("\r", ""), actualTrimmed.replace("\r", ""));
+            assertEquals(assertMsg, expectedTrimmed.replace("\r", "").replace("\n", ""), 
+                                    actualTrimmed.replace("\r", "").replace("\n", ""));
             skipNodeCheck = true;
         }
         // Try manual equals and then assert strings for pretty print
@@ -324,6 +340,15 @@ public class RestServiceFilesIT extends ITBase {
                 assertEquals ("Headers check", nameValue[1].trim(),
                         exch.getResponseFields().getStringField(nameValue[0]));
             }
+        }
+    }
+
+    public boolean isJson(String string) {
+        try {
+            JsonUtils.readTree(string);
+            return true;
+        } catch (IOException e) {
+            return false;
         }
     }
 

@@ -23,14 +23,16 @@ import com.foundationdb.rest.RestResponseBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+
 import java.io.PrintWriter;
 
 import static com.foundationdb.rest.resources.ResourceHelper.JSONP_ARG_NAME;
@@ -47,20 +49,22 @@ public class ProcedureCallResource {
         this.reqs = reqs;
     }
 
-    @GET
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
-    public Response getCall(@Context final HttpServletRequest request,
+    public Response postCall(@Context final HttpServletRequest request,
                             @PathParam("proc") String proc,
-                            @Context final UriInfo uri) throws Exception {
+                            @Context final UriInfo uri,
+                            final MultivaluedMap<String, String> postParams) throws Exception {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
         return RestResponseBuilder
-                .forRequest(request)
+                .forURLEncodedRequest(request, postParams)
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
                         reqs.restDMLService.callProcedure(writer, request, JSONP_ARG_NAME,
-                                                          procName, uri.getQueryParameters(), null);
+                                                          procName, postParams, null);
                     }
                 })
                 .build();
@@ -69,7 +73,7 @@ public class ProcedureCallResource {
     @POST
     @Consumes(MEDIATYPE_JSON_JAVASCRIPT)
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
-    public Response postCall(@Context final HttpServletRequest request,
+    public Response postCallJson(@Context final HttpServletRequest request,
                              @PathParam("proc") String proc,
                              @Context final UriInfo uri,
                              final String jsonParams) throws Exception {

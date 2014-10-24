@@ -21,13 +21,18 @@ import com.foundationdb.rest.ResourceRequirements;
 import com.foundationdb.rest.RestResponseBuilder;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+
 import java.io.PrintWriter;
 import java.util.Arrays;
 
@@ -42,34 +47,36 @@ public class SQLResource {
     }
 
     /** Run a single SQL statement specified by the 'q' query parameter. */
-    @GET
+    @POST
     @Path("/query")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response query(@Context final HttpServletRequest request,
-                          @QueryParam("q") final String query) {
+                          final MultivaluedMap<String, String> postParams) {
         return RestResponseBuilder
-                .forRequest(request)
+                .forURLEncodedRequest(request, postParams)
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
-                        reqs.restDMLService.runSQL(writer, request, query, null);
+                        reqs.restDMLService.runSQL(writer, request, postParams.getFirst("q"), null);
                     }
                 })
                 .build();
     }
 
     /** Explain a single SQL statement specified by the 'q' query parameter. */
-    @GET
+    @POST
     @Path("/explain")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response explain(@Context final HttpServletRequest request,
-                            @QueryParam("q") final String query) {
+                            final MultivaluedMap<String, String> postParams) {
         return RestResponseBuilder
-                .forRequest(request)
+                .forURLEncodedRequest(request, postParams)
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
-                        reqs.restDMLService.explainSQL(writer, request, query);
+                        reqs.restDMLService.explainSQL(writer, request, postParams.getFirst("q"));
                     }
                 })
                 .build();
