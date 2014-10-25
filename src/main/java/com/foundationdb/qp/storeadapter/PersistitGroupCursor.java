@@ -196,7 +196,7 @@ class PersistitGroupCursor extends RowCursorImpl implements GroupCursor
             direction = Key.GT;
         }
 
-        HKeyAndDescendentsScan(PersistitHKey hKey) throws PersistitException
+        HKeyAndDescendentsScan(HKey hKey) throws PersistitException
         {
             hKey.copyTo(exchange.getKey());
             hKey.copyTo(controllingHKey);
@@ -222,7 +222,7 @@ class PersistitGroupCursor extends RowCursorImpl implements GroupCursor
             }
         }
 
-        HKeyWithoutDescendentsScan(PersistitHKey hKey) throws PersistitException
+        HKeyWithoutDescendentsScan(HKey hKey) throws PersistitException
         {
             hKey.copyTo(exchange.getKey());
         }

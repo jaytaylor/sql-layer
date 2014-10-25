@@ -21,7 +21,6 @@ import com.foundationdb.qp.operator.CursorLifecycle;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.RowCursorImpl;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.HKeyRow;
 import com.foundationdb.qp.row.Row;
@@ -128,7 +127,7 @@ public class FullTextCursor extends RowCursorImpl
     /* Allocate a new <code>PersistitHKey</code> and copy the given
      * key bytes into it. */
     protected HKey hkey(String encoded) {
-        PersistitHKey hkey = (PersistitHKey)context.getStore().newHKey(rowType.hKey());
+        HKey hkey = context.getStore().newHKey(rowType.hKey());
         Key key = hkey.key();
         byte decodedBytes[] = RowIndexer.decodeString(encoded);
         key.setEncodedSize(decodedBytes.length);

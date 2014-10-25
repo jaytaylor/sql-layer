@@ -20,7 +20,6 @@ package com.foundationdb.qp.storeadapter.indexrow;
 import com.foundationdb.ais.model.IndexToHKey;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.util.HKeyCache;
@@ -126,7 +125,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
 
     // Object state
 
-    protected final HKeyCache<PersistitHKey> hKeyCache;
+    protected final HKeyCache<HKey> hKeyCache;
     protected final Table leafmostTable;
     private final Key keyState;
     private final IndexRowType indexRowType;

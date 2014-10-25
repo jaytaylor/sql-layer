@@ -42,6 +42,7 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.AbstractRow;
+import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.WriteIndexRow;
@@ -1111,18 +1112,15 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         }
         SDType storeData = createStoreData(session, table.getGroup());
         try {
-            // the "false" at the end of constructHKey toggles whether the RowData should be modified to increment
-            // the hidden PK field, if there is one. For PK-less rows, this field have already been incremented by now,
-            // so we don't want to increment it again
             Key hKey = getKey(session, storeData);
             constructHKey(session, table.rowDef(), rowData, hKey);
 
-            PersistitHKey persistitHKey = new PersistitHKey(createKey(), table.hKey());
+            StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(table.getAIS()));
+            HKey persistitHKey = adapter.newHKey(table.hKey());
             persistitHKey.copyFrom(hKey);
 
             for(GroupIndex groupIndex : groupIndexes) {
                 if(columnDifferences == null || groupIndex.columnsOverlap(table, columnDifferences)) {
-                    StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(table.getAIS()));
                     StoreGIMaintenance plan = StoreGIMaintenancePlans
                             .forAis(table.getAIS())
                             .forRowType(groupIndex, adapter.schema().tableRowType(table));

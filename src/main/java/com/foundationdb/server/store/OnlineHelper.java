@@ -451,7 +451,7 @@ public class OnlineHelper implements RowListener
                             spatialColumnHandler = new SpatialColumnHandler(index);
                             zValue = spatialColumnHandler.zValue(rowData);
                         }
-                        store.writeIndexRow(session, index, rowData, ((PersistitHKey)row.hKey()).key(), buffer,
+                        store.writeIndexRow(session, index, rowData, row.hKey().key(), buffer,
                                             spatialColumnHandler, zValue, true);
                     }
                 }
@@ -697,7 +697,7 @@ public class OnlineHelper implements RowListener
                     try {
                         if(handler != null) {
                             //TODO: Not correct but only option for createAs due to hidden PK
-                            Key hKey = ((PersistitHKey)row.hKey()).key();
+                            Key hKey = row.hKey().key();
                             if (!checker.contains(schemaManager, session, hKey)) {
                                 handler.handleRow(row);
                             } else {

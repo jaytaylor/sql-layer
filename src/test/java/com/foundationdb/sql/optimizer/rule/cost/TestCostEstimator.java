@@ -50,12 +50,12 @@ public class TestCostEstimator extends CostEstimator
                              File statsFile, boolean statsIgnoreMissingIndexes,
                              Properties properties)
             throws IOException {
-        super(schema, properties, new TestKeyCreator(), new TestCostModelFactory());
+        super(schema, properties, new TestKeyCreator(schema), new TestCostModelFactory());
         this.ais = ais;
         if (statsFile == null)
             stats = Collections.<Index,IndexStatistics>emptyMap();
         else
-            stats = new IndexStatisticsYamlLoader(ais, OptimizerTestBase.DEFAULT_SCHEMA, new TestKeyCreator())
+            stats = new IndexStatisticsYamlLoader(ais, OptimizerTestBase.DEFAULT_SCHEMA, new TestKeyCreator(schema))
                 .load(statsFile, statsIgnoreMissingIndexes);
     }
 

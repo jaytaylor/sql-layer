@@ -249,6 +249,7 @@ class HKeyUnion_Ordered extends Operator
                         HKey nextHKey = outputHKey(nextRow);
                         HKeyCache<HKey> hKeyCache = new HKeyCache<>(adapter);
                         nextRow = new HKeyRow(outputHKeyRowType, nextHKey, hKeyCache);
+                        //nextRow = (Row) nextHKey;
                         previousHKey = nextHKey;
                     } else {
                         nextRow = null;

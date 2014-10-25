@@ -42,7 +42,6 @@ import com.persistit.Key;
 import com.persistit.Value;
 
 import java.util.Collection;
-import java.util.List;
 
 public interface Store extends KeyCreator {
 

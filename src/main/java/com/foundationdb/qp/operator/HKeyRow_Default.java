@@ -20,6 +20,7 @@ package com.foundationdb.qp.operator;
 import com.foundationdb.ais.model.HKeyColumn;
 import com.foundationdb.ais.model.HKeySegment;
 import com.foundationdb.qp.storeadapter.PersistitHKey;
+import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.HKeyRow;
 import com.foundationdb.qp.row.ProjectedRow;
 import com.foundationdb.qp.row.Row;
@@ -32,6 +33,7 @@ import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -169,7 +171,7 @@ class HKeyRow_Default extends Operator
 
         private HKeyRow buildHKeyRow() {
             StoreAdapter store = adapter(rowType.hKey().table());
-            PersistitHKey hkey = (PersistitHKey)store.newHKey(rowType.hKey());
+            HKey hkey = store.newHKey(rowType.hKey());
             target.attach(hkey.key());
             int index = 0;
             for (HKeySegment segment : rowType.hKey().segments()) {

@@ -37,6 +37,7 @@ import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.row.AbstractRow;
+import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.HKeyRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.HKeyRowType;
@@ -58,15 +59,16 @@ import com.foundationdb.server.service.transaction.TransactionService.CallbackTy
 import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
-
 import com.foundationdb.sql.server.ServerCallContextStack;
 import com.foundationdb.sql.server.ServerQueryContext;
 import com.foundationdb.util.Exceptions;
+
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.search.Query;
 
 import com.google.inject.Inject;
 import com.persistit.Key;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -435,7 +437,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 
     private HKeyRow toHKeyRow(byte rowBytes[], HKeyRowType hKeyRowType, StoreAdapter store)
     {
-        PersistitHKey hkey = (PersistitHKey)store.newHKey(hKeyRowType.hKey());
+        HKey hkey = store.newHKey(hKeyRowType.hKey());
         Key key = hkey.key();
         key.setEncodedSize(rowBytes.length);
         System.arraycopy(rowBytes, 0, key.getEncodedBytes(), 0, rowBytes.length);

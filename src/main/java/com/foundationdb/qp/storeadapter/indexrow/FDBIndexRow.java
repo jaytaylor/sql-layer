@@ -26,7 +26,6 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.rowtype.IndexRowType;
-import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.storeadapter.indexcursor.SortKeyAdapter;
 import com.foundationdb.qp.storeadapter.indexcursor.SortKeyTarget;
 import com.foundationdb.qp.storeadapter.indexcursor.ValueSortKeyAdapter;
@@ -65,17 +64,19 @@ public class FDBIndexRow extends IndexRow {
     @Override
     public HKey ancestorHKey(Table table)
     {
-        PersistitHKey ancestorHKey; 
+        HKey ancestorHKey; 
         
         IndexToHKey indexToHKey;
         if (index.isGroupIndex()) {
-            ancestorHKey = new PersistitHKey(keyCreator.createKey(), table.hKey());
+            ancestorHKey = keyCreator.newHKey(table.hKey());
             indexToHKey = ((GroupIndex)index).indexToHKey(table.getDepth());
         } else {
-            ancestorHKey = new PersistitHKey(keyCreator.createKey(), index.leafMostTable().hKey());
+            ancestorHKey = keyCreator.newHKey(index.leafMostTable().hKey());
             indexToHKey = ((TableIndex)index).indexToHKey();
         }
-        Key hKey = ancestorHKey.key();
+        
+        
+        Key hKey = keyCreator.createKey();
         hKey.clear();
         for (int i = 0; i < indexToHKey.getLength(); i++) {
             if (indexToHKey.isOrdinal(i)) {
@@ -95,13 +96,13 @@ public class FDBIndexRow extends IndexRow {
                 PersistitKey.appendFieldFromKey(hKey, keySource, indexField, index.getIndexName());
             }
         }
+        ancestorHKey.copyFrom(hKey);
         if (index.isTableIndex() && index.leafMostTable() != table) {
             this.leafTableHKey = ancestorHKey; 
-            ancestorHKey = new PersistitHKey(keyCreator.createKey(), table.hKey());
+            ancestorHKey = keyCreator.newHKey(table.hKey());
             this.leafTableHKey.copyTo(ancestorHKey);
             ancestorHKey.useSegments(table.getDepth() + 1);
         }
-        
         return ancestorHKey;
     }
     
@@ -293,8 +294,6 @@ public class FDBIndexRow extends IndexRow {
         this.indexRowType = indexRowType;
         this.index = indexRowType.index();
         resetForWrite(index, iKey);
-        //this.leafmostTable = index.leafMostTable();
-        //this.hKeyCache = new HKeyCache<>(adapter);
         this.types = index.types();
     }
     
@@ -309,8 +308,6 @@ public class FDBIndexRow extends IndexRow {
 
     private final SortKeyAdapter<ValueSource, TPreparedExpression> SORT_KEY_ADAPTER = ValueSortKeyAdapter.INSTANCE;
     
-    //protected final HKeyCache<PersistitHKey> hKeyCache;
-    //protected final Table leafmostTable;
     private final TInstance[] types;
     private final KeyCreator keyCreator;
     private HKey leafTableHKey;

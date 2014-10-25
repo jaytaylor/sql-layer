@@ -19,6 +19,7 @@ package com.foundationdb.server.store.statistics;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.collation.TestKeyCreator;
 
 import static com.foundationdb.sql.TestBase.*;
@@ -26,6 +27,7 @@ import static com.foundationdb.sql.optimizer.OptimizerTestBase.*;
 
 import org.junit.Before;
 import org.junit.Test;
+
 import static org.junit.Assert.*;
 
 import java.io.StringWriter;
@@ -49,7 +51,8 @@ public class IndexStatisticsYamlTest
 
     @Test
     public void testLoadDump() throws Exception {
-        IndexStatisticsYamlLoader loader = new IndexStatisticsYamlLoader(ais, "test", new TestKeyCreator());
+        Schema schema = new Schema (ais);
+        IndexStatisticsYamlLoader loader = new IndexStatisticsYamlLoader(ais, "test", new TestKeyCreator(schema));
         Map<Index,IndexStatistics> stats = loader.load(YAML_FILE);
         File tempFile = File.createTempFile("stats", ".yaml");
         tempFile.deleteOnExit();

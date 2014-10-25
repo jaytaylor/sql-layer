@@ -66,7 +66,7 @@ public class PersistitGroupRow extends AbstractRow
     }
 
     @Override
-    public PersistitHKey hKey()
+    public HKey hKey()
     {
         return currentHKey;
     }
@@ -74,7 +74,7 @@ public class PersistitGroupRow extends AbstractRow
     @Override
     public HKey ancestorHKey(Table table)
     {
-        PersistitHKey ancestorHKey = hKeyCache.hKey(table);
+        HKey ancestorHKey = hKeyCache.hKey(table);
         currentHKey.copyTo(ancestorHKey);
         ancestorHKey.useSegments(table.getDepth() + 1);
         return ancestorHKey;
@@ -123,7 +123,7 @@ public class PersistitGroupRow extends AbstractRow
                 RowDef rowDef = adapter.schema().ais().getTable(rowData.getRowDefId()).rowDef();
                 row.setRowDef(rowDef);
                 row.setRowData(rowData);
-                PersistitHKey persistitHKey = persistitHKey();
+                HKey persistitHKey = persistitHKey();
                 persistitHKey.copyFrom(exchange.getKey());
             } catch (ArrayIndexOutOfBoundsException e) {
                 exception = e;
@@ -154,7 +154,7 @@ public class PersistitGroupRow extends AbstractRow
 
     // For use by this class
 
-    private PersistitHKey persistitHKey()
+    private HKey persistitHKey()
     {
         currentHKey = hKeyCache.hKey(row.getRowDef().table());
         return currentHKey;
@@ -169,7 +169,7 @@ public class PersistitGroupRow extends AbstractRow
     {
         this.adapter = adapter;
         this.rowData = rowData;
-        this.hKeyCache = new HKeyCache<PersistitHKey>(adapter);
+        this.hKeyCache = new HKeyCache<>(adapter);
     }
 
     private RowDataValueSource valueSource(int i) {
@@ -202,8 +202,8 @@ public class PersistitGroupRow extends AbstractRow
     private final PersistitAdapter adapter;
     private RowData rowData;
     private LegacyRowWrapper row;
-    private PersistitHKey currentHKey;
-    private HKeyCache<PersistitHKey> hKeyCache;
+    private HKey currentHKey;
+    private HKeyCache<HKey> hKeyCache;
     private RowDef lastRowDef;
     private RowType lastRowType;
 }

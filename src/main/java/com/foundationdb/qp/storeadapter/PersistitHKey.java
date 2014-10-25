@@ -127,6 +127,7 @@ public class PersistitHKey implements HKey
         originalHKeySize = hKey.getEncodedSize();
     }
 
+    @Override
     public void copyTo(Key target)
     {
         hKey.copyTo(target);
@@ -140,9 +141,16 @@ public class PersistitHKey implements HKey
         this.keyDepth = hKeyMetadata.keyDepth();
     }
 
+    @Override
     public Key key()
     {
         return hKey;
+    }
+    
+    @Override
+    public Key key(Key start) {
+        hKey.copyTo(start);
+        return start;
     }
     
     // For use by this class
