@@ -48,7 +48,7 @@ public class ProcedureCallResource {
 
     @POST
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
-    public Response postCallJson(@Context final HttpServletRequest request,
+    public Response postCall(@Context final HttpServletRequest request,
                              @PathParam("proc") String proc,
                              @Context final UriInfo uri,
                              final String jsonParams) throws Exception {
