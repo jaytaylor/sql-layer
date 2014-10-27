@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.rowdata;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -63,7 +64,7 @@ public class RowDef {
     /**
      * Array of index definitions for this row
      */
-    private TableIndex[] indexes;
+    private Collection<TableIndex> indexes;
 
     /**
      * Array of group index definitions for this row.
@@ -276,7 +277,7 @@ public class RowDef {
         return fieldDefs;
     }
 
-    public TableIndex[] getIndexes() {
+    public Collection<TableIndex> getIndexes() {
         return indexes;
     }
 
@@ -292,7 +293,7 @@ public class RowDef {
         return tableStatus;
     }
 
-    public void setIndexes(TableIndex[] indexes) {
+    public void setIndexes(Collection<TableIndex> indexes) {
         this.indexes = indexes;
     }
 
@@ -313,8 +314,8 @@ public class RowDef {
     }
 
     public TableIndex getPKIndex() {
-        if (indexes != null && indexes.length > 0) {
-            return indexes[0];
+        if (indexes != null && indexes.size() > 0) {
+            return indexes.iterator().next();
         } else {
             return null;
         }

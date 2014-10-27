@@ -17,10 +17,9 @@
 
 package com.foundationdb.rest;
 
+import com.foundationdb.junit.SelectedParameterizedRunner;
 import com.foundationdb.server.service.text.FullTextIndexService;
 import com.foundationdb.http.HttpConductor;
-import com.foundationdb.junit.NamedParameterizedRunner;
-import com.foundationdb.junit.Parameterization;
 import com.foundationdb.server.service.is.BasicInfoSchemaTablesService;
 import com.foundationdb.server.service.is.BasicInfoSchemaTablesServiceImpl;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
@@ -36,6 +35,7 @@ import org.eclipse.jetty.client.HttpExchange;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +57,7 @@ import java.util.Map;
 import static com.foundationdb.util.JsonUtils.readTree;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(NamedParameterizedRunner.class)
+@RunWith(SelectedParameterizedRunner.class)
 public class RestServiceFilesIT extends ITBase {
     private static final Logger LOG = LoggerFactory.getLogger(RestServiceFilesIT.class.getName());
     private static final File RESOURCE_DIR = new File(
@@ -100,7 +100,7 @@ public class RestServiceFilesIT extends ITBase {
     protected final CaseParams caseParams;
     protected final HttpClient httpClient;
 
-    public RestServiceFilesIT(CaseParams caseParams) throws Exception {
+    public RestServiceFilesIT(String name, CaseParams caseParams) throws Exception {
         this.caseParams = caseParams;
         this.httpClient = new HttpClient();
         httpClient.setConnectorType(HttpClient.CONNECTOR_SELECT_CHANNEL);
@@ -154,9 +154,9 @@ public class RestServiceFilesIT extends ITBase {
         return URLEncoder.encode(s.trim().replaceAll("\\s+", " "), "UTF-8");
     }
 
-    @NamedParameterizedRunner.TestParameters
-    public static Collection<Parameterization> gatherCases() throws Exception {
-        Collection<Parameterization> result = new ArrayList<>();
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Object[]> gatherCases() throws Exception {
+        Collection<Object[]> result = new ArrayList<>();
         for(String subDirName: RESOURCE_DIR.list()) {
             File subDir = new File(RESOURCE_DIR, subDirName);
             if(!subDir.isDirectory()) {
@@ -185,12 +185,12 @@ public class RestServiceFilesIT extends ITBase {
                     uri = "/sql/explain?q=" + trimAndURLEncode(uri);
                 }
 
-                result.add(Parameterization.create(
+                result.add(new Object[]{
                         subDirName + File.separator + caseName,
                         new CaseParams(subDirName, caseName, method, uri, body,
-                                       header, expected, expectedIgnore,
-                                       checkURI, checkExpected, setParameters)
-                ));
+                                header, expected, expectedIgnore,
+                                checkURI, checkExpected, setParameters)
+                });
             }
         }
         return result;

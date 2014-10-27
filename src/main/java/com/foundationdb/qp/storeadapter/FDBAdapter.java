@@ -31,8 +31,8 @@ import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.storeadapter.indexcursor.IterationHelper;
 import com.foundationdb.qp.storeadapter.indexcursor.MergeJoinSorter;
-import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
-import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowPool;
+import com.foundationdb.qp.storeadapter.indexrow.FDBIndexRow;
+import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
@@ -60,7 +60,7 @@ import java.io.InterruptedIOException;
 import java.util.Collection;
 
 public class FDBAdapter extends StoreAdapter {
-    private static final PersistitIndexRowPool indexRowPool = new PersistitIndexRowPool();
+    private static final IndexRowPool indexRowPool = new IndexRowPool();
 
     private final FDBStore store;
     private final FDBTransactionService txnService;
@@ -119,7 +119,7 @@ public class FDBAdapter extends StoreAdapter {
     }
 
     @Override
-    public void writeRow(Row newRow, TableIndex[] indexes, Collection<GroupIndex> groupIndexes) {
+    public void writeRow(Row newRow, Collection<TableIndex> indexes, Collection<GroupIndex> groupIndexes) {
         RowDef rowDef = newRow.rowType().table().rowDef();
         RowData newRowData = rowData(rowDef, newRow, new RowDataCreator());
         try {
@@ -164,13 +164,19 @@ public class FDBAdapter extends StoreAdapter {
     }
 
     @Override
-    public PersistitIndexRow takeIndexRow(IndexRowType indexRowType)
+    public IndexRow newIndexRow(IndexRowType indexRowType)
+    {
+        return new FDBIndexRow (this, indexRowType);
+    }
+    
+    @Override
+    public IndexRow takeIndexRow(IndexRowType indexRowType)
     {
         return indexRowPool.takeIndexRow(this, indexRowType);
     }
 
     @Override
-    public void returnIndexRow(PersistitIndexRow indexRow)
+    public void returnIndexRow(IndexRow indexRow)
     {
         indexRowPool.returnIndexRow(this, indexRow.rowType(), indexRow);
     }

@@ -14,11 +14,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+package com.foundationdb.server.error;
 
-package com.foundationdb.server.geophile;
+public class NoClusterFileException extends StartupFailureException {
 
-public interface Scan
-{
-    SpatialObject next();
-    void close();
+    public NoClusterFileException(String filename) {
+        super(ErrorCode.NO_CLUSTER_FILE, filename);
+    }
+
 }

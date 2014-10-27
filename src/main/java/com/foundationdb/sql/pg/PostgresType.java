@@ -152,8 +152,8 @@ public class PostgresType extends ServerType
         REGPROCEDURE_TYPE_OID(2202, "regprocedure"),
         REGOPER_TYPE_OID(2203, "regoper"),
         REGOPERATOR_TYPE_OID(2204, "regoperator"),
-        UUID_TYPE_OID(2950, "uuid"),
-        _UUID_TYPE_OID(2951, "_uuid");
+        UUID_TYPE_OID(2950, "uuid", BinaryEncoding.UUID, Types.OTHER),
+        _UUID_TYPE_OID(2951, "_uuid", BinaryEncoding.UUID, Types.OTHER);
         
         enum TypType {
             BASE,

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 FoundationDB, LLC
+ * Copyright (C) 2009-2014 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,11 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.geophile;
+package com.foundationdb.sql.pg;
 
-public interface Index
-{
-    boolean add(long z, SpatialObject spatialObject);
-    boolean remove(long z, SpatialObject spatialObject);
-    Scan scan(long z);
+public class PostgresServerJDBCTypesWithBinaryIT extends PostgresServerJDBCTypesITBase {
+
+
+    public PostgresServerJDBCTypesWithBinaryIT(String caseName, int jdbcType, String colName, Object value, String unparseable, Object defaultValue) {
+        super(caseName, jdbcType, colName, value, unparseable, defaultValue);
+    }
+
+    @Override
+    protected boolean binaryTransfer() {
+        return true;
+    }
 }

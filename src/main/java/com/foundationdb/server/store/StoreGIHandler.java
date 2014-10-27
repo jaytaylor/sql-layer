@@ -24,18 +24,16 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.rowtype.InternalIndexTypes;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.geophile.Space;
-import com.foundationdb.server.geophile.SpaceLatLon;
+import com.foundationdb.qp.row.WriteIndexRow;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.spatial.Spatial;
 import com.foundationdb.util.ArgumentValidation;
-import com.foundationdb.util.tap.PointTap;
-import com.foundationdb.util.tap.Tap;
+import com.geophile.z.Space;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -60,7 +58,7 @@ class StoreGIHandler<SType extends AbstractStore,SDType,SSDType extends StoreSto
     private final AbstractStore<SType,SDType,SSDType> store;
     private final Session session;
     private final Table sourceTable;
-    private final PersistitIndexRowBuffer indexRow;
+    private final WriteIndexRow indexRow;
     private final Value zSource_t3 = new Value(InternalIndexTypes.LONG.instance(true));
     private final Collection<RowType> lockTypes;
 
@@ -68,7 +66,7 @@ class StoreGIHandler<SType extends AbstractStore,SDType,SSDType extends StoreSto
     private StoreGIHandler(AbstractStore<SType,SDType,SSDType> store, Session session, Schema schema, Table sourceTable, Table lockLeaf) {
         this.store = store;
         this.session = session;
-        this.indexRow = new PersistitIndexRowBuffer(store);
+        this.indexRow = new WriteIndexRow(store);
         this.sourceTable = sourceTable;
         if(lockLeaf == null) {
             this.lockTypes = null;
@@ -156,11 +154,11 @@ class StoreGIHandler<SType extends AbstractStore,SDType,SSDType extends StoreSto
     }
 
     private void copyZValueToIndexRow(GroupIndex groupIndex, Row row, IndexRowComposition irc) {
-        BigDecimal[] coords = new BigDecimal[Space.LAT_LON_DIMENSIONS];
-        SpaceLatLon space = (SpaceLatLon) groupIndex.space();
+        BigDecimal[] coords = new BigDecimal[Spatial.LAT_LON_DIMENSIONS];
+        Space space = groupIndex.space();
         int firstSpatialColumn = groupIndex.firstSpatialArgument();
         boolean zNull = false;
-        for(int d = 0; d < Space.LAT_LON_DIMENSIONS; d++) {
+        for(int d = 0; d < Spatial.LAT_LON_DIMENSIONS; d++) {
             if(!zNull) {
                 ValueSource columnValue = row.value(irc.getFieldPosition(firstSpatialColumn + d));
                 if (columnValue.isNull()) {
@@ -174,7 +172,7 @@ class StoreGIHandler<SType extends AbstractStore,SDType,SSDType extends StoreSto
             zSource_t3.putNull();
             indexRow.append(zSource_t3, NON_NULL_Z_TYPE);
         } else {
-            zSource_t3.putInt64(space.shuffle(coords));
+            zSource_t3.putInt64(Spatial.shuffle(space, coords[0].doubleValue(), coords[1].doubleValue()));
             indexRow.append(zSource_t3, NON_NULL_Z_TYPE);
         }
     }

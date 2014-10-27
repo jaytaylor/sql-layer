@@ -52,7 +52,8 @@
 ---
 - Statement: SELECT NULLIF(?, 2.3) FROM all_types;
 - params: [[3]]
-- output: [[3.0]]
+- output: [[3]]
+- output_types : [NUMERIC]
 
 ---
 - Message: "bug (or maybe not) type of ? is unknown, thus 2.4 is assumed to have the same type as 2, which is bigint."

@@ -17,31 +17,41 @@
 
 package com.foundationdb.sql.pg;
 
-import com.foundationdb.junit.NamedParameterizedRunner;
-import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
-import com.foundationdb.junit.Parameterization;
+
+import com.foundationdb.junit.SelectedParameterizedRunner;
+
+import com.foundationdb.sql.jdbc.util.PSQLException;
 
 import java.sql.*;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.GregorianCalendar;
+import java.util.UUID;
 
+import com.foundationdb.sql.jdbc.util.PSQLState;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized.Parameters;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
  * Test using various JDBC <code>set</code> and <code>get</code> methods.
  */
-@RunWith(NamedParameterizedRunner.class)
-public class PostgresServerJDBCTypesIT extends PostgresServerITBase
+@RunWith(SelectedParameterizedRunner.class)
+public abstract class PostgresServerJDBCTypesITBase extends PostgresServerITBase
 {
+
     @Before
     public void createTable() throws Exception {
         SimpleColumn columns[] = {
@@ -57,18 +67,36 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
             new SimpleColumn("col_smallint", "MCOMPAT_ smallint"),
             new SimpleColumn("col_varchar", "MCOMPAT_ varchar", 16L, null),
             new SimpleColumn("col_time", "MCOMPAT_ time"), 
-            new SimpleColumn("col_timestamp", "MCOMPAT_ timestamp"),
             new SimpleColumn("col_datetime", "MCOMPAT_ datetime"),
+            new SimpleColumn("col_guid", "AKSQL_ GUID"),
         };
         createTableFromTypes(SCHEMA_NAME, "types", false, false, columns);
     }
 
-    static Object[] tc(String name, int jdbcType, String colName, Object value) {
-        return new Object[] { name, jdbcType, colName, value };
+    @Before
+    public void ensureCorrectConnectionType() throws Exception {
+        forgetConnection();
     }
 
-    @TestParameters
-    public static Collection<Parameterization> types() throws Exception {
+    @Override
+    protected String getConnectionURL() {
+        // loglevel=2 is also useful for seeing what's really happening.
+        return super.getConnectionURL() + "?prepareThreshold=1&binaryTransfer=" + binaryTransfer();
+    }
+
+    protected abstract boolean binaryTransfer();
+
+    /**
+     * @param unparseable some sort of string that couldn't possibly be parsed (e.g. an int of value "Suzie")
+     * @param defaultValue the default value that should come back if you pass in a wildly incorrect string
+     */
+    static Object[] tc(String name, int jdbcType, String colName, Object value,
+                       String unparseable, Object defaultValue) {
+        return new Object[] { name, jdbcType, colName, value, unparseable, defaultValue};
+    }
+
+    @Parameters(name="{0}")
+    public static Iterable<Object[]> types() throws Exception {
         Calendar cal = new GregorianCalendar();
         cal.set(Calendar.MILLISECOND, 0);
         long timeNoMillis = cal.getTime().getTime();
@@ -83,39 +111,42 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
         tcal.set(Calendar.DAY_OF_MONTH, 1);
         long timeOfDay = tcal.getTime().getTime();
         Object[][] tcs = new Object[][] {
-            tc("BigDecimal", Types.DECIMAL, "col_decimal", new BigDecimal("3.14")),
-            tc("Boolean", Types.BOOLEAN, "col_boolean", Boolean.TRUE),
-            tc("Byte", Types.TINYINT, "col_tinyint", (byte)123),
-            tc("Bytes", Types.VARBINARY, "col_varbinary", new byte[] { 0, 1, (byte)0xFF }),
-            tc("Date", Types.DATE, "col_date", new Date(startOfDay)),
-            tc("Double", Types.DOUBLE, "col_double", 3.14),
-            tc("Float", Types.FLOAT, "col_float", 3.14f),
-            tc("Int", Types.INTEGER, "col_int", 123456),
-            tc("Long", Types.BIGINT, "col_bigint", 0x12345678L),
-            tc("Short", Types.SMALLINT, "col_smallint", (short)1001),
-            tc("String", Types.VARCHAR, "col_varchar", "hello"),
-            tc("Time", Types.TIME, "col_time", new Time(timeOfDay)),
-            tc("Timestamp", Types.TIMESTAMP, "col_timestamp", new Timestamp(timeNoMillis)),
-            tc("Timestamp(Datetime)", Types.TIMESTAMP, "col_datetime", new Timestamp(timeNoMillis)),
+            tc("BigDecimal", Types.DECIMAL, "col_decimal", new BigDecimal("3.14"), "Suzie", new BigDecimal("0.00")),
+            tc("Boolean", Types.BOOLEAN, "col_boolean", Boolean.TRUE, "Jack", false),
+            tc("Byte", Types.TINYINT, "col_tinyint", (byte)123, "Lewis", (byte)0),
+            // strings are parsed into byte arrays
+            tc("Bytes", Types.VARBINARY, "col_varbinary", new byte[] { 0, 1, (byte)0xFF }, null, null),
+            tc("Date", Types.DATE, "col_date", new Date(startOfDay), "Janet", null),
+            tc("Double", Types.DOUBLE, "col_double", 3.14E52, "Bridget", 0.0),
+            tc("Float", Types.FLOAT, "col_float", 3.14f, "Willy", 0.0f),
+            tc("Int", Types.INTEGER, "col_int", 123456, "Mary", 0),
+            tc("Long", Types.BIGINT, "col_bigint", 0x12345678L, "Jimmy", 0L),
+            tc("Short", Types.SMALLINT, "col_smallint", (short)1001, "Martha", (short)0),
+            // obviously any string can be a string
+            tc("String", Types.VARCHAR, "col_varchar", "hello", null, null),
+            tc("Time", Types.TIME, "col_time", new Time(timeOfDay), "Mike", null),
+            tc("Timestamp(Datetime)", Types.TIMESTAMP, "col_datetime", new Timestamp(timeNoMillis), "Bob", null),
+            tc("GUID", Types.OTHER, "col_guid", UUID.randomUUID(), "3249",
+               new PSQLException("3249", new PSQLState("2202I"))),
         };
-        Collection<Parameterization> result = new ArrayList<>();
-        for (Object[] tc : tcs) {
-            result.add(Parameterization.create((String)tc[0], tc));
-        }
-        return result;
+        return Arrays.asList(tcs);
     }
 
     private final String caseName;
     private final int jdbcType;
     private final String colName;
     private final Object value;
+    private final String unparseable;
+    private final Object defaultValue;
 
-    public PostgresServerJDBCTypesIT(String caseName, int jdbcType, String colName,
-                                     Object value) {
+    public PostgresServerJDBCTypesITBase(String caseName, int jdbcType, String colName,
+                                         Object value, String unparseable, Object defaultValue) {
         this.caseName = caseName;
         this.jdbcType = jdbcType;
         this.colName = colName;
         this.value = value;
+        this.unparseable = unparseable;
+        this.defaultValue = defaultValue;
     }
 
     @Test
@@ -142,6 +173,75 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
         rs.close();
         
         getStmt.close();
+        setStmt.close();
+    }
+
+    @Test
+    public void setAsString() throws Exception {
+        PreparedStatement setStmt = getConnection().prepareStatement(String.format("INSERT INTO types(id,%s) VALUES(?,?)", colName));
+        PreparedStatement getStmt = getConnection().prepareStatement(String.format("SELECT %s FROM types WHERE id = ?", colName));
+        Object valueForStrings = value;
+        // "3true" -> true
+        // check out Date with "3"+value.toString()
+        // also Date/Time with value.toString() + "3" -> get's parsed as null
+        // bytes need special handling here.
+        if (value instanceof byte[]) {
+            byte[] bytes = (byte[])value;
+            byte[] bytesCopy = new byte[bytes.length];
+            valueForStrings = bytesCopy;
+            // large bytes fall over when you try to encode them as UTF-8
+            // not going to worry about that here
+            for (int i=0; i<bytes.length; i++) {
+                if (bytes[i] < 0) {
+                    bytesCopy[i] = 37;
+                } else {
+                    bytesCopy[i] = bytes[i];
+                }
+            }
+            setStmt.setString(2, new String(bytesCopy, "UTF-8"));
+        } else {
+            setStmt.setString(2, valueForStrings.toString());
+        }
+        setStmt.setInt(1, 1);
+        setStmt.executeUpdate();
+        getStmt.setInt(1, 1);
+        ResultSet rs = getStmt.executeQuery();
+        assertTrue(rs.next());
+        compareObjects(asObject(valueForStrings, jdbcType), rs.getObject(1));
+        rs.close();
+
+        getStmt.close();
+        setStmt.close();
+    }
+
+    @Test
+    public void setUnparseableString() throws Exception {
+        PreparedStatement setStmt = getConnection().prepareStatement(String.format("INSERT INTO types(id,%s) VALUES(?,?)", colName));
+        PreparedStatement getStmt = getConnection().prepareStatement(String.format("SELECT %s FROM types WHERE id = ?", colName));
+        setStmt.setString(2, unparseable);
+        setStmt.setInt(1, 1);
+        if (defaultValue instanceof Exception) {
+            try {
+                setStmt.executeUpdate();
+                fail("Expected an exception to be thrown");
+            } catch (Exception e) {
+                assertThat(e, is(instanceOf(defaultValue.getClass())));
+                assertThat(e.getMessage(), containsString(((Exception) defaultValue).getMessage()));
+                if (defaultValue instanceof PSQLException) {
+                    assertEquals(((PSQLException)defaultValue).getSQLState(),
+                            ((PSQLException)e).getSQLState());
+                }
+            }
+        } else {
+            setStmt.executeUpdate();
+            getStmt.setInt(1, 1);
+            ResultSet rs = getStmt.executeQuery();
+            assertTrue(rs.next());
+            compareObjects(asObject(defaultValue, jdbcType), rs.getObject(1));
+            rs.close();
+
+            getStmt.close();
+        }
         setStmt.close();
     }
 
@@ -188,6 +288,9 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
         case Types.TIMESTAMP:
             stmt.setTimestamp(index, (Timestamp)value);
             break;
+        case Types.OTHER:
+            stmt.setObject(index, value);
+            break;
         default:
             fail("Unknown JDBC type");
         }
@@ -222,6 +325,8 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
             return rs.getTime(index);
         case Types.TIMESTAMP:
             return rs.getTimestamp(index);
+        case Types.OTHER:
+            return rs.getObject(index);
         default:
             fail("Unknown JDBC type");
             return null;
@@ -241,7 +346,7 @@ public class PostgresServerJDBCTypesIT extends PostgresServerITBase
 
     protected static void compareObjects(Object expected, Object actual) {
         if (expected instanceof byte[]) {
-            assertTrue(Arrays.equals((byte[])expected, (byte[])expected));
+            assertArrayEquals((byte[]) expected, (byte[]) actual);
         }
         else if (expected instanceof java.util.Date) {
             assertEquals(String.format("%s <> %s", 

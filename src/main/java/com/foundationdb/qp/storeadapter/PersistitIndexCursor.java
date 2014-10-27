@@ -20,9 +20,9 @@ package com.foundationdb.qp.storeadapter;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.*;
-import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.storeadapter.indexcursor.IndexCursor;
 import com.foundationdb.qp.storeadapter.indexcursor.IterationHelper;
+import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.server.api.dml.ColumnSelector;
@@ -41,11 +41,11 @@ class PersistitIndexCursor extends RowCursorImpl implements BindingsAwareCursor
     @Override
     public Row next()
     {
-        PersistitIndexRow next;
+        IndexRow next;
         CursorLifecycle.checkIdleOrActive(this);
         boolean needAnother;
         do {
-            if ((next = (PersistitIndexRow) indexCursor.next()) != null) {
+            if ((next = (IndexRow) indexCursor.next()) != null) {
                 needAnother = !(isTableIndex ||
                                 selector.matchesAll() ||
                                 !next.keyEmpty() && selector.matches(next.tableBitmap()));

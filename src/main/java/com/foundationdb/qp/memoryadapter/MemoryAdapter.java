@@ -34,8 +34,8 @@ import com.foundationdb.qp.operator.API.Ordering;
 import com.foundationdb.qp.operator.API.SortOption;
 import com.foundationdb.qp.storeadapter.Sorter;
 import com.foundationdb.qp.storeadapter.indexcursor.IterationHelper;
-import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
 import com.foundationdb.qp.row.HKey;
+import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
@@ -105,7 +105,7 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
-    public void writeRow(Row newRow, TableIndex[] indexes, Collection<GroupIndex> groupIndexes) {
+    public void writeRow(Row newRow, Collection<TableIndex> indexes, Collection<GroupIndex> groupIndexes) {
         throw new UnsupportedOperationException();
     }
 
@@ -124,13 +124,18 @@ public class MemoryAdapter extends StoreAdapter {
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public PersistitIndexRow takeIndexRow(IndexRowType indexRowType) {
+    @Override 
+    public IndexRow newIndexRow (IndexRowType indexRowType) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void returnIndexRow(PersistitIndexRow indexRow) {
+    public IndexRow takeIndexRow(IndexRowType indexRowType) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void returnIndexRow(IndexRow indexRow) {
         throw new UnsupportedOperationException();
     }
 

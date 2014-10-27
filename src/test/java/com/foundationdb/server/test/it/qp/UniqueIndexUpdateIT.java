@@ -20,11 +20,12 @@ package com.foundationdb.server.test.it.qp;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.rowtype.TableRowType;
-import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
+import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.scan.NewRow;
+
 import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.cursor;
@@ -69,7 +70,7 @@ public class UniqueIndexUpdateIT extends OperatorITBase
         Row row;
         int count = 0;
         while ((row = cursor.next()) != null) {
-            PersistitIndexRowBuffer indexRow = (PersistitIndexRowBuffer) row;
+            IndexRow indexRow = (IndexRow) row;
             long x = getLong(indexRow, 0);
             long id = getLong(indexRow, 2);
             assertEquals(id, x * 1000);
@@ -104,7 +105,7 @@ public class UniqueIndexUpdateIT extends OperatorITBase
         Row row;
         final long NEW_Y_VALUE = 99;
         while ((row = cursor.next()) != null) {
-            PersistitIndexRowBuffer indexRow = (PersistitIndexRowBuffer) row;
+            IndexRow indexRow = (IndexRow) row;
             long x = getLong(indexRow, 0);
             long id = getLong(indexRow, 2);
             int pos = 1;
@@ -120,7 +121,7 @@ public class UniqueIndexUpdateIT extends OperatorITBase
         cursor.openTopLevel();
         int count = 0;
         while ((row = cursor.next()) != null) {
-            PersistitIndexRowBuffer indexRow = (PersistitIndexRowBuffer) row;
+            IndexRow indexRow = (IndexRow) row;
             long x = getLong(indexRow, 0);
             long y = getLong(indexRow, 1);
             long id = getLong(indexRow, 2);

@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule.cost;
 
-import com.foundationdb.server.geophile.BoxLatLon;
+import com.foundationdb.server.spatial.BoxLatLon;
 import com.foundationdb.sql.optimizer.rule.cost.CostEstimator.IndexIntersectionCoster;
 import com.foundationdb.sql.optimizer.rule.cost.CostEstimator.SelectivityConditions;
 import com.foundationdb.sql.optimizer.rule.range.RangeSegment;
@@ -30,8 +30,9 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.rowtype.InternalIndexTypes;
 import com.foundationdb.server.error.AkibanInternalException;
-import com.foundationdb.server.geophile.SpaceLatLon;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
+import com.geophile.z.Space;
+import com.geophile.z.SpatialObject;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -178,7 +179,7 @@ public class PlanCostEstimator
             int nscans = 1;
             FunctionExpression func = (FunctionExpression)index.getLowComparand();
             List<ExpressionNode> operands = func.getOperands();
-            SpaceLatLon space = (SpaceLatLon)index.getIndex().space();
+            Space space = index.getIndex().space();
             if ("_center".equals(func.getFunction())) {
                 nscans = 2;     // One in each direction.
                 costEstimate = costEstimator.costIndexScan(index.getIndex(),
@@ -190,14 +191,17 @@ public class PlanCostEstimator
                 BigDecimal lon = decimalConstant(operands.get(1));
                 BigDecimal r = decimalConstant(operands.get(2));
                 if ((lat != null) && (lon != null) && (r != null)) {
-                    BoxLatLon box = BoxLatLon.newBox(lat.subtract(r), lat.add(r), lon.subtract(r), lon.add(r));
-                    long[] zValues = new long[SpaceLatLon.MAX_DECOMPOSITION_Z_VALUES];
+                    SpatialObject box = BoxLatLon.newBox(lat.subtract(r).doubleValue(),
+                                                         lat.add(r).doubleValue(),
+                                                         lon.subtract(r).doubleValue(),
+                                                         lon.add(r).doubleValue());
+                    long[] zValues = new long[box.maxZ()];
                     space.decompose(box, zValues);
-                    for (int i = 0; i < SpaceLatLon.MAX_DECOMPOSITION_Z_VALUES; i++) {
+                    for (int i = 0; i < box.maxZ(); i++) {
                         long z = zValues[i];
                         if (z != -1L) {
-                            ExpressionNode lo = new ConstantExpression(space.zLo(z), InternalIndexTypes.LONG.instance(true));
-                            ExpressionNode hi =  new ConstantExpression(space.zHi(z), InternalIndexTypes.LONG.instance(true));
+                            ExpressionNode lo = new ConstantExpression(Space.zLo(z), InternalIndexTypes.LONG.instance(true));
+                            ExpressionNode hi =  new ConstantExpression(Space.zHi(z), InternalIndexTypes.LONG.instance(true));
                             CostEstimate zScanCost =
                                 costEstimator.costIndexScan(index.getIndex(), index.getEqualityComparands(),
                                                             lo, true,

@@ -49,7 +49,7 @@
 #- output: [['123']]
 ---
 - Statement: SELECT left(?, 3) from all_types;
-- params: [[12345]]
+- params: [['12345']]
 - output: [['123']]
 ---
 - Statement: SELECT left('abcd', ?) from all_types;

@@ -23,6 +23,8 @@ import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.qp.loadableplan.std.PersistitCLILoadablePlan;
 import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
+import com.foundationdb.qp.row.IndexRow;
+import com.foundationdb.qp.row.WriteIndexRow;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.server.*;
@@ -152,7 +154,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
                                    RowData rowData,
                                    Index index,
                                    Key hKey,
-                                   PersistitIndexRowBuffer indexRow,
+                                   WriteIndexRow indexRow,
                                    SpatialColumnHandler spatialColumnHander,
                                    long zValue,
                                    boolean forInsert) throws PersistitException
@@ -185,7 +187,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     }
 
     @Override
-    public PersistitIndexRowBuffer readIndexRow(Session session,
+    public IndexRow readIndexRow(Session session,
                                                 Index parentPKIndex,
                                                 Exchange exchange,
                                                 RowDef childRowDef,
@@ -198,6 +200,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
             keyAppender.append(fieldDef, childRowData);
         }
         try {
+            
             PersistitIndexRowBuffer indexRow = null;
             // Method only called if looking up a pk for which there is at least one
             // column missing from child row. Key contains the logical parent of it.
@@ -226,7 +229,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
                               TableIndex index,
                               RowData rowData,
                               Key hKey,
-                              PersistitIndexRowBuffer indexRow,
+                              WriteIndexRow indexRow,
                               SpatialColumnHandler spatialColumnHandler,
                               long zValue,
                               boolean doLock) {
@@ -274,7 +277,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
                                 Exchange exchange,
                                 RowData rowData,
                                 Key hKey,
-                                PersistitIndexRowBuffer indexRowBuffer,
+                                WriteIndexRow indexRowBuffer,
                                 SpatialColumnHandler spatialColumnHandler,
                                 long zValue)
         throws PersistitException
@@ -290,7 +293,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
                                TableIndex index,
                                RowData rowData,
                                Key hKey,
-                               PersistitIndexRowBuffer buffer,
+                               WriteIndexRow buffer,
                                SpatialColumnHandler spatialColumnHandler,
                                long zValue,
                                boolean doLock) {
@@ -337,7 +340,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     }
 
     @Override
-    void resetForWrite(Exchange ex, Index index, PersistitIndexRowBuffer indexRowBuffer) {
+    void resetForWrite(Exchange ex, Index index, WriteIndexRow indexRowBuffer) {
         indexRowBuffer.resetForWrite(index, ex.getKey(), ex.getValue());
     }
 
