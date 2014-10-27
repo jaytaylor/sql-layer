@@ -42,25 +42,12 @@
 - Statement: SELECT NULLIF(2, '3') FROM all_types;
 - output_types:  !select-engine { sys-mysql: [BIGINT], all: [INTEGER] }
 
----
-- Message: "BUG: comparisons on strings are 'space' sensitive."
-#---
-#- Statement: SELECT NULLIF('   ', '') FROM all_types;
-#- output: [[null]]
-
 ## Test with parameters
 ---
 - Statement: SELECT NULLIF(?, 2.3) FROM all_types;
 - params: [[3]]
 - output: [[3]]
 - output_types : [NUMERIC]
-
----
-- Message: "bug (or maybe not) type of ? is unknown, thus 2.4 is assumed to have the same type as 2, which is bigint."
-#---
-#- Statement: SELECT NULLIF(2, ?) FROM all_types;
-#- params: [[2.4]]
-#- output: [[2]]
 
 ## Test with fields
 --- 
