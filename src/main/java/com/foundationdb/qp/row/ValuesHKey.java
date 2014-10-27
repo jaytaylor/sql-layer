@@ -113,7 +113,7 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
                     Value valueTarget = t.valueAt(columnIndex);
                     ValueTargets.copyFrom(valueSource, valueTarget);
                 } else {
-                    t.valueAt(columnIndex).putNull();
+                    //t.valueAt(columnIndex).putNull();
                 }
                 columnIndex++;
             }
@@ -121,9 +121,9 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
         if (t.hKeySegments > hKeySegments)
             t.useSegments(hKeySegments);
         
-        for (int i = columnIndex; i < t.values.size(); i++) {
-            t.valueAt(i).putNull();
-        }
+        //for (int i = columnIndex; i < t.values.size(); i++) {
+        //    t.valueAt(i).putNull();
+        //}
     }
     
     @Override 
@@ -142,7 +142,7 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
                 if (this.values.get(columnIndex).hasAnyValue()) {
                     appender.append(this.values.get(columnIndex), column.column());
                 } else {
-                    appender.appendNull();
+                    //appender.appendNull();
                 }
                 columnIndex++;
             }

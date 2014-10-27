@@ -132,7 +132,7 @@ public class ValuesHKeyTest {
         key.copyTo(target);
         
         assertEquals (target.valueAt(0).getInt32(), 42);
-        assertTrue (target.valueAt(1).isNull());
+        assertTrue (!target.valueAt(1).hasAnyValue());
         assertEquals(target.segments(), 1);
     }
     
@@ -144,7 +144,7 @@ public class ValuesHKeyTest {
         ValuesHKey target = createHKey("item");
         key.copyTo(target);
         assertEquals (target.valueAt(0).getInt32(), 42);
-        assertTrue (target.valueAt(1).isNull());
+        assertTrue (!target.valueAt(1).hasAnyValue());
         assertEquals(target.segments(), 1);
     }
 
