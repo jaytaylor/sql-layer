@@ -39,14 +39,6 @@ import static com.foundationdb.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVA
 @Path("/sql")
 public class SQLResource {
 
-    public class JsonParams {
-        public String q;
-
-        public JsonParams(String q) {
-            this.q = q;
-        }
-    }
-
     private final ResourceRequirements reqs;
 
     public SQLResource(ResourceRequirements reqs) {
