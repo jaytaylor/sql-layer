@@ -2,4 +2,3 @@ target/
 plugins/
 /nohup.out
 /bin/nohup.out
-/foo.yaml

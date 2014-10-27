@@ -104,7 +104,8 @@ public class FDBIndexRow extends IndexRow {
         
         return ancestorHKey;
     }
-    
+
+    @SuppressWarnings("unchecked")
     @Override
     public <S> void append(S source, TInstance type) {
         pKeyTarget.append(source, type);
