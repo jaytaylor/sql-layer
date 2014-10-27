@@ -22,6 +22,7 @@ import com.foundationdb.rest.ResourceRequirements;
 import com.foundationdb.rest.RestResponseBuilder;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -47,6 +48,7 @@ public class ProcedureCallResource {
     }
 
     @POST
+    @Consumes(MEDIATYPE_JSON_JAVASCRIPT)
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response postCall(@Context final HttpServletRequest request,
                              @PathParam("proc") String proc,
