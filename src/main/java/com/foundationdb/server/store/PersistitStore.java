@@ -23,14 +23,16 @@ import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.qp.loadableplan.std.PersistitCLILoadablePlan;
 import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
+import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.WriteIndexRow;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
-import com.foundationdb.server.*;
+import com.foundationdb.server.AccumulatorAdapter;
 import com.foundationdb.server.AccumulatorAdapter.AccumInfo;
-import com.foundationdb.server.error.*;
 import com.foundationdb.server.error.DuplicateKeyException;
+import com.foundationdb.server.error.QueryCanceledException;
+import com.foundationdb.server.error.TableVersionChangedException;
 import com.foundationdb.server.rowdata.*;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
@@ -127,6 +129,11 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     @Override
     public Key createKey() {
         return new Key(treeService.getDb());
+    }
+    
+    @Override
+    public HKey newHKey (com.foundationdb.ais.model.HKey hkey) {
+        return null;
     }
 
     public Persistit getDb() {
