@@ -152,10 +152,6 @@ public class RestServiceFilesIT extends ITBase {
         return null;
     }
 
-    private static String trimAndURLEncode(String s) throws UnsupportedEncodingException {
-        return URLEncoder.encode(s.trim().replaceAll("\\s+", " "), "UTF-8");
-    }
-
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> gatherCases() throws Exception {
         Collection<Object[]> result = new ArrayList<>();
@@ -180,17 +176,9 @@ public class RestServiceFilesIT extends ITBase {
                 String checkExpected = dumpFileIfExists(new File(basePath + ".check_expected"));
                 String setParameters = dumpFileIfExists(new File(basePath + ".properties"));
                 if("QUERY".equals(method) || "EXPLAIN".equals(method)) {
-                    StringWriter stringWriter = new StringWriter();
-                    JsonGenerator jsonGenerator = JsonUtils.createJsonGenerator(stringWriter);
-                    jsonGenerator.writeStartObject();
-                    jsonGenerator.writeStringField("q", uri);
-                    jsonGenerator.writeEndObject();
-                    jsonGenerator.flush();
-                    jsonGenerator.close();
-                    body = stringWriter.toString();
+                    body = buildJsonBody("q", uri);
                     uri = "QUERY".equals(method) ? "/sql/query" : "/sql/explain";
                     method = "POST";
-                    System.out.println(body);
                 }
 
                 result.add(new Object[]{
@@ -202,6 +190,17 @@ public class RestServiceFilesIT extends ITBase {
             }
         }
         return result;
+    }
+
+    private static String buildJsonBody(String key, String value) throws IOException {
+        StringWriter stringWriter = new StringWriter();
+        JsonGenerator jsonGenerator = JsonUtils.createJsonGenerator(stringWriter);
+        jsonGenerator.writeStartObject();
+        jsonGenerator.writeStringField(key, value);
+        jsonGenerator.writeEndObject();
+        jsonGenerator.flush();
+        jsonGenerator.close();
+        return stringWriter.toString();
     }
 
     private URL getRestURL(String request) throws MalformedURLException {
