@@ -17,6 +17,7 @@
 
 package com.foundationdb.rest.resources;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.foundationdb.rest.ResourceRequirements;
 import com.foundationdb.rest.RestResponseBuilder;
@@ -55,10 +56,10 @@ public class SQLResource {
         return RestResponseBuilder
                 .forRequest(request)
                 .body(new RestResponseBuilder.BodyGenerator() {
-                    @SuppressWarnings("unchecked")
                     @Override
                     public void write(PrintWriter writer) throws Exception {
-                        Map<String, String> paramMap = new ObjectMapper().readValue(jsonParams, Map.class);
+                        Map<String, String> paramMap = new ObjectMapper().readValue(jsonParams, 
+                                                                                    new TypeReference<Map<String, String>>() {});
                         reqs.restDMLService.runSQL(writer, request, paramMap.get("q"), null);
                     }
                 })
@@ -75,10 +76,10 @@ public class SQLResource {
         return RestResponseBuilder
                 .forRequest(request)
                 .body(new RestResponseBuilder.BodyGenerator() {
-                    @SuppressWarnings("unchecked")
                     @Override
                     public void write(PrintWriter writer) throws Exception {
-                        Map<String, String> paramMap = new ObjectMapper().readValue(jsonParams, Map.class);
+                        Map<String, String> paramMap = new ObjectMapper().readValue(jsonParams, 
+                                                                                    new TypeReference<Map<String, String>>() {});
                         reqs.restDMLService.explainSQL(writer, request, paramMap.get("q"));
                     }
                 })
