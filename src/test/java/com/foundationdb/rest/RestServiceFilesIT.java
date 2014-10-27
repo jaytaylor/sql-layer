@@ -28,6 +28,7 @@ import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.sql.RegexFilenameFilter;
 import com.foundationdb.util.JsonUtils;
 import com.foundationdb.util.Strings;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -44,6 +45,7 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -55,8 +57,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
-
-import javax.ws.rs.core.MediaType;
 
 import static com.foundationdb.util.JsonUtils.readTree;
 import static org.junit.Assert.assertEquals;
@@ -180,9 +180,17 @@ public class RestServiceFilesIT extends ITBase {
                 String checkExpected = dumpFileIfExists(new File(basePath + ".check_expected"));
                 String setParameters = dumpFileIfExists(new File(basePath + ".properties"));
                 if("QUERY".equals(method) || "EXPLAIN".equals(method)) {
-                    body = "q=" + trimAndURLEncode(uri);
+                    StringWriter stringWriter = new StringWriter();
+                    JsonGenerator jsonGenerator = JsonUtils.createJsonGenerator(stringWriter);
+                    jsonGenerator.writeStartObject();
+                    jsonGenerator.writeStringField("q", uri);
+                    jsonGenerator.writeEndObject();
+                    jsonGenerator.flush();
+                    jsonGenerator.close();
+                    body = stringWriter.toString();
                     uri = "QUERY".equals(method) ? "/sql/query" : "/sql/explain";
                     method = "POST";
+                    System.out.println(body);
                 }
 
                 result.add(new Object[]{
@@ -238,12 +246,6 @@ public class RestServiceFilesIT extends ITBase {
         httpConn.setRequestContentSource(new ByteArrayInputStream(request));
     }
 
-    private static void postURLEncodedContents(HttpExchange httpConn, byte[] request) throws IOException {
-        httpConn.setRequestContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        httpConn.setRequestHeader("Accept", MediaType.APPLICATION_JSON);
-        httpConn.setRequestContentSource(new ByteArrayInputStream(request));
-    }
-
     @After
     public void finish() throws Exception {
         httpClient.stop();
@@ -262,11 +264,7 @@ public class RestServiceFilesIT extends ITBase {
                     throw new UnsupportedOperationException ("PUT/POST/PATCH expects request body (<test>.body)");
                 }
                 LOG.debug(caseParams.requestBody);
-                if (isJson(caseParams.requestBody)) {
-                    postContents(conn, caseParams.requestBody.getBytes());
-                } else {
-                    postURLEncodedContents(conn, caseParams.requestBody.getBytes());
-                }
+                postContents(conn, caseParams.requestBody.getBytes());
             } // else GET || DELETE
 
             httpClient.send(conn);

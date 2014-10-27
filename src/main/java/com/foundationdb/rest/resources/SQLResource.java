@@ -17,6 +17,7 @@
 
 package com.foundationdb.rest.resources;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.foundationdb.rest.ResourceRequirements;
 import com.foundationdb.rest.RestResponseBuilder;
 
@@ -27,16 +28,25 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.Map;
 
 import static com.foundationdb.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 
 @Path("/sql")
 public class SQLResource {
+
+    public class JsonParams {
+        public String q;
+
+        public JsonParams(String q) {
+            this.q = q;
+        }
+    }
+
     private final ResourceRequirements reqs;
 
     public SQLResource(ResourceRequirements reqs) {
@@ -46,16 +56,18 @@ public class SQLResource {
     /** Run a single SQL statement specified by the 'q' query parameter. */
     @POST
     @Path("/query")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response query(@Context final HttpServletRequest request,
-                          final MultivaluedMap<String, String> postParams) {
+                          final String jsonParams) {
         return RestResponseBuilder
-                .forRequest(request, postParams)
+                .forRequest(request)
                 .body(new RestResponseBuilder.BodyGenerator() {
+                    @SuppressWarnings("unchecked")
                     @Override
                     public void write(PrintWriter writer) throws Exception {
-                        reqs.restDMLService.runSQL(writer, request, postParams.getFirst("q"), null);
+                        Map<String, String> paramMap = new ObjectMapper().readValue(jsonParams, Map.class);
+                        reqs.restDMLService.runSQL(writer, request, paramMap.get("q"), null);
                     }
                 })
                 .build();
@@ -64,16 +76,18 @@ public class SQLResource {
     /** Explain a single SQL statement specified by the 'q' query parameter. */
     @POST
     @Path("/explain")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response explain(@Context final HttpServletRequest request,
-                            final MultivaluedMap<String, String> postParams) {
+                            final String jsonParams) {
         return RestResponseBuilder
-                .forRequest(request, postParams)
+                .forRequest(request)
                 .body(new RestResponseBuilder.BodyGenerator() {
+                    @SuppressWarnings("unchecked")
                     @Override
                     public void write(PrintWriter writer) throws Exception {
-                        reqs.restDMLService.explainSQL(writer, request, postParams.getFirst("q"));
+                        Map<String, String> paramMap = new ObjectMapper().readValue(jsonParams, Map.class);
+                        reqs.restDMLService.explainSQL(writer, request, paramMap.get("q"));
                     }
                 })
                 .build();
