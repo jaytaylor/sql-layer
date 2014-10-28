@@ -27,6 +27,9 @@ START_TIMEOUT=60
 # Source function library
 . /etc/init.d/functions
 
+# Execute configuration variable file if it is present
+[ -r /etc/sysconfig/$NAME ] && . /etc/sysconfig/$NAME
+
 start() {
     echo -n "Starting $NAME: "
 
