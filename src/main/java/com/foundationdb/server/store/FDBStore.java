@@ -638,7 +638,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     @Override
     public HKey newHKey(com.foundationdb.ais.model.HKey hKey) {
-        return null;
+        throw new UnsupportedOperationException ();
     }
     //
     // Storage iterators

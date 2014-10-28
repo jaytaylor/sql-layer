@@ -133,7 +133,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     
     @Override
     public HKey newHKey (com.foundationdb.ais.model.HKey hkey) {
-        return null;
+        throw new UnsupportedOperationException ();
     }
 
     public Persistit getDb() {
