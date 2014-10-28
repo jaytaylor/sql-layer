@@ -21,8 +21,8 @@ grant codeBase "file:${fdbsql.home}/server/-" {
   permission java.security.AllPermission;
 };
 
-grant codeBase "file:${fdbsql.home}/plugings/-" {
-  permission java.security.Allpermission;
+grant codeBase "file:${fdbsql.home}/plugins/-" {
+  permission java.security.AllPermission;
 }; 
 
 grant codeBase "file:${fdbsql.home}/routine-firewall/*" {
