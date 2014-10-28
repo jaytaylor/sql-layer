@@ -140,14 +140,6 @@ infer_dep_dir()
     export DEP_DIR="$value"
 }
 
-infer_policy_file()
-{
-    local value="${FDBSQL_HOME}/sql-layer.policy"
-    if [ -n "$1" ]; then
-       value="$1"
-    fi
-    export POLICY_FILE="-Djava.security.policy=${value}"
-}
 
 SECURITYMAN="true"
 set_security_manager()
@@ -204,11 +196,12 @@ launch_service()
     FDBSQL_CONF=$8
     infer_jar_rf_file 
     set_security_manager 
-    infer_policy_file "$9"
 
     if [ -z "$FDBSQL_CONF" ]; then
         FDBSQL_CONF="${FDBSQL_HOME}/conf"
     fi
+    
+    POLICY_FILE="-Djava.security.policy=${FDBSQL_CONF}/sql-layer.policy"
 
     if [ -n "$pidpath" ]; then
         fdbsql_parms="$fdbsql_parms -Dfdbsql.pidfile=$pidpath"
@@ -257,7 +250,7 @@ launch_service()
 }
 
 # Parse any command line options.
-args=`getopt c:d:D:fghH:j:kp:qswv:Mm: "$@"`
+args=`getopt c:d:D:fghH:j:kMp:qswv: "$@"`
 eval set -- "$args"
 
 while true; do
@@ -320,10 +313,6 @@ while true; do
             pgrep -u `whoami` -f fdb-sql-layer | xargs kill -9
             exit 0
         ;;
-	-m)
-            policyfile="$2"
-            shift 2
-        ;;
         -M) 
             SECURITYMAN="false"
             shift
@@ -358,7 +347,7 @@ while true; do
 done
 
 # Start up the service
-launch_service "$homedir" "$mode" "$properties" "$gui" "$pidfile" "$jarfile" "$depdir" "$conf" "$policyfile"
+launch_service "$homedir" "$mode" "$properties" "$gui" "$pidfile" "$jarfile" "$depdir" "$conf"
 
 exit $?
 
