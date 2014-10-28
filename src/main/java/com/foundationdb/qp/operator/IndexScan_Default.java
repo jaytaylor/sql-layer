@@ -229,7 +229,7 @@ class IndexScan_Default extends Operator
             if (indexKeyRange.hi() != null) {
                 hiExprs = indexKeyRange.hi().getExplainer(context).get().get(Label.EXPRESSIONS);
             }
-            if (indexKeyRange.spatial()) {
+            if (indexKeyRange.spatialCoordsIndex()) {
                 if (index.isGroupIndex()) {
                     atts.remove(Label.INDEX_KIND);
                     atts.put(Label.INDEX_KIND, PrimitiveExplainer.getInstance("SPATIAL GROUP"));

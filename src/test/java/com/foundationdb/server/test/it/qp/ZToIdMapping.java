@@ -18,6 +18,7 @@
 package com.foundationdb.server.test.it.qp;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,11 @@ class ZToIdMapping implements Iterable<Map.Entry<Long, List<Integer>>>
         return zToId.entrySet().iterator();
     }
 
+    public int size()
+    {
+        return count;
+    }
+
     public void add(long z, int id)
     {
         List<Integer> zIds = zToId.get(z);
@@ -41,7 +47,7 @@ class ZToIdMapping implements Iterable<Map.Entry<Long, List<Integer>>>
         assert !zIds.contains(id);
         zIds.add(id);
         ids.add(id);
-        idCount++;
+        count++;
     }
 
     public List<Integer> ids()
@@ -53,12 +59,12 @@ class ZToIdMapping implements Iterable<Map.Entry<Long, List<Integer>>>
     {
         zToId.clear();
         ids.clear();
-        idCount = 0;
+        count = 0;
     }
 
     public long[][] toArray(ExpectedRowCreator rowCreator)
     {
-        return toArray(idCount, rowCreator);
+        return toArray(count, rowCreator);
     }
 
     public long[][] toArray(int expectedRows, ExpectedRowCreator rowCreator)
@@ -74,7 +80,10 @@ class ZToIdMapping implements Iterable<Map.Entry<Long, List<Integer>>>
                 }
             }
         }
-        return array;
+        return
+            r == expectedRows
+            ? array
+            : Arrays.copyOf(array, r);
     }
 
     public interface ExpectedRowCreator
@@ -84,5 +93,5 @@ class ZToIdMapping implements Iterable<Map.Entry<Long, List<Integer>>>
 
     private Map<Long, List<Integer>> zToId = new TreeMap<>();
     private List<Integer> ids = new ArrayList<>();
-    private int idCount = 0;
+    private int count = 0;
 }

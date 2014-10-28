@@ -38,6 +38,7 @@ import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.Strings;
+import com.geophile.z.SpatialObject;
 import org.junit.After;
 import org.junit.Before;
 import org.slf4j.Logger;
@@ -318,6 +319,10 @@ public class OperatorITBase extends ITBase
                     value.putString((String) obj, null);
                 } else if (obj instanceof BigDecimal) {
                     value.putObject(new BigDecimalWrapperImpl((BigDecimal) obj));
+                } else if (obj instanceof Double) {
+                    value.putDouble((Double) obj);
+                } else if (obj instanceof SpatialObject) {
+                    value.putObject(obj);
                 } else {
                     fail();
                 }

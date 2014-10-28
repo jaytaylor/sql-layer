@@ -97,18 +97,37 @@ public abstract class IndexCursor extends RowCursorImpl implements BindingsAware
                                      IterationHelper iterationHelper,
                                      boolean openAllSubCursors)
     {
-        SortKeyAdapter<?, ?> adapter = ValueSortKeyAdapter.INSTANCE;
-
-        return
-            keyRange != null && keyRange.spatial()
-            ? keyRange.hi() == null
-                ? IndexCursorSpatial_NearPoint.create(context, iterationHelper, keyRange)
-                : IndexCursorSpatial_InBox.create(context, iterationHelper, keyRange, openAllSubCursors)
-            : ordering.allAscending() || ordering.allDescending()
-                ? (keyRange != null && keyRange.lexicographic()
-                    ? IndexCursorUnidirectionalLexicographic.create(context, iterationHelper, keyRange, ordering, adapter)
-                    : IndexCursorUnidirectional.create(context, iterationHelper, keyRange, ordering, adapter))
-                : IndexCursorMixedOrder.create(context, iterationHelper, keyRange, ordering, adapter);
+        IndexCursor indexCursor;
+        if (keyRange != null && keyRange.spatialCoordsIndex()) {
+            if (keyRange.hi() == null) {
+                indexCursor = IndexCursorSpatial_NearPoint.create(context, iterationHelper, keyRange);
+            } else {
+                indexCursor = IndexCursorSpatial_InBox.create(context, iterationHelper, keyRange, openAllSubCursors);
+            }
+        } else if (keyRange != null && keyRange.spatialObjectIndex()) {
+            indexCursor = IndexCursorSpatial_InBox.create(context, iterationHelper, keyRange, openAllSubCursors);
+        } else if (ordering.allAscending() || ordering.allDescending()) {
+            if (keyRange != null && keyRange.lexicographic()) {
+                indexCursor = IndexCursorUnidirectionalLexicographic.create(context,
+                                                                            iterationHelper,
+                                                                            keyRange,
+                                                                            ordering,
+                                                                            ValueSortKeyAdapter.INSTANCE);
+            } else {
+                indexCursor = IndexCursorUnidirectional.create(context,
+                                                               iterationHelper,
+                                                               keyRange,
+                                                               ordering,
+                                                               ValueSortKeyAdapter.INSTANCE);
+            }
+        } else {
+            indexCursor = IndexCursorMixedOrder.create(context,
+                                                       iterationHelper,
+                                                       keyRange,
+                                                       ordering,
+                                                       ValueSortKeyAdapter.INSTANCE);
+        }
+        return indexCursor;
     }
 
     // For use by subclasses
