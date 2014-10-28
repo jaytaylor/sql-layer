@@ -124,14 +124,15 @@ public class FullTextCursor extends RowCursorImpl
         searcher = null;
     }
 
-    /* Allocate a new <code>PersistitHKey</code> and copy the given
+    /* Allocate a new <code>HKey</code> and copy the given
      * key bytes into it. */
     protected HKey hkey(String encoded) {
         HKey hkey = context.getStore().newHKey(rowType.hKey());
-        Key key = hkey.key();
+        Key key = context.getStore().createKey();
         byte decodedBytes[] = RowIndexer.decodeString(encoded);
         key.setEncodedSize(decodedBytes.length);
         System.arraycopy(decodedBytes, 0, key.getEncodedBytes(), 0, decodedBytes.length);
+        hkey.copyFrom(key);
         return hkey;
     }
 
