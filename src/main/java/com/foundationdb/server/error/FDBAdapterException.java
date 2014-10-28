@@ -36,7 +36,7 @@ public class FDBAdapterException extends StoreAdapterRuntimeException
         initCause(ex);
     }
 
-    private FDBAdapterException(ErrorCode errorCode, String desc) {
+    protected FDBAdapterException(ErrorCode errorCode, String desc) {
         super(errorCode, desc);
     }
     

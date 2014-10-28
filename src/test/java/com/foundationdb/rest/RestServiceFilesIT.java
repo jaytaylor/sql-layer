@@ -17,31 +17,35 @@
 
 package com.foundationdb.rest;
 
+import com.foundationdb.junit.SelectedParameterizedRunner;
 import com.foundationdb.server.service.text.FullTextIndexService;
 import com.foundationdb.http.HttpConductor;
-import com.foundationdb.junit.NamedParameterizedRunner;
-import com.foundationdb.junit.Parameterization;
 import com.foundationdb.server.service.is.BasicInfoSchemaTablesService;
 import com.foundationdb.server.service.is.BasicInfoSchemaTablesServiceImpl;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.text.FullTextIndexServiceImpl;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.sql.RegexFilenameFilter;
+import com.foundationdb.util.JsonUtils;
 import com.foundationdb.util.Strings;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
+
 import org.eclipse.jetty.client.ContentExchange;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpExchange;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -57,7 +61,7 @@ import java.util.Map;
 import static com.foundationdb.util.JsonUtils.readTree;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(NamedParameterizedRunner.class)
+@RunWith(SelectedParameterizedRunner.class)
 public class RestServiceFilesIT extends ITBase {
     private static final Logger LOG = LoggerFactory.getLogger(RestServiceFilesIT.class.getName());
     private static final File RESOURCE_DIR = new File(
@@ -100,7 +104,7 @@ public class RestServiceFilesIT extends ITBase {
     protected final CaseParams caseParams;
     protected final HttpClient httpClient;
 
-    public RestServiceFilesIT(CaseParams caseParams) throws Exception {
+    public RestServiceFilesIT(String name, CaseParams caseParams) throws Exception {
         this.caseParams = caseParams;
         this.httpClient = new HttpClient();
         httpClient.setConnectorType(HttpClient.CONNECTOR_SELECT_CHANNEL);
@@ -148,13 +152,9 @@ public class RestServiceFilesIT extends ITBase {
         return null;
     }
 
-    private static String trimAndURLEncode(String s) throws UnsupportedEncodingException {
-        return URLEncoder.encode(s.trim().replaceAll("\\s+", " "), "UTF-8");
-    }
-
-    @NamedParameterizedRunner.TestParameters
-    public static Collection<Parameterization> gatherCases() throws Exception {
-        Collection<Parameterization> result = new ArrayList<>();
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Object[]> gatherCases() throws Exception {
+        Collection<Object[]> result = new ArrayList<>();
         for(String subDirName: RESOURCE_DIR.list()) {
             File subDir = new File(RESOURCE_DIR, subDirName);
             if(!subDir.isDirectory()) {
@@ -175,23 +175,32 @@ public class RestServiceFilesIT extends ITBase {
                 String checkURI = dumpFileIfExists(new File(basePath + ".check"));
                 String checkExpected = dumpFileIfExists(new File(basePath + ".check_expected"));
                 String setParameters = dumpFileIfExists(new File(basePath + ".properties"));
-                if("QUERY".equals(method)) {
-                    method = "GET";
-                    uri = "/sql/query?q=" + trimAndURLEncode(uri);
-                } else if("EXPLAIN".equals(method)) {
-                    method = "GET";
-                    uri = "/sql/explain?q=" + trimAndURLEncode(uri);
+                if("QUERY".equals(method) || "EXPLAIN".equals(method)) {
+                    body = buildJsonBody("q", uri);
+                    uri = "QUERY".equals(method) ? "/sql/query" : "/sql/explain";
+                    method = "POST";
                 }
 
-                result.add(Parameterization.create(
+                result.add(new Object[]{
                         subDirName + File.separator + caseName,
                         new CaseParams(subDirName, caseName, method, uri, body,
-                                       header, expected, expectedIgnore,
-                                       checkURI, checkExpected, setParameters)
-                ));
+                                header, expected, expectedIgnore,
+                                checkURI, checkExpected, setParameters)
+                });
             }
         }
         return result;
+    }
+
+    private static String buildJsonBody(String key, String value) throws IOException {
+        StringWriter stringWriter = new StringWriter();
+        JsonGenerator jsonGenerator = JsonUtils.createJsonGenerator(stringWriter);
+        jsonGenerator.writeStartObject();
+        jsonGenerator.writeStringField(key, value);
+        jsonGenerator.writeEndObject();
+        jsonGenerator.flush();
+        jsonGenerator.close();
+        return stringWriter.toString();
     }
 
     private URL getRestURL(String request) throws MalformedURLException {
@@ -254,7 +263,7 @@ public class RestServiceFilesIT extends ITBase {
                     throw new UnsupportedOperationException ("PUT/POST/PATCH expects request body (<test>.body)");
                 }
                 LOG.debug(caseParams.requestBody);
-                postContents(conn, caseParams.requestBody.getBytes() );
+                postContents(conn, caseParams.requestBody.getBytes());
             } // else GET || DELETE
 
             httpClient.send(conn);
@@ -299,7 +308,8 @@ public class RestServiceFilesIT extends ITBase {
             }
         } catch(JsonParseException e) {
             // Note: This case handles the jsonp tests. Somewhat fragile, but not horrible yet.
-            assertEquals(assertMsg, expectedTrimmed.replace("\r", ""), actualTrimmed.replace("\r", ""));
+            assertEquals(assertMsg, expectedTrimmed.replace("\r", "").replace("\n", ""), 
+                                    actualTrimmed.replace("\r", "").replace("\n", ""));
             skipNodeCheck = true;
         }
         // Try manual equals and then assert strings for pretty print
@@ -324,6 +334,15 @@ public class RestServiceFilesIT extends ITBase {
                 assertEquals ("Headers check", nameValue[1].trim(),
                         exch.getResponseFields().getStringField(nameValue[0]));
             }
+        }
+    }
+
+    public boolean isJson(String string) {
+        try {
+            JsonUtils.readTree(string);
+            return true;
+        } catch (IOException e) {
+            return false;
         }
     }
 

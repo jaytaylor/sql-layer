@@ -43,3 +43,19 @@ CREATE TABLE long_str (
     id INT NOT NULL PRIMARY KEY,
     v VARCHAR(512)
 );
+
+CREATE TABLE types (
+    id int primary key,
+    a_int int,
+    a_uint int unsigned,
+    a_float float,
+    a_ufloat float unsigned,
+    a_double double,
+    a_udouble double unsigned,
+    a_decimal decimal(5, 2),
+    a_varchar varchar(512),
+    a_date date,
+    a_time time,
+    a_datetime datetime,
+    a_boolean boolean
+);

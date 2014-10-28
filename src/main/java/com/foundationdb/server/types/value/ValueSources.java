@@ -122,11 +122,7 @@ public final class ValueSources {
                     value.putBytes(((ByteSource)object).toByteSubarray());
                 break;
             case STRING:
-                if(!(object instanceof CharSequence || object instanceof Number)) {
-                    throw new IllegalArgumentException("Unsafe toString(): " + object.getClass());
-                }
-                value.putString(object.toString(), null);
-                break;
+                throw new IllegalArgumentException("Unsafe toString(): " + object.getClass());
             case BOOL:
                 if (object instanceof Boolean)
                     value.putBool((Boolean)object);

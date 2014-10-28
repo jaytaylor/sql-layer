@@ -16,14 +16,10 @@
  */
 package com.foundationdb.server.error;
 
-public class StartupFailureException extends FDBAdapterException {
+public class ClusterFileTooLargeException extends StartupFailureException {
 
-    protected StartupFailureException(ErrorCode code, Long i, Long j, Long k,
-            Long l) {
-        super(code, i, j, k, l);
+    public ClusterFileTooLargeException(String filename) {
+        super(ErrorCode.CLUSTER_FILE_TOO_LARGE, filename);
     }
 
-    protected StartupFailureException(ErrorCode code, String desc) {
-        super(code, desc);
-    }
 }
