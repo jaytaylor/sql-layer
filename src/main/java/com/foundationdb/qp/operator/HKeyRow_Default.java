@@ -19,7 +19,6 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.ais.model.HKeyColumn;
 import com.foundationdb.ais.model.HKeySegment;
-import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.HKeyRow;
 import com.foundationdb.qp.row.ProjectedRow;

@@ -57,12 +57,6 @@ public class ValuesHKeyTest {
         assertEquals(key.rowType().nFields(), 2);
     }
     
-    @Test (expected=UnsupportedOperationException.class)
-    public void noHKey() {
-        ValuesHKey key = createHKey("item");
-        assertNull(key.hKey());
-    }
-    
     @Test
     public void ordinalsSetCorrectly() {
         ValuesHKey key = createHKey("item");

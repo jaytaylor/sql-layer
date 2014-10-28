@@ -283,7 +283,6 @@ public class FDBIndexRow extends IndexRow {
         this.keyCreator = keyCreator;
         this.indexRowType = null;
         this.types = null;
-        //this.leafmostTable = null;
     }
 
     public FDBIndexRow (KeyCreator adapter, IndexRowType indexRowType)
