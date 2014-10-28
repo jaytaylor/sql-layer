@@ -104,8 +104,8 @@ public abstract class CsrfProtectionITBase extends ITBase
         HttpUriRequest request = new HttpGet(uri);
 
         response = client.execute(request);
-        assertEquals("status", HttpStatus.SC_BAD_REQUEST, response.getStatusLine().getStatusCode());
-        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("CSRF attack prevented."));
+        assertEquals("status", HttpStatus.SC_FORBIDDEN, response.getStatusLine().getStatusCode());
+        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("Referer"));
     }
 
     @Test
@@ -116,8 +116,8 @@ public abstract class CsrfProtectionITBase extends ITBase
         request.setHeader("Referer","");
 
         response = client.execute(request);
-        assertEquals("status", HttpStatus.SC_BAD_REQUEST, response.getStatusLine().getStatusCode());
-        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("CSRF attack prevented."));
+        assertEquals("status", HttpStatus.SC_FORBIDDEN, response.getStatusLine().getStatusCode());
+        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("Referer"));
     }
 
     @Test
@@ -128,8 +128,8 @@ public abstract class CsrfProtectionITBase extends ITBase
         request.setHeader("Referer", "https://coolest.site.edu.fake.com:4320");
 
         response = client.execute(request);
-        assertEquals("status", HttpStatus.SC_BAD_REQUEST, response.getStatusLine().getStatusCode());
-        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("CSRF attack prevented."));
+        assertEquals("status", HttpStatus.SC_FORBIDDEN, response.getStatusLine().getStatusCode());
+        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("Referer"));
     }
 
     @Test
@@ -140,8 +140,8 @@ public abstract class CsrfProtectionITBase extends ITBase
         request.setHeader("Referer", "https://coolest.site.edu.fake.com:4320");
 
         response = client.execute(request);
-        assertEquals("status", HttpStatus.SC_BAD_REQUEST, response.getStatusLine().getStatusCode());
-        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("CSRF attack prevented."));
+        assertEquals("status", HttpStatus.SC_FORBIDDEN, response.getStatusLine().getStatusCode());
+        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("Referer"));
     }
 
     @Test
@@ -151,8 +151,8 @@ public abstract class CsrfProtectionITBase extends ITBase
         HttpUriRequest request = new HttpPut(uri);
 
         response = client.execute(request);
-        assertEquals("status", HttpStatus.SC_BAD_REQUEST, response.getStatusLine().getStatusCode());
-        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("CSRF attack prevented."));
+        assertEquals("status", HttpStatus.SC_FORBIDDEN, response.getStatusLine().getStatusCode());
+        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("Referer"));
     }
 
 

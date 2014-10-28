@@ -74,8 +74,8 @@ public class CsrfProtectionRefererFilter implements javax.servlet.Filter {
                 logger.debug("CSRF attempt blocked due to invalid referer uri; Request:{} Referer:{}",
                         request.getRequestURI(),
                         referer);
-                ((HttpServletResponse)servletResponse).sendError(400,
-                        "CSRF attack prevented. For legit usage see the configuration documentation");
+                ((HttpServletResponse)servletResponse).sendError(403,
+                        "Referer not allowed");
             }
         } else {
             logger.error("Unexpected type of request: {} -- {}", servletRequest.getClass(), servletRequest);
