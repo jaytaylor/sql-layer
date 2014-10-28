@@ -34,6 +34,18 @@ import com.persistit.Key;
 
 public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
 
+    // HKey interface - Object interface
+    @Override
+    public boolean equals(Object that)
+    {
+        return
+            that == this ||
+            (that != null &&
+                that instanceof ValuesHKey &&
+                this.compareTo((ValuesHKey)that) == 0);
+    }
+
+    // HKey Interface  - Comparable interface 
     @Override
     public int compareTo(HKey o) {
         assert o instanceof ValuesHKey : "Wrong HKey Type for compareTo";
@@ -72,6 +84,7 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
         return 0;
     }
 
+    // HKey interface implementation
     @Override
     public boolean prefixOf(HKey hKey) {
         assert hKey instanceof ValuesHKey : "Wrong HKey Type for prefixOf";
@@ -85,7 +98,7 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
         }
         return false;
     }
-
+    
     @Override
     public int segments() {
         return hKeySegments;
@@ -112,66 +125,22 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
                 if (valueSource.hasAnyValue()) {
                     Value valueTarget = t.valueAt(columnIndex);
                     ValueTargets.copyFrom(valueSource, valueTarget);
-                } else {
-                    //t.valueAt(columnIndex).putNull();
                 }
                 columnIndex++;
             }
         }
         if (t.hKeySegments > hKeySegments)
             t.useSegments(hKeySegments);
-        
-        //for (int i = columnIndex; i < t.values.size(); i++) {
-        //    t.valueAt(i).putNull();
-        //}
     }
     
-    @Override 
-    public Key key() {
-        throw new UnsupportedOperationException("Key() not supported");
-    }
 
     @Override
-    public void copyTo (Key target) {
-        int columnIndex = 0;
-        
-        PersistitKeyAppender appender = PersistitKeyAppender.create(target, rowType().table().getName() );
-        for (int segment = 0; segment < hKeySegments; segment++) {
-            appender.append(ordinals[segment]);
-            for (HKeyColumn column : rowType().hKey().segments().get(segment).columns()) {
-                if (this.values.get(columnIndex).hasAnyValue()) {
-                    appender.append(this.values.get(columnIndex), column.column());
-                } else {
-                    //appender.appendNull();
-                }
-                columnIndex++;
-            }
-        }
-    }
-
-    @Override
-    public HKey ancestorHKey(Table table)
-    {
-        // TODO: This does the wrong thing for hkeys derived from group index rows!
-        // TODO: See bug 997746.
-        HKeyRowType rowType = this.rowType().schema().newHKeyRowType(table.hKey());
-        HKey ancestorHKey = new ValuesHKey(rowType);
-        copyTo(ancestorHKey);
-        ancestorHKey.useSegments(table.getDepth() + 1);
-        return ancestorHKey;
-    }
-
-
-    @Override 
-    public Key key(Key start) {
-        this.copyTo(start);
-        return start;
-    }
-    
-    @Override
-    @Deprecated
     public void extendWithOrdinal(int ordinal) {
-        ordinals[hKeySegments++] = ordinal;
+        if (hKeySegments < ordinals.length) {
+            assert ordinals[hKeySegments++] == ordinal;
+        } else {
+            ordinals[hKeySegments++] = ordinal;
+        }
     }
 
     @Override
@@ -191,11 +160,36 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
     public ValueSource pEval(int valueIndex) {
         return values.get(valueIndex);
     }
-
-    public ValueTarget pTarget (int valueIndex) {
-        return values.get(valueIndex);
+    
+    // HKey interface implementation - low level interface (to be removed at some point)
+    
+    @Override 
+    public Key key() {
+        throw new UnsupportedOperationException("Key() not supported");
     }
 
+    @Override 
+    public Key key(Key start) {
+        this.copyTo(start);
+        return start;
+    }
+
+
+    @Override
+    public void copyTo (Key target) {
+        int columnIndex = 0;
+        PersistitKeyAppender appender = PersistitKeyAppender.create(target, rowType().table().getName() );
+        for (int segment = 0; segment < hKeySegments; segment++) {
+            appender.append(ordinals[segment]);
+            for (HKeyColumn column : rowType().hKey().segments().get(segment).columns()) {
+                if (this.values.get(columnIndex).hasAnyValue()) {
+                    appender.append(this.values.get(columnIndex), column.column());
+                }
+                columnIndex++;
+            }
+        }
+    }
+    
     @Override
     public void copyFrom(Key source)
     {
@@ -247,7 +241,29 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
             columnsInSegment++;
         }        
     }
+    
+    
+    // AbstractHoldersRow overrides 
+    
+    @Override
+    public HKey hKey() {
+        return this;
+    }
 
+    @Override
+    public HKey ancestorHKey(Table table)
+    {
+        // TODO: This does the wrong thing for hkeys derived from group index rows!
+        // TODO: See bug 997746.
+        HKeyRowType rowType = this.rowType().schema().newHKeyRowType(table.hKey());
+        HKey ancestorHKey = new ValuesHKey(rowType);
+        copyTo(ancestorHKey);
+        ancestorHKey.useSegments(table.getDepth() + 1);
+        return ancestorHKey;
+    }
+
+    // Constructors and private methods. 
+    
     public ValuesHKey (HKeyRowType rowType)
     {
         super(rowType, true);
