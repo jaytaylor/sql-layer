@@ -191,7 +191,7 @@
                 <artifactId>maven-license-plugin</artifactId>
                 <version>1.10.b1</version>
                 <configuration>
-                    <header>fdb-sql-layer-core/src/etc/header.txt</header>
+                    <header>/etc/header.txt</header>
                     <headerSections>
                         <headerSection>
                             <key>__YEAR_SECTION__</key>
