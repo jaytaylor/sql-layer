@@ -33,10 +33,10 @@ CALL:findJarFile "%FDBSQL_HOME%\sql\lib"
 SET DEP_DIR=%FDBSQL_HOME%\sql\lib\server
 SET FDBSQL_HOME_DIR=%FDBSQL_HOME%\sql
 SET FDBSQL_RFDIR=%FDBSQL_HOME%\sql\lib\routine-firewall
-SET FDBSQL_POLICY=%FDBSQL_HOME%\sql\lib\sql-layer-win.policy
 @REM Replaced during install
 SET FDBSQL_CONF=${confdir}
 SET FDBSQL_LOGDIR=${logdir}
+SET FDBSQL_POLICY=%FDBSQL_CONF%\sql-layer-win.policy
 
 FOR %%P IN (prunsrv.exe) DO SET PRUNSRV=%%~$PATH:P
 FOR %%P IN (prunmgr.exe) DO SET PRUNMGR=%%~$PATH:P
@@ -65,7 +65,7 @@ SET FDBSQL_CONF=%BUILD_HOME%\conf
 SET FDBSQL_LOGDIR=\tmp\fdbsqllayer
 SET FDBSQL_HOME_DIR=%BUILD_HOME%\fdb-sql-layer-core\target
 SET FDBSQL_RFDIR=%BUILD_HOME%\routine-firewall\target
-SET FDBSQL_POLICY_LOC=%BUILD_HOME%\sql-layer-win-loc.policy
+SET FDBSQL_POLICY_LOC=%FDBSQL_CONF%\sql-layer-win.policy
 SET PRUNSRV=prunsrv
 SET PRUNMGR=prunmgr
 SET SERVICE_MODE=manual
