@@ -238,8 +238,6 @@ class Flatten_HKeyOrdered extends Operator
         HKeySegment lastChildHKeySegment = childHKeySegments.get(childHKeySegments.size() - 1);
         RowDef childRowDef = lastChildHKeySegment.table().rowDef();
         this.childOrdinal = childRowDef.table().getOrdinal();
-        //this.nChildHKeySegmentFields = lastChildHKeySegment.columns().size();
-        //this.parentHKeySegments = parentType.hKey().segments().size();
     }
 
     // Class state
@@ -261,8 +259,6 @@ class Flatten_HKeyOrdered extends Operator
     private final boolean keepChild;
     // For constructing a left-join hkey
     private final int childOrdinal;
-    //private final int nChildHKeySegmentFields;
-    //private final int parentHKeySegments;
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
@@ -380,7 +376,6 @@ class Flatten_HKeyOrdered extends Operator
         {
             super(context, input);
             this.leftJoinHKey = adapter().newHKey(childType.hKey());
-            //LOG.error("Parent: {}, Child: {}", parentType, childType);
         }
 
         // For use by this class
@@ -437,10 +432,6 @@ class Flatten_HKeyOrdered extends Operator
             parentHKey.copyTo(leftJoinHKey);
             leftJoinHKey.extendWithOrdinal(childOrdinal);
             leftJoinHKey.extendWithNull();
-            
-            //for (int i = 0; i < nChildHKeySegmentFields; i++) {
-            //    leftJoinHKey.extendWithNull();
-            //}
         }
 
         private boolean readyForLeftJoinRow(Row inputRow)

@@ -53,18 +53,7 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
     // See ITBase#compareTwoRows(line 190ff). 
     public String toString() {
         Key target = new Key (null, 2047);
-        int columnIndex = 0;
-        PersistitKeyAppender appender = PersistitKeyAppender.create(target, rowType().table().getName() );
-        int maxSegments = Math.min(hKeySegments, rowType().hKey().segments().size());
-        for (int segment = 0; segment < maxSegments; segment++) {
-            appender.append(ordinals[segment]);
-            for (HKeyColumn column : rowType().hKey().segments().get(segment).columns()) {
-                if (this.values.get(columnIndex).hasAnyValue()) {
-                    appender.append(this.values.get(columnIndex), column.column());
-                }
-                columnIndex++;
-            }
-        }
+        this.copyTo(target);
         return target.toString();
     }
     

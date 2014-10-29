@@ -62,7 +62,6 @@ class StoreGIHandler<SType extends AbstractStore,SDType,SSDType extends StoreSto
     private final Value zSource_t3 = new Value(InternalIndexTypes.LONG.instance(true));
     private final Collection<RowType> lockTypes;
 
-
     private StoreGIHandler(AbstractStore<SType,SDType,SSDType> store, Session session, Schema schema, Table sourceTable, Table lockLeaf) {
         this.store = store;
         this.session = session;
