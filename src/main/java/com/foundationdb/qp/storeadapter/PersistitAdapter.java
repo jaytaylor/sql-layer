@@ -26,6 +26,7 @@ import com.foundationdb.qp.storeadapter.indexrow.PersistitGroupIndexRow;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitTableIndexRow;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesHKey;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -98,7 +99,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
     @Override
     public com.foundationdb.qp.row.HKey newHKey(com.foundationdb.ais.model.HKey hKeyMetadata)
     {
-        return new PersistitHKey(store.createKey(), hKeyMetadata);
+        return new ValuesHKey(schema.newHKeyRowType(hKeyMetadata));
     }
 
     @Override

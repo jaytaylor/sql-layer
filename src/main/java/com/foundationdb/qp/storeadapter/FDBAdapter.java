@@ -100,8 +100,8 @@ public class FDBAdapter extends StoreAdapter {
 
     @Override
     public HKey newHKey(com.foundationdb.ais.model.HKey hKeyMetadata) {
-        //return new ValuesHKey(schema.newHKeyRowType(hKeyMetadata));
-        return new PersistitHKey(store.createKey(), hKeyMetadata);
+        return new ValuesHKey(schema.newHKeyRowType(hKeyMetadata));
+        //return new PersistitHKey(store.createKey(), hKeyMetadata);
     }
 
     @Override
