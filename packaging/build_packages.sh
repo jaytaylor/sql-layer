@@ -80,20 +80,20 @@ build_sql_layer() {
     LAYER_MVN_VERSION=$(cd "${TOP_DIR}/fdb-sql-layer-core" ; mvn -B org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version |grep '^[0-9]')
     LAYER_VERSION=${LAYER_MVN_VERSION%-SNAPSHOT}
     LAYER_JAR_NAME="fdb-sql-layer-core-${LAYER_MVN_VERSION}.jar"
-    RF_MVN_VERSION=$(cd "${TOP_DIR}/routine-firewall" ; mvn -B org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version |grep '^[0-9]')
+    RF_MVN_VERSION=$(cd "${TOP_DIR}/fdb-sql-layer-routinefw" ; mvn -B org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version |grep '^[0-9]')
     RF_VERSION=${RF_MVN_VERSION%-SNAPSHOT}
-    RF_JAR_NAME="routine-firewall-${RF_MVN_VERSION}.jar"    
+    RF_JAR_NAME="fdb-sql-layer-routinefw-${RF_MVN_VERSION}.jar"    
 
 
     echo "Building FoundationDB SQL Layer ${LAYER_VERSION} Release ${RELEASE}"
     pushd .
     cd "${TOP_DIR}"
     mvn_package
-    mkdir -p "${1}" "${2}"/{server,plugins,routine-firewall}
+    mkdir -p "${1}" "${2}"/{server,plugins,fdb-sql-layer-routinefw}
     cp "${TOP_DIR}/bin/fdbsqllayer" "${1}/"
     cp "fdb-sql-layer-core/target/${LAYER_JAR_NAME}" "${2}/"
     cp fdb-sql-layer-core/target/dependency/* "${2}/server/"
-    cp "routine-firewall/target/${RF_JAR_NAME}" "${2}/routine-firewall/"
+    cp "fdb-sql-layer-routinefw/target/${RF_JAR_NAME}" "${2}/fdb-sql-layer-routinefw/"
     popd
 }
 
@@ -158,7 +158,7 @@ case "${1}" in
         mkdir -p -m 0755 etc/foundationdb/sql
         mkdir -p -m 0755 etc/init.d
         mkdir -p -m 0755 usr/share/doc/fdb-sql-layer
-        mkdir -p -m 0755 usr/share/foundationdb/sql/{plugins,server,routine-firewall}
+        mkdir -p -m 0755 usr/share/foundationdb/sql/{plugins,server,fdb-sql-layer-routinefw}
         mkdir -p -m 0755 var/{lib,log}/foundationdb/sql
 
         install -m 0644 "${TOP_DIR}/packaging/deb/conffiles" "${STAGE_DIR}/DEBIAN/"
@@ -174,8 +174,8 @@ case "${1}" in
 
         cd usr/share/foundationdb/sql
         ln -s "${LAYER_JAR_NAME}" "fdb-sql-layer.jar"
-        cd routine-firewall/
-        ln -s "${RF_JAR_NAME}" "routine-firewall.jar"     
+        cd fdb-sql-layer-routinefw/
+        ln -s "${RF_JAR_NAME}" "fdb-sql-layer-routinefw.jar"     
 
         cd "${STAGE_DIR}"
         echo "Installed-Size:" $(du -sx --exclude DEBIAN $STAGE_DIR | awk '{print $1}') >> "${STAGE_DIR}/DEBIAN/control"
@@ -255,8 +255,8 @@ case "${1}" in
         cp "${TOP_DIR}/LICENSE.txt" "${STAGE_DIR}/resources/"
         cd "${LAYER_ULOCAL}/foundationdb/sql/"
         ln -s /usr/local/foundationdb/sql/${LAYER_JAR_NAME} fdb-sql-layer.jar
-        cd routine-firewall
-        ln -s /usr/local/foundationdb/sql/routine-firewall/${RF_JAR_NAME} routine-firewall.jar
+        cd fdb-sql-layer-routinefw
+        ln -s /usr/local/foundationdb/sql/fdb-sql-layer-routinefw/${RF_JAR_NAME} fdb-sql-layer-routinefw.jar
         #
         # Client Tools
         #

@@ -19,7 +19,6 @@ package com.foundationdb.sql.server;
 
 import com.foundationdb.ais.model.Parameter;
 import com.foundationdb.qp.operator.QueryBindings;
-import routinefrwll.routinefrwll.*;
 import com.foundationdb.server.error.ExternalRoutineInvocationException;
 import com.foundationdb.server.explain.Attributes;
 import com.foundationdb.server.explain.CompoundExplainer;

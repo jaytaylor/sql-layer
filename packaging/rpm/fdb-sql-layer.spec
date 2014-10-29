@@ -66,7 +66,7 @@ mkdir -p "${RPM_BUILD_ROOT}/usr/share/doc/fdb-sql-layer"
 cp -r etc/ "${RPM_BUILD_ROOT}/"
 cp -r usr/ "${RPM_BUILD_ROOT}/"
 ln -s /usr/share/foundationdb/sql/%{_fdb_sql_layer_jar} "${RPM_BUILD_ROOT}/usr/share/foundationdb/sql/fdb-sql-layer.jar"
-ln -s /usr/share/foundationdb/sql/routine-firewall/%{_fdb_sql_layer_rf_jar} "${RPM_BUILD_ROOT}/usr/share/foundationdb/sql/routine-firewall/routine-firewall.jar"
+ln -s /usr/share/foundationdb/sql/fdb-sql-layer-routinefw/%{_fdb_sql_layer_rf_jar} "${RPM_BUILD_ROOT}/usr/share/foundationdb/sql/fdb-sql-layer-routinefw/fdb-sql-layer-routinefw.jar"
 
 %clean
 rm -rf "${RPM_BUILD_ROOT}"

@@ -32,7 +32,7 @@ FOR %%P IN ("%~dp0..") DO SET FDBSQL_HOME=%%~fP
 CALL:findJarFile "%FDBSQL_HOME%\sql\lib"
 SET DEP_DIR=%FDBSQL_HOME%\sql\lib\server
 SET FDBSQL_HOME_DIR=%FDBSQL_HOME%\sql
-SET FDBSQL_RFDIR=%FDBSQL_HOME%\sql\lib\routine-firewall
+SET FDBSQL_RFDIR=%FDBSQL_HOME%\sql\lib\fdb-sql-layer-routinefw
 @REM Replaced during install
 SET FDBSQL_CONF=${confdir}
 SET FDBSQL_LOGDIR=${logdir}
@@ -64,7 +64,7 @@ SET DEP_DIR=%BUILD_HOME%\fdb-sql-layer-core\target\dependency
 SET FDBSQL_CONF=%BUILD_HOME%\conf
 SET FDBSQL_LOGDIR=\tmp\fdbsqllayer
 SET FDBSQL_HOME_DIR=%BUILD_HOME%\fdb-sql-layer-core\target
-SET FDBSQL_RFDIR=%BUILD_HOME%\routine-firewall\target
+SET FDBSQL_RFDIR=%BUILD_HOME%\fdb-sql-layer-routinefw\target
 SET FDBSQL_POLICY_LOC=%FDBSQL_CONF%\sql-layer-win.policy
 SET PRUNSRV=prunsrv
 SET PRUNMGR=prunmgr

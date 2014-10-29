@@ -20,13 +20,11 @@ package com.foundationdb.sql.server;
 import java.sql.ResultSet;
 import java.util.Queue;
 
-import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.CacheValueGenerator;
 import com.foundationdb.ais.model.Parameter;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.explain.Explainable;
-import routinefrwll.routinefrwll.ShieldedInvokable;
-import routinefrwll.routinefrwll.RoutineFirewall;
+import com.foundationdb.sql.routinefw.ShieldedInvokable;
+import com.foundationdb.sql.routinefw.RoutineFirewall;
 
 /** A Routine that uses Java native data types in its invocation API. */
 public abstract class ServerJavaRoutine implements Explainable, ShieldedInvokable

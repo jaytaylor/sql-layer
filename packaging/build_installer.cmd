@@ -94,7 +94,7 @@ MD target\isstage\layer\bin
 MD target\isstage\layer\lib
 MD target\isstage\layer\lib\plugins
 MD target\isstage\layer\lib\server
-MD target\isstage\layer\lib\routine-firewall
+MD target\isstage\layer\lib\fdb-sql-layer-routinefw
 MD target\isstage\layer\procrun
 
 COPY %TOP_DIR%\LICENSE.txt target\isstage\layer\LICENSE-SQL_LAYER.txt
@@ -105,7 +105,7 @@ COPY bin\*.cmd target\isstage\layer\bin
 FOR %%f in (target\isstage\layer\conf\*) DO MOVE "%%f" "%%f.new"
 XCOPY fdb-sql-layer-core\target\fdb-sql-layer-core*.jar target\isstage\layer\lib /EXCLUDE:target\xclude
 XCOPY fdb-sql-layer-core\target\dependency\* target\isstage\layer\lib\server
-XCOPY routine-firewall\target\routine-firewall*.jar target\isstage\layer\lib\routine-firewall\ /EXCLUDE:target\xclude
+XCOPY fdb-sql-layer-routinefw\target\fdb-sql-layer-routinefw*.jar target\isstage\layer\lib\fdb-sql-layer-routinefw\ /EXCLUDE:target\xclude
 
 CD target\isstage\layer
 curl -o procrun.zip -L http://archive.apache.org/dist/commons/daemon/binaries/windows/commons-daemon-1.0.15-bin-windows.zip

@@ -95,22 +95,22 @@ infer_jar_file()
 
 infer_jar_rf_file()
 {
-    local loc_dev="${FDBSQL_HOME}/routine-firewall/target"
-    local loc_home="${FDBSQL_HOME}/routine-firewall/routine-firewall.jar"
+    local loc_dev="${FDBSQL_HOME}/fdb-sql-layer-routinefw/target"
+    local loc_home="${FDBSQL_HOME}/fdb-sql-layer-routinefw/fdb-sql-layer-routinefw.jar"
     local value=""
 
     # Only infer if passed no argument
     if [ -z "$1" ]; then
         # Try dev first so you can develop *and* have a system package installed
         if [ -d "$loc_dev" ]; then
-            value=$(ls "$loc_dev"/routine-firewall*.jar |grep -v -E '\-sources|\-tests')
+            value=$(ls "$loc_dev"/fdb-sql-layer-routinefw*.jar |grep -v -E '\-sources|\-tests')
             if [ -z "$value" ]; then
                 echo_die "Developer directory detected but no jar found"
             fi
         elif [ -f "$loc_home" ]; then
             value="$loc_home"
         else
-            echo_die "Unknown rf jar location"
+            echo_die "Unknown routine firewall jar location"
         fi
     else
         value="$1"

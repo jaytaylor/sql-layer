@@ -29,7 +29,7 @@
     </scm>
 
     <modules>
-      <module>routine-firewall</module>
+      <module>fdb-sql-layer-routinefw</module>
       <module>fdb-sql-layer-core</module>
     </modules>
 

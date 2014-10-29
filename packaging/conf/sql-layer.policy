@@ -13,5 +13,5 @@ grant codeBase "file:${fdbsql.home}/plugins/-" {
   permission java.security.AllPermission;
 }; 
 
-grant codeBase "file:${fdbsql.home}/routine-firewall/*" {
+grant codeBase "file:${fdbsql.home}/fdb-sql-layer-routinefw/*" {
 };

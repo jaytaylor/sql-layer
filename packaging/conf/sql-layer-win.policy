@@ -11,5 +11,5 @@ grant codeBase "file:${fdbsql.home}/lib/server/-" {
 };
 
 
-grant codeBase "file:${fdbsql.home}/lib/routine-firewall/*" {
+grant codeBase "file:${fdbsql.home}/lib/fdb-sql-layer-routinefw/*" {
 };
