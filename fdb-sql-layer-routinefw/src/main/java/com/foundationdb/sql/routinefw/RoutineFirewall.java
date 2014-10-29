@@ -14,9 +14,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+package com.foundationdb.sql.routinefw;
 
-package routinefrwll.routinefrwll;
 
-public interface ShieldedInvokable {
-    public void invokeShielded();
+public class RoutineFirewall {
+        public static void callInvoke(ShieldedInvokable si){
+            si.invokeShielded();
+        }
 }
