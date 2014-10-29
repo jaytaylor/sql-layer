@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 FoundationDB, LLC
+ * Copyright (C) 2009-2014 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -14,16 +14,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package com.foundationdb.server.error;
 
-public class StartupFailureException extends FDBAdapterException {
-
-    protected StartupFailureException(ErrorCode code, Long i, Long j, Long k,
-            Long l) {
-        super(code, i, j, k, l);
-    }
-
-    protected StartupFailureException(ErrorCode code, String desc) {
-        super(code, desc);
+public class InvalidGuidFormatException extends InvalidOperationException {
+    public InvalidGuidFormatException(String guid) {
+        super (ErrorCode.INVALID_GUID_FORMAT, guid);
     }
 }

@@ -115,7 +115,9 @@ import java.util.*;
         }
 
         public boolean isIllegalPlan(PlanNode n) {
-            return (n instanceof SetPlanNode || n instanceof MapJoin);
+            // Only the simplest select from a single table is allowed.
+            return !(n instanceof DMLStatement || n instanceof InsertStatement ||
+                     n instanceof Project || n instanceof Select || n instanceof TableSource);
         }
     }
 }

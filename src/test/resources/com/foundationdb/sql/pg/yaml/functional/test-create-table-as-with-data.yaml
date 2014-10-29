@@ -48,4 +48,7 @@
 ---
 - Statement: CREATE TABLE people7 AS select name from people where name in (select people2.name from people2) WITH DATA
 - error: [0A503]
+---
+- Statement: CREATE TABLE people7 AS (SELECT DISTINCT age, name FROM people) WITH DATA
+- error: [0A503]
 ...

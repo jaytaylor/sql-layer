@@ -16,14 +16,10 @@
  */
 package com.foundationdb.server.error;
 
-public class StartupFailureException extends FDBAdapterException {
+public class ClusterFileNotReadableException extends StartupFailureException {
 
-    protected StartupFailureException(ErrorCode code, Long i, Long j, Long k,
-            Long l) {
-        super(code, i, j, k, l);
+    public ClusterFileNotReadableException(String filename) {
+        super(ErrorCode.CLUSTER_FILE_NOT_READABLE, filename);
     }
 
-    protected StartupFailureException(ErrorCode code, String desc) {
-        super(code, desc);
-    }
 }
