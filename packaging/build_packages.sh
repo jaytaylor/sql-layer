@@ -140,10 +140,12 @@ filter_config_files() {
     pushd .
     cd "${PACKAGING_DIR}/conf"
     for f in $(ls); do
-        sed -e "s|\\\${datadir}|${2}|g" \
-            -e "s|\\\${logdir}|${3}|g" \
-            -e "s|\\\${tempdir}|${4}|g" \
-            "${f}" > "${1}/${f}${5}"
+        if [ f -ne "sql-layer-win.policy" ]; then
+            sed -e "s|\\\${datadir}|${2}|g" \
+                -e "s|\\\${logdir}|${3}|g" \
+                -e "s|\\\${tempdir}|${4}|g" \
+                "${f}" > "${1}/${f}${5}"
+        fi
     done
     popd
 }
@@ -167,6 +169,7 @@ case "${1}" in
 
         filter_config_files "${STAGE_DIR}/etc/foundationdb/sql" \
               "/var/lib/foundationdb/sql" "/var/log/foundationdb/sql" "/tmp"
+
         install -m 0644 "${PACKAGING_DIR}/deb/copyright" "usr/share/doc/fdb-sql-layer/"
 
         sed -e "s/VERSION/${LAYER_VERSION}/g" -e "s/RELEASE/${RELEASE}/g" \

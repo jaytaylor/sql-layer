@@ -100,6 +100,7 @@ MD target\isstage\layer\procrun
 COPY %TOP_DIR%\LICENSE.txt target\isstage\layer\LICENSE-SQL_LAYER.txt
 COPY %EXE_DIR%\..\conf\* target\isstage\layer\conf
 DEL target\isstage\layer\conf\jvm.options
+DEL target\isstage\layer\conf\sql-layer.policy
 COPY bin\*.cmd target\isstage\layer\bin
 %DOS2UNIX% --verbose --u2d target\isstage\layer\conf\* target\isstage\layer\*.txt target\isstage\layer\bin\*.cmd
 FOR %%f in (target\isstage\layer\conf\*) DO MOVE "%%f" "%%f.new"
