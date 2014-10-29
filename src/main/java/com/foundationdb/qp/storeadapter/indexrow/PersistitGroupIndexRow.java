@@ -33,7 +33,9 @@ public class PersistitGroupIndexRow extends PersistitIndexRow
     public HKey ancestorHKey(Table table)
     {
         HKey ancestorHKey = hKeyCache.hKey(table);
-        constructHKeyFromIndexKey(ancestorHKey.key(), index.indexToHKey(table.getDepth()));
+        Key hKey = keyCreator.createKey();
+        constructHKeyFromIndexKey(hKey, index.indexToHKey(table.getDepth()));
+        ancestorHKey.copyFrom(hKey);
         return ancestorHKey;
     }
 

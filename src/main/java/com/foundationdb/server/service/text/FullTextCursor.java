@@ -22,10 +22,9 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.RowCursorImpl;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.HKey;
-import com.foundationdb.qp.row.HKeyRow;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesHKey;
 import com.foundationdb.qp.rowtype.HKeyRowType;
-import com.foundationdb.qp.util.HKeyCache;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.persistit.Key;
 
@@ -48,7 +47,7 @@ public class FullTextCursor extends RowCursorImpl
     private final SearcherManager searcherManager;
     private final Query query;
     private final int limit;
-    private final StoreAdapter adapter;
+    //private final StoreAdapter adapter;
     private IndexSearcher searcher;
     private TopDocs results = null;
     private int position;
@@ -66,7 +65,7 @@ public class FullTextCursor extends RowCursorImpl
         this.searcherManager = searcherManager;
         this.query = query;
         this.limit = limit;
-        adapter = context.getStore();
+        //adapter = context.getStore();
         searcher = searcherManager.acquire();
     }
 
@@ -105,8 +104,7 @@ public class FullTextCursor extends RowCursorImpl
         catch (IOException ex) {
             throw new AkibanInternalException("Error reading document", ex);
         }
-        HKey hkey = hkey(doc.get(IndexedField.KEY_FIELD));
-        Row row = new HKeyRow(rowType, hkey, new HKeyCache<HKey>(adapter));
+        Row row = toHkeyRow(doc.get(IndexedField.KEY_FIELD));
         logger.debug("FullTextCursor: yield {}", row);
         return row;
     }
@@ -126,14 +124,14 @@ public class FullTextCursor extends RowCursorImpl
 
     /* Allocate a new <code>HKey</code> and copy the given
      * key bytes into it. */
-    protected HKey hkey(String encoded) {
+    protected Row toHkeyRow(String encoded) {
         HKey hkey = context.getStore().newHKey(rowType.hKey());
         Key key = context.getStore().createKey();
         byte decodedBytes[] = RowIndexer.decodeString(encoded);
         key.setEncodedSize(decodedBytes.length);
         System.arraycopy(decodedBytes, 0, key.getEncodedBytes(), 0, decodedBytes.length);
         hkey.copyFrom(key);
-        return hkey;
+        return (Row)(ValuesHKey)hkey;
     }
 
 }

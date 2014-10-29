@@ -156,7 +156,8 @@ public class RowIndexer implements Closeable
     }
 
     protected void getKeyBytes(Row row) {
-        Key key = row.hKey().key();
+        Key key = new Key (null, 2047);
+        row.hKey().copyTo(key);
         keyEncodedString = encodeBytes(key.getEncodedBytes(), 0, key.getEncodedSize());
         Field field = new StringField(IndexedField.KEY_FIELD, keyEncodedString, Store.YES);
         currentDocument.add(field);

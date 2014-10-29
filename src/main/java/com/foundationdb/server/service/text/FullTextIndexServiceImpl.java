@@ -40,6 +40,7 @@ import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.HKeyRow;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesHKey;
 import com.foundationdb.qp.rowtype.HKeyRowType;
 import com.foundationdb.qp.util.HKeyCache;
 import com.foundationdb.qp.util.SchemaCache;
@@ -271,7 +272,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             Iterator<byte[]> it = rows.iterator();
             while(it.hasNext()) {
                 byte[] row = it.next();
-                HKeyRow hkeyRow = toHKeyRow(row, indexInfo.getHKeyRowType(), adapter);
+                Row hkeyRow = toHKeyRow(row, indexInfo.getHKeyRowType(), adapter);
                 queryBindings.setRow(0, hkeyRow);
                 cursor = API.cursor(operator, queryContext, queryBindings);
                 rowIndexer.updateDocument(cursor, row);
@@ -435,13 +436,21 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         }
     }
 
-    private HKeyRow toHKeyRow(byte rowBytes[], HKeyRowType hKeyRowType, StoreAdapter store)
+    private Row toHKeyRow(byte rowBytes[], HKeyRowType hKeyRowType, StoreAdapter store)
     {
         HKey hkey = store.newHKey(hKeyRowType.hKey());
-        Key key = hkey.key();
+        Key key = store.createKey();
+        
         key.setEncodedSize(rowBytes.length);
         System.arraycopy(rowBytes, 0, key.getEncodedBytes(), 0, rowBytes.length);
-        return new HKeyRow(hKeyRowType, hkey, new HKeyCache<>(store));
+        
+        hkey.copyFrom(key);
+        
+        if (hkey instanceof ValuesHKey) {
+            return ((Row)(ValuesHKey)hkey);
+        } else {
+            throw new UnsupportedOperationException("HKey type is not ValuesHKey");
+        }
     }
 
     private class HKeyBytesStream implements Iterable<byte[]>, Closeable

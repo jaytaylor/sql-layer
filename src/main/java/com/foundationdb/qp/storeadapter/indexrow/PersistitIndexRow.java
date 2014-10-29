@@ -88,7 +88,9 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     public void copyFrom(Key key, Value value)
     {
         super.copyFrom(key, value);
-        constructHKeyFromIndexKey(hKeyCache.hKey(leafmostTable).key(), indexToHKey());
+        Key hKey = keyCreator.createKey();
+        constructHKeyFromIndexKey(hKey, indexToHKey());
+        hKeyCache.hKey(leafmostTable).copyFrom(hKey);
     }
 
     public void reset()
