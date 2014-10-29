@@ -233,12 +233,13 @@ class Flatten_HKeyOrdered extends Operator
         this.rightJoin = fullJoin || joinType.equals(API.JoinType.RIGHT_JOIN);
         this.keepParent = options.contains(KEEP_PARENT);
         this.keepChild = options.contains(KEEP_CHILD);
+        
         List<HKeySegment> childHKeySegments = childType.hKey().segments();
         HKeySegment lastChildHKeySegment = childHKeySegments.get(childHKeySegments.size() - 1);
         RowDef childRowDef = lastChildHKeySegment.table().rowDef();
         this.childOrdinal = childRowDef.table().getOrdinal();
-        this.nChildHKeySegmentFields = lastChildHKeySegment.columns().size();
-        this.parentHKeySegments = parentType.hKey().segments().size();
+        //this.nChildHKeySegmentFields = lastChildHKeySegment.columns().size();
+        //this.parentHKeySegments = parentType.hKey().segments().size();
     }
 
     // Class state
@@ -260,8 +261,8 @@ class Flatten_HKeyOrdered extends Operator
     private final boolean keepChild;
     // For constructing a left-join hkey
     private final int childOrdinal;
-    private final int nChildHKeySegmentFields;
-    private final int parentHKeySegments;
+    //private final int nChildHKeySegmentFields;
+    //private final int parentHKeySegments;
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
@@ -379,6 +380,7 @@ class Flatten_HKeyOrdered extends Operator
         {
             super(context, input);
             this.leftJoinHKey = adapter().newHKey(childType.hKey());
+            //LOG.error("Parent: {}, Child: {}", parentType, childType);
         }
 
         // For use by this class
@@ -394,12 +396,10 @@ class Flatten_HKeyOrdered extends Operator
         {
             assert parent != null;
             if (leftJoin) {
-                if (parent.hKey().segments() < parentHKeySegments) {
-                    throw new IncompatibleRowException(
-                        String.format("%s: parent hkey %s has been shortened by an earlier Flatten, " +
-                                      "so this Flatten should specify LEFT_JOIN_SHORTENS_HKEY also",
-                                      this, parent.hKey()));
-                }
+                assert parent.hKey().segments() == parentType.hKey().segments().size() : 
+                    String.format("%s: parent hkey %s has been shortened by an earlier Flatten, " +
+                        "so this Flatten should specify LEFT_JOIN_SHORTENS_HKEY also",
+                        this, parent.hKey());
                 // Copy leftJoinHKey to avoid aliasing problems. (leftJoinHKey changes on each parent row.)
                 HKey hKey = adapter().newHKey(childType.hKey());
                 leftJoinHKey.copyTo(hKey);
@@ -436,9 +436,11 @@ class Flatten_HKeyOrdered extends Operator
             HKey parentHKey = newParent.hKey();
             parentHKey.copyTo(leftJoinHKey);
             leftJoinHKey.extendWithOrdinal(childOrdinal);
-            for (int i = 0; i < nChildHKeySegmentFields; i++) {
-                leftJoinHKey.extendWithNull();
-            }
+            leftJoinHKey.extendWithNull();
+            
+            //for (int i = 0; i < nChildHKeySegmentFields; i++) {
+            //    leftJoinHKey.extendWithNull();
+            //}
         }
 
         private boolean readyForLeftJoinRow(Row inputRow)
