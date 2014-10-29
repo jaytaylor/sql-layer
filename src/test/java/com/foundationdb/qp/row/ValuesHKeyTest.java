@@ -18,7 +18,6 @@
 package com.foundationdb.qp.row;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Before;
@@ -54,7 +53,7 @@ public class ValuesHKeyTest {
         Table item = schema.ais().getTable("schema", "item");
         ValuesHKey key = new ValuesHKey(schema.newHKeyRowType(item.hKey()));
         assertEquals(key.segments(), 3);
-        assertEquals(key.rowType().nFields(), 2);
+        assertEquals(key.rowType().nFields(), 3);
     }
     
     @Test
@@ -275,9 +274,10 @@ public class ValuesHKeyTest {
         itemKey.copyFrom(key);
         
         assertEquals (itemKey.segments(), 3);
+        assertEquals (itemKey.values.size(), 3);
         assertEquals (itemKey.valueAt(0).getInt32(), 42);
         assertEquals (itemKey.valueAt(1).getInt32(), 51);
-        assertEquals (itemKey.values.size(), 2);
+        assertEquals (itemKey.valueAt(2).getInt32(), 99);
     }
 
     
@@ -310,6 +310,42 @@ public class ValuesHKeyTest {
         assertEquals(target.decodeLong(), 51);
         assertEquals(target.decodeInt(), ordinal("item"));
     }
+    
+    @Test
+    public void extendWithNull() {
+        ValuesHKey key = createHKey("customer");
+        key.valueAt(0).putInt32(42);
+        ValuesHKey target = createHKey("order");
+        key.copyTo(target);
+        assertEquals(target.valueAt(0).getInt32(),42);
+        assertEquals(target.segments(), 1);
+        
+        target.extendWithOrdinal(ordinal("order"));
+        assertEquals(target.segments(), 2);
+        target.extendWithNull();
+        assertTrue (target.valueAt(1).isNull());
+        
+    }
+    
+    @Test
+    public void extendOrdinalTwo() {
+        ValuesHKey key = createHKey("customer");
+        key.valueAt(0).putInt32(42);
+        
+        ValuesHKey target = createHKey("item");
+        key.copyTo(target);
+        
+        assertEquals (target.valueAt(0).getInt32(), 42);
+        assertTrue (!target.valueAt(1).hasAnyValue());
+        assertTrue(!target.valueAt(2).hasAnyValue());
+        assertEquals(target.segments(), 1);
+
+        target.extendWithOrdinal(ordinal("item"));
+        assertEquals (target.segments(), 3);
+        assertTrue(target.valueAt(1).isNull());
+        assertTrue(!target.valueAt(2).hasAnyValue());
+    }
+    
     
     private ValuesHKey createHKey(String tableName) {
         
@@ -345,7 +381,7 @@ public class ValuesHKeyTest {
         builder.joinTables("co", "schema", "customer", "schema", "order");
         builder.joinColumns("co", "schema", "customer", "customer_id", "schema", "order", "customer_id");
         builder.joinTables("oi", "schema", "order", "schema", "item");
-        builder.joinColumns("oi", "schema", "order", "order_id", "schema", "item", "item_id");
+        builder.joinColumns("oi", "schema", "order", "order_id", "schema", "item", "order_id");
         builder.table("schema", "state");
         builder.column("schema", "state", "code", 0, "MCOMPAT", "varchar", 2L, null, false);
         builder.column("schema", "state", "name", 1, "MCOMPAT", "varchar", 50L, null, false);

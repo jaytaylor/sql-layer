@@ -16,7 +16,11 @@
  */
 package com.foundationdb.qp.row;
 
+import java.util.Arrays;
 import java.util.EnumMap;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.foundationdb.ais.model.HKeyColumn;
 import com.foundationdb.ais.model.HKeySegment;
@@ -28,7 +32,6 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
-import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.value.ValueTargets;
 import com.persistit.Key;
 
@@ -45,6 +48,27 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
                 this.compareTo((ValuesHKey)that) == 0);
     }
 
+    @Override
+    // TODO: This is overkill, but several tests rely upon the older PersistitHKey(key#toString()) behavior, 
+    // See ITBase#compareTwoRows(line 190ff). 
+    public String toString() {
+        Key target = new Key (null, 2047);
+        int columnIndex = 0;
+        PersistitKeyAppender appender = PersistitKeyAppender.create(target, rowType().table().getName() );
+        int maxSegments = Math.min(hKeySegments, rowType().hKey().segments().size());
+        for (int segment = 0; segment < maxSegments; segment++) {
+            appender.append(ordinals[segment]);
+            for (HKeyColumn column : rowType().hKey().segments().get(segment).columns()) {
+                if (this.values.get(columnIndex).hasAnyValue()) {
+                    appender.append(this.values.get(columnIndex), column.column());
+                }
+                columnIndex++;
+            }
+        }
+        return target.toString();
+    }
+    
+    
     // HKey Interface  - Comparable interface 
     @Override
     public int compareTo(HKey o) {
@@ -120,7 +144,7 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
         for (int segment = 0; segment < hKeySegments; segment++) {
             if (segment >= t.hKeySegments) break;
             assert ordinals[segment] == t.ordinals[segment] : "Mismatched ordinals on segment " + segment +" for " + ordinals[segment] + " source vs " + t.ordinals[segment] + " target";
-            for (int i = 0 ; i < rowType().hKey().segments().get(segment).columns().size(); i++) {
+            for (int i = 0 ; i < keyDepth[segment]; i++) {
                 Value valueSource = valueAt(columnIndex);
                 if (valueSource.hasAnyValue()) {
                     Value valueTarget = t.valueAt(columnIndex);
@@ -136,24 +160,42 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
 
     @Override
     public void extendWithOrdinal(int ordinal) {
-        if (hKeySegments < ordinals.length) {
-            assert ordinals[hKeySegments++] == ordinal;
+        
+        // There are two cases where we want to extend this HKey
+        // This (child hkey) was copied from parent, and now extended to match this child
+        if (hKeySegments < ordinals.length-1 ) {
+
+            //LOG.trace("Attempting to assign ordinal " + ordinal + " to position " + hKeySegments + " into " + Arrays.toString(ordinals));
+            
+            int finalSegment = 0;
+            for (int segment = hKeySegments - 1; segment < ordinals.length-1; segment++) {
+                if (ordinals[segment] == ordinal)
+                    finalSegment = segment;
+            }
+            assert finalSegment != 0 : "Attempting to assign ordinal " + ordinal + " to position " + hKeySegments + " into " + Arrays.toString(ordinals);
+            
+            for (int segment = hKeySegments; segment < finalSegment; segment++) {
+                hKeySegments++;
+                extendWithNull();
+            }
+            hKeySegments++;
         } else {
+            // This (parent hkey) is being extended to query a specific child
             ordinals[hKeySegments++] = ordinal;
         }
     }
 
     @Override
-    @Deprecated
     public void extendWithNull() {
-        throw new UnsupportedOperationException();
-        /*
-        assert extendIndex < rowType().hKey().nColumns() : "Too may columns in HKey";
-        TInstance tInstance = rowType().hKey().column(extendIndex++).getType();
-        Value value = new Value (tInstance);
-        value.putNull();
-        values.add(value);
-        */
+        int columnIndex = -1;
+        int segment;
+        for (segment = 0; segment < hKeySegments; segment++) {
+            columnIndex += keyDepth[segment];
+        }
+        for (int i = 0; i < keyDepth[segment-1]; i++) {
+            valueAt(columnIndex).putNull();
+            columnIndex++;
+        }
     }
 
     @Override
@@ -179,7 +221,8 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
     public void copyTo (Key target) {
         int columnIndex = 0;
         PersistitKeyAppender appender = PersistitKeyAppender.create(target, rowType().table().getName() );
-        for (int segment = 0; segment < hKeySegments; segment++) {
+        int maxSegments = Math.min(hKeySegments, rowType().hKey().segments().size());
+        for (int segment = 0; segment < maxSegments; segment++) {
             appender.append(ordinals[segment]);
             for (HKeyColumn column : rowType().hKey().segments().get(segment).columns()) {
                 if (this.values.get(columnIndex).hasAnyValue()) {
@@ -290,6 +333,7 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
     private int[] keyDepth;
     private int hKeySegments;
 //    private int extendIndex = 0;
+    private static final Logger LOG = LoggerFactory.getLogger(ValuesHKey.class);
 
     private static final EnumMap<UnderlyingType, Class<?>> underlyingExpectedClasses = createPUnderlyingExpectedClasses();
 
