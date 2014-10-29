@@ -130,7 +130,6 @@ public class ApiTestBase {
     };
 
     public static interface TestRowOutput extends RowOutput {
-        public int getRowCount();
         public void clear();
     }
 
@@ -149,11 +148,6 @@ public class ApiTestBase {
         }
 
         @Override
-        public int getRowCount() {
-            return rows.size();
-        }
-
-        @Override
         public void clear() {
             rows.clear();
         }
@@ -166,36 +160,6 @@ public class ApiTestBase {
         @Override
         public void rewind() {
             ListUtils.truncate(rows, mark);
-        }
-    }
-
-    public static class CountingRowOutput implements TestRowOutput {
-        private int count = 0;
-        private int mark = 0;
-
-        @Override
-        public void output(NewRow row) {
-            ++count;
-        }
-
-        @Override
-        public void mark() {
-            mark = count;
-        }
-
-        @Override
-        public void rewind() {
-            count = mark;
-        }
-
-        @Override
-        public int getRowCount() {
-            return count;
-        }
-
-        @Override
-        public void clear() {
-            count = 0;
         }
     }
 
@@ -392,15 +356,7 @@ public class ApiTestBase {
         lastStartupConfigProperties = null;
         sm.stopServices();
     }
-    
-    public final void crashTestServices() throws Exception {
-        beforeStopServices();
-        sm.crashServices();
-        sm = null;
-        session = null;
-        lastStartupConfigProperties = null;
-    }
-    
+
     public final void restartTestServices(Map<String, String> properties) throws Exception {
         ServiceManagerImpl.setServiceManager(null);
         sm = createServiceManager( properties );

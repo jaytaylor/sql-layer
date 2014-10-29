@@ -18,20 +18,13 @@
 package com.foundationdb.server.test.pt.qp;
 
 import com.foundationdb.ais.model.*;
-import com.foundationdb.qp.operator.Cursor;
-import com.foundationdb.qp.operator.Limit;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.storeadapter.PersistitAdapter;
-import com.foundationdb.qp.storeadapter.PersistitGroupRow;
-import com.foundationdb.qp.storeadapter.PersistitRowLimit;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.server.api.dml.ColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.api.dml.scan.ScanLimit;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager.BindingsConfigurationProvider;
 import com.foundationdb.server.store.PersistitStore;
 import com.foundationdb.server.test.it.PersistitITBase;
@@ -42,8 +35,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
 
 public class QPProfilePTBase extends PTBase
 {
@@ -90,61 +81,10 @@ public class QPProfilePTBase extends PTBase
         return null;
     }
 
-    protected ColumnSelector columnSelector(final Index index)
-    {
-        return new ColumnSelector()
-        {
-            @Override
-            public boolean includesColumn(int columnPosition)
-            {
-                for (IndexColumn indexColumn : index.getKeyColumns()) {
-                    Column column = indexColumn.getColumn();
-                    if (column.getPosition() == columnPosition) {
-                        return true;
-                    }
-                }
-                return false;
-            }
-        };
-    }
-
     protected Row row(RowType rowType, Object... fields)
     {
         return new TestRow(rowType, fields);
     }
-
-    protected Row row(int tableId, Object... values /* alternating field position and value */)
-    {
-        NewRow niceRow = createNewRow(tableId);
-        int i = 0;
-        while (i < values.length) {
-            int position = (Integer) values[i++];
-            Object value = values[i++];
-            niceRow.put(position, value);
-        }
-        return PersistitGroupRow.newPersistitGroupRow(adapter, niceRow.toRowData());
-    }
-
-    protected void compareRenderedHKeys(String[] expected, Cursor cursor)
-    {
-        int count;
-        try {
-            cursor.openTopLevel();
-            count = 0;
-            List<Row> actualRows = new ArrayList<>(); // So that result is viewable in debugger
-            Row actualRow;
-            while ((actualRow = cursor.next()) != null) {
-                assertEquals(expected[count], actualRow.hKey().toString());
-                count++;
-                actualRows.add(actualRow);
-            }
-        } finally {
-            cursor.closeTopLevel();
-        }
-        assertEquals(expected.length, count);
-    }
-
-    protected static final Limit NO_LIMIT = new PersistitRowLimit(ScanLimit.NONE);
 
     protected Schema schema;
     protected PersistitAdapter adapter;
