@@ -43,5 +43,7 @@ public abstract class BaseScan extends BasePlanNode
     }
 
     public abstract Collection<? extends ConditionExpression> getConditions();
+    public abstract void visitComparands(ExpressionRewriteVisitor v);
+    public abstract void visitComparands(ExpressionVisitor v);
 
 }

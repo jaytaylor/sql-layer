@@ -212,14 +212,14 @@ public class TableGroupJoinTree extends BaseJoinable
 
     public boolean accept(PlanVisitor v) {
         if (v.visitEnter(this)) {
-            if (scan instanceof IndexScan) {
+            if (scan != null) {
                 // Could just do scan.accept(v), but then it'd explain
                 // on a separate line.
                 if (v instanceof ExpressionRewriteVisitor) {
-                    ((IndexScan)scan).visitComparands((ExpressionRewriteVisitor)v);
+                    scan.visitComparands((ExpressionRewriteVisitor)v);
                 }
                 else if (v instanceof ExpressionVisitor) {
-                    ((IndexScan)scan).visitComparands((ExpressionVisitor)v);
+                    scan.visitComparands((ExpressionVisitor)v);
                 }
             }
             TableGroupJoinNode next = root;
