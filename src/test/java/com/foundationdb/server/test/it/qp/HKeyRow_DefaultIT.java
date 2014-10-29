@@ -25,7 +25,6 @@ import com.foundationdb.qp.rowtype.HKeyRowType;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.Collections;
 
 import static com.foundationdb.qp.operator.API.*;
 import static com.foundationdb.server.test.ExpressionGenerators.literal;
@@ -69,12 +68,12 @@ public class HKeyRow_DefaultIT extends OperatorITBase
     public void testItemRow() {
         Operator plan =
             groupLookup_Default(
-                hKeyRow_DefaultTest(itemHKeyRowType, Arrays.asList(literal(1L), literal(12L), literal(121L))),
+                hKeyRow_DefaultTest(itemHKeyRowType, Arrays.asList(literal(1), literal(12), literal(121))),
                 coi, itemHKeyRowType, Arrays.asList(itemRowType),
                 InputPreservationOption.DISCARD_INPUT, 0);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         Row[] expected = new Row[]{
-            row(itemRowType, 121L, 12L),
+            row(itemRowType, 121, 12),
         };
         compareRows(expected, cursor);
     }
@@ -83,14 +82,14 @@ public class HKeyRow_DefaultIT extends OperatorITBase
     public void testOrderBranch() {
         Operator plan =
             branchLookup_Default(
-                hKeyRow_DefaultTest(orderHKeyRowType, Arrays.asList(literal(2L), literal(22L))),
+                hKeyRow_DefaultTest(orderHKeyRowType, Arrays.asList(literal(2), literal(22))),
                 coi, orderHKeyRowType, orderRowType,
                 InputPreservationOption.DISCARD_INPUT);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         Row[] expected = new Row[]{
-            row(orderRowType, 22L, 2L, "jack"),
-            row(itemRowType, 221L, 22L),
-            row(itemRowType, 222L, 22L),
+            row(orderRowType, 22, 2, "jack"),
+            row(itemRowType, 221, 22),
+            row(itemRowType, 222, 22),
         };
         compareRows(expected, cursor);
     }
@@ -99,7 +98,7 @@ public class HKeyRow_DefaultIT extends OperatorITBase
     public void testCursor() {
         Operator plan =
             groupLookup_Default(
-                hKeyRow_DefaultTest(customerHKeyRowType, Arrays.asList(literal(1L))),
+                hKeyRow_DefaultTest(customerHKeyRowType, Arrays.asList(literal(1))),
                 coi, customerHKeyRowType, Arrays.asList(customerRowType),
                 InputPreservationOption.DISCARD_INPUT, 0);
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
@@ -108,7 +107,7 @@ public class HKeyRow_DefaultIT extends OperatorITBase
             public Row[] firstExpectedRows()
             {
                 return new Row[] {
-                    row(customerRowType, 1L, "xyz"),
+                    row(customerRowType, 1, "xyz"),
                 };
             }
         };
