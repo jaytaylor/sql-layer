@@ -181,9 +181,8 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
         for (segment = 0; segment < hKeySegments; segment++) {
             columnIndex += keyDepth[segment];
         }
-        for (int i = 0; i < keyDepth[segment-1]; i++) {
+        for (int i = 0; i < keyDepth[segment-1] && columnIndex < values.size() ; columnIndex++, i++) {
             valueAt(columnIndex).putNull();
-            columnIndex++;
         }
     }
 
@@ -194,11 +193,6 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
     
     // HKey interface implementation - low level interface (to be removed at some point)
     
-    @Override 
-    public Key key() {
-        throw new UnsupportedOperationException("Key() not supported");
-    }
-
     @Override 
     public Key key(Key start) {
         this.copyTo(start);
@@ -280,6 +274,10 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
     @Override
     public HKey hKey() {
         return this;
+    }
+
+    public Value valueAt(int index) {
+        return super.valueAt(index);
     }
 
     @Override

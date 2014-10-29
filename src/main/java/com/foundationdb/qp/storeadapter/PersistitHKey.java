@@ -142,12 +142,6 @@ public class PersistitHKey implements HKey
     }
 
     @Override
-    public Key key()
-    {
-        return hKey;
-    }
-    
-    @Override
     public Key key(Key start) {
         hKey.copyTo(start);
         return start;
