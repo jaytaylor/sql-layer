@@ -88,7 +88,7 @@
 
 # BUG: Fails in FTS. Enable when fixed.
 ---
-- Properties: fdb-sql
+- Properties: fts
 - suppressed: true
 
 ---
