@@ -1266,7 +1266,6 @@ public class ApiTestBase {
             }
         }
 
-        // Minor hack: Automatically insert an expression for hidden PK if it's missing.
         if(fields.length < rowType.nFields()) {
             QueryContext context = new SimpleQueryContext(newStoreAdapter(rowType.schema()));
             List<TPreparedExpression> expressions = new ArrayList<>();
