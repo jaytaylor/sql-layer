@@ -20,6 +20,7 @@ package com.foundationdb.server.test.it.qp;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.server.types.value.ValueSources;
 import org.junit.Test;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.expression.IndexKeyRange;
@@ -108,12 +109,12 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
         use(db);
         for (Row row : db)
         {
-            indexRowWithIdMap.put(row.value(0).getInt64(),
+            indexRowWithIdMap.put(ValueSources.getLong(row.value(0)),
                                   new TestRow(tRowType,
-                                              row.value(1).getInt64(),  // a
-                                              row.value(2).getInt64(),  // b
-                                              row.value(3).getInt64(),  // c
-                                              row.value(0).getInt64()   // id
+                                              ValueSources.toObject(row.value(1)),  // a
+                                              ValueSources.toObject(row.value(2)),  // b
+                                              ValueSources.toObject(row.value(3)),  // c
+                                              ValueSources.toObject(row.value(0))   // id
                                   ));
         }
     }

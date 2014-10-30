@@ -31,6 +31,7 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.spatial.Spatial;
+import com.foundationdb.server.types.value.ValueSources;
 import com.geophile.z.Space;
 import org.junit.Test;
 
@@ -150,11 +151,11 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
             long[][] expected = new long[remainingRows.size()][];
             int r = 0;
             for (Row row : remainingRows) {
-                int cid = (Integer) row.value(0).getObject();
-                int pid = (Integer) row.value(1).getObject();
-                int after = (Integer) row.value(2).getObject();
-                BigDecimal clat = (BigDecimal) row.value(3).getObject();
-                BigDecimal clon = (BigDecimal) row.value(4).getObject();
+                int cid = (Integer) ValueSources.toObject(row.value(0));
+                int pid = (Integer) ValueSources.toObject(row.value(1));
+                int after = (Integer) ValueSources.toObject(row.value(2));
+                BigDecimal clat = (BigDecimal) ValueSources.toObject(row.value(3));
+                BigDecimal clon = (BigDecimal) ValueSources.toObject(row.value(4));
                 long z = Spatial.shuffle(space, clat.doubleValue(), clon.doubleValue());
                 expected[r++] = new long[]{before(pid), z, after, pid, cid};
             }
@@ -165,9 +166,9 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
             long[][] expected = new long[remainingRows.size()][];
             int r = 0;
             for (Row row : remainingRows) {
-                int cid = (Integer) row.value(0).getObject();
-                int pid = (Integer) row.value(1).getObject();
-                int after = (Integer) row.value(2).getObject();
+                int cid = (Integer) ValueSources.toObject(row.value(0));
+                int pid = (Integer) ValueSources.toObject(row.value(1));
+                int after = (Integer) ValueSources.toObject(row.value(2));
                 BigDecimal plat = plats.get(pid);
                 BigDecimal plon = plons.get(pid);
                 long z = Spatial.shuffle(space, plat.doubleValue(), plon.doubleValue());

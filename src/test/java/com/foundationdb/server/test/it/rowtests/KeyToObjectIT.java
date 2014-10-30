@@ -91,7 +91,7 @@ public class KeyToObjectIT extends ITBase {
                 for(IndexColumn indexColumn : index.getKeyColumns()) {
                     Column column = indexColumn.getColumn();
                     int colPos = column.getPosition();
-                    Object objFromRow = row.value(colPos).getObject();
+                    Object objFromRow = ValueSources.toObject(row.value(colPos));
                     PersistitKeyValueSource valueSource = new PersistitKeyValueSource(indexColumn.getColumn().getType());
                     valueSource.attach(key, indexColumn);
                     
