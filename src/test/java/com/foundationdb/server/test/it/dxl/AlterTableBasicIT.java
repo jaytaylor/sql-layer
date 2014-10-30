@@ -148,7 +148,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                 row(cid, 5, "C", 10L)
         );
         runAlter(ChangeLevel.GROUP, "ALTER TABLE c DROP COLUMN c1");
-        expectFullRows(
+        expectRows(
                 cid,
                 row(cid, "C", 10),
                 row(cid, "B", 20),
@@ -210,7 +210,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         // Check that schema change was rolled back correctly
         updateAISGeneration();
-        expectFullRows(
+        expectRows(
                 cid,
                 row(cid, 1, "10"),
                 row(cid, 2, "20"),
@@ -222,7 +222,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
     public void addNotNullColumnDefault() throws StandardException {
         createAndLoadSingleTableGroup();
         runAlter("ALTER TABLE c ADD COLUMN c2 INT NOT NULL DEFAULT 0");
-        expectFullRows(
+        expectRows(
                 cid,
                 row(cid, 1, "10", 0),
                 row(cid, 2, "20", 0),
@@ -234,7 +234,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
     public void addSingleColumnSingleTableGroup() throws StandardException {
         createAndLoadSingleTableGroup();
         runAlter("ALTER TABLE c ADD COLUMN c2 INT NULL");
-        expectFullRows(
+        expectRows(
                 cid,
                 row(cid, 1, "10", null),
                 row(cid, 2, "20", null),
@@ -267,7 +267,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         ddl().alterTable(session(), cName, builder.unvalidatedAIS().getTable(cName), changes, changes, queryContext());
         updateAISGeneration();
 
-        expectFullRowsSkipInternal(
+        expectRowsSkipInternal(
                 tableId,
                 row(tableId, 1, 2, 3, null),
                 row(tableId, 4, 5, 6, null),
@@ -289,7 +289,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
     public void addSingleColumnRootOfGroup() throws StandardException {
         createAndLoadCOI();
         runAlter("ALTER TABLE c ADD COLUMN c2 INT NULL");
-        expectFullRows(
+        expectRows(
                 cid,
                 row(cid, 1, "a", null),
                 row(cid, 2, "b", null)
@@ -300,7 +300,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
     public void addSingleColumnMiddleOfGroup() throws StandardException {
         createAndLoadCOI();
         runAlter("ALTER TABLE o ADD COLUMN o2 INT NULL");
-        expectFullRows(
+        expectRows(
                 oid,
                 row(oid, 10, 1, 11, null),
                 row(oid, 11, 1, 12, null),
@@ -312,7 +312,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
     public void addSingleColumnLeafOfGroup() throws StandardException {
         createAndLoadCOI();
         runAlter("ALTER TABLE i ADD COLUMN i2 INT NULL");
-        expectFullRows(
+        expectRows(
                 iid,
                 row(iid, 100, 10, 110, null),
                 row(iid, 101, 10, 111, null),
@@ -325,7 +325,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
     public void dropSingleColumnSingleTableGroup() throws StandardException {
         createAndLoadSingleTableGroup();
         runAlter("ALTER TABLE c DROP COLUMN c1");
-        expectFullRows(
+        expectRows(
                 cid,
                 row(cid, 1),
                 row(cid, 2),
@@ -337,7 +337,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
     public void dropSingleColumnRootOfGroup() throws StandardException {
         createAndLoadCOI();
         runAlter("ALTER TABLE c DROP COLUMN c1");
-        expectFullRows(
+        expectRows(
                 cid,
                 row(cid, 1),
                 row(cid, 2)
@@ -348,7 +348,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
     public void dropSingleColumnMiddleOfGroup() throws StandardException {
         createAndLoadCOI();
         runAlter("ALTER TABLE o DROP COLUMN o1");
-        expectFullRows(
+        expectRows(
                 oid,
                 row(oid, 10, 1),
                 row(oid, 11, 1),
@@ -360,7 +360,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
     public void dropSingleColumnLeafOfGroup() throws StandardException {
         createAndLoadCOI();
         runAlter("ALTER TABLE i DROP COLUMN i1");
-        expectFullRows(
+        expectRows(
                 iid,
                 row(iid, 100, 10),
                 row(iid, 101, 10),
@@ -377,7 +377,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter("ALTER TABLE c DROP COLUMN c1");
 
         expectIndexes(cid, "PRIMARY");
-        expectFullRows(
+        expectRows(
                 cid,
                 row(cid, 1),
                 row(cid, 2),
@@ -457,7 +457,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
     public void changeDataTypeSingleColumnSingleTableGroup() throws StandardException {
         createAndLoadSingleTableGroup();
         runAlter("ALTER TABLE c ALTER COLUMN c1 SET DATA TYPE int");
-        expectFullRows(
+        expectRows(
                 cid,
                 row(cid, 1, 10),
                 row(cid, 2, 20),
@@ -470,7 +470,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         createAndLoadSingleTableGroup();
         createIndex(SCHEMA, "c", "c1", "c1");
         runAlter("ALTER TABLE c ALTER COLUMN c1 SET DATA TYPE int");
-        expectFullRows(
+        expectRows(
                 cid,
                 row(cid, 1, 10),
                 row(cid, 2, 20),
@@ -519,7 +519,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         ddl().alterTable(session(), new TableName(SCHEMA, "c"), newTable, changes, NO_CHANGES, queryContext());
         updateAISGeneration();
 
-        expectFullRows(
+        expectRows(
                 cid,
                 row(cid, 1, "10", "A", null),
                 row(cid, 2, "20", "B", null),
@@ -664,7 +664,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         ddl().alterTable(session(), new TableName(SCHEMA, "o"), table, columnChanges, indexChanges, queryContext());
         updateAISGeneration();
 
-        expectFullRows(
+        expectRows(
                 oid,
                 row(oid, 10, 1, null),
                 row(oid, 11, 1, null),
@@ -1008,7 +1008,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
                  Arrays.asList(TableChange.createModify("c1", "c1"), TableChange.createModify("c2", "c2")),
                  NO_CHANGES);
 
-        expectFullRows(
+        expectRows(
                 cid,
                 row(cid, 10, 1),
                 row(cid, 20, 2),
@@ -1032,7 +1032,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         };
         writeRows(rows);
         runAlter(ChangeLevel.TABLE, "ALTER TABLE c ALTER COLUMN state SET DATA TYPE varchar(3)");
-        expectFullRows(cid, rows);
+        expectRows(cid, rows);
         checkIndexesInstead(C_NAME, "PRIMARY", "state");
     }
 
@@ -1052,7 +1052,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter(ChangeLevel.GROUP, "ALTER TABLE c ALTER COLUMN id SET DATA TYPE varchar(10)");
         assertNull("sequence was dropped", ddl().getAIS(session()).getSequence(seq.getSequenceName()));
         assertNull("id column has no sequence", getTable(id).getColumn("id").getIdentityGenerator());
-        expectFullRows(
+        expectRows(
                 id,
                 row(id, "1", "1"),
                 row(id, "2", "2"),
@@ -1077,7 +1077,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         runAlter(ChangeLevel.GROUP, "ALTER TABLE c DROP COLUMN id");
         assertNull("sequence was dropped", ddl().getAIS(session()).getSequence(seq.getSequenceName()));
         assertNull("id column does not exist", getTable(id).getColumn("id"));
-        expectFullRowsSkipInternal(
+        expectRowsSkipInternal(
                 id,
                 row(id, "1"),
                 row(id, "2"),
@@ -1302,7 +1302,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         // Check for a hidden PK generator in a bad state (e.g. reproducing old values)
         writeRows(row(cid, "e"));
 
-        expectFullRowsSkipInternal(
+        expectRowsSkipInternal(
                 cid,
                 row(cid, "a"),
                 row(cid, "b"),
@@ -1385,7 +1385,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         // writerows doesn't run default handling behavior
         writeRows(row(cid, "e", 5));
 
-        expectFullRows(
+        expectRows(
                 cid,
                 row(cid, "a", 1),
                 row(cid, "b", 2),
@@ -1410,7 +1410,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         // Check for a hidden PK generator in a bad state (e.g. reproducing old values)
         writeRows(row(cid, "e"));
 
-        expectFullRows(
+        expectRows(
                 cid,
                 row(cid, "a"),
                 row(cid, "b"),
@@ -1437,7 +1437,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         // Check for a hidden PK generator in a bad state (e.g. reproducing old values)
         writeRows(row(cid, "e", "v"));
 
-        expectFullRowsSkipInternal(
+        expectRowsSkipInternal(
                 cid,
                 row(cid, "a", "z"),
                 row(cid, "b", "y"),

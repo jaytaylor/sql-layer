@@ -33,7 +33,7 @@ public final class MissingColumnsIT extends ITBase {
     public void testForMissingColumns() throws InvalidOperationException, IOException {
         int tableId = loadBlocksTable();
         writeRows( rows(tableId) );
-        expectFullRows(tableId, rows(tableId));
+        expectRows(tableId, rows(tableId));
     }
 
     private int loadBlocksTable() throws InvalidOperationException, IOException {

@@ -47,7 +47,7 @@ public class TransactionServiceIT extends ITBase
                 writeRows(row);
             }
         });
-        expectFullRows(tid, row);
+        expectRows(tid, row);
     }
 
     @Test
@@ -82,7 +82,7 @@ public class TransactionServiceIT extends ITBase
                 }
             }
         });
-        expectFullRows(tid, row);
+        expectRows(tid, row);
     }
 
     @Test
@@ -99,7 +99,7 @@ public class TransactionServiceIT extends ITBase
                 }
             }
         });
-        expectFullRows(tid, row);
+        expectRows(tid, row);
     }
 
     @Test
@@ -112,7 +112,7 @@ public class TransactionServiceIT extends ITBase
                 return row;
             }
         });
-        expectFullRows(tid, row);
+        expectRows(tid, row);
     }
 
     @Test
@@ -158,7 +158,7 @@ public class TransactionServiceIT extends ITBase
                 return row;
             }
         });
-        expectFullRows(tid, row);
+        expectRows(tid, row);
     }
 
     @Test
@@ -176,6 +176,6 @@ public class TransactionServiceIT extends ITBase
                 return row;
             }
         });
-        expectFullRows(tid, row);
+        expectRows(tid, row);
     }
 }

@@ -30,7 +30,7 @@ public final class NoPkIT extends ITBase {
                 row(tableId, 2)
         );
 
-        expectFullRowsSkipInternal(
+        expectRowsSkipInternal(
                 tableId,
                 row(tableId, 2),
                 row(tableId, 2)

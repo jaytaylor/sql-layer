@@ -72,13 +72,13 @@ public final class TableAndColumnDuplicationIT extends ITBase {
                 row(schema2Table, "third row")
         );
 
-        expectFullRows(schema1Table,
+        expectRows(schema1Table,
                 row(schema1Table, 0),
                 row(schema1Table, 1),
                 row(schema1Table, 2)
         );
         
-        expectFullRows(schema2Table,
+        expectRows(schema2Table,
                 row(schema2Table, "first row"),
                 row(schema2Table, "second row"),
                 row(schema2Table, "third row")
@@ -105,13 +105,13 @@ public final class TableAndColumnDuplicationIT extends ITBase {
                 row(schema2Table, 2, "bravo-1")
         );
 
-        expectFullRows( schema1Table,
+        expectRows( schema1Table,
                 row(schema1Table, 0, "alpha-0"),
                 row(schema1Table, 1, "alpha-1"),
                 row(schema1Table, 2, "alpha-1")
         );
 
-        expectFullRows( schema2Table,
+        expectRows( schema2Table,
                 row(schema2Table, 0, "bravo-0"),
                 row(schema2Table, 1, "bravo-1"),
                 row(schema2Table, 2, "bravo-1")

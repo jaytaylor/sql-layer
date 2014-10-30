@@ -228,7 +228,7 @@ public final class DropSchemaIT extends ITBase {
         expectTables("one", "c");
         expectNotTables("two", "o");
         cTableId = getTable("one", "c").getTableId();
-        expectFullRows(
+        expectRows(
                 cTableId,
                 row(cTableId, 1));
         oTableId = createTable("two", "o",
@@ -237,7 +237,7 @@ public final class DropSchemaIT extends ITBase {
         List<Row> newRows = scanAllIndex(getTable("two", "o").getPrimaryKey().getIndex());
         assertEquals(newRows.toString(), newRows.size(), 1);
         assertEquals(102, ValueSources.toObject(newRows.get(0).value(0)));
-        expectFullRows(
+        expectRows(
                 oTableId,
                 row(oTableId, 102, 10));
     }

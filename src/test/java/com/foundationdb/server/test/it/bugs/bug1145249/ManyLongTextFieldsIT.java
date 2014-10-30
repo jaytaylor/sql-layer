@@ -52,7 +52,7 @@ public class ManyLongTextFieldsIT extends ITBase {
         int tid = tableId(SCHEMA, TABLE);
         Row row = row(tid, colValues);
         writeRow(row);
-        expectFullRows(tid, row);
+        expectRows(tid, row);
     }
 
     @Test

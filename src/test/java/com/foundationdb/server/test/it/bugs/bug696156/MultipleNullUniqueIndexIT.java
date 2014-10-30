@@ -45,7 +45,7 @@ public class MultipleNullUniqueIndexIT  extends ITBase {
         Object[] data = new Object[1];
         writeRows(row(tid, data));
         writeRows(row(tid, data));
-        expectFullRowsSkipInternal(
+        expectRowsSkipInternal(
             tid,
             row(tid, (Object)null),
             row(tid, (Object)null));

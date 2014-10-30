@@ -1079,35 +1079,6 @@ public class ApiTestBase {
         }
     }
 
-    protected void expectRows(Index index, Row... expectedRows) {
-        expectRows(index, Arrays.asList(expectedRows));
-    }
-
-    protected void expectRows(Index index, Collection<Row> expectedRows) {
-        expectRows(scanAllIndexRequest(index), false, expectedRows);
-    }
-
-    protected void expectRowsSkipInternal(Index index, Row... expectedRows) {
-        expectRows(scanAllIndexRequest(index), true, expectedRows);
-    }
-
-    protected void expectRows(ScanRequest request, Row... expectedRows) {
-        expectRows(request, Arrays.asList(expectedRows));
-    }
-
-    protected void expectRows(ScanRequest request, Collection<Row> expectedRows) {
-        expectRows(request, false, expectedRows);
-    }
-
-    protected void expectRows(ScanRequest request, boolean skipInternal, Row... expectedRows) {
-        expectRows(request, skipInternal, Arrays.asList(expectedRows));
-    }
-
-    protected void expectRows(ScanRequest request, boolean skipInternal, Collection<Row> expectedRows) {
-        List<Row> actual = scanAll(request);
-        compareRows(expectedRows, actual, skipInternal);
-    }
-
     protected final ScanAllRequest scanAllRequest(int tableId) {
         return scanAllRequest(tableId, true);
     }
@@ -1252,19 +1223,49 @@ public class ApiTestBase {
         return result;
     }
 
-    protected void expectFullRows(int tableID, Row... expectedRows) {
-        expectFullRows(tableID, false, expectedRows);
+    protected void expectRows(int tableID, Row... expectedRows) {
+        expectRows(tableID, false, expectedRows);
     }
 
-    protected void expectFullRowsSkipInternal(int tableID, Row... expectedRows) {
-        expectFullRows(tableID, true, expectedRows);
+    protected void expectRowsSkipInternal(int tableID, Row... expectedRows) {
+        expectRows(tableID, true, expectedRows);
     }
 
-    protected void expectFullRows(int tableID, boolean skipInternal, Row... expectedRows) {
+    protected void expectRows(int tableID, boolean skipInternal, Row... expectedRows) {
         ScanRequest all = scanAllRequest(tableID);
         expectRows(all, skipInternal, expectedRows);
         expectRowCount(tableID, expectedRows.length);
     }
+
+    protected void expectRows(Index index, Row... expectedRows) {
+        expectRows(index, Arrays.asList(expectedRows));
+    }
+
+    protected void expectRows(Index index, Collection<Row> expectedRows) {
+        expectRows(scanAllIndexRequest(index), false, expectedRows);
+    }
+
+    protected void expectRowsSkipInternal(Index index, Row... expectedRows) {
+        expectRows(scanAllIndexRequest(index), true, expectedRows);
+    }
+
+    protected void expectRows(ScanRequest request, Row... expectedRows) {
+        expectRows(request, Arrays.asList(expectedRows));
+    }
+
+    protected void expectRows(ScanRequest request, Collection<Row> expectedRows) {
+        expectRows(request, false, expectedRows);
+    }
+
+    protected void expectRows(ScanRequest request, boolean skipInternal, Row... expectedRows) {
+        expectRows(request, skipInternal, Arrays.asList(expectedRows));
+    }
+
+    protected void expectRows(ScanRequest request, boolean skipInternal, Collection<Row> expectedRows) {
+        List<Row> actual = scanAll(request);
+        compareRows(expectedRows, actual, skipInternal);
+    }
+
 
     protected static Set<CursorId> cursorSet(CursorId... cursorIds) {
         Set<CursorId> set = new HashSet<>();

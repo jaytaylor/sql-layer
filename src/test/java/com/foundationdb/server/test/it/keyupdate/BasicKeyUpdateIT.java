@@ -238,7 +238,7 @@ public final class BasicKeyUpdateIT extends ITBase {
 
         updateRow(rowToUpdate, updatedValue);
 
-        expectFullRows(
+        expectRows(
                 tableId,
                 endRows.toArray(new Row[endRows.size()])
         );

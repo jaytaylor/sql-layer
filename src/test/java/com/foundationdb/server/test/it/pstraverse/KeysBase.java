@@ -121,7 +121,7 @@ public abstract class KeysBase extends ITBase {
 
     @Test
     public void scanCustomers() throws InvalidOperationException {
-        expectFullRows(
+        expectRows(
                 customers,
                 row(customers, 71L)
         );
@@ -129,7 +129,7 @@ public abstract class KeysBase extends ITBase {
 
     @Test
     public void scanOrders() throws InvalidOperationException {
-        expectFullRows(
+        expectRows(
                 orders,
                 row(orders, 71L, 81L),
                 row(orders, 72L, 82L)
@@ -138,7 +138,7 @@ public abstract class KeysBase extends ITBase {
 
     @Test
     public void scanItems() throws InvalidOperationException {
-        expectFullRows(
+        expectRows(
                 items,
                 row(items, 71L, 81L, 91L),
                 row(items, 71L, 81L, 92L),

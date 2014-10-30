@@ -135,9 +135,9 @@ public final class COIBasicIT extends ITBase {
         writeRows(cRow);
         writeRows(oRow);
         writeRows(iRow);
-        expectFullRows(tids.c, cRow);
-        expectFullRows(tids.o, oRow);
-        expectFullRows(tids.i, iRow);
+        expectRows(tids.c, cRow);
+        expectRows(tids.o, oRow);
+        expectRows(tids.i, iRow);
     }
 
     @Test(expected=UnsupportedDropException.class)
@@ -162,16 +162,16 @@ public final class COIBasicIT extends ITBase {
 
         writeRows(cRow, oRow, iRow);
 
-        expectFullRows(tids.c, cRow);
-        expectFullRows(tids.o, oRow);
-        expectFullRows(tids.i, iRow);
+        expectRows(tids.c, cRow);
+        expectRows(tids.o, oRow);
+        expectRows(tids.i, iRow);
 
         ddl().dropTable(session(), tableName(tids.i));
-        expectFullRows(tids.c, cRow);
-        expectFullRows(tids.o, oRow);
+        expectRows(tids.c, cRow);
+        expectRows(tids.o, oRow);
 
         ddl().dropTable(session(), tableName(tids.o));
-        expectFullRows(tids.c, cRow);
+        expectRows(tids.c, cRow);
 
         ddl().dropTable(session(), tableName(tids.c));
     }

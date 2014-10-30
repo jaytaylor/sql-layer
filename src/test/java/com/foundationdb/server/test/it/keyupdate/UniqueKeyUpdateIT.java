@@ -59,7 +59,7 @@ public final class UniqueKeyUpdateIT extends ITBase {
             // expected
         }
 
-        expectFullRows(
+        expectRows(
                 tableId,
                 row(tableId, 11, 21),
                 row(tableId, 12, 22)
@@ -95,7 +95,7 @@ public final class UniqueKeyUpdateIT extends ITBase {
             // expected
         }
 
-        expectFullRows(
+        expectRows(
                 tableId,
                 row(tableId, 11),
                 row(tableId, 12)
@@ -179,7 +179,7 @@ public final class UniqueKeyUpdateIT extends ITBase {
                     row(tableId, 12, 22, 32),
                     row(tableId, 12, 21, 32)
             );
-            expectFullRows(
+            expectRows(
                     tableId,
                     row(tableId, 11, 21, 31),
                     row(tableId, 12, 21, 32),
@@ -197,7 +197,7 @@ public final class UniqueKeyUpdateIT extends ITBase {
                     row(tableId, 12, 21, 32),
                     row(tableId, 12, 21, 33)
             );
-            expectFullRows(
+            expectRows(
                     tableId,
                     row(tableId, 11, 21, 31),
                     row(tableId, 12, 21, 33),
@@ -223,7 +223,7 @@ public final class UniqueKeyUpdateIT extends ITBase {
             // expected
         }
 
-        expectFullRows(
+        expectRows(
                 tableId,
                 row(tableId, 11, 21, 31),
                 row(tableId, 12, 21, 33),
@@ -255,7 +255,7 @@ public final class UniqueKeyUpdateIT extends ITBase {
         Row updated = row(tableId, 12, null);
         updateRow(original, updated);
 
-        expectFullRows(
+        expectRows(
                 tableId,
                 row(tableId, 11, null),
                 row(tableId, 12, null)

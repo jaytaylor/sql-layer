@@ -81,14 +81,14 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
     @Test
     public void createDropCreateRestart() throws Exception {
         createAndLoad();
-        expectFullRows(tid, rows);
+        expectRows(tid, rows);
         ddl().dropTable(session(), TABLE_NAME);
 
         // Make sure second table gets new trees that don't get removed on restart
         createAndLoad();
-        expectFullRows(tid, rows);
+        expectRows(tid, rows);
         safeRestart();
-        expectFullRows(tid, rows);
+        expectRows(tid, rows);
     }
 
     @Test
@@ -115,14 +115,14 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
         }
 
         safeRestart();
-        expectFullRows(tid, rows);
+        expectRows(tid, rows);
     }
 
     @Test
     public void aisCanBeReloaded() {
         createAndLoad();
         pssm.clearAISMap();
-        expectFullRows(tid, rows);
+        expectRows(tid, rows);
     }
 
     @Test
