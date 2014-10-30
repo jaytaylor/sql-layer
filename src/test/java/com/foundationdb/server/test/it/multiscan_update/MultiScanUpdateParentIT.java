@@ -23,6 +23,7 @@ import com.foundationdb.server.error.ConcurrentScanAndUpdateException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -43,6 +44,7 @@ import static org.junit.Assert.assertEquals;
  * We'll open a scan against {@code items.quantity}, then update an order (which happens to not be unrelated to
  * any item), then get rows from the scan and confirm the exception.</p>
  */
+@Ignore("Testing DMLFunctions only, which is going away")
 public final class MultiScanUpdateParentIT extends ITBase {
     private static final String SCHEMA = "sc";
     private int cId;
@@ -60,12 +62,12 @@ public final class MultiScanUpdateParentIT extends ITBase {
                 "GROUPING FOREIGN KEY (oid) REFERENCES o(oid)");
         createIndex(SCHEMA, "i", "quantity", "quantity");
         writeRows(
-                createNewRow(cId, 1),
-                createNewRow(cId, 2),
-                createNewRow(cId, 3),
-                createNewRow(oId, 1, 1),
-                createNewRow(oId, 2, 2),
-                createNewRow(iId, 1, 1, 5)
+                row(cId, 1),
+                row(cId, 2),
+                row(cId, 3),
+                row(oId, 1, 1),
+                row(oId, 2, 2),
+                row(iId, 1, 1, 5)
         );
     }
 
@@ -75,12 +77,7 @@ public final class MultiScanUpdateParentIT extends ITBase {
         CursorId cursorId;
         try {
             cursorId = dml().openCursor(session(), aisGeneration(), scanAllRequest(iId));
-            dml().updateRow(
-                    session(),
-                    createNewRow(oId, 2, 2),
-                    createNewRow(oId, 2, 3),
-                    ConstantColumnSelector.ALL_ON
-            );
+            updateRow(row(oId, 2, 2), row(oId, 2, 3));
         } catch (InvalidOperationException e) {
             throw new TestException(e);
         }
@@ -100,12 +97,7 @@ public final class MultiScanUpdateParentIT extends ITBase {
         CursorId cursorId;
         try {
             cursorId = dml().openCursor(session(), aisGeneration(), scanAllRequest(iId));
-            dml().updateRow(
-                    session(),
-                    createNewRow(cId, 3),
-                    createNewRow(cId, 4),
-                    ConstantColumnSelector.ALL_ON
-            );
+            updateRow(row(cId, 3), row(cId, 4));
         } catch (InvalidOperationException e) {
             throw new TestException(e);
         }

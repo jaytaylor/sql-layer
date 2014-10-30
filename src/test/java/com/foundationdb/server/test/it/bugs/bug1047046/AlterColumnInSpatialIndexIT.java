@@ -33,9 +33,9 @@ public class AlterColumnInSpatialIndexIT extends AlterTableITBase {
     public void createAndLoadTable() {
         int tid = createTable(SCHEMA, TABLE, "c1 decimal(11,7), c2 decimal(11,7)");
         writeRows(
-                createNewRow(tid, "43.5435", "156.989"),
-                createNewRow(tid, "32.456", "99.543"),
-                createNewRow(tid, "53.00", "80.00")
+                row(tid, "43.5435", "156.989"),
+                row(tid, "32.456", "99.543"),
+                row(tid, "53.00", "80.00")
         );
         createIndex(SCHEMA, TABLE, INDEX_NAME, "z_order_lat_lon(c1, c2)");
         TableIndex index = getTable(tid).getIndex("idx1");

@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.pg;
 
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.scan.NewRow;
 
 import org.junit.Before;
@@ -48,9 +49,9 @@ public class PostgresServerCacheIT extends PostgresServerFilesITBase
     @Before
     public void createData() throws Exception {
         int tid = createTable(SCHEMA_NAME, "t1", "id int not null primary key");
-        NewRow[] rows = new NewRow[NROWS];
+        Row[] rows = new Row[NROWS];
         for (int i = 0; i < NROWS; i++) {
-            rows[i] = createNewRow(tid, i);
+            rows[i] = row(tid, i);
         }
         writeRows(rows);
         hitsBase = server().getStatementCacheHits();

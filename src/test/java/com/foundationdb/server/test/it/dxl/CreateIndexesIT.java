@@ -32,6 +32,7 @@ import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.IndexLacksColumnsException;
@@ -195,8 +196,8 @@ public final class CreateIndexesIT extends ITBase
     @Test
     public void nonUniqueVarchar() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int not null primary key, name varchar(255)");
-        dml().writeRow(session(), createNewRow(tId, 1, "bob"));
-        dml().writeRow(session(), createNewRow(tId, 2, "jim"));
+        writeRow(tId, 1, "bob");
+        writeRow(tId, 2, "jim");
         
         AkibanInformationSchema ais = createAISWithTable(tId);
         Index index = addIndex(ais, tId, "name", false, "name");
@@ -211,7 +212,7 @@ public final class CreateIndexesIT extends ITBase
         assertFalse(indexCheck.isConnectedToFK());
         assertEquals("Index count", 1, indexCheck.getKeyColumns().size());
         
-        List<NewRow> rows = scanAllIndex(getTable(tId).getIndex("name"));
+        List<Row> rows = scanAllIndex(getTable(tId).getIndex("name"));
         assertEquals("rows from index scan", 2, rows.size());
     }
     
@@ -222,18 +223,18 @@ public final class CreateIndexesIT extends ITBase
         int iId = createTable("coi", "i", "iid int not null primary key, o_id int, idesc varchar(32), FOREIGN KEY (o_id) REFERENCES o(oid)");
         
         // One customer 
-        dml().writeRow(session(), createNewRow(cId, 1, "bob"));
+        writeRow(cId, 1, "bob");
 
         // Two orders
-        dml().writeRow(session(), createNewRow(oId, 1, 1, "supplies"));
-        dml().writeRow(session(), createNewRow(oId, 2, 1, "random"));
+        writeRow(oId, 1, 1, "supplies");
+        writeRow(oId, 2, 1, "random");
 
         // Two/three items per order
-        dml().writeRow(session(), createNewRow(iId, 1, 1, "foo"));
-        dml().writeRow(session(), createNewRow(iId, 2, 1, "bar"));
-        dml().writeRow(session(), createNewRow(iId, 3, 2, "zap"));
-        dml().writeRow(session(), createNewRow(iId, 4, 2, "fob"));
-        dml().writeRow(session(), createNewRow(iId, 5, 2, "baz"));
+        writeRow(iId, 1, 1, "foo");
+        writeRow(iId, 2, 1, "bar");
+        writeRow(iId, 3, 2, "zap");
+        writeRow(iId, 4, 2, "fob");
+        writeRow(iId, 5, 2, "baz");
         
         // Create index on an varchar (note: in the "middle" of a group, shifts IDs after, etc)
         AkibanInformationSchema ais = createAISWithTable(oId);
@@ -251,7 +252,7 @@ public final class CreateIndexesIT extends ITBase
         assertEquals("Index count", 1, indexCheck.getKeyColumns().size());
         
         // Get all customers
-        List<NewRow> rows = scanAll(scanAllRequest(cId));
+        List<Row> rows = scanAll(scanAllRequest(cId));
         assertEquals("customers from table scan", 1, rows.size());
         // Get all orders
         rows = scanAll(scanAllRequest(oId));
@@ -269,9 +270,9 @@ public final class CreateIndexesIT extends ITBase
         int tId = createTable("test", "t", "id int not null primary key, \"first\" varchar(250), \"last\" varchar(250)");
         
         expectRowCount(tId, 0);
-        dml().writeRow(session(), createNewRow(tId, 1, "foo", "bar"));
-        dml().writeRow(session(), createNewRow(tId, 2, "zap", "snap"));
-        dml().writeRow(session(), createNewRow(tId, 3, "baz", "fob"));
+        writeRow(tId, 1, "foo", "bar");
+        writeRow(tId, 2, "zap", "snap");
+        writeRow(tId, 3, "baz", "fob");
         expectRowCount(tId, 3);
         
         AkibanInformationSchema ais = createAISWithTable(tId);
@@ -286,7 +287,7 @@ public final class CreateIndexesIT extends ITBase
         assertEquals("column first", "last", ids.get(1).getColumn().getName());
         assertEquals(ids.size(), 2);
              
-        List<NewRow> rows = scanAllIndex(getTable(tId).getIndex("name"));
+        List<Row> rows = scanAllIndex(getTable(tId).getIndex("name"));
         assertEquals("rows from index scan", 3, rows.size());
     }
     
@@ -295,9 +296,9 @@ public final class CreateIndexesIT extends ITBase
         int tId = createTable("test", "t", "id int not null primary key, state char(2)");
         
         expectRowCount(tId, 0);
-        dml().writeRow(session(), createNewRow(tId, 1, "IA"));
-        dml().writeRow(session(), createNewRow(tId, 2, "WA"));
-        dml().writeRow(session(), createNewRow(tId, 3, "MA"));
+        writeRow(tId, 1, "IA");
+        writeRow(tId, 2, "WA");
+        writeRow(tId, 3, "MA");
         expectRowCount(tId, 3);
         
         AkibanInformationSchema ais = createAISWithTable(tId);
@@ -314,7 +315,7 @@ public final class CreateIndexesIT extends ITBase
         assertEquals("column name: state", "state", indexCheck.getKeyColumns().get(0).getColumn().getName());
         assertEquals("Index count", 1, indexCheck.getKeyColumns().size());
 
-        List<NewRow> rows = scanAllIndex(getTable(tId).getIndex("state"));
+        List<Row> rows = scanAllIndex(getTable(tId).getIndex("state"));
         assertEquals("rows from index scan", 3, rows.size());
     }
 
@@ -322,10 +323,10 @@ public final class CreateIndexesIT extends ITBase
     public void uniqueCharHasDuplicates() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int not null primary key, state char(2)");
 
-        dml().writeRow(session(), createNewRow(tId, 1, "IA"));
-        dml().writeRow(session(), createNewRow(tId, 2, "WA"));
-        dml().writeRow(session(), createNewRow(tId, 3, "MA"));
-        dml().writeRow(session(), createNewRow(tId, 4, "IA"));
+        writeRow(tId, 1, "IA");
+        writeRow(tId, 2, "WA");
+        writeRow(tId, 3, "MA");
+        writeRow(tId, 4, "IA");
 
         AkibanInformationSchema ais = createAISWithTable(tId);
         Index index = addIndex(ais, tId, "state", true, "state");
@@ -344,7 +345,7 @@ public final class CreateIndexesIT extends ITBase
         assertNotNull("pk index doesn't exist", table.getIndex("PRIMARY"));
         assertEquals("Index count", 1, table.getIndexes().size());
 
-        List<NewRow> rows = scanAll(scanAllRequest(tId));
+        List<Row> rows = scanAll(scanAllRequest(tId));
         assertEquals("rows from table scan", 4, rows.size());
     }
     
@@ -353,9 +354,9 @@ public final class CreateIndexesIT extends ITBase
         int tId = createTable("test", "t", "id int not null primary key, \"otherId\" int, price decimal(10,2)");
         
         expectRowCount(tId, 0);
-        dml().writeRow(session(), createNewRow(tId, 1, 1337, "10.50"));
-        dml().writeRow(session(), createNewRow(tId, 2, 5000, "10.50"));
-        dml().writeRow(session(), createNewRow(tId, 3, 47000, "9.99"));
+        writeRow(tId, 1, 1337, "10.50");
+        writeRow(tId, 2, 5000, "10.50");
+        writeRow(tId, 3, 47000, "9.99");
         expectRowCount(tId, 3);
         
         AkibanInformationSchema ais = createAISWithTable(tId);
@@ -381,7 +382,7 @@ public final class CreateIndexesIT extends ITBase
         assertEquals("column name: price", "price", indexCheck2.getKeyColumns().get(0).getColumn().getName());
         assertEquals("Index count", 1, indexCheck2.getKeyColumns().size());
         
-        List<NewRow> rows = scanAllIndex(getTable(tId).getIndex("otherId"));
+        List<Row> rows = scanAllIndex(getTable(tId).getIndex("otherId"));
         assertEquals("rows from index scan", 3, rows.size());
 
         rows = scanAllIndex(getTable(tId).getIndex("price"));
@@ -393,10 +394,10 @@ public final class CreateIndexesIT extends ITBase
         int tId = createTable("test", "t", "id int not null primary key, i1 int, i2 int, price decimal(10,2)");
         createIndex("test", "t", "i1", "i1");
 
-        dml().writeRow(session(), createNewRow(tId, 1, 10, 1337, "10.50"));
-        dml().writeRow(session(), createNewRow(tId, 2, 20, 5000, "10.50"));
-        dml().writeRow(session(), createNewRow(tId, 3, 30, 47000, "9.99"));
-        dml().writeRow(session(), createNewRow(tId, 4, 40, 47000, "9.99"));
+        writeRow(tId, 1, 10, 1337, "10.50");
+        writeRow(tId, 2, 20, 5000, "10.50");
+        writeRow(tId, 3, 30, 47000, "9.99");
+        writeRow(tId, 4, 40, 47000, "9.99");
 
         AkibanInformationSchema ais = createAISWithTable(tId);
         Index index1 = addIndex(ais, tId, "otherId", true, "i2");
@@ -418,7 +419,7 @@ public final class CreateIndexesIT extends ITBase
         assertNotNull("i1 index doesn't exist", table.getIndex("i1"));
         assertEquals("Index count", 2, table.getIndexes().size());
 
-        List<NewRow> rows = scanAll(scanAllRequest(tId));
+        List<Row> rows = scanAll(scanAllRequest(tId));
         assertEquals("rows from table scan", 4, rows.size());
     }
 
@@ -426,9 +427,9 @@ public final class CreateIndexesIT extends ITBase
     public void multipleTablesNonUniqueIntNonUniqueInt() throws InvalidOperationException {
         int tid = createTable("test", "t", "id int not null primary key, foo int");
         int uid = createTable("test", "u", "id int not null primary key, bar int");
-        dml().writeRow(session(), createNewRow(tid, 1, 42));
-        dml().writeRow(session(), createNewRow(tid, 2, 43));
-        dml().writeRow(session(), createNewRow(uid, 1, 44));
+        writeRow(tid, 1, 42);
+        writeRow(tid, 2, 43);
+        writeRow(uid, 1, 44);
         
         AkibanInformationSchema ais = createAISWithTable(tid, uid);
         Index index1 = addIndex(ais, tid, "foo", false, "foo");
@@ -446,7 +447,7 @@ public final class CreateIndexesIT extends ITBase
         assertTrue(uidIndex.isTableIndex());
         assertFalse(uidIndex.isUnique());
         
-        List<NewRow> rows = scanAllIndex(getTable(tid).getIndex("foo"));
+        List<Row> rows = scanAllIndex(getTable(tid).getIndex("foo"));
         assertEquals("t rows from index scan", 2, rows.size());
         
         rows = scanAllIndex(getTable(uid).getIndex("bar"));

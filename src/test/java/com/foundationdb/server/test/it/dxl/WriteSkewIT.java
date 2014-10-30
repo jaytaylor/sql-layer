@@ -20,10 +20,12 @@ package com.foundationdb.server.test.it.dxl;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Arrays;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.util.Exceptions;
 import org.junit.Test;
 
@@ -42,16 +44,16 @@ public class WriteSkewIT extends ITBase
     public void testHKeyMaintenance() throws InterruptedException
     {
         createDatabase();
-        dml().writeRow(session(), ITBase.createNewRow(parentRowDef, 1, 100));
-        dml().writeRow(session(), ITBase.createNewRow(parentRowDef, 2, 200));
-        dml().writeRow(session(), ITBase.createNewRow(childRowDef, 1, 1, 1100));
-        dml().writeRow(session(), ITBase.createNewRow(grandchildRowDef, 1, 1, 11100));
+        writeRow(parentRowDef.getRowDefId(), 1, 100);
+        writeRow(parentRowDef.getRowDefId(), 2, 200);
+        writeRow(childRowDef.getRowDefId(), 1, 1, 1100);
+        writeRow(grandchildRowDef.getRowDefId(), 1, 1, 11100);
         TestThread threadA = new TestThread("a")
         {
             @Override
             public void doAction()
             {
-                dml().writeRow(threadPrivateSession, ITBase.createNewRow(childRowDef, 2, 2, 2200));
+                writeRow(threadPrivateSession, childRowDef.getRowDefId(), 2, 2, 2200);
             }
         };
         TestThread threadB = new TestThread("b")
@@ -59,7 +61,7 @@ public class WriteSkewIT extends ITBase
             @Override
             public void doAction()
             {
-                dml().writeRow(threadPrivateSession, ITBase.createNewRow(grandchildRowDef, 2, 2, 22200));
+                writeRow(threadPrivateSession, grandchildRowDef.getRowDefId(), 2, 2, 22200);
             }
         };
         runTest(threadA, threadB);
@@ -70,14 +72,14 @@ public class WriteSkewIT extends ITBase
     public void testGroupIndexMaintenance() throws InterruptedException
     {
         createDatabase();
-        dml().writeRow(session(), ITBase.createNewRow(parentRowDef, 1, 100));
-        dml().writeRow(session(), ITBase.createNewRow(childRowDef, 11, 1, 1100));
+        writeRow(parentRowDef.getRowDefId(), 1, 100);
+        writeRow(childRowDef.getRowDefId(), 11, 1, 1100);
         TestThread threadA = new TestThread("a")
         {
             @Override
             public void doAction()
             {
-                dml().writeRow(threadPrivateSession, ITBase.createNewRow(parentRowDef, 2, 2200));
+                writeRow(threadPrivateSession, parentRowDef.getRowDefId(), 2, 2200);
             }
         };
         TestThread threadB = new TestThread("b")
@@ -85,8 +87,9 @@ public class WriteSkewIT extends ITBase
             @Override
             public void doAction()
             {
-                dml().updateRow(threadPrivateSession, ITBase.createNewRow(childRowDef, 11, 1, 1100), 
-                        ITBase.createNewRow(childRowDef, 11, 2, 1100), null);
+                updateRow(threadPrivateSession,
+                          row(threadPrivateSession, childRowDef.getRowDefId(), 11, 1, 1100),
+                          row(threadPrivateSession, childRowDef.getRowDefId(), 11, 2, 1100));
             }
         };
         runTest(threadA, threadB);

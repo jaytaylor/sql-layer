@@ -30,7 +30,6 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.spatial.Spatial;
 import com.geophile.z.Space;
 import org.junit.Test;
@@ -129,7 +128,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
     public void testLoadAndRemove()
     {
         loadDB();
-        List<NewRow> remainingRows = new ArrayList<>();
+        List<Row> remainingRows = new ArrayList<>();
         {
             // Delete the first (1 + (pid % CHILDREN_PER_PARENT)) children of parent pid, and
             // keep track of the remaining rows.
@@ -137,9 +136,9 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                 int nChildrenToDelete = 1 + pid % CHILDREN_PER_PARENT;
                 for (int c = 1; c <= CHILDREN_PER_PARENT; c++) {
                     int cid = pid + c;
-                    NewRow row = createNewRow(child, cid, pid, after(cid), clats.get(cid), clons.get(cid));
+                    Row row = row(child, cid, pid, after(cid), clats.get(cid), clons.get(cid));
                     if (c <= nChildrenToDelete) {
-                        dml().deleteRow(session(), row, false);
+                        deleteRow(row);
                     } else {
                         remainingRows.add(row);
                     }
@@ -150,12 +149,12 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
             Operator plan = indexScan_Default(cSpatialIndexRowType);
             long[][] expected = new long[remainingRows.size()][];
             int r = 0;
-            for (NewRow row : remainingRows) {
-                int cid = (Integer) row.get(0);
-                int pid = (Integer) row.get(1);
-                int after = (Integer) row.get(2);
-                BigDecimal clat = (BigDecimal) row.get(3);
-                BigDecimal clon = (BigDecimal) row.get(4);
+            for (Row row : remainingRows) {
+                int cid = (Integer) row.value(0).getObject();
+                int pid = (Integer) row.value(1).getObject();
+                int after = (Integer) row.value(2).getObject();
+                BigDecimal clat = (BigDecimal) row.value(3).getObject();
+                BigDecimal clon = (BigDecimal) row.value(4).getObject();
                 long z = Spatial.shuffle(space, clat.doubleValue(), clon.doubleValue());
                 expected[r++] = new long[]{before(pid), z, after, pid, cid};
             }
@@ -165,10 +164,10 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
             Operator plan = indexScan_Default(pSpatialIndexRowType);
             long[][] expected = new long[remainingRows.size()][];
             int r = 0;
-            for (NewRow row : remainingRows) {
-                int cid = (Integer) row.get(0);
-                int pid = (Integer) row.get(1);
-                int after = (Integer) row.get(2);
+            for (Row row : remainingRows) {
+                int cid = (Integer) row.value(0).getObject();
+                int pid = (Integer) row.value(1).getObject();
+                int after = (Integer) row.value(2).getObject();
                 BigDecimal plat = plats.get(pid);
                 BigDecimal plon = plons.get(pid);
                 long z = Spatial.shuffle(space, plat.doubleValue(), plon.doubleValue());
@@ -190,18 +189,18 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
             for (Integer pid : pids) {
                 BigDecimal plat = plats.get(pid);
                 BigDecimal plon = plons.get(pid);
-                NewRow original = createNewRow(parent, pid, before(pid), plat, plon);
-                NewRow updated = createNewRow(parent, pid, before(pid), plat, plon.add(BigDecimal.ONE));
+                Row original = row(parent, pid, before(pid), plat, plon);
+                Row updated = row(parent, pid, before(pid), plat, plon.add(BigDecimal.ONE));
                 long z = Spatial.shuffle(space, plat.doubleValue(), plon.doubleValue() + 1);
                 parentZToPid.put(z, pid);
-                dml().updateRow(session(), original, updated, null);
+                updateRow(original, updated);
                 for (int c = 1; c <= CHILDREN_PER_PARENT; c++) {
                     Integer cid = pid + c;
                     BigDecimal clat = clats.get(cid);
                     BigDecimal clon = clons.get(cid);
-                    original = createNewRow(child, cid, pid, after(cid), clat, clon);
-                    updated = createNewRow(child, cid, pid, after(cid), clat, clon.add(BigDecimal.ONE));
-                    dml().updateRow(session(), original, updated, null);
+                    original = row(child, cid, pid, after(cid), clat, clon);
+                    updated = row(child, cid, pid, after(cid), clat, clon.add(BigDecimal.ONE));
+                    updateRow(original, updated);
                     z = Spatial.shuffle(space, clat.doubleValue(), clon.doubleValue() + 1);
                     childZToCid.put(z, cid);
                 }
@@ -466,7 +465,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
             for (long x = LON_LO; x < LON_HI; x += DLON) {
                 BigDecimal plat = new BigDecimal(y);
                 BigDecimal plon = new BigDecimal(x);
-                dml().writeRow(session(), createNewRow(parent, pid, before(pid),  plat, plon));
+                writeRow(parent, pid, before(pid), plat, plon);
                 long parentZ = Spatial.shuffle(space, plat.doubleValue(), plon.doubleValue());
                 parentZToPid.put(parentZ, pid);
                 plats.put(pid, plat);
@@ -481,7 +480,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                     long childZ = Spatial.shuffle(space, clat.doubleValue(), clon.doubleValue());
                     childZToCid.put(childZ, cid);
                     // System.out.println(String.format("    child  %016x -> %s", childZ, cid));
-                    dml().writeRow(session(), createNewRow(child, cid, pid, after(cid), clat, clon));
+                    writeRow(child, cid, pid, after(cid), clat, clon);
                 }
                 pid += 10;
             }

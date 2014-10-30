@@ -21,6 +21,7 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.PersistitKeyValueSource;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.UnsupportedIndexDataTypeException;
@@ -69,10 +70,10 @@ public class KeyToObjectIT extends ITBase {
         final Index index = table.getIndex(indexName);
         assertNotNull("expected index named: "+indexName, index);
         
-        final List<NewRow> allRows = scanAll(scanAllRequest(tableId));
+        final List<Row> allRows = scanAll(scanAllRequest(tableId));
         assertEquals("rows scanned", expectedRowCount, allRows.size());
 
-        final Iterator<NewRow> rowIt = allRows.iterator();
+        final Iterator<Row> rowIt = allRows.iterator();
 
         store().traverse(session(), index, new IndexVisitor<Key,Value>() {
             private int rowCounter = 0;
@@ -83,14 +84,14 @@ public class KeyToObjectIT extends ITBase {
                     Assert.fail("More index entries than rows: rows("+allRows+") index("+index+")");
                 }
 
-                final NewRow row = rowIt.next();
+                final Row row = rowIt.next();
                 key.indexTo(0);
 
                
                 for(IndexColumn indexColumn : index.getKeyColumns()) {
                     Column column = indexColumn.getColumn();
                     int colPos = column.getPosition();
-                    Object objFromRow = row.get(colPos);
+                    Object objFromRow = row.value(colPos).getObject();
                     PersistitKeyValueSource valueSource = new PersistitKeyValueSource(indexColumn.getColumn().getType());
                     valueSource.attach(key, indexColumn);
                     
@@ -124,7 +125,7 @@ public class KeyToObjectIT extends ITBase {
     void createAndWriteRows(int tableId, Object[] singleColumnValue) {
         int i = 0;
         for(Object o : singleColumnValue) {
-            dml().writeRow(session(), createNewRow(tableId, i++, o));
+            writeRow(tableId, i++, o);
         }
     }
 

@@ -40,7 +40,7 @@ public class DeleteIT extends OperatorITBase {
         use(db);
         doDelete();
         compareRows(
-                array(TestRow.class,
+                array(Row.class,
                       row(customerRowType, 1L, "xyz")
                 ),
                 cursor(

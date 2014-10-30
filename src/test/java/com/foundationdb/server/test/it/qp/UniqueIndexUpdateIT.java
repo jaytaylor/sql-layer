@@ -24,7 +24,6 @@ import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.server.api.dml.scan.NewRow;
 
 import org.junit.Test;
 
@@ -60,10 +59,10 @@ public class UniqueIndexUpdateIT extends OperatorITBase
     @Test
     public void testNullOnInsert()
     {
-        dml().writeRow(session(), createNewRow(t, 1000L, 1L, 1L));
-        dml().writeRow(session(), createNewRow(t, 2000L, 2L, 2L));
-        dml().writeRow(session(), createNewRow(t, 3000L, 3L, null));
-        dml().writeRow(session(), createNewRow(t, 4000L, 4L, null));
+        writeRow(t, 1000L, 1L, 1L);
+        writeRow(t, 2000L, 2L, 2L);
+        writeRow(t, 3000L, 3L, null);
+        writeRow(t, 4000L, 4L, null);
         Operator plan = indexScan_Default(xyIndexRowType);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         cursor.openTopLevel();
@@ -95,10 +94,10 @@ public class UniqueIndexUpdateIT extends OperatorITBase
     public void testNullOnUpdate()
     {
         // Load as in testNullSeparatorOnInsert
-        dml().writeRow(session(), createNewRow(t, 1000L, 1L, 1L));
-        dml().writeRow(session(), createNewRow(t, 2000L, 2L, 2L));
-        dml().writeRow(session(), createNewRow(t, 3000L, 3L, null));
-        dml().writeRow(session(), createNewRow(t, 4000L, 4L, null));
+        writeRow(t, 1000L, 1L, 1L);
+        writeRow(t, 2000L, 2L, 2L);
+        writeRow(t, 3000L, 3L, null);
+        writeRow(t, 4000L, 4L, null);
         // Change nulls to some other value. Scan backwards to avoid halloween issues.
         Cursor cursor = cursor(indexScan_Default(xyIndexRowType, true), queryContext, queryBindings);
         cursor.openTopLevel();
@@ -110,9 +109,9 @@ public class UniqueIndexUpdateIT extends OperatorITBase
             long id = getLong(indexRow, 2);
             int pos = 1;
             if (isNull(indexRow, pos)) {
-                NewRow oldRow = createNewRow(t, id, x, null);
-                NewRow newRow = createNewRow(t, id, x, NEW_Y_VALUE);
-                dml().updateRow(session(), oldRow, newRow, null);
+                Row oldRow = row(t, id, x, null);
+                Row newRow = row(t, id, x, NEW_Y_VALUE);
+                updateRow(oldRow, newRow);
             }
         }
         cursor.close();
@@ -139,25 +138,25 @@ public class UniqueIndexUpdateIT extends OperatorITBase
     @Test
     public void testDeleteIndexRowWithNull()
     {
-        dml().writeRow(session(), createNewRow(t, 1L, 999L, null));
-        dml().writeRow(session(), createNewRow(t, 2L, 999L, null));
-        dml().writeRow(session(), createNewRow(t, 3L, 999L, null));
-        dml().writeRow(session(), createNewRow(t, 4L, 999L, null));
-        dml().writeRow(session(), createNewRow(t, 5L, 999L, null));
-        dml().writeRow(session(), createNewRow(t, 6L, 999L, null));
+        writeRow(t, 1L, 999L, null);
+        writeRow(t, 2L, 999L, null);
+        writeRow(t, 3L, 999L, null);
+        writeRow(t, 4L, 999L, null);
+        writeRow(t, 5L, 999L, null);
+        writeRow(t, 6L, 999L, null);
         checkIndex(1, 2, 3, 4, 5, 6);
         // Delete each row
-        dml().deleteRow(session(), createNewRow(t, 3L, 999L, null), false);
+        deleteRow(t, 3L, 999L, null);
         checkIndex(1, 2, 4, 5, 6);
-        dml().deleteRow(session(), createNewRow(t, 6L, 999L, null), false);
+        deleteRow(t, 6L, 999L, null);
         checkIndex(1, 2, 4, 5);
-        dml().deleteRow(session(), createNewRow(t, 2L, 999L, null), false);
+        deleteRow(t, 2L, 999L, null);
         checkIndex(1, 4, 5);
-        dml().deleteRow(session(), createNewRow(t, 4L, 999L, null), false);
+        deleteRow(t, 4L, 999L, null);
         checkIndex(1, 5);
-        dml().deleteRow(session(), createNewRow(t, 1L, 999L, null), false);
+        deleteRow(t, 1L, 999L, null);
         checkIndex(5);
-        dml().deleteRow(session(), createNewRow(t, 5L, 999L, null), false);
+        deleteRow(t, 5L, 999L, null);
         checkIndex();
     }
 
@@ -180,13 +179,13 @@ public class UniqueIndexUpdateIT extends OperatorITBase
     @Test
     public void testUpdateIndexRowWithNull()
     {
-        db = new NewRow[]{
-            createNewRow(t, 1L, null, null),
+        db = new Row[]{
+            row(t, 1L, null, null),
         };
         use(db);
-        NewRow oldRow = createNewRow(t, 1L, null, null);
-        NewRow newRow = createNewRow(t, 1L, 10L, 10L);
-        dml().updateRow(session(), oldRow, newRow, null);
+        Row oldRow = row(t, 1L, null, null);
+        Row newRow = row(t, 1L, 10L, 10L);
+        updateRow(oldRow, newRow);
         Cursor cursor = cursor(indexScan_Default(xyIndexRowType), queryContext, queryBindings);
         cursor.openTopLevel();
         Row row = cursor.next();

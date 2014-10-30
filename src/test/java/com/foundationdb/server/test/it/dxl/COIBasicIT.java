@@ -120,58 +120,24 @@ public final class COIBasicIT extends ITBase {
     }
 
     @Test
-    public void simple() throws InvalidOperationException {
-        createTables(); // TODO placeholder test method until we get the insertToUTablesAndScan to work
+    public void simple() {
+        createTables();
     }
 
     @Test
-    public void insertToUTablesAndScan() throws InvalidOperationException {
+    public void insertToUTablesAndScan() {
         final TableIds tids = createTables();
 
-        final NewRow cRow = NewRowBuilder.forTable(tids.c, getRowDef(tids.c)).put(1).put("Robert").check(session(), dml()).row();
-        final NewRow oRow = NewRowBuilder.forTable(tids.o, getRowDef(tids.o)).put(10).put(1).check(session(), dml()).row();
-        final NewRow iRow = NewRowBuilder.forTable(tids.i, getRowDef(tids.i)).put(100).put(10).put("Desc 1").check(session(), dml()).row();
+        final Row cRow = row(tids.c, 1, "Robert");
+        final Row oRow = row(tids.o, 10, 1);
+        final Row iRow = row(tids.i, 100, 10, "Desc 1");
 
-        writeRows(cRow, oRow, iRow);
-        expectFullRows(tids.c, NewRowBuilder.copyOf(cRow).row());
-        expectFullRows(tids.o, NewRowBuilder.copyOf(oRow).row());
-        expectFullRows(tids.i, NewRowBuilder.copyOf(iRow).row());
-    }
-
-    @Test
-    public void insertToUTablesAndScanToLegacy() throws InvalidOperationException {
-        final TableIds tids = createTables();
-
-        final NewRow cRow = NewRowBuilder.forTable(tids.c, getRowDef(tids.c)).put(1).put("Robert").check(session(), dml()).row();
-        final NewRow oRow = NewRowBuilder.forTable(tids.o, getRowDef(tids.o)).put(10).put(1).check(session(), dml()).row();
-        final NewRow iRow = NewRowBuilder.forTable(tids.i, getRowDef(tids.i)).put(100).put(10).put("Desc 1").check(session(), dml()).row();
-
-        writeRows(cRow, oRow, iRow);
-        List<RowData> cRows = scanFull(scanAllRequest(tids.c));
-        List<RowData> oRows = scanFull(scanAllRequest(tids.o));
-        List<RowData> iRows = scanFull(scanAllRequest(tids.i));
-
-        assertEquals("cRows", Arrays.asList(cRow), convertRowDatas(cRows));
-        assertEquals("oRows", Arrays.asList(oRow), convertRowDatas(oRows));
-        assertEquals("iRows", Arrays.asList(iRow), convertRowDatas(iRows));
-    }
-
-    @Test
-    public void insertToUTablesBulkAndScanToLegacy() throws InvalidOperationException {
-        final TableIds tids = createTables();
-
-        final NewRow cRow = NewRowBuilder.forTable(tids.c, getRowDef(tids.c)).put(1).put("Robert").check(session(), dml()).row();
-        final NewRow oRow = NewRowBuilder.forTable(tids.o, getRowDef(tids.o)).put(10).put(1).check(session(), dml()).row();
-        final NewRow iRow = NewRowBuilder.forTable(tids.i, getRowDef(tids.i)).put(100).put(10).put("Desc 1").check(session(), dml()).row();
-
-        dml().writeRows(session(), Arrays.asList(cRow.toRowData(), oRow.toRowData(), iRow.toRowData()));
-        List<RowData> cRows = scanFull(scanAllRequest(tids.c));
-        List<RowData> oRows = scanFull(scanAllRequest(tids.o));
-        List<RowData> iRows = scanFull(scanAllRequest(tids.i));
-
-        assertEquals("cRows", Arrays.asList(cRow), convertRowDatas(cRows));
-        assertEquals("oRows", Arrays.asList(oRow), convertRowDatas(oRows));
-        assertEquals("iRows", Arrays.asList(iRow), convertRowDatas(iRows));
+        writeRows(cRow);
+        writeRows(oRow);
+        writeRows(iRow);
+        expectFullRows(tids.c, cRow);
+        expectFullRows(tids.o, oRow);
+        expectFullRows(tids.i, iRow);
     }
 
     @Test(expected=UnsupportedDropException.class)
@@ -190,25 +156,22 @@ public final class COIBasicIT extends ITBase {
     public void dropTableLeaves() throws InvalidOperationException {
         final TableIds tids = createTables();
 
-        final NewRow cRow = NewRowBuilder.forTable(tids.c, getRowDef(tids.c)).put(1).put("Robert").check(session(), dml()).row();
-        final NewRow oRow = NewRowBuilder.forTable(tids.o, getRowDef(tids.o)).put(10).put(1).check(session(), dml()).row();
-        final NewRow iRow = NewRowBuilder.forTable(tids.i, getRowDef(tids.i)).put(100).put(10).put("Desc 1").check(session(), dml()).row();
+        final Row cRow = row(tids.c, 1, "Robert");
+        final Row oRow = row(tids.o, 10, 1);
+        final Row iRow = row(tids.i, 100, 10, "Desc 1");
 
         writeRows(cRow, oRow, iRow);
-        List<RowData> cRows = scanFull(scanAllRequest(tids.c));
-        List<RowData> oRows = scanFull(scanAllRequest(tids.o));
-        List<RowData> iRows = scanFull(scanAllRequest(tids.i));
 
-        assertEquals("cRows", Arrays.asList(cRow), convertRowDatas(cRows));
-        assertEquals("oRows", Arrays.asList(oRow), convertRowDatas(oRows));
-        assertEquals("iRows", Arrays.asList(iRow), convertRowDatas(iRows));
+        expectFullRows(tids.c, cRow);
+        expectFullRows(tids.o, oRow);
+        expectFullRows(tids.i, iRow);
 
         ddl().dropTable(session(), tableName(tids.i));
-        assertEquals("oRows", Arrays.asList(oRow), convertRowDatas(oRows));
-        assertEquals("cRows", Arrays.asList(cRow), convertRowDatas(cRows));
+        expectFullRows(tids.c, cRow);
+        expectFullRows(tids.o, oRow);
 
         ddl().dropTable(session(), tableName(tids.o));
-        assertEquals("cRows", Arrays.asList(cRow), convertRowDatas(cRows));
+        expectFullRows(tids.c, cRow);
 
         ddl().dropTable(session(), tableName(tids.c));
     }
@@ -334,7 +297,7 @@ public final class COIBasicIT extends ITBase {
         compareRows( new Row[] { iRow, oOrigRow, o1Row, cRow }, adapter.newGroupCursor(cType.table().getGroup()) );
 
         // updated o moves after o1 and adopts i
-        update(tids.o, oOrig).to(oUpdate);
+    updateRow(oOrigRow, oUpdateRow);
         compareRows( new Row[] { o1Row, cRow, oUpdateRow, iRow }, adapter.newGroupCursor(cType.table().getGroup()) );
     }
 

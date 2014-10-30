@@ -19,6 +19,7 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
@@ -40,12 +41,12 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
     private static final int ROW_COUNT = 10;
 
     private int tid;
-    private NewRow[] rows = new NewRow[ROW_COUNT];
+    private Row[] rows = new Row[ROW_COUNT];
 
     private void createAndLoad() {
         tid = createTable(SCHEMA, T1_NAME, T1_DDL);
         for(int i = 0; i < ROW_COUNT; ++i) {
-            rows[i] = createNewRow(tid, i+1);
+            rows[i] = row(tid, i + 1);
         }
         writeRows(rows);
     }

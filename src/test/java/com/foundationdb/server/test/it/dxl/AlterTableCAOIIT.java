@@ -84,25 +84,25 @@ public class AlterTableCAOIIT extends AlterTableITBase {
         txnService().beginTransaction(session());
         // Data
         writeRows(
-                createNewRow(cid, 1L, "1"),
-                    createNewRow(aid, 10L, 1L, "11"),
-                    createNewRow(oid, 10L, 1L, "11"),
-                        createNewRow(iid, 100L, 10L, "110"),
-                        createNewRow(iid, 101L, 10L, "111"),
-                    createNewRow(oid, 11L, 1L, "12"),
-                        createNewRow(iid, 111L, 11L, "122"),
-                createNewRow(cid, 2L, "2"),                     // No children
+                row(cid, 1L, "1"),
+                    row(aid, 10L, 1L, "11"),
+                    row(oid, 10L, 1L, "11"),
+                        row(iid, 100L, 10L, "110"),
+                        row(iid, 101L, 10L, "111"),
+                    row(oid, 11L, 1L, "12"),
+                        row(iid, 111L, 11L, "122"),
+                row(cid, 2L, "2"),                     // No children
                 // No cust(3L)
-                    createNewRow(oid, 30L, 3L, "33"),           // Level 1 orphan
-                        createNewRow(iid, 300L, 30L, "330"),
-                createNewRow(cid, 4L, "4"),
-                    createNewRow(aid, 40L, 4L, "44"),
-                    createNewRow(aid, 41L, 4L, "45"),
+                    row(oid, 30L, 3L, "33"),           // Level 1 orphan
+                        row(iid, 300L, 30L, "330"),
+                row(cid, 4L, "4"),
+                    row(aid, 40L, 4L, "44"),
+                    row(aid, 41L, 4L, "45"),
                     // No 40 order
-                        createNewRow(iid, 400L, 40L, "440"),    // Level 2 orphan
-                        createNewRow(iid, 401L, 40L, "441"),    // Level 2 orphan
+                        row(iid, 400L, 40L, "440"),    // Level 2 orphan
+                        row(iid, 401L, 40L, "441"),    // Level 2 orphan
                 // No cust(5L)
-                    createNewRow(aid, 50L, 5L, "55")            // Level 1 orphan
+                    row(aid, 50L, 5L, "55")            // Level 1 orphan
         );
         txnService().commitTransaction(session());
     }
@@ -499,10 +499,10 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     public void addGroupingForeignKey_C() {
         int xid = createTable(X_NAME, "id varchar(5) not null primary key");
         writeRows(
-                createNewRow(xid, "1"), // Adopts 1 (well formed group)
+                row(xid, "1"), // Adopts 1 (well formed group)
                                         // Leave 2 orphan
-                createNewRow(xid, "4"), // Adopts 2 (c has no children)
-                createNewRow(xid, "5")  // No Children
+                row(xid, "4"), // Adopts 2 (c has no children)
+                row(xid, "5")  // No Children
         );
         createAndLoadCAOI_FK(true, true, true);
         runAlter("ALTER TABLE " + C_TABLE + " ADD GROUPING FOREIGN KEY(cc) REFERENCES x(id)");

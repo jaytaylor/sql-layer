@@ -23,17 +23,15 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
-import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.FixedCountLimit;
 import com.foundationdb.server.api.dml.scan.*;
 import com.foundationdb.server.error.CursorIsFinishedException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchRowException;
 import com.foundationdb.server.error.OldAISException;
-import com.foundationdb.server.error.TableDefinitionMismatchException;
 import com.foundationdb.server.error.RowDefNotFoundException;
 import com.foundationdb.server.test.it.ITBase;
-import com.foundationdb.util.GrowableByteBuffer;
 import org.junit.Test;
 
 import java.util.*;
@@ -42,167 +40,6 @@ import static org.junit.Assert.*;
 
 public final class CBasicIT extends ITBase {
 
-    @Test
-    public void simpleScanLimit() throws InvalidOperationException {
-        final int tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
-
-        expectRowCount(tableId, 0);
-        dml().writeRow(session(), createNewRow(tableId, 0, "hello world") );
-        expectRowCount(tableId, 1);
-        dml().writeRow(session(), createNewRow(tableId, 1, "foo bear") );
-        expectRowCount(tableId, 2);
-
-        ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1), 0, null, new FixedCountLimit(1));
-        ListRowOutput output = new ListRowOutput();
-
-        assertEquals("cursors", cursorSet(), dml().getCursors(session()));
-        CursorId cursorId = dml().openCursor(session(), aisGeneration(), request);
-        assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session()));
-        assertEquals("state", CursorState.FRESH, dml().getCursorState(session(), cursorId));
-
-        dml().scanSome(session(), cursorId, output);
-        assertEquals("state", CursorState.FINISHED, dml().getCursorState(session(), cursorId));
-
-        assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session()));
-        dml().closeCursor(session(), cursorId);
-        assertEquals("cursors", cursorSet(), dml().getCursors(session()));
-
-        List<NewRow> expectedRows = new ArrayList<>();
-        expectedRows.add( createNewRow(tableId, 0, "hello world") );
-        assertEquals("rows scanned", expectedRows, output.getRows());
-    }
-
-    @Test
-    public void simpleScan() throws InvalidOperationException {
-        final int tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
-
-        expectRowCount(tableId, 0);
-        dml().writeRow(session(), createNewRow(tableId, 0, "hello world") );
-        expectRowCount(tableId, 1);
-        dml().writeRow(session(), createNewRow(tableId, 1, "foo bear") );
-        expectRowCount(tableId, 2);
-
-        ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-        ListRowOutput output = new ListRowOutput();
-
-        assertEquals("cursors", cursorSet(), dml().getCursors(session()));
-        CursorId cursorId = dml().openCursor(session(), aisGeneration(), request);
-        assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session()));
-        assertEquals("state", CursorState.FRESH, dml().getCursorState(session(), cursorId));
-
-        dml().scanSome(session(), cursorId, output);
-        assertEquals("state", CursorState.FINISHED, dml().getCursorState(session(), cursorId));
-
-        assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session()));
-        dml().closeCursor(session(), cursorId);
-        assertEquals("cursors", cursorSet(), dml().getCursors(session()));
-
-        List<NewRow> expectedRows = new ArrayList<>();
-        expectedRows.add( createNewRow(tableId, 0, "hello world") );
-        expectedRows.add( createNewRow(tableId, 1, "foo bear") );
-        assertEquals("rows scanned", expectedRows, output.getRows());
-
-    }
-
-    /*
-     * There was a miscalculation in the ColumnSet pack to/from legacy conversions if the 8th bit
-     * happened to be set. A bad if check would skip the byte all together and up to 8 columns would
-     * no longer be in the set.
-     */
-    @Test
-    public void simpleScanColumnMapConversionCheck() throws InvalidOperationException {
-        final int tableId = createTable("test", "t",
-                                        "c1 int not null primary key, c2 int, c3 int, c4 int, c5 int, c6 int, c7 int, c8 int, c9 int");
-
-        expectRowCount(tableId, 0);
-        writeRows(createNewRow(tableId, 11, 12, 13, 14, 15, 16, 17, 18, 19),
-                  createNewRow(tableId, 21, 22, 23, 24, 25, 26, 27, 28, 29),
-                  createNewRow(tableId, 31, 32, 33, 34, 35, 36, 37, 38, 39));
-        expectRowCount(tableId, 3);
-
-        // Select 8th place in column map (index 7) which caused the byte to be <0 and skipped in a bad if check
-        List<NewRow> rows = scanAll(new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 7, 8)));
-        assertEquals("rows scanned", 3, rows.size());
-
-        List<NewRow> expectedRows = new ArrayList<>();
-        NewRow r;
-        r = createNewRow(tableId); r.put(0, 11); r.put(7, 18); r.put(8, 19); expectedRows.add(r);
-        r = createNewRow(tableId); r.put(0, 21); r.put(7, 28); r.put(8, 29); expectedRows.add(r);
-        r = createNewRow(tableId); r.put(0, 31); r.put(7, 38); r.put(8, 39); expectedRows.add(r);
-        assertEquals("row content", expectedRows, rows);
-    }
-
-    @Test
-    public void indexScan() throws InvalidOperationException {
-        final int tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
-        createIndex("testSchema", "customer", "name", "name");
-        final int indexId = ddl().getTable(session(), tableId).getIndex("name").getIndexId();
-
-        expectRowCount(tableId, 0);
-        dml().writeRow(session(), createNewRow(tableId, 1, "foo"));
-        dml().writeRow(session(), createNewRow(tableId, 2, "bar"));
-        dml().writeRow(session(), createNewRow(tableId, 3, "zap"));
-        expectRowCount(tableId, 3);
-
-        List<NewRow> rows = scanAll(new ScanAllRequest(tableId, ColumnSet.ofPositions(1), indexId, null));
-        assertEquals("rows scanned", 3, rows.size());
-
-        List<NewRow> expectedRows = new ArrayList<>();
-        expectedRows.add(createNewRow(tableId, 2, "bar"));
-        expectedRows.add(createNewRow(tableId, 1, "foo"));
-        expectedRows.add(createNewRow(tableId, 3, "zap"));
-
-        // Remove first column so toStrings match on assert below
-        for(NewRow row : expectedRows) {
-            row.remove(0);
-        }
-
-        assertEquals("row contents", expectedRows, rows);
-    }
-
-    @Test
-    public void partialRowScan() throws InvalidOperationException {
-        final int tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
-
-        expectRowCount(tableId, 0);
-        dml().writeRow(session(), createNewRow(tableId, 0, "hello world") );
-        expectRowCount(tableId, 1);
-
-        ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0));
-        expectRows(request, createNewRow(tableId, 0) );
-    }
-
-    /**
-     * Note that in legacy mode, even a partial scan request results in a full scan
-     * @throws InvalidOperationException if something failed
-     * @throws BufferFullException if something failed
-     */
-    @Test
-    public void partialRowScanLegacy() throws InvalidOperationException, BufferFullException {
-        final int tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
-
-        expectRowCount(tableId, 0);
-        dml().writeRow(session(), createNewRow(tableId, 0, "hello world") );
-        expectRowCount(tableId, 1);
-
-        // request a partial scan
-        ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0), 0, null, new FixedCountLimit(1));
-        LegacyRowOutput output = new WrappingRowOutput(new GrowableByteBuffer(1024 * 1024));
-        CursorId cursorId = dml().openCursor(session(), aisGeneration(), request);
-
-        dml().scanSome(session(), cursorId, output);
-        assertEquals("rows read", 1, output.getRowsCount());
-        dml().closeCursor(session(), cursorId);
-
-        List<NewRow> expectedRows = new ArrayList<>();
-        expectedRows.add( createNewRow(tableId, 0, "hello world") ); // full scan expected
-        RowData rowData = new RowData(output.getOutputBuffer().array(), 0, output.getOutputBuffer().position());
-        rowData.prepareRow(0);
-        assertEquals("table ID", tableId, rowData.getRowDefId());
-        List<NewRow> converted = dml().convertRowDatas(session(), Arrays.asList(rowData));
-        assertEquals("rows scanned", expectedRows, converted);
-    }
-    
     @Test(expected=RowDefNotFoundException.class)
     public void dropTable() throws InvalidOperationException {
         final int tableId1;
@@ -266,13 +103,13 @@ public final class CBasicIT extends ITBase {
         ddl().createTable(session(), builder.ais().getTable("test", "t1"));
         final int tidV1 = tableId("test", "t1");
 
-        dml().writeRow(session(), createNewRow(tidV1, 1, "hello world"));
+        writeRow(tidV1, 1, "hello world");
         expectRowCount(tidV1, 1);
         ddl().dropTable(session(), tableName(tidV1));
 
         // Easiest exception trigger was to toggle auto_inc column, failed when trying to update it
         final int tidV2 = createTable("test", "t2", "id int not null primary key, tag char(1), value decimal(10,2)");
-        dml().writeRow(session(), createNewRow(tidV2, "1", "a", "49.95"));
+        writeRow(tidV2, "1", "a", "49.95");
         expectRowCount(tidV2, 1);
         ddl().dropTable(session(), tableName(tidV2));
     }
@@ -312,15 +149,15 @@ public final class CBasicIT extends ITBase {
         final int tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
 
         expectRowCount(tableId, 0);
-        dml().writeRow(session(), createNewRow(tableId, 0, "hello world") );
+        writeRow(tableId, 0, "hello world");
         expectRowCount(tableId, 1);
 
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-        expectRows(request, createNewRow(tableId, 0, "hello world") );
+        expectRows(request, row(tableId, 0, "hello world") );
 
-        dml().updateRow(session(), createNewRow(tableId, 0, "hello world"), createNewRow(tableId, 0, "goodbye cruel world"), null);
+        updateRow(row(tableId, 0, "hello world"), row(tableId, 0, "goodbye cruel world"));
         expectRowCount(tableId, 1);
-        expectRows(request, createNewRow(tableId, 0, "goodbye cruel world") );
+        expectRows(request, row(tableId, 0, "goodbye cruel world") );
     }
 
     @Test
@@ -328,15 +165,15 @@ public final class CBasicIT extends ITBase {
         final int tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
 
         expectRowCount(tableId, 0);
-        dml().writeRow(session(), createNewRow(tableId, 0, "hello world") );
+        writeRow(tableId, 0, "hello world");
         expectRowCount(tableId, 1);
 
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-        expectRows(request, createNewRow(tableId, 0, "hello world") );
+        expectRows(request, row(tableId, 0, "hello world") );
 
-        dml().updateRow(session(), createNewRow(tableId, 0), createNewRow(tableId, 1, "goodbye cruel world"), null);
+        updateRow(row(tableId, 0, "hello world"), row(tableId, 1, "goodbye cruel world"));
         expectRowCount(tableId, 1);
-        expectRows(request, createNewRow(tableId, 1, "goodbye cruel world") );
+        expectRows(request, row(tableId, 1, "goodbye cruel world") );
     }
 
     @Test(expected=NoRowsUpdatedException.class)
@@ -346,23 +183,22 @@ public final class CBasicIT extends ITBase {
             tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
 
             expectRowCount(tableId, 0);
-            dml().writeRow(session(), createNewRow(tableId, 0, "hello world") );
+            writeRow(tableId, 0, "hello world");
             expectRowCount(tableId, 1);
 
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-            expectRows(request, createNewRow(tableId, 0, "hello world") );
+            expectRows(request, row(tableId, 0, "hello world") );
         } catch (InvalidOperationException e) {
             throw unexpectedException(e);
         }
 
-        NewRow badRow = createNewRow(tableId, 1, "goodbye cruel world");
+        Row badRow = row(tableId, 1, "goodbye cruel world");
         try {
-            NewRow old = createNewRow(tableId);
-            old.put(1, "hello world");
-            dml().updateRow(session(), old, badRow, null);
+            Row old = row(tableId, null, "hello world");
+            updateRow(old, badRow);
         } catch (NoSuchRowException e) {
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-            expectRows(request, createNewRow(tableId, 0, "hello world"));
+            expectRows(request, row(tableId, 0, "hello world"));
             throw new NoRowsUpdatedException();
         }
     }
@@ -378,88 +214,15 @@ public final class CBasicIT extends ITBase {
         final int tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
 
         expectRowCount(tableId, 0);
-        dml().writeRow(session(), createNewRow(tableId, 0, "hello world") );
+        writeRow(tableId, 0, "hello world");
         expectRowCount(tableId, 1);
 
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-        expectRows(request, createNewRow(tableId, 0, "hello world") );
+        expectRows(request, row(tableId, 0, "hello world") );
 
-        dml().updateRow(session(), createNewRow(tableId, 0), createNewRow(tableId, 1), null);
+        updateRow(row(tableId, 0, null), row(tableId, 1, null));
         expectRowCount(tableId, 1);
-        expectRows(new ScanAllRequest(tableId, ColumnSet.ofPositions(0)), createNewRow(tableId, 1) );
-    }
-
-    /*
-    @Test(expected=InvalidCharToNumException.class)
-    public void updateOldNewHasWrongType() throws InvalidOperationException {
-        Types3Switch.ON = false;
-        final int tableId;
-        try {
-            tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
-
-            expectRowCount(tableId, 0);
-            dml().writeRow(session(), createNewRow(tableId, 0, "hello world") );
-            expectRowCount(tableId, 1);
-
-            ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-            expectRows(request, createNewRow(tableId, 0L, "hello world") );
-        } catch (InvalidOperationException e) {
-            throw unexpectedException(e);
-        }
-
-        try {
-            dml().updateRow(
-                    session(), createNewRow(tableId, 0, "hello world"),
-                    createNewRow(tableId, "zero", "1234"), null);
-        } catch (InvalidCharToNumException e) {
-            ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-            expectRows(request, createNewRow(tableId, 0L, "hello world") );
-            throw e;
-        }
-        fail("expected exception. rows are now: " + scanAll(new ScanAllRequest(tableId, null)));
-    }
-    */
-    /*
-    @Test(expected=InvalidCharToNumException.class)
-    public void insertHasWrongType() throws InvalidOperationException {
-        Types3Switch.ON = false;
-        final int tableId;
-        try {
-            tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
-            expectRowCount(tableId, 0);
-        } catch (InvalidOperationException e) {
-            throw unexpectedException(e);
-        }
-
-        try {
-            dml().writeRow(session(), createNewRow(tableId, "zero", 123) );
-        } catch (TableDefinitionMismatchException e) {
-            expectRowCount(tableId, 0);
-            expectRows(new ScanAllRequest(tableId, null));
-            throw e;
-        }
-        fail("expected exception. rows are now: " + scanAll(new ScanAllRequest(tableId, null)));
-    }
-    */
-    
-    @Test(expected=TableDefinitionMismatchException.class)
-    public void insertStringTooLong() throws InvalidOperationException {
-        final int tableId;
-        try {
-            tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(5)");
-            expectRowCount(tableId, 0);
-        } catch (InvalidOperationException e) {
-            throw unexpectedException(e);
-        }
-
-        try {
-            dml().writeRow(session(), createNewRow(tableId, 0, "this string is longer than five characters") );
-        } catch (TableDefinitionMismatchException e) {
-            expectRowCount(tableId, 0);
-            expectRows(new ScanAllRequest(tableId, null));
-            throw e;
-        }
-        fail("expected exception. rows are now: " + scanAll(new ScanAllRequest(tableId, null)));
+        expectRows(new ScanAllRequest(tableId, null), row(tableId, 1, null) );
     }
 
     @Test
@@ -467,15 +230,15 @@ public final class CBasicIT extends ITBase {
         final int tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
 
         expectRowCount(tableId, 0);
-        dml().writeRow(session(), createNewRow(tableId, 0, "hello world") );
+        writeRow(tableId, 0, "hello world");
         expectRowCount(tableId, 1);
 
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-        expectRows(request, createNewRow(tableId, 0, "hello world") );
+        expectRows(request, row(tableId, 0, "hello world") );
 
-        dml().updateRow(session(), createNewRow(tableId, 0), createNewRow(tableId, 1, "goodbye cruel world"), null);
+        updateRow(row(tableId, 0, "hello world"), row(tableId, 1, "goodbye cruel world"));
         expectRowCount(tableId, 1);
-        expectRows(request, createNewRow(tableId, 1, "goodbye cruel world") );
+        expectRows(request, row(tableId, 1, "goodbye cruel world") );
     }
 
     @Test
@@ -483,22 +246,22 @@ public final class CBasicIT extends ITBase {
         final int tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
 
         expectRowCount(tableId, 0);
-        dml().writeRow(session(), createNewRow(tableId, 0, "doomed row") );
+        writeRow(tableId, 0, "doomed row");
         expectRowCount(tableId, 1);
-        dml().writeRow(session(), createNewRow(tableId, 1, "also doomed") );
+        writeRow(tableId, 1, "also doomed");
         expectRowCount(tableId, 2);
 
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
         expectRows(request,
-                createNewRow(tableId, 0, "doomed row"),
-                createNewRow(tableId, 1, "also doomed"));
+                row(tableId, 0, "doomed row"),
+                row(tableId, 1, "also doomed"));
 
-        dml().deleteRow(session(), createNewRow(tableId, 0, "doomed row"), false );
+        deleteRow(tableId, 0, "doomed row");
         expectRowCount(tableId, 1);
         expectRows(request,
-                createNewRow(tableId, 1, "also doomed"));
+                row(tableId, 1, "also doomed"));
 
-        dml().deleteRow(session(), createNewRow(tableId, 1), false );
+        deleteRow(tableId, 1, "also doomed");
         expectRowCount(tableId, 0);
         expectRows(request);
     }
@@ -510,22 +273,21 @@ public final class CBasicIT extends ITBase {
             tableId = createTable("theschema", "c", "id int not null primary key, name varchar(32)");
 
             expectRowCount(tableId, 0);
-            dml().writeRow(session(), createNewRow(tableId, 0, "the customer's name") );
+            writeRow(tableId, 0, "the customer's name");
             expectRowCount(tableId, 1);
 
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-            expectRows(request, createNewRow(tableId, 0, "the customer's name"));
+            expectRows(request, row(tableId, 0, "the customer's name"));
         } catch (InvalidOperationException e) {
             throw unexpectedException(e);
         }
 
         try {
-            NewRow deleteAttempt = createNewRow(tableId);
-            deleteAttempt.put(1, "the customer's name");
-            dml().deleteRow(session(), deleteAttempt, false);
+            Row deleteAttempt = row(tableId, null, "the customer's name");
+            deleteRow(deleteAttempt);
         } catch (NoSuchRowException e) {
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-            expectRows(request, createNewRow(tableId, 0, "the customer's name"));
+            expectRows(request, row(tableId, 0, "the customer's name"));
             throw e;
         }
     }
@@ -540,9 +302,7 @@ public final class CBasicIT extends ITBase {
         }
 
         try {
-            NewRow deleteAttempt = createNewRow(tableId);
-            deleteAttempt.put(1, "the customer's name");
-            dml().deleteRow(session(), createNewRow(tableId, 0, "this row doesn't exist"), false);
+            deleteRow(tableId, 0, "this row doesn't exist");
         } catch (NoSuchRowException e) {
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
             expectRows(request);
@@ -563,39 +323,10 @@ public final class CBasicIT extends ITBase {
         final int tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
 
         expectRowCount(tableId, 0);
-        dml().writeRow(session(), createNewRow(tableId, 0, "hello world") );
+        writeRow(tableId, 0, "hello world");
         expectRowCount(tableId, 1);
         dml().truncateTable(session(), tableId);
         expectRowCount(tableId, 0);
-    }
-
-    // test for bug 754986
-    @Test
-    public void selectZeroFencePost() throws InvalidOperationException {
-        final int tid = createTable("test", "t", "id int not null primary key", "i int");
-        createIndex("test", "t", "i", "i");
-
-        writeRows(createNewRow(tid, 1L, -5L),
-                  createNewRow(tid, 2L, -1L),
-                  createNewRow(tid, 3L,  0L),
-                  createNewRow(tid, 4L,  1L),
-                  createNewRow(tid, 5L,  2L));
-        expectRowCount(tid, 5);
-
-        final byte[] columnBitmap = {3};
-        final NewRow endRow = createNewRow(tid, null, 0L);
-        final int indexId = getTable(tid).getIndex("i").getIndexId();
-        final EnumSet<ScanFlag> scanFlags = EnumSet.of(ScanFlag.START_AT_BEGINNING,
-                                                       ScanFlag.END_RANGE_EXCLUSIVE,
-                                                       ScanFlag.LEXICOGRAPHIC);
-
-        LegacyScanRequest request = new LegacyScanRequest(tid, null, null,
-                                                          endRow.toRowData(), endRow.getActiveColumns(),
-                                                          columnBitmap, indexId,
-                                                          ScanFlag.toRowDataFormat(scanFlags), 
-                                                          ScanLimit.NONE);
-
-        expectRows(request, createNewRow(tid, 1, -5), createNewRow(tid, 2, -1));
     }
 
     /**

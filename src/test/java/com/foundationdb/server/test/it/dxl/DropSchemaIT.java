@@ -25,6 +25,7 @@ import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.View;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.ForeignKeyPreventsDropTableException;
 import com.foundationdb.server.error.ForeignConstraintDDLException;
@@ -32,6 +33,7 @@ import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.ReferencedSQLJJarException;
 import com.foundationdb.server.error.ViewReferencesExist;
 import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.server.types.value.ValueSources;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
@@ -157,13 +159,13 @@ public final class DropSchemaIT extends ITBase {
     @Test
     public void singleTableCheckData() throws InvalidOperationException {
         final int tid1 = createTable("one", "t", "id int not null primary key");
-        writeRows(createNewRow(tid1, 1L), createNewRow(tid1, 2L));
+        writeRows(row(tid1, 1L), row(tid1, 2L));
         ddl().dropSchema(session(), "one");
         expectNotTables("one", "t");
         // Check for lingering data
         final int tid2 = createTable("one", "t", "id int not null primary key");
         expectRowCount(tid2, 0);
-        assertEquals("scanned rows", 0, scanFull(scanAllRequest(tid2)).size());
+        assertEquals("scanned rows", 0, scanAll(scanAllRequest(tid2)).size());
     }
 
     @Test
@@ -228,16 +230,16 @@ public final class DropSchemaIT extends ITBase {
         cTableId = getTable("one", "c").getTableId();
         expectFullRows(
                 cTableId,
-                createNewRow(cTableId, 1));
+                row(cTableId, 1));
         oTableId = createTable("two", "o",
                 "id int not null primary key, oid int, grouping foreign key(oid) references one.c(id)");
         writeRow(oTableId, 102, 10);
-        List<NewRow> newRows = scanAllIndex(getTable("two", "o").getPrimaryKey().getIndex());
+        List<Row> newRows = scanAllIndex(getTable("two", "o").getPrimaryKey().getIndex());
         assertEquals(newRows.toString(), newRows.size(), 1);
-        assertEquals(102, newRows.get(0).get(0));
+        assertEquals(102, ValueSources.toObject(newRows.get(0).value(0)));
         expectFullRows(
                 oTableId,
-                createNewRow(oTableId, 102, 10));
+                row(oTableId, 102, 10));
     }
 
     private int createChildTable(String childSchema, String childName, String parentSchema, String parentName) {

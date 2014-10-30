@@ -26,7 +26,8 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.cursor;
@@ -56,18 +57,18 @@ public class IndexScanBoundedAllColumnsIT extends OperatorITBase
         schema = new Schema(ais());
         tRowType = schema.tableRowType(table(t));
         idxRowType = indexType(t, "a", "b", "c", "id");
-        db = new NewRow[]{
+        db = new Row[]{
                 // No nulls
-                createNewRow(t, 1000L, 1L, 11L, 111L),
-                createNewRow(t, 1001L, 1L, 11L, 115L),
-                createNewRow(t, 1002L, 1L, 15L, 151L),
-                createNewRow(t, 1003L, 1L, 15L, 155L),
-                createNewRow(t, 1004L, 5L, 51L, 511L),
-                createNewRow(t, 1005L, 5L, 51L, 515L),
-                createNewRow(t, 1006L, 5L, 55L, 551L),
-                createNewRow(t, 1007L, 5L, 55L, 555L),
-                createNewRow(t, 1008L, 5L, 55L, 555L),
-                createNewRow(t, 1009L, 5L, 55L, 555L),
+                row(t, 1000L, 1L, 11L, 111L),
+                row(t, 1001L, 1L, 11L, 115L),
+                row(t, 1002L, 1L, 15L, 151L),
+                row(t, 1003L, 1L, 15L, 155L),
+                row(t, 1004L, 5L, 51L, 511L),
+                row(t, 1005L, 5L, 51L, 515L),
+                row(t, 1006L, 5L, 55L, 551L),
+                row(t, 1007L, 5L, 55L, 555L),
+                row(t, 1008L, 5L, 55L, 555L),
+                row(t, 1009L, 5L, 55L, 555L),
         };
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
@@ -187,9 +188,13 @@ public class IndexScanBoundedAllColumnsIT extends OperatorITBase
 
     private Row dbRow(long id)
     {
-        for (NewRow newRow : db) {
-            if (newRow.get(0).equals(id)) {
-                return row(idxRowType, newRow.get(1), newRow.get(2), newRow.get(3), newRow.get(0));
+        for (Row newRow : db) {
+            if (ValueSources.getLong(newRow.value(0)) == id) {
+                return row(idxRowType,
+                           ValueSources.toObject(newRow.value(1)),
+                           ValueSources.toObject(newRow.value(2)),
+                           ValueSources.toObject(newRow.value(3)),
+                           ValueSources.toObject(newRow.value(0)));
             }
         }
         fail();

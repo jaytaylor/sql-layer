@@ -17,8 +17,10 @@
 
 package com.foundationdb.server.test.it.rowtests;
 
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.server.types.value.ValueSources;
 import org.junit.Assert;
 
 import org.junit.Ignore;
@@ -41,18 +43,18 @@ public class UnsignedFieldsIT extends ITBase {
     private void writeRows(int tableId, Object... values) {
         long id = 0;
         for(Object o : values) {
-            dml().writeRow(session(),  createNewRow(tableId, id++, o));
+            writeRow(tableId, id++, o);
         }
     }
 
     private void compareRows(int tableId, Object... values) {
-        List<NewRow> rows = scanAll(scanAllRequest(tableId));
+        List<Row> rows = scanAll(scanAllRequest(tableId));
         assertEquals("column count", 2, getTable(tableId).getColumns().size());
-        Iterator<NewRow> rowIt = rows.iterator();
+        Iterator<Row> rowIt = rows.iterator();
         Iterator<Object> expectedIt = Arrays.asList(values).iterator();
         while(rowIt.hasNext() && expectedIt.hasNext()) {
-            NewRow row = rowIt.next();
-            Number actual = (Number)row.get(1);
+            Row row = rowIt.next();
+            Number actual = (Number)ValueSources.toObject(row.value(1));
             if (actual instanceof Short) {
                 actual = actual.longValue();
             } else if (actual instanceof Integer) {
@@ -62,7 +64,7 @@ public class UnsignedFieldsIT extends ITBase {
             if (actual instanceof Long && expected instanceof BigInteger) {
                 actual = BigInteger.valueOf(actual.longValue());
             }
-            assertEquals("row id " + row.get(0), expected, actual);
+            assertEquals("row id " + ValueSources.toObject(row.value(0)), expected, actual);
         }
         String extra = "";
         while(rowIt.hasNext()) {

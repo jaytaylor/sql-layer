@@ -45,7 +45,7 @@ public class InsertIT extends OperatorITBase {
         use(db);
         doInsert();
         compareRows(
-                array(TestRow.class,
+                array(Row.class,
                       row(customerRowType, 0L, "zzz"),
                       row(customerRowType, 1L, "xyz"),
                       row(customerRowType, 2L, "abc"),

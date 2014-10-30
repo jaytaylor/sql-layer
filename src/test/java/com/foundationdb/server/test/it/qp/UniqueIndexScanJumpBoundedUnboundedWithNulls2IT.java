@@ -28,7 +28,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -87,35 +86,35 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
         schema = new Schema(ais());
         tRowType = schema.tableRowType(table(t));
         idxRowType = indexType(t, "a", "b", "c");
-        db = new NewRow[] {
-            createNewRow(t, 1010L, 1L, 11L, 110L),
-            createNewRow(t, 1011L, 1L, 13L, 130L),
-            createNewRow(t, 1012L, 1L, (Long)null, 132L),
-            createNewRow(t, 1013L, 1L, (Long)null, 132L),
-            createNewRow(t, 1014L, 1L, 13L, 133L),
-            createNewRow(t, 1015L, 1L, 13L, 134L),
-            createNewRow(t, 1016L, 1L, null, 122L),
-            createNewRow(t, 1017L, 1L, 14L, 142L),
-            createNewRow(t, 1018L, 1L, 30L, 201L),
-            createNewRow(t, 1019L, 1L, 30L, null),
-            createNewRow(t, 1020L, 1L, 30L, null),
-            createNewRow(t, 1021L, 1L, 30L, null),
-            createNewRow(t, 1022L, 1L, 30L, 300L),
-            createNewRow(t, 1023L, 1L, 40L, 401L)
+        db = new Row[] {
+            row(t, 1010L, 1L, 11L, 110L),
+            row(t, 1011L, 1L, 13L, 130L),
+            row(t, 1012L, 1L, (Long)null, 132L),
+            row(t, 1013L, 1L, (Long)null, 132L),
+            row(t, 1014L, 1L, 13L, 133L),
+            row(t, 1015L, 1L, 13L, 134L),
+            row(t, 1016L, 1L, null, 122L),
+            row(t, 1017L, 1L, 14L, 142L),
+            row(t, 1018L, 1L, 30L, 201L),
+            row(t, 1019L, 1L, 30L, null),
+            row(t, 1020L, 1L, 30L, null),
+            row(t, 1021L, 1L, 30L, null),
+            row(t, 1022L, 1L, 30L, 300L),
+            row(t, 1023L, 1L, 40L, 401L)
         };
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         use(db);
-        for (NewRow row : db)
+        for (Row row : db)
         {
-            indexRowWithIdMap.put((Long) row.get(0),
+            indexRowWithIdMap.put(row.value(0).getInt64(),
                                   new TestRow(tRowType,
-                                              new Object[]{row.get(1),  // a
-                                                           row.get(2),  // b
-                                                           row.get(3),  // c
-                                                           row.get(0)   // id
-                                              }));
+                                              row.value(1).getInt64(),  // a
+                                              row.value(2).getInt64(),  // b
+                                              row.value(3).getInt64(),  // c
+                                              row.value(0).getInt64()   // id
+                                  ));
         }
     }
 

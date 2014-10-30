@@ -75,17 +75,17 @@ public class OnlineCreateGroupIndexMT extends OnlineMTBase
         iRowType = schema.tableRowType(iID);
         writeRows(// unknown
                     // no O(65, 6)
-                                createNewRow(iID, 650, 65, 650000),           // 0
-                            createNewRow(cID, 2, 2000),                       // 1
-                        createNewRow(aID, 20, 2, 20000),                      // 2
-                                    createNewRow(oID, 25, 2, 25000),          // 3
-                                createNewRow(iID, 250, 25, 250000),           // 4
-                            createNewRow(cID, 4, 4000),                       // 5
+                                row(iID, 650, 65, 650000),           // 0
+                            row(cID, 2, 2000),                       // 1
+                        row(aID, 20, 2, 20000),                      // 2
+                                    row(oID, 25, 2, 25000),          // 3
+                                row(iID, 250, 25, 250000),           // 4
+                            row(cID, 4, 4000),                       // 5
                         // no A(40, 4, 40000)
-                                    createNewRow(oID, 45, 4, 45000),          // 6
-                                createNewRow(iID, 450, 45, 450000),           // 7
-                            createNewRow(cID, 6, 6000),                       // 8
-                        createNewRow(aID, 60, 6, 60000));                     // 9
+                                    row(oID, 45, 4, 45000),          // 6
+                                row(iID, 450, 45, 450000),           // 7
+                            row(cID, 6, 6000),                       // 8
+                        row(aID, 60, 6, 60000));                     // 9
         groupRows = runPlanTxn(groupScanCreator(cID));
     }
 

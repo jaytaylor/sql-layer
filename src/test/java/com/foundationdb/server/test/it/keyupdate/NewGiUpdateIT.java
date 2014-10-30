@@ -1348,7 +1348,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi(___RIGHT_street_name________)
                 .done();
 
-        update(c, 1L, "John", 1000L).to(2L, "Johnny", 1000L);
+        updateRow(row(c, 1L, "John", 1000L), row(c, 2L, "Johnny", 1000L));
         checker()
                 .gi(___LEFT_name_when___________)
                 .entry("Johnny, 2002-02-02, 2, 12").backedBy(c, o)
@@ -1364,7 +1364,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi(___RIGHT_street_name________)
                 .done();
 
-        update(c, 2L, "Johnny", 1000L).to(1L, "John", 1000L);
+        updateRow(row(c, 2L, "Johnny", 1000L), row(c, 1L, "John", 1000L));
         initState.check();
     }
 
@@ -1390,7 +1390,7 @@ public final class NewGiUpdateIT extends ITBase {
     public void coihCIH_move_o_changeCid() {
         GisChecker initState = init_coihCIH();
 
-        update(o, 11L, 1L, "2001-01-1", 11000L).to(21L, 1L, "1999-12-31", 11000L);
+        updateRow(row(o, 11L, 1L, "2001-01-1", 11000L), row(o, 21L, 1L, "1999-12-31", 11000L));
         checker()
                 .gi(___LEFT_name_when___________)
                 .entry("Bob, null, 2, null").backedBy(c)
@@ -1406,7 +1406,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi(___RIGHT_street_name________)
                 .done();
 
-        update(o, 21L, 1L, "1999-12-31", 11000L).to(11L, 1L, "2001-01-01", 11000L);
+        updateRow(row(o, 21L, 1L, "1999-12-31", 11000L), row(o, 11L, 1L, "2001-01-01", 11000L));
         initState.check();
     }
 
@@ -1436,7 +1436,7 @@ public final class NewGiUpdateIT extends ITBase {
         // i   _,12,112        112 12 5678
         // h   _,12,112,1112   1112 112 be careful
 
-        update(o, 11L, 1L, "2001-01-1", 11000L).to(11L, 2L, "1999-12-31", 11000L);
+        updateRow(row(o, 11L, 1L, "2001-01-1", 11000L), row(o, 11L, 2L, "1999-12-31", 11000L));
         checker()
                 .gi(___LEFT_name_when___________)
                 .entry("Bob, 1999-12-31, 2, 11").backedBy(c, o)
@@ -1452,7 +1452,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi(___RIGHT_street_name________)
                 .done();
 
-        update(o, 11L, 2L, "1999-12-31", 11000L).to(11L, 1L, "2001-01-01", 11000L);
+        updateRow(row(o, 11L, 2L, "1999-12-31", 11000L), row(o, 11L, 1L, "2001-01-01", 11000L));
         initState.check();
     }
 
@@ -1460,7 +1460,7 @@ public final class NewGiUpdateIT extends ITBase {
     public void coihCIH_move_o_changeBoth() {
         GisChecker initState = init_coihCIH();
 
-        update(o, 11L, 1L, "2001-01-1", 11000L).to(12L, 2L, "1999-12-31", 11000L);
+        updateRow(row(o, 11L, 1L, "2001-01-1", 11000L), row(o, 12L, 2L, "1999-12-31", 11000L));
         checker()
                 .gi(___LEFT_name_when___________)
                 .entry("Bob, 1999-12-31, 2, 12").backedBy(c, o)
@@ -1476,7 +1476,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi(___RIGHT_street_name________)
                 .done();
 
-        update(o, 12L, 2L, "1999-12-31", 11000L).to(11L, 1L, "2001-01-01", 11000L);
+        updateRow(row(o, 12L, 2L, "1999-12-31", 11000L), row(o, 11L, 1L, "2001-01-01", 11000L));
         initState.check();
     }
 
@@ -1498,7 +1498,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi(___RIGHT_street_name________)
                 .done();
 
-        update(i, 111L, 11L, "1234", 111000L).to(112L, 12L, "3456", 111000L);
+        updateRow(row(i, 111L, 11L, "1234", 111000L), row(i, 112L, 12L, "3456", 111000L));
         checker()
                 .gi(___LEFT_name_when___________)
                 .entry("Bob, 2002-02-02, 2, 12").backedBy(c, o)
@@ -1514,7 +1514,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi(___RIGHT_street_name________)
                 .done();
 
-        update(i, 112L, 12L, "3456", 111000L).to(111L, 11L, "1234", 111000L);
+        updateRow(row(i, 112L, 12L, "3456", 111000L), row(i, 111L, 11L, "1234", 111000L));
         initState.check();
     }
 
@@ -1536,7 +1536,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi(___RIGHT_street_name________)
                 .done();
 
-        update(h, 1111L, 111L, "don't drop").to(1112L, 112L, "handle with care");
+        updateRow(row(h, 1111L, 111L, "don't drop"), row(h, 1112L, 112L, "handle with care"));
         checker()
                 .gi(___LEFT_name_when___________)
                 .entry("Bob, 2002-02-02, 2, 12").backedBy(c, o)
@@ -1551,8 +1551,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("5678, handle with care, 2, 12, 112, 1112").backedBy(i, h)
                 .gi(___RIGHT_street_name________)
                 .done();
-        
-        update(h, 1112L, 112L, "handle with care").to(1111L, 111L, "don't drop");
+
+        updateRow(row(h, 1112L, 112L, "handle with care"), row(h, 1111L, 111L, "don't drop"));
         initState.check();
     }
 
@@ -1563,7 +1563,7 @@ public final class NewGiUpdateIT extends ITBase {
     {
         init_co();
         // Update name, which is involved in all indexes on customer.
-        update(c, 1L, "John", 1000L).to(1L, "Paul", 1000L);
+        updateRow(row(c, 1L, "John", 1000L), row(c, 1L, "Paul", 1000L));
         checker()
                 .gi(___LEFT_name_when___________)
                 .entry("Paul, 2001-01-01, 1, 11").backedBy(c, o)
@@ -1581,7 +1581,7 @@ public final class NewGiUpdateIT extends ITBase {
     {
         init_co();
         // Updating both name and extra -- same number of GI maintenance actions as for updating name.
-        update(c, 1L, "John", 1000L).to(1L, "Paul", 1111L);
+        updateRow(row(c, 1L, "John", 1000L), row(c, 1L, "Paul", 1111L));
         checker()
                 .gi(___LEFT_name_when___________)
                 .entry("Paul, 2001-01-01, 1, 11").backedBy(c, o)
@@ -1599,7 +1599,7 @@ public final class NewGiUpdateIT extends ITBase {
     {
         init_co();
         // If there is no actual update, all maintenance (twice for each index involving customer) should be skipped
-        update(c, 1L, "John", 1000L).to(1L, "John", 1000L);
+        updateRow(row(c, 1L, "John", 1000L), row(c, 1L, "John", 1000L));
         checker()
                 .gi(___LEFT_name_when___________)
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
@@ -1619,7 +1619,7 @@ public final class NewGiUpdateIT extends ITBase {
         // There are 3 indexes involving the customer table and each may be updated twice.
         // If extra is updated, which is not involved in any index, then the expected number
         // of GI maintenance actions skipped is 6.
-        update(c, 1L, "John", 1000L).to(1L, "John", 1111L);
+        updateRow(row(c, 1L, "John", 1000L), row(c, 1L, "John", 1111L));
         checker()
                 .gi(___LEFT_name_when___________)
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
@@ -1637,7 +1637,7 @@ public final class NewGiUpdateIT extends ITBase {
     {
         init_co();
         // Update when, which is involved in all indexes on order.
-        update(o, 11L, 1L, "2001-01-01", 11000L).to(11L, 1L, "2011-11-11", 11000L);
+        updateRow(row(o, 11L, 1L, "2001-01-01", 11000L), row(o, 11L, 1L, "2011-11-11", 11000L));
         checker()
                 .gi(___LEFT_name_when___________)
                 .entry("John, 2011-11-11, 1, 11").backedBy(c, o)
@@ -1655,7 +1655,7 @@ public final class NewGiUpdateIT extends ITBase {
     {
         init_co();
         // Updating both when and extra -- same number of GI maintenance actions as for updating when.
-        update(o, 11L, 1L, "2001-01-01", 11000L).to(11L, 1L, "2011-11-11", 11111L);
+        updateRow(row(o, 11L, 1L, "2001-01-01", 11000L), row(o, 11L, 1L, "2011-11-11", 11111L));
         checker()
                 .gi(___LEFT_name_when___________)
                 .entry("John, 2011-11-11, 1, 11").backedBy(c, o)
@@ -1673,7 +1673,7 @@ public final class NewGiUpdateIT extends ITBase {
     {
         init_co();
         // If there is no actual update, all maintenance (twice for each index involving order) should be skipped
-        update(o, 11L, 1L, "2001-01-01", 11000L).to(11L, 1L, "2001-01-01", 11000L);
+        updateRow(row(o, 11L, 1L, "2001-01-01", 11000L), row(o, 11L, 1L, "2001-01-01", 11000L));
         checker()
                 .gi(___LEFT_name_when___________)
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
@@ -1693,7 +1693,7 @@ public final class NewGiUpdateIT extends ITBase {
         // There are 2 indexes involving the order table and each may be updated twice.
         // If extra is updated, which is not involved in any index, then the expected number
         // of GI maintenance actions skipped is 4.
-        update(o, 11L, 1L, "2001-01-01", 11000L).to(11L, 1L, "2001-01-01", 11111L);
+        updateRow(row(o, 11L, 1L, "2001-01-01", 11000L), row(o, 11L, 1L, "2001-01-01", 11111L));
         checker()
                 .gi(___LEFT_name_when___________)
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
@@ -1711,7 +1711,7 @@ public final class NewGiUpdateIT extends ITBase {
     {
         init_coih();
         // Update sku, which is involved in all indexes on item.
-        update(i, 111L, 11L, "1234", 111000L).to(111L, 11L, "9999", 111000L);
+        updateRow(row(i, 111L, 11L, "1234", 111000L), row(i, 111L, 11L, "9999", 111000L));
         checker()
                 .gi(___LEFT_name_when___________)
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
@@ -1731,7 +1731,7 @@ public final class NewGiUpdateIT extends ITBase {
     {
         init_coih();
         // Updating both sku and extra -- same number of GI maintenance actions as for updating sku.
-        update(i, 111L, 11L, "1234", 111000L).to(111L, 11L, "9999", 111111L);
+        updateRow(row(i, 111L, 11L, "1234", 111000L), row(i, 111L, 11L, "9999", 111111L));
         checker()
                 .gi(___LEFT_name_when___________)
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
@@ -1751,7 +1751,7 @@ public final class NewGiUpdateIT extends ITBase {
     {
         init_coih();
         // If there is no actual update, all maintenance (twice for each index involving order) should be skipped
-        update(i, 111L, 11L, "1234", 111000L).to(111L, 11L, "1234", 111000L);
+        updateRow(row(i, 111L, 11L, "1234", 111000L), row(i, 111L, 11L, "1234", 111000L));
         checker()
                 .gi(___LEFT_name_when___________)
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
@@ -1773,7 +1773,7 @@ public final class NewGiUpdateIT extends ITBase {
         // There are 2 indexes involving the item table and each may be updated twice.
         // If extra is updated, which is not involved in any index, then the expected number
         // of GI maintenance actions skipped is 4.
-        update(i, 111L, 11L, "1234", 111000L).to(111L, 11L, "1234", 111111L);
+        updateRow(row(i, 111L, 11L, "1234", 111000L), row(i, 111L, 11L, "1234", 111111L));
         checker()
                 .gi(___LEFT_name_when___________)
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
@@ -1793,7 +1793,7 @@ public final class NewGiUpdateIT extends ITBase {
     {
         init_coih();
         // Update handling_instructions, which is involved in all indexes on item.
-        update(h, 1111L, 111L, "don't drop", 1111000L).to(1111L, 111L, "lemon drop", 1111000L);
+        updateRow(row(h, 1111L, 111L, "don't drop", 1111000L), row(h, 1111L, 111L, "lemon drop", 1111000L));
         checker()
                 .gi(___LEFT_name_when___________)
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
@@ -1814,7 +1814,7 @@ public final class NewGiUpdateIT extends ITBase {
         init_coih();
         // Updating both handling instructions and extra -- same number of GI maintenance actions as for updating
         // handling instructions.
-        update(h, 1111L, 111L, "don't drop", 1111000L).to(1111L, 111L, "lemon drop", 1111111L);
+        updateRow(row(h, 1111L, 111L, "don't drop", 1111000L), row(h, 1111L, 111L, "lemon drop", 1111111L));
         checker()
                 .gi(___LEFT_name_when___________)
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
@@ -1834,7 +1834,7 @@ public final class NewGiUpdateIT extends ITBase {
     {
         init_coih();
         // If there is no actual update, all maintenance (twice for each index involving order) should be skipped
-        update(h, 1111L, 111L, "don't drop", 1111000L).to(1111L, 111L, "don't drop", 1111000L);
+        updateRow(row(h, 1111L, 111L, "don't drop", 1111000L), row(h, 1111L, 111L, "don't drop", 1111000L));
         checker()
                 .gi(___LEFT_name_when___________)
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
@@ -1856,7 +1856,7 @@ public final class NewGiUpdateIT extends ITBase {
         // There are 2 indexes involving the handling table and each may be updated twice.
         // If extra is updated, which is not involved in any index, then the expected number
         // of GI maintenance actions skipped is 4.
-        update(h, 1111L, 111L, "don't drop", 1111000L).to(1111L, 111L, "don't drop", 1111111L);
+        updateRow(row(h, 1111L, 111L, "don't drop", 1111000L), row(h, 1111L, 111L, "don't drop", 1111111L));
         checker()
                 .gi(___LEFT_name_when___________)
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)

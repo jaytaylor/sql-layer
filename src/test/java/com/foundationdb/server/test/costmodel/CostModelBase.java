@@ -70,29 +70,6 @@ public class CostModelBase extends ApiTestBase
         return null;
     }
 
-    protected ColumnSelector columnSelector(final Index index)
-    {
-        return new ColumnSelector()
-        {
-            @Override
-            public boolean includesColumn(int columnPosition)
-            {
-                for (IndexColumn indexColumn : index.getKeyColumns()) {
-                    Column column = indexColumn.getColumn();
-                    if (column.getPosition() == columnPosition) {
-                        return true;
-                    }
-                }
-                return false;
-            }
-        };
-    }
-
-    protected Row row(RowType rowType, Object... fields)
-    {
-        return new TestRow(rowType, fields);
-    }
-
     protected String schemaName()
     {
         return "schema";

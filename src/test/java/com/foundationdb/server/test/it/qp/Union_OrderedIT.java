@@ -27,7 +27,6 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.SetWrongNumColumns;
 import org.junit.Test;
 
@@ -58,13 +57,13 @@ public class Union_OrderedIT extends OperatorITBase
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
-        db = new NewRow[] {
-            createNewRow(t, 1000L, 1L),
-            createNewRow(t, 1001L, 1L),
-            createNewRow(t, 1002L, 1L),
-            createNewRow(t, 2000L, 2L),
-            createNewRow(t, 2001L, 2L),
-            createNewRow(t, 2002L, 2L),
+        db = new Row[] {
+            row(t, 1000L, 1L),
+            row(t, 1001L, 1L),
+            row(t, 1002L, 1L),
+            row(t, 2000L, 2L),
+            row(t, 2001L, 2L),
+            row(t, 2002L, 2L),
         };
         use(db);
     }

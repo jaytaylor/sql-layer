@@ -81,11 +81,6 @@ public class QPProfilePTBase extends PTBase
         return null;
     }
 
-    protected Row row(RowType rowType, Object... fields)
-    {
-        return new TestRow(rowType, fields);
-    }
-
     protected Schema schema;
     protected PersistitAdapter adapter;
     protected QueryContext queryContext;

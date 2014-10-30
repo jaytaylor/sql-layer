@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.test.it.dxl;
 
-import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.api.FixedCountLimit;
 import com.foundationdb.server.api.dml.scan.BufferFullException;
@@ -54,12 +53,12 @@ public final class ScanBufferTooSmallIT extends ITBase {
                 "GROUPING FOREIGN KEY (oid) REFERENCES o(oid)");
 
         writeRows(
-                createNewRow(cid, 1, "short name"),
-                createNewRow(oid, 1, 1),
-                createNewRow(iid, 1, 1),
-                createNewRow(iid, 2, 1),
+                row(cid, 1, "short name"),
+                row(oid, 1, 1),
+                row(iid, 1, 1),
+                row(iid, 2, 1),
 
-                createNewRow(cid, 2, "this name is much longer than the previous name, which was short")
+                row(cid, 2, "this name is much longer than the previous name, which was short")
         );
     }
 

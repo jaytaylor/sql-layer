@@ -25,7 +25,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.SetWrongNumColumns;
 import org.junit.Test;
 
@@ -74,27 +73,27 @@ public class Intersect_OrderedIT extends OperatorITBase
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
 
-        db = new NewRow[] {
-                createNewRow(t, 1000L, 10L),
-                createNewRow(t, 1001L, 20L),
-                createNewRow(t, 1002L, 50L),
-                createNewRow(t, 1003L, 80L),
-                createNewRow(t, 1004L, 90L),
-                createNewRow(t, 1005L, 90L),
+        db = new Row[] {
+                row(t, 1000L, 10L),
+                row(t, 1001L, 20L),
+                row(t, 1002L, 50L),
+                row(t, 1003L, 80L),
+                row(t, 1004L, 90L),
+                row(t, 1005L, 90L),
 
-                createNewRow(u, 1000L, 1L),
-                createNewRow(u, 1001L, 2L),
-                createNewRow(u, 1002L, 5L),
-                createNewRow(u, 1003L, 8L),
-                createNewRow(u, 1004L, 9L),
-                createNewRow(u, 1005L, 9L),
+                row(u, 1000L, 1L),
+                row(u, 1001L, 2L),
+                row(u, 1002L, 5L),
+                row(u, 1003L, 8L),
+                row(u, 1004L, 9L),
+                row(u, 1005L, 9L),
 
-                createNewRow(v, 1000L, 0L),
-                createNewRow(v, 1001L, 1L),
-                createNewRow(v, 1002L, 1L),
-                createNewRow(v, 1003L, 2L),
-                createNewRow(v, 1004L, 9L),
-                createNewRow(v, 1005L, 20L),
+                row(v, 1000L, 0L),
+                row(v, 1001L, 1L),
+                row(v, 1002L, 1L),
+                row(v, 1003L, 2L),
+                row(v, 1004L, 9L),
+                row(v, 1005L, 20L),
         };
         use(db);
     }

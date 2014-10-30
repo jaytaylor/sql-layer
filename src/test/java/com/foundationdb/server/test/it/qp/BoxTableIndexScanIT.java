@@ -28,7 +28,6 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.OutOfRangeException;
 import com.foundationdb.server.spatial.Spatial;
 import com.geophile.z.Space;
@@ -156,13 +155,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
             // Delete rows with odd ids
             for (Integer id : zToId.values()) {
                 if ((id % 2) == 1) {
-                    dml().deleteRow(session(), createNewRow(box,
-                                                            id,
-                                                            before(id),
-                                                            after(id),
-                                                             lats.get(id),
-                                                            lons.get(id)),
-                                    false);
+                    deleteRow(box, id, before(id), after(id), lats.get(id), lons.get(id));
                 }
             }
         }
@@ -255,11 +248,11 @@ public class BoxTableIndexScanIT extends OperatorITBase
             for (int id = 0; id < n; id++) {
                 BigDecimal lat = lats.get(id);
                 BigDecimal lon = lons.get(id);
-                NewRow before = createNewRow(box, id, before(id), after(id), lat, lon);
-                NewRow after = createNewRow(box, id, before(id), after(id), lat, lon.add(BigDecimal.ONE));
+                Row before = row(box, id, before(id), after(id), lat, lon);
+                Row after = row(box, id, before(id), after(id), lat, lon.add(BigDecimal.ONE));
                 long z = Spatial.shuffle(space, lat.doubleValue(), lon.doubleValue() + 1);
                 zToId.put(z, id);
-                dml().updateRow(session(), before, after, null);
+                updateRow(before, after);
             }
         }
         {
@@ -784,7 +777,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
             for (long x = LON_LO; x < LON_HI; x += DLON) {
                 BigDecimal lat = new BigDecimal(y);
                 BigDecimal lon = new BigDecimal(x);
-                dml().writeRow(session(), createNewRow(box, id, before(id),  after(id), lat, lon));
+                writeRow(box, id, before(id), after(id), lat, lon);
                 long z = Spatial.shuffle(space, lat.doubleValue(), lon.doubleValue());
                 zToId.put(z, id);
                 lats.add(lat);

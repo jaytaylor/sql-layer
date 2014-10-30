@@ -26,7 +26,6 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
 import java.util.EnumSet;
@@ -71,29 +70,29 @@ public class GroupSkipScanIT extends OperatorITBase
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
-        db = new NewRow[] {
-            createNewRow(p, 1L, 1L),
-            createNewRow(c1, 101L, 1L, 100L),
-            createNewRow(c1, 102L, 1L, 200L),
-            createNewRow(c2, 121L, 1L, 120L),
-            createNewRow(c2, 122L, 1L, 220L),
-            createNewRow(p, 2L, 2L),
-            createNewRow(c1, 201L, 2L, 100L),
-            createNewRow(c1, 202L, 2L, 200L),
-            createNewRow(c2, 221L, 2L, 120L),
-            createNewRow(c2, 222L, 2L, 220L),
-            createNewRow(p, 3L, 1L),
-            createNewRow(p, 4L, 2L),
-            createNewRow(p, 5L, 1L),
-            createNewRow(p, 6L, 2L),
-            createNewRow(p, 7L, 1L),
-            createNewRow(p, 8L, 2L),
-            createNewRow(p, 9L, 1L),
-            createNewRow(c1, 901L, 9L, 100L),
-            createNewRow(c1, 902L, 9L, 200L),
-            createNewRow(c2, 921L, 9L, 120L),
-            createNewRow(c2, 922L, 9L, 220L),
-            createNewRow(p, 10L, 2L)
+        db = new Row[] {
+            row(p, 1L, 1L),
+            row(c1, 101L, 1L, 100L),
+            row(c1, 102L, 1L, 200L),
+            row(c2, 121L, 1L, 120L),
+            row(c2, 122L, 1L, 220L),
+            row(p, 2L, 2L),
+            row(c1, 201L, 2L, 100L),
+            row(c1, 202L, 2L, 200L),
+            row(c2, 221L, 2L, 120L),
+            row(c2, 222L, 2L, 220L),
+            row(p, 3L, 1L),
+            row(p, 4L, 2L),
+            row(p, 5L, 1L),
+            row(p, 6L, 2L),
+            row(p, 7L, 1L),
+            row(p, 8L, 2L),
+            row(p, 9L, 1L),
+            row(c1, 901L, 9L, 100L),
+            row(c1, 902L, 9L, 200L),
+            row(c2, 921L, 9L, 120L),
+            row(c2, 922L, 9L, 220L),
+            row(p, 10L, 2L)
         };
         use(db);
     }

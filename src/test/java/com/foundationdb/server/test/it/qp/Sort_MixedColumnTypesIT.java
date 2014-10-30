@@ -60,10 +60,10 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
         // - when the rows are ordered by name, they are unordered by importance
         // - when the rows are ordered by importance, they are unordered by name
         writeRows(
-                createNewRow(customer, 1L, "Ccc", "100.00"),
-                createNewRow(customer, 2L, "Aaa", "75.25"),
-                createNewRow(customer, 3L, "Bbb", "120.00"),
-                createNewRow(customer, 4L, "Aaa", "32.00")
+                row(customer, 1L, "Ccc", "100.00"),
+                row(customer, 2L, "Aaa", "75.25"),
+                row(customer, 3L, "Bbb", "120.00"),
+                row(customer, 4L, "Aaa", "32.00")
         );
 
         schema = new Schema(ddl().getAIS(session()));
