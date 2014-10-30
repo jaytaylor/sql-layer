@@ -1,7 +1,7 @@
 # test that full text indices are updated (and populated) properly
 
 ---
-- Properties: fdb-sql
+- Properties: fts 
 - suppressed: true
 
 ---

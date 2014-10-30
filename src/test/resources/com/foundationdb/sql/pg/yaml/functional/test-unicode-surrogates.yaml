@@ -1,7 +1,7 @@
 # Test distinction between SQL character count (codepoints) and Java character count.
 ---
 # Python 2 cannot compare UTF-8 result column with Unicode YAML below.
-- Properties: fdb-sql
+- Properties: fts 
 - suppressed: true
 ---
 - CreateTable: tu (id INT PRIMARY KEY NOT NULL, s1 VARCHAR(1), s2 VARCHAR(2))
