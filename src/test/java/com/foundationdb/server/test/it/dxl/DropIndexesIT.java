@@ -94,7 +94,7 @@ public final class DropIndexesIT extends ITBase {
         Index indexCheck = aisCheck.getTable(tId).getIndex("name");
         assertNull(indexCheck);
         assertEquals("number of indexes", 1, aisCheck.getTable(tId).getIndexes().size());
-        List<Row> rows = scanAll(scanAllRequest(tId));
+        List<Row> rows = scanAll(tId);
         assertEquals("rows from table scan", 2, rows.size());
     }
     
@@ -126,11 +126,11 @@ public final class DropIndexesIT extends ITBase {
         assertNotNull(aisCheck.getTable(oId).getIndex("o_fkey"));
         assertNull(aisCheck.getTable(oId).getIndex("tag"));
                 
-        List<Row> rows = scanAll(scanAllRequest(cId));
+        List<Row> rows = scanAll(cId);
         assertEquals("customers from table scan", 1, rows.size());
-        rows = scanAll(scanAllRequest(oId));
+        rows = scanAll(oId);
         assertEquals("orders from table scan", 2, rows.size());
-        rows = scanAll(scanAllRequest(iId));
+        rows = scanAll(iId);
         assertEquals("items from table scan", 5, rows.size());
     }
     
@@ -150,7 +150,7 @@ public final class DropIndexesIT extends ITBase {
         assertEquals("number of indexes", 1, aisCheck.getTable(tId).getIndexes().size());
         assertNotNull(aisCheck.getTable(tId).getIndex("PRIMARY"));
         
-        List<Row> rows = scanAll(scanAllRequest(tId));
+        List<Row> rows = scanAll(tId);
         assertEquals("rows from table scan", 3, rows.size());
     }
     
@@ -168,7 +168,7 @@ public final class DropIndexesIT extends ITBase {
         assertEquals("number of indexes", 1, aisCheck.getTable(tId).getIndexes().size());
         assertNull(aisCheck.getTable(tId).getIndex("state"));
         assertNotNull(aisCheck.getTable(tId).getIndex("PRIMARY"));
-        List<Row> rows = scanAll(scanAllRequest(tId));
+        List<Row> rows = scanAll(tId);
         assertEquals("rows from table scan", 3, rows.size());
     }
     
@@ -189,7 +189,7 @@ public final class DropIndexesIT extends ITBase {
         assertNull(aisCheck.getTable(tId).getIndex("price"));
         assertNotNull(aisCheck.getTable(tId).getIndex("PRIMARY"));
         
-        List<Row> rows = scanAll(scanAllRequest(tId));
+        List<Row> rows = scanAll(tId);
         assertEquals("rows from table scan", 3, rows.size());
     }
 }

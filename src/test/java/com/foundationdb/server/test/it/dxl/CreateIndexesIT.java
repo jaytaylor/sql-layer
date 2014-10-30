@@ -252,13 +252,13 @@ public final class CreateIndexesIT extends ITBase
         assertEquals("Index count", 1, indexCheck.getKeyColumns().size());
         
         // Get all customers
-        List<Row> rows = scanAll(scanAllRequest(cId));
+        List<Row> rows = scanAll(cId);
         assertEquals("customers from table scan", 1, rows.size());
         // Get all orders
-        rows = scanAll(scanAllRequest(oId));
+        rows = scanAll(oId);
         assertEquals("orders from table scan", 2, rows.size());
         // Get all items
-        rows = scanAll(scanAllRequest(iId));
+        rows = scanAll(iId);
         assertEquals("items from table scan", 5, rows.size());
         // Index scan on new index
         rows = scanAllIndex(getTable(oId).getIndex("tag"));
@@ -345,7 +345,7 @@ public final class CreateIndexesIT extends ITBase
         assertNotNull("pk index doesn't exist", table.getIndex("PRIMARY"));
         assertEquals("Index count", 1, table.getIndexes().size());
 
-        List<Row> rows = scanAll(scanAllRequest(tId));
+        List<Row> rows = scanAll(tId);
         assertEquals("rows from table scan", 4, rows.size());
     }
     
@@ -419,7 +419,7 @@ public final class CreateIndexesIT extends ITBase
         assertNotNull("i1 index doesn't exist", table.getIndex("i1"));
         assertEquals("Index count", 2, table.getIndexes().size());
 
-        List<Row> rows = scanAll(scanAllRequest(tId));
+        List<Row> rows = scanAll(tId);
         assertEquals("rows from table scan", 4, rows.size());
     }
 

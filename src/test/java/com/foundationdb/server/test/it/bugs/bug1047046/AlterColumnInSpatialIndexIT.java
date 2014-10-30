@@ -49,7 +49,7 @@ public class AlterColumnInSpatialIndexIT extends AlterTableITBase {
         createAndLoadTable();
         runAlter("ALTER TABLE t1 ALTER c2 SET DATA TYPE varchar(10)");
         final int tid = tableId(SCHEMA, TABLE);
-        assertEquals("row count", ROW_COUNT, scanAll(scanAllRequest(tid)).size());
+        assertEquals("row count", ROW_COUNT, scanAll(tid).size());
         assertEquals("Index exists", false, getTable(tid).getIndex(INDEX_NAME) != null);
     }
 
@@ -60,7 +60,7 @@ public class AlterColumnInSpatialIndexIT extends AlterTableITBase {
         TableIndex indexBefore = getTable(tid).getIndex(INDEX_NAME);
         assertEquals("index row count before alter", ROW_COUNT, scanAllIndex(indexBefore).size());
         runAlter("ALTER TABLE t1 ALTER c2 SET DATA TYPE decimal(22,14)");
-        assertEquals("row count", ROW_COUNT, scanAll(scanAllRequest(tid)).size());
+        assertEquals("row count", ROW_COUNT, scanAll(tid).size());
         TableIndex index = getTable(tid).getIndex(INDEX_NAME);
         assertEquals("Index exists", true, index != null);
         assertEquals("index row count", ROW_COUNT, scanAllIndex(index).size());
@@ -71,7 +71,7 @@ public class AlterColumnInSpatialIndexIT extends AlterTableITBase {
         createAndLoadTable();
         runAlter("ALTER TABLE t1 DROP COLUMN c2");
         final int tid = tableId(SCHEMA, TABLE);
-        assertEquals("row count", ROW_COUNT, scanAll(scanAllRequest(tid)).size());
+        assertEquals("row count", ROW_COUNT, scanAll(tid).size());
         assertEquals("Index exists", false, getTable(tid).getIndex(INDEX_NAME) != null);
     }
     
@@ -80,7 +80,7 @@ public class AlterColumnInSpatialIndexIT extends AlterTableITBase {
         createAndLoadTable();
         runAlter("ALTER TABLE t1 DROP COLUMN c1");
         final int tid = tableId(SCHEMA, TABLE);
-        assertEquals("row count", ROW_COUNT, scanAll(scanAllRequest(tid)).size());
+        assertEquals("row count", ROW_COUNT, scanAll(tid).size());
         assertEquals("Index exists", false, getTable(tid).getIndex(INDEX_NAME) != null);
     }
 }

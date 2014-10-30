@@ -203,7 +203,7 @@ public class AlterTableITBase extends ITBase {
         updateAISGeneration();
         AkibanInformationSchema ais = ddl().getAIS(session());
         Table table = ais.getTable(tableID);
-        List<Row> tableRows = new ArrayList<>(scanAll(scanAllRequest(tableID, true)));
+        List<Row> tableRows = new ArrayList<>(scanAll(tableID));
 
         for(TableIndex index : table.getIndexesIncludingInternal()) {
             if(index.getKeyColumns().size() == 1) {

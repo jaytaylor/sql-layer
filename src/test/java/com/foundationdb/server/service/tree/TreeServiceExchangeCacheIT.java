@@ -122,7 +122,7 @@ public class TreeServiceExchangeCacheIT extends PersistitITBase
             TableName name = new TableName("test", "t_"+i);
             int tid = createTable(name, "id int not null primary key");
             expectRows(tid);
-            expectRows(scanAllIndexRequest(getTable(tid).getPrimaryKey().getIndex()));
+            expectRows(getTable(tid).getPrimaryKey().getIndex());
             ddl().dropTable(session(), name);
         }
         // A little slop for internal trees (e.g. schema manager, index statistics)

@@ -70,7 +70,7 @@ public class KeyToObjectIT extends ITBase {
         final Index index = table.getIndex(indexName);
         assertNotNull("expected index named: "+indexName, index);
         
-        final List<Row> allRows = scanAll(scanAllRequest(tableId));
+        final List<Row> allRows = scanAll(tableId);
         assertEquals("rows scanned", expectedRowCount, allRows.size());
 
         final Iterator<Row> rowIt = allRows.iterator();

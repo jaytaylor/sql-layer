@@ -77,21 +77,6 @@ public final class CBasicIT extends ITBase {
         dml().openCursor(session(), ddl().getGenerationAsInt(session()), new ScanAllRequest(tid, ColumnSet.ofPositions(0)));
     }
 
-    @Test(expected=OldAISException.class)
-    public void cursorHasOldAIS() throws InvalidOperationException {
-        final int tid;
-        final int localAISGeneration;
-        try {
-            tid = createTable("test", "t", "id int not null primary key");
-            localAISGeneration = aisGeneration();
-            createTable("test", "t2", "id int not null primary key");
-        } catch (InvalidOperationException e) {
-            throw new TestException(e);
-        }
-
-        dml().openCursor(session(), localAISGeneration, scanAllRequest(tid));
-    }
-
     /*
      * Found from an actual case in the MTR test suite. Caused by recycled RowDefIDs and undeleted table statuses.
      * Really testing that table statuses get deleted, but about as direct as we can get from this level.
@@ -152,12 +137,11 @@ public final class CBasicIT extends ITBase {
         writeRow(tableId, 0, "hello world");
         expectRowCount(tableId, 1);
 
-        ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-        expectRows(request, row(tableId, 0, "hello world") );
+        expectRows(tableId, row(tableId, 0, "hello world") );
 
         updateRow(row(tableId, 0, "hello world"), row(tableId, 0, "goodbye cruel world"));
         expectRowCount(tableId, 1);
-        expectRows(request, row(tableId, 0, "goodbye cruel world") );
+        expectRows(tableId, row(tableId, 0, "goodbye cruel world") );
     }
 
     @Test
@@ -168,12 +152,11 @@ public final class CBasicIT extends ITBase {
         writeRow(tableId, 0, "hello world");
         expectRowCount(tableId, 1);
 
-        ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-        expectRows(request, row(tableId, 0, "hello world") );
+        expectRows(tableId, row(tableId, 0, "hello world") );
 
         updateRow(row(tableId, 0, "hello world"), row(tableId, 1, "goodbye cruel world"));
         expectRowCount(tableId, 1);
-        expectRows(request, row(tableId, 1, "goodbye cruel world") );
+        expectRows(tableId, row(tableId, 1, "goodbye cruel world") );
     }
 
     @Test(expected=NoRowsUpdatedException.class)
@@ -186,8 +169,7 @@ public final class CBasicIT extends ITBase {
             writeRow(tableId, 0, "hello world");
             expectRowCount(tableId, 1);
 
-            ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-            expectRows(request, row(tableId, 0, "hello world") );
+            expectRows(tableId, row(tableId, 0, "hello world") );
         } catch (InvalidOperationException e) {
             throw unexpectedException(e);
         }
@@ -197,8 +179,7 @@ public final class CBasicIT extends ITBase {
             Row old = row(tableId, null, "hello world");
             updateRow(old, badRow);
         } catch (NoSuchRowException e) {
-            ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-            expectRows(request, row(tableId, 0, "hello world"));
+            expectRows(tableId, row(tableId, 0, "hello world"));
             throw new NoRowsUpdatedException();
         }
     }
@@ -217,12 +198,11 @@ public final class CBasicIT extends ITBase {
         writeRow(tableId, 0, "hello world");
         expectRowCount(tableId, 1);
 
-        ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-        expectRows(request, row(tableId, 0, "hello world") );
+        expectRows(tableId, row(tableId, 0, "hello world") );
 
         updateRow(row(tableId, 0, null), row(tableId, 1, null));
         expectRowCount(tableId, 1);
-        expectRows(new ScanAllRequest(tableId, null), row(tableId, 1, null) );
+        expectRows(tableId, row(tableId, 1, null) );
     }
 
     @Test
@@ -233,12 +213,11 @@ public final class CBasicIT extends ITBase {
         writeRow(tableId, 0, "hello world");
         expectRowCount(tableId, 1);
 
-        ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-        expectRows(request, row(tableId, 0, "hello world") );
+        expectRows(tableId, row(tableId, 0, "hello world") );
 
         updateRow(row(tableId, 0, "hello world"), row(tableId, 1, "goodbye cruel world"));
         expectRowCount(tableId, 1);
-        expectRows(request, row(tableId, 1, "goodbye cruel world") );
+        expectRows(tableId, row(tableId, 1, "goodbye cruel world") );
     }
 
     @Test
@@ -251,19 +230,18 @@ public final class CBasicIT extends ITBase {
         writeRow(tableId, 1, "also doomed");
         expectRowCount(tableId, 2);
 
-        ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-        expectRows(request,
+        expectRows(tableId,
                 row(tableId, 0, "doomed row"),
                 row(tableId, 1, "also doomed"));
 
         deleteRow(tableId, 0, "doomed row");
         expectRowCount(tableId, 1);
-        expectRows(request,
+        expectRows(tableId,
                 row(tableId, 1, "also doomed"));
 
         deleteRow(tableId, 1, "also doomed");
         expectRowCount(tableId, 0);
-        expectRows(request);
+        expectRows(tableId);
     }
 
     @Test(expected=NoSuchRowException.class)
@@ -276,8 +254,7 @@ public final class CBasicIT extends ITBase {
             writeRow(tableId, 0, "the customer's name");
             expectRowCount(tableId, 1);
 
-            ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-            expectRows(request, row(tableId, 0, "the customer's name"));
+            expectRows(tableId, row(tableId, 0, "the customer's name"));
         } catch (InvalidOperationException e) {
             throw unexpectedException(e);
         }
@@ -286,8 +263,7 @@ public final class CBasicIT extends ITBase {
             Row deleteAttempt = row(tableId, null, "the customer's name");
             deleteRow(deleteAttempt);
         } catch (NoSuchRowException e) {
-            ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-            expectRows(request, row(tableId, 0, "the customer's name"));
+            expectRows(tableId, row(tableId, 0, "the customer's name"));
             throw e;
         }
     }
@@ -304,8 +280,7 @@ public final class CBasicIT extends ITBase {
         try {
             deleteRow(tableId, 0, "this row doesn't exist");
         } catch (NoSuchRowException e) {
-            ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
-            expectRows(request);
+            expectRows(tableId);
             throw e;
         }
     }

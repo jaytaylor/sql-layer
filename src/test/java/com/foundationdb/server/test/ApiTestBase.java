@@ -46,14 +46,11 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.UpdateFunction;
 import com.foundationdb.qp.row.BindableRow;
-import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.api.dml.scan.ColumnSet;
-import com.foundationdb.server.api.dml.scan.ScanLimit;
+import com.foundationdb.server.error.NoSuchIndexException;
 import com.foundationdb.server.store.FDBHolder;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.ais.AISCloner;
@@ -860,56 +857,37 @@ public class ApiTestBase {
         return new RuntimeException("unexpected exception", cause);
     }
 
-    protected List<Row> scanAll(ScanRequest request) throws InvalidOperationException {
-        if(request.getClass() != ScanAllRequest.class ||
-           request.getScanLimit() != ScanLimit.NONE ||
-           request.getScanFlags() != 0) {
-            throw new UnsupportedOperationException(request.toString());
-        }
-
-        AkibanInformationSchema ais = ais();
-        Schema schema = SchemaCache.globalSchema(ais);
-        int tableID = request.getTableId();
-        Table table = ais.getTable(tableID);
-
-        if(!request.scanAllColumns()) {
-            Set<Integer> allCols = new HashSet<>();
-            for(int i = 0; i < table.getColumnsIncludingInternal().size(); ++i) {
-                allCols.add(i);
-            }
-            byte[] allBitmap = ColumnSet.packToLegacy(allCols);
-            if(!Arrays.equals(allBitmap, request.getColumnBitMap())) {
-                throw new UnsupportedOperationException("partial column scan");
-            }
-        }
-
-        Operator plan;
-        if(request.getIndexId() != 0) {
-            Index index = null;
-            for(Index idx : table.getIndexesIncludingInternal()) {
-                if(idx.getIndexId() == request.getIndexId()) {
-                    index = idx;
-                    break;
-                }
-            }
-            if(index == null) {
-                throw new IllegalArgumentException("No such index: " + request.getIndexId());
-            }
-            plan = API.indexScan_Default(schema.indexRowType(index));
-        } else {
-            plan = API.filter_Default(API.groupScan_Default(table.getGroup()),
-                                      Arrays.asList(schema.tableRowType(table)));
-        }
-        return runPlan(session(), schema, plan);
+    protected List<Row> scanAll(int tableID) {
+        Table table = getTable(tableID);
+        Operator plan = scanTablePlan(table);
+        return runPlan(session(), SchemaCache.globalSchema(table.getAIS()), plan);
     }
 
-    protected final ScanRequest scanAllIndexRequest(Index index) {
-        // TODO: GI scanning
-        if(!index.isTableIndex()) {
-            throw new UnsupportedOperationException("non-table index");
+    protected List<Row> scanAll(int tableID, int indexID) {
+        Table table = getTable(tableID);
+        Index index = null;
+        for(Index idx : table.getIndexesIncludingInternal()) {
+            if(idx.getIndexId() == indexID) {
+                index = idx;
+                break;
+            }
         }
-        int tableID = index.leafMostTable().getTableId();
-        return new ScanAllRequest(tableID, null, index.getIndexId(), null);
+        if(index == null) {
+            throw new IllegalArgumentException("no indexid: " + indexID);
+        }
+        Operator plan = scanIndexPlan(index);
+        return runPlan(session(), SchemaCache.globalSchema(table.getAIS()), plan);
+    }
+
+    private Operator scanTablePlan(Table table) {
+        Schema schema = SchemaCache.globalSchema(table.getAIS());
+        return API.filter_Default(API.groupScan_Default(table.getGroup()),
+                                  Arrays.asList(schema.tableRowType(table)));
+    }
+
+    protected Operator scanIndexPlan(Index index) {
+        Schema schema = SchemaCache.globalSchema(index.getAIS());
+        return API.indexScan_Default(schema.indexRowType(index));
     }
 
     protected final List<Row> scanAllIndex(Index index) {
@@ -1079,21 +1057,6 @@ public class ApiTestBase {
         }
     }
 
-    protected final ScanAllRequest scanAllRequest(int tableId) {
-        return scanAllRequest(tableId, true);
-    }
-
-    protected final ScanAllRequest scanAllRequest(int tableId, boolean includingInternal) {
-        Table table = ddl().getTable(session(), tableId);
-        Set<Integer> allCols = new HashSet<>();
-        List<Column> columns = includingInternal ? table.getColumnsIncludingInternal() : table.getColumns();
-        for (Column column : columns)
-        {
-            allCols.add(column.getPosition());
-        }
-        return new ScanAllRequest(tableId, allCols);
-    }
-
     protected final int indexId(String schema, String table, String index) {
         AkibanInformationSchema ais = ddl().getAIS(session());
         Table aisTable = ais.getTable(schema, table);
@@ -1111,10 +1074,7 @@ public class ApiTestBase {
         if (aisIndex == null) {
             throw new RuntimeException("no such index: " + index);
         }
-        return openFullScan(
-            aisTable.getTableId(),
-            aisIndex.getIndexId()
-                           );
+        return openFullScan(aisTable.getTableId(), aisIndex.getIndexId());
     }
 
     protected final CursorId openFullScan(int tableId, int indexId) throws InvalidOperationException {
@@ -1224,17 +1184,21 @@ public class ApiTestBase {
     }
 
     protected void expectRows(int tableID, Row... expectedRows) {
+        expectRows(tableID, Arrays.asList(expectedRows));
+    }
+
+    protected void expectRows(int tableID, Collection<Row> expectedRows) {
         expectRows(tableID, false, expectedRows);
     }
 
     protected void expectRowsSkipInternal(int tableID, Row... expectedRows) {
-        expectRows(tableID, true, expectedRows);
+        expectRows(tableID, true, Arrays.asList(expectedRows));
     }
 
-    protected void expectRows(int tableID, boolean skipInternal, Row... expectedRows) {
-        ScanRequest all = scanAllRequest(tableID);
-        expectRows(all, skipInternal, expectedRows);
-        expectRowCount(tableID, expectedRows.length);
+    protected void expectRows(int tableID, boolean skipInternal, Collection<Row> expectedRows) {
+        Operator plan = scanTablePlan(getTable(tableID));
+        expectRows(plan, skipInternal, expectedRows);
+        expectRowCount(tableID, expectedRows.size());
     }
 
     protected void expectRows(Index index, Row... expectedRows) {
@@ -1242,30 +1206,22 @@ public class ApiTestBase {
     }
 
     protected void expectRows(Index index, Collection<Row> expectedRows) {
-        expectRows(scanAllIndexRequest(index), false, expectedRows);
+        expectRows(scanIndexPlan(index), false, expectedRows);
     }
 
     protected void expectRowsSkipInternal(Index index, Row... expectedRows) {
-        expectRows(scanAllIndexRequest(index), true, expectedRows);
+        expectRows(scanIndexPlan(index), true, Arrays.asList(expectedRows));
     }
 
-    protected void expectRows(ScanRequest request, Row... expectedRows) {
-        expectRows(request, Arrays.asList(expectedRows));
+    protected void expectRows(Operator plan, boolean skipInternal, Collection<Row> expectedRows) {
+        Schema schema = SchemaCache.globalSchema(ais());
+        expectRows(schema, plan, skipInternal, expectedRows);
     }
 
-    protected void expectRows(ScanRequest request, Collection<Row> expectedRows) {
-        expectRows(request, false, expectedRows);
-    }
-
-    protected void expectRows(ScanRequest request, boolean skipInternal, Row... expectedRows) {
-        expectRows(request, skipInternal, Arrays.asList(expectedRows));
-    }
-
-    protected void expectRows(ScanRequest request, boolean skipInternal, Collection<Row> expectedRows) {
-        List<Row> actual = scanAll(request);
+    protected void expectRows(Schema schema, Operator plan, boolean skipInternal, Collection<Row> expectedRows) {
+        List<Row> actual = runPlan(session(), schema, plan);
         compareRows(expectedRows, actual, skipInternal);
     }
-
 
     protected static Set<CursorId> cursorSet(CursorId... cursorIds) {
         Set<CursorId> set = new HashSet<>();

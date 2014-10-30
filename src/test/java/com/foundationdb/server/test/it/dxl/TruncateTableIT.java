@@ -48,7 +48,7 @@ public final class TruncateTableIT extends ITBase {
         expectRowCount(tableId, 0);
 
         // Check table scan
-        List<Row> rows = scanAll(new ScanAllRequest(tableId, null));
+        List<Row> rows = scanAll(tableId);
         assertEquals("Rows scanned", 0, rows.size());
     }
 
@@ -72,7 +72,7 @@ public final class TruncateTableIT extends ITBase {
         int indexId = ddl().getAIS(session()).getTable("test", "t").getIndex("pid").getIndexId();
 
         // Exception originally thrown during dml.doScan: Corrupt RowData at {1,(long)1}
-        List<Row> rows = scanAll(new ScanAllRequest(tableId, null, indexId, null));
+        List<Row> rows = scanAll(tableId, indexId);
         assertEquals("Rows scanned", 0, rows.size());
     }
 
@@ -101,19 +101,19 @@ public final class TruncateTableIT extends ITBase {
         final int nameIndexId = table.getIndex("name").getIndexId();
 
         // Scan on primary key
-        List<Row> rows = scanAll(new ScanAllRequest(tableId, null, pkeyIndexId, null));
+        List<Row> rows = scanAll(tableId, pkeyIndexId);
         assertEquals("Rows scanned", 0, rows.size());
 
         // Scan on index
-        rows = scanAll(new ScanAllRequest(tableId, null, valueIndexId, null));
+        rows = scanAll(tableId, valueIndexId);
         assertEquals("Rows scanned", 0, rows.size());
 
         // Scan on unique index
-        rows = scanAll(new ScanAllRequest(tableId, null, nameIndexId, null));
+        rows = scanAll(tableId, nameIndexId);
         assertEquals("Rows scanned", 0, rows.size());
 
         // Table scan
-        rows = scanAll(new ScanAllRequest(tableId, null));
+        rows = scanAll(tableId);
         assertEquals("Rows scanned", 0, rows.size());
     }
 
@@ -132,7 +132,7 @@ public final class TruncateTableIT extends ITBase {
         dml().truncateTable(session(), parentId);
 
         expectRowCount(parentId, 0);
-        List<Row> rows = scanAll(new ScanAllRequest(parentId, null));
+        List<Row> rows = scanAll(parentId);
         assertEquals("Rows scanned", 0, rows.size());
     }
 
@@ -154,11 +154,11 @@ public final class TruncateTableIT extends ITBase {
         dml().truncateTable(session(), parentId);
 
         expectRowCount(parentId, 0);
-        List<Row> rows = scanAll(new ScanAllRequest(parentId, null));
+        List<Row> rows = scanAll(parentId);
         assertEquals("Rows scanned", 0, rows.size());
 
         expectRowCount(childId, 1);
-        rows = scanAll(new ScanAllRequest(childId, null));
+        rows = scanAll(childId);
         assertEquals("Rows scanned", 1, rows.size());
     }
 
@@ -181,7 +181,7 @@ public final class TruncateTableIT extends ITBase {
         expectRowCount(tableId, 0);
 
         // Check table scan
-        List<Row> rows = scanAll(new ScanAllRequest(tableId, null));
+        List<Row> rows = scanAll(tableId);
         assertEquals("Rows scanned", 0, rows.size());
     }
 

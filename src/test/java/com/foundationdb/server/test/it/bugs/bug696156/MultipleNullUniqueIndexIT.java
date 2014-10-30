@@ -59,7 +59,7 @@ public class MultipleNullUniqueIndexIT  extends ITBase {
                   row(tid, 3, null),
                   row(tid, 4, "ghi"),
                   row(tid, 5, null));
-        assertEquals(5, scanAll(new ScanAllRequest(tid, null)).size());
+        assertEquals(5, scanAll(tid).size());
 
         try {
             writeRows(row(tid, 6, "abc"));
@@ -80,7 +80,7 @@ public class MultipleNullUniqueIndexIT  extends ITBase {
                   row(tid, 6, null, 1, null),
                   row(tid, 7, null, null, null),
                   row(tid, 8, null, null, null));
-        assertEquals(8, scanAll(new ScanAllRequest(tid, null)).size());
+        assertEquals(8, scanAll(tid).size());
 
         try {
             writeRows(row(tid, 9, 1, 1, 1));
@@ -99,7 +99,7 @@ public class MultipleNullUniqueIndexIT  extends ITBase {
                   row(tid, 3, "abc"),
                   row(tid, 4, null),
                   row(tid, 5, null));
-        assertEquals(5, scanAll(new ScanAllRequest(tid, null)).size());
+        assertEquals(5, scanAll(tid).size());
     }
 
     @Test
@@ -115,6 +115,6 @@ public class MultipleNullUniqueIndexIT  extends ITBase {
                   row(tid, 7, null, 1),
                   row(tid, 8, null, null),
                   row(tid, 9, null, null));
-        assertEquals(9, scanAll(new ScanAllRequest(tid, null)).size());
+        assertEquals(9, scanAll(tid).size());
     }
 }

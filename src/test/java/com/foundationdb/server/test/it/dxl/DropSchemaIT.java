@@ -165,7 +165,7 @@ public final class DropSchemaIT extends ITBase {
         // Check for lingering data
         final int tid2 = createTable("one", "t", "id int not null primary key");
         expectRowCount(tid2, 0);
-        assertEquals("scanned rows", 0, scanAll(scanAllRequest(tid2)).size());
+        expectRows(tid2);
     }
 
     @Test

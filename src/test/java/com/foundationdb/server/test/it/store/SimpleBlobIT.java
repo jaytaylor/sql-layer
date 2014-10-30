@@ -93,7 +93,7 @@ public class SimpleBlobIT extends ITBase {
             expected.add(row);
         }
         expectRows(
-            scanAllRequest(tid),
+            tid,
             expected
         );
      }

@@ -42,7 +42,6 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.NoColumnsInTableException;
 import com.foundationdb.server.error.NotNullViolationException;
 import com.foundationdb.server.error.UnsupportedSQLException;
@@ -156,7 +155,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         );
         Index index = getTable(SCHEMA, "c").getIndex(Index.PRIMARY);
         expectRows(
-                scanAllIndexRequest(index),
+                index,
                 row(index, 10),
                 row(index, 20),
                 row(index, 50)
@@ -276,7 +275,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         Index index =getTable(tableId).getIndex("c4");
         expectRows(
-                scanAllIndexRequest(index),
+                index,
                 row(index, null, 1),
                 row(index, null, 2),
                 row(index, null, 3)
@@ -400,7 +399,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         Index index = getTable(SCHEMA, "c").getIndex("c1_c2");
         expectRows(
-                scanAllIndexRequest(index),
+                index,
                 row(index, 12, 1),
                 row(index, 22, 2),
                 row(index, 32, 3),
@@ -478,7 +477,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         );
         Index index = getTable(SCHEMA, "c").getIndex("c1");
         expectRows(
-                scanAllIndexRequest(index),
+                index,
                 row(index, 10, 1),
                 row(index, 20, 2),
                 row(index, 30, 3)
@@ -535,7 +534,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         expectIndexes(cid, "PRIMARY", "c1");
         Index index = getTable(SCHEMA, "c").getIndex("c1");
         expectRows(
-                scanAllIndexRequest(index),
+                index,
                 row(index, "10", 1),
                 row(index, "20", 2),
                 row(index, "30", 3)
@@ -598,7 +597,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         expectIndexes(cid, "foo", "PRIMARY");
         Index index = getTable(SCHEMA, "c").getIndex("foo");
         expectRows(
-                scanAllIndexRequest(index),
+                index,
                 row(index, "1", 3),
                 row(index, "2", 2),
                 row(index, "3", 1)
@@ -632,7 +631,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         expectIndexes(cid, "foo", "PRIMARY");
         Index index = getTable(SCHEMA, "c").getIndex("foo");
         expectRows(
-                scanAllIndexRequest(index),
+                index,
                 row(index, "1", "C", 3L),
                 row(index, "2", "B", 2L),
                 row(index, "3", "A", 1L)
@@ -675,7 +674,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         Index index = getTable(SCHEMA, "o").getIndex("x");
         expectRows(
-                scanAllIndexRequest(index),
+                index,
                 row(index, null, 1, 10),
                 row(index, null, 1, 11),
                 row(index, null, 3, 30)
@@ -683,7 +682,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         index = getTable(SCHEMA, "o").getIndex("y");
         expectRows(
-                scanAllIndexRequest(index),
+                index,
                 row(index, 1, 10),
                 row(index, 1, 11),
                 row(index, 3, 30)

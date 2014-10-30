@@ -48,7 +48,7 @@ public class UnsignedFieldsIT extends ITBase {
     }
 
     private void compareRows(int tableId, Object... values) {
-        List<Row> rows = scanAll(scanAllRequest(tableId));
+        List<Row> rows = scanAll(tableId);
         assertEquals("column count", 2, getTable(tableId).getColumns().size());
         Iterator<Row> rowIt = rows.iterator();
         Iterator<Object> expectedIt = Arrays.asList(values).iterator();

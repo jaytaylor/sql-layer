@@ -120,7 +120,7 @@ public class RenameTableIT extends ITBase {
         updateAISGeneration();
         int id = tableId(schemaName, tableName);
         expectRowCount(id, rowCount);
-        List<Row> rows = scanAll(scanAllRequest(id));
+        List<Row> rows = scanAll(id);
         assertEquals("Scan rows: " + rows, rowCount, rows.size());
     }
 
@@ -323,7 +323,7 @@ public class RenameTableIT extends ITBase {
             ddl().dropTable(session(), NAME3);
             updateAISGeneration();
             // Confirm
-            List<Row> newTableRows = scanAll(scanAllRequest(tableId(NAME1)));
+            List<Row> newTableRows = scanAll(tableId(NAME1));
             assertEquals("Rows scanned after renames and drop on loop "+i, 3, newTableRows.size());
         }
     }
