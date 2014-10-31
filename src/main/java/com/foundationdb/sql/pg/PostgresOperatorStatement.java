@@ -101,6 +101,7 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
         int nrows = 0;
         Cursor cursor = null;
         IOException exceptionDuringExecution = null;
+        RuntimeException runtimeExDuringExecution = null;
         boolean suspended = false;
         try {
             preExecute(context, DXLFunction.UNSPECIFIED_DML_READ);
@@ -124,6 +125,9 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
         }
         catch (IOException e) {
             exceptionDuringExecution = e;
+        } catch (RuntimeException e) {
+            logger.error("Caught unexpected runtime exception during execution {}", e);
+            runtimeExDuringExecution = e;
         }
         finally {
             RuntimeException exceptionDuringCleanup = null;
@@ -132,13 +136,15 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
             }
             catch (RuntimeException e) {
                 exceptionDuringCleanup = e;
-                logger.error("Caught exception while cleaning up cursor for {0}", resultOperator.describePlan(), e);
+                logger.error("Caught exception while cleaning up cursor for {} : {}", resultOperator.describePlan(), e);
             }
             finally {
                 postExecute(context, DXLFunction.UNSPECIFIED_DML_READ);
             }
             if (exceptionDuringExecution != null) {
                 throw exceptionDuringExecution;
+            } else if (runtimeExDuringExecution != null) {
+                throw runtimeExDuringExecution;
             } else if (exceptionDuringCleanup != null) {
                 throw exceptionDuringCleanup;
             }
