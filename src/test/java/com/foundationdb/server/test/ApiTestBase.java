@@ -445,10 +445,6 @@ public class ApiTestBase {
         return sm.getServiceByClass(IndexStatisticsService.class);
     }
 
-    protected final void updateAISGeneration() {
-        // TODO: DELETE
-    }
-
     protected Map<String, String> startupConfigProperties() {
         return Collections.emptyMap();
     }
@@ -477,7 +473,6 @@ public class ApiTestBase {
     protected void createFromDDL(String schema, String ddl) {
         SchemaFactory schemaFactory = new SchemaFactory(schema);
         schemaFactory.ddl(ddl(), session(), ddl);
-        updateAISGeneration();
     }
 
     protected static final class SimpleColumn {
@@ -518,7 +513,6 @@ public class ApiTestBase {
         }
         org.junit.Assert.assertTrue("is alter node", node instanceof AlterTableNode);
         AlterTableDDL.alterTable(ddl(), dml(), session(), schema, (AlterTableNode) node, queryContext);
-        updateAISGeneration();
     }
 
     protected final int createTableFromTypes(String schema, String table, boolean firstIsPk, boolean createIndexes,
@@ -546,7 +540,6 @@ public class ApiTestBase {
 
         Table tempTable = builder.akibanInformationSchema().getTable(schema, table);
         ddl().createTable(session(), tempTable);
-        updateAISGeneration();
         return tableId(schema, table);
     }
     
@@ -1360,7 +1353,6 @@ public class ApiTestBase {
 
     protected void runAlter(TableChangeValidator.ChangeLevel expectedChangeLevel, String defaultSchema, String sql) {
         runAlter(session(), ddlForAlter(), dml(), null, expectedChangeLevel, defaultSchema, sql);
-        updateAISGeneration();
     }
 
     protected static void runAlter(Session session, DDLFunctions ddl, DMLFunctions dml, QueryContext context,

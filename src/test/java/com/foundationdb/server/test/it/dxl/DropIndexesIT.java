@@ -88,7 +88,6 @@ public final class DropIndexesIT extends ITBase {
         writeRow(tId, 1, "bob");
         writeRow(tId, 2, "jim");
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("name"));
-        updateAISGeneration();
 
         AkibanInformationSchema aisCheck = ais();
         Index indexCheck = aisCheck.getTable(tId).getIndex("name");
@@ -116,7 +115,6 @@ public final class DropIndexesIT extends ITBase {
         writeRow(iId, 5, 2, "baz");
         
         ddl().dropTableIndexes(session(), tableName(oId), Arrays.asList("tag"));
-        updateAISGeneration();
 
         AkibanInformationSchema aisCheck = ais();
         Index indexCheck = aisCheck.getTable(oId).getIndex("tag");
@@ -142,7 +140,6 @@ public final class DropIndexesIT extends ITBase {
         writeRow(tId, 2, "zap", "snap");
         writeRow(tId, 3, "baz", "fob");
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("name"));
-        updateAISGeneration();
 
         AkibanInformationSchema aisCheck = ais();
         Index indexCheck = aisCheck.getTable(tId).getIndex("name");
@@ -162,7 +159,6 @@ public final class DropIndexesIT extends ITBase {
         writeRow(tId, 3, "MA");
         
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("state"));
-        updateAISGeneration();
 
         AkibanInformationSchema aisCheck = ais();
         assertEquals("number of indexes", 1, aisCheck.getTable(tId).getIndexes().size());
@@ -181,7 +177,6 @@ public final class DropIndexesIT extends ITBase {
         writeRow(tId, 3, 47000, "9.99");
         
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("otherid", "price"));
-        updateAISGeneration();
 
         AkibanInformationSchema aisCheck = ais();
         assertEquals("number of indexes", 1, aisCheck.getTable(tId).getIndexes().size());

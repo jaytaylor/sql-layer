@@ -39,7 +39,6 @@ public class MultipleNullUniqueIndexIT  extends ITBase {
         builder.unique(SCHEMA, TABLE, "c1");
         builder.indexColumn(SCHEMA, TABLE, COLUMN, COLUMN, 0, true, null);
         ddl().createTable(session(), builder.akibanInformationSchema().getTable(SCHEMA, TABLE));
-        updateAISGeneration();
         final int tid = tableId(SCHEMA, TABLE);
         Object[] data = new Object[1];
         writeRows(row(tid, data));

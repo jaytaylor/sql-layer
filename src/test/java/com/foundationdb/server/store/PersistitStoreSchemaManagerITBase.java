@@ -48,6 +48,5 @@ public class PersistitStoreSchemaManagerITBase extends PersistitITBase
         pssm = null;
         safeRestartTestServices(properties);
         pssm = castToPSSM();
-        updateAISGeneration();
     }
 }

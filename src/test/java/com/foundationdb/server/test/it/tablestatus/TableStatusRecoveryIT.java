@@ -47,7 +47,6 @@ public class TableStatusRecoveryIT extends ITBase {
         NewAISBuilder builder = AISBBasedBuilder.create("test", ddl().getTypesTranslator());
         builder.table("A").autoIncInt("I", 1).colString("V", 255).pk("I");
         ddl().createTable(session(), builder.ais().getTable("test", "A"));
-        updateAISGeneration();
 
         int tableId = tableId("test", "A");
         for (int i = 1; i <= ROW_COUNT; i++) {
