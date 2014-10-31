@@ -21,7 +21,6 @@ import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDataExtractor;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.api.dml.ColumnSelector;
-import com.foundationdb.server.api.dml.DMLError;
 
 import java.util.Map;
 
@@ -78,7 +77,7 @@ public final class LegacyRowWrapper extends NewRow
     {
         Object object;
         if (rowData == null && niceRow == null) {
-            throw new DMLError("Row state has not been set");
+            throw new IllegalArgumentException("Row state has not been set");
         } else {
             object =
                 niceRow != null

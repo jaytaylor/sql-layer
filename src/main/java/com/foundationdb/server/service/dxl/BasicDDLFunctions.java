@@ -22,7 +22,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -61,9 +60,6 @@ import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.DMLFunctions;
-import com.foundationdb.server.api.dml.scan.Cursor;
-import com.foundationdb.server.api.dml.scan.CursorId;
-import com.foundationdb.server.api.dml.scan.ScanRequest;
 import com.foundationdb.server.error.AlterMadeNoChangeException;
 import com.foundationdb.server.error.ConcurrentViolationException;
 import com.foundationdb.server.error.DropSequenceNotAllowedException;
@@ -134,7 +130,6 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     {
         TableName tableName = schemaManager().createTableDefinition(session, table);
         Table newTable = getAIS(session).getTable(tableName);
-        checkCursorsForDDLModification(session, newTable);
         for(TableListener listener : listenerService.getTableListeners()) {
             listener.onCreate(session, newTable);
         }
@@ -263,7 +258,6 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     public void renameTable(Session session, TableName currentName, TableName newName)
     {
         schemaManager().renameTable(session, currentName, newName);
-        checkCursorsForDDLModification(session, getAIS(session).getTable(newName));
     }
 
     @Override
@@ -311,7 +305,6 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
         schemaManager().dropTableDefinition(session, tableName.getSchemaName(), tableName.getTableName(),
                 SchemaManager.DropBehavior.RESTRICT);
-        checkCursorsForDDLModification(session, table);
     }
 
     @Override
@@ -557,7 +550,6 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         Table root = group.getRoot();
         schemaManager().dropTableDefinition(session, root.getName().getSchemaName(), root.getName().getTableName(),
                                             SchemaManager.DropBehavior.CASCADE);
-        checkCursorsForDDLModification(session, root);
     }
 
     @Override
@@ -693,9 +685,6 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     Collection<ChangeSet> changeSets = schemaManager().getOnlineChangeSets(session);
                     AkibanInformationSchema onlineAIS = schemaManager().getOnlineAIS(session);
                     Collection<Index> newIndexes = OnlineHelper.findIndexesToBuild(changeSets, onlineAIS);
-                    for(Index index : newIndexes) {
-                        checkCursorsForDDLModification(session, index.leafMostTable());
-                    }
                     for(TableListener listener : listenerService.getTableListeners()) {
                         listener.onCreateIndex(session, newIndexes);
                     }
@@ -762,7 +751,6 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             for(TableListener listener : listenerService.getTableListeners()) {
                 listener.onDropIndex(session, allIndexes);
             }
-            checkCursorsForDDLModification(session, table);
             txnService.commitTransaction(session);
         } finally {
             txnService.rollbackTransactionIfOpen(session);
@@ -868,26 +856,6 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     public synchronized void setOnlineDDLMonitor(OnlineDDLMonitor onlineDDLMonitor) {
         assert (this.onlineDDLMonitor == null || onlineDDLMonitor == null);
         this.onlineDDLMonitor = onlineDDLMonitor;
-    }
-
-    private void checkCursorsForDDLModification(Session session, Table table) {
-        Map<CursorId,BasicDXLMiddleman.ScanData> cursorsMap = getScanDataMap(session);
-        if (cursorsMap == null) {
-            return;
-        }
-
-        final int tableId = table.getTableId();
-        for (BasicDXLMiddleman.ScanData scanData : cursorsMap.values()) {
-            Cursor cursor = scanData.getCursor();
-            if (cursor.isClosed()) {
-                continue;
-            }
-            ScanRequest request = cursor.getScanRequest();
-            int scanTableId = request.getTableId();
-            if (scanTableId == tableId) {
-                cursor.setDDLModified();
-            }
-        }
     }
 
     public void createSequence(Session session, Sequence sequence) {

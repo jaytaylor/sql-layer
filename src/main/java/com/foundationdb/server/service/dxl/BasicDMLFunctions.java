@@ -31,13 +31,8 @@ import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.rowtype.*;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.DMLFunctions;
-import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
-import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.TableListener;
 import com.foundationdb.server.service.session.Session;
@@ -62,42 +57,6 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         this.ddlFunctions = ddlFunctions;
         this.indexStatisticsService = indexStatisticsService;
         this.listenerService = listenerService;
-    }
-
-    @Override
-    public NewRow wrapRowData(Session session, RowData rowData) {
-        logger.trace("wrapping in NewRow: {}", rowData);
-        RowDef rowDef = ddlFunctions.getRowDef(session, rowData.getRowDefId());
-        return new LegacyRowWrapper(rowDef, rowData);
-    }
-
-    @Override
-    public NewRow convertRowData(Session session, RowData rowData) {
-        logger.trace("converting to NewRow: {}", rowData);
-        RowDef rowDef = ddlFunctions.getRowDef(session, rowData.getRowDefId());
-        return NiceRow.fromRowData(rowData, rowDef);
-    }
-
-    @Override
-    public List<NewRow> convertRowDatas(Session session, List<RowData> rowDatas)
-    {
-        logger.trace("converting {} RowData(s) to NewRow", rowDatas.size());
-        if (rowDatas.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        List<NewRow> converted = new ArrayList<>(rowDatas.size());
-        int lastRowDefId = -1;
-        RowDef rowDef = null;
-        for (RowData rowData : rowDatas) {
-            int currRowDefId = rowData.getRowDefId();
-            if ((rowDef == null) || (currRowDefId != lastRowDefId)) {
-                lastRowDefId = currRowDefId;
-                rowDef = ddlFunctions.getRowDef(session, currRowDefId);
-            }
-            converted.add(NiceRow.fromRowData(rowData, rowDef));
-        }
-        return converted;
     }
 
     /**

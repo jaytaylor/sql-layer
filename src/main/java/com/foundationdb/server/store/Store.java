@@ -32,7 +32,6 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.api.dml.scan.ScanLimit;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
@@ -42,7 +41,6 @@ import com.persistit.Key;
 import com.persistit.Value;
 
 import java.util.Collection;
-import java.util.List;
 
 public interface Store extends KeyCreator {
 

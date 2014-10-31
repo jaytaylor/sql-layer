@@ -17,12 +17,8 @@
 
 package com.foundationdb.server.service.dxl;
 
-import com.foundationdb.server.api.dml.scan.CursorId;
-import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
-
-import java.util.Map;
 
 abstract class ClientAPIBase {
 
@@ -42,25 +38,6 @@ abstract class ClientAPIBase {
 
     final public SchemaManager schemaManager() {
         return schemaManager;
-    }
-
-    BasicDXLMiddleman.ScanData putScanData(Session session, CursorId cursorId, BasicDXLMiddleman.ScanData scanData) {
-        return middleman.putScanData(session, cursorId, scanData);
-    }
-
-    BasicDXLMiddleman.ScanData getScanData(Session session, CursorId cursorId) {
-        return middleman.getScanData(session, cursorId);
-    }
-
-    BasicDXLMiddleman.ScanData removeScanData(Session session, CursorId cursorId) {
-        return middleman.removeScanData(session, cursorId);
-    }
-
-    Map<CursorId,BasicDXLMiddleman.ScanData> getScanDataMap() {
-        return middleman.getScanDataMap();
-    }
-    Map<CursorId,BasicDXLMiddleman.ScanData> getScanDataMap(Session session) {
-        return middleman.getScanDataMap(session);
     }
 
     BasicDXLMiddleman middleman() {

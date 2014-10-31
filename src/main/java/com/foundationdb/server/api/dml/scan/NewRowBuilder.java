@@ -84,21 +84,6 @@ public final class NewRowBuilder {
     }
 
     /**
-     * Tries to convert this row to a RowData; mostly good as a debug line. This method converts the row to a RowData,
-     * converts that RowData back, and throws a runtime exception if the two rows are not equal.
-     * @param dml the DMLFunctions that is responsible for the conversion
-     * @return this builder
-     */
-    public NewRowBuilder check(Session session, DMLFunctions dml) {
-        final RowData rowData = row.toRowData(); 
-        final NewRow back = dml.convertRowData(session, rowData);
-        if (!row.equals(back)) {
-            throw new RuntimeException(String.format("%s != %s", row, back));
-        }
-        return this;
-    }
-
-    /**
      * Returns the Row that has been built.
      * @return the row
      */

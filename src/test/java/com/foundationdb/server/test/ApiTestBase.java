@@ -29,7 +29,6 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -50,7 +49,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.error.NoSuchIndexException;
 import com.foundationdb.server.store.FDBHolder;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.ais.AISCloner;
@@ -73,14 +71,12 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.server.AkServerUtil;
-import com.foundationdb.server.api.dml.scan.ScanFlag;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.rowdata.SchemaFactory;
 import com.foundationdb.server.service.ServiceManagerImpl;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.config.TestConfigService;
 import com.foundationdb.server.service.dxl.DXLService;
-import com.foundationdb.server.service.dxl.DXLTestHookRegistry;
 import com.foundationdb.server.service.dxl.DXLTestHooks;
 import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.security.SecurityService;
@@ -108,16 +104,10 @@ import org.junit.After;
 import org.junit.Before;
 
 import com.foundationdb.server.store.Store;
-import com.foundationdb.util.ListUtils;
 
-import com.foundationdb.server.TableStatistics;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.DMLFunctions;
-import com.foundationdb.server.api.dml.scan.CursorId;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.api.dml.scan.RowOutput;
-import com.foundationdb.server.api.dml.scan.ScanAllRequest;
-import com.foundationdb.server.api.dml.scan.ScanRequest;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.service.ServiceManager;
@@ -146,40 +136,6 @@ public class ApiTestBase {
             return o1.getName().compareTo(o2.getName());
         }
     };
-
-    public static interface TestRowOutput extends RowOutput {
-        public void clear();
-    }
-
-    public static class ListRowOutput implements TestRowOutput {
-        private final List<NewRow> rows = new ArrayList<>();
-        private final List<NewRow> rowsUnmodifiable = Collections.unmodifiableList(rows);
-        private int mark = 0;
-
-        @Override
-        public void output(NewRow row) {
-            rows.add(row);
-        }
-        
-        public List<NewRow> getRows() {
-            return rowsUnmodifiable;
-        }
-
-        @Override
-        public void clear() {
-            rows.clear();
-        }
-
-        @Override
-        public void mark() {
-            mark = rows.size();
-        }
-
-        @Override
-        public void rewind() {
-            ListUtils.truncate(rows, mark);
-        }
-    }
 
     private static class RetryRule implements MethodRule {
         private static int MAX_TRIES = 5;
@@ -212,7 +168,6 @@ public class ApiTestBase {
 
     private static ServiceManager sm;
     private Session sharedSession;
-    private int aisGeneration;
     private static Map<String,String> lastStartupConfigProperties = null;
     private static boolean needServicesRestart = false;
     protected static Set<Callable<Void>> beforeStopServices = new HashSet<>();
@@ -318,14 +273,8 @@ public class ApiTestBase {
     public final void tearDownAllTables() throws Exception {
         if (lastStartupConfigProperties == null)
             return; // services never started up
-        String openCursorsMessage = null;
         if (sm.serviceIsStarted(DXLService.class)) {
             dropAllTables();
-            DXLTestHooks dxlTestHooks = DXLTestHookRegistry.get();
-            // Check for any residual open cursors
-            if (dxlTestHooks.openCursorsExist()) {
-                openCursorsMessage = "open cursors remaining:" + dxlTestHooks.describeOpenCursors();
-            }
         }
         if (TAPS != null) {
             TapReport[] reports = sm.getStatisticsService().getReport(TAPS);
@@ -346,10 +295,6 @@ public class ApiTestBase {
         }
         sharedSession.close();
 
-        if (openCursorsMessage != null) {
-            fail(openCursorsMessage);
-        }
-        
         needServicesRestart |= runningOutOfSpace();
     }
     
@@ -503,12 +448,8 @@ public class ApiTestBase {
         return sm.getServiceByClass(IndexStatisticsService.class);
     }
 
-    protected final int aisGeneration() {
-        return aisGeneration;
-    }
-
     protected final void updateAISGeneration() {
-        aisGeneration = ddl().getGenerationAsInt(session());
+        // TODO: DELETE
     }
 
     protected Map<String, String> startupConfigProperties() {

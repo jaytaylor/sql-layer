@@ -17,38 +17,9 @@
 
 package com.foundationdb.server.api;
 
-import java.util.List;
-import java.util.Set;
-
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.service.session.Session;
 
 public interface DMLFunctions {
-
-    /**
-     * Wraps a RowData in a NewRow. This conversion requires a RowDef, which the caller may not have, but which
-     * implementers of this interface should.
-     * @param rowData the row to wrap
-     * @return a NewRow representation of the RowData
-     */
-    NewRow wrapRowData(Session session, RowData rowData);
-
-    /**
-     * Converts a RowData to a NewRow. This conversion requires a RowDef, which the caller may not have, but which
-     * implementers of this interface should.
-     * @param rowData the row to convert
-     * @return a NewRow representation of the RowData
-     */
-    NewRow convertRowData(Session session, RowData rowData);
-
-    /**
-     * Converts several RowData objects at once. This is not just a convenience; it lets implementations of this
-     * class cache RowDefs they need, which could save time.
-     * @param rowDatas the rows to convert
-     * @return a List of NewRows, each of which is a converted RowData
-     */
-    List<NewRow> convertRowDatas(Session session, List<RowData> rowDatas);
 
     /**
      * Truncates the given table.

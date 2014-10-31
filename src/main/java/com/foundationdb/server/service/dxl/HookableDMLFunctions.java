@@ -17,9 +17,7 @@
 
 package com.foundationdb.server.service.dxl;
 
-import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.api.DMLFunctions;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.session.SessionService;
@@ -38,63 +36,6 @@ public final class HookableDMLFunctions implements DMLFunctions {
         this.delegate = delegate;
         this.sessionService = sessionService;
         this.hook = hooks.size() == 1 ? hooks.get(0) : new CompositeHook(hooks);
-    }
-
-    @Override
-    public NewRow wrapRowData(Session session, RowData rowData) {
-        Throwable thrown = null;
-        try {
-            hook.hookFunctionIn(session, DXLFunction.CONVERT_ROW_DATA);
-            return delegate.wrapRowData(session, rowData);
-        } catch (RuntimeException t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.CONVERT_ROW_DATA, t);
-            throw t;
-        } catch (Throwable t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.CONVERT_ROW_DATA, t);
-            throw throwAlways(t);
-        } finally {
-            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.CONVERT_ROW_DATA, thrown);
-        }
-    }
-
-    @Override
-    public NewRow convertRowData(Session session, RowData rowData) {
-        Throwable thrown = null;
-        try {
-            hook.hookFunctionIn(session, DXLFunction.CONVERT_ROW_DATA);
-            return delegate.convertRowData(session, rowData);
-        } catch (RuntimeException t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.CONVERT_ROW_DATA, t);
-            throw t;
-        } catch (Throwable t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.CONVERT_ROW_DATA, t);
-            throw throwAlways(t);
-        } finally {
-            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.CONVERT_ROW_DATA, thrown);
-        }
-    }
-
-    @Override
-    public List<NewRow> convertRowDatas(Session session, List<RowData> rowDatas) {
-        Throwable thrown = null;
-        try {
-            hook.hookFunctionIn(session, DXLFunction.CONVERT_ROW_DATAS);
-            return delegate.convertRowDatas(session, rowDatas);
-        } catch (RuntimeException t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.CONVERT_ROW_DATAS, t);
-            throw t;
-        } catch (Throwable t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.CONVERT_ROW_DATAS, t);
-            throw throwAlways(t);
-        } finally {
-            hook.hookFunctionFinally(session, DXLFunction.CONVERT_ROW_DATAS, thrown);
-        }
     }
 
     @Override

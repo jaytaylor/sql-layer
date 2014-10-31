@@ -18,7 +18,6 @@
 package com.foundationdb.server.test.it.bugs.bug696156;
 
 import com.foundationdb.ais.model.TestAISBuilder;
-import com.foundationdb.server.api.dml.scan.ScanAllRequest;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.test.it.ITBase;
