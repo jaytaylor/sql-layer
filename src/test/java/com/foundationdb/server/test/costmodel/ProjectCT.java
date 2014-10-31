@@ -60,7 +60,7 @@ public class ProjectCT extends CostModelBase
     protected void populateDB(int rows)
     {
         for (int id = 0; id < rows; id++) {
-            dml().writeRow(session(), createNewRow(t, id));
+            writeRow(t, id);
         }
     }
 

@@ -30,7 +30,6 @@ import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.*;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.ColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
@@ -133,20 +132,20 @@ public class OperatorITBase extends ITBase
         orderOrdinal =  ddl().getTable(session(),  order).getOrdinal();
         itemOrdinal = ddl().getTable(session(),  item).getOrdinal();
         addressOrdinal =  ddl().getTable(session(),  address).getOrdinal();
-        db = new NewRow[]{createNewRow(customer, 1L, "xyz"),
-                          createNewRow(customer, 2L, "abc"),
-                          createNewRow(order, 11L, 1L, "ori"),
-                          createNewRow(order, 12L, 1L, "david"),
-                          createNewRow(order, 21L, 2L, "tom"),
-                          createNewRow(order, 22L, 2L, "jack"),
-                          createNewRow(item, 111L, 11L),
-                          createNewRow(item, 112L, 11L),
-                          createNewRow(item, 121L, 12L),
-                          createNewRow(item, 122L, 12L),
-                          createNewRow(item, 211L, 21L),
-                          createNewRow(item, 212L, 21L),
-                          createNewRow(item, 221L, 22L),
-                          createNewRow(item, 222L, 22L)};
+        db = new Row[]{ row(customer, 1L, "xyz"),
+                        row(customer, 2L, "abc"),
+                        row(order, 11L, 1L, "ori"),
+                        row(order, 12L, 1L, "david"),
+                        row(order, 21L, 2L, "tom"),
+                        row(order, 22L, 2L, "jack"),
+                        row(item, 111L, 11L),
+                        row(item, 112L, 11L),
+                        row(item, 121L, 12L),
+                        row(item, 122L, 12L),
+                        row(item, 211L, 21L),
+                        row(item, 212L, 21L),
+                        row(item, 221L, 22L),
+                        row(item, 222L, 22L)};
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
@@ -203,7 +202,7 @@ public class OperatorITBase extends ITBase
         assertTrue(cursor.isClosed());
     }
 
-    protected void use(NewRow[] db)
+    protected void use(Row[] db)
     {
         writeRows(db);
     }
@@ -282,11 +281,6 @@ public class OperatorITBase extends ITBase
                 return columnPosition < columnCount;
             }
         };
-    }
-
-    protected TestRow row(RowType rowType, Object... fields)
-    {
-        return new TestRow(rowType, fields);
     }
 
     protected TestRow row(String hKeyString, RowType rowType, Object... fields)
@@ -464,8 +458,8 @@ public class OperatorITBase extends ITBase
     protected IndexRowType customerNameItemOidIndexRowType;
     protected Group coi;
     protected Schema schema;
-    protected NewRow[] db;
-    protected NewRow[] emptyDB = new NewRow[0];
+    protected Row[] db;
+    protected Row[] emptyDB = new Row[0];
     protected StoreAdapter adapter;
     protected QueryBindings queryBindings;
     protected QueryContext queryContext;

@@ -43,25 +43,26 @@ public class MultipleNullUniqueIndexIT  extends ITBase {
         updateAISGeneration();
         final int tid = tableId(SCHEMA, TABLE);
         Object[] data = new Object[1];
-        writeRows(createNewRow(tid, data));
-        writeRows(createNewRow(tid, data));
-        expectFullRows(tid,
-                       createNewRow(tid, (Object)null),
-                       createNewRow(tid, (Object)null));
+        writeRows(row(tid, data));
+        writeRows(row(tid, data));
+        expectRowsSkipInternal(
+            tid,
+            row(tid, (Object)null),
+            row(tid, (Object)null));
     }
 
     @Test
     public void singleColumnUniqueWithNulls() throws InvalidOperationException {
         final int tid = createTable("test", "t1", "id int not null primary key, name varchar(32), unique(name)");
-        writeRows(createNewRow(tid, 1, "abc"),
-                  createNewRow(tid, 2, "def"),
-                  createNewRow(tid, 3, null),
-                  createNewRow(tid, 4, "ghi"),
-                  createNewRow(tid, 5, null));
-        assertEquals(5, scanAll(new ScanAllRequest(tid, null)).size());
+        writeRows(row(tid, 1, "abc"),
+                  row(tid, 2, "def"),
+                  row(tid, 3, null),
+                  row(tid, 4, "ghi"),
+                  row(tid, 5, null));
+        assertEquals(5, scanAll(tid).size());
 
         try {
-            writeRows(createNewRow(tid, 6, "abc"));
+            writeRows(row(tid, 6, "abc"));
             Assert.fail("DuplicateKeyException expected");
         }
         catch(DuplicateKeyException e) {
@@ -71,18 +72,18 @@ public class MultipleNullUniqueIndexIT  extends ITBase {
     @Test
     public void multiColumnUniqueWithNulls() throws InvalidOperationException {
         final int tid = createTable("test", "t1", "id int not null primary key, seg1 int, seg2 int, seg3 int, unique(seg1,seg2,seg3)");
-        writeRows(createNewRow(tid, 1, 1, 1, 1),
-                  createNewRow(tid, 2, 1, 1, null),
-                  createNewRow(tid, 3, 1, null, 1),
-                  createNewRow(tid, 4, 1, null, null),
-                  createNewRow(tid, 5, null, 1, 1),
-                  createNewRow(tid, 6, null, 1, null),
-                  createNewRow(tid, 7, null, null, null),
-                  createNewRow(tid, 8, null, null, null));
-        assertEquals(8, scanAll(new ScanAllRequest(tid, null)).size());
+        writeRows(row(tid, 1, 1, 1, 1),
+                  row(tid, 2, 1, 1, null),
+                  row(tid, 3, 1, null, 1),
+                  row(tid, 4, 1, null, null),
+                  row(tid, 5, null, 1, 1),
+                  row(tid, 6, null, 1, null),
+                  row(tid, 7, null, null, null),
+                  row(tid, 8, null, null, null));
+        assertEquals(8, scanAll(tid).size());
 
         try {
-            writeRows(createNewRow(tid, 9, 1, 1, 1));
+            writeRows(row(tid, 9, 1, 1, 1));
             Assert.fail("DuplicateKeyException expected");
         }
         catch(DuplicateKeyException e) {
@@ -93,27 +94,27 @@ public class MultipleNullUniqueIndexIT  extends ITBase {
     public void singleColumnIndexWithNulls() throws InvalidOperationException {
         final int tid = createTable("test", "t1", "id int not null primary key, name varchar(32)");
         createIndex("test", "t1", "name", "name");
-        writeRows(createNewRow(tid, 1, "abc"),
-                  createNewRow(tid, 2, "def"),
-                  createNewRow(tid, 3, "abc"),
-                  createNewRow(tid, 4, null),
-                  createNewRow(tid, 5, null));
-        assertEquals(5, scanAll(new ScanAllRequest(tid, null)).size());
+        writeRows(row(tid, 1, "abc"),
+                  row(tid, 2, "def"),
+                  row(tid, 3, "abc"),
+                  row(tid, 4, null),
+                  row(tid, 5, null));
+        assertEquals(5, scanAll(tid).size());
     }
 
     @Test
     public void multiColumnIndexWithNulls() throws InvalidOperationException {
         final int tid = createTable("test", "t1", "id int not null primary key, seg1 int, seg2 int");
         createIndex("test", "t1", "seg1", "seg1", "seg2");
-        writeRows(createNewRow(tid, 1, 1, 1),
-                  createNewRow(tid, 2, 2, 2),
-                  createNewRow(tid, 3, 1, 1),
-                  createNewRow(tid, 4, 1, null),
-                  createNewRow(tid, 5, null, 1),
-                  createNewRow(tid, 6, 1, null),
-                  createNewRow(tid, 7, null, 1),
-                  createNewRow(tid, 8, null, null),
-                  createNewRow(tid, 9, null, null));
-        assertEquals(9, scanAll(new ScanAllRequest(tid, null)).size());
+        writeRows(row(tid, 1, 1, 1),
+                  row(tid, 2, 2, 2),
+                  row(tid, 3, 1, 1),
+                  row(tid, 4, 1, null),
+                  row(tid, 5, null, 1),
+                  row(tid, 6, 1, null),
+                  row(tid, 7, null, 1),
+                  row(tid, 8, null, null),
+                  row(tid, 9, null, null));
+        assertEquals(9, scanAll(tid).size());
     }
 }

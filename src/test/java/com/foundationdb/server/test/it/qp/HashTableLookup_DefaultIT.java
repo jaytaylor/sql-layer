@@ -21,7 +21,6 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.TableRowType;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.types.texpressions.TPreparedBoundField;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
@@ -58,38 +57,38 @@ public class HashTableLookup_DefaultIT extends OperatorITBase {
     @Override
     protected void setupPostCreateSchema() {
         super.setupPostCreateSchema();
-        NewRow[] db = new NewRow[]{
-                createNewRow(customer, 1L, "northbridge"), // two orders, two addresses
-                createNewRow(customer, 2L, "foundation"), // two orders, one address
-                createNewRow(customer, 3L, "matrix"), // one order, two addresses
-                createNewRow(customer, 4L, "atlas"), // two orders, no addresses
-                createNewRow(customer, 5L, "highland"), // no orders, two addresses
-                createNewRow(customer, 6L, "flybridge"), // no orders or addresses
+        Row[] db = new Row[]{
+                row(customer, 1L, "northbridge"), // two orders, two addresses
+                row(customer, 2L, "foundation"), // two orders, one address
+                row(customer, 3L, "matrix"), // one order, two addresses
+                row(customer, 4L, "atlas"), // two orders, no addresses
+                row(customer, 5L, "highland"), // no orders, two addresses
+                row(customer, 6L, "flybridge"), // no orders or addresses
 
-                createNewRow(address, 5000L, 5L, "555 5000 st"),
-                createNewRow(address, 5001L, 5L, "555 5001 st"),
-                createNewRow(address, 1000L, 1L, "111 1000 st"),
-                createNewRow(address, 1001L, 1L, "111 1001 st"),
-                createNewRow(address, 3000L, 3L, "333 3000 st"),
-                createNewRow(address, 3001L, 3L, "333 3001 st"),
-                createNewRow(address, 2000L, 2L, "222 2000 st"),
+                row(address, 5000L, 5L, "555 5000 st"),
+                row(address, 5001L, 5L, "555 5001 st"),
+                row(address, 1000L, 1L, "111 1000 st"),
+                row(address, 1001L, 1L, "111 1001 st"),
+                row(address, 3000L, 3L, "333 3000 st"),
+                row(address, 3001L, 3L, "333 3001 st"),
+                row(address, 2000L, 2L, "222 2000 st"),
 
-                createNewRow(order, 300L, 3L, "tom"),
-                createNewRow(order, 400L, 4L, "jack"),
-                createNewRow(order, 401L, 4L, "jack"),
-                createNewRow(order, 200L, 2L, "david"),
-                createNewRow(order, 201L, 2L, "david"),
-                createNewRow(order, 100L, 1L, "ori"),
-                createNewRow(order, 101L, 1L, "ori"),
+                row(order, 300L, 3L, "tom"),
+                row(order, 400L, 4L, "jack"),
+                row(order, 401L, 4L, "jack"),
+                row(order, 200L, 2L, "david"),
+                row(order, 201L, 2L, "david"),
+                row(order, 100L, 1L, "ori"),
+                row(order, 101L, 1L, "ori"),
 
-                createNewRow(item, 111L, null),
-                createNewRow(item, 112L, null),
-                createNewRow(item, 121L, 12L),
-                createNewRow(item, 122L, 12L),
-                createNewRow(item, 211L, null),
-                createNewRow(item, 212L, 21L),
-                createNewRow(item, 221L, 22L),
-                createNewRow(item, 222L, null)
+                row(item, 111L, null),
+                row(item, 112L, null),
+                row(item, 121L, 12L),
+                row(item, 122L, 12L),
+                row(item, 211L, null),
+                row(item, 212L, 21L),
+                row(item, 221L, 22L),
+                row(item, 222L, null)
         };
         use(db);
         fullAddressRowType = schema.tableRowType(table(fullAddress));

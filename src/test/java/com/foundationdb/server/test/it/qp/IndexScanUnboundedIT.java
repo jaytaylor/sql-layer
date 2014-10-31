@@ -24,7 +24,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.cursor;
@@ -58,25 +57,25 @@ public class IndexScanUnboundedIT extends OperatorITBase
         schema = new Schema(ais());
         tRowType = schema.tableRowType(table(t));
         idxRowType = indexType(t, "a", "b", "c", "id");
-        db = new NewRow[]{
+        db = new Row[]{
             // No nulls
-            createNewRow(t, 1000L, 1L, 11L, 111L),
-            createNewRow(t, 1001L, 1L, 11L, 112L),
-            createNewRow(t, 1002L, 1L, 12L, 121L),
-            createNewRow(t, 1003L, 1L, 12L, 122L),
-            createNewRow(t, 1004L, 2L, 21L, 211L),
-            createNewRow(t, 1005L, 2L, 21L, 212L),
-            createNewRow(t, 1006L, 2L, 22L, 221L),
-            createNewRow(t, 1007L, 2L, 22L, 222L),
+            row(t, 1000L, 1L, 11L, 111L),
+            row(t, 1001L, 1L, 11L, 112L),
+            row(t, 1002L, 1L, 12L, 121L),
+            row(t, 1003L, 1L, 12L, 122L),
+            row(t, 1004L, 2L, 21L, 211L),
+            row(t, 1005L, 2L, 21L, 212L),
+            row(t, 1006L, 2L, 22L, 221L),
+            row(t, 1007L, 2L, 22L, 222L),
             // With nulls
-            createNewRow(t, 2000L, 3L, 4L, 5L),
-            createNewRow(t, 2001L, 3L, 4L, null),
-            createNewRow(t, 2002L, 3L, null, 5L),
-            createNewRow(t, 2003L, 3L, null, null),
-            createNewRow(t, 2004L, null, 4L, 5L),
-            createNewRow(t, 2005L, null, 4L, null),
-            createNewRow(t, 2006L, null, null, 5L),
-            createNewRow(t, 2007L, null, null, null),
+            row(t, 2000L, 3L, 4L, 5L),
+            row(t, 2001L, 3L, 4L, null),
+            row(t, 2002L, 3L, null, 5L),
+            row(t, 2003L, 3L, null, null),
+            row(t, 2004L, null, 4L, 5L),
+            row(t, 2005L, null, 4L, null),
+            row(t, 2006L, null, null, 5L),
+            row(t, 2007L, null, null, null),
         };
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);

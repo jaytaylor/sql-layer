@@ -20,7 +20,6 @@ package com.foundationdb.server.test.it.dxl;
 import com.foundationdb.server.api.FixedCountLimit;
 import com.foundationdb.server.api.dml.scan.ColumnSet;
 import com.foundationdb.server.api.dml.scan.CursorId;
-import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
 import com.foundationdb.server.api.dml.scan.ScanAllRequest;
 import com.foundationdb.server.api.dml.scan.ScanRequest;
 import com.foundationdb.server.error.InvalidOperationException;
@@ -46,10 +45,10 @@ public final class StaleScanDataIT extends ITBase
                              "id int not null primary key",
                              "c1 int");
         // Load some data
-        dml().writeRow(session(), createNewRow(t1, 0, 0, 0, 0));
-        dml().writeRow(session(), createNewRow(t1, 1, 1, 1, 1));
-        dml().writeRow(session(), createNewRow(t2, 2, 2));
-        dml().writeRow(session(), createNewRow(t2, 3, 3));
+        writeRow(t1, 0, 0, 0, 0);
+        writeRow(t1, 1, 1, 1, 1);
+        writeRow(t2, 2, 2);
+        writeRow(t2, 3, 3);
         // Start a scan on t1. Should leave a ScanData hanging around.
         ScanRequest t1ScanRequest = new ScanAllRequest(t1,
                                                        ColumnSet.ofPositions(0, 1, 2, 3),
@@ -65,10 +64,7 @@ public final class StaleScanDataIT extends ITBase
         //   BasicDMLFunctions.checkForModifiedCursors to retrieve a field from the old/new rows.
         // - There is a non-closed ScanData whose index contains columns from field positions that don't exist
         //   in the old/new rows, (set up using the t1 scan).
-        dml().updateRow(session(),
-                        dml().wrapRowData(session(), createNewRow(t2, 2, 2).toRowData()),
-                        dml().wrapRowData(session(), createNewRow(t2, 2, 999).toRowData()),
-                        null);
+        updateRow(row(t2, 2, 2), row(t2, 2, 999));
         dml().closeCursor(session(), cursorId);
         assertTrue(dml().getCursors(session()).isEmpty());
     }

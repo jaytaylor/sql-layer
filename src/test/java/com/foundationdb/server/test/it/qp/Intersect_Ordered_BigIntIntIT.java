@@ -60,16 +60,16 @@ public class Intersect_Ordered_BigIntIntIT extends ITBase
         createIndex(SCHEMA, METADATA, "name_value", "name", "value");
 
         writeRows(
-            createNewRow(rid, 1, "foo"),
-            createNewRow(mid, 10, 1, "x", "one"),
-            createNewRow(rid, 2, "bar"),
-            createNewRow(mid, 20, 2, "x", "one"),
-            createNewRow(rid, 3, "foo"),
-            createNewRow(mid, 30, 3, "x", "one"),
-            createNewRow(mid, 31, 3, "y", "two"),
-            createNewRow(rid, 4, "zap"),
-            createNewRow(mid, 40, 4, "x", "one"),
-            createNewRow(mid, 41, 4, "y", "two")
+            row(rid, 1, "foo"),
+            row(mid, 10, 1, "x", "one"),
+            row(rid, 2, "bar"),
+            row(mid, 20, 2, "x", "one"),
+            row(rid, 3, "foo"),
+            row(mid, 30, 3, "x", "one"),
+            row(mid, 31, 3, "y", "two"),
+            row(rid, 4, "zap"),
+            row(mid, 40, 4, "x", "one"),
+            row(mid, 41, 4, "y", "two")
         );
 
         AkibanInformationSchema ais = ais();

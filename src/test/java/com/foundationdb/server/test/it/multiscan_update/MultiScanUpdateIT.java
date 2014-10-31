@@ -23,6 +23,7 @@ import com.foundationdb.junit.OnlyIf;
 import com.foundationdb.junit.OnlyIfNot;
 import com.foundationdb.junit.Parameterization;
 import com.foundationdb.junit.ParameterizationBuilder;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.DMLFunctions;
 import com.foundationdb.server.api.dml.ConstantColumnSelector;
 import com.foundationdb.server.api.dml.scan.BufferFullException;
@@ -152,7 +153,7 @@ public class MultiScanUpdateIT extends ITBase {
         }
     }
 
-    private NewRow getRow(int i) {
+    private Row getRow(int i) {
         StringBuilder builder = new StringBuilder();
         for (int c = 0; c < COL_WIDTH; ++c) {
             builder.append( i % 9 );
@@ -165,7 +166,7 @@ public class MultiScanUpdateIT extends ITBase {
         }
         String nickname = builder.toString();
         builder.setLength(0);
-        return createNewRow(tableId, i, name, nickname);
+        return row(tableId, i, name, nickname);
     }
 
     @Test(expected=ConcurrentScanAndUpdateException.class)

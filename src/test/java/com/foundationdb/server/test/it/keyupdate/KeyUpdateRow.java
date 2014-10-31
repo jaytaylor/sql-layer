@@ -19,12 +19,11 @@ package com.foundationdb.server.test.it.keyupdate;
 
 import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.rowdata.RowDef;
-import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
 
-public class TestRow extends NiceRow
+public class KeyUpdateRow extends NiceRow
 {
-    public TestRow(int tableId, RowDef rowDef, Store store)
+    public KeyUpdateRow(int tableId, RowDef rowDef, Store store)
     {
         super(tableId, rowDef);
         this.store = store;
@@ -40,12 +39,12 @@ public class TestRow extends NiceRow
         this.hKey = hKey;
     }
 
-    public TestRow parent()
+    public KeyUpdateRow parent()
     {
         return parent;
     }
 
-    public void parent(TestRow parent)
+    public void parent(KeyUpdateRow parent)
     {
         this.parent = parent;
     }
@@ -55,6 +54,6 @@ public class TestRow extends NiceRow
     }
 
     private HKey hKey;
-    private TestRow parent;
+    private KeyUpdateRow parent;
     private final Store store;
 }

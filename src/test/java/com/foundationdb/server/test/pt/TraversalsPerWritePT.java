@@ -21,6 +21,7 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.junit.NamedParameterizedRunner;
 import com.foundationdb.junit.Parameterization;
 import com.foundationdb.junit.ParameterizationBuilder;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -77,17 +78,17 @@ public final class TraversalsPerWritePT extends PTBase {
 
     @Test
     public void moveCustomer1To2() {
-        update(cTable, 1L, "alpha").to(2L, "beta");
+        updateRow(row(cTable, 1L, "alpha"), row(cTable, 2L, "beta"));
     }
 
     @Test
     public void moveCustomer1To0() {
-        update(cTable, 1L, "alpha").to(0L, "adopter");
+        updateRow(row(cTable, 1L, "alpha"), row(cTable, 0L, "adopter"));
     }
 
     @Test
     public void writeOrderForCustomer0() {
-        writeRows(ordersRow(0, ordersPerCustomer+1));
+        writeRows(ordersRow(0, ordersPerCustomer + 1));
     }
 
     @Test
@@ -102,42 +103,42 @@ public final class TraversalsPerWritePT extends PTBase {
 
     @Test
     public void deleteOrderForCustomer0() {
-        dml().deleteRow(session(), ordersRow(0, ordersPerCustomer), false);
+        deleteRow(ordersRow(0, ordersPerCustomer));
     }
 
     @Test
     public void deleteOrderForCustomer1() {
-        dml().deleteRow(session(), ordersRow(1, ordersPerCustomer), false);
+        deleteRow(ordersRow(1, ordersPerCustomer));
     }
 
     @Test
     public void moveOrderForCustomer0ToCustomer0() {
-        update(ordersRow(0, ordersPerCustomer)).to(ordersRow(0, ordersPerCustomer+10));
+        updateRow(ordersRow(0, ordersPerCustomer), ordersRow(0, ordersPerCustomer+10));
     }
 
     @Test
     public void moveOrderForCustomer0ToCustomer1() {
-        update(ordersRow(0, ordersPerCustomer)).to(ordersRow(1, ordersPerCustomer+10));
+        updateRow(ordersRow(0, ordersPerCustomer), ordersRow(1, ordersPerCustomer+10));
     }
 
     @Test
     public void moveOrderForCustomer0ToCustomer9() {
-        update(ordersRow(0, ordersPerCustomer)).to(ordersRow(9, ordersPerCustomer+10));
+        updateRow(ordersRow(0, ordersPerCustomer), ordersRow(9, ordersPerCustomer+10));
     }
 
     @Test
     public void moveOrderForCustomer1ToCustomer0() {
-        update(ordersRow(1, ordersPerCustomer)).to(ordersRow(0, ordersPerCustomer+10));
+        updateRow(ordersRow(1, ordersPerCustomer), ordersRow(0, ordersPerCustomer+10));
     }
 
     @Test
     public void moveOrderForCustomer1ToCustomer1() {
-        update(ordersRow(1, ordersPerCustomer)).to(ordersRow(1, ordersPerCustomer+10));
+        updateRow(ordersRow(1, ordersPerCustomer), ordersRow(1, ordersPerCustomer+10));
     }
 
     @Test
     public void moveOrderForCustomer1ToCustomer9() {
-        update(ordersRow(1, ordersPerCustomer)).to(ordersRow(9, ordersPerCustomer+10));
+        updateRow(ordersRow(1, ordersPerCustomer), ordersRow(9, ordersPerCustomer+10));
     }
 
     @Override
@@ -166,7 +167,7 @@ public final class TraversalsPerWritePT extends PTBase {
         // write orders for two customers, one of which (cid=0) doesn't exist
         for (long cid = 0; cid < 2; ++cid) {
             for (long oidSegment = 1; oidSegment <= ordersPerCustomer; ++oidSegment) {
-                NewRow row = ordersRow(cid, oidSegment);
+                Row row = ordersRow(cid, oidSegment);
                 writeRows(row);
                 if (bushy) {
                     writeRows(
@@ -188,13 +189,13 @@ public final class TraversalsPerWritePT extends PTBase {
         );
     }
 
-    private NewRow ordersRow(long cid, long oidSegment) {
+    private Row ordersRow(long cid, long oidSegment) {
         return customersChild(oTable, cid, oidSegment);
     }
 
-    private NewRow customersChild(int tableId, long cid, long oidSegment) {
+    private Row customersChild(int tableId, long cid, long oidSegment) {
         long oid = cid + oidSegment  * 10;
-        return createNewRow(tableId, oid, cid, String.valueOf(1900+oid));
+        return row(tableId, oid, cid, String.valueOf(1900 + oid));
     }
 
     public TraversalsPerWritePT(int ordersPerCustomer, Index.JoinType joinType, boolean bushy) {

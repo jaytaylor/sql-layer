@@ -128,7 +128,7 @@ public class SortPT extends QPProfilePTBase
     private void populateDB(int n)
     {
         for (int id = 0; id < n; id++) {
-            dml().writeRow(session(), createNewRow(t, id, random.nextInt(), FILLER));
+            writeRow(t, id, random.nextInt(), FILLER);
         }
     }
 

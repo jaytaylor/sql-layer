@@ -20,6 +20,7 @@ package com.foundationdb.server.test.it.bugs.bug1145249;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TestAISBuilder;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
@@ -49,9 +50,9 @@ public class ManyLongTextFieldsIT extends ITBase {
         }
 
         int tid = tableId(SCHEMA, TABLE);
-        NewRow row = createNewRow(tid, colValues);
-        writeRows(row);
-        expectFullRows(tid, row);
+        Row row = row(tid, colValues);
+        writeRow(row);
+        expectRows(tid, row);
     }
 
     @Test

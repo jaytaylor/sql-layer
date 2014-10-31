@@ -52,10 +52,10 @@ public class OnlineAlterAddForeignKeyMT extends OnlineMTBase
         cID = createTable(SCHEMA, CHILD_TABLE, "cid INT NOT NULL PRIMARY KEY, pid INT");
         parentRowType = SchemaCache.globalSchema(ais()).tableRowType(pID);
         childRowType = SchemaCache.globalSchema(ais()).tableRowType(cID);
-        writeRows(createNewRow(pID, 1),
-                  createNewRow(pID, 2));
-        writeRows(createNewRow(cID, 10, 1),
-                  createNewRow(cID, 20, 2));
+        writeRows(row(pID, 1),
+                  row(pID, 2));
+        writeRows(row(cID, 10, 1),
+                  row(cID, 20, 2));
         parentGroupRows = runPlanTxn(groupScanCreator(pID));
         childGroupRows = runPlanTxn(groupScanCreator(cID));
     }

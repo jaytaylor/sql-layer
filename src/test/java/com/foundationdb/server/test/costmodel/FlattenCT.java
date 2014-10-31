@@ -78,9 +78,9 @@ public class FlattenCT extends CostModelBase
         int cid = 0;
         for (int childCount : CHILD_COUNTS) {
             for (int i = 0; i < PARENT_INSTANCES; i++) {
-                dml().writeRow(session(), createNewRow(parent, childCount, i));
+                writeRow(parent, childCount, i);
                 for (int c = 0; c < childCount; c++) {
-                    dml().writeRow(session(), createNewRow(child, cid++, childCount, i));
+                    writeRow(child, cid++, childCount, i);
                 }
             }
         }

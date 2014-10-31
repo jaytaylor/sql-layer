@@ -22,12 +22,14 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.scan.CursorId;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.TableDefinitionChangedException;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -36,6 +38,7 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
+@Ignore("Testing DMLFunctions only, which is going away")
 public final class DDLInvalidatesScansIT extends ITBase {
     private final static String SCHEMA = "mycoolschema";
     private static final String CUSTOMERS = "customers";
@@ -214,26 +217,26 @@ public final class DDLInvalidatesScansIT extends ITBase {
                 "melt_at int"
         );
 
-        List<NewRow> customerRows = expectedCustomers();
-        writeRows(customerRows.toArray(new NewRow[customerRows.size()]));
+        List<Row> customerRows = expectedCustomers();
+        writeRows(customerRows.toArray(new Row[customerRows.size()]));
 
         writeRows(
-                createNewRow(orders, 31, 27, "today"),
-                createNewRow(orders, 32, 27, "yesterday"),
+                row(orders, 31, 27, "today"),
+                row(orders, 32, 27, "yesterday"),
 
-                createNewRow(orders, 33, 29, "tomorrow"),
-                createNewRow(orders, 34, 29, "never"),
+                row(orders, 33, 29, "tomorrow"),
+                row(orders, 34, 29, "never"),
 
-                createNewRow(snowmen, 1, 32),
-                createNewRow(snowmen, 2, -40) // C or F?!
+                row(snowmen, 1, 32),
+                row(snowmen, 2, -40) // C or F?!
         );
     }
 
-    private List<NewRow> expectedCustomers() {
+    private List<Row> expectedCustomers() {
         int customers = tableId(SCHEMA, CUSTOMERS);
         return Arrays.asList(
-                createNewRow(customers, 27, "Knoepfli", "C", "N"), // I forget if he actually played center...
-                createNewRow(customers, 29, "Bitz", "W", "Y")
+                row(customers, 27, "Knoepfli", "C", "N"), // I forget if he actually played center...
+                row(customers, 29, "Bitz", "W", "Y")
 
         );
     }

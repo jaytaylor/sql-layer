@@ -17,8 +17,8 @@
 
 package com.foundationdb.server.test.it.keyupdate;
 
-import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.scan.ScanAllRequest;
 import com.foundationdb.server.api.dml.scan.ScanFlag;
 import com.foundationdb.server.api.dml.scan.ScanLimit;
@@ -26,6 +26,7 @@ import com.foundationdb.server.api.dml.scan.ScanRequest;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.test.it.ITBase;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -43,24 +44,24 @@ public final class BasicKeyUpdateIT extends ITBase {
     @Test
     public void oldKeysAreRemoved_1Row() throws InvalidOperationException {
         int tableId = table();
+        Index index = nameIndex();
         runTest(
                 tableId,
                 Arrays.asList(
-                        createNewRow(tableId, 2, "c")
+                        row(tableId, 2, "c")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 2, "c")
+                        row(index, "c", 2)
                 ),
 
-                createNewRow(tableId, 2, "c"),
-                createNewRow(tableId, 2, "a"),
-                set(1),
+                row(tableId, 2, "c"),
+                row(tableId, 2, "a"),
 
                 Arrays.asList(
-                        createNewRow(tableId, 2, "a")
+                        row(tableId, 2, "a")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 2, "a")
+                        row(index, "a", 2)
                 )
         );
     }
@@ -68,28 +69,28 @@ public final class BasicKeyUpdateIT extends ITBase {
     @Test
     public void oldKeysAreRemoved_2Rows_Partial_IndexChanged() throws InvalidOperationException {
         int tableId = table();
+        Index index = nameIndex();
         runTest(
                 tableId,
                 Arrays.asList(
-                        createNewRow(tableId, 1, "b"),
-                        createNewRow(tableId, 2, "c")
+                        row(tableId, 1, "b"),
+                        row(tableId, 2, "c")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 1, "b"),
-                        createNewRow(tableId, 2, "c")
+                        row(index, "b", 1),
+                        row(index, "c", 2)
                 ),
 
-                createNewRow(tableId, 2, UNDEF),
-                createNewRow(tableId, 2, "a"),
-                set(1),
+                row(tableId, 2, null),
+                row(tableId, 2, "a"),
 
                 Arrays.asList(
-                        createNewRow(tableId, 1, "b"),
-                        createNewRow(tableId, 2, "a")
+                        row(tableId, 1, "b"),
+                        row(tableId, 2, "a")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 2, "a"),
-                        createNewRow(tableId, 1, "b")
+                        row(index, "a", 2),
+                        row(index, "b", 1)
                 )
         );
     }
@@ -97,28 +98,28 @@ public final class BasicKeyUpdateIT extends ITBase {
     @Test
     public void oldKeysAreRemoved_2Rows_IndexChanged() throws InvalidOperationException {
         int tableId = table();
+        Index index = nameIndex();
         runTest(
                 tableId,
                 Arrays.asList(
-                        createNewRow(tableId, 1, "b"),
-                        createNewRow(tableId, 2, "c")
+                        row(tableId, 1, "b"),
+                        row(tableId, 2, "c")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 1, "b"),
-                        createNewRow(tableId, 2, "c")
+                        row(index, "b", 1),
+                        row(index, "c", 2)
                 ),
 
-                createNewRow(tableId, 2, "c"),
-                createNewRow(tableId, 2, "a"),
-                set(1),
+                row(tableId, 2, "c"),
+                row(tableId, 2, "a"),
 
                 Arrays.asList(
-                        createNewRow(tableId, 1, "b"),
-                        createNewRow(tableId, 2, "a")
+                        row(tableId, 1, "b"),
+                        row(tableId, 2, "a")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 2, "a"),
-                        createNewRow(tableId, 1, "b")
+                        row(index, "a", 2),
+                        row(index, "b", 1)
                 )
         );
     }
@@ -126,28 +127,28 @@ public final class BasicKeyUpdateIT extends ITBase {
     @Test
     public void oldKeysAreRemoved_2Rows_IndexAndPKMovesBackward() throws InvalidOperationException {
         int tableId = table();
+        Index index = nameIndex();
         runTest(
                 tableId,
                 Arrays.asList(
-                        createNewRow(tableId, 1, "b"),
-                        createNewRow(tableId, 2, "c")
+                        row(tableId, 1, "b"),
+                        row(tableId, 2, "c")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 1, "b"),
-                        createNewRow(tableId, 2, "c")
+                        row(index, "b", 1),
+                        row(index, "c", 2)
                 ),
 
-                createNewRow(tableId, 2, "c"),
-                createNewRow(tableId, 0, "a"),
-                set(0, 1),
+                row(tableId, 2, "c"),
+                row(tableId, 0, "a"),
 
                 Arrays.asList(
-                        createNewRow(tableId, 0, "a"),
-                        createNewRow(tableId, 1, "b")
+                        row(tableId, 0, "a"),
+                        row(tableId, 1, "b")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 0, "a"),
-                        createNewRow(tableId, 1, "b")
+                        row(index, "a", 0),
+                        row(index, "b", 1)
                 )
         );
     }
@@ -155,28 +156,28 @@ public final class BasicKeyUpdateIT extends ITBase {
     @Test
     public void oldKeysAreRemoved_2Rows_IndexAndPKMovesForward() throws InvalidOperationException {
         int tableId = table();
+        Index index = nameIndex();
         runTest(
                 tableId,
                 Arrays.asList(
-                        createNewRow(tableId, 1, "b"),
-                        createNewRow(tableId, 2, "c")
+                        row(tableId, 1, "b"),
+                        row(tableId, 2, "c")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 1, "b"),
-                        createNewRow(tableId, 2, "c")
+                        row(index, "b", 1),
+                        row(index, "c", 2)
                 ),
 
-                createNewRow(tableId, 2, "c"),
-                createNewRow(tableId, 3, "a"),
-                set(0, 1),
+                row(tableId, 2, "c"),
+                row(tableId, 3, "a"),
 
                 Arrays.asList(
-                        createNewRow(tableId, 1, "b"),
-                        createNewRow(tableId, 3, "a")
+                        row(tableId, 1, "b"),
+                        row(tableId, 3, "a")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 3, "a"),
-                        createNewRow(tableId, 1, "b")
+                        row(index, "a", 3),
+                        row(index, "b", 1)
                 )
         );
     }
@@ -184,40 +185,39 @@ public final class BasicKeyUpdateIT extends ITBase {
     @Test
     public void oldKeysAreRemoved_2Rows_IndexSame() throws InvalidOperationException {
         int tableId = table();
+        Index index = nameIndex();
         runTest(
                 tableId,
                 Arrays.asList(
-                        createNewRow(tableId, 1, "d"),
-                        createNewRow(tableId, 2, "c")
+                        row(tableId, 1, "d"),
+                        row(tableId, 2, "c")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 2, "c"),
-                        createNewRow(tableId, 1, "d")
+                        row(index, "c", 2),
+                        row(index, "d", 1)
                 ),
 
-                createNewRow(tableId, 2, "c"),
-                createNewRow(tableId, 2, "a"),
-                set(1),
+                row(tableId, 2, "c"),
+                row(tableId, 2, "a"),
 
                 Arrays.asList(
-                        createNewRow(tableId, 1, "d"),
-                        createNewRow(tableId, 2, "a")
+                        row(tableId, 1, "d"),
+                        row(tableId, 2, "a")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 2, "a"),
-                        createNewRow(tableId, 1, "d")
+                        row(index, "a", 2),
+                        row(index, "d", 1)
                 )
         );
     }
 
     public void runTest(int tableId,
-                        List<NewRow> initialRows,
-                        List<NewRow> initialRowsByName,
-                        NewRow rowToUpdate,
-                        NewRow updatedValue,
-                        Set<Integer> fieldsToUpdate,
-                        List<NewRow> endRows,
-                        List<NewRow> endRowsByName
+                        List<Row> initialRows,
+                        List<Row> initialRowsByName,
+                        Row rowToUpdate,
+                        Row updatedValue,
+                        List<Row> endRows,
+                        List<Row> endRowsByName
 
     ) throws InvalidOperationException
     {
@@ -230,22 +230,22 @@ public final class BasicKeyUpdateIT extends ITBase {
             throw new RuntimeException("All lists must be of the same size");
         }
 
-        writeRows( initialRows.toArray(new NewRow[initialRows.size()]) );
-        expectRows(byNameScan(tableId), initialRowsByName.toArray(new NewRow[initialRowsByName.size()]));
-
-        dml().updateRow(session(), rowToUpdate, updatedValue, new SetColumnSelector(fieldsToUpdate));
-
-        expectFullRows(
-                tableId,
-                endRows.toArray(new NewRow[endRows.size()])
+        writeRows( initialRows.toArray(new Row[initialRows.size()]) );
+        expectRows(
+            nameIndex(),
+            initialRowsByName
         );
 
-        List<NewRow> scanAllResult = scanAll(byNameScan(tableId));
-        assertEquals("scan size: " + scanAllResult, endRows.size(), scanAllResult.size());
-        assertEquals(
-                "scan values",
-                endRowsByName,
-                scanAllResult
+        updateRow(rowToUpdate, updatedValue);
+
+        expectRows(
+                tableId,
+                endRows.toArray(new Row[endRows.size()])
+        );
+
+        expectRows(
+            nameIndex(),
+            endRowsByName
         );
     }
 
@@ -255,12 +255,7 @@ public final class BasicKeyUpdateIT extends ITBase {
         return tid;
     }
 
-    private ScanRequest byNameScan(int tableId) throws NoSuchTableException {
-        int indexId = ddl().getTable(session(), tableName(SCHEMA, TABLE)).getIndex("name").getIndexId();
-        return new ScanAllRequest(
-                tableId, set(0, 1), indexId,
-                EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END),
-                ScanLimit.NONE
-        );
+    private Index nameIndex() {
+        return getTable(SCHEMA, TABLE).getIndex("name");
     }
 }

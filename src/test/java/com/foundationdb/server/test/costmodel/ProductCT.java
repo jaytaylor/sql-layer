@@ -89,10 +89,10 @@ public class ProductCT extends CostModelBase
         int cid = 0;
         for (int childCount : CHILD_COUNTS) {
             for (int i = 0; i < ROOT_INSTANCES; i++) {
-                dml().writeRow(session(), createNewRow(root, childCount, i));
-                dml().writeRow(session(), createNewRow(one, cid++, childCount, i));
+                writeRow(root, childCount, i);
+                writeRow(one, cid++, childCount, i);
                 for (int c = 0; c < childCount; c++) {
-                    dml().writeRow(session(), createNewRow(many, cid++, childCount, i));
+                    writeRow(many, cid++, childCount, i);
                 }
             }
         }

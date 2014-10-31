@@ -25,7 +25,6 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.TableRowType;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -107,30 +106,30 @@ public class IndexRowAndAncestorIT extends OperatorITBase
 
     private void loadDatabase()
     {
-        db = new NewRow[] {
+        db = new Row[] {
             // 1: c
-            createNewRow(c, 1L, 19999L),
+            row(c, 1L, 19999L),
             // 2: c-o
-            createNewRow(c, 2L, 29999L),
-            createNewRow(o, 2L, 209999),
+            row(c, 2L, 29999L),
+            row(o, 2L, 209999),
             // 3: c-i
-            createNewRow(c, 3L, 39999L),
-            createNewRow(o, 3L, 309999L),
-            createNewRow(i, 3L, 3009999L),
+            row(c, 3L, 39999L),
+            row(o, 3L, 309999L),
+            row(i, 3L, 3009999L),
             // 4: c-h
-            createNewRow(c, 4L, 49999L),
-            createNewRow(o, 4L, 409999L),
-            createNewRow(i, 4L, 4009999L),
-            createNewRow(h, 4L, 40009999L),
+            row(c, 4L, 49999L),
+            row(o, 4L, 409999L),
+            row(i, 4L, 4009999L),
+            row(h, 4L, 40009999L),
             // 5: o-h
-            createNewRow(o, 5L, 509999L),
-            createNewRow(i, 5L, 5009999L),
-            createNewRow(h, 5L, 50009999L),
+            row(o, 5L, 509999L),
+            row(i, 5L, 5009999L),
+            row(h, 5L, 50009999L),
             // 6: i-h
-            createNewRow(i, 6L, 6009999L),
-            createNewRow(h, 6L, 60009999L),
+            row(i, 6L, 6009999L),
+            row(h, 6L, 60009999L),
             // 7: h
-            createNewRow(h, 7L, 70009999L),
+            row(h, 7L, 70009999L),
         };
         use(db);
     }

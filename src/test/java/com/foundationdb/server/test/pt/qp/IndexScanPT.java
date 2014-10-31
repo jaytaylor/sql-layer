@@ -111,7 +111,7 @@ public class IndexScanPT extends QPProfilePTBase
     {
         for (int id = 0; id < rows; id++) {
             int x = random.nextInt();
-            dml().writeRow(session(), createNewRow(t, id, x));
+            writeRow(t, id, x);
         }
     }
 

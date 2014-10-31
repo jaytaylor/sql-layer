@@ -37,7 +37,6 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.texpressions.Comparison;
@@ -98,24 +97,24 @@ public class FlattenLeftJoinIT extends OperatorITBase
         afterChildRowType = schema.tableRowType(table(afterChild));
         parentPidIndexType = indexType(parent, "pid");
         group = group(ancestor);
-        db = new NewRow[]{
+        db = new Row[]{
             // case 1: one row of each type (except child)
-            createNewRow(ancestor, 1L, "a1"),
-            createNewRow(parent, 11L, 1L, "p1"),
-            createNewRow(beforeChild, 111L, 11L, "b1"),
-            createNewRow(afterChild, 111L, 11L, "a1"),
+            row(ancestor, 1L, "a1"),
+            row(parent, 11L, 1L, "p1"),
+            row(beforeChild, 111L, 11L, "b1"),
+            row(afterChild, 111L, 11L, "a1"),
             // case 2: no before_child row
-            createNewRow(ancestor, 2L, "a2"),
-            createNewRow(parent, 22L, 2L, "p2"),
-            createNewRow(afterChild, 222L, 22L, "a2"),
+            row(ancestor, 2L, "a2"),
+            row(parent, 22L, 2L, "p2"),
+            row(afterChild, 222L, 22L, "a2"),
             // case 3: no after_child row
-            createNewRow(ancestor, 3L, "a3"),
-            createNewRow(parent, 33L, 3L, "p3"),
-            createNewRow(beforeChild, 333L, 33L, "b3"),
+            row(ancestor, 3L, "a3"),
+            row(parent, 33L, 3L, "p3"),
+            row(beforeChild, 333L, 33L, "b3"),
             // case 4: no before_child or after_child row
-            createNewRow(ancestor, 4L, "a4"),
-            createNewRow(parent, 41L, 4L, "p41"),
-            createNewRow(parent, 42L, 4L, "p42"),
+            row(ancestor, 4L, "a4"),
+            row(parent, 41L, 4L, "p41"),
+            row(parent, 42L, 4L, "p42"),
         };
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);

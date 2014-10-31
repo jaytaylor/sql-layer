@@ -114,7 +114,7 @@ public class TreeScanCT extends CostModelBase
         int k = 0;
         for (int id = 0; id < rows; id++) {
             Object key = indexedColumn.valueFor(id);
-            dml().writeRow(session(), createNewRow(t, id, key));
+            writeRow(t, id, key);
             if (id >= start && k < keys.length) {
                 keys[k++] = key;
             }

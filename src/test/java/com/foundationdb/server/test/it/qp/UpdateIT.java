@@ -233,7 +233,7 @@ public class UpdateIT extends OperatorITBase
         use(db);
         doUpdate();
         compareRows(
-                array(TestRow.class,
+                array(Row.class,
                       row(customerRowType, 1L, "xyz"),
                       row(customerRowType, 2L, "zzz")
                       ),

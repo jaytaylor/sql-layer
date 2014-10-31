@@ -27,7 +27,7 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.types.value.ValueSources;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -60,43 +60,43 @@ public class UniqueIndexScanJumpUnboundedIT extends OperatorITBase
         schema = new Schema(ais());
         tRowType = schema.tableRowType(table(t));
         idxRowType = indexType(t, "a", "b", "c", "id");
-        db = new NewRow[] {
-            createNewRow(t, 1000L, null, null, null),
-            createNewRow(t, 1001L, null, null, 5L),
-            createNewRow(t, 1002L, null, 4L, null),
-            createNewRow(t, 1003L, null, 4L, 5L),
-            createNewRow(t, 1010L, 1L, 11L, 111L),
-            createNewRow(t, 1011L, 1L, 11L, 112L),
-            createNewRow(t, 1012L, 1L, 12L, 121L),
-            createNewRow(t, 1013L, 1L, 12L, 122L),
-            createNewRow(t, 1020L, 2L, 21L, 211L),
-            createNewRow(t, 1021L, 2L, 21L, 212L),
-            createNewRow(t, 1022L, 2L, 22L, 221L),
-            createNewRow(t, 1023L, 2L, 22L, 222L),
-            createNewRow(t, 1030L, 3L, null, null),
-            createNewRow(t, 1031L, 3L, null, 5L),
-            createNewRow(t, 1032L, 3L, 4L, null),
-            createNewRow(t, 1033L, 3L, 4L, 5L),
+        db = new Row[] {
+            row(t, 1000L, null, null, null),
+            row(t, 1001L, null, null, 5L),
+            row(t, 1002L, null, 4L, null),
+            row(t, 1003L, null, 4L, 5L),
+            row(t, 1010L, 1L, 11L, 111L),
+            row(t, 1011L, 1L, 11L, 112L),
+            row(t, 1012L, 1L, 12L, 121L),
+            row(t, 1013L, 1L, 12L, 122L),
+            row(t, 1020L, 2L, 21L, 211L),
+            row(t, 1021L, 2L, 21L, 212L),
+            row(t, 1022L, 2L, 22L, 221L),
+            row(t, 1023L, 2L, 22L, 222L),
+            row(t, 1030L, 3L, null, null),
+            row(t, 1031L, 3L, null, 5L),
+            row(t, 1032L, 3L, 4L, null),
+            row(t, 1033L, 3L, 4L, 5L),
             // Duplicates of rows with nulls, which must be preserved in unique indexes
-            createNewRow(t, 2000L, null, null, null),
-            createNewRow(t, 2001L, null, null, 5L),
-            createNewRow(t, 2002L, null, 4L, null),
-            createNewRow(t, 2003L, null, 4L, 5L),
-            createNewRow(t, 2030L, 3L, null, null),
-            createNewRow(t, 2031L, 3L, null, 5L),
-            createNewRow(t, 2032L, 3L, 4L, null),
+            row(t, 2000L, null, null, null),
+            row(t, 2001L, null, null, 5L),
+            row(t, 2002L, null, 4L, null),
+            row(t, 2003L, null, 4L, 5L),
+            row(t, 2030L, 3L, null, null),
+            row(t, 2031L, 3L, null, 5L),
+            row(t, 2032L, 3L, 4L, null),
         };
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         use(db);
-        for (NewRow row : db) {
-            indexRowMap.put((Long) row.get(0),
+        for (Row row : db) {
+            indexRowMap.put(ValueSources.getLong(row.value(0)),
                             new TestRow(tRowType,
-                                        new Object[] {row.get(1),     // a
-                                                      row.get(2),     // b
-                                                      row.get(3),     // c
-                                                      row.get(0)}));  // id
+                                        ValueSources.toObject(row.value(1)),    // a
+                                        ValueSources.toObject(row.value(2)),    // b
+                                        ValueSources.toObject(row.value(3)),    // c
+                                        ValueSources.toObject(row.value(0))));  // id
         }
     }
 

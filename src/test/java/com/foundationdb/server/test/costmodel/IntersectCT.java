@@ -24,6 +24,7 @@ import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.operator.TimeOperator;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
@@ -73,24 +74,22 @@ public class IntersectCT extends CostModelBase
     private void populateDB()
     {
         // First column determines match
-        NewRow row;
+        Row row;
         for (int i = 0; i < ROWS; i++) {
-            row = createNewRow(t,
-                               FIRST_KEY_COLUMN_UNIQUE, // index_key
-                               i, // c1
-                               FIRST_KEY_COLUMN_UNIQUE, //c2
-                               FIRST_KEY_COLUMN_UNIQUE, //c3
-                               FIRST_KEY_COLUMN_UNIQUE, //c4
-                               FIRST_KEY_COLUMN_UNIQUE); //c5
-            dml().writeRow(session(), row);
-            row = createNewRow(t,
-                               LAST_KEY_COLUMN_UNIQUE, // index_key
-                               LAST_KEY_COLUMN_UNIQUE, // c1
-                               LAST_KEY_COLUMN_UNIQUE, // c2
-                               LAST_KEY_COLUMN_UNIQUE, // c3
-                               LAST_KEY_COLUMN_UNIQUE, // c4
-                               i); // c5
-            dml().writeRow(session(), row);
+            row = row(t, FIRST_KEY_COLUMN_UNIQUE, // index_key
+                      i, // c1
+                      FIRST_KEY_COLUMN_UNIQUE, //c2
+                      FIRST_KEY_COLUMN_UNIQUE, //c3
+                      FIRST_KEY_COLUMN_UNIQUE, //c4
+                      FIRST_KEY_COLUMN_UNIQUE); //c5
+            writeRow(row);
+            row = row(t, LAST_KEY_COLUMN_UNIQUE, // index_key
+                      LAST_KEY_COLUMN_UNIQUE, // c1
+                      LAST_KEY_COLUMN_UNIQUE, // c2
+                      LAST_KEY_COLUMN_UNIQUE, // c3
+                      LAST_KEY_COLUMN_UNIQUE, // c4
+                      i); // c5
+            writeRow(row);
         }
     }
 

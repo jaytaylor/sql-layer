@@ -27,7 +27,6 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -72,22 +71,22 @@ public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
-        db = new NewRow[]{
+        db = new Row[]{
             // 1: Comparisons need only examine k1 on a mismatch.
-            createNewRow(t, 1000, 1, 500, "x", 999, 501, "x", 999),
-            createNewRow(t, 1001, 1, 502, "x", 999, 502, "x", 999),
-            createNewRow(t, 1002, 1, 502, "x", 999, 502, "x", 999),
-            createNewRow(t, 1003, 1, 504, "x", 999, 503, "x", 999),
+            row(t, 1000, 1, 500, "x", 999, 501, "x", 999),
+            row(t, 1001, 1, 502, "x", 999, 502, "x", 999),
+            row(t, 1002, 1, 502, "x", 999, 502, "x", 999),
+            row(t, 1003, 1, 504, "x", 999, 503, "x", 999),
             // 2: k1 always equal, k2s differ in length
-            createNewRow(t, 1008, 2, 500, "x", 999, 500, "xx", 999),
-            createNewRow(t, 1009, 2, 500, "xxx", 999, 500, "xxx", 999),
-            createNewRow(t, 1010, 2, 500, "xxx", 999, 500, "xxx", 999),
-            createNewRow(t, 1011, 2, 500, "xxxxx", 999, 500, "xxxx", 999),
+            row(t, 1008, 2, 500, "x", 999, 500, "xx", 999),
+            row(t, 1009, 2, 500, "xxx", 999, 500, "xxx", 999),
+            row(t, 1010, 2, 500, "xxx", 999, 500, "xxx", 999),
+            row(t, 1011, 2, 500, "xxxxx", 999, 500, "xxxx", 999),
             // 3: k1, k2 always match, difference is in k3
-            createNewRow(t, 1016, 3, 500, "x", 900, 500, "x", 901),
-            createNewRow(t, 1017, 3, 500, "x", 902, 500, "x", 902),
-            createNewRow(t, 1018, 3, 500, "x", 902, 500, "x", 902),
-            createNewRow(t, 1019, 3, 500, "x", 904, 500, "x", 903),
+            row(t, 1016, 3, 500, "x", 900, 500, "x", 901),
+            row(t, 1017, 3, 500, "x", 902, 500, "x", 902),
+            row(t, 1018, 3, 500, "x", 902, 500, "x", 902),
+            row(t, 1019, 3, 500, "x", 904, 500, "x", 903),
         };
         use(db);
     }

@@ -28,7 +28,7 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.types.value.ValueSources;
 import org.junit.Test;
 
 import java.util.*;
@@ -58,25 +58,25 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
         schema = new Schema(ais());
         tRowType = schema.tableRowType(table(t));
         idxRowType = indexType(t, "a", "b", "c", "id");
-        db = new NewRow[] {
-            createNewRow(t, 1010L, 1L, 11L, 111L),
-            createNewRow(t, 1011L, 1L, 11L, 112L),
-            createNewRow(t, 1012L, 1L, 12L, 121L),
-            createNewRow(t, 1013L, 1L, 12L, 122L),
-            createNewRow(t, 1014L, 1L, 13L, 131L),
-            createNewRow(t, 1015L, 1L, 13L, 132L),
+        db = new Row[] {
+            row(t, 1010L, 1L, 11L, 111L),
+            row(t, 1011L, 1L, 11L, 112L),
+            row(t, 1012L, 1L, 12L, 121L),
+            row(t, 1013L, 1L, 12L, 122L),
+            row(t, 1014L, 1L, 13L, 131L),
+            row(t, 1015L, 1L, 13L, 132L),
         };
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         use(db);
-        for (NewRow row : db) {
-            indexRowMap.put((Long) row.get(0),
+        for (Row row : db) {
+            indexRowMap.put(ValueSources.getLong(row.value(0)),
                             new TestRow(tRowType,
-                                        new Object[] {row.get(1),     // a
-                                                      row.get(2),     // b
-                                                      row.get(3),     // c
-                                                      row.get(0)}));  // id
+                                        ValueSources.toObject(row.value(1)),    // a
+                                        ValueSources.toObject(row.value(2)),    // b
+                                        ValueSources.toObject(row.value(3)),    // c
+                                        ValueSources.toObject(row.value(0))));  // id
         }
     }
 
