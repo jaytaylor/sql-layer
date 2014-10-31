@@ -28,6 +28,13 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.foundationdb.ais.model.*;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.SimpleQueryContext;
+import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.rowtype.*;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.AkServerUtil;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
@@ -691,92 +698,60 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     public void truncateTable(final Session session, final int tableId, final boolean descendants)
     {
         logger.trace("truncating tableId={}", tableId);
-        final int knownAIS = ddlFunctions.getGenerationAsInt(session);
         final TableName name = ddlFunctions.getTableName(session, tableId);
-        final Table utable = ddlFunctions.getTable(session, name);
+        final Table table = ddlFunctions.getTable(session, name);
 
-        if(canFastTruncate(session, utable, descendants)) {
-            store().truncateGroup(session, utable.getGroup());
+        if(canFastTruncate(session, table, descendants)) {
+            store().truncateGroup(session, table.getGroup());
             // All other tables in the group have no rows. Only need to truncate this table.
             for(TableListener listener : listenerService.getTableListeners()) {
-                listener.onTruncate(session, utable, true);
+                listener.onTruncate(session, table, true);
             }
             return;
         }
 
-        slowTruncate(session, knownAIS, utable, tableId, descendants);
+        slowTruncate(session, table, descendants);
     }
 
-    private void slowTruncate(final Session session, final int knownAIS, 
-                              final Table utable, final int tableId,
-                              final boolean descendants) {
-        if (descendants) {
-            for(Join join : utable.getChildJoins()) {
-                Table ctable = join.getChild();
-                slowTruncate(session, knownAIS, ctable, ctable.getTableId(), descendants);
-            }
+    private void slowTruncate(Session session, Table table, boolean descendants) {
+        final com.foundationdb.qp.rowtype.Schema schema = SchemaCache.globalSchema(table.getAIS());
+        final Set<TableRowType> filterTypes;
+        if(descendants) {
+            filterTypes = new HashSet<>();
+            table.visit(new AbstractVisitor() {
+                @Override
+                public void visit(Table t) {
+                    TableRowType rowType = schema.tableRowType(t);
+                    assert rowType != null : t;
+                    filterTypes.add(rowType);
+                }
+            });
+        } else {
+            filterTypes = Collections.singleton(schema.tableRowType(table));
         }
 
-        // We can't do a "fast truncate" for whatever reason, so we have to delete row by row
-        // (one reason is orphan row maintenance). Do so with a full table scan.
+        // We can't do a "fast truncate" for whatever reason so do so with a full scan.
+        Operator plan =
+            API.delete_Returning(
+                API.filter_Default(
+                    API.groupScan_Default(table.getGroup()), filterTypes),
+                false
+            );
 
-        // Store.deleteRow() requires all index columns to be in the passed RowData to properly clean everything up
-        Set<Integer> keyColumns = new HashSet<>();
-        for(Index index : utable.getIndexesIncludingInternal()) {
-            for(IndexColumn col : index.getKeyColumns()) {
-                int pos = col.getColumn().getPosition();
-                keyColumns.add(pos);
-            }
-        }
-
-        RowDataLegacyOutputRouter output = new RowDataLegacyOutputRouter();
-        output.addHandler(new RowDataLegacyOutputRouter.Handler() {
-            private LegacyRowWrapper rowWrapper = new LegacyRowWrapper();
-
-            @Override
-            public void handleRow(RowData rowData) {
-                rowWrapper.setRowData(rowData);
-                deleteRow(session, rowWrapper, false);
-            }
-
-            @Override
-            public void mark() {
-                // nothing to do
-            }
-
-            @Override
-            public void rewind() {
-                // nothing to do
-            }
-        });
-
-
-        final CursorId cursorId;
-        ScanRequest all = new ScanAllRequest(tableId, keyColumns);
-        cursorId = openCursor(session, knownAIS, all);
-
-        InvalidOperationException thrown = null;
+        StoreAdapter adapter = store().createAdapter(session, schema);
+        QueryContext context = new SimpleQueryContext(adapter);
+        com.foundationdb.qp.operator.Cursor cursor = API.cursor(plan, context, context.createBindings());
+        cursor.openTopLevel();
         try {
-            scanSome(session, cursorId, output);
-        } catch (InvalidOperationException e) {
-            throw e; 
-        } catch (BufferFullException e) {
-            throw new RuntimeException("Internal error, buffer full: " + e);
-        } finally {
-            try {
-                closeCursor(session, cursorId);
-            } catch (CursorIsUnknownException e) {
-                thrown = e;
+            while(cursor.next() != null) {
+                // None
             }
+        } finally {
+            cursor.closeTopLevel();
         }
-        store().truncateTableStatus(session, tableId);
 
         for(TableListener listener : listenerService.getTableListeners()) {
-            listener.onTruncate(session, utable, false);
-        }
-
-        if (thrown != null) {
-            throw thrown;
+            listener.onTruncate(session, table, false);
         }
     }
 }
