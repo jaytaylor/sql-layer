@@ -28,7 +28,6 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
-import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
 
@@ -175,12 +174,11 @@ class HKeyRow_Default extends Operator
                 int columnIndex = 0;
                 for (HKeySegment segment : rowType.hKey().segments()) {
                     for (HKeyColumn column : segment.columns()) {
-                        ValueTarget target = ((ValuesHKey)hkey).valueAt(columnIndex);
-                        TEvaluatableExpression evalExpr = evalExprs.get(columnIndex++);
+                        TEvaluatableExpression evalExpr = evalExprs.get(columnIndex);
                         evalExpr.with(context);
                         evalExpr.with(bindings);
                         evalExpr.evaluate();
-                        column.column().getType().writeCollating(evalExpr.resultValue(), target);
+                        ((ValuesHKey)hkey).copyValueTo(evalExpr.resultValue(), columnIndex++);
                     }
                 }
                 return (Row)hkey;
