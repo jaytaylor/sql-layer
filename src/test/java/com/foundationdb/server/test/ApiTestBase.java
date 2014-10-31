@@ -20,7 +20,6 @@ package com.foundationdb.server.test;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -96,7 +95,6 @@ import com.foundationdb.util.AssertUtils;
 import com.foundationdb.util.Exceptions;
 import com.foundationdb.util.Strings;
 import com.foundationdb.util.tap.TapReport;
-import com.foundationdb.util.Undef;
 
 import com.geophile.z.Space;
 import org.junit.Assert;
@@ -128,7 +126,6 @@ import org.junit.runners.model.Statement;
 public class ApiTestBase {
     private static final int MIN_FREE_SPACE = 256 * 1024 * 1024;
     private static final String TAPS = System.getProperty("it.taps");
-    protected final static Object UNDEF = Undef.only();
 
     private static final Comparator<? super TapReport> TAP_REPORT_COMPARATOR = new Comparator<TapReport>() {
         @Override
@@ -1176,12 +1173,6 @@ public class ApiTestBase {
     }
 
     public Row row(RowType rowType, Object... fields) {
-        for(Object o : fields) {
-            if(o == UNDEF) {
-                throw new UnsupportedOperationException("UNDEF");
-            }
-        }
-
         if(fields.length < rowType.nFields()) {
             QueryContext context = new SimpleQueryContext(newStoreAdapter(rowType.schema()));
             List<TPreparedExpression> expressions = new ArrayList<>();
