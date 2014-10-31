@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.store;
 
-import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.QueryTimedOutException;
 import com.foundationdb.server.test.it.ITBase;
@@ -40,14 +40,14 @@ public class TransactionServiceIT extends ITBase
 
     @Test
     public void runnableSuccess() {
-        final NewRow row = createNewRow(tid, 1);
+        final Row row = row(tid, 1);
         txnService().run(session(), new Runnable() {
             @Override
             public void run() {
                 writeRows(row);
             }
         });
-        expectFullRows(tid, row);
+        expectRows(tid, row);
     }
 
     @Test
@@ -70,7 +70,7 @@ public class TransactionServiceIT extends ITBase
 
     @Test
     public void singleRunnableRetry() {
-        final NewRow row = createNewRow(tid, 1);
+        final Row row = row(tid, 1);
         final int[] failures = { 0 };
         txnService().run(session(), new Runnable() {
             @Override
@@ -82,12 +82,12 @@ public class TransactionServiceIT extends ITBase
                 }
             }
         });
-        expectFullRows(tid, row);
+        expectRows(tid, row);
     }
 
     @Test
     public void multipleRunnableRetry() {
-        final NewRow row = createNewRow(tid, 1);
+        final Row row = row(tid, 1);
         final int failures[] = { 0 };
         txnService().run(session(), new Runnable() {
             @Override
@@ -99,29 +99,29 @@ public class TransactionServiceIT extends ITBase
                 }
             }
         });
-        expectFullRows(tid, row);
+        expectRows(tid, row);
     }
 
     @Test
     public void callableSuccess() {
-        NewRow row = txnService().run(session(), new Callable<NewRow>() {
+        Row row = txnService().run(session(), new Callable<Row>() {
             @Override
-            public NewRow call() {
-                NewRow row = createNewRow(tid, 1);
+            public Row call() {
+                Row row = row(tid, 1);
                 writeRows(row);
                 return row;
             }
         });
-        expectFullRows(tid, row);
+        expectRows(tid, row);
     }
 
     @Test
     public void callableFailure() {
         final RuntimeException ex = new RuntimeException();
         try {
-            txnService().run(session(), new Callable<NewRow>() {
+            txnService().run(session(), new Callable<Row>() {
                 @Override
-                public NewRow call() {
+                public Row call() {
                     writeRow(tid, 1);
                     throw ex;
                 }
@@ -146,10 +146,10 @@ public class TransactionServiceIT extends ITBase
     @Test
     public void singleCallableRetry() {
         final int[] failures = { 0 };
-        NewRow row = txnService().run(session(), new Callable<NewRow>() {
+        Row row = txnService().run(session(), new Callable<Row>() {
             @Override
-            public NewRow call() {
-                NewRow row = createNewRow(tid, 1);
+            public Row call() {
+                Row row = row(tid, 1);
                 writeRows(row);
                 if(failures[0] < 1) {
                     ++failures[0];
@@ -158,16 +158,16 @@ public class TransactionServiceIT extends ITBase
                 return row;
             }
         });
-        expectFullRows(tid, row);
+        expectRows(tid, row);
     }
 
     @Test
     public void multipleCallableRetry() {
         final int[] failures = { 0 };
-        NewRow row = txnService().run(session(), new Callable<NewRow>() {
+        Row row = txnService().run(session(), new Callable<Row>() {
             @Override
-            public NewRow call() {
-                NewRow row = createNewRow(tid, 1);
+            public Row call() {
+                Row row = row(tid, 1);
                 writeRows(row);
                 if(failures[0] < 2) {
                     ++failures[0];
@@ -176,6 +176,6 @@ public class TransactionServiceIT extends ITBase
                 return row;
             }
         });
-        expectFullRows(tid, row);
+        expectRows(tid, row);
     }
 }

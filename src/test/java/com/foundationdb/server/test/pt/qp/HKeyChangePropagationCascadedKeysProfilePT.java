@@ -121,12 +121,12 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
                     long pid = 0;
                     long cid = 0;
                     for (int c = 0; c < grandparents; c++) {
-                        dml().writeRow(session(), createNewRow(grandparent, gid, gid));
+                        writeRow(row(grandparent, gid, gid));
                         for (int o = 0; o < parentsPerGrandparent; o++) {
-                            dml().writeRow(session(), createNewRow(parent, gid, pid, pid));
+                            writeRow(row(parent, gid, pid, pid));
                             for (int i = 0; i < childrenPerParent; i++) {
-                                dml().writeRow(session(), createNewRow(child1, gid, pid, cid, cid));
-                                dml().writeRow(session(), createNewRow(child2, gid, pid, cid, cid));
+                                writeRow(row(child1, gid, pid, cid, cid));
+                                writeRow(row(child2, gid, pid, cid, cid));
                                 cid++;
                             }
                             pid++;

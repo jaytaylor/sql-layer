@@ -20,7 +20,6 @@ package com.foundationdb.server.test.it.qp;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.expression.RowBasedUnboundExpressions;
-import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
@@ -30,7 +29,6 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.PersistitKeyValueSource;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.test.ExpressionGenerators;
@@ -83,39 +81,39 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         ciCollator = dRowType.table().getColumn("a").getCollator();
-        db = new NewRow[]{
+        db = new Row[]{
             // Test 0: No d or f rows
             // Test 1: No f rows
-            createNewRow(f, 1L, "xy", 100L),
+            row(f, 1L, "xy", "100"),
             // Test 2: No d rows
-            createNewRow(f, 2L, "xy", 200L),
+            row(f, 2L, "xy", "200"),
             // Test 3: 1 d row, no matching f rows
-            createNewRow(d, 3L, "xy", "A"),
-            createNewRow(f, 3L, "xz", "A"),
-            createNewRow(f, 3L, "xy", "B"),
+            row(d, 3L, "xy", "A"),
+            row(f, 3L, "xz", "A"),
+            row(f, 3L, "xy", "B"),
             // Test 4: 1 d row, 1 matching f rows
-            createNewRow(d, 4L, "xy", "a"),
-            createNewRow(f, 4L, "XY", "A"),
-            createNewRow(f, 4L, "XZ", "A"),
-            createNewRow(f, 4L, "XY", "B"),
+            row(d, 4L, "xy", "a"),
+            row(f, 4L, "XY", "A"),
+            row(f, 4L, "XZ", "A"),
+            row(f, 4L, "XY", "B"),
             // Test 5: multiple d rows, no matching f rows
-            createNewRow(d, 5L, "xy", "a"),
-            createNewRow(d, 5L, "xz", "b"),
-            createNewRow(f, 5L, "XY", "B"),
-            createNewRow(f, 5L, "XZ", "A"),
+            row(d, 5L, "xy", "a"),
+            row(d, 5L, "xz", "b"),
+            row(f, 5L, "XY", "B"),
+            row(f, 5L, "XZ", "A"),
             // Test 6: multiple d rows, multiple f rows, multiple matches
-            createNewRow(d, 6L, "xy", "A"),
-            createNewRow(d, 6L, "XY", "aB"),
-            createNewRow(d, 6L, "Xy", "Ac"),
-            createNewRow(d, 6L, "xY", "a"),
-            createNewRow(f, 6L, "XY", "aZ"),
-            createNewRow(f, 6L, "xy",  "Ab"),
-            createNewRow(f, 6L, "Xy", "ac"),
-            createNewRow(f, 6L, "xy", "aZ"),
+            row(d, 6L, "xy", "A"),
+            row(d, 6L, "XY", "aB"),
+            row(d, 6L, "Xy", "Ac"),
+            row(d, 6L, "xY", "a"),
+            row(f, 6L, "XY", "aZ"),
+            row(f, 6L, "xy", "Ab"),
+            row(f, 6L, "Xy", "ac"),
+            row(f, 6L, "xy", "aZ"),
             // Test 7: Null columns in d
-            createNewRow(d, 7L, null, null),
+            row(d, 7L, null, null),
             // Test 8: Null columns in f
-            createNewRow(f, 8L, null, null),
+            row(f, 8L, null, null),
         };
         use(db);
     }

@@ -130,7 +130,7 @@ public class ScanFlagsIT extends ITBase
         }
         assertNotNull(idCopyIndex);
         for (int x : values) {
-            dml().writeRow(session(), createNewRow(rowDefId, x, x));
+            writeRow(rowDefId, x, x);
         }
         flags |= RowCollector.SCAN_FLAGS_LEXICOGRAPHIC;
         LegacyScanRequest request = new LegacyScanRequest(rowDefId,

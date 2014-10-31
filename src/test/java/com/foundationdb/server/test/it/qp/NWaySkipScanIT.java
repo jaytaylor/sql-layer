@@ -26,7 +26,6 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
 import java.util.EnumSet;
@@ -65,16 +64,16 @@ public class NWaySkipScanIT extends OperatorITBase
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
-        db = new NewRow[] {
-            createNewRow(t, 1000L, 71L, 81L, 91L),
-            createNewRow(t, 1001L, 71L, 81L, 92L),
-            createNewRow(t, 1002L, 71L, 82L, 91L),
-            createNewRow(t, 1003L, 71L, 82L, 92L),
-            createNewRow(t, 1004L, 72L, 81L, 91L),
-            createNewRow(t, 1005L, 72L, 81L, 92L),
-            createNewRow(t, 1006L, 72L, 82L, 91L),
-            createNewRow(t, 1007L, 72L, 82L, 92L),
-            createNewRow(t, 1008L, 73L, null, null),
+        db = new Row[] {
+            row(t, 1000L, 71L, 81L, 91L),
+            row(t, 1001L, 71L, 81L, 92L),
+            row(t, 1002L, 71L, 82L, 91L),
+            row(t, 1003L, 71L, 82L, 92L),
+            row(t, 1004L, 72L, 81L, 91L),
+            row(t, 1005L, 72L, 81L, 92L),
+            row(t, 1006L, 72L, 82L, 91L),
+            row(t, 1007L, 72L, 82L, 92L),
+            row(t, 1008L, 73L, null, null),
         };
         use(db);
     }

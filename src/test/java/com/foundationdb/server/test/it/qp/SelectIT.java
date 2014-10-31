@@ -21,7 +21,6 @@ import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 
@@ -38,33 +37,33 @@ public class SelectIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         super.setupPostCreateSchema();
-        NewRow[] dbWithOrphans = new NewRow[]{
-            createNewRow(customer, 1L, "northbridge"),
-            createNewRow(customer, 2L, "foundation"),
-            createNewRow(customer, 4L, "highland"),
-            createNewRow(address, 1001L, 1L, "111 1111 st"),
-            createNewRow(address, 1002L, 1L, null),
-            createNewRow(address, 2001L, 2L, "222 1111 st"),
-            createNewRow(address, 2002L, 2L, null),
-            createNewRow(address, 4001L, 4L, "444 1111 st"),
-            createNewRow(address, 4002L, 4L, null),
-            createNewRow(order, 11L, 1L, "ori"),
-            createNewRow(order, 12L, 1L, null),
-            createNewRow(order, 21L, 2L, "tom"),
-            createNewRow(order, 22L, 2L, null),
-            createNewRow(order, 31L, 3L, "peter"),
-            createNewRow(item, 111L, 11L),
-            createNewRow(item, 112L, 11L),
-            createNewRow(item, 121L, 12L),
-            createNewRow(item, 122L, 12L),
-            createNewRow(item, 211L, 21L),
-            createNewRow(item, 212L, 21L),
-            createNewRow(item, 221L, 22L),
-            createNewRow(item, 222L, 22L),
+        Row[] dbWithOrphans = new Row[]{
+            row(customer, 1L, "northbridge"),
+            row(customer, 2L, "foundation"),
+            row(customer, 4L, "highland"),
+            row(address, 1001L, 1L, "111 1111 st"),
+            row(address, 1002L, 1L, null),
+            row(address, 2001L, 2L, "222 1111 st"),
+            row(address, 2002L, 2L, null),
+            row(address, 4001L, 4L, "444 1111 st"),
+            row(address, 4002L, 4L, null),
+            row(order, 11L, 1L, "ori"),
+            row(order, 12L, 1L, null),
+            row(order, 21L, 2L, "tom"),
+            row(order, 22L, 2L, null),
+            row(order, 31L, 3L, "peter"),
+            row(item, 111L, 11L),
+            row(item, 112L, 11L),
+            row(item, 121L, 12L),
+            row(item, 122L, 12L),
+            row(item, 211L, 21L),
+            row(item, 212L, 21L),
+            row(item, 221L, 22L),
+            row(item, 222L, 22L),
             // orphans
-            createNewRow(address, 5001L, 5L, "555 1111 st"),
-            createNewRow(item, 311L, 31L),
-            createNewRow(item, 312L, 31L)};
+            row(address, 5001L, 5L, "555 1111 st"),
+            row(item, 311L, 31L),
+            row(item, 312L, 31L)};
         use(dbWithOrphans);
     }
 

@@ -26,8 +26,10 @@ import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.server.types.value.ValueSources;
 import org.junit.After;
 
 import java.util.ArrayList;
@@ -168,7 +170,7 @@ public class AlterTableITBase extends ITBase {
 
 
     // Note: Does not handle null index contents, check manually in that case
-    private static class SingleColumnComparator implements Comparator<NewRow> {
+    private static class SingleColumnComparator implements Comparator<Row> {
         private final int colPos;
 
         SingleColumnComparator(int colPos) {
@@ -177,9 +179,9 @@ public class AlterTableITBase extends ITBase {
 
         @Override
         @SuppressWarnings("unchecked")
-        public int compare(NewRow o1, NewRow o2) {
-            Object col1 = o1.get(colPos);
-            Object col2 = o2.get(colPos);
+        public int compare(Row o1, Row o2) {
+            Object col1 = ValueSources.toObject(o1.value(colPos));
+            Object col2 = ValueSources.toObject(o2.value(colPos));
             if(col1 == null && col2 == null) {
                 return 0;
             }
@@ -201,14 +203,15 @@ public class AlterTableITBase extends ITBase {
         updateAISGeneration();
         AkibanInformationSchema ais = ddl().getAIS(session());
         Table table = ais.getTable(tableID);
-        List<NewRow> tableRows = new ArrayList<>(scanAll(scanAllRequest(tableID, true)));
+        List<Row> tableRows = new ArrayList<>(scanAll(tableID));
 
         for(TableIndex index : table.getIndexesIncludingInternal()) {
             if(index.getKeyColumns().size() == 1) {
-                int colPos = index.getKeyColumns().get(0).getColumn().getPosition();
+                int idxPos = 0;
+                int colPos = index.getKeyColumns().get(idxPos).getColumn().getPosition();
                 Collections.sort(tableRows, new SingleColumnComparator(colPos));
 
-                List<NewRow> indexRows = scanAllIndex(index);
+                List<Row> indexRows = scanAllIndex(index);
 
                 if(tableRows.size() != indexRows.size()) {
                     assertEquals(index + " size does not match table size",
@@ -216,8 +219,8 @@ public class AlterTableITBase extends ITBase {
                 }
 
                 for(int i = 0; i < tableRows.size(); ++i) {
-                    Object tableObj = tableRows.get(i).get(colPos);
-                    Object indexObj = indexRows.get(i).get(colPos);
+                    Object tableObj = ValueSources.toObject(tableRows.get(i).value(colPos));
+                    Object indexObj = ValueSources.toObject(indexRows.get(i).value(idxPos));
                     assertEquals(index + " contents mismatch at row " + i,
                                  tableObj, indexObj);
                 }

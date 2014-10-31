@@ -28,7 +28,6 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.TableRowType;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -76,9 +75,9 @@ public class GroupIndexRowIT extends OperatorITBase
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
-        db = new NewRow[] {
-            createNewRow(user, 1L),
-            createNewRow(memberInfo, 1L, 20120424),
+        db = new Row[] {
+            row(user, 1L),
+            row(memberInfo, 1L, 20120424),
         };
         use(db);
     }

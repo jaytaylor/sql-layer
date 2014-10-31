@@ -25,7 +25,6 @@ import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -44,11 +43,11 @@ public class IfEmptyIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema() {
         super.setupPostCreateSchema();
-        NewRow[] db = new NewRow[]{
-            createNewRow(customer, 0L, "matrix"), // no orders
-            createNewRow(customer, 2L, "foundation"), // two orders
-            createNewRow(order, 200L, 2L, "david"),
-            createNewRow(order, 201L, 2L, "david"),
+        Row[] db = new Row[]{
+            row(customer, 0L, "matrix"), // no orders
+            row(customer, 2L, "foundation"), // two orders
+            row(order, 200L, 2L, "david"),
+            row(order, 201L, 2L, "david"),
         };
         use(db);
     }

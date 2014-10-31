@@ -26,14 +26,14 @@ public final class NoPkIT extends ITBase {
     public void replAkiban() throws Exception {
         int tableId = createTable("test", "REPL_C", "I INT");
         writeRows(
-                createNewRow(tableId, 2),
-                createNewRow(tableId, 2)
+                row(tableId, 2),
+                row(tableId, 2)
         );
 
-        expectFullRows( tableId,
-                // expectFullRows checks user-visible data, and so does not check the __akiban_pk column.
-                createNewRow(tableId, 2),
-                createNewRow(tableId, 2)
+        expectRowsSkipInternal(
+                tableId,
+                row(tableId, 2),
+                row(tableId, 2)
         );
     }
 
@@ -51,13 +51,13 @@ public final class NoPkIT extends ITBase {
                         "ref int",
                         "grouping foreign key(id) references t1(id)");
         writeRows(
-            createNewRow(t1, 1),
-            createNewRow(t1, 2),
-            createNewRow(t1, 3));
+            row(t1, 1),
+            row(t1, 2),
+            row(t1, 3));
         writeRows( // Bug 1023945 produces NPE when writing rows to t2
-                   createNewRow(t2, 1, 1),
-                   createNewRow(t2, 2, 1),
-                   createNewRow(t2, 3, 1));
+                   row(t2, 1, 1),
+                   row(t2, 2, 1),
+                   row(t2, 3, 1));
         createLeftGroupIndex(new TableName("schema", "t1"), "gi", "t2.ref", "t2.id", "t1.id");
         ddl().dropTable(session(), new TableName("schema", "t2"));
     }
@@ -77,12 +77,12 @@ public final class NoPkIT extends ITBase {
                         "grouping foreign key(id) references t1(id)");
         createLeftGroupIndex(new TableName("schema", "t1"), "gi", "t2.ref", "t2.id", "t1.id");
         writeRows(
-            createNewRow(t1, 1),
-            createNewRow(t1, 2),
-            createNewRow(t1, 3));
+            row(t1, 1),
+            row(t1, 2),
+            row(t1, 3));
         writeRows( // Bug 1023945 produces NPE when writing rows to t2
-            createNewRow(t2, 1, 1),
-            createNewRow(t2, 2, 1),
-            createNewRow(t2, 3, 1));
+            row(t2, 1, 1),
+            row(t2, 2, 1),
+            row(t2, 3, 1));
     }
 }

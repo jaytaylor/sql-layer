@@ -35,28 +35,28 @@ public class TestStore
 {
     // Store-ish interface. Update delegate first, so that if it throws an exception, map is left alone.
 
-    public void writeRow(Session session, TestRow row)
+    public void writeRow(Session session, KeyUpdateRow row)
         throws Exception
     {
         realStore.writeRow(session, row.toRowData());
         map.put(row.hKey(), row);
     }
 
-    public void deleteRow(Session session, TestRow row)
+    public void deleteRow(Session session, KeyUpdateRow row)
         throws Exception
     {
         realStore.deleteRow(session, row.toRowData(), false);
         map.remove(row.hKey());
     }
 
-    public void updateRow(Session session, TestRow oldRow, TestRow newRow, ColumnSelector columnSelector)
+    public void updateRow(Session session, KeyUpdateRow oldRow, KeyUpdateRow newRow, ColumnSelector columnSelector)
     {
         realStore.updateRow(session,
                             oldRow.toRowData(),
                             newRow.toRowData(), // Not mergedRow. Rely on delegate to merge existing and new.
                             null);
-        TestRow currentRow = map.remove(oldRow.hKey());
-        TestRow mergedRow = mergeRows(currentRow, newRow, columnSelector);
+        KeyUpdateRow currentRow = map.remove(oldRow.hKey());
+        KeyUpdateRow mergedRow = mergeRows(currentRow, newRow, columnSelector);
         map.put(mergedRow.hKey(), mergedRow);
     }
 
@@ -64,7 +64,7 @@ public class TestStore
         throws Exception
     {
         realStore.traverse(session, group, realVisitor);
-        for (Map.Entry<HKey, TestRow> entry : map.entrySet()) {
+        for (Map.Entry<HKey, KeyUpdateRow> entry : map.entrySet()) {
             testVisitor.visit(entry.getKey().objectArray(), entry.getValue());
         }
     }
@@ -76,7 +76,7 @@ public class TestStore
 
     // TestStore interface
 
-    public TestRow find(HKey hKey)
+    public KeyUpdateRow find(HKey hKey)
     {
         return map.get(hKey);
     }
@@ -86,28 +86,28 @@ public class TestStore
         this.realStore = realStore;
     }
 
-    public void writeTestRow(TestRow row)
+    public void writeTestRow(KeyUpdateRow row)
     {
         map.put(row.hKey(), row);
     }
 
-    public void deleteTestRow(TestRow row)
+    public void deleteTestRow(KeyUpdateRow row)
     {
         map.remove(row.hKey());
     }
 
     // For use by this class
 
-    private TestRow mergeRows(TestRow currentRow, TestRow newRow, ColumnSelector columnSelector)
+    private KeyUpdateRow mergeRows(KeyUpdateRow currentRow, KeyUpdateRow newRow, ColumnSelector columnSelector)
     {
-        TestRow mergedRow;
+        KeyUpdateRow mergedRow;
         if (columnSelector == null) {
             mergedRow = newRow;
         } else {
             if (currentRow.getRowDef() != newRow.getRowDef()) {
                 throw new RuntimeException();
             }
-            mergedRow = new TestRow(newRow.getRowDef().getRowDefId(), newRow.getRowDef(), currentRow.getStore());
+            mergedRow = new KeyUpdateRow(newRow.getRowDef().getRowDefId(), newRow.getRowDef(), currentRow.getStore());
             int n = newRow.getRowDef().getFieldCount();
             for (int i = 0; i < n; i++) {
                 mergedRow.put(i, columnSelector.includesColumn(i) ? newRow.get(i) : currentRow.get(i));
@@ -118,6 +118,6 @@ public class TestStore
 
     // Object state
 
-    private final SortedMap<HKey, TestRow> map = new TreeMap<>();
+    private final SortedMap<HKey, KeyUpdateRow> map = new TreeMap<>();
     private final Store realStore;
 }

@@ -31,9 +31,9 @@ public abstract class KeyUpdateSingleColumnBase extends KeyUpdateBase
     public void testOrderPriorityUpdate() throws Exception
     {
         // Set customer.priority = 80 for order 133
-        TestRow customerRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L));
-        TestRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, 133L));
-        TestRow newOrderRow = copyRow(oldOrderRow);
+        KeyUpdateRow customerRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L));
+        KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, 133L));
+        KeyUpdateRow newOrderRow = copyRow(oldOrderRow);
         updateRow(newOrderRow, o_priority, 80L, customerRow);
         dbUpdate(oldOrderRow, newOrderRow);
         checkDB();
@@ -44,9 +44,9 @@ public abstract class KeyUpdateSingleColumnBase extends KeyUpdateBase
     public void testOrderPriorityUpdateCreatingDuplicate() throws Exception
     {
         // Set customer.priority = 81 for order 133. Duplicates are fine.
-        TestRow customerRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L));
-        TestRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, 133L));
-        TestRow newOrderRow = copyRow(oldOrderRow);
+        KeyUpdateRow customerRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L));
+        KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, 133L));
+        KeyUpdateRow newOrderRow = copyRow(oldOrderRow);
         updateRow(newOrderRow, o_priority, 81L, customerRow);
         dbUpdate(oldOrderRow, newOrderRow);
         checkDB();
@@ -58,9 +58,9 @@ public abstract class KeyUpdateSingleColumnBase extends KeyUpdateBase
     public void testOrderWhenUpdate() throws Exception
     {
         // Set customer.when = 9000 for order 133
-        TestRow customerRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L));
-        TestRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, 133L));
-        TestRow newOrderRow = copyRow(oldOrderRow);
+        KeyUpdateRow customerRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L));
+        KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, 133L));
+        KeyUpdateRow newOrderRow = copyRow(oldOrderRow);
         updateRow(newOrderRow, o_when, 9000L, customerRow);
         dbUpdate(oldOrderRow, newOrderRow);
         checkDB();
@@ -71,15 +71,15 @@ public abstract class KeyUpdateSingleColumnBase extends KeyUpdateBase
     public void testOrderWhenUpdateCreatingDuplicate() throws Exception
     {
         // Set customer.when = 9001 for order 133
-        TestRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, 133L));
-        TestRow newOrderRow = copyRow(oldOrderRow);
+        KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, 133L));
+        KeyUpdateRow newOrderRow = copyRow(oldOrderRow);
         Long oldWhen = (Long) newOrderRow.put(o_when, 9001L);
         assertEquals("old order.when", Long.valueOf(9009L), oldWhen);
         try {
             dbUpdate(oldOrderRow, newOrderRow);
 
             // Make sure such a row actually exists!
-            TestRow shouldHaveConflicted = testStore.find(new HKey(vendorRD, 1L, customerRD, 11L, orderRD, 111L));
+            KeyUpdateRow shouldHaveConflicted = testStore.find(new HKey(vendorRD, 1L, customerRD, 11L, orderRD, 111L));
             assertNotNull("shouldHaveConflicted not found", shouldHaveConflicted);
             assertEquals(9001L, shouldHaveConflicted.getFields().get(o_when));
 
@@ -87,7 +87,7 @@ public abstract class KeyUpdateSingleColumnBase extends KeyUpdateBase
         } catch (InvalidOperationException e) {
             assertEquals(e.getCode(), ErrorCode.DUPLICATE_KEY);
         }
-        TestRow confirmOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, 133L));
+        KeyUpdateRow confirmOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, 133L));
         assertSameFields(oldOrderRow, confirmOrderRow);
         checkDB();
     }
@@ -97,8 +97,8 @@ public abstract class KeyUpdateSingleColumnBase extends KeyUpdateBase
     public void testOrderUpdateIsNoOp() throws Exception
     {
         // Update a row to its same values
-        TestRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, 133L));
-        TestRow newOrderRow = copyRow(oldOrderRow);
+        KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, 133L));
+        KeyUpdateRow newOrderRow = copyRow(oldOrderRow);
         dbUpdate(oldOrderRow, newOrderRow);
         checkDB();
     }

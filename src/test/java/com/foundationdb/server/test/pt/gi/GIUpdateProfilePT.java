@@ -128,11 +128,11 @@ public class GIUpdateProfilePT extends PTBase
         long oid = 0;
         long iid = 0;
         for (int c = 0; c < customers; c++) {
-            dml().writeRow(session(), createNewRow(customer, cid, String.format("customer %s", cid)));
+            writeRow(customer, cid, String.format("customer %s", cid));
             for (int o = 0; o < ordersPerCustomer; o++) {
-                dml().writeRow(session(), createNewRow(order, oid, cid, String.format("salesman %s", oid)));
+                writeRow(order, oid, cid, String.format("salesman %s", oid));
                 for (int i = 0; i < itemsPerOrder; i++) {
-                    dml().writeRow(session(), createNewRow(item, iid, oid));
+                    writeRow(item, iid, oid);
                     iid++;
                 }
                 oid++;

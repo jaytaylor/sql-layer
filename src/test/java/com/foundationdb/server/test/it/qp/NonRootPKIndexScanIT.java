@@ -27,7 +27,6 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.test.ExpressionGenerators;
 import org.junit.Test;
 
@@ -62,13 +61,13 @@ public class NonRootPKIndexScanIT extends OperatorITBase
         parentRowType = schema.tableRowType(table(parent));
         childRowType = schema.tableRowType(table(child));
         childPKRowType = indexType(child, "cid");
-        db = new NewRow[] {
-            createNewRow(parent, 1L, 1L),
-            createNewRow(child, 11L, 1L, 1L),
-            createNewRow(child, 12L, 1L, 1L),
-            createNewRow(parent, 2L, 2L),
-            createNewRow(child, 21L, 2L, 2L),
-            createNewRow(child, 22L, 2L, 2L),
+        db = new Row[] {
+            row(parent, 1L, 1L),
+            row(child, 11L, 1L, 1L),
+            row(child, 12L, 1L, 1L),
+            row(parent, 2L, 2L),
+            row(child, 21L, 2L, 2L),
+            row(child, 22L, 2L, 2L),
         };
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);

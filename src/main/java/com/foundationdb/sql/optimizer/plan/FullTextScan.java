@@ -62,6 +62,14 @@ public class FullTextScan extends BaseScan
     }
 
     @Override
+    public void visitComparands(ExpressionRewriteVisitor v) {
+    }
+
+    @Override
+    public void visitComparands(ExpressionVisitor v) {
+    }
+
+    @Override
     public boolean accept(PlanVisitor v) {
         if (v.visitEnter(this)) {
             // Don't own tables, right?

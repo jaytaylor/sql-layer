@@ -62,6 +62,7 @@ public class ExpressionsHKeyScan extends BaseScan implements EqualityColumnsScan
         return keys;
     }
 
+    @Override
     public List<ConditionExpression> getConditions() {
         return conditions;
     }
@@ -82,17 +83,27 @@ public class ExpressionsHKeyScan extends BaseScan implements EqualityColumnsScan
     public boolean accept(PlanVisitor v) {
         if (v.visitEnter(this)) {
             if (v instanceof ExpressionRewriteVisitor) {
-                for (int i = 0; i < keys.size(); i++) {
-                    keys.set(i, keys.get(i).accept((ExpressionRewriteVisitor)v));
-                }
+                visitComparands((ExpressionRewriteVisitor)v);
             }
             else if (v instanceof ExpressionVisitor) {
-                for (ExpressionNode key : keys) {
-                    key.accept((ExpressionVisitor)v);
-                }
+                visitComparands((ExpressionVisitor)v);
             }
         }
         return v.visitLeave(this);
+    }
+
+    @Override
+    public void visitComparands(ExpressionRewriteVisitor v) {
+        for (int i = 0; i < keys.size(); i++) {
+            keys.set(i, keys.get(i).accept(v));
+        }
+    }
+
+    @Override
+    public void visitComparands(ExpressionVisitor v) {
+        for (ExpressionNode key : keys) {
+            key.accept(v);
+        }
     }
 
     @Override

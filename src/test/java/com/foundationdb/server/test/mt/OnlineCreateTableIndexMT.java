@@ -56,8 +56,8 @@ public class OnlineCreateTableIndexMT extends OnlineMTBase
     public void createAndLoad() {
         tID = createTable(SCHEMA, TABLE, "id INT NOT NULL PRIMARY KEY, x INT");
         tableRowType = SchemaCache.globalSchema(ais()).tableRowType(tID);
-        writeRows(createNewRow(tID, 2, 20),
-                  createNewRow(tID, 4, 40));
+        writeRows(row(tID, 2, 20),
+                  row(tID, 4, 40));
         groupRows = runPlanTxn(groupScanCreator(tID));
     }
 

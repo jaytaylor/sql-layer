@@ -83,10 +83,10 @@ public class Select_BloomFilterCT extends CostModelBase
     protected void populateDB()
     {
         for (int x = 0; x < FILTER_ROWS; x++) {
-            dml().writeRow(session(), createNewRow(f, x, x)); // x, hidden_pk
+            writeRow(f, x, x); // x, hidden_pk
         }
         for (int x = 0; x < DRIVING_ROWS; x++) {
-            dml().writeRow(session(), createNewRow(d, x, x)); // x, hidden_pk
+            writeRow(d, x, x); // x, hidden_pk
         }
     }
     

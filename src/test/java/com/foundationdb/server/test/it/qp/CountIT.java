@@ -21,8 +21,6 @@ import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.api.dml.scan.NewRow;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -34,11 +32,11 @@ public class CountIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema() {
         super.setupPostCreateSchema();
-        NewRow[] dbRows = new NewRow[]{
-            createNewRow(customer, 1L, "northbridge"),
-            createNewRow(customer, 2L, "foundation"),
-            createNewRow(customer, 4L, "highland"),
-            createNewRow(order, 11L, 1L, "ori")
+        Row[] dbRows = new Row[]{
+            row(customer, 1L, "northbridge"),
+            row(customer, 2L, "foundation"),
+            row(customer, 4L, "highland"),
+            row(order, 11L, 1L, "ori")
         };
         use(dbRows);
     }
@@ -69,7 +67,7 @@ public class CountIT extends OperatorITBase
             row(resultRowType, 3L)
         };
         compareRows(expected, cursor);
-        writeRows(createNewRow(customer, 5L, "matrix"));
+        writeRows(row(customer, 5L, "matrix"));
         expected = new Row[]{
             row(resultRowType, 4L)
         };

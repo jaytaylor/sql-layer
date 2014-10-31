@@ -116,9 +116,9 @@ public final class DropTreesIT extends ITBase {
     public void singleTableWithData() throws Exception {
         int tid = createTable("s", "t", "id int not null primary key, name varchar(32)");
         Table t = getTable(tid);
-        writeRows(createNewRow(tid, 1L, "joe"),
-                  createNewRow(tid, 2L, "bob"),
-                  createNewRow(tid, 3L, "jim"));
+        writeRows(row(tid, 1L, "joe"),
+                  row(tid, 2L, "bob"),
+                  row(tid, 3L, "jim"));
         expectTree(t);
         ddl().dropTable(session(), t.getName());
         expectNoTree(t);
@@ -140,12 +140,12 @@ public final class DropTreesIT extends ITBase {
     public void groupedTablesWithData() throws Exception {
         int pid = createTable("s", "p", "id int not null primary key");
         int cid = createTable("s", "c", "id int not null primary key, pid int, grouping foreign key(pid) references p(id)");
-        writeRows(createNewRow(pid, 1L),
-                  createNewRow(pid, 2L),
-                  createNewRow(pid, 3L));
-        writeRows(createNewRow(cid, 10L, 1L),
-                  createNewRow(cid, 20L, 1L),
-                  createNewRow(cid, 30L, 2L));
+        writeRows(row(pid, 1L),
+                  row(pid, 2L),
+                  row(pid, 3L));
+        writeRows(row(cid, 10L, 1L),
+                  row(cid, 20L, 1L),
+                  row(cid, 30L, 2L));
         Table p = getTable(pid);
         expectTree(p);
         Table c = getTable(cid);
@@ -171,9 +171,9 @@ public final class DropTreesIT extends ITBase {
     public void secondaryIndexWithData() throws Exception {
         int tid = createTable("s", "t", "id int not null primary key, c char(10)");
         createIndex("s", "t", "c", "c");
-        writeRows(createNewRow(tid, 1L, "abcd"),
-                  createNewRow(tid, 2L, "efgh"),
-                  createNewRow(tid, 3L, "ijkl"));
+        writeRows(row(tid, 1L, "abcd"),
+                  row(tid, 2L, "efgh"),
+                  row(tid, 3L, "ijkl"));
         Table t = getTable(tid);
         expectTree(t);
         Index c = t.getIndex("c");
@@ -198,9 +198,9 @@ public final class DropTreesIT extends ITBase {
     @Test
     public void addSecondaryIndexWithData() throws Exception {
         int tid = createTable("s", "t", "id int not null primary key, other int");
-        writeRows(createNewRow(tid, 1L, 10L),
-                  createNewRow(tid, 2L, 20L),
-                  createNewRow(tid, 3L, 30L));
+        writeRows(row(tid, 1L, 10L),
+                  row(tid, 2L, 20L),
+                  row(tid, 3L, 30L));
         Table t = getTable(tid);
         expectTree(t);
         ddl().createIndexes(session(), Collections.singleton(createSimpleIndex(t, "other")));
@@ -231,9 +231,9 @@ public final class DropTreesIT extends ITBase {
         int tid = createTable("s", "t", "id int not null primary key, c char(10)");
         createIndex("s", "t", "c", "c");
         createIndex("s", "t", "c2", "c");
-        writeRows(createNewRow(tid, 1L, "mnop"),
-                  createNewRow(tid, 2L, "qrst"),
-                  createNewRow(tid, 3L, "uvwx"));
+        writeRows(row(tid, 1L, "mnop"),
+                  row(tid, 2L, "qrst"),
+                  row(tid, 3L, "uvwx"));
         Table t = getTable(tid);
         expectTree(t);
         Index c = t.getIndex("c");
@@ -264,12 +264,12 @@ public final class DropTreesIT extends ITBase {
         int pid = createTable("s", "p", "id int not null primary key");
         int cid = createTable("s", "c", "id int not null primary key, i int, pid int, grouping foreign key(pid) references p(id)");
         createIndex("s", "c", "i", "i");
-        writeRows(createNewRow(pid, 1L),
-                  createNewRow(pid, 2L));
+        writeRows(row(pid, 1L),
+                  row(pid, 2L));
         Table p = getTable(pid);
         expectTree(p);
-        writeRows(createNewRow(cid, 10L, 100L, 1L),
-                  createNewRow(cid, 20L, 100L, 2L));
+        writeRows(row(cid, 10L, 100L, 1L),
+                  row(cid, 20L, 100L, 2L));
         Table c = getTable(cid);
         expectTree(c);
         Index i = c.getIndex("i");
@@ -295,8 +295,8 @@ public final class DropTreesIT extends ITBase {
     public void pkLessRootWithData() throws Exception {
         int tid = createTable("s", "t", "i int");
         createIndex("s", "t", "i", "i");
-        writeRows(createNewRow(tid, 10L),
-                  createNewRow(tid, 20L));
+        writeRows(row(tid, 10L),
+                  row(tid, 20L));
         Table t = getTable(tid);
         expectTree(t);
         Index pk = t.getIndexIncludingInternal(Index.PRIMARY);
@@ -326,12 +326,12 @@ public final class DropTreesIT extends ITBase {
         int pid = createTable("s", "p", "id int not null primary key");
         int cid = createTable("s", "c", "i int, pid int, grouping foreign key(pid) references p(id)");
         createIndex("s", "c", "i", "i");
-        writeRows(createNewRow(pid, 1L),
-                  createNewRow(pid, 2L));
+        writeRows(row(pid, 1L),
+                  row(pid, 2L));
         Table p = getTable(pid);
         expectTree(p);
-        writeRows(createNewRow(cid, 10L, 1L),
-                  createNewRow(cid, 20L, 2L));
+        writeRows(row(cid, 10L, 1L),
+                  row(cid, 20L, 2L));
         Table c = getTable(cid);
         expectTree(c);
         Index pk = c.getIndexIncludingInternal(Index.PRIMARY);
@@ -348,12 +348,12 @@ public final class DropTreesIT extends ITBase {
         int pid = createTable("s", "p", "id int not null primary key, o int");
         createIndex("s", "p", "o", "o");
         int cid = createTable("s", "c", "id int not null primary key, pid int, grouping foreign key(pid) references p(id)");
-        writeRows(createNewRow(pid, 1L, 100L),
-                  createNewRow(pid, 2L, 200L),
-                  createNewRow(pid, 3L, 300L));
-        writeRows(createNewRow(cid, 10L, 1L),
-                  createNewRow(cid, 20L, 1L),
-                  createNewRow(cid, 30L, 2L));
+        writeRows(row(pid, 1L, 100L),
+                  row(pid, 2L, 200L),
+                  row(pid, 3L, 300L));
+        writeRows(row(cid, 10L, 1L),
+                  row(cid, 20L, 1L),
+                  row(cid, 30L, 2L));
         Table p = getTable(pid);
         expectTree(p);
         Index o = p.getIndex("o");
@@ -396,12 +396,12 @@ public final class DropTreesIT extends ITBase {
         Table p = getTable(pid);
         Table c = getTable(cid);
         Index index = createLeftGroupIndex(p.getGroup().getName(), "name_val", "p.name", "c.val");
-        writeRows(createNewRow(pid, 1, "bob"),
-                    createNewRow(cid, 1, 1, 100),
-                    createNewRow(cid, 2, 1, 101),
-                  createNewRow(pid, 2, "joe"),
-                    createNewRow(cid, 3, 2, 102),
-                  createNewRow(pid, 3, "foo"));
+        writeRows(row(pid, 1, "bob"),
+                    row(cid, 1, 1, 100),
+                    row(cid, 2, 1, 101),
+                  row(pid, 2, "joe"),
+                    row(cid, 3, 2, 102),
+                  row(pid, 3, "foo"));
         ddl().dropTable(session(), c.getName());
         expectNoTree(index);
         ddl().dropTable(session(), p.getName());
@@ -431,12 +431,12 @@ public final class DropTreesIT extends ITBase {
         Table p = getTable(pid);
         Table c = getTable(cid);
         Index index = createLeftGroupIndex(p.getGroup().getName(), "name_val", "p.name", "c.val");
-        writeRows(createNewRow(pid, 1, "bob"),
-                    createNewRow(cid, 1, 1, 100),
-                    createNewRow(cid, 2, 1, 101),
-                  createNewRow(pid, 2, "joe"),
-                    createNewRow(cid, 3, 2, 102),
-                  createNewRow(pid, 3, "foo"));
+        writeRows(row(pid, 1, "bob"),
+                    row(cid, 1, 1, 100),
+                    row(cid, 2, 1, 101),
+                  row(pid, 2, "joe"),
+                    row(cid, 3, 2, 102),
+                  row(pid, 3, "foo"));
         ddl().dropGroupIndexes(session(), p.getGroup().getName(), Collections.singleton("name_val"));
         expectNoTree(index);
         ddl().dropTable(session(), c.getName());

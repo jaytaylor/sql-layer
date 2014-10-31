@@ -26,7 +26,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -43,35 +42,35 @@ public class FlattenIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema() {
         super.setupPostCreateSchema();
-        NewRow[] dbWithOrphans = new NewRow[]{
-            createNewRow(customer, 1L, "northbridge"),
-            createNewRow(customer, 2L, "foundation"),
-            createNewRow(customer, 4L, "highland"),
-            createNewRow(customer, 5L, "matrix"), // customer 5 is for testing bug 792102
-            createNewRow(order, 11L, 1L, "ori"),
-            createNewRow(order, 12L, 1L, "david"),
-            createNewRow(order, 21L, 2L, "tom"),
-            createNewRow(order, 22L, 2L, "jack"),
-            createNewRow(order, 31L, 3L, "peter"),
-            createNewRow(order, 51L, 5L, "yuval"),
-            createNewRow(item, 111L, 11L),
-            createNewRow(item, 112L, 11L),
-            createNewRow(item, 121L, 12L),
-            createNewRow(item, 122L, 12L),
-            createNewRow(item, 211L, 21L),
-            createNewRow(item, 212L, 21L),
-            createNewRow(item, 221L, 22L),
-            createNewRow(item, 222L, 22L),
+        Row[] dbWithOrphans = new Row[]{
+            row(customer, 1L, "northbridge"),
+            row(customer, 2L, "foundation"),
+            row(customer, 4L, "highland"),
+            row(customer, 5L, "matrix"), // customer 5 is for testing bug 792102
+            row(order, 11L, 1L, "ori"),
+            row(order, 12L, 1L, "david"),
+            row(order, 21L, 2L, "tom"),
+            row(order, 22L, 2L, "jack"),
+            row(order, 31L, 3L, "peter"),
+            row(order, 51L, 5L, "yuval"),
+            row(item, 111L, 11L),
+            row(item, 112L, 11L),
+            row(item, 121L, 12L),
+            row(item, 122L, 12L),
+            row(item, 211L, 21L),
+            row(item, 212L, 21L),
+            row(item, 221L, 22L),
+            row(item, 222L, 22L),
             // orphans
-            createNewRow(item, 311L, 31L),
-            createNewRow(item, 312L, 31L),
+            row(item, 311L, 31L),
+            row(item, 312L, 31L),
             // Bug 837706
-            createNewRow(address, 41L, 4L, "560 Harrison"),
+            row(address, 41L, 4L, "560 Harrison"),
             // Bug 1018206
-            createNewRow(customer, 6L, "nea"),
-            createNewRow(order, 61L, 6L, "mike"),
-            createNewRow(order, 62L, 6L, "padraig"),
-            createNewRow(item, 621L, 62L),
+            row(customer, 6L, "nea"),
+            row(order, 61L, 6L, "mike"),
+            row(order, 62L, 6L, "padraig"),
+            row(item, 621L, 62L),
         };
         use(dbWithOrphans);
     }
@@ -312,7 +311,7 @@ public class FlattenIT extends OperatorITBase
                 LEFT_JOIN);
         RowType oiRowType = plan.rowType();
         Cursor cursor = cursor(plan, queryContext, queryBindings);
-        TestRow[] expected = new TestRow[]{
+        Row[] expected = new Row[]{
             row(customerRowType, 1L, "northbridge"),
             row(oiRowType, 11L, 1L, "ori", 111L, 11L),
             row(oiRowType, 11L, 1L, "ori", 112L, 11L),

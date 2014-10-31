@@ -28,7 +28,6 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.*;
@@ -76,25 +75,25 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
-        db = new NewRow[]{
+        db = new Row[]{
             // 0x: Both sides empty
             // 1x: C empty
-            createNewRow(p, 10L, 1L),
-            createNewRow(d, 1900L, 10L, 1L),
-            createNewRow(d, 1901L, 10L, 1L),
-            createNewRow(d, 1902L, 10L, 1L),
+            row(p, 10L, 1L),
+            row(d, 1900L, 10L, 1L),
+            row(d, 1901L, 10L, 1L),
+            row(d, 1902L, 10L, 1L),
             // 2x: D empty
-            createNewRow(p, 20L, 2L),
-            createNewRow(c, 2800L, 20L, 2L),
-            createNewRow(c, 2801L, 20L, 2L),
-            createNewRow(c, 2802L, 20L, 2L),
+            row(p, 20L, 2L),
+            row(c, 2800L, 20L, 2L),
+            row(c, 2801L, 20L, 2L),
+            row(c, 2802L, 20L, 2L),
             // 3x: C, D non-empty
-            createNewRow(p, 30L, 3L),
-            createNewRow(c, 3800L, 30L, 3L),
-            createNewRow(c, 3801L, 30L, 3L),
-            createNewRow(c, 3802L, 30L, 3L),
-            createNewRow(d, 3900L, 30L, 3L),
-            createNewRow(d, 3901L, 30L, 3L),
+            row(p, 30L, 3L),
+            row(c, 3800L, 30L, 3L),
+            row(c, 3801L, 30L, 3L),
+            row(c, 3802L, 30L, 3L),
+            row(d, 3900L, 30L, 3L),
+            row(d, 3901L, 30L, 3L),
         };
         use(db);
     }

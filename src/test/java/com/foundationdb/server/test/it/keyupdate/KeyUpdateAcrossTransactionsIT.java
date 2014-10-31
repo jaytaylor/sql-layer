@@ -57,7 +57,7 @@ public final class KeyUpdateAcrossTransactionsIT extends ITBase
                         "id int not null primary key",
                         "u int",
                         "unique(u)");
-        writeRows(createNewRow(tableId, 0, 0));
+        writeRows(row(tableId, 0, 0));
         AkibanInformationSchema ais = ddl().getAIS(session());
         Table table = ais.getTable(tableId);
         Index uIndex = null;
@@ -117,7 +117,7 @@ public final class KeyUpdateAcrossTransactionsIT extends ITBase
                     System.out.println(String.format("(%s, %s), %s: Starting", id, u, session));
                     barrier.await();
                     System.out.println(String.format("(%s, %s), %s: About to write", id, u, session));
-                    dml().writeRow(session, createNewRow(tableId, id, u));
+                    writeRows(session, Arrays.asList(row(session, tableId, id, u)));
                     System.out.println(String.format("(%s, %s), %s: Wrote", id, u, session));
                     barrier.await();
                     System.out.println(String.format("(%s, %s), %s: Exiting", id, u, session));

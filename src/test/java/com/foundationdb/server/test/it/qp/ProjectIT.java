@@ -22,8 +22,6 @@ import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.api.dml.scan.NewRow;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -39,26 +37,26 @@ public class ProjectIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         super.setupPostCreateSchema();
-        NewRow[] dbWithOrphans = new NewRow[]{
-            createNewRow(customer, 1L, "northbridge"),
-            createNewRow(customer, 2L, "foundation"),
-            createNewRow(customer, 4L, "highland"),
-            createNewRow(order, 11L, 1L, "ori"),
-            createNewRow(order, 12L, 1L, "david"),
-            createNewRow(order, 21L, 2L, "tom"),
-            createNewRow(order, 22L, 2L, "jack"),
-            createNewRow(order, 31L, 3L, "peter"),
-            createNewRow(item, 111L, 11L),
-            createNewRow(item, 112L, 11L),
-            createNewRow(item, 121L, 12L),
-            createNewRow(item, 122L, 12L),
-            createNewRow(item, 211L, 21L),
-            createNewRow(item, 212L, 21L),
-            createNewRow(item, 221L, 22L),
-            createNewRow(item, 222L, 22L),
+        Row[] dbWithOrphans = new Row[]{
+            row(customer, 1L, "northbridge"),
+            row(customer, 2L, "foundation"),
+            row(customer, 4L, "highland"),
+            row(order, 11L, 1L, "ori"),
+            row(order, 12L, 1L, "david"),
+            row(order, 21L, 2L, "tom"),
+            row(order, 22L, 2L, "jack"),
+            row(order, 31L, 3L, "peter"),
+            row(item, 111L, 11L),
+            row(item, 112L, 11L),
+            row(item, 121L, 12L),
+            row(item, 122L, 12L),
+            row(item, 211L, 21L),
+            row(item, 212L, 21L),
+            row(item, 221L, 22L),
+            row(item, 222L, 22L),
             // orphans
-            createNewRow(item, 311L, 31L),
-            createNewRow(item, 312L, 31L)};
+            row(item, 311L, 31L),
+            row(item, 312L, 31L)};
         use(dbWithOrphans);
     }
 

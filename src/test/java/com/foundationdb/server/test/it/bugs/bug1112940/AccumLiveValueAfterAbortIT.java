@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.test.it.bugs.bug1112940;
 
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.TableStatus;
 import com.foundationdb.server.api.dml.ConstantColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
@@ -68,20 +69,20 @@ public class AccumLiveValueAfterAbortIT extends ITBase {
     }
 
     private void insertAs(Op op, int id, int x) {
-        NewRow newRow = createNewRow(tid, id, x);
+        Row newRow = row(tid, id, x);
         try {
-            dml().writeRow(session(), newRow);
+            writeRow(newRow);
             fail("Expected DuplicateKeyException");
         } catch(DuplicateKeyException e) {
             // Expected
         }
 
-        NewRow oldRow = createNewRow(tid, id, x - 1);
+        Row oldRow = row(tid, id, x - 1);
         if(op == Op.ON_DUP_KEY_UPDATE) {
-            dml().updateRow(session(), oldRow, newRow, ConstantColumnSelector.ALL_ON);
+            updateRow(oldRow, newRow);
         } else if(op == Op.REPLACE) {
-            dml().deleteRow(session(), oldRow, false);
-            dml().writeRow(session(), newRow);
+            deleteRow(oldRow);
+            writeRow(newRow);
         } else {
             fail("Unknown op: " + op);
         }

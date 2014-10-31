@@ -18,7 +18,7 @@
 package com.foundationdb.server.test.it.bugs.bug701614;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.util.Strings;
@@ -33,7 +33,7 @@ public final class MissingColumnsIT extends ITBase {
     public void testForMissingColumns() throws InvalidOperationException, IOException {
         int tableId = loadBlocksTable();
         writeRows( rows(tableId) );
-        expectFullRows(tableId, rows(tableId));
+        expectRows(tableId, rows(tableId));
     }
 
     private int loadBlocksTable() throws InvalidOperationException, IOException {
@@ -44,11 +44,11 @@ public final class MissingColumnsIT extends ITBase {
         return tableId("drupal", "blocks");
     }
 
-    private NewRow[] rows(int tableId) {
-        return new NewRow[] {
-                createNewRow(tableId, 1, "user", "0", "garland", 1, 0, "left", 0, 0, 0, "", "", -1),
-                createNewRow(tableId, 2, "user", "1", "garland", 1, 0, "left", 0, 0, 0, "", "", -1),
-                createNewRow(tableId, 3, "system", "0", "garland", 1, 10, "footer", 0, 0, 0, "", "", -1)
+    private Row[] rows(int tableId) {
+        return new Row[] {
+                row(tableId, 1, "user", "0", "garland", 1, 0, "left", 0, 0, 0, "", "", -1),
+                row(tableId, 2, "user", "1", "garland", 1, 0, "left", 0, 0, 0, "", "", -1),
+                row(tableId, 3, "system", "0", "garland", 1, 10, "footer", 0, 0, 0, "", "", -1)
         };
     }
 }
