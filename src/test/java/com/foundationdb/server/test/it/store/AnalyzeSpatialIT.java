@@ -18,14 +18,13 @@
 package com.foundationdb.server.test.it.store;
 
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.server.TableStatistics;
 import com.foundationdb.server.spatial.Spatial;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
 import java.util.Collections;
-import java.util.concurrent.Callable;
 
 public final class AnalyzeSpatialIT extends ITBase {
     @Test
@@ -73,12 +72,15 @@ public final class AnalyzeSpatialIT extends ITBase {
         getStats(cid);
     }
 
-    private TableStatistics getStats(final int tableID) {
-        return txnService().run(session(), new Callable<TableStatistics>()
+    private void getStats(final int tableID) {
+        txnService().run(session(), new Runnable()
         {
             @Override
-            public TableStatistics call() throws Exception {
-                return indexStatsService().getTableStatistics(session(), getTable(tableID));
+            public void run() {
+                Table table = getTable(tableID);
+                for(Index index : table.getIndexesIncludingInternal()) {
+                    indexStatsService().getIndexStatistics(session(), index);
+                }
             }
         });
     }

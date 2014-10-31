@@ -22,17 +22,12 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexName;
-import com.foundationdb.ais.model.IndexRowComposition;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
-import com.foundationdb.server.TableStatistics;
-import com.foundationdb.server.TableStatus;
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
@@ -44,7 +39,6 @@ import com.foundationdb.server.store.FDBSchemaManager;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.store.format.FDBStorageDescription;
-import com.persistit.Key;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +46,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayDeque;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -195,28 +188,6 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
         result.setValidity(IndexStatistics.Validity.INVALID);
         cache.put(index, result);
         return null;
-    }
-
-    @Override
-    public TableStatistics getTableStatistics(Session session, Table table) {
-        final RowDef rowDef = table.rowDef();
-        final TableStatistics ts = new TableStatistics(table.getTableId());
-        final TableStatus status = rowDef.getTableStatus();
-        ts.setAutoIncrementValue(status.getAutoIncrement(session));
-        ts.setRowCount(status.getRowCount(session));
-        // TODO - get correct values
-        ts.setMeanRecordLength(100);
-        ts.setBlockSize(8192);
-        for(Index index : rowDef.getIndexes()) {
-            if(index.isSpatial()) {
-                continue;
-            }
-            TableStatistics.Histogram histogram = indexStatisticsToHistogram(session, index, store.createKey());
-            if(histogram != null) {
-                ts.addHistogram(histogram);
-            }
-        }
-        return ts;
     }
 
     @Override
@@ -395,52 +366,6 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
     //
     // Internal
     //
-
-    /** Convert from new-format histogram to old for adapter. */
-    protected TableStatistics.Histogram indexStatisticsToHistogram(Session session, Index index, Key key) {
-        IndexStatistics stats = getIndexStatistics(session, index);
-        if (stats == null) {
-            return null;
-        }
-        int nkeys = index.getKeyColumns().size();
-        Histogram fromHistogram = stats.getHistogram(0, nkeys);
-        if (fromHistogram == null) {
-            return null;
-        }
-        IndexRowComposition indexRowComposition = index.indexRowComposition();
-        RowDef indexRowDef = index.leafMostTable().rowDef();
-        TableStatistics.Histogram toHistogram = new TableStatistics.Histogram(index.getIndexId());
-        RowData indexRowData = new RowData(new byte[4096]);
-        Object[] indexValues = new Object[indexRowDef.getFieldCount()];
-        long count = 0;
-        for (HistogramEntry entry : fromHistogram.getEntries()) {
-            // Decode the key.
-            int keylen = entry.getKeyBytes().length;
-            System.arraycopy(entry.getKeyBytes(), 0, key.getEncodedBytes(), 0, keylen);
-            key.setEncodedSize(keylen);
-            key.indexTo(0);
-            int depth = key.getDepth();
-            // Copy key fields to index row.
-            for (int i = 0; i < nkeys; i++) {
-                int field = indexRowComposition.getFieldPosition(i);
-                if (--depth >= 0) {
-                    indexValues[field] = key.decode();
-                } else {
-                    indexValues[field] = null;
-                }
-            }
-            indexRowData.createRow(indexRowDef, indexValues);
-            // Partial counts to running total less than key.
-            count += entry.getLessCount();
-            toHistogram.addSample(new TableStatistics.HistogramSample(indexRowData.copy(), count));
-            count += entry.getEqualCount();
-        }
-        // Add final entry with all nulls.
-        Arrays.fill(indexValues, null);
-        indexRowData.createRow(indexRowDef, indexValues);
-        toHistogram.addSample(new TableStatistics.HistogramSample(indexRowData.copy(), count));
-        return toHistogram;
-    }
 
     private static AkibanInformationSchema createStatsTables(SchemaManager schemaManager) {
         NewAISBuilder builder = AISBBasedBuilder.create(INDEX_STATISTICS_TABLE_NAME.getSchemaName(),
