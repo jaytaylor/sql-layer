@@ -47,7 +47,6 @@ import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.WriteIndexRow;
 import com.foundationdb.qp.storeadapter.OperatorBasedRowCollector;
-import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.storeadapter.RowDataCreator;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.qp.util.SchemaCache;
@@ -771,6 +770,11 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     public OnlineHelper getOnlineHelper() {
         return onlineHelper;
     }
+    
+    public TypesRegistryService getTypesRegistry() {
+        return typesRegistryService;
+    }
+    
 
     //
     // Internal

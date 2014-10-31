@@ -29,6 +29,8 @@ import com.foundationdb.qp.rowtype.HKeyRowType;
 import com.foundationdb.server.store.PersistitKeyAppender;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TKeyComparable;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
@@ -76,19 +78,17 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
                 } else if (!this.values.get(columnIndex).hasAnyValue()) {
                     return -1;
                 } else {
-                    if (! TClass.comparisonNeedsCasting(this.values.get(columnIndex).getType(), 
-                            that.values.get(columnIndex).getType())) {
-                        cmp = TClass.compare(this.values.get(columnIndex).getType(), 
-                                this.values.get(columnIndex), 
-                                that.values.get(columnIndex).getType(), 
-                                that.values.get(columnIndex));
-                        if (cmp != 0) {
-                            return cmp;
-                        }
+                    ValueSource left = this.values.get(columnIndex);
+                    ValueSource right = that.values.get(columnIndex);
+                    TKeyComparable compare = registry.getKeyComparable(this.values.get(columnIndex).getType().typeClass(), 
+                            that.values.get(columnIndex).getType().typeClass());
+                    if (compare != null) {
+                        cmp =  compare.getComparison().compare(left.getType(), left, right.getType(), right);
                     } else {
-                        // TODO: Is this Correct? If the two columns are not comparable, which goes first? 
-                        // problem: the prefixOf uses this code, and that should return false for this case
-                        throw new UnsupportedOperationException();
+                        cmp = TClass.compare(left.getType(), left, right.getType(), right);
+                    }
+                    if (cmp != 0) {
+                        return cmp;
                     }
                 }
             }
@@ -134,11 +134,7 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
             if (segment >= t.hKeySegments) break;
             assert ordinals[segment] == t.ordinals[segment] : "Mismatched ordinals on segment " + segment +" for " + ordinals[segment] + " source vs " + t.ordinals[segment] + " target";
             for (int i = 0 ; i < keyDepth[segment]; i++) {
-                Value valueSource = valueAt(columnIndex);
-                if (valueSource.hasAnyValue()) {
-                    Value valueTarget = t.valueAt(columnIndex);
-                    ValueTargets.copyFrom(valueSource, valueTarget);
-                }
+                copyValue (valueAt(columnIndex), t.valueAt(columnIndex));
                 columnIndex++;
             }
         }
@@ -146,7 +142,10 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
             t.useSegments(hKeySegments);
     }
     
-
+    public void copyValueTo(ValueSource value, int columnIndex) {
+        copyValue (value, valueAt(columnIndex));
+    }
+    
     @Override
     public void extendWithOrdinal(int ordinal) {
         
@@ -174,6 +173,7 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
         }
     }
 
+    
     @Override
     public void extendWithNull() {
         int columnIndex = -1;
@@ -193,13 +193,6 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
     
     // HKey interface implementation - low level interface (to be removed at some point)
     
-    @Override 
-    public Key key(Key start) {
-        this.copyTo(start);
-        return start;
-    }
-
-
     @Override
     public void copyTo (Key target) {
         int columnIndex = 0;
@@ -268,6 +261,7 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
         }        
     }
     
+
     
     // AbstractHoldersRow overrides 
     
@@ -286,7 +280,7 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
         // TODO: This does the wrong thing for hkeys derived from group index rows!
         // TODO: See bug 997746.
         HKeyRowType rowType = this.rowType().schema().newHKeyRowType(table.hKey());
-        HKey ancestorHKey = new ValuesHKey(rowType);
+        HKey ancestorHKey = new ValuesHKey(rowType, this.registry);
         copyTo(ancestorHKey);
         ancestorHKey.useSegments(table.getDepth() + 1);
         return ancestorHKey;
@@ -294,9 +288,10 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
 
     // Constructors and private methods. 
     
-    public ValuesHKey (HKeyRowType rowType)
+    public ValuesHKey (HKeyRowType rowType, TypesRegistryService registry)
     {
         super(rowType, true);
+        this.registry = registry;
         this.hKeySegments = rowType().hKey().segments().size();
         setOrdinals();
     }
@@ -312,15 +307,25 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
             ordinalIndex++;
         }
     }
-    
+
+    private void copyValue (ValueSource valueSource, Value valueTarget) {
+        if (valueSource.hasAnyValue()) {
+            TKeyComparable compare = registry.getKeyComparable(valueSource.getType().typeClass(), valueTarget.getType().typeClass());
+            if (compare != null) {
+                compare.getComparison().copyComparables(valueSource, valueTarget);
+            } else {
+                ValueTargets.copyFrom(valueSource, valueTarget);
+            }
+        }        
+    }
     // For testing purposes
     protected int[] ordinals() { return ordinals; }
     
     private int[] ordinals;
     private int[] keyDepth;
     private int hKeySegments;
-//    private int extendIndex = 0;
     private static final Logger LOG = LoggerFactory.getLogger(ValuesHKey.class);
+    private final TypesRegistryService registry;
 
     private static final EnumMap<UnderlyingType, Class<?>> underlyingExpectedClasses = createPUnderlyingExpectedClasses();
 

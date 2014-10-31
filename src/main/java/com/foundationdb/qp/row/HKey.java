@@ -39,7 +39,6 @@ public interface HKey extends Comparable<HKey>
     ValueSource pEval(int i);
     
     // Lower level interface
-    public Key key(Key start);
     public void copyTo (Key start);
     public void copyFrom(Key source);
 

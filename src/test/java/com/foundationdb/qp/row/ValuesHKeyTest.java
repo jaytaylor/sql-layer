@@ -28,22 +28,25 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TestAISBuilder;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.rowdata.SchemaFactory;
-import com.foundationdb.server.types.service.TestTypesRegistry;
+import com.foundationdb.server.types.service.TypesRegistryService;
+import com.foundationdb.server.types.service.TypesRegistryServiceImpl;
 import com.persistit.Key;
 
 public class ValuesHKeyTest {
 
-    Schema schema;
-    
+
     @Before 
     public void createSchema() {
+        TypesRegistryServiceImpl registryImpl = new TypesRegistryServiceImpl();
+        registryImpl.start();
+        registry = registryImpl;
         this.schema = caoiSchema();
     }
     
     @Test
     public void testSegmentsTop() {
         Table customer = schema.ais().getTable("schema", "customer");
-        ValuesHKey key = new ValuesHKey(schema.newHKeyRowType(customer.hKey()));
+        ValuesHKey key = new ValuesHKey(schema.newHKeyRowType(customer.hKey()), registry);
         assertEquals(key.segments(), 1);
         assertEquals(key.rowType().nFields(), 1);
     }
@@ -51,7 +54,7 @@ public class ValuesHKeyTest {
     @Test
     public void testSegmentsBottom() {
         Table item = schema.ais().getTable("schema", "item");
-        ValuesHKey key = new ValuesHKey(schema.newHKeyRowType(item.hKey()));
+        ValuesHKey key = new ValuesHKey(schema.newHKeyRowType(item.hKey()), registry);
         assertEquals(key.segments(), 3);
         assertEquals(key.rowType().nFields(), 3);
     }
@@ -346,12 +349,22 @@ public class ValuesHKeyTest {
         assertTrue(!target.valueAt(2).hasAnyValue());
     }
     
+    @Test
+    public void compareTypes() {
+        ValuesHKey key= createHKey("customer");
+        key.valueAt(0).putInt32(42);
+        
+        ValuesHKey target = createHKey ("customer2");
+        target.valueAt(0).putInt64(42);
+        
+        assertEquals(key.compareTo(target), 0);
+        assertEquals(target.compareTo(key), 0);
+    }
     
     private ValuesHKey createHKey(String tableName) {
         
         Table table = schema.ais().getTable("schema", tableName);
-        ValuesHKey key = new ValuesHKey(schema.newHKeyRowType(table.hKey()));
-        
+        ValuesHKey key = new ValuesHKey(schema.newHKeyRowType(table.hKey()), registry);
         return key;
     }
     
@@ -360,7 +373,7 @@ public class ValuesHKeyTest {
     }
     
     private Schema caoiSchema() {
-        TestAISBuilder builder = new TestAISBuilder(TestTypesRegistry.MCOMPAT);
+        TestAISBuilder builder = new TestAISBuilder(registry.getTypesRegistry());
         builder.table("schema", "customer");
         builder.column("schema", "customer", "customer_id", 0, "MCOMPAT", "int", false);
         builder.column("schema", "customer", "customer_name", 1, "MCOMPAT", "varchar", 64L, null, false);
@@ -385,17 +398,27 @@ public class ValuesHKeyTest {
         builder.table("schema", "state");
         builder.column("schema", "state", "code", 0, "MCOMPAT", "varchar", 2L, null, false);
         builder.column("schema", "state", "name", 1, "MCOMPAT", "varchar", 50L, null, false);
+        builder.table("schema", "customer2");
+        builder.column("schema", "customer2", "customer_id", 0, "MCOMPAT", "int unsigned", false);
+        builder.column("schema", "customer2", "customer_name", 1, "MCOMPAT", "VARCHAR", 64L, null,  false);
+        builder.pk("schema", "customer2");
+        builder.indexColumn("schema", "customer2", Index.PRIMARY, "customer_id", 0, true, null);
         builder.basicSchemaIsComplete();
-        builder.createGroup("group", "groupschema");
+        builder.createGroup("group", "schema");
         builder.addJoinToGroup("group", "co", 0);
         builder.addJoinToGroup("group", "oi", 0);
         builder.createGroup("state", "schema");
         builder.addTableToGroup("state", "schema", "state");
+        builder.createGroup("customer", "schema");
+        builder.addTableToGroup("customer", "schema", "customer2");
         builder.groupingIsComplete();
         
         SchemaFactory factory = new SchemaFactory ("schema");
         factory.buildRowDefs(builder.akibanInformationSchema());
         return new Schema(builder.akibanInformationSchema());
     }
+
+    private Schema schema;
+    private TypesRegistryService registry;
 
 }

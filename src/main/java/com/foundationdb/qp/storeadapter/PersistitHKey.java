@@ -140,12 +140,6 @@ public class PersistitHKey implements HKey
         this.hKeySegments = hKeyMetadata.segments().size();
         this.keyDepth = hKeyMetadata.keyDepth();
     }
-
-    @Override
-    public Key key(Key start) {
-        hKey.copyTo(start);
-        return start;
-    }
     
     // For use by this class
     
