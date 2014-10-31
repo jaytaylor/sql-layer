@@ -186,11 +186,6 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
         }
     }
 
-    @Override
-    public ValueSource pEval(int valueIndex) {
-        return values.get(valueIndex);
-    }
-    
     // HKey interface implementation - low level interface (to be removed at some point)
     
     @Override

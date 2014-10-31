@@ -130,7 +130,7 @@ public class FDBIndexRowTest {
        HKey hKey = row.ancestorHKey(customers);
        assertNotNull (hKey);
        assertTrue(hKey.segments() == 1);
-       assertTrue(hKey.pEval(0).getInt64() == 1);
+       assertTrue(hKey.value(0).getInt64() == 1);
     }
     
     @Test 
@@ -146,9 +146,9 @@ public class FDBIndexRowTest {
         HKey hkey = row.ancestorHKey(items);
         
         assertNotNull (hkey);
-        assertEquals(hkey.pEval(0).getInt64(), 7L);
-        assertEquals(hkey.pEval(1).getInt64(), 5L);
-        assertEquals(hkey.pEval(2).getInt64(), 15L);
+        assertEquals(hkey.value(0).getInt64(), 7L);
+        assertEquals(hkey.value(1).getInt64(), 5L);
+        assertEquals(hkey.value(2).getInt64(), 15L);
     }
     
     

@@ -36,7 +36,9 @@ public interface HKey extends Comparable<HKey>
     void copyTo(HKey target);
     void extendWithOrdinal(int ordinal);
     void extendWithNull();
-    ValueSource pEval(int i);
+    
+    // testing only 
+    ValueSource value(int index);
     
     // Lower level interface
     public void copyTo (Key start);
