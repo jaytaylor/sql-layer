@@ -36,7 +36,7 @@ SET FDBSQL_RFDIR=%FDBSQL_HOME%\sql\lib\fdb-sql-layer-routinefw
 @REM Replaced during install
 SET FDBSQL_CONF=${confdir}
 SET FDBSQL_LOGDIR=${logdir}
-SET FDBSQL_POLICY=%FDBSQL_CONF%\sql-layer-win.policy
+SET FDBSQL_POLICY=%FDBSQL_CONF%\sql-layer.policy
 
 FOR %%P IN (prunsrv.exe) DO SET PRUNSRV=%%~$PATH:P
 FOR %%P IN (prunmgr.exe) DO SET PRUNMGR=%%~$PATH:P
