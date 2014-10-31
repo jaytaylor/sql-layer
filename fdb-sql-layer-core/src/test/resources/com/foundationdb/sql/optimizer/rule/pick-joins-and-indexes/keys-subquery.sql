@@ -1,0 +1,1 @@
+SELECT * FROM customers WHERE cid = (SELECT MAX(cid) FROM orders)

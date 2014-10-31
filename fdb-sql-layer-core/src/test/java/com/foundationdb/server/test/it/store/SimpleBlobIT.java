@@ -19,6 +19,7 @@ package com.foundationdb.server.test.it.store;
 
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.TestAISBuilder;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.util.WrappingByteSource;
@@ -82,17 +83,19 @@ public class SimpleBlobIT extends ITBase {
 
     private void testBlobs(int rowCount) throws Exception {
         final int tid = setUpTable();
-        final List<NewRow> expected = new ArrayList<>();
+        final List<Row> expected = new ArrayList<>();
         for (int i = 1; i <= rowCount; ++i) {
             int bsize = (int)Math.pow(5, i);
             int csize = (int)Math.pow(10, i);
-            NewRow row = createNewRow(tid, i, bigString(bsize), bigString(csize));
+            Row row = row(tid, i, bigString(bsize), bigString(csize));
             writeRows(row);
-            row = createNewRow (tid, i, bigBytes(bsize), bigBytes(csize));
+            row = row(tid, i, bigBytes(bsize), bigBytes(csize));
             expected.add(row);
         }
-        final List<NewRow> actual = scanAll(scanAllRequest(tid));
-        assertEquals(expected, actual);
+        expectRows(
+            tid,
+            expected
+        );
      }
 
     private byte[] bigString(final int length) {

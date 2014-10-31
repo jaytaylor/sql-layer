@@ -1,0 +1,15 @@
+{
+  "id": 1,
+  "a_int": "-352",
+  "a_uint": "52",
+  "a_float": "-42.58",
+  "a_ufloat": "4598.0293",
+  "a_double": "-4.89E-138",
+  "a_udouble": "5.92e218",
+  "a_decimal": "423.52",
+  "a_varchar": "Hey John, I like your shoes.",
+  "a_date": "2014-10-01",
+  "a_time": "13:42:58",
+  "a_datetime": "1907-03-24 08:39:21",
+  "a_boolean": "true"
+}

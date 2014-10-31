@@ -768,7 +768,7 @@ public class PostgresServerConnection extends ServerSessionBase
         for (int i = 0; i < nparams; i++)
             paramTypes[i] = messenger.readInt();
         sessionMonitor.startStatement(sql, stmtName);
-        logger.debug("Parse: {} = {}", stmtName, sql);
+        logger.debug("Parse: {} = {} with types {}", stmtName, sql, paramTypes);
         
         PostgresQueryContext context = new PostgresQueryContext(this);
         updateAIS(context);
@@ -905,7 +905,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 boolean binary = false;
                 if ((paramsBinary != null) && (i < paramsBinary.length))
                     binary = paramsBinary[i];
-                valueDecoder.decodeValue(params[i], pgType, binary, bindings, i, bound);
+                valueDecoder.decodeValue(params[i], pgType, binary, bindings, i, bound, typesRegistryService());
             }
             logger.debug("Bound params: {}", bindings);
         }
@@ -922,8 +922,10 @@ public class PostgresServerConnection extends ServerSessionBase
     }
 
     protected void processDescribe() throws IOException{
+
         byte source = messenger.readByte();
         String name = messenger.readString();
+        logger.debug("Describe: {}", name);
         PostgresStatement pstmt;
         PostgresQueryContext context;
         boolean params;

@@ -30,7 +30,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
@@ -61,31 +60,31 @@ public class IndexScanLookaheadIT extends OperatorITBase
     protected void setupPostCreateSchema() {
         super.setupPostCreateSchema();
         // Like super, but with a whole lot more cid=2 orders.
-        db = new NewRow[]{createNewRow(customer, 1L, "xyz"),
-                          createNewRow(customer, 2L, "abc"),
-                          createNewRow(customer, 4L, "qqq"),
-                          createNewRow(order, 11L, 1L, "ori"),
-                          createNewRow(order, 12L, 1L, "david"),
-                          createNewRow(order, 21L, 2L, "tom"),
-                          createNewRow(order, 22L, 2L, "jack"),
-                          createNewRow(order, 23L, 2L, "dave"),
-                          createNewRow(order, 24L, 2L, "dave"),
-                          createNewRow(order, 25L, 2L, "dave"),
-                          createNewRow(order, 26L, 2L, "dave"),
-                          createNewRow(order, 27L, 2L, "dave"),
-                          createNewRow(order, 28L, 2L, "dave"),
-                          createNewRow(order, 29L, 2L, "dave"),
-                          createNewRow(order, 41L, 4L, "nathan"),
-                          createNewRow(item, 111L, 11L),
-                          createNewRow(item, 112L, 11L),
-                          createNewRow(item, 121L, 12L),
-                          createNewRow(item, 122L, 12L),
-                          createNewRow(item, 211L, 21L),
-                          createNewRow(item, 212L, 21L),
-                          createNewRow(item, 221L, 22L),
-                          createNewRow(item, 222L, 22L),
-                          createNewRow(item, 241L, 24L),
-                          createNewRow(item, 251L, 25L)};
+        db = new Row[]{ row(customer, 1L, "xyz"),
+                          row(customer, 2L, "abc"),
+                          row(customer, 4L, "qqq"),
+                          row(order, 11L, 1L, "ori"),
+                          row(order, 12L, 1L, "david"),
+                          row(order, 21L, 2L, "tom"),
+                          row(order, 22L, 2L, "jack"),
+                          row(order, 23L, 2L, "dave"),
+                          row(order, 24L, 2L, "dave"),
+                          row(order, 25L, 2L, "dave"),
+                          row(order, 26L, 2L, "dave"),
+                          row(order, 27L, 2L, "dave"),
+                          row(order, 28L, 2L, "dave"),
+                          row(order, 29L, 2L, "dave"),
+                          row(order, 41L, 4L, "nathan"),
+                          row(item, 111L, 11L),
+                          row(item, 112L, 11L),
+                          row(item, 121L, 12L),
+                          row(item, 122L, 12L),
+                          row(item, 211L, 21L),
+                          row(item, 212L, 21L),
+                          row(item, 221L, 22L),
+                          row(item, 222L, 22L),
+                          row(item, 241L, 24L),
+                          row(item, 251L, 25L)};
         use(db);
     }
 

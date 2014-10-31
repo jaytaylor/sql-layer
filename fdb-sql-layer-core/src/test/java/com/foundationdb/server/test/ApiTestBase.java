@@ -26,6 +26,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -38,12 +39,29 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
+import com.foundationdb.qp.expression.ExpressionRow;
+import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Cursor;
+import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.operator.UpdateFunction;
+import com.foundationdb.qp.row.BindableRow;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.util.SchemaCache;
+import com.foundationdb.server.error.NoSuchIndexException;
 import com.foundationdb.server.store.FDBHolder;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.model.Index.JoinType;
 import com.foundationdb.ais.util.TableChangeValidator;
+import com.foundationdb.server.test.it.qp.TestRow;
+import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedLiteral;
 import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.SimpleQueryContext;
@@ -59,7 +77,6 @@ import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.rowdata.SchemaFactory;
 import com.foundationdb.server.service.ServiceManagerImpl;
 import com.foundationdb.server.service.config.ConfigurationService;
-import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.config.TestConfigService;
 import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.dxl.DXLTestHookRegistry;
@@ -74,6 +91,7 @@ import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.sql.RegexFilenameFilter;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.aisddl.AlterTableDDL;
+import com.foundationdb.sql.optimizer.rule.PlanGenerator;
 import com.foundationdb.sql.parser.AlterTableNode;
 import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.StatementNode;
@@ -83,11 +101,11 @@ import com.foundationdb.util.Strings;
 import com.foundationdb.util.tap.TapReport;
 import com.foundationdb.util.Undef;
 
+import com.geophile.z.Space;
 import org.junit.Assert;
 import org.junit.After;
 import org.junit.Before;
 
-import com.foundationdb.server.api.dml.scan.RowDataOutput;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.util.ListUtils;
 
@@ -96,7 +114,6 @@ import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.DMLFunctions;
 import com.foundationdb.server.api.dml.scan.CursorId;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.api.dml.scan.RowOutput;
 import com.foundationdb.server.api.dml.scan.ScanAllRequest;
 import com.foundationdb.server.api.dml.scan.ScanRequest;
@@ -130,7 +147,6 @@ public class ApiTestBase {
     };
 
     public static interface TestRowOutput extends RowOutput {
-        public int getRowCount();
         public void clear();
     }
 
@@ -149,11 +165,6 @@ public class ApiTestBase {
         }
 
         @Override
-        public int getRowCount() {
-            return rows.size();
-        }
-
-        @Override
         public void clear() {
             rows.clear();
         }
@@ -166,36 +177,6 @@ public class ApiTestBase {
         @Override
         public void rewind() {
             ListUtils.truncate(rows, mark);
-        }
-    }
-
-    public static class CountingRowOutput implements TestRowOutput {
-        private int count = 0;
-        private int mark = 0;
-
-        @Override
-        public void output(NewRow row) {
-            ++count;
-        }
-
-        @Override
-        public void mark() {
-            mark = count;
-        }
-
-        @Override
-        public void rewind() {
-            count = mark;
-        }
-
-        @Override
-        public int getRowCount() {
-            return count;
-        }
-
-        @Override
-        public void clear() {
-            count = 0;
         }
     }
 
@@ -229,9 +210,8 @@ public class ApiTestBase {
     }
 
     private static ServiceManager sm;
-    private Session session;
+    private Session sharedSession;
     private int aisGeneration;
-    private final Set<RowUpdater> unfinishedRowUpdaters = new HashSet<>();
     private static Map<String,String> lastStartupConfigProperties = null;
     private static boolean needServicesRestart = false;
     protected static Set<Callable<Void>> beforeStopServices = new HashSet<>();
@@ -254,7 +234,6 @@ public class ApiTestBase {
 
     @Before
     public final void startTestServices() throws Throwable {
-        assertTrue("some row updaters were left over: " + unfinishedRowUpdaters, unfinishedRowUpdaters.isEmpty());
         System.setProperty("fdbsql.home", System.getProperty("user.home"));
         try {
             Map<String, String> startupConfigProperties = startupConfigProperties();
@@ -293,7 +272,7 @@ public class ApiTestBase {
                 }
                 lastStartupConfigProperties = propertiesForEquality;
             }
-            session = sm.getSessionService().createSession();
+            sharedSession = sm.getSessionService().createSession();
         } catch (Exception e) {
             handleStartupFailure(e);
         }
@@ -338,9 +317,6 @@ public class ApiTestBase {
     public final void tearDownAllTables() throws Exception {
         if (lastStartupConfigProperties == null)
             return; // services never started up
-        Set<RowUpdater> localUnfinishedUpdaters = new HashSet<>(unfinishedRowUpdaters);
-        unfinishedRowUpdaters.clear();
-        assertTrue("not all updaters were used: " + localUnfinishedUpdaters, localUnfinishedUpdaters.isEmpty());
         String openCursorsMessage = null;
         if (sm.serviceIsStarted(DXLService.class)) {
             dropAllTables();
@@ -367,7 +343,7 @@ public class ApiTestBase {
                 );
             }
         }
-        session.close();
+        sharedSession.close();
 
         if (openCursorsMessage != null) {
             fail(openCursorsMessage);
@@ -392,20 +368,12 @@ public class ApiTestBase {
         lastStartupConfigProperties = null;
         sm.stopServices();
     }
-    
-    public final void crashTestServices() throws Exception {
-        beforeStopServices();
-        sm.crashServices();
-        sm = null;
-        session = null;
-        lastStartupConfigProperties = null;
-    }
-    
+
     public final void restartTestServices(Map<String, String> properties) throws Exception {
         ServiceManagerImpl.setServiceManager(null);
         sm = createServiceManager( properties );
         sm.startServices();
-        session = sm.getSessionService().createSession();
+        sharedSession = sm.getSessionService().createSession();
         lastStartupConfigProperties = propertiesForEquality(properties);
         ddl(); // loads up the schema manager et al
         ServiceManagerImpl.setServiceManager(sm);
@@ -464,15 +432,15 @@ public class ApiTestBase {
     }
 
     protected final Session session() {
-        return session;
+        return sharedSession;
     }
 
     protected final StoreAdapter newStoreAdapter(Schema schema) {
         return newStoreAdapter(session(), schema);
     }
 
-    protected final StoreAdapter newStoreAdapter(Session explicit_session, Schema schema) {
-        return store().createAdapter(explicit_session, schema);
+    protected final StoreAdapter newStoreAdapter(Session session, Schema schema) {
+        return store().createAdapter(session, schema);
     }
 
     protected final QueryContext queryContext(StoreAdapter adapter) {
@@ -485,7 +453,11 @@ public class ApiTestBase {
     }
 
     protected final AkibanInformationSchema ais() {
-        return ddl().getAIS(session());
+        return ais(session());
+    }
+
+    protected final AkibanInformationSchema ais(Session session) {
+        return ddl().getAIS(session);
     }
 
     protected final AISCloner aisCloner() {
@@ -828,30 +800,28 @@ public class ApiTestBase {
 
     protected void loadDataFile(String schemaName, File file) throws Exception {
         String tableName = file.getName().replace(".dat", "");
-        int tableId = tableId(schemaName, tableName);
-        final List<NewRow> rows = new ArrayList<>();
+        Table table = getTable(schemaName, tableName);
+        final List<Row> rows = new ArrayList<>();
         for (String line : Strings.dumpFile(file)) {
             String[] cols = line.split("\t");
-            NewRow row = createNewRow(tableId);
+            Object[] values = new Object[cols.length];
             for (int i = 0; i < cols.length; i++) {
                 Object val;
                 if ("NULL".equalsIgnoreCase(cols[i])) {
                     val = null;
-                } else if (isBinary(row.getRowDef(), i)) {
+                } else if (isBinary(table.getColumn(i))) {
                     val = Strings.fromBase64(cols[i]);
                 } else {
                     val = cols[i];
                 }
-                row.put(i, val);
+                values[i] = val;
             }
-            rows.add(row);
+            rows.add(row(table, values));
         }
         txnService().run(session(), new Runnable() {
             @Override
             public void run() {
-                for(NewRow r : rows) {
-                    writeRows(r);
-                }
+                writeRows(rows);
             }
         });
     }
@@ -866,8 +836,8 @@ public class ApiTestBase {
         return rootTableID;
     }
 
-    protected boolean isBinary(RowDef rowDef, int index) {
-        return (rowDef.getFieldDef(index).column().getType().typeClass() instanceof com.foundationdb.server.types.common.types.TBinary);
+    protected static boolean isBinary(Column column) {
+        return (column.getType().typeClass() instanceof com.foundationdb.server.types.common.types.TBinary);
     }
 
     /**
@@ -887,80 +857,204 @@ public class ApiTestBase {
         return new RuntimeException("unexpected exception", cause);
     }
 
-    protected final List<RowData> scanFull(ScanRequest request) {
-        try {
-            return RowDataOutput.scanFull(session(), aisGeneration(), dml(), request);
-        } catch (InvalidOperationException e) {
-            throw new TestException(e);
+    protected List<Row> scanAll(int tableID) {
+        Table table = getTable(tableID);
+        Operator plan = scanTablePlan(table);
+        return runPlan(session(), SchemaCache.globalSchema(table.getAIS()), plan);
+    }
+
+    protected List<Row> scanAll(int tableID, int indexID) {
+        Table table = getTable(tableID);
+        Index index = null;
+        for(Index idx : table.getIndexesIncludingInternal()) {
+            if(idx.getIndexId() == indexID) {
+                index = idx;
+                break;
+            }
         }
-    }
-
-    protected final List<NewRow> scanAll(ScanRequest request) throws InvalidOperationException {
-        ListRowOutput output = new ListRowOutput();
-        CursorId cursorId = dml().openCursor(session(), aisGeneration(), request);
-
-        dml().scanSome(session(), cursorId, output);
-        dml().closeCursor(session(), cursorId);
-
-        return output.getRows();
-    }
-
-    protected final ScanRequest scanAllIndexRequest(TableIndex index)  throws InvalidOperationException {
-        final Set<Integer> columns = new HashSet<>();
-        for(IndexColumn icol : index.getKeyColumns()) {
-            columns.add(icol.getColumn().getPosition());
+        if(index == null) {
+            throw new IllegalArgumentException("no indexid: " + indexID);
         }
-        return new ScanAllRequest(index.getTable().getTableId(), columns, index.getIndexId(), null);
+        Operator plan = scanIndexPlan(index);
+        return runPlan(session(), SchemaCache.globalSchema(table.getAIS()), plan);
     }
 
-    protected final List<NewRow> scanAllIndex(TableIndex index)  throws InvalidOperationException {
-        return scanAll(scanAllIndexRequest(index));
+    private Operator scanTablePlan(Table table) {
+        Schema schema = SchemaCache.globalSchema(table.getAIS());
+        return API.filter_Default(API.groupScan_Default(table.getGroup()),
+                                  Arrays.asList(schema.tableRowType(table)));
     }
 
-    protected final void writeRow(int tableId, Object... values) {
-        dml().writeRow(session(), createNewRow(tableId, values));
+    protected Operator scanIndexPlan(Index index) {
+        Schema schema = SchemaCache.globalSchema(index.getAIS());
+        return API.indexScan_Default(schema.indexRowType(index));
     }
 
-
-    protected final RowUpdater update(NewRow oldRow) {
-        RowUpdater updater = new RowUpdaterImpl(oldRow);
-        unfinishedRowUpdaters.add(updater);
-        return updater;
-    }
-    
-    protected final RowUpdater update(int tableId, Object... values) {
-        NewRow oldRow = createNewRow(tableId, values);
-        return update(oldRow);
+    protected final List<Row> scanAllIndex(Index index) {
+        AkibanInformationSchema ais = ais();
+        Schema schema = SchemaCache.globalSchema(ais);
+        Operator plan = API.indexScan_Default(schema.indexRowType(index));
+        return runPlan(session(), schema, plan);
     }
 
-    protected final int writeRows(NewRow... rows) throws InvalidOperationException {
-        for (NewRow row : rows) {
-            dml().writeRow(session(), row);
+    protected List<Row> writeRow(int tableID, Object... fields) {
+        return writeRow(session(), tableID, fields);
+    }
+
+    protected List<Row> writeRow(Session session, int tableID, Object... fields) {
+        Row row = row(session, tableID, fields);
+        return writeRows(session, row);
+    }
+
+    protected List<Row> writeRow(Row row) {
+        return writeRow(session(), row);
+    }
+
+    protected List<Row> writeRow(Session session, Row row) {
+        return writeRows(session, row);
+    }
+
+    protected List<Row> writeRows(Row... rows) {
+        return writeRows(session(), rows);
+    }
+
+    protected List<Row> writeRows(Session session, Row... rows) {
+        return writeRows(session, Arrays.asList(rows));
+    }
+
+    protected List<Row> writeRows(Collection<Row> rows) {
+        return writeRows(session(), rows);
+    }
+
+    protected List<Row> writeRows(Session session, Collection<Row> rows) {
+        RowType lastRowType = null;
+        List<Row> someRows = new ArrayList<>();
+        List<Row> outputRows = new ArrayList<>();
+        for(Row r : rows) {
+            if(lastRowType != r.rowType()) {
+                if(!someRows.isEmpty()) {
+                    outputRows.addAll(writeRowsInternal(session, lastRowType, someRows));
+                }
+                someRows.clear();
+                lastRowType = r.rowType();
+            }
+            someRows.add(r);
         }
-        return rows.length;
+        if(!someRows.isEmpty()) {
+            outputRows.addAll(writeRowsInternal(session, lastRowType, someRows));
+        }
+        return outputRows;
     }
 
-    protected final void deleteRow(int tableId, Object... values) {
-        dml().deleteRow(session(), createNewRow(tableId, values), false);
-    }
-
-    protected final void expectRows(ScanRequest request, NewRow... expectedRows) throws InvalidOperationException {
-        assertEquals("rows scanned", Arrays.asList(expectedRows), scanAll(request));
-    }
-
-    protected final ScanAllRequest scanAllRequest(int tableId) {
-        return scanAllRequest(tableId, false);
-    }
-
-    protected final ScanAllRequest scanAllRequest(int tableId, boolean includingInternal) {
-        Table table = ddl().getTable(session(), tableId);
-        Set<Integer> allCols = new HashSet<>();
-        List<Column> columns = includingInternal ? table.getColumnsIncludingInternal() : table.getColumns();
-        for (Column column : columns)
+    private List<Row> writeRowsInternal(Session session, final RowType rowType, final Collection<Row> rows) {
+        return runPlan(session, rowType.schema(), new PlanCreator()
         {
-            allCols.add(column.getPosition());
+            @Override
+            public Operator createPlan() {
+                // Delicate: Create on demand so bindableRows can evaluate an expression for
+                //           hidden sequences. This can go away if ITs get sane txn management.
+                return API.insert_Returning(API.valuesScan_Default(bindableRows(rows), rowType));
+            }
+        });
+    }
+
+    protected List<Row> updateRow(final Row oldRow, final Row newRow) {
+        return updateRow(session(), oldRow, newRow);
+    }
+
+    protected List<Row> updateRow(Session session, final Row oldRow, final Row newRow) {
+        if(oldRow.rowType() != newRow.rowType()) {
+            throw new IllegalArgumentException("mixed RowTypes");
         }
-        return new ScanAllRequest(tableId, allCols);
+        Operator plan = API.update_Returning(API.valuesScan_Default(bindableRows(oldRow), oldRow.rowType()),
+                                             new UpdateFunction()
+                                             {
+                                                 @Override
+                                                 public Row evaluate(Row original,
+                                                                     QueryContext context,
+                                                                     QueryBindings bindings) {
+                                                     return newRow;
+                                                 }
+
+                                                 @Override
+                                                 public boolean rowIsSelected(Row row) {
+                                                     return row == oldRow;
+                                                 }
+                                             });
+        return runPlan(session, oldRow.rowType().schema(), plan);
+    }
+
+    protected List<Row> deleteRow(int tableID, Object... fields) {
+        Row row = row(tableID, fields);
+        return deleteRow(row);
+    }
+
+    protected List<Row> deleteRow(Row row) {
+        return deleteRow(row, false);
+    }
+
+    protected List<Row> deleteRow(Row row, boolean cascade) {
+        Operator plan = API.delete_Returning(API.valuesScan_Default(bindableRows(row),
+                                                                    row.rowType()),
+                                             cascade);
+        return runPlan(session(), row.rowType().schema(), plan);
+    }
+
+    protected static List<? extends BindableRow> bindableRows(Row... rows) {
+        return bindableRows(Arrays.asList(rows));
+    }
+
+    protected static List<? extends BindableRow> bindableRows(Collection<Row> rows) {
+        List<BindableRow> output = new ArrayList<>();
+        for(Row r : rows) {
+            output.add(BindableRow.of(r));
+        }
+        return output;
+    }
+
+    private interface PlanCreator {
+        Operator createPlan();
+    }
+
+    protected List<Row> runPlan(final Session session, final Schema schema, final Operator plan) {
+        return runPlan(session, schema, new PlanCreator()
+        {
+            public Operator createPlan() {
+                return plan;
+            }
+        });
+    }
+
+    protected List<Row> runPlan(final Session session, final Schema schema, final PlanCreator plan) {
+        if(txnService().isTransactionActive(session)) {
+            return runPlanInternal(session, schema, plan.createPlan());
+        } else {
+            // TODO: Get all ITs managing their own transactions
+            return txnService().run(session, new Callable<List<Row>>()
+            {
+                @Override
+                public List<Row> call() throws Exception {
+                    return runPlanInternal(session, schema, plan.createPlan());
+                }
+            });
+        }
+    }
+
+    protected List<Row> runPlanInternal(Session session, Schema schema, Operator plan) {
+        StoreAdapter adapter = newStoreAdapter(session, schema);
+        QueryContext context = queryContext(adapter);
+        Cursor cursor = API.cursor(plan, context, context.createBindings());
+        cursor.openTopLevel();
+        try {
+            List<Row> output = new ArrayList<>();
+            Row row;
+            while((row = cursor.next()) != null) {
+                output.add(row);
+            }
+            return output;
+        } finally {
+            cursor.closeTopLevel();
+        }
     }
 
     protected final int indexId(String schema, String table, String index) {
@@ -980,10 +1074,7 @@ public class ApiTestBase {
         if (aisIndex == null) {
             throw new RuntimeException("no such index: " + index);
         }
-        return openFullScan(
-            aisTable.getTableId(),
-            aisIndex.getIndexId()
-                           );
+        return openFullScan(aisTable.getTableId(), aisIndex.getIndexId());
     }
 
     protected final CursorId openFullScan(int tableId, int indexId) throws InvalidOperationException {
@@ -1092,19 +1183,44 @@ public class ApiTestBase {
         return result;
     }
 
-    protected final void expectFullRows(int tableId, NewRow... expectedRows) throws InvalidOperationException {
-        ScanRequest all = scanAllRequest(tableId);
-        expectRows(all, expectedRows);
-        expectRowCount(tableId, expectedRows.length);
+    protected void expectRows(int tableID, Row... expectedRows) {
+        expectRows(tableID, Arrays.asList(expectedRows));
     }
 
-    protected final List<NewRow> convertRowDatas(List<RowData> rowDatas) {
-        List<NewRow> ret = new ArrayList<>(rowDatas.size());
-        for(RowData rowData : rowDatas) {
-            NewRow newRow = NiceRow.fromRowData(rowData, ddl().getRowDef(session(), rowData.getRowDefId()));
-            ret.add(newRow);
-        }
-        return ret;
+    protected void expectRows(int tableID, Collection<Row> expectedRows) {
+        expectRows(tableID, false, expectedRows);
+    }
+
+    protected void expectRowsSkipInternal(int tableID, Row... expectedRows) {
+        expectRows(tableID, true, Arrays.asList(expectedRows));
+    }
+
+    protected void expectRows(int tableID, boolean skipInternal, Collection<Row> expectedRows) {
+        Operator plan = scanTablePlan(getTable(tableID));
+        expectRows(plan, skipInternal, expectedRows);
+        expectRowCount(tableID, expectedRows.size());
+    }
+
+    protected void expectRows(Index index, Row... expectedRows) {
+        expectRows(index, Arrays.asList(expectedRows));
+    }
+
+    protected void expectRows(Index index, Collection<Row> expectedRows) {
+        expectRows(scanIndexPlan(index), false, expectedRows);
+    }
+
+    protected void expectRowsSkipInternal(Index index, Row... expectedRows) {
+        expectRows(scanIndexPlan(index), true, Arrays.asList(expectedRows));
+    }
+
+    protected void expectRows(Operator plan, boolean skipInternal, Collection<Row> expectedRows) {
+        Schema schema = SchemaCache.globalSchema(ais());
+        expectRows(schema, plan, skipInternal, expectedRows);
+    }
+
+    protected void expectRows(Schema schema, Operator plan, boolean skipInternal, Collection<Row> expectedRows) {
+        List<Row> actual = runPlan(session(), schema, plan);
+        compareRows(expectedRows, actual, skipInternal);
     }
 
     protected static Set<CursorId> cursorSet(CursorId... cursorIds) {
@@ -1117,21 +1233,60 @@ public class ApiTestBase {
         return set;
     }
 
-    public NewRow createNewRow(int tableId, Object... columns) {
-        return createNewRow(getRowDef(tableId), columns);
+    public Row row(RowDef rowDef, Object... fields) {
+        return row(rowDef.table(), fields);
     }
-    
-    public static NewRow createNewRow(RowDef rowDef, Object... columns) {
-        NewRow row = new NiceRow(rowDef.getRowDefId(), rowDef);
-        for (int i=0; i < columns.length; ++i) {
-            if (columns[i] != UNDEF) {
-                row.put(i, columns[i] );
+
+    public Row row(Table table, Object... fields) {
+        return row(table.getTableId(), fields);
+    }
+
+    public Row row(int tableID, Object... fields) {
+        return row(session(), tableID, fields);
+    }
+
+    public Row row(Session session, int tableID, Object... fields) {
+        AkibanInformationSchema ais = ais(session);
+        Schema schema = SchemaCache.globalSchema(ais);
+        RowType rowType = schema.tableRowType(tableID);
+        return row(rowType, fields);
+    }
+
+    public Row row(Index index, Object... fields) {
+        AkibanInformationSchema ais = ais(session());
+        Schema schema = SchemaCache.globalSchema(ais);
+        RowType rowType = schema.indexRowType(index);
+        return row(rowType, fields);
+    }
+
+    public Row row(RowType rowType, Object... fields) {
+        for(Object o : fields) {
+            if(o == UNDEF) {
+                throw new UnsupportedOperationException("UNDEF");
             }
         }
-        return row;
+
+        if(fields.length < rowType.nFields()) {
+            QueryContext context = new SimpleQueryContext(newStoreAdapter(rowType.schema()));
+            List<TPreparedExpression> expressions = new ArrayList<>();
+            for(int i = 0; i < fields.length; ++i) {
+                TInstance type = rowType.typeAt(i);
+                TPreptimeValue val = ValueSources.fromObject(fields[i], type);
+                expressions.add(new TPreparedLiteral(type, val.value()));
+            }
+            for(int i = fields.length; i < rowType.nFields(); ++i) {
+                Column col = getColumn(rowType, i);
+                if(col == null) {
+                    throw new IllegalArgumentException("Column " + i + "not specified and no default: " + rowType);
+                }
+                expressions.add(PlanGenerator.generateDefaultExpression(col, null, typesRegistryService(), ddl().getTypesTranslator(), context));
+            }
+            return new ExpressionRow(rowType, context, context.createBindings(), expressions);
+        } else {
+            return new TestRow(rowType, fields);
+        }
     }
-    
-    
+
     protected final void dropAllTables() throws InvalidOperationException {
         dropAllTables(session());
     }
@@ -1258,49 +1413,18 @@ public class ApiTestBase {
         assertEquals("indexes in " + table.getName(), expectedIndexesSet, actualIndexes);
     }
 
-    public interface RowUpdater {
-        void to(Object... values);
-        void to(NewRow newRow);
-    }
-
-    private class RowUpdaterImpl implements RowUpdater {
-        @Override
-        public void to(Object... values) {
-            NewRow newRow = createNewRow(oldRow.getTableId(), values);
-            to(newRow);
-        }
-
-        @Override
-        public void to(NewRow newRow) {
-            boolean removed = unfinishedRowUpdaters.remove(this);
-            dml().updateRow(session(), oldRow, newRow, null);
-            assertTrue("couldn't remove row updater " + toString(), removed);
-        }
-
-        @Override
-        public String toString() {
-            return "RowUpdater for " + oldRow;
-        }
-
-        private RowUpdaterImpl(NewRow oldRow) {
-            this.oldRow = oldRow;
-        }
-
-        private final NewRow oldRow;
-    }
-
     protected <T> T transactionally(Callable<T> callable) throws Exception {
-        txnService().beginTransaction(session);
+        txnService().beginTransaction(session());
         try {
             T value = callable.call();
-            txnService().commitTransaction(session);
+            txnService().commitTransaction(session());
             return value;
         }
         finally {
-            txnService().rollbackTransactionIfOpen(session);
+            txnService().rollbackTransactionIfOpen(session());
         }
     }
-    
+
     protected <T> T transactionallyUnchecked(Callable<T> callable) {
         try {
             return transactionally(callable);
@@ -1308,7 +1432,7 @@ public class ApiTestBase {
             throw Exceptions.throwAlways(e);
         }
     }
-    
+
     protected void transactionallyUnchecked(final Runnable runnable) {
         transactionallyUnchecked(new Callable<Void>() {
             @Override
@@ -1344,5 +1468,119 @@ public class ApiTestBase {
         assertTrue("is alter node", node instanceof AlterTableNode);
         TableChangeValidator.ChangeLevel level = AlterTableDDL.alterTable(ddl, dml, session, defaultSchema, (AlterTableNode) node, context);
         assertEquals("ChangeLevel", expectedChangeLevel, level);
+    }
+
+    protected static void compareRows(Collection<? extends Row> expected, Collection<? extends Row> actual, boolean skipInternalColumns) {
+        Iterator<? extends Row> eIt = expected.iterator();
+        Iterator<? extends Row> aIt = actual.iterator();
+        int i = 0;
+        while(eIt.hasNext() && aIt.hasNext()) {
+            compareTwoRows(eIt.next(), aIt.next(), i++, skipInternalColumns);
+        }
+        assertEquals("row count", expected.size(), actual.size());
+    }
+
+    protected static void compareTwoRows(Row expected, Row actual, int rowNumber) {
+        compareTwoRows(expected, actual, rowNumber, false);
+    }
+
+
+    private static void compareTwoRows(Row expected, Row actual, int rowNumber, boolean skipInternalColumns) {
+        if(!equal(expected, actual,skipInternalColumns)) {
+            assertEquals("row " + rowNumber, String.valueOf(expected), String.valueOf(actual));
+        }
+        if(expected instanceof TestRow) {
+            TestRow expectedTestRow = (TestRow) expected;
+            if (expectedTestRow.persistityString() != null) {
+                Object hKey = (actual != null) ? actual.hKey() : null;
+                String actualHKeyString = String.valueOf(hKey);
+                assertEquals(rowNumber + ": hkey", expectedTestRow.persistityString(), actualHKeyString);
+            }
+        }
+    }
+
+    private static boolean equal(Row expected, Row actual, boolean skipInternalColumns)
+    {
+        int nFields;
+        if(skipInternalColumns){
+            boolean equal = getTotalNonInternalColumns(expected) == getTotalNonInternalColumns(actual);
+            if (!equal)
+                return false;
+            nFields = getTotalNonInternalColumns(actual);
+        }//Used to ignore added pk column when create table as select is used
+        else {
+            boolean equal = expected.rowType().nFields() == actual.rowType().nFields();
+            if (!equal)
+                return false;
+            nFields = actual.rowType().nFields();
+        }
+        Space space = space(expected.rowType());
+        if (space != null) {
+            nFields = nFields - space.dimensions() + 1;
+        }
+        for (int actualPosition = 0, expectedPosition = 0;
+             actualPosition < nFields && expectedPosition < nFields;
+             actualPosition++, expectedPosition++) {
+            if(skipInternalColumns) {
+                while (isInternalColumn(actual, actualPosition)) {
+                    if(++actualPosition == nFields)
+                        return true;
+                }
+                while (isInternalColumn(expected, actualPosition)) {
+                    if(++expectedPosition == nFields)
+                        return true;
+                }
+            }
+            ValueSource expectedField = expected.value(expectedPosition);
+            ValueSource actualField = actual.value(actualPosition);
+            TInstance expectedType = expected.rowType().typeAt(expectedPosition);
+            TInstance actualType = actual.rowType().typeAt(actualPosition);
+            assertEquals("expected type", expectedType.typeClass(), actualType.typeClass());
+            int c = TClass.compare(expectedType, expectedField, actualType, actualField);
+            if (c != 0)
+                return false;
+        }
+        return true;
+    }
+
+    private static int getTotalNonInternalColumns(Row row){
+        int count = 0;
+        for(int i = 0; i < row.rowType().nFields();i++){
+            if(!isInternalColumn(row, i)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private static Column getColumn(RowType rowType, int position) {
+        Column col = null;
+        if(rowType.hasTable()){
+            col = rowType.table().getColumnsIncludingInternal().get(position);
+        } else if(rowType instanceof IndexRowType) {
+            col = ((IndexRowType)rowType).index().getAllColumns().get(position).getColumn();
+        }
+        return col;
+    }
+
+    private static boolean isInternalColumn(Row row, int position) {
+        return isInternalColumn(row.rowType(), position);
+    }
+
+    private static boolean isInternalColumn(RowType rowType, int position) {
+        Column col = getColumn(rowType, position);
+        return (col != null) && col.isInternalColumn();
+    }
+
+    private static Space space(RowType rowType)
+    {
+        Space space = null;
+        if (rowType instanceof IndexRowType) {
+            Index index = ((IndexRowType)rowType).index();
+            if (index.isSpatial()) {
+                space = index.space();
+            }
+        }
+        return space;
     }
 }

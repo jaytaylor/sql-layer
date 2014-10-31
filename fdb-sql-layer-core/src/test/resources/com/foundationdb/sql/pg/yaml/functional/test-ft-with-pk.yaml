@@ -1,7 +1,7 @@
 # Tests with changed primary key
 
 ---
-- Properties: fdb-sql
+- Properties: fts 
 - suppressed: true
 
 ---

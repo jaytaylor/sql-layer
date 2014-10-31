@@ -82,13 +82,13 @@ public class SortWithLimitCT extends CostModelBase
     private void populateDB(int rows)
     {
         for (int id = 0; id < rows; id++) {
-            dml().writeRow(session(), createNewRow(t,
-                                                   id,
-                                                   random.nextInt(),
-                                                   random.nextInt(),
-                                                   random.nextInt(),
-                                                   random.nextInt(),
-                                                   random.nextInt()));
+            writeRow(session(), row(t,
+                                    id,
+                                    random.nextInt(),
+                                    random.nextInt(),
+                                    random.nextInt(),
+                                    random.nextInt(),
+                                    random.nextInt()));
         }
     }
 

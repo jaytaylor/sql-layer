@@ -22,7 +22,6 @@ import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.*;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -80,20 +79,20 @@ public class Product3WayIT extends OperatorITBase
         aValueIndexRowType = indexType(a, "avalue");
         rValueIndexRowType = indexType(r, "rvalue");
         rabc = group(r);
-        db = new NewRow[]{createNewRow(r, 1L, "r1"),
-                          createNewRow(r, 2L, "r2"),
-                          createNewRow(a, 13L, 1L, "a13"),
-                          createNewRow(a, 14L, 1L, "a14"),
-                          createNewRow(a, 23L, 2L, "a23"),
-                          createNewRow(a, 24L, 2L, "a24"),
-                          createNewRow(b, 15L, 1L, "b15"),
-                          createNewRow(b, 16L, 1L, "b16"),
-                          createNewRow(b, 25L, 2L, "b25"),
-                          createNewRow(b, 26L, 2L, "b26"),
-                          createNewRow(c, 17L, 1L, "c17"),
-                          createNewRow(c, 18L, 1L, "c18"),
-                          createNewRow(c, 27L, 2L, "c27"),
-                          createNewRow(c, 28L, 2L, "c28"),
+        db = new Row[]{ row(r, 1L, "r1"),
+                          row(r, 2L, "r2"),
+                          row(a, 13L, 1L, "a13"),
+                          row(a, 14L, 1L, "a14"),
+                          row(a, 23L, 2L, "a23"),
+                          row(a, 24L, 2L, "a24"),
+                          row(b, 15L, 1L, "b15"),
+                          row(b, 16L, 1L, "b16"),
+                          row(b, 25L, 2L, "b25"),
+                          row(b, 26L, 2L, "b26"),
+                          row(c, 17L, 1L, "c17"),
+                          row(c, 18L, 1L, "c18"),
+                          row(c, 27L, 2L, "c27"),
+                          row(c, 28L, 2L, "c28"),
         };
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);

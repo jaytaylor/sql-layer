@@ -25,7 +25,7 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.types.value.ValueSources;
 import org.junit.Test;
 
 import java.util.*;
@@ -56,7 +56,7 @@ public class Sort_General_RandomIT extends OperatorITBase
         schema = new Schema(ais());
         tRowType = schema.tableRowType(table(t));
         group = group(t);
-        List<NewRow> rows = new ArrayList<>();
+        List<Row> rows = new ArrayList<>();
         Random random = new Random(123456789);
         long key = 0;
         for (long a = 0; a < A; a++) {
@@ -66,13 +66,13 @@ public class Sort_General_RandomIT extends OperatorITBase
                 for (long c = 0; c < nC; c++) {
                     int nD = random.nextInt(R) + 1;
                     for (long d = 0; d < nD; d++) {
-                        NewRow row = createNewRow(t, a, b, c, d, key++);
+                        Row row = row(t, a, b, c, d, key++);
                         rows.add(row);
                     }
                 }
             }
         }
-        db = new NewRow[rows.size()];
+        db = new Row[rows.size()];
         rows.toArray(db);
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
@@ -102,11 +102,11 @@ public class Sort_General_RandomIT extends OperatorITBase
     private Row[] expected(final boolean ... asc)
     {
         Row[] sorted = new Row[db.length];
-        Comparator<NewRow> comparator =
-            new Comparator<NewRow>()
+        Comparator<Row> comparator =
+            new Comparator<Row>()
             {
                 @Override
-                public int compare(NewRow x, NewRow y)
+                public int compare(Row x, Row y)
                 {
                     int c = 0;
                     for (int i = 0; c == 0 && i < 4; i++) {
@@ -115,16 +115,15 @@ public class Sort_General_RandomIT extends OperatorITBase
                     return c;
                 }
 
-                private int compare(NewRow x, NewRow y, boolean[] asc, int i)
+                private int compare(Row x, Row y, boolean[] asc, int i)
                 {
-                    return (int) (((Long) x.get(i)) - ((Long) y.get(i))) * (asc[i] ? 1 : -1);
+                    return (int) ((ValueSources.getLong(x.value(i)) - ValueSources.getLong(y.value(i)))) * (asc[i] ? 1 : -1);
                 }
             };
         Arrays.sort(db, comparator);
         int r = 0;
-        for (NewRow dbRow : db) {
-            Object[] fields = new Object[]{dbRow.get(0), dbRow.get(1), dbRow.get(2), dbRow.get(3), dbRow.get(4)};
-            sorted[r++] = new TestRow(tRowType, fields);
+        for (Row dbRow : db) {
+            sorted[r++] = dbRow;
         }
         return sorted;
     }

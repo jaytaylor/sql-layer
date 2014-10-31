@@ -26,7 +26,6 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -64,12 +63,12 @@ public class IndexScanNullIT extends OperatorITBase
         schema = new Schema(ais());
         tRowType = schema.tableRowType(table(t));
         idxRowType = indexType(t, "a", "b", "id");
-        db = new NewRow[]{
+        db = new Row[]{
             // No nulls
-            createNewRow(t, 1000L, null, null),
-            createNewRow(t, 1001L, null, 8L),
-            createNewRow(t, 1002L, 5L, null),
-            createNewRow(t, 1003L, 5L, 8L),
+            row(t, 1000L, null, null),
+            row(t, 1001L, null, 8L),
+            row(t, 1002L, 5L, null),
+            row(t, 1003L, 5L, 8L),
         };
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
@@ -254,9 +253,9 @@ public class IndexScanNullIT extends OperatorITBase
 
     private Row dbRow(long id)
     {
-        for (NewRow newRow : db) {
-            if (newRow.get(0).equals(id)) {
-                return row(idxRowType, newRow.get(1), newRow.get(2), newRow.get(0));
+        for (Row newRow : db) {
+            if (newRow.value(0).getInt64() == id) {
+                return row(idxRowType, newRow.value(1).getInt64(), newRow.value(2).getInt64(), newRow.value(0).getInt64());
             }
         }
         fail();

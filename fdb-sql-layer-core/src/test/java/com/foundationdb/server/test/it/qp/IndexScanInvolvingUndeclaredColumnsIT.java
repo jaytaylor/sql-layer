@@ -26,7 +26,6 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.test.ExpressionGenerators;
 import org.junit.Test;
 
@@ -59,17 +58,17 @@ public class IndexScanInvolvingUndeclaredColumnsIT extends OperatorITBase
         schema = new Schema(ais());
         regionChildrenRowType = schema.tableRowType(table(regionChildren));
         idxRowType = indexType(regionChildren, "locid");
-        db = new NewRow[]{
+        db = new Row[]{
             // region
-            createNewRow(region, 10L),
-            createNewRow(region, 20L),
+            row(region, 10L),
+            row(region, 20L),
             // region_children (last column is hidden PK)
-            createNewRow(regionChildren, 10L, 100L, 1L),
-            createNewRow(regionChildren, 10L, 110L, 2L),
-            createNewRow(regionChildren, 10L, 120L, 3L),
-            createNewRow(regionChildren, 20L, 200L, 4L),
-            createNewRow(regionChildren, 20L, 210L, 5L),
-            createNewRow(regionChildren, 20L, 220L, 6L),
+            row(regionChildren, 10L, 100L, 1L),
+            row(regionChildren, 10L, 110L, 2L),
+            row(regionChildren, 10L, 120L, 3L),
+            row(regionChildren, 20L, 200L, 4L),
+            row(regionChildren, 20L, 210L, 5L),
+            row(regionChildren, 20L, 220L, 6L),
         };
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);

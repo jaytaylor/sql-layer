@@ -62,7 +62,10 @@
                     <!-- apparently this is backwards, false here means use incremental compilation
                          Maven issue for this: https://jira.codehaus.org/browse/MCOMPILER-209 -->
                     <useIncrementalCompilation>false</useIncrementalCompilation>
-                    <compilerArgument>-Xlint</compilerArgument>
+                    <compilerArguments>
+                        <Xlint:all />
+                        <Werror />
+                    </compilerArguments>
                 </configuration>
             </plugin>
             <plugin>
@@ -210,6 +213,7 @@
                         <exclude>bin/fdbsqllayer</exclude>
                         <!-- Files requiring a specific format (packaging control, test output, etc) -->
                         <exclude>README.md</exclude>
+                        <exclude>SECURITY.md</exclude>
                         <exclude>conf/**</exclude>
                         <exclude>packaging/**</exclude>
                         <exclude>src/main/protobuf/*.proto</exclude>

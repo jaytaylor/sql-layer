@@ -26,7 +26,6 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
-import com.foundationdb.server.test.it.qp.TestRow;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -261,10 +260,6 @@ public class FullTextIndexServiceIT extends FullTextIndexServiceITBase
 
     protected RowType rowType(String tableName) {
         return schema.newHKeyRowType(ais().getTable(SCHEMA, tableName).hKey());
-    }
-
-    protected TestRow row(RowType rowType, Object... fields) {
-        return new TestRow(rowType, fields);
     }
 
     private void ftScanAndCompare(FullTextQueryBuilder builder, String query, int limit, Row[] expected) {

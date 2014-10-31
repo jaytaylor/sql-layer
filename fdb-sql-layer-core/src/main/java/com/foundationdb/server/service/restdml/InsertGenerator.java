@@ -60,16 +60,16 @@ public class InsertGenerator extends OperatorGenerator {
         table = ais().getTable(tableName);
         RowStream stream = new RowStream();
         List<TPreparedExpression> inputExprs = assembleValueScan(stream, values.values());
-        stream = assemptInsertProject(stream, values.keySet(), inputExprs, table);
+        stream = assembleInsertProject(stream, values.keySet(), inputExprs, table);
         stream.operator = API.insert_Returning(stream.operator);
         stream = assembleReturningProject(stream, table);
         return stream.operator; 
     }
     
-    protected RowStream assemptInsertProject(RowStream input,
-                                             Collection<Column> inputColumns,
-                                             List<TPreparedExpression> inputExprs,
-                                             Table table) {
+    protected RowStream assembleInsertProject(RowStream input,
+                                              Collection<Column> inputColumns,
+                                              List<TPreparedExpression> inputExprs,
+                                              Table table) {
         assert inputColumns.size() == inputExprs.size();
         assert input.rowType.nFields() == inputExprs.size();
         List<TPreparedExpression> insertExprs = new ArrayList<>(inputColumns.size());

@@ -461,7 +461,7 @@ class Intersect_Ordered extends Operator
             } else if (rightRow == null) {
                 c = -1;
             } else {
-                c = leftRow.compareTo(rightRow, leftFixedFields, rightFixedFields, fieldsToCompare);
+                c = compare (comparisons, fieldsToCompare, leftRow, leftFixedFields, rightRow, rightFixedFields);
                 c = adjustComparison(c);
 
             }

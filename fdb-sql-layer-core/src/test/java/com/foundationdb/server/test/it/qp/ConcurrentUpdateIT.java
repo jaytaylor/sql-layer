@@ -27,7 +27,6 @@ import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.util.SequencerConstants;
@@ -67,13 +66,13 @@ public class ConcurrentUpdateIT extends OperatorITBase
         bRowType = schema.tableRowType(table(b));
         aGroup = group(a);
         bGroup = group(b);
-        db = new NewRow[]{
-            createNewRow(a, 1L, 101L),
-            createNewRow(a, 2L, 102L),
-            createNewRow(a, 3L, 103L),
-            createNewRow(b, 4L, 204L),
-            createNewRow(b, 5L, 205L),
-            createNewRow(b, 6L, 206L),
+        db = new Row[]{
+            row(a, 1L, 101L),
+            row(a, 2L, 102L),
+            row(a, 3L, 103L),
+            row(b, 4L, 204L),
+            row(b, 5L, 205L),
+            row(b, 6L, 206L),
         };
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);

@@ -24,7 +24,7 @@ import java.util.List;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.NoSuchIndexException;
@@ -85,8 +85,8 @@ public final class DropIndexesIT extends ITBase {
     public void nonUniqueVarchar() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int not null primary key, name varchar(255)");
         createIndex("test", "t", "name", "name");
-        dml().writeRow(session(), createNewRow(tId, 1, "bob"));
-        dml().writeRow(session(), createNewRow(tId, 2, "jim"));
+        writeRow(tId, 1, "bob");
+        writeRow(tId, 2, "jim");
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("name"));
         updateAISGeneration();
 
@@ -94,7 +94,7 @@ public final class DropIndexesIT extends ITBase {
         Index indexCheck = aisCheck.getTable(tId).getIndex("name");
         assertNull(indexCheck);
         assertEquals("number of indexes", 1, aisCheck.getTable(tId).getIndexes().size());
-        List<NewRow> rows = scanAll(scanAllRequest(tId));
+        List<Row> rows = scanAll(tId);
         assertEquals("rows from table scan", 2, rows.size());
     }
     
@@ -106,14 +106,14 @@ public final class DropIndexesIT extends ITBase {
         int iId = createTable("coi", "i", "iid int not null primary key, o_id int, idesc varchar(32), GROUPING FOREIGN KEY (o_id) REFERENCES o(oid)");
 
         // One customer, two orders, 5 items
-        dml().writeRow(session(), createNewRow(cId, 1, "bob"));
-        dml().writeRow(session(), createNewRow(oId, 1, 1, "supplies"));
-        dml().writeRow(session(), createNewRow(oId, 2, 1, "random"));
-        dml().writeRow(session(), createNewRow(iId, 1, 1, "foo"));
-        dml().writeRow(session(), createNewRow(iId, 2, 1, "bar"));
-        dml().writeRow(session(), createNewRow(iId, 3, 2, "zap"));
-        dml().writeRow(session(), createNewRow(iId, 4, 2, "fob"));
-        dml().writeRow(session(), createNewRow(iId, 5, 2, "baz"));
+        writeRow(cId, 1, "bob");
+        writeRow(oId, 1, 1, "supplies");
+        writeRow(oId, 2, 1, "random");
+        writeRow(iId, 1, 1, "foo");
+        writeRow(iId, 2, 1, "bar");
+        writeRow(iId, 3, 2, "zap");
+        writeRow(iId, 4, 2, "fob");
+        writeRow(iId, 5, 2, "baz");
         
         ddl().dropTableIndexes(session(), tableName(oId), Arrays.asList("tag"));
         updateAISGeneration();
@@ -126,11 +126,11 @@ public final class DropIndexesIT extends ITBase {
         assertNotNull(aisCheck.getTable(oId).getIndex("o_fkey"));
         assertNull(aisCheck.getTable(oId).getIndex("tag"));
                 
-        List<NewRow> rows = scanAll(scanAllRequest(cId));
+        List<Row> rows = scanAll(cId);
         assertEquals("customers from table scan", 1, rows.size());
-        rows = scanAll(scanAllRequest(oId));
+        rows = scanAll(oId);
         assertEquals("orders from table scan", 2, rows.size());
-        rows = scanAll(scanAllRequest(iId));
+        rows = scanAll(iId);
         assertEquals("items from table scan", 5, rows.size());
     }
     
@@ -138,9 +138,9 @@ public final class DropIndexesIT extends ITBase {
     public void nonUniqueCompoundVarcharVarchar() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int not null primary key, \"first\" varchar(250), \"last\" varchar(250)");
         createIndex("test", "t", "name", "\"first\"", "\"last\"");
-        dml().writeRow(session(), createNewRow(tId, 1, "foo", "bar"));
-        dml().writeRow(session(), createNewRow(tId, 2, "zap", "snap"));
-        dml().writeRow(session(), createNewRow(tId, 3, "baz", "fob"));
+        writeRow(tId, 1, "foo", "bar");
+        writeRow(tId, 2, "zap", "snap");
+        writeRow(tId, 3, "baz", "fob");
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("name"));
         updateAISGeneration();
 
@@ -150,16 +150,16 @@ public final class DropIndexesIT extends ITBase {
         assertEquals("number of indexes", 1, aisCheck.getTable(tId).getIndexes().size());
         assertNotNull(aisCheck.getTable(tId).getIndex("PRIMARY"));
         
-        List<NewRow> rows = scanAll(scanAllRequest(tId));
+        List<Row> rows = scanAll(tId);
         assertEquals("rows from table scan", 3, rows.size());
     }
     
     @Test
     public void uniqueChar() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int not null primary key, state char(2), unique(state)");
-        dml().writeRow(session(), createNewRow(tId, 1, "IA"));
-        dml().writeRow(session(), createNewRow(tId, 2, "WA"));
-        dml().writeRow(session(), createNewRow(tId, 3, "MA"));
+        writeRow(tId, 1, "IA");
+        writeRow(tId, 2, "WA");
+        writeRow(tId, 3, "MA");
         
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("state"));
         updateAISGeneration();
@@ -168,7 +168,7 @@ public final class DropIndexesIT extends ITBase {
         assertEquals("number of indexes", 1, aisCheck.getTable(tId).getIndexes().size());
         assertNull(aisCheck.getTable(tId).getIndex("state"));
         assertNotNull(aisCheck.getTable(tId).getIndex("PRIMARY"));
-        List<NewRow> rows = scanAll(scanAllRequest(tId));
+        List<Row> rows = scanAll(tId);
         assertEquals("rows from table scan", 3, rows.size());
     }
     
@@ -176,9 +176,9 @@ public final class DropIndexesIT extends ITBase {
     public void uniqueIntNonUniqueDecimal() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int not null primary key, otherid int, price decimal(10,2), unique(otherid)");
         createIndex("test", "t", "price", "price");
-        dml().writeRow(session(), createNewRow(tId, 1, 1337, "10.50"));
-        dml().writeRow(session(), createNewRow(tId, 2, 5000, "10.50"));
-        dml().writeRow(session(), createNewRow(tId, 3, 47000, "9.99"));
+        writeRow(tId, 1, 1337, "10.50");
+        writeRow(tId, 2, 5000, "10.50");
+        writeRow(tId, 3, 47000, "9.99");
         
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("otherid", "price"));
         updateAISGeneration();
@@ -189,7 +189,7 @@ public final class DropIndexesIT extends ITBase {
         assertNull(aisCheck.getTable(tId).getIndex("price"));
         assertNotNull(aisCheck.getTable(tId).getIndex("PRIMARY"));
         
-        List<NewRow> rows = scanAll(scanAllRequest(tId));
+        List<Row> rows = scanAll(tId);
         assertEquals("rows from table scan", 3, rows.size());
     }
 }

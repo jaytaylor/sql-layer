@@ -24,7 +24,6 @@ import com.foundationdb.qp.rowtype.AisRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -38,25 +37,25 @@ public class FilterIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema() {
         super.setupPostCreateSchema();
-        NewRow[] dbWithOrphans = new NewRow[]{
-            createNewRow(customer, 1L, "northbridge"),
-            createNewRow(customer, 2L, "foundation"),
-            createNewRow(address, 1001L, 1L, "111 1111 st"),
-            createNewRow(address, 1002L, 1L, "111 2222 st"),
-            createNewRow(address, 2001L, 2L, "222 1111 st"),
-            createNewRow(address, 2002L, 2L, "222 2222 st"),
-            createNewRow(order, 11L, 1L, "ori"),
-            createNewRow(order, 12L, 1L, "david"),
-            createNewRow(order, 21L, 2L, "tom"),
-            createNewRow(order, 22L, 2L, "jack"),
-            createNewRow(item, 111L, 11L),
-            createNewRow(item, 112L, 11L),
-            createNewRow(item, 121L, 12L),
-            createNewRow(item, 122L, 12L),
-            createNewRow(item, 211L, 21L),
-            createNewRow(item, 212L, 21L),
-            createNewRow(item, 221L, 22L),
-            createNewRow(item, 222L, 22L)
+        Row[] dbWithOrphans = new Row[]{
+            row(customer, 1L, "northbridge"),
+            row(customer, 2L, "foundation"),
+            row(address, 1001L, 1L, "111 1111 st"),
+            row(address, 1002L, 1L, "111 2222 st"),
+            row(address, 2001L, 2L, "222 1111 st"),
+            row(address, 2002L, 2L, "222 2222 st"),
+            row(order, 11L, 1L, "ori"),
+            row(order, 12L, 1L, "david"),
+            row(order, 21L, 2L, "tom"),
+            row(order, 22L, 2L, "jack"),
+            row(item, 111L, 11L),
+            row(item, 112L, 11L),
+            row(item, 121L, 12L),
+            row(item, 122L, 12L),
+            row(item, 211L, 21L),
+            row(item, 212L, 21L),
+            row(item, 221L, 22L),
+            row(item, 222L, 22L)
         };
         use(dbWithOrphans);
     }

@@ -26,7 +26,6 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.util.tap.Tap;
 import com.foundationdb.util.tap.TapReport;
 import org.junit.Test;
@@ -97,10 +96,10 @@ public class SkipScanPerformanceIT extends OperatorITBase
         //     ...
         //     id[N-1]    888    999      null
         assertTrue(N > 1);
-        db = new NewRow[N];
+        db = new Row[N];
         for (int id = 0; id < N; id++) {
             Integer y = id == 0 || id == N - 1 ? Y : null;
-            db[id] = createNewRow(t, id, X, y, null);
+            db[id] = row(t, id, X, y, null);
         }
         use(db);
         // N rows from left index scan, 2 from right, 1 to realize scan is done.
@@ -121,10 +120,10 @@ public class SkipScanPerformanceIT extends OperatorITBase
         //     ...
         //     id[N-1]    888    999      null
         assertTrue(N > 1);
-        db = new NewRow[N];
+        db = new Row[N];
         for (int id = 0; id < N; id++) {
             Integer y = id == 0 || id == N - 1 ? Y : null;
-            db[id] = createNewRow(t, id, X, y, null);
+            db[id] = row(t, id, X, y, null);
         }
         use(db);
         // N rows from left index scan, 2 from right, 1 to realize scan is done.
@@ -146,12 +145,12 @@ public class SkipScanPerformanceIT extends OperatorITBase
         // - Scan of z retrieves rows N/3-1, N/3, N/3+1
         assertTrue((N % 3) == 0);
         assertTrue(N / 3 >= 2);
-        db = new NewRow[N];
+        db = new Row[N];
         for (int id = 0; id < N; id++) {
             Integer x = id < 2 * N / 3 ? X : null;
             Integer y = id >= N / 3 ? Y : null;
             Integer z = abs(id - N/3) <= 1 ? Z : null;
-            NewRow row = createNewRow(t, id, x, y, z);
+            Row row = row(t, id, x, y, z);
             db[id] = row;
         }
         use(db);
@@ -180,12 +179,12 @@ public class SkipScanPerformanceIT extends OperatorITBase
         // - Scan of z retrieves rows N/3-1, N/3, N/3+1
         assertTrue((N % 3) == 0);
         assertTrue(N / 3 >= 2);
-        db = new NewRow[N];
+        db = new Row[N];
         for (int id = 0; id < N; id++) {
             Integer x = id < 2 * N / 3 ? X : null;
             Integer y = id >= N / 3 ? Y : null;
             Integer z = abs(id - N/3) <= 1 ? Z : null;
-            NewRow row = createNewRow(t, id, x, y, z);
+            Row row = row(t, id, x, y, z);
             db[id] = row;
         }
         use(db);

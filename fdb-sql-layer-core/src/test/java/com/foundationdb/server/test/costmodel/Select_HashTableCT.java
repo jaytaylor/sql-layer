@@ -145,39 +145,57 @@ public class Select_HashTableCT extends CostModelBase
     {
         int multiples[] = {53,97,193,389,769};
         for (int x = 0; x < HASHED_ROWS[0]/2; x++) {
-            dml().writeRow(session(), createNewRow(h1, x, x * multiples[0])); // x, hidden_pk
-            dml().writeRow(session(), createNewRow(h1, x, x * multiples[0])); // x, hidden_pk
+            writeRow(h1, x, x * multiples[0]); // x, hidden_pk
+            writeRow(h1, x, x * multiples[0]); // x, hidden_pk
         }
         for (int x = 0; x < HASHED_ROWS[0]; x +=2) {
-            dml().writeRow(session(), createNewRow(d1, x, x * multiples[0])); // x, hidden_pk
+            writeRow(d1, x, x * multiples[0]); // x, hidden_pk
         }
         for (int x = 0; x < HASHED_ROWS[1]/2; x++) {
-            dml().writeRow(session(), createNewRow(h2, x, x * multiples[0], x * multiples[1])); // x, hidden_pk
-            dml().writeRow(session(), createNewRow(h2, x, x * multiples[0], x * multiples[1])); // x, hidden_pk
+            writeRow(h2, x, x * multiples[0], x * multiples[1]); // x, hidden_pk
+            writeRow(h2, x, x * multiples[0], x * multiples[1]); // x, hidden_pk
         }
         for (int x = 0; x < HASHED_ROWS[1]; x +=2) {
-            dml().writeRow(session(), createNewRow(d2, x, x * multiples[0], x * multiples[1])); // x, hidden_pk
+            writeRow(d2, x, x * multiples[0], x * multiples[1]); // x, hidden_pk
         }
         for (int x = 0; x < HASHED_ROWS[2]/2; x++) {
-            dml().writeRow(session(), createNewRow(h3, x, x * multiples[0], x * multiples[1], x * multiples[2])); // x, hidden_pk
-            dml().writeRow(session(), createNewRow(h3, x, x * multiples[0], x * multiples[1], x * multiples[2])); // x, hidden_pk
+            writeRow(h3, x, x * multiples[0], x * multiples[1], x * multiples[2]); // x, hidden_pk
+            writeRow(h3, x, x * multiples[0], x * multiples[1], x * multiples[2]); // x, hidden_pk
         }
         for (int x = 0; x < HASHED_ROWS[2]; x +=2) {
-            dml().writeRow(session(), createNewRow(d3, x, x * multiples[0], x * multiples[1], x * multiples[2])); // x, hidden_pk
+            writeRow(d3, x, x * multiples[0], x * multiples[1], x * multiples[2]); // x, hidden_pk
         }
         for (int x = 0; x < HASHED_ROWS[3]/2; x++) {
-            dml().writeRow(session(), createNewRow(h4, x, x * multiples[0], x * multiples[1], x * multiples[2], x * multiples[3])); // x, hidden_pk
-            dml().writeRow(session(), createNewRow(h4, x, x * multiples[0], x * multiples[1], x * multiples[2], x * multiples[3])); // x, hidden_pk
+            writeRow(h4, x, x * multiples[0], x * multiples[1], x * multiples[2], x * multiples[3]); // x, hidden_pk
+            writeRow(h4, x, x * multiples[0], x * multiples[1], x * multiples[2], x * multiples[3]); // x, hidden_pk
         }
         for (int x = 0; x < HASHED_ROWS[3]; x +=2) {
-            dml().writeRow(session(), createNewRow(d4, x, x * multiples[0], x * multiples[1], x * multiples[2], x * multiples[3])); // x, hidden_pk
+            writeRow(d4, x, x * multiples[0], x * multiples[1], x * multiples[2], x * multiples[3]); // x, hidden_pk
         }
         for (int x = 0; x < HASHED_ROWS[4] /2; x++) {
-            dml().writeRow(session(), createNewRow(h5, x, x * multiples[0], x * multiples[1], x * multiples[2], x * multiples[3], x * multiples[4])); // x, hidden_pk
-            dml().writeRow(session(), createNewRow(h5, x, x * multiples[0], x * multiples[1], x * multiples[2], x * multiples[3], x * multiples[4])); // x, hidden_pk
+            writeRow(h5,
+                                          x,
+                                          x * multiples[0],
+                                          x * multiples[1],
+                                          x * multiples[2],
+                                          x * multiples[3],
+                                          x * multiples[4]); // x, hidden_pk
+            writeRow(h5,
+                                          x,
+                                          x * multiples[0],
+                                          x * multiples[1],
+                                          x * multiples[2],
+                                          x * multiples[3],
+                                          x * multiples[4]); // x, hidden_pk
         }
         for (int x = 0; x < HASHED_ROWS[4] * 2; x += 2 ){
-            dml().writeRow(session(), createNewRow(d5, x, x * multiples[0], x * multiples[1], x * multiples[2], x * multiples[3], x * multiples[4])); // x, hidden_pk
+            writeRow(d5,
+                                          x,
+                                          x * multiples[0],
+                                          x * multiples[1],
+                                          x * multiples[2],
+                                          x * multiples[3],
+                                          x * multiples[4]); // x, hidden_pk
 
         }
 

@@ -22,9 +22,10 @@ import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.*;
 import com.foundationdb.qp.storeadapter.indexcursor.IterationHelper;
 import com.foundationdb.qp.storeadapter.indexcursor.MergeJoinSorter;
-import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
-import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowPool;
-import com.foundationdb.qp.row.HKey;
+import com.foundationdb.qp.storeadapter.indexrow.IndexRowPool;
+import com.foundationdb.qp.storeadapter.indexrow.PersistitGroupIndexRow;
+import com.foundationdb.qp.storeadapter.indexrow.PersistitTableIndexRow;
+import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
@@ -34,7 +35,6 @@ import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.server.store.PersistitStore;
@@ -46,6 +46,7 @@ import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
 import com.persistit.exception.RollbackException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,7 +122,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
         }
     }
     @Override
-    public void writeRow(Row newRow, TableIndex[] indexes, Collection<GroupIndex> groupIndexes) {
+    public void writeRow(Row newRow, Collection<TableIndex> indexes, Collection<GroupIndex> groupIndexes) {
         RowDef rowDef = newRow.rowType().table().rowDef();
         try {
             RowData newRowData = rowData (rowDef, newRow, rowDataCreator());
@@ -174,13 +175,22 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
     }
 
     @Override
-    public PersistitIndexRow takeIndexRow(IndexRowType indexRowType)
+    public IndexRow newIndexRow(IndexRowType indexRowType) 
+    {
+        return
+                indexRowType.index().isTableIndex()
+                ? new PersistitTableIndexRow(this, indexRowType)
+                : new PersistitGroupIndexRow(this, indexRowType);
+     
+    }
+    @Override
+    public IndexRow takeIndexRow(IndexRowType indexRowType)
     {
         return indexRowPool.takeIndexRow(this, indexRowType);
     }
 
     @Override
-    public void returnIndexRow(PersistitIndexRow indexRow)
+    public void returnIndexRow(IndexRow indexRow)
     {
         indexRowPool.returnIndexRow(this, indexRow.rowType(), indexRow);
     }
@@ -294,7 +304,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
 
     // Class state
 
-    private static PersistitIndexRowPool indexRowPool = new PersistitIndexRowPool();
+    private static IndexRowPool indexRowPool = new IndexRowPool();
 
     // Object state
 

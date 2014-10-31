@@ -24,19 +24,23 @@ import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.sql.embedded.EmbeddedJDBCService;
 import com.foundationdb.sql.embedded.EmbeddedJDBCServiceImpl;
-
 import com.foundationdb.sql.pg.PostgresService;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
+import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
+
 import com.fasterxml.jackson.databind.JsonNode;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -109,11 +113,17 @@ public class SecurityServiceIT extends ITBase
         assertEquals("user1", securityService().authenticate(session(), "user1", "password").getName());
     }
 
-    private int openRestURL(String request, String query, String userInfo)
+    private int openRestURL(String request, String query, String userInfo, boolean post)
             throws Exception {
         CloseableHttpClient client = HttpClientBuilder.create().build();
-        HttpGet get = new HttpGet(getRestURL(request, query, userInfo));
-        HttpResponse response = client.execute(get);
+        HttpRequestBase httpRequest;
+        if (post) {
+            httpRequest = new HttpPost(getRestURL(request, "", userInfo));
+            ((HttpPost)httpRequest).setEntity(new ByteArrayEntity(query.getBytes("UTF-8")));
+        } else {
+            httpRequest = new HttpGet(getRestURL(request, query, userInfo));
+        }
+        HttpResponse response = client.execute(httpRequest);
         int code = response.getStatusLine().getStatusCode();
         EntityUtils.consume(response.getEntity());
         client.close();
@@ -130,43 +140,43 @@ public class SecurityServiceIT extends ITBase
     @Test
     public void restUnauthenticated() throws Exception {
         assertEquals(HttpStatus.SC_UNAUTHORIZED,
-                     openRestURL("/user1.utable/1", null, null));
+                     openRestURL("/user1.utable/1", null, null, false));
     }
 
     @Test
     public void restAuthenticated() throws Exception {
         assertEquals(HttpStatus.SC_OK,
-                     openRestURL("/entity/user1.utable/1", null, "user1:password"));
+                     openRestURL("/entity/user1.utable/1", null, "user1:password", false));
     }
 
     @Test
     public void restAuthenticateBadUser() throws Exception {
         assertEquals(HttpStatus.SC_UNAUTHORIZED,
-                     openRestURL("/user1.utable/1", null, "user2:none"));
+                     openRestURL("/user1.utable/1", null, "user2:none", false));
     }
 
     @Test
     public void restAuthenticateBadPassword() throws Exception {
         assertEquals(HttpStatus.SC_UNAUTHORIZED,
-                     openRestURL("/user1.utable/1", null, "user1:wrong"));
+                     openRestURL("/user1.utable/1", null, "user1:wrong", false));
     }
 
     @Test
     public void restAuthenticateWrongSchema() throws Exception {
         assertEquals(HttpStatus.SC_FORBIDDEN,
-                     openRestURL("/entity/user2.utable/1", null, "user1:password"));
+                     openRestURL("/entity/user2.utable/1", null, "user1:password", false));
     }
 
     @Test
     public void restQueryAuthenticated() throws Exception {
         assertEquals(HttpStatus.SC_OK,
-                     openRestURL("/sql/query", "q=SELECT+*+FROM+utable", "user1:password"));
+                     openRestURL("/sql/query", "{\"q\": \"SELECT * FROM utable\"}", "user1:password", true));
     }
 
     @Test
     public void restQueryWrongSchema() throws Exception {
         assertEquals(HttpStatus.SC_NOT_FOUND,
-                     openRestURL("/sql/query", "q=SELECT+*+FROM+user2.utable", "user1:password"));
+                     openRestURL("/sql/query", "{\"q\": \"SELECT * FROM user2.utable\"}", "user1:password", true));
     }
 
     static final String ADD_USER = "{\"user\":\"user3\", \"password\":\"pass\", \"roles\": [\"rest-user\"]}";

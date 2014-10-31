@@ -130,13 +130,13 @@ public class GroupIndexIT extends ITBase {
 
     @Test
     public void createCOWithExistingData() throws Exception {
-        writeRows(createNewRow(cId, 1, "bob"),
-                    createNewRow(oId, 1, 1, 20100702),
-                    createNewRow(oId, 2, 1, 20110621),
-                  createNewRow(cId, 2, "jill"),
-                    createNewRow(oId, 3, 2, 20050930),
-                  createNewRow(cId, 3, "foo"),
-                  createNewRow(cId, 4, "bar"));
+        writeRows(row(cId, 1, "bob"),
+                    row(oId, 1, 1, 20100702),
+                    row(oId, 2, 1, 20110621),
+                  row(cId, 2, "jill"),
+                    row(oId, 3, 2, 20050930),
+                  row(cId, 3, "foo"),
+                  row(cId, 4, "bar"));
 
         GroupIndex oDate_cName = createLeftGroupIndex(groupName, "oDate_cName", "o.odate", "c.name");
         expectIndexContents(oDate_cName,
@@ -149,19 +149,19 @@ public class GroupIndexIT extends ITBase {
 
     @Test
     public void createIOWithExistingData() throws Exception {
-        writeRows(createNewRow(cId, 1, "bob"),
-                    createNewRow(oId, 1, 1, 20100702),
-                      createNewRow(iId, 1, 1, 5623),
-                      createNewRow(iId, 2, 1, 1832),
-                    createNewRow(oId, 2, 1, 20110621),
-                  createNewRow(cId, 2, "jill"),
-                    createNewRow(oId, 3, 2, 20050930),
-                      createNewRow(iId, 3, 3, 9218),
-                      createNewRow(iId, 4, 3, 7822),
-                  createNewRow(cId, 3, "foo"),
-                  createNewRow(cId, 4, "bar"),
-                    createNewRow(oId, 4, 4, 20070101),
-                      createNewRow(iId, 5, 4, 3456L));
+        writeRows(row(cId, 1, "bob"),
+                    row(oId, 1, 1, 20100702),
+                      row(iId, 1, 1, 5623),
+                      row(iId, 2, 1, 1832),
+                    row(oId, 2, 1, 20110621),
+                  row(cId, 2, "jill"),
+                    row(oId, 3, 2, 20050930),
+                      row(iId, 3, 3, 9218),
+                      row(iId, 4, 3, 7822),
+                  row(cId, 3, "foo"),
+                  row(cId, 4, "bar"),
+                    row(oId, 4, 4, 20070101),
+                      row(iId, 5, 4, 3456L));
 
         GroupIndex iSku_oDate = createLeftGroupIndex(groupName, "iSku_oDate", "i.sku", "o.odate");
         expectIndexContents(iSku_oDate,
@@ -175,13 +175,13 @@ public class GroupIndexIT extends ITBase {
 
     @Test
     public void createACWithExistingData() throws Exception {
-        writeRows(createNewRow(cId, 1, "bob"),
-                    createNewRow(aId, 3, 1, "123"),
-                  createNewRow(cId, 2, "jill"),
-                    createNewRow(aId, 1, 2, "875"),
-                  createNewRow(cId, 3, "foo"),
-                  createNewRow(cId, 4, "bar"),
-                    createNewRow(aId, 2, 4, "23"));
+        writeRows(row(cId, 1, "bob"),
+                    row(aId, 3, 1, "123"),
+                  row(cId, 2, "jill"),
+                    row(aId, 1, 2, "875"),
+                  row(cId, 3, "foo"),
+                  row(cId, 4, "bar"),
+                    row(aId, 2, 4, "23"));
 
         GroupIndex aAddr_cID = createLeftGroupIndex(groupName, "aAddr_cID", "a.addr", "c.id");
         expectIndexContents(aAddr_cID,

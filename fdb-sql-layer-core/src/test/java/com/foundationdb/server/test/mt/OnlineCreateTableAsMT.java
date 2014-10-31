@@ -38,10 +38,10 @@ public class OnlineCreateTableAsMT extends OnlineCreateTableAsBase {
 
         fromTableRowType = SchemaCache.globalSchema(ais()).tableRowType(ftID);
 
-        writeRows(createNewRow(ftID, -1, 10),
-                createNewRow(ftID, 2, 20),
-                createNewRow(ftID, 3, 30),
-                createNewRow(ftID, 4, 40));
+        writeRows(row(ftID, -1, 10),
+                row(ftID, 2, 20),
+                row(ftID, 3, 30),
+                row(ftID, 4, 40));
 
         fromGroupRows = runPlanTxn(groupScanCreator(ftID));
         columnNames = Arrays.asList("id", "x");

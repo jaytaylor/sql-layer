@@ -73,7 +73,7 @@ public class MapCT extends CostModelBase
     protected void populateDB()
     {
         for (int r = 0; r < OUTER_ROWS; r++) {
-            dml().writeRow(session(), createNewRow(p, r));
+            writeRow(p, r);
         }
     }
     

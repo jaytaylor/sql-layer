@@ -23,6 +23,7 @@ import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.operator.TimeOperator;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.scan.NewRow;
@@ -77,14 +78,7 @@ public class DistinctCT extends CostModelBase
     {
         // First column unique
         for (int i = 0; i < rows; i++) {
-            NewRow row =
-                createNewRow(t,
-                             i,
-                             0,
-                             0,
-                             0,
-                             0);
-            dml().writeRow(session(), row);
+            writeRow(t, i, 0, 0, 0, 0);
         }
     }
 
@@ -92,15 +86,7 @@ public class DistinctCT extends CostModelBase
     {
         // ALl columns have the same value in all rows. Have to check all columns to determine distinctness.
         for (int id = 0; id < rows; id++) {
-            NewRow row =
-                createNewRow(t,
-                             id,
-                             0,
-                             0,
-                             0,
-                             0,
-                             0);
-            dml().writeRow(session(), row);
+            writeRow(t, id, 0, 0, 0, 0, 0);
         }
     }
 

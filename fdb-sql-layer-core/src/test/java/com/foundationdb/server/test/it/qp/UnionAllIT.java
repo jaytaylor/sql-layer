@@ -22,13 +22,13 @@ import static com.foundationdb.qp.operator.API.select_HKeyOrdered;
 import static com.foundationdb.qp.operator.API.unionAll_Default;
 import static com.foundationdb.qp.operator.API.union_Ordered;
 
+import com.foundationdb.qp.row.Row;
 import org.junit.Test;
 
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.SetWrongTypeColumns;
 import com.foundationdb.server.test.ExpressionGenerators;
 import com.foundationdb.server.types.texpressions.Comparison;
@@ -67,19 +67,19 @@ public class UnionAllIT extends OperatorITBase {
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
-        db = new NewRow[]{
-            createNewRow(t, 1000L, 8L),
-            createNewRow(t, 1001L, 9L),
-            createNewRow(t, 1002L, 8L),
-            createNewRow(t, 1003L, 9L),
-            createNewRow(t, 1004L, 8L),
-            createNewRow(t, 1005L, 9L),
-            createNewRow(t, 1006L, 8L),
-            createNewRow(t, 1007L, 9L),
-            createNewRow(u, 1000L, 7L),
-            createNewRow(u, 1001L, 9L),
-            createNewRow(u, 1002L, 9L),
-            createNewRow(u, 1003L, 9L)
+        db = new Row[]{
+            row(t, 1000L, 8L),
+            row(t, 1001L, 9L),
+            row(t, 1002L, 8L),
+            row(t, 1003L, 9L),
+            row(t, 1004L, 8L),
+            row(t, 1005L, 9L),
+            row(t, 1006L, 8L),
+            row(t, 1007L, 9L),
+            row(u, 1000L, 7L),
+            row(u, 1001L, 9L),
+            row(u, 1002L, 9L),
+            row(u, 1003L, 9L)
         };
         use(db);
     }
@@ -109,7 +109,7 @@ public class UnionAllIT extends OperatorITBase {
                         ExpressionGenerators.literal(7), castResolver())),
                 uRowType, 
                 true);
-        TestRow[] expected = new TestRow[]{
+        Row[] expected = new Row[]{
             row(tRowType, 1000L, 8L),
             row(tRowType, 1002L, 8L),
             row(tRowType, 1004L, 8L),
@@ -144,7 +144,7 @@ public class UnionAllIT extends OperatorITBase {
                 2,
                 ascending (true, true),
                 false);
-        TestRow[] expected = new TestRow[]{
+        Row[] expected = new Row[]{
             row(tRowType, 1001L, 9L),
             row(uRowType, 1002L, 9L),
             row(tRowType, 1003L, 9L),

@@ -27,7 +27,6 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.test.ExpressionGenerators;
 import com.foundationdb.server.types.texpressions.Comparison;
 import org.junit.Test;
@@ -69,39 +68,39 @@ public class Select_BloomFilterIT extends OperatorITBase
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
-        db = new NewRow[]{
+        db = new Row[]{
             // Test 0: No d or f rows
             // Test 1: No f rows
-            createNewRow(f, 1L, 10L, 100L),
+            row(f, 1L, 10L, 100L),
             // Test 2: No d rows
-            createNewRow(f, 2L, 20L, 200L),
+            row(f, 2L, 20L, 200L),
             // Test 3: 1 d row, no matching f rows
-            createNewRow(d, 3L, 30L, 300L),
-            createNewRow(f, 3L, 31L, 300L),
-            createNewRow(f, 3L, 30L, 301L),
+            row(d, 3L, 30L, 300L),
+            row(f, 3L, 31L, 300L),
+            row(f, 3L, 30L, 301L),
             // Test 4: 1 d row, 1 matching f rows
-            createNewRow(d, 4L, 40L, 400L),
-            createNewRow(f, 4L, 40L, 400L),
-            createNewRow(f, 4L, 41L, 400L),
-            createNewRow(f, 4L, 40L, 401L),
+            row(d, 4L, 40L, 400L),
+            row(f, 4L, 40L, 400L),
+            row(f, 4L, 41L, 400L),
+            row(f, 4L, 40L, 401L),
             // Test 5: multiple d rows, no matching f rows
-            createNewRow(d, 5L, 50L, 500L),
-            createNewRow(d, 5L, 51L, 501L),
-            createNewRow(f, 5L, 50L, 501L),
-            createNewRow(f, 5L, 51L, 500L),
+            row(d, 5L, 50L, 500L),
+            row(d, 5L, 51L, 501L),
+            row(f, 5L, 50L, 501L),
+            row(f, 5L, 51L, 500L),
             // Test 6: multiple d rows, multiple f rows, multiple matches
-            createNewRow(d, 6L, 60L, 600L),
-            createNewRow(d, 6L, 61L, 601L),
-            createNewRow(d, 6L, 62L, 602L),
-            createNewRow(d, 6L, 63L, 603L),
-            createNewRow(f, 6L, 60L, 699L),
-            createNewRow(f, 6L, 61L, 601L),
-            createNewRow(f, 6L, 62L, 602L),
-            createNewRow(f, 6L, 63L, 699L),
+            row(d, 6L, 60L, 600L),
+            row(d, 6L, 61L, 601L),
+            row(d, 6L, 62L, 602L),
+            row(d, 6L, 63L, 603L),
+            row(f, 6L, 60L, 699L),
+            row(f, 6L, 61L, 601L),
+            row(f, 6L, 62L, 602L),
+            row(f, 6L, 63L, 699L),
             // Test 7: Null columns in d
-            createNewRow(d, 7L, null, null),
+            row(d, 7L, null, null),
             // Test 8: Null columns in f
-            createNewRow(f, 8L, null, null),
+            row(f, 8L, null, null),
         };
         use(db);
     }

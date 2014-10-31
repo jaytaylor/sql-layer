@@ -27,8 +27,8 @@ import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.row.WriteIndexRow;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
@@ -42,7 +42,6 @@ import com.persistit.Key;
 import com.persistit.Value;
 
 import java.util.Collection;
-import java.util.List;
 
 public interface Store extends KeyCreator {
 
@@ -51,8 +50,8 @@ public interface Store extends KeyCreator {
 
     /**  If not {@code null}, only maintain the given {@code tableIndexes} and {@code groupIndexes}. */
     void writeRow(Session session, RowData row);
-    void writeRow(Session session, RowData row, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes);
-    void writeRow(Session session, RowDef rowDef, RowData row, TableIndex[] tableIndexes, Collection<GroupIndex> groupIndexes);
+    void writeRow(Session session, RowData row, Collection<TableIndex> tableIndexes, Collection<GroupIndex> groupIndexes);
+    void writeRow(Session session, RowDef rowDef, RowData row, Collection<TableIndex> tableIndexes, Collection<GroupIndex> groupIndexes);
     void writeNewRow(Session session, NewRow row);
 
     void deleteRow(Session session, RowData row, boolean cascadeDelete);
@@ -63,11 +62,11 @@ public interface Store extends KeyCreator {
     void updateRow(Session session, RowDef oldRowDef, RowData oldRow, RowDef newRowDef, RowData newRow, ColumnSelector selector);
 
     /** Save the TableIndex row for {@code rowData}. {@code hKey} must be populated. */
-    void writeIndexRow(Session session, TableIndex index, RowData rowData, Key hKey, PersistitIndexRowBuffer buffer,
+    void writeIndexRow(Session session, TableIndex index, RowData rowData, Key hKey, WriteIndexRow buffer,
                        SpatialColumnHandler spatialColumnHandler, long zValue, boolean doLock);
 
     /** Clear the TableIndex row for {@code rowData]. {@code hKey} must be populated. */
-    void deleteIndexRow(Session session, TableIndex index, RowData rowData, Key hKey, PersistitIndexRowBuffer buffer,
+    void deleteIndexRow(Session session, TableIndex index, RowData rowData, Key hKey, WriteIndexRow buffer,
                         SpatialColumnHandler spatialColumnHandler, long zValue, boolean doLock);
 
     /** Save the GroupIndex rows for {@code rowData}. Locking handed by StoreGIHandler. */

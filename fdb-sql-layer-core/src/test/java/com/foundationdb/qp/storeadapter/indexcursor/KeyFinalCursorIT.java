@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Random;
 
 import com.fasterxml.sort.IterableSorterException;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.storeadapter.indexcursor.MergeJoinSorter.KeyReader;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,7 +48,6 @@ import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.test.it.qp.OperatorITBase;
-import com.foundationdb.server.test.it.qp.TestRow;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.texpressions.TPreparedField;
@@ -77,7 +77,7 @@ public class KeyFinalCursorIT extends OperatorITBase
     public void cycleComplete() throws IOException {
         RowType rowType = schema.newValuesType(MNumeric.INT.instance(true));
         
-        TestRow[] rows = new TestRow[] {
+        Row[] rows = new Row[] {
                 row(rowType, 1L),
         };
         
@@ -90,7 +90,7 @@ public class KeyFinalCursorIT extends OperatorITBase
     @Test
     public void cycleNValues() throws IOException {
         RowType rowType = schema.newValuesType(MNumeric.INT.instance(false),MNumeric.INT.instance(true), MString.varchar());
-        TestRow[] rows = new TestRow[] {
+        Row[] rows = new Row[] {
                 row(rowType, 1L, 100L, "A"),
         };
         
@@ -103,30 +103,30 @@ public class KeyFinalCursorIT extends OperatorITBase
     public void cycleNRows() throws IOException {
         RowType rowType = schema.newValuesType(MNumeric.INT.instance(true));
         
-        List<TestRow> rows = new ArrayList<>();
+        List<Row> rows = new ArrayList<>();
         for (long i = 0; i < 100; i++) {
-            TestRow row = row (rowType, i);
+            Row row = row (rowType, i);
             rows.add(row);
             bindRows.add(BindableRow.of(row));
         }
         RowCursor cursor = cycleRows (rowType);
         
-        TestRow[] rowArray = new TestRow[rows.size()];
+        Row[] rowArray = new Row[rows.size()];
         compareRows (rows.toArray(rowArray), cursor); 
     }
     
     @Test
     public void cycleManyRows() throws IOException {
         RowType rowType = schema.newValuesType(MNumeric.INT.instance(false), MNumeric.INT.instance(true), MString.varchar());
-        List<TestRow> rows = new ArrayList<>();
+        List<Row> rows = new ArrayList<>();
         for (long i = 0; i < 100; i++) {
-            TestRow row = row (rowType, random.nextInt(), i, 
+            Row row = row (rowType, random.nextInt(), i, 
                     characters(5+random.nextInt(1000)));
             rows.add(row);
             bindRows.add(BindableRow.of(row));
         }
         RowCursor cursor = cycleRows(rowType);
-        TestRow[] rowArray = new TestRow[rows.size()];
+        Row[] rowArray = new Row[rows.size()];
         compareRows (rows.toArray(rowArray), cursor);
         
     }
@@ -134,7 +134,7 @@ public class KeyFinalCursorIT extends OperatorITBase
     @Test
     public void cycleDecimalRows() throws IOException {
         RowType rowType = schema.newValuesType(MNumeric.INT.instance(false), MNumeric.DECIMAL.instance(11,0, false), MString.varchar());
-        List<TestRow> rows = new ArrayList<>();
+        List<Row> rows = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             BigDecimal value = new BigDecimal (random.nextInt(100000));
             rows.add(row(rowType, random.nextInt(), value, characters(5+random.nextInt(10))));
@@ -142,20 +142,20 @@ public class KeyFinalCursorIT extends OperatorITBase
         }
         
         RowCursor cursor = cycleRows(rowType);
-        TestRow[] rowArray = new TestRow[rows.size()];
+        Row[] rowArray = new Row[rows.size()];
         compareRows (rows.toArray(rowArray), cursor);
     }
     
     @Test
     public void cycleBlobRows() throws IOException {
         RowType rowType = schema.newValuesType(MString.TEXT.instance(false), MString.TINYTEXT.instance(false));
-        List<TestRow> rows = new ArrayList<>();
+        List<Row> rows = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             rows.add(row(rowType, characters(5+random.nextInt(100)), characters(5+random.nextInt(10))));
             bindRows.add(BindableRow.of(rows.get(i)));
         }
         RowCursor cursor = cycleRows(rowType);
-        TestRow[] rowArray = new TestRow[rows.size()];
+        Row[] rowArray = new Row[rows.size()];
         compareRows (rows.toArray(rowArray), cursor);
     }
     

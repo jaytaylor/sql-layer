@@ -54,10 +54,10 @@ public final class InsertUpdateDeleteMT extends MTBase
         tableRowType = SchemaCache.globalSchema(ais()).tableRowType(tID);
         pkID = tableRowType.table().getPrimaryKey().getIndex().getIndexId();
         xID = tableRowType.table().getIndex("x").getIndexId();
-        writeRows(createNewRow(tID, 3, 30, 300),
-                  createNewRow(tID, 4, 40, 400),
-                  createNewRow(tID, 6, 60, 600),
-                  createNewRow(tID, 7, 70, 700));
+        writeRows(row(tID, 3, 30, 300),
+                  row(tID, 4, 40, 400),
+                  row(tID, 6, 60, 600),
+                  row(tID, 7, 70, 700));
         groupRows = runPlanTxn(groupScanCreator(tID));
         pkRows = runPlanTxn(indexScanCreator(tID, pkID));
         indexRows = runPlanTxn(indexScanCreator(tID, xID));

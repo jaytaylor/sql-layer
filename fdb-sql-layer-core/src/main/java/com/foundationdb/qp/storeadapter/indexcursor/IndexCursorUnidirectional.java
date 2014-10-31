@@ -28,7 +28,8 @@ import com.foundationdb.qp.operator.CursorLifecycle;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.rowtype.InternalIndexTypes;
 import com.foundationdb.qp.storeadapter.SpatialHelper;
-import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRow;
+import com.foundationdb.qp.row.IndexRow;
+import com.foundationdb.qp.row.IndexRow.EdgeValue;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.types.TInstance;
@@ -256,7 +257,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                             }
                         } else {
                             // Cases 0, 4, 8, 12
-                            endKey.append(Key.AFTER);
+                            endKey.append(EdgeValue.AFTER);
                         }
                     } else {
                         // Cases 1, 3, 5, 7, 9, 11, 13, 15
@@ -278,7 +279,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                             }
                         } else {
                             // Cases 0, 4, 8, 12
-                            startKey.append(Key.AFTER);
+                            startKey.append(EdgeValue.AFTER);
                         }
                     } else {
                         // Cases 1, 3, 5, 7, 9, 11, 13, 15
@@ -319,7 +320,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                         startKey.append(startValues[f], type(f));
                     } else {
                         // Cases 0, 4, 8, 12
-                        startKey.append(Key.AFTER);
+                        startKey.append(EdgeValue.AFTER);
                     }
                 } else {
                     // Cases 1, 3, 5, 7, 9, 11, 13, 15
@@ -333,7 +334,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     {
         boolean beforeStart = false;
         if (startKey != null && row != null && startBoundColumns != 0) {
-            PersistitIndexRow current = (PersistitIndexRow) row;
+            IndexRow current = (IndexRow) row;
             int c = current.compareTo(startKey, startBoundColumns) * direction;
             beforeStart = c < 0 || c == 0 && !startInclusive;
         }
@@ -346,7 +347,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         if (endKey == null || endBoundColumns == 0) {
             pastEnd = false;
         } else {
-            PersistitIndexRow current = (PersistitIndexRow) row;
+            IndexRow current = (IndexRow) row;
             int c = current.compareTo(endKey, endBoundColumns) * direction;
             pastEnd = c > 0 || c == 0 && !endInclusive;
         }
@@ -356,13 +357,13 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     protected void clearStart()
     {
         startKeyKey.clear();
-        startKey.resetForWrite(index(), startKeyKey, null);
+        startKey.resetForWrite(index(), startKeyKey);
     }
 
     protected void clearEnd()
     {
         endKeyKey.clear();
-        endKey.resetForWrite(index(), endKeyKey, null);
+        endKey.resetForWrite(index(), endKeyKey);
     }
 
     protected TInstance type(int f)
@@ -384,7 +385,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             this.endInclusive = keyRange.hiInclusive();
             this.initialKeyComparison = startInclusive ? Key.GTEQ : Key.GT;
             this.subsequentKeyComparison = Key.GT;
-            this.startBoundary = Key.BEFORE;
+            this.startBoundary = EdgeValue.BEFORE;
         } else if (ordering.allDescending()) {
             this.direction = BACKWARD;
             this.start = this.hi;
@@ -393,7 +394,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             this.endInclusive = keyRange.loInclusive();
             this.initialKeyComparison = startInclusive ? Key.LTEQ : Key.LT;
             this.subsequentKeyComparison = Key.LT;
-            this.startBoundary = Key.AFTER;
+            this.startBoundary = EdgeValue.AFTER;
         } else {
             assert false : ordering;
         }
@@ -445,7 +446,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                 // - direction == BACKWARD && startInclusive: Similarly, going in the other direction, we do the
                 //   (10, 5, ...) records if startInclusive. But an LTEQ traversal would miss it unless we search
                 //   for (10, 5, AFTER).
-                startKey.append(Key.AFTER);
+                startKey.append(EdgeValue.AFTER);
             }
             // Copy just the persistit key part of startKey to the exchange's key. startKey may be overspecified.
             // E.g., if we have a PK index for a non-root table, the index row is [childPK, parentPK], and an index
@@ -472,11 +473,11 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         this.initialKeyRange = null;
         this.ordering = ordering;
         if (ordering.allAscending()) {
-            this.startBoundary = Key.BEFORE;
+            this.startBoundary = EdgeValue.BEFORE;
             this.initialKeyComparison = Key.GT;
             this.subsequentKeyComparison = Key.GT;
         } else if (ordering.allDescending()) {
-            this.startBoundary = Key.AFTER;
+            this.startBoundary = EdgeValue.AFTER;
             this.initialKeyComparison = Key.LT;
             this.subsequentKeyComparison = Key.LT;
         } else {
@@ -503,7 +504,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     protected Key.Direction keyComparison;
     protected Key.Direction initialKeyComparison;
     protected Key.Direction subsequentKeyComparison;
-    protected Key.EdgeValue startBoundary; // Start of a scan that is unbounded at the start
+    protected EdgeValue startBoundary; // Start of a scan that is unbounded at the start
     // start/endBoundColumns is the number of index fields with restrictions. They start out having the same value.
     // But jump(Row) resets state pertaining to the start of a scan, including startBoundColumns.
     protected int startBoundColumns;
@@ -516,8 +517,8 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     protected IndexBound end;
     protected boolean startInclusive;
     protected boolean endInclusive;
-    protected PersistitIndexRow startKey;
-    protected PersistitIndexRow endKey;
+    protected IndexRow startKey;
+    protected IndexRow endKey;
     private Key startKeyKey;
     private Key endKeyKey;
     private boolean pastStart;

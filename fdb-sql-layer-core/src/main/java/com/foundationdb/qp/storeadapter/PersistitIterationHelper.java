@@ -32,7 +32,7 @@ public class PersistitIterationHelper implements IterationHelper
     @Override
     public Row row()
     {
-        PersistitIndexRow row = adapter.takeIndexRow(indexRowType);
+        PersistitIndexRow row = (PersistitIndexRow)adapter.takeIndexRow(indexRowType);
         row.copyFrom(exchange);
         return row;
     }

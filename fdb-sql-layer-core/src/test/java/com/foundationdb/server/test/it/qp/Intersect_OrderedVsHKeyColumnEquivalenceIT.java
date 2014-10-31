@@ -24,7 +24,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
 import java.util.EnumSet;
@@ -105,11 +104,11 @@ public class Intersect_OrderedVsHKeyColumnEquivalenceIT extends OperatorITBase
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
-        db = new NewRow[] {
-            createNewRow(item, 1L, 1L, 100L, 100L, 100L, 100L, 100L, 100L, 100L, 100L, 100L),
-            createNewRow(itemValueState, 1L, 1L, 111L, 111L, 1L, 1L),
-            createNewRow(itemValueState, 1L, 1L, 222L, 222L, 1L, 1L),
-            createNewRow(itemValueState, 1L, 1L, 333L, 333L, 1L, 1L),
+        db = new Row[] {
+            row(item, 1L, 1L, 100L, 100L, 100L, 100L, 100L, 100L, 100L, 100L, 100L),
+            row(itemValueState, 1L, 1L, 111L, 111L, 1L, 1L),
+            row(itemValueState, 1L, 1L, 222L, 222L, 1L, 1L),
+            row(itemValueState, 1L, 1L, 333L, 333L, 1L, 1L),
         };
         use(db);
     }

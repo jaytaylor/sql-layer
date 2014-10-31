@@ -176,6 +176,8 @@ public enum ErrorCode {
         // SubClass 02F - array data, right truncation    
         // SubClass 02G - invalid repeat argument in a sample clause
         // SubClass 02H - invalid sample size 02H
+    INVALID_GUID_FORMAT ("22", "02I", Importance.DEBUG, InvalidGuidFormatException.class),
+
     TABLE_DEFINITION_CHANGED("22", "501", Importance.DEBUG, TableDefinitionChangedException.class),
     NEGATIVE_LIMIT          ("22", "502", Importance.DEBUG, NegativeLimitException.class),
     INVALID_ARGUMENT_TYPE   ("22", "503", Importance.DEBUG, InvalidArgumentTypeException.class),
@@ -431,6 +433,9 @@ public enum ErrorCode {
     INVALID_VOLUME          ("52", "010", Importance.ERROR, InvalidVolumeException.class),
     INVALID_OPTIMIZER_PROPERTY ("52", "011", Importance.ERROR, InvalidOptimizerPropertyException.class),
     IS_TABLE_VERSION_MISMATCH ("52", "012", Importance.ERROR, ISTableVersionMismatchException.class),
+    NO_CLUSTER_FILE         ("52", "013", Importance.ERROR, NoClusterFileException.class),
+    CLUSTER_FILE_NOT_READABLE ("52", "014", Importance.ERROR, ClusterFileNotReadableException.class),
+    CLUSTER_FILE_TOO_LARGE  ("52", "015", Importance.ERROR, ClusterFileTooLargeException.class),
 
     // Class 53 - Internal error 
     INTERNAL_ERROR          ("53", "000", Importance.ERROR, null),

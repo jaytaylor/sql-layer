@@ -17,10 +17,11 @@
 
 package com.foundationdb.server.test.it.keyupdate;
 
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.ConstantColumnSelector;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.api.dml.scan.ScanAllRequest;
 import com.foundationdb.server.api.dml.scan.ScanFlag;
 import com.foundationdb.server.api.dml.scan.ScanRequest;
@@ -43,36 +44,31 @@ public final class UniqueKeyUpdateIT extends ITBase {
         try {
             tableId = createTable(schemaName, tableName, "cid int not null primary key", "u1 int", "UNIQUE(u1)");
             writeRows(
-                    createNewRow(tableId, 11, 21),
-                    createNewRow(tableId, 12, 22)
+                    row(tableId, 11, 21),
+                    row(tableId, 12, 22)
             );
         } catch (InvalidOperationException e) {
             throw new TestException(e);
         }
-        NewRow original = createNewRow(tableId, 12, 22);
-        NewRow updated = createNewRow(tableId, 12, 21);
+        Row original = row(tableId, 12, 22);
+        Row updated = row(tableId, 12, 21);
         try {
-            dml().updateRow(session(), original, updated, ConstantColumnSelector.ALL_ON);
+            updateRow(original, updated);
             fail("expected DuplicateKeyException");
         } catch (DuplicateKeyException e) {
             // expected
         }
 
-        expectFullRows(
-                tableId,
-                createNewRow(tableId, 11, 21),
-                createNewRow(tableId, 12, 22)
-        );
-        ScanRequest scanByU1 = new ScanAllRequest(
-                tableId,
-                set(0, 1),
-                indexId(schemaName, tableName, "u1"),
-                EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END)
-        );
         expectRows(
-                scanByU1,
-                createNewRow(tableId, 11, 21),
-                createNewRow(tableId, 12, 22)
+                tableId,
+                row(tableId, 11, 21),
+                row(tableId, 12, 22)
+        );
+        Index index = getTable(tableId).getIndex("u1");
+        expectRows(
+                index,
+                row(index, 21, 11),
+                row(index, 22, 12)
         );
     }
 
@@ -84,36 +80,31 @@ public final class UniqueKeyUpdateIT extends ITBase {
         try {
             tableId = createTable(schemaName, tableName, "cid int not null primary key", "UNIQUE(cid)");
             writeRows(
-                    createNewRow(tableId, 11),
-                    createNewRow(tableId, 12)
+                    row(tableId, 11),
+                    row(tableId, 12)
             );
         } catch (InvalidOperationException e) {
             throw new TestException(e);
         }
-        NewRow original = createNewRow(tableId, 12);
-        NewRow updated = createNewRow(tableId, 11);
+        Row original = row(tableId, 12);
+        Row updated = row(tableId, 11);
         try {
-            dml().updateRow(session(), original, updated, ConstantColumnSelector.ALL_ON);
+            updateRow(original, updated);
             fail("expected DuplicateKeyException");
         } catch (DuplicateKeyException e) {
             // expected
         }
 
-        expectFullRows(
-                tableId,
-                createNewRow(tableId, 11),
-                createNewRow(tableId, 12)
-        );
-        ScanRequest scanByCid = new ScanAllRequest(
-                tableId,
-                set(0, 1),
-                indexId(schemaName, tableName, "cid"),
-                EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END)
-        );
         expectRows(
-                scanByCid,
-                createNewRow(tableId, 11),
-                createNewRow(tableId, 12)
+                tableId,
+                row(tableId, 11),
+                row(tableId, 12)
+        );
+        Index index = getTable(tableId).getIndex("cid");
+        expectRows(
+                index,
+                row(index, 11),
+                row(index, 12)
         );
     }
 
@@ -123,48 +114,41 @@ public final class UniqueKeyUpdateIT extends ITBase {
         final String schemaName = "s1";
 
         final int tableId;
-        final ScanRequest scanByCid;
-        final NewRow original;
-        final NewRow updated;
+        final Index index;
+        final Row original;
+        final Row updated;
 
         try {
             tableId = createTable(schemaName, tableName, "cid int", "UNIQUE(cid)");
             writeRows(
-                    createNewRow(tableId, 1),
-                    createNewRow(tableId, 2)
+                    row(tableId, 1),
+                    row(tableId, 2)
             );
-            scanByCid = new ScanAllRequest(
-                    tableId,
-                    set(0),
-                    indexId(schemaName, tableName, "cid"),
-                    EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END)
-            );
-            List<NewRow> scan = scanAll(scanByCid);
+            index = getTable(tableId).getIndex("cid");
+            List<Row> scan = scanAllIndex(index);
             assertEquals("scan size", 2, scan.size());
-            assertEquals("scan[0] size", 1, scan.get(0).getFields().size());
-            assertEquals("scan[0][0]", 1, scan.get(0).get(0));
-            assertEquals("scan[1] size", 1, scan.get(0).getFields().size());
-            assertEquals("scan[1][0]", 2, scan.get(1).get(0));
+            assertEquals("scan[0] size", 2, scan.get(0).rowType().nFields());
+            assertEquals("scan[0][0]", 1, scan.get(0).value(0).getInt32());
+            assertEquals("scan[1] size", 2, scan.get(1).rowType().nFields());
+            assertEquals("scan[1][0]", 2, scan.get(1).value(0).getInt32());
 
-            original = scan.get(0); // (1)
-            updated = createNewRow(tableId);
-            updated.put(0, scan.get(1).get(0)); // (2)
-            original.put(1, 1); // (1, 1)
-            updated.put(1, 1); // (2, 1)
+            Row irow = scan.get(0);
+            original = row(tableId, 1, irow.value(1).getInt64());
+            updated = row(tableId, 2, irow.value(1).getInt64());
 
         } catch (InvalidOperationException e) {
             throw new TestException(e);
         }
         try {
-            dml().updateRow(session(), original, updated, new SetColumnSelector(0));
+            updateRow(original, updated);
             fail("expected DuplicateKeyException");
         } catch (DuplicateKeyException e) {
             // expected
         }
-        expectRows(
-                scanByCid,
-                createNewRow(tableId, 1),
-                createNewRow(tableId, 2)
+        expectRowsSkipInternal(
+                index,
+                row(index, 1),
+                row(index, 2)
         );
     }
 
@@ -174,93 +158,82 @@ public final class UniqueKeyUpdateIT extends ITBase {
         final String tableName = "t1";
         final String schemaName = "s1";
         final int tableId;
-        final ScanRequest scanByU1;
+        final Index index;
         try {
             tableId = createTable(schemaName, tableName, "cid int not null primary key", "u1 int", "u2 int", "UNIQUE(u1,u2)");
-            scanByU1 = new ScanAllRequest(
-                    tableId,
-                    set(0, 1, 2),
-                    indexId(schemaName, tableName, "u1"),
-                    EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END)
-            );
+            index = getTable(tableId).getIndex("u1");
             writeRows(
-                    createNewRow(tableId, 11, 21, 31),
-                    createNewRow(tableId, 12, 22, 32),
-                    createNewRow(tableId, 13, 20, 33)
+                    row(tableId, 11, 21, 31),
+                    row(tableId, 12, 22, 32),
+                    row(tableId, 13, 20, 33)
             );
             expectRows(
-                    scanByU1,
-                    createNewRow(tableId, 13, 20, 33),
-                    createNewRow(tableId, 11, 21, 31),
-                    createNewRow(tableId, 12, 22, 32)
+                    index,
+                    row(index, 20, 33, 13),
+                    row(index, 21, 31, 11),
+                    row(index, 22, 32, 12)
             );
 
             // update such that there's a similarity in u1
-            dml().updateRow(
-                    session(),
-                    createNewRow(tableId, 12, 22, 32),
-                    createNewRow(tableId, 12, 21, 32),
-                    ConstantColumnSelector.ALL_ON
-            );
-            expectFullRows(
-                    tableId,
-                    createNewRow(tableId, 11, 21, 31),
-                    createNewRow(tableId, 12, 21, 32),
-                    createNewRow(tableId, 13, 20, 33)
+            updateRow(
+                    row(tableId, 12, 22, 32),
+                    row(tableId, 12, 21, 32)
             );
             expectRows(
-                    scanByU1,
-                    createNewRow(tableId, 13, 20, 33),
-                    createNewRow(tableId, 11, 21, 31),
-                    createNewRow(tableId, 12, 21, 32)
+                    tableId,
+                    row(tableId, 11, 21, 31),
+                    row(tableId, 12, 21, 32),
+                    row(tableId, 13, 20, 33)
+            );
+            expectRows(
+                    index,
+                    row(index, 20, 33, 13),
+                    row(index, 21, 31, 11),
+                    row(index, 21, 32, 12)
             );
 
             // update such that there's a similarity in u2
-            dml().updateRow(
-                    session(),
-                    createNewRow(tableId, 12, 21, 32),
-                    createNewRow(tableId, 12, 21, 33),
-                    ConstantColumnSelector.ALL_ON
-            );
-            expectFullRows(
-                    tableId,
-                    createNewRow(tableId, 11, 21, 31),
-                    createNewRow(tableId, 12, 21, 33),
-                    createNewRow(tableId, 13, 20, 33)
+            updateRow(
+                    row(tableId, 12, 21, 32),
+                    row(tableId, 12, 21, 33)
             );
             expectRows(
-                    scanByU1,
-                    createNewRow(tableId, 13, 20, 33),
-                    createNewRow(tableId, 11, 21, 31),
-                    createNewRow(tableId, 12, 21, 33)
+                    tableId,
+                    row(tableId, 11, 21, 31),
+                    row(tableId, 12, 21, 33),
+                    row(tableId, 13, 20, 33)
+            );
+            expectRows(
+                    index,
+                    row(index, 20, 33, 13),
+                    row(index, 21, 31, 11),
+                    row(index, 21, 33, 12)
             );
         } catch (InvalidOperationException e) {
             throw new TestException(e);
         }
 
         try {
-            dml().updateRow(
-                    session(),
-                    createNewRow(tableId, 12, 21, 33),
-                    createNewRow(tableId, 12, 21, 31),
-                    ConstantColumnSelector.ALL_ON
+            updateRow(
+                    row(tableId, 12, 21, 33),
+                    row(tableId, 12, 21, 31)
             );
             fail("expected DuplicateKeyException");
         } catch (DuplicateKeyException e) {
             // expected
         }
 
-        expectFullRows(
+        expectRows(
                 tableId,
-                createNewRow(tableId, 11, 21, 31),
-                createNewRow(tableId, 12, 21, 33),
-                createNewRow(tableId, 13, 20, 33)
+                row(tableId, 11, 21, 31),
+                row(tableId, 12, 21, 33),
+                row(tableId, 13, 20, 33)
         );
         expectRows(
-                scanByU1,
-                createNewRow(tableId, 13, 20, 33),
-                createNewRow(tableId, 11, 21, 31),
-                createNewRow(tableId, 12, 21, 33)
+                index,
+                row(index, 20, 33, 13),
+                row(index, 21, 31, 11),
+                row(index, 21, 33, 12)
         );
     }
 
@@ -272,31 +245,26 @@ public final class UniqueKeyUpdateIT extends ITBase {
         try {
             tableId = createTable(schemaName, tableName, "cid int not null primary key", "u1 int NULL", "UNIQUE(u1)");
             writeRows(
-                    createNewRow(tableId, 11, null),
-                    createNewRow(tableId, 12, 22)
+                    row(tableId, 11, null),
+                    row(tableId, 12, 22)
             );
         } catch (InvalidOperationException e) {
             throw new TestException(e);
         }
-        NewRow original = createNewRow(tableId, 12, 22);
-        NewRow updated = createNewRow(tableId, 12, null);
-        dml().updateRow(session(), original, updated, ConstantColumnSelector.ALL_ON);
+        Row original = row(tableId, 12, 22);
+        Row updated = row(tableId, 12, null);
+        updateRow(original, updated);
 
-        expectFullRows(
-                tableId,
-                createNewRow(tableId, 11, null),
-                createNewRow(tableId, 12, null)
-        );
-        ScanRequest scanByU1 = new ScanAllRequest(
-                tableId,
-                set(0, 1),
-                indexId(schemaName, tableName, "u1"),
-                EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END)
-        );
         expectRows(
-                scanByU1,
-                createNewRow(tableId, 11, null),
-                createNewRow(tableId, 12, null)
+                tableId,
+                row(tableId, 11, null),
+                row(tableId, 12, null)
+        );
+        Index index = getTable(tableId).getIndex("u1");
+        expectRows(
+                index,
+                row(index, null, 11),
+                row(index, null, 12)
         );
     }
 
@@ -308,8 +276,8 @@ public final class UniqueKeyUpdateIT extends ITBase {
         try {
             tableId = createTable(schemaName, tableName, "cid int not null primary key, cx int");
             writeRows(
-                createNewRow(tableId, 1, 1),
-                createNewRow(tableId, 1, 2));
+                row(tableId, 1, 1),
+                row(tableId, 1, 2));
             fail();
         } catch (DuplicateKeyException e) {
             // Expected

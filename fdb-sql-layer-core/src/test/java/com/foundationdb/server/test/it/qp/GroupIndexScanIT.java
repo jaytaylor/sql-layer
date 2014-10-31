@@ -95,13 +95,13 @@ public final class GroupIndexScanIT extends ITBase {
         giRowType = schema.indexRowType(gi);
 
         writeRows(
-                createNewRow(c, 1L, "One"),
-                createNewRow(o, 10L, 1L, "01-01-2001"), // no children
-                createNewRow(o, 11L, 1L, "02-02-2002"), // one child
-                createNewRow(i, 100L, 11L, "1111"),
-                createNewRow(o, 12L, 2L, "03-03-2003"), // orphaned, two children
-                createNewRow(i, 101L, 12L, null),
-                createNewRow(i, 102L, 12L, "3333")
+                row(c, 1L, "One"),
+                row(o, 10L, 1L, "01-01-2001"), // no children
+                row(o, 11L, 1L, "02-02-2002"), // one child
+                row(i, 100L, 11L, "1111"),
+                row(o, 12L, 2L, "03-03-2003"), // orphaned, two children
+                row(i, 101L, 12L, null),
+                row(i, 102L, 12L, "3333")
         );
 
         txnService().beginTransaction(session());

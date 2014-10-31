@@ -145,7 +145,7 @@ public class RowDefBuilder
         }
 
         rowDef.setParentJoinFields(parentJoinFields);
-        rowDef.setIndexes(indexList.toArray(new TableIndex[indexList.size()]));
+        rowDef.setIndexes(indexList);
         rowDef.setGroupIndexes(groupIndexList.toArray(new GroupIndex[groupIndexList.size()]));
 
         rowDef.getTableStatus().setRowDef(rowDef);

@@ -25,10 +25,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.util.PersistitKey;
 import com.foundationdb.server.PersistitKeyValueSource;
-import com.foundationdb.server.rowdata.*;
-import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.KeyCreator;
-import com.foundationdb.server.store.Store;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.ArgumentValidation;
@@ -135,40 +132,6 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     }
 
     // IndexRow interface
-
-    @Override
-    public void initialize(RowData rowData, Key hKey, SpatialColumnHandler spatialColumnHandler, long zValue)
-    {
-        pKeyAppends = 0;
-        int indexField = 0;
-        IndexRowComposition indexRowComp = index.indexRowComposition();
-        FieldDef[] fieldDefs = index.leafMostTable().rowDef().getFieldDefs();
-        RowDataSource rowDataValueSource = new RowDataValueSource();
-        while (indexField < indexRowComp.getLength()) {
-            // handleSpatialColumn will increment pKeyAppends once for all spatial columns
-            if (spatialColumnHandler != null && spatialColumnHandler.handleSpatialColumn(this, indexField, zValue)) {
-                if (indexField == index.firstSpatialArgument()) {
-                    pKeyAppends++;
-                }
-            } else {
-                if (indexRowComp.isInRowData(indexField)) {
-                    FieldDef fieldDef = fieldDefs[indexRowComp.getFieldPosition(indexField)];
-                    Column column = fieldDef.column();
-                    rowDataValueSource.bind(fieldDef, rowData);
-                    pKeyTarget().append(rowDataValueSource,
-                                        column.getType());
-                } else if (indexRowComp.isInHKey(indexField)) {
-                    PersistitKey.appendFieldFromKey(pKey(), hKey, indexRowComp.getHKeyPosition(indexField), index
-                        .getIndexName());
-                } else {
-                    throw new IllegalStateException("Invalid IndexRowComposition: " + indexRowComp);
-                }
-                pKeyAppends++;
-            }
-            indexField++;
-        }
-    }
-
     @Override
     public <S> void append(S source, TInstance type)
     {
@@ -177,16 +140,29 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     }
 
     @Override
-    public void close(Session session, Store store, boolean forInsert)
-    {
-        // If necessary, copy pValue state into value. (Check pValueAppender, because that is non-null only in
-        // a writeable PIRB.)
-        if (pValueTarget != null) {
-            value.clear();
-            value.putByteArray(pValue.getEncodedBytes(), 0, pValue.getEncodedSize());
+    public int compareTo(IndexRow that, int fieldCount, boolean[] ascending) {
+        if (that instanceof PersistitIndexRowBuffer) {
+            return compareTo((PersistitIndexRowBuffer)that, fieldCount, ascending);
+        } else {
+            throw new UnsupportedOperationException(index.toString());
         }
     }
-
+    
+    @Override
+    public int compareTo (IndexRow that, int fieldCount) {
+        return compareTo (that, fieldCount, null);
+    }
+    
+    @Override
+    public void append (EdgeValue value) {
+        if (value == EdgeValue.BEFORE)
+            append(Key.BEFORE);
+        else if (value == EdgeValue.AFTER)
+            append(Key.AFTER);
+        else
+            throw new UnsupportedOperationException(value.toString());
+    }
+    
     // PersistitIndexRowBuffer interface
 
     public void appendFieldTo(int position, Key target)
@@ -210,9 +186,15 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         pKey.append(edgeValue);
     }
 
+    @Override
     public void tableBitmap(long bitmap)
     {
         value.put(bitmap);
+    }
+
+    @Override
+    public long tableBitmap() {
+        throw new UnsupportedOperationException();
     }
 
     public void copyPersistitKeyTo(Key key)
@@ -232,6 +214,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         reset(index, key, value, true);
     }
 
+    @Override
     public void resetForRead(Index index, Key key, Value value)
     {
         reset(index, key, value, false);
@@ -243,6 +226,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         this.keyCreator = keyCreator;
     }
 
+    @Override
     public boolean keyEmpty()
     {
         return pKey.getEncodedSize() == 0;
@@ -381,6 +365,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         }
     }
 
+    @Override
     public void reset()
     {
         pKey.clear();
@@ -400,16 +385,6 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         checkValueUsage();
         return pValueTarget;
     }
-
-    Key pKey()
-    {
-        if (pKeyAppends < pKeyFields) {
-            return pKey;
-        }
-        checkValueUsage();
-        return pValue;
-    }
-
     private void reset(Index index, Key key, Value value, boolean writable)
     {
         assert !index.isUnique() || index.isTableIndex() : index;
@@ -512,6 +487,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
             throw new IllegalStateException("Unexpected fields in Value: " + index);
         }
     }
+
 
     // Inner classes
 

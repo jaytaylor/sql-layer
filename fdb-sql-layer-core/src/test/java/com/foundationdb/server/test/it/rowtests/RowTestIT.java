@@ -39,7 +39,7 @@ public class RowTestIT extends ITBase
                                 "id int not null primary key",
                                 "a int not null",
                                 "b int not null");
-        NewRow original = createNewRow(t);
+        NewRow original = new NiceRow(t, getRowDef(t));
         int cId = 0;
         int cA = 1;
         int cB = 2;
@@ -61,7 +61,7 @@ public class RowTestIT extends ITBase
                                 "id int not null primary key",
                                 "a int not null",
                                 "b int");
-        NewRow original = createNewRow(t);
+        NewRow original = new NiceRow(t, getRowDef(t));
         int cId = 0;
         int cA = 1;
         int cB = 2;
@@ -84,7 +84,7 @@ public class RowTestIT extends ITBase
                                 "a int",
                                 "b int",
                                 "c int");
-        NewRow row = createNewRow(t);
+        NewRow row = new NiceRow(t, getRowDef(t));
         int cId = 0;
         int cA = 1;
         int cB = 2;
@@ -116,7 +116,7 @@ public class RowTestIT extends ITBase
                                 "a int",
                                 "b int",
                                 "c int");
-        NewRow niceRow = createNewRow(t);
+        NewRow niceRow = new NiceRow(t, getRowDef(t));
         int cId = 0;
         int cA = 1;
         int cB = 2;
@@ -151,7 +151,7 @@ public class RowTestIT extends ITBase
                                 "a int",
                                 "b int",
                                 "c int");
-        NewRow niceRow = createNewRow(t);
+        NewRow niceRow = new NiceRow(t, getRowDef(t));
         int cId = 0;
         int cA = 1;
         int cB = 2;

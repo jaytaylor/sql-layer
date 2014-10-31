@@ -105,17 +105,15 @@ public class SortCT extends CostModelBase
     private void populateDB(int rows)
     {
         for (int id = 0; id < rows; id++) {
-            NewRow row =
-                createNewRow(t,
-                             id,
-                             random.nextInt(),
-                             random.nextInt(),
-                             random.nextInt(),
-                             FILLER_100,
-                             FILLER_200,
-                             FILLER_300,
-                             FILLER_400);
-            dml().writeRow(session(), row);
+            writeRow(t,
+                    id,
+                    random.nextInt(),
+                    random.nextInt(),
+                    random.nextInt(),
+                    FILLER_100,
+                    FILLER_200,
+                    FILLER_300,
+                    FILLER_400);
         }
     }
 

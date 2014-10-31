@@ -43,13 +43,13 @@ import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.row.ProjectedRow;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.WriteIndexRow;
 import com.foundationdb.qp.rowtype.ProjectedTableRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.storeadapter.RowDataRow;
-import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.ConcurrentViolationException;
@@ -89,6 +89,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.persistit.Key;
 import com.persistit.KeyState;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -428,7 +429,7 @@ public class OnlineHelper implements RowListener
                                    StoreAdapter adapter,
                                    final TransformCache transformCache,
                                    Multimap<Group,RowType> tableIndexes) {
-        final PersistitIndexRowBuffer buffer = new PersistitIndexRowBuffer(adapter);
+        final WriteIndexRow buffer = new WriteIndexRow(adapter);
         for(Entry<Group, Collection<RowType>> entry : tableIndexes.asMap().entrySet()) {
             if(entry.getValue().isEmpty()) {
                 continue;
@@ -442,9 +443,8 @@ public class OnlineHelper implements RowListener
                 public void handleRow(Row row) {
                     RowData rowData = ((AbstractRow)row).rowData();
                     TableTransform transform = transformCache.get(rowData.getRowDefId());
-                    TableIndex[] indexes = transform.tableIndexes;
                     simpleCheckConstraints(session, transform, rowData);
-                    for(TableIndex index : indexes) {
+                    for(TableIndex index : transform.tableIndexes) {
                         long zValue = -1;
                         SpatialColumnHandler spatialColumnHandler = null;
                         if (index.isSpatial()) {
@@ -498,8 +498,8 @@ public class OnlineHelper implements RowListener
         QueryContext context = null;
         switch(transform.changeLevel) {
             case INDEX:
-                if(transform.tableIndexes.length > 0) {
-                    PersistitIndexRowBuffer buffer = new PersistitIndexRowBuffer(store);
+                if(!transform.tableIndexes.isEmpty()) {
+                    WriteIndexRow buffer = new WriteIndexRow (store);
                     for(TableIndex index : transform.tableIndexes) {
                         long oldZValue = -1;
                         long newZValue = -1;
@@ -974,7 +974,7 @@ public class OnlineHelper implements RowListener
                                   newRowType,
                                   projectedRowType,
                                   checkConstraints,
-                                  tableIndexes.toArray(new TableIndex[tableIndexes.size()]),
+                                  tableIndexes,
                                   groupIndexes,
                                   deleteOperator,
                                   insertOperator);
@@ -1136,7 +1136,7 @@ public class OnlineHelper implements RowListener
         /** Not {@code null} *iff* new rows need only be verified. */
         public final boolean checkConstraints;
         /** Contains table indexes to build (can be empty) */
-        public final TableIndex[] tableIndexes;
+        public final Collection<TableIndex> tableIndexes;
         /** Populated with group indexes to build (can be empty) */
         public final Collection<GroupIndex> groupIndexes;
         /** Used for CreateTableAs */
@@ -1149,7 +1149,7 @@ public class OnlineHelper implements RowListener
                               TableRowType rowType,
                               ProjectedTableRowType projectedRowType,
                               boolean checkConstraints,
-                              TableIndex[] tableIndexes,
+                              Collection<TableIndex> tableIndexes,
                               Collection<GroupIndex> groupIndexes,
                               Operator deleteOperator ,
                               Operator insertOperator) {
