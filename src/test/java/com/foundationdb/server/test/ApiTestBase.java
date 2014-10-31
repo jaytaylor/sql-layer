@@ -791,9 +791,20 @@ public class ApiTestBase {
      * @param rowsExpected how many rows we expect
      * @throws InvalidOperationException for various reasons :)
      */
-    protected final void expectRowCount(int tableId, long rowsExpected) throws InvalidOperationException {
-        Table table = getTable(tableId);
-        assertEquals("rows by TableStatistics", rowsExpected, table.rowDef().getTableStatus().getRowCount(session()));
+    protected final void expectRowCount(final int tableId, final long rowsExpected) {
+        Runnable runnable = new Runnable()
+        {
+            @Override
+            public void run() {
+                Table table = getTable(tableId);
+                assertEquals("rows by TableStatistics", rowsExpected, table.rowDef().getTableStatus().getRowCount(session()));
+            }
+        };
+        if(txnService().isTransactionActive(session())) {
+            runnable.run();
+        } else {
+            txnService().run(session(), runnable);
+        }
     }
 
     protected static RuntimeException unexpectedException(Throwable cause) {

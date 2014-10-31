@@ -20,7 +20,6 @@ package com.foundationdb.server.service.dxl;
 import com.foundationdb.server.api.DMLFunctions;
 import com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.service.session.SessionService;
 
 import java.util.List;
 
@@ -30,11 +29,9 @@ public final class HookableDMLFunctions implements DMLFunctions {
 
     private final DMLFunctions delegate;
     private final DXLFunctionsHook hook;
-    private final SessionService sessionService;
 
-    public HookableDMLFunctions(DMLFunctions delegate, List<DXLFunctionsHook> hooks, SessionService sessionService) {
+    public HookableDMLFunctions(DMLFunctions delegate, List<DXLFunctionsHook> hooks) {
         this.delegate = delegate;
-        this.sessionService = sessionService;
         this.hook = hooks.size() == 1 ? hooks.get(0) : new CompositeHook(hooks);
     }
 

@@ -94,7 +94,6 @@ import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistry;
-import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.compiler.BooleanNormalizer;
 import com.foundationdb.sql.optimizer.AISBinder;
@@ -114,11 +113,13 @@ import org.slf4j.LoggerFactory;
 
 import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 
-public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
+public class BasicDDLFunctions implements DDLFunctions {
     private final static Logger logger = LoggerFactory.getLogger(BasicDDLFunctions.class);
 
     private final static String FEATURE_SPATIAL_INDEX_PROP = "fdbsql.feature.spatial_index_on";
 
+    private final SchemaManager schemaManager;
+    private final Store store;
     private final IndexStatisticsService indexStatisticsService;
     private final TransactionService txnService;
     private final ListenerService listenerService;
@@ -285,8 +286,7 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             throw new UnsupportedDropException(table.getName());
         }
 
-        DMLFunctions dml = new BasicDMLFunctions(middleman(), schemaManager(), store(), this,
-                                                 indexStatisticsService, listenerService);
+        DMLFunctions dml = new BasicDMLFunctions(schemaManager(), store(), listenerService);
         if(table.isRoot()) {
             // Root table and no child tables, can delete all associated trees
             store().removeTrees(session, table);
@@ -883,11 +883,14 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     // Internal
     //
 
-    BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store,
-                      IndexStatisticsService indexStatisticsService, TypesRegistryService typesRegistry,
-                      TransactionService txnService, ListenerService listenerService,
+    BasicDDLFunctions(SchemaManager schemaManager,
+                      Store store,
+                      IndexStatisticsService indexStatisticsService,
+                      TransactionService txnService,
+                      ListenerService listenerService,
                       ConfigurationService configService) {
-        super(middleman, schemaManager, store);
+        this.schemaManager = schemaManager;
+        this.store = store;
         this.indexStatisticsService = indexStatisticsService;
         this.txnService = txnService;
         this.listenerService = listenerService;
@@ -1268,15 +1271,12 @@ public class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
     }
 
-    private static boolean isIdentitySequence(Collection<Table> tables, Sequence s) {
-        // Must search as there is no back-reference Sequence to owning Column.
-        for(Table t : tables) {
-            Column identityColumn = t.getIdentityColumn();
-            if((identityColumn != null) && (identityColumn.getIdentityGenerator() == s)) {
-                return true;
-            }
-        }
-        return false;
+    private Store store() {
+        return store;
+    }
+
+    private SchemaManager schemaManager() {
+        return schemaManager;
     }
 
     //
