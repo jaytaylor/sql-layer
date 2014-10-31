@@ -35,12 +35,10 @@ import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.rowtype.*;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.AkServerUtil;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.DMLFunctions;
-import com.foundationdb.server.api.LegacyUtils;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.ConstantColumnSelector;
 import com.foundationdb.server.api.dml.scan.BufferFullException;
@@ -57,7 +55,6 @@ import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.api.dml.scan.RowOutput;
 import com.foundationdb.server.api.dml.scan.ScanLimit;
 import com.foundationdb.server.api.dml.scan.ScanRequest;
-import com.foundationdb.server.rowdata.encoding.EncodingException;
 import com.foundationdb.server.error.ConcurrentScanAndUpdateException;
 import com.foundationdb.server.error.CursorIsFinishedException;
 import com.foundationdb.server.error.CursorIsUnknownException;
@@ -67,7 +64,6 @@ import com.foundationdb.server.error.OldAISException;
 import com.foundationdb.server.error.RowOutputException;
 import com.foundationdb.server.error.ScanRetryAbandonedException;
 import com.foundationdb.server.error.TableDefinitionChangedException;
-import com.foundationdb.server.error.TableDefinitionMismatchException;
 import com.foundationdb.server.service.dxl.BasicDXLMiddleman.ScanData;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.TableListener;
@@ -85,7 +81,6 @@ import org.slf4j.LoggerFactory;
 
 class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
-    private static final ColumnSelector ALL_COLUMNS_SELECTOR = ConstantColumnSelector.ALL_ON;
     private static final AtomicLong cursorsCount = new AtomicLong();
 
     private final static Logger logger = LoggerFactory.getLogger(BasicDMLFunctions.class);
@@ -519,125 +514,6 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             converted.add(NiceRow.fromRowData(rowData, rowDef));
         }
         return converted;
-    }
-
-    @Override
-    public void writeRow(Session session, NewRow row)
-    {
-        logger.trace("writing a row");
-        store().writeNewRow(session, row);
-    }
-
-    @Override
-    public void writeRows(Session session, List<RowData> rows) {
-        logger.trace("writing {} rows", rows.size());
-        for(RowData rowData : rows) {
-            store().writeRow(session, rowData);
-        }
-    }
-
-    @Override
-    public void deleteRow(Session session, NewRow row, boolean cascadeDelete)
-    {
-        logger.trace("deleting a row (cascade: {})", cascadeDelete);
-        final RowData rowData = niceRowToRowData(row);
-        store().deleteRow(session, rowData, cascadeDelete);
-    }
-
-    private RowData niceRowToRowData(NewRow row) 
-    {
-        try {
-            return row.toRowData();
-        } catch (EncodingException e) {
-            throw new TableDefinitionMismatchException(e);
-        }
-    }
-
-    @Override
-    public void updateRow(Session session, NewRow oldRow, NewRow newRow, ColumnSelector columnSelector)
-    {
-        logger.trace("updating a row");
-        final RowData oldData = niceRowToRowData(oldRow);
-        final RowData newData = niceRowToRowData(newRow);
-
-        final int tableId = LegacyUtils.matchRowDatas(oldData, newData);
-        checkForModifiedCursors(
-                session,
-                oldRow, newRow,
-                columnSelector == null ? ALL_COLUMNS_SELECTOR : columnSelector,
-                tableId
-        );
-
-        store().updateRow(session, oldData, newData, columnSelector);
-    }
-
-    private void checkForModifiedCursors(
-            Session session, NewRow oldRow, NewRow newRow, ColumnSelector columnSelector, int tableId) {
-        boolean hKeyIsModified = isHKeyModified(session, oldRow, newRow, columnSelector, tableId);
-
-        Map<CursorId,ScanData> cursorsMap = getScanDataMap(session);
-        if (cursorsMap == null) {
-            return;
-        }
-        for (ScanData scanData : cursorsMap.values()) {
-            Cursor cursor = scanData.getCursor();
-            if (cursor.isClosed()) {
-                continue;
-            }
-            RowCollector rc = cursor.getRowCollector();
-            if (hKeyIsModified) {
-                // check whether the update is on this scan or its ancestors
-                int scanTableId = rc.getTableId();
-                while (scanTableId > 0) {
-                    if (scanTableId == tableId) {
-                        cursor.setScanModified();
-                        break;
-                    }
-                    scanTableId = ddlFunctions.getTable(session, scanTableId).getParentTable().getTableId();
-                }
-            }
-            else {
-                TableIndex index = rc.getPredicateIndex();
-                if (index == null) {
-                    index = ddlFunctions.getRowDef(session, rc.getTableId()).getPKIndex();
-                }
-                if (index != null) {
-                    if (index.getTable().getTableId() != tableId) {
-                        continue;
-                    }
-                    int nkeys = index.getKeyColumns().size();
-                    IndexRowComposition indexRowComposition = index.indexRowComposition();
-                    for (int i = 0; i < nkeys; i++) {
-                        int field = indexRowComposition.getFieldPosition(i);
-                        if (columnSelector.includesColumn(field)
-                                && !AkServerUtil.equals(oldRow.get(field), newRow.get(field)))
-                        {
-                            cursor.setScanModified();
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private boolean isHKeyModified(Session session, NewRow oldRow, NewRow newRow, ColumnSelector columns, int tableId)
-    {
-        Table table = ddlFunctions.getAIS(session).getTable(tableId);
-        HKey hKey = table.hKey();
-        for (HKeySegment segment : hKey.segments()) {
-            for (HKeyColumn hKeyColumn : segment.columns()) {
-                Column column = hKeyColumn.column();
-                if (column.getTable() != table) {
-                    continue;
-                }
-                int pos = column.getPosition();
-                if (columns.includesColumn(pos) && !AkServerUtil.equals(oldRow.get(pos), newRow.get(pos))) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     /**

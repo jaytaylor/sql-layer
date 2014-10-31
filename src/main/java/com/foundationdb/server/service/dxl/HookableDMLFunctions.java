@@ -18,9 +18,7 @@
 package com.foundationdb.server.service.dxl;
 
 import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.TableStatistics;
 import com.foundationdb.server.api.DMLFunctions;
-import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.scan.BufferFullException;
 import com.foundationdb.server.api.dml.scan.CursorId;
 import com.foundationdb.server.api.dml.scan.CursorState;
@@ -221,82 +219,6 @@ public final class HookableDMLFunctions implements DMLFunctions {
             throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DXLFunction.CONVERT_ROW_DATAS, thrown);
-        }
-    }
-
-    @Override
-    public void writeRow(Session session, NewRow row) {
-        Throwable thrown = null;
-        try {
-            hook.hookFunctionIn(session, DXLFunction.WRITE_ROW);
-            delegate.writeRow(session, row);
-        } catch (RuntimeException t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.WRITE_ROW, t);
-            throw t;
-        } catch (Throwable t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunction.WRITE_ROW, t);
-            throw throwAlways(t);
-        } finally {
-            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.WRITE_ROW, thrown);
-        }
-    }
-
-    @Override
-    public void writeRows(Session session, List<RowData> rows) {
-        Throwable thrown = null;
-        try {
-            hook.hookFunctionIn(session, DXLFunction.WRITE_ROWS);
-            delegate.writeRows(session, rows);
-        } catch (RuntimeException t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.WRITE_ROWS, t);
-            throw t;
-        } catch (Throwable t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunction.WRITE_ROWS, t);
-            throw throwAlways(t);
-        } finally {
-            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.WRITE_ROWS, thrown);
-        }
-    }
-
-    @Override 
-    public void deleteRow(Session session, NewRow row, boolean cascadeDelete) {
-        Throwable thrown = null;
-        try {
-            hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.DELETE_ROW);
-            delegate.deleteRow(session, row, cascadeDelete);
-        } catch (RuntimeException t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.DELETE_ROW, t);
-            throw t;
-        } catch (Throwable t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.DELETE_ROW, t);
-            throw throwAlways(t);
-        } finally {
-            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.DELETE_ROW, thrown);
-        }
-    }
-
-    @Override
-    public void updateRow(Session session, NewRow oldRow, NewRow newRow, ColumnSelector columnSelector) {
-        Throwable thrown = null;
-        try {
-            hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.UPDATE_ROW);
-            delegate.updateRow(session, oldRow, newRow, columnSelector);
-        } catch (RuntimeException t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.UPDATE_ROW, t);
-            throw t;
-        } catch (Throwable t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunction.UPDATE_ROW, t);
-            throw throwAlways(t);
-        } finally {
-            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.UPDATE_ROW, thrown);
         }
     }
 

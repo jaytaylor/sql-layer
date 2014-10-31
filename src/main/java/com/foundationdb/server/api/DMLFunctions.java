@@ -95,7 +95,7 @@ public interface DMLFunctions {
      * <p>This method is similar to its LegacyRowOutput-taking twin, but it takes a RowOutput instead. Converting
      * from legacy RowData instances to NewRows requires RowDef knowledge that the caller may not have, but
      * DMLFunctions implementations should have this information. Thus, this call acts as both a convenience
-     * and a separator of concerns.</p> 
+     * and a separator of concerns.</p>
      *
      * <p>This method returns whether there are more rows to be scanned; if it returns <tt>false</tt>, subsequent scans
      * on this cursor will raise a CursorIsFinishedException. The first invocation of this method on a cursor will never
@@ -184,36 +184,6 @@ public interface DMLFunctions {
      * @return a List of NewRows, each of which is a converted RowData
      */
     List<NewRow> convertRowDatas(Session session, List<RowData> rowDatas);
-
-    /**
-     * Writes a row to the specified table.
-     * @param row the row to write
-     */
-    void writeRow(Session session, NewRow row);
-
-    /**
-     * Write multiple rows to their associated tables.
-     * @param rows the rows to write
-     */
-    void writeRows(Session session, List<RowData> rows);
-
-    /**
-     * Deletes a row, possibly cascading the delete to the child rows
-     * @param session current execution session 
-     * @param row row to delete
-     * @param cascadeDelete set true to delete any child rows through the Group Foreign key
-     *      set false to delete only from the table. 
-     */
-    void deleteRow(Session session, NewRow row, boolean cascadeDelete);
-    
-    /**
-     * <p>Updates a row, possibly cascading updates to its PK to children rows.</p>
-     * @param oldRow the row to update
-     * @param newRow the row's new values
-     * @param columnSelector specifies which columns are being updated
-     * @throws NullPointerException if any of the arguments are <tt>null</tt>
-     */
-    void updateRow(Session session, NewRow oldRow, NewRow newRow, ColumnSelector columnSelector);
 
     /**
      * Truncates the given table.
