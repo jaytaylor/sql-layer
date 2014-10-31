@@ -1063,38 +1063,6 @@ public class ApiTestBase {
         }
     }
 
-    protected final int indexId(String schema, String table, String index) {
-        AkibanInformationSchema ais = ddl().getAIS(session());
-        Table aisTable = ais.getTable(schema, table);
-        Index aisIndex = aisTable.getIndex(index);
-        if (aisIndex == null) {
-            throw new RuntimeException("no such index: " + index);
-        }
-        return aisIndex.getIndexId();
-    }
-
-    protected final CursorId openFullScan(String schema, String table, String index) throws InvalidOperationException {
-        AkibanInformationSchema ais = ddl().getAIS(session());
-        Table aisTable = ais.getTable(schema, table);
-        Index aisIndex = aisTable.getIndex(index);
-        if (aisIndex == null) {
-            throw new RuntimeException("no such index: " + index);
-        }
-        return openFullScan(aisTable.getTableId(), aisIndex.getIndexId());
-    }
-
-    protected final CursorId openFullScan(int tableId, int indexId) throws InvalidOperationException {
-        Table table = ddl().getTable(session(), tableId);
-        Set<Integer> allCols = new HashSet<>();
-        for (int i=0, MAX=table.getColumns().size(); i < MAX; ++i) {
-            allCols.add(i);
-        }
-        ScanRequest request = new ScanAllRequest(tableId, allCols, indexId,
-                EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END)
-        );
-        return dml().openCursor(session(), aisGeneration(), request);
-    }
-
     protected static Set<Integer> set(Integer... items) {
         return new HashSet<>(Arrays.asList(items));
     }
@@ -1227,16 +1195,6 @@ public class ApiTestBase {
     protected void expectRows(Schema schema, Operator plan, boolean skipInternal, Collection<Row> expectedRows) {
         List<Row> actual = runPlan(session(), schema, plan);
         compareRows(expectedRows, actual, skipInternal);
-    }
-
-    protected static Set<CursorId> cursorSet(CursorId... cursorIds) {
-        Set<CursorId> set = new HashSet<>();
-        for (CursorId id : cursorIds) {
-            if(!set.add(id)) {
-                fail(String.format("while adding %s to %s", id, set));
-            }
-        }
-        return set;
     }
 
     public Row row(RowDef rowDef, Object... fields) {

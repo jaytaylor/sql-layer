@@ -19,19 +19,12 @@ package com.foundationdb.server.service.dxl;
 
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.api.DMLFunctions;
-import com.foundationdb.server.api.dml.scan.BufferFullException;
-import com.foundationdb.server.api.dml.scan.CursorId;
-import com.foundationdb.server.api.dml.scan.CursorState;
-import com.foundationdb.server.api.dml.scan.LegacyRowOutput;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.api.dml.scan.RowOutput;
-import com.foundationdb.server.api.dml.scan.ScanRequest;
 import com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.session.SessionService;
 
 import java.util.List;
-import java.util.Set;
 
 import static com.foundationdb.util.Exceptions.throwAlways;
 
@@ -45,124 +38,6 @@ public final class HookableDMLFunctions implements DMLFunctions {
         this.delegate = delegate;
         this.sessionService = sessionService;
         this.hook = hooks.size() == 1 ? hooks.get(0) : new CompositeHook(hooks);
-    }
-
-    @Override
-    public CursorId openCursor(Session session, int knownAIS, ScanRequest request) {
-        Throwable thrown = null;
-        try {
-            hook.hookFunctionIn(session, DXLFunction.OPEN_CURSOR);
-            return delegate.openCursor(session, knownAIS, request);
-        } catch (RuntimeException t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.OPEN_CURSOR, t);
-            throw t;
-        } catch (Throwable t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunction.OPEN_CURSOR, t);
-            throw throwAlways(t);
-        } finally {
-            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.OPEN_CURSOR, thrown);
-        }
-    }
-
-    @Override
-    public CursorState getCursorState(Session session, CursorId cursorId) {
-        Throwable thrown = null;
-        try {
-            hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.GET_CURSOR_STATE);
-            return delegate.getCursorState(session, cursorId);
-        } catch (RuntimeException t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_CURSOR_STATE, t);
-            throw t;
-        } catch (Throwable t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_CURSOR_STATE, t);
-            throw throwAlways(t);
-        } finally {
-            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.GET_CURSOR_STATE, thrown);
-        }
-    }
-
-    @Override
-    public void scanSome(Session session, CursorId cursorId, LegacyRowOutput output) throws BufferFullException {
-        Throwable thrown = null;
-        try {
-            hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.SCAN_SOME);
-            delegate.scanSome(session, cursorId, output);
-        } catch (RuntimeException t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.SCAN_SOME, t);
-            throw t;
-        } catch (BufferFullException ex) {
-            thrown = ex; 
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.SCAN_SOME, ex);
-            throw ex;
-        } catch (Throwable t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.SCAN_SOME, t);
-            throw throwAlways(t);
-        } finally {
-            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.SCAN_SOME, thrown);
-        }
-    }
-
-    @Override
-    public void scanSome(Session session, CursorId cursorId, RowOutput output) {
-        Throwable thrown = null;
-        try {
-            hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.SCAN_SOME);
-            delegate.scanSome(session, cursorId, output);
-        } catch (RuntimeException t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.SCAN_SOME, t);
-            throw t;
-        } catch (Throwable t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunction.SCAN_SOME, t);
-            throw throwAlways(t);
-        } finally {
-            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.SCAN_SOME, thrown);
-        }
-    }
-
-    @Override
-    public void closeCursor(Session session, CursorId cursorId) {
-        Throwable thrown = null;
-        try {
-            hook.hookFunctionIn(session, DXLFunction.CLOSE_CURSOR);
-            delegate.closeCursor(session, cursorId);
-        } catch (RuntimeException t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.CLOSE_CURSOR, t);
-            throw t;
-        } catch (Throwable t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.CLOSE_CURSOR, t);
-            throw throwAlways(t);
-        } finally {
-            hook.hookFunctionFinally(session, DXLFunction.CLOSE_CURSOR, thrown);
-        }
-    }
-
-    @Override
-    public Set<CursorId> getCursors(Session session) {
-        Throwable thrown = null;
-        try {
-            hook.hookFunctionIn(session, DXLFunction.GET_CURSORS);
-            return delegate.getCursors(session);
-        } catch (RuntimeException t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_CURSORS, t);
-            throw t;
-        } catch (Throwable t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunction.GET_CURSORS, t);
-            throw throwAlways(t);
-        } finally {
-            hook.hookFunctionFinally(session, DXLFunction.GET_CURSORS, thrown);
-        }
     }
 
     @Override
