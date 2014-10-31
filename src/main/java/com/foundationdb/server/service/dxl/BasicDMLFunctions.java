@@ -38,7 +38,6 @@ import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.AkServerUtil;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
-import com.foundationdb.server.TableStatistics;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.DMLFunctions;
 import com.foundationdb.server.api.LegacyUtils;
@@ -55,9 +54,7 @@ import com.foundationdb.server.api.dml.scan.LegacyRowOutput;
 import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.NiceRow;
-import com.foundationdb.server.api.dml.scan.RowDataLegacyOutputRouter;
 import com.foundationdb.server.api.dml.scan.RowOutput;
-import com.foundationdb.server.api.dml.scan.ScanAllRequest;
 import com.foundationdb.server.api.dml.scan.ScanLimit;
 import com.foundationdb.server.api.dml.scan.ScanRequest;
 import com.foundationdb.server.rowdata.encoding.EncodingException;
@@ -106,17 +103,6 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         this.indexStatisticsService = indexStatisticsService;
         this.listenerService = listenerService;
         this.scanner = new Scanner();
-    }
-
-    @Override
-    public TableStatistics getTableStatistics(Session session, int tableId, boolean updateFirst)
-    {
-        logger.trace("stats for {} updating: {}", tableId, updateFirst);
-        Table table = ddlFunctions.getTable(session, tableId);
-        if (updateFirst) {
-            ddlFunctions.updateTableStatistics(session, table.getName(), null);
-        }
-        return indexStatisticsService.getTableStatistics(session, table);
     }
 
     @Override
@@ -674,8 +660,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         while(!tableList.isEmpty()) {
             Table aTable = tableList.remove(tableList.size() - 1);
             if(aTable != table) {
-                TableStatistics stats = getTableStatistics(session, aTable.getTableId(), false);
-                if(stats.getRowCount() > 0) {
+                if(aTable.rowDef().getTableStatus().getRowCount(session) > 0) {
                     return false;
                 }
             }

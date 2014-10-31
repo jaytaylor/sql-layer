@@ -57,6 +57,7 @@ import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.model.Index.JoinType;
 import com.foundationdb.ais.util.TableChangeValidator;
+import com.foundationdb.server.store.statistics.IndexStatisticsService;
 import com.foundationdb.server.test.it.qp.TestRow;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TPreptimeValue;
@@ -426,9 +427,7 @@ public class ApiTestBase {
     }
 
     protected String akibanFK(String childCol, String parentTable, String parentCol) {
-        return String.format("GROUPING FOREIGN KEY (%s) REFERENCES \"%s\" (%s)",
-                             childCol, parentTable, parentCol
-        );
+        return String.format("GROUPING FOREIGN KEY (%s) REFERENCES \"%s\" (%s)", childCol, parentTable, parentCol);
     }
 
     protected final Session session() {
@@ -498,6 +497,10 @@ public class ApiTestBase {
 
     protected SecurityService securityService() {
         return sm.getServiceByClass(SecurityService.class);
+    }
+
+    protected IndexStatisticsService indexStatsService() {
+        return sm.getServiceByClass(IndexStatisticsService.class);
     }
 
     protected final int aisGeneration() {
@@ -848,9 +851,8 @@ public class ApiTestBase {
      * @throws InvalidOperationException for various reasons :)
      */
     protected final void expectRowCount(int tableId, long rowsExpected) throws InvalidOperationException {
-        TableStatistics tableStats = dml().getTableStatistics(session(), tableId, true);
-        assertEquals("table ID", tableId, tableStats.getRowDefId());
-        assertEquals("rows by TableStatistics", rowsExpected, tableStats.getRowCount());
+        Table table = getTable(tableId);
+        assertEquals("rows by TableStatistics", rowsExpected, table.rowDef().getTableStatus().getRowCount(session()));
     }
 
     protected static RuntimeException unexpectedException(Throwable cause) {
@@ -881,8 +883,7 @@ public class ApiTestBase {
 
     private Operator scanTablePlan(Table table) {
         Schema schema = SchemaCache.globalSchema(table.getAIS());
-        return API.filter_Default(API.groupScan_Default(table.getGroup()),
-                                  Arrays.asList(schema.tableRowType(table)));
+        return API.filter_Default(API.groupScan_Default(table.getGroup()), Arrays.asList(schema.tableRowType(table)));
     }
 
     protected Operator scanIndexPlan(Index index) {

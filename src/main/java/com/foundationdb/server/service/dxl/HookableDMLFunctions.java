@@ -50,25 +50,6 @@ public final class HookableDMLFunctions implements DMLFunctions {
     }
 
     @Override
-    public TableStatistics getTableStatistics(Session session, int tableId, boolean updateFirst) {
-        Throwable thrown = null;
-        try {
-            hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.GET_TABLE_STATISTICS);
-            return delegate.getTableStatistics(session, tableId, updateFirst);
-        } catch (RuntimeException t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_TABLE_STATISTICS, t);
-            throw t;
-        } catch (Throwable t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_TABLE_STATISTICS, t);
-            throw throwAlways(t);
-        } finally {
-            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.GET_TABLE_STATISTICS, thrown);
-        }
-    }
-
-    @Override
     public CursorId openCursor(Session session, int knownAIS, ScanRequest request) {
         Throwable thrown = null;
         try {

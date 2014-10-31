@@ -19,11 +19,13 @@ package com.foundationdb.server.test.it.store;
 
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.server.TableStatistics;
 import com.foundationdb.server.spatial.Spatial;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.concurrent.Callable;
 
 public final class AnalyzeSpatialIT extends ITBase {
     @Test
@@ -32,10 +34,10 @@ public final class AnalyzeSpatialIT extends ITBase {
 
         createSpatialTableIndex("schem", "tab", "idxgeo", 0, 2, "lat", "lon");
         writeRow(cid, 10L, "10", "11");
-        dml().getTableStatistics(session(), cid, false);
+        getStats(cid);
         serviceManager().getDXL().ddlFunctions().updateTableStatistics(session(),
                 new TableName("schem", "tab"), Collections.singleton("idxgeo"));
-        dml().getTableStatistics(session(), cid, false);
+        getStats(cid);
     }
 
     @Test
@@ -45,10 +47,10 @@ public final class AnalyzeSpatialIT extends ITBase {
 
         createSpatialTableIndex("schem", "tab", "idxgeo", 0, 2, "lat", "lon", "name");
         writeRow(cid, 10L, "10", "11", "foo");
-        dml().getTableStatistics(session(), cid, false);
+        getStats(cid);
         serviceManager().getDXL().ddlFunctions().updateTableStatistics(session(),
                 new TableName("schem", "tab"), Collections.singleton("idxgeo"));
-        dml().getTableStatistics(session(), cid, false);
+        getStats(cid);
     }
 
     @Test
@@ -64,10 +66,20 @@ public final class AnalyzeSpatialIT extends ITBase {
                                 "cust.lat", "cust.lon", "orders.colour");
         writeRow(cid, 10L, "10", "11", "foo");
         writeRow(oid, 20L, 10L, "red");
-        dml().getTableStatistics(session(), cid, false);
+        getStats(cid);
         serviceManager().getDXL().ddlFunctions().updateTableStatistics(session(),
                 new TableName("schem", "orders"), Collections.singleton("idxgeogrp"));
-        dml().getTableStatistics(session(), cid, false);
-        dml().getTableStatistics(session(), oid, false);
+        getStats(cid);
+        getStats(cid);
+    }
+
+    private TableStatistics getStats(final int tableID) {
+        return txnService().run(session(), new Callable<TableStatistics>()
+        {
+            @Override
+            public TableStatistics call() throws Exception {
+                return indexStatsService().getTableStatistics(session(), getTable(tableID));
+            }
+        });
     }
 }

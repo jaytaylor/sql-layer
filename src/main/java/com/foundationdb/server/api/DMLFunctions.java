@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Set;
 
 import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.TableStatistics;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.scan.BufferFullException;
 import com.foundationdb.server.api.dml.scan.CursorId;
@@ -34,14 +33,6 @@ import com.foundationdb.server.error.CursorIsUnknownException;
 import com.foundationdb.server.service.session.Session;
 
 public interface DMLFunctions {
-    /**
-     * Gets the table statistics for the specified table, optionally updating the statistics first. If you request
-     * this update, the method may take significantly longer.
-     * @param tableId the table for which to get (and possibly update) statistics
-     * @param updateFirst whether to update the statistics before returning them
-     * @return the table's statistics
-     */
-    TableStatistics getTableStatistics(Session session, int tableId, boolean updateFirst);
 
     /**
      * Opens a new cursor for scanning a table. This cursor will be stored in the current session, and a handle
