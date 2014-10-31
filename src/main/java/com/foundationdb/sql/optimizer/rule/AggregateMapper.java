@@ -22,7 +22,6 @@ import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.server.error.InvalidOptimizerPropertyException;
 import com.foundationdb.server.error.NoAggregateWithGroupByException;
-import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.IndexColumn;
@@ -51,6 +50,47 @@ public class AggregateMapper extends BaseRule
         for (AggregateSourceState source : sources) {
             Mapper m = new Mapper((SchemaRulesContext)plan.getRulesContext(), source.aggregateSource, source.containingQuery);
             m.remap(source.aggregateSource);
+        }
+        for (AggregateSourceState source : sources) {
+            Mapper2 m2 = new Mapper2();
+            m2.remap(source.aggregateSource);
+        }
+    }
+
+    static class AggregateFunctionWithAnnotation extends AggregateFunctionExpression {
+        private int level;
+        private AggregateSource source;
+
+        public AggregateFunctionWithAnnotation(AggregateFunctionExpression aggregateFunc, int level, AggregateSource source) {
+            super(aggregateFunc.getFunction(),
+                  aggregateFunc.getOperand(),
+                  aggregateFunc.isDistinct(),
+                  aggregateFunc.getSQLtype(),
+                  aggregateFunc.getSQLsource(),
+                  aggregateFunc.getType(),
+                  aggregateFunc.getOption(),
+                  aggregateFunc.getOrderBy());
+            this.level = level;
+            this.source = source;
+        }
+
+        public AggregateFunctionWithAnnotation setQueryAndLevel(Integer level, AggregateSource source) {
+            if (this.level > level) {
+                this.level = level;
+                this.source = source;
+            }
+            return this;
+        }
+
+        public boolean isThisIt(AggregateSource source) {
+            if (this.source == source) {
+                return true;
+            }
+            return false;
+        }
+
+        public AggregateSource getSource() {
+            return source;
         }
     }
 
@@ -178,16 +218,18 @@ public class AggregateMapper extends BaseRule
             if (nexpr != null)
                 return nexpr;
             if (expr instanceof AggregateFunctionExpression) {
-                return addAggregate((AggregateFunctionExpression)expr);
+                nexpr = rewrite((AggregateFunctionExpression)expr);
+                if (nexpr == null) {
+                    return new AggregateFunctionWithAnnotation((AggregateFunctionExpression)expr, subqueries.size(), source);
+                }
+                return nexpr.accept(this);
+            }
+            if (expr instanceof AggregateFunctionWithAnnotation) {
+                return ((AggregateFunctionWithAnnotation)expr).setQueryAndLevel(subqueries.size(), source);
             }
             if (expr instanceof ColumnExpression) {
                 ColumnExpression column = (ColumnExpression)expr;
                 ColumnSource table = column.getTable();
-                if (table instanceof AggregateSource) {
-                    ExpressionNode expressionNode = ((AggregateSource)table).getField(column.getPosition());
-                    assert expressionNode instanceof AggregateFunctionExpression : expressionNode;
-                    return addAggregate((AggregateFunctionExpression) expressionNode);
-                }
                 if (!aggregated.contains(table) &&
                     !boundElsewhere(table)) {
                     return nonAggregate(column);
@@ -336,4 +378,82 @@ public class AggregateMapper extends BaseRule
         }
     }
 
+    static class Mapper2 implements ExpressionRewriteVisitor, PlanVisitor {
+
+        public void remap(PlanNode n) {
+            while (true) {
+                // Keep going as long as we're feeding something we understand.
+                n = n.getOutput();
+                if (n instanceof Select) {
+                    remap(((Select)n).getConditions());
+                }
+                else if (n instanceof Sort) {
+                    remapA(((Sort)n).getOrderBy());
+                }
+                else if (n instanceof Project) {
+                    Project p = (Project)n;
+                    remap(p.getFields());
+                }
+                else if (n instanceof Limit) {
+                    // Understood not but mapped.
+                }
+                else
+                    break;
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        protected <T extends ExpressionNode> void remap(List<T> exprs) {
+            for (int i = 0; i < exprs.size(); i++) {
+                exprs.set(i, (T)exprs.get(i).accept(this));
+            }
+        }
+
+        protected void remapA(List<? extends AnnotatedExpression> exprs) {
+            for (AnnotatedExpression expr : exprs) {
+                expr.setExpression(expr.getExpression().accept(this));
+            }
+        }
+
+        @Override
+        public boolean visitChildrenFirst(ExpressionNode expr) {
+            return false;
+        }
+
+        @Override
+        public ExpressionNode visit(ExpressionNode expr) {
+            if (expr instanceof AggregateFunctionWithAnnotation) {
+                return addAggregate((AggregateFunctionWithAnnotation)expr);
+            }
+            return expr;
+        }
+
+        @Override
+        public boolean visitEnter(PlanNode n) {
+            return visit(n);
+        }
+
+        @Override
+        public boolean visitLeave(PlanNode n) {
+            return true;
+        }
+
+        @Override
+        public boolean visit(PlanNode n) {
+            return true;
+        }
+
+        protected ExpressionNode addAggregate(AggregateFunctionWithAnnotation expr) {
+            AggregateSource source = expr.getSource();
+            int position;
+            if (source.hasAggregate(expr)) {
+                position = source.getPosition(expr);
+            } else {
+                position = source.addAggregate(expr);
+            }
+            ExpressionNode nexpr = new ColumnExpression(source, position,
+                                         expr.getSQLtype(), expr.getSQLsource(), expr.getType());
+            return nexpr;
+        }
+    }
 }
