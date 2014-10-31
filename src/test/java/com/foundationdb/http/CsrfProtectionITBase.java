@@ -101,7 +101,7 @@ public abstract class CsrfProtectionITBase extends ITBase
     public void requestBlockedWithMissingReferer() throws Exception{
         URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
 
-        HttpUriRequest request = new HttpGet(uri);
+        HttpUriRequest request = new HttpPut(uri);
 
         response = client.execute(request);
         assertEquals("status", HttpStatus.SC_FORBIDDEN, response.getStatusLine().getStatusCode());
@@ -112,7 +112,7 @@ public abstract class CsrfProtectionITBase extends ITBase
     public void requestBlockedWithEmptyReferer() throws Exception{
         URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
 
-        HttpUriRequest request = new HttpGet(uri);
+        HttpUriRequest request = new HttpPut(uri);
         request.setHeader("Referer","");
 
         response = client.execute(request);
@@ -121,7 +121,9 @@ public abstract class CsrfProtectionITBase extends ITBase
     }
 
     @Test
-    public void requestBlockedWithBadHost() throws Exception{
+    public void getBlockedWithBadHost() throws Exception{
+        // Although we let blank & empty referers through for get requests, there is no benefit to
+        // letting incorrect referers through, so those are always blocked.
         URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
 
         HttpUriRequest request = new HttpGet(uri);
@@ -154,7 +156,42 @@ public abstract class CsrfProtectionITBase extends ITBase
         assertEquals("status", HttpStatus.SC_FORBIDDEN, response.getStatusLine().getStatusCode());
         assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("Referer"));
     }
+    @Test
+    public void putBlockedWithBlankReferer() throws Exception{
+        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
 
+        HttpUriRequest request = new HttpPut(uri);
+        request.setHeader("Referer","");
+
+        response = client.execute(request);
+        assertEquals("status", HttpStatus.SC_FORBIDDEN, response.getStatusLine().getStatusCode());
+        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("Referer"));
+    }
+
+    @Test
+    public void getAllowedWithNoReferer() throws Exception{
+        // Since GET requests don't have side effects, the cross-origin header will prevent
+        // third-party javascript from viewing the result, meaning that we can allow this through.
+        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
+
+        HttpUriRequest request = new HttpGet(uri);
+
+        response = client.execute(request);
+        assertEquals("status", HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+    }
+
+    @Test
+    public void getAllowedWithBlankReferer() throws Exception{
+        // Since GET requests don't have side effects, the cross-origin header will prevent
+        // third-party javascript from viewing the result, meaning that we can allow this through.
+        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
+
+        HttpUriRequest request = new HttpGet(uri);
+        request.setHeader("Referer","");
+
+        response = client.execute(request);
+        assertEquals("status", HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+    }
 
     @Test
     public void getAllowed1() throws Exception{

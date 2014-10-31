@@ -34,9 +34,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * This blocks any requests with an unknown or blank referer.
@@ -68,7 +66,7 @@ public class CsrfProtectionRefererFilter implements javax.servlet.Filter {
         if (servletRequest instanceof HttpServletRequest) {
             HttpServletRequest request = (HttpServletRequest) servletRequest;
             String referer = request.getHeader(REFERER_HEADER);
-            if (isAllowedUri(allowedReferers, referer)) {
+            if (isAllowedUri(allowedReferers, referer, "GET".equals(request.getMethod()))) {
                 filterChain.doFilter(servletRequest,  servletResponse);
             } else {
                 logger.debug("CSRF attempt blocked due to invalid referer uri; Request:{} Referer:{}",
@@ -134,9 +132,9 @@ public class CsrfProtectionRefererFilter implements javax.servlet.Filter {
         return allowedReferers;
     }
 
-    public static boolean isAllowedUri(List<URI> allowedReferers, String referer) {
+    public static boolean isAllowedUri(List<URI> allowedReferers, String referer, boolean isGetRequest) {
         if (referer == null || referer.isEmpty()) {
-            return false;
+            return isGetRequest;
         }
         URI refererUri = URI.create(referer);
         for (URI uri : allowedReferers) {
