@@ -881,6 +881,11 @@ public class ApiTestBase {
         return runPlan(session(), SchemaCache.globalSchema(table.getAIS()), plan);
     }
 
+    protected List<Row> scanAll(Group group) {
+        Schema schema = SchemaCache.globalSchema(group.getAIS());
+        return runPlan(session(), schema, API.groupScan_Default(group));
+    }
+
     private Operator scanTablePlan(Table table) {
         Schema schema = SchemaCache.globalSchema(table.getAIS());
         return API.filter_Default(API.groupScan_Default(table.getGroup()), Arrays.asList(schema.tableRowType(table)));
