@@ -555,9 +555,9 @@ public class ASTStatementLoader extends BaseRule
                 input = new ExpressionsSource(Collections.singletonList(Collections.<ExpressionNode>emptyList()));
             }
             ConditionList conditions = toConditions(selectNode.getWhereClause());
-            if (hasAggregateFunction(conditions))
-                throw new UnsupportedSQLException("Aggregate not allowed in WHERE",
-                                                  selectNode.getWhereClause());
+            //if (hasAggregateFunction(conditions))
+            //    throw new UnsupportedSQLException("Aggregate not allowed in WHERE",
+            //                                      selectNode.getWhereClause());
             return new Select(input, conditions);
         }
 
