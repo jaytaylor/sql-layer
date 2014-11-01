@@ -20,7 +20,6 @@ package com.foundationdb.server.test;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -29,7 +28,6 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -50,13 +48,13 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.error.NoSuchIndexException;
 import com.foundationdb.server.store.FDBHolder;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.model.Index.JoinType;
 import com.foundationdb.ais.util.TableChangeValidator;
+import com.foundationdb.server.store.statistics.IndexStatisticsService;
 import com.foundationdb.server.test.it.qp.TestRow;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TPreptimeValue;
@@ -72,14 +70,12 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.server.AkServerUtil;
-import com.foundationdb.server.api.dml.scan.ScanFlag;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.rowdata.SchemaFactory;
 import com.foundationdb.server.service.ServiceManagerImpl;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.config.TestConfigService;
 import com.foundationdb.server.service.dxl.DXLService;
-import com.foundationdb.server.service.dxl.DXLTestHookRegistry;
 import com.foundationdb.server.service.dxl.DXLTestHooks;
 import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.security.SecurityService;
@@ -99,7 +95,6 @@ import com.foundationdb.util.AssertUtils;
 import com.foundationdb.util.Exceptions;
 import com.foundationdb.util.Strings;
 import com.foundationdb.util.tap.TapReport;
-import com.foundationdb.util.Undef;
 
 import com.geophile.z.Space;
 import org.junit.Assert;
@@ -107,16 +102,10 @@ import org.junit.After;
 import org.junit.Before;
 
 import com.foundationdb.server.store.Store;
-import com.foundationdb.util.ListUtils;
 
-import com.foundationdb.server.TableStatistics;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.DMLFunctions;
-import com.foundationdb.server.api.dml.scan.CursorId;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.api.dml.scan.RowOutput;
-import com.foundationdb.server.api.dml.scan.ScanAllRequest;
-import com.foundationdb.server.api.dml.scan.ScanRequest;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.service.ServiceManager;
@@ -137,7 +126,6 @@ import org.junit.runners.model.Statement;
 public class ApiTestBase {
     private static final int MIN_FREE_SPACE = 256 * 1024 * 1024;
     private static final String TAPS = System.getProperty("it.taps");
-    protected final static Object UNDEF = Undef.only();
 
     private static final Comparator<? super TapReport> TAP_REPORT_COMPARATOR = new Comparator<TapReport>() {
         @Override
@@ -145,40 +133,6 @@ public class ApiTestBase {
             return o1.getName().compareTo(o2.getName());
         }
     };
-
-    public static interface TestRowOutput extends RowOutput {
-        public void clear();
-    }
-
-    public static class ListRowOutput implements TestRowOutput {
-        private final List<NewRow> rows = new ArrayList<>();
-        private final List<NewRow> rowsUnmodifiable = Collections.unmodifiableList(rows);
-        private int mark = 0;
-
-        @Override
-        public void output(NewRow row) {
-            rows.add(row);
-        }
-        
-        public List<NewRow> getRows() {
-            return rowsUnmodifiable;
-        }
-
-        @Override
-        public void clear() {
-            rows.clear();
-        }
-
-        @Override
-        public void mark() {
-            mark = rows.size();
-        }
-
-        @Override
-        public void rewind() {
-            ListUtils.truncate(rows, mark);
-        }
-    }
 
     private static class RetryRule implements MethodRule {
         private static int MAX_TRIES = 5;
@@ -211,7 +165,6 @@ public class ApiTestBase {
 
     private static ServiceManager sm;
     private Session sharedSession;
-    private int aisGeneration;
     private static Map<String,String> lastStartupConfigProperties = null;
     private static boolean needServicesRestart = false;
     protected static Set<Callable<Void>> beforeStopServices = new HashSet<>();
@@ -317,14 +270,8 @@ public class ApiTestBase {
     public final void tearDownAllTables() throws Exception {
         if (lastStartupConfigProperties == null)
             return; // services never started up
-        String openCursorsMessage = null;
         if (sm.serviceIsStarted(DXLService.class)) {
             dropAllTables();
-            DXLTestHooks dxlTestHooks = DXLTestHookRegistry.get();
-            // Check for any residual open cursors
-            if (dxlTestHooks.openCursorsExist()) {
-                openCursorsMessage = "open cursors remaining:" + dxlTestHooks.describeOpenCursors();
-            }
         }
         if (TAPS != null) {
             TapReport[] reports = sm.getStatisticsService().getReport(TAPS);
@@ -345,10 +292,6 @@ public class ApiTestBase {
         }
         sharedSession.close();
 
-        if (openCursorsMessage != null) {
-            fail(openCursorsMessage);
-        }
-        
         needServicesRestart |= runningOutOfSpace();
     }
     
@@ -426,9 +369,7 @@ public class ApiTestBase {
     }
 
     protected String akibanFK(String childCol, String parentTable, String parentCol) {
-        return String.format("GROUPING FOREIGN KEY (%s) REFERENCES \"%s\" (%s)",
-                             childCol, parentTable, parentCol
-        );
+        return String.format("GROUPING FOREIGN KEY (%s) REFERENCES \"%s\" (%s)", childCol, parentTable, parentCol);
     }
 
     protected final Session session() {
@@ -500,12 +441,8 @@ public class ApiTestBase {
         return sm.getServiceByClass(SecurityService.class);
     }
 
-    protected final int aisGeneration() {
-        return aisGeneration;
-    }
-
-    protected final void updateAISGeneration() {
-        aisGeneration = ddl().getGenerationAsInt(session());
+    protected IndexStatisticsService indexStatsService() {
+        return sm.getServiceByClass(IndexStatisticsService.class);
     }
 
     protected Map<String, String> startupConfigProperties() {
@@ -536,7 +473,6 @@ public class ApiTestBase {
     protected void createFromDDL(String schema, String ddl) {
         SchemaFactory schemaFactory = new SchemaFactory(schema);
         schemaFactory.ddl(ddl(), session(), ddl);
-        updateAISGeneration();
     }
 
     protected static final class SimpleColumn {
@@ -577,7 +513,6 @@ public class ApiTestBase {
         }
         org.junit.Assert.assertTrue("is alter node", node instanceof AlterTableNode);
         AlterTableDDL.alterTable(ddl(), dml(), session(), schema, (AlterTableNode) node, queryContext);
-        updateAISGeneration();
     }
 
     protected final int createTableFromTypes(String schema, String table, boolean firstIsPk, boolean createIndexes,
@@ -605,7 +540,6 @@ public class ApiTestBase {
 
         Table tempTable = builder.akibanInformationSchema().getTable(schema, table);
         ddl().createTable(session(), tempTable);
-        updateAISGeneration();
         return tableId(schema, table);
     }
     
@@ -847,10 +781,20 @@ public class ApiTestBase {
      * @param rowsExpected how many rows we expect
      * @throws InvalidOperationException for various reasons :)
      */
-    protected final void expectRowCount(int tableId, long rowsExpected) throws InvalidOperationException {
-        TableStatistics tableStats = dml().getTableStatistics(session(), tableId, true);
-        assertEquals("table ID", tableId, tableStats.getRowDefId());
-        assertEquals("rows by TableStatistics", rowsExpected, tableStats.getRowCount());
+    protected final void expectRowCount(final int tableId, final long rowsExpected) {
+        Runnable runnable = new Runnable()
+        {
+            @Override
+            public void run() {
+                Table table = getTable(tableId);
+                assertEquals("rows by TableStatistics", rowsExpected, table.rowDef().getTableStatus().getRowCount(session()));
+            }
+        };
+        if(txnService().isTransactionActive(session())) {
+            runnable.run();
+        } else {
+            txnService().run(session(), runnable);
+        }
     }
 
     protected static RuntimeException unexpectedException(Throwable cause) {
@@ -879,10 +823,14 @@ public class ApiTestBase {
         return runPlan(session(), SchemaCache.globalSchema(table.getAIS()), plan);
     }
 
+    protected List<Row> scanAll(Group group) {
+        Schema schema = SchemaCache.globalSchema(group.getAIS());
+        return runPlan(session(), schema, API.groupScan_Default(group));
+    }
+
     private Operator scanTablePlan(Table table) {
         Schema schema = SchemaCache.globalSchema(table.getAIS());
-        return API.filter_Default(API.groupScan_Default(table.getGroup()),
-                                  Arrays.asList(schema.tableRowType(table)));
+        return API.filter_Default(API.groupScan_Default(table.getGroup()), Arrays.asList(schema.tableRowType(table)));
     }
 
     protected Operator scanIndexPlan(Index index) {
@@ -1057,38 +1005,6 @@ public class ApiTestBase {
         }
     }
 
-    protected final int indexId(String schema, String table, String index) {
-        AkibanInformationSchema ais = ddl().getAIS(session());
-        Table aisTable = ais.getTable(schema, table);
-        Index aisIndex = aisTable.getIndex(index);
-        if (aisIndex == null) {
-            throw new RuntimeException("no such index: " + index);
-        }
-        return aisIndex.getIndexId();
-    }
-
-    protected final CursorId openFullScan(String schema, String table, String index) throws InvalidOperationException {
-        AkibanInformationSchema ais = ddl().getAIS(session());
-        Table aisTable = ais.getTable(schema, table);
-        Index aisIndex = aisTable.getIndex(index);
-        if (aisIndex == null) {
-            throw new RuntimeException("no such index: " + index);
-        }
-        return openFullScan(aisTable.getTableId(), aisIndex.getIndexId());
-    }
-
-    protected final CursorId openFullScan(int tableId, int indexId) throws InvalidOperationException {
-        Table table = ddl().getTable(session(), tableId);
-        Set<Integer> allCols = new HashSet<>();
-        for (int i=0, MAX=table.getColumns().size(); i < MAX; ++i) {
-            allCols.add(i);
-        }
-        ScanRequest request = new ScanAllRequest(tableId, allCols, indexId,
-                EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END)
-        );
-        return dml().openCursor(session(), aisGeneration(), request);
-    }
-
     protected static Set<Integer> set(Integer... items) {
         return new HashSet<>(Arrays.asList(items));
     }
@@ -1223,16 +1139,6 @@ public class ApiTestBase {
         compareRows(expectedRows, actual, skipInternal);
     }
 
-    protected static Set<CursorId> cursorSet(CursorId... cursorIds) {
-        Set<CursorId> set = new HashSet<>();
-        for (CursorId id : cursorIds) {
-            if(!set.add(id)) {
-                fail(String.format("while adding %s to %s", id, set));
-            }
-        }
-        return set;
-    }
-
     public Row row(RowDef rowDef, Object... fields) {
         return row(rowDef.table(), fields);
     }
@@ -1260,12 +1166,6 @@ public class ApiTestBase {
     }
 
     public Row row(RowType rowType, Object... fields) {
-        for(Object o : fields) {
-            if(o == UNDEF) {
-                throw new UnsupportedOperationException("UNDEF");
-            }
-        }
-
         if(fields.length < rowType.nFields()) {
             QueryContext context = new SimpleQueryContext(newStoreAdapter(rowType.schema()));
             List<TPreparedExpression> expressions = new ArrayList<>();
@@ -1453,7 +1353,6 @@ public class ApiTestBase {
 
     protected void runAlter(TableChangeValidator.ChangeLevel expectedChangeLevel, String defaultSchema, String sql) {
         runAlter(session(), ddlForAlter(), dml(), null, expectedChangeLevel, defaultSchema, sql);
-        updateAISGeneration();
     }
 
     protected static void runAlter(Session session, DDLFunctions ddl, DMLFunctions dml, QueryContext context,

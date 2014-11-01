@@ -103,7 +103,6 @@ public class AlterTableITBase extends ITBase {
                             List<TableChange> columnChanges, List<TableChange> indexChanges) {
         ChangeLevel actual = ddlForAlter().alterTable(session(), name, newDefinition, columnChanges, indexChanges, queryContext());
         assertEquals("ChangeLevel", expectedChangeLevel, actual);
-        updateAISGeneration();
     }
 
     protected void runRenameTable(TableName oldName, TableName newName) {
@@ -200,7 +199,6 @@ public class AlterTableITBase extends ITBase {
             return;
         }
 
-        updateAISGeneration();
         AkibanInformationSchema ais = ddl().getAIS(session());
         Table table = ais.getTable(tableID);
         List<Row> tableRows = new ArrayList<>(scanAll(tableID));

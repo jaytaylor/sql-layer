@@ -147,73 +147,6 @@ public class IndexKeyRange
         return new IndexKeyRange(indexRowType, lo, true, null, false, IndexKind.SPATIAL);
     }
 
-    /**
-     * Describes all keys in the index starting at or after lo, depending on loInclusive.
-     * This is used only in lexicographic scans.
-     *
-     * @param indexRowType The row type of index keys.
-     * @param lo           Lower bound of the range.
-     * @param loInclusive  True if the lower bound is inclusive, false if exclusive.
-     * @return IndexKeyRange covering the keys starting at or after lo.
-     */
-    public static IndexKeyRange startingAt(IndexRowType indexRowType,
-                                           IndexBound lo,
-                                           boolean loInclusive)
-    {
-        if (lo == null) {
-            throw new IllegalArgumentException("IndexBound argument must not be null");
-        }
-        return new IndexKeyRange(indexRowType, lo, loInclusive, null, false, IndexKind.LEXICOGRAPHIC);
-    }
-
-    /**
-     * Describes all keys in the index ending at or before hi, depending on hiInclusive.
-     *
-     * @param indexRowType The row type of index keys.
-     * @param hi           Upper bound of the range.
-     * @param hiInclusive  True if the upper bound is inclusive, false if exclusive.
-     * @return IndexKeyRange covering the keys ending at or before lo.
-     */
-    public static IndexKeyRange endingAt(IndexRowType indexRowType,
-                                         IndexBound hi,
-                                         boolean hiInclusive)
-    {
-        if (hi == null) {
-            throw new IllegalArgumentException("IndexBound argument must not be null");
-        }
-        return new IndexKeyRange(indexRowType, null, false, hi, hiInclusive, IndexKind.LEXICOGRAPHIC);
-    }
-
-    /**
-     * Describes all keys in the index starting at or after lo, depending on loInclusive; and
-     * ending at or before hi, depending on hiInclusive.
-     * This is used only in lexicographic scans.
-     *
-     * @param indexRowType The row type of index keys.
-     * @param lo           Lower bound of the range.
-     * @param loInclusive  True if the lower bound is inclusive, false if exclusive.
-     * @param hi           Upper bound of the range.
-     * @param hiInclusive  True if the upper bound is inclusive, false if exclusive.
-     * @return IndexKeyRange covering the keys ending at or before lo.
-     */
-    public static IndexKeyRange startingAtAndEndingAt(
-        IndexRowType indexRowType,
-        IndexBound lo,
-        boolean loInclusive,
-        IndexBound hi,
-        boolean hiInclusive)
-    {
-        if (hi == null) {
-            throw new IllegalArgumentException("IndexBound argument must not be null");
-        }
-        return new IndexKeyRange(indexRowType, lo, loInclusive, hi, hiInclusive, IndexKind.LEXICOGRAPHIC);
-    }
-
-    public boolean lexicographic()
-    {
-        return indexKind == IndexKind.LEXICOGRAPHIC;
-    }
-
     public boolean spatial()
     {
         return indexKind == IndexKind.SPATIAL;
@@ -336,17 +269,11 @@ public class IndexKeyRange
     // (1, 10, 800) - (1, 10, 888) is legal, but (1, 10, 800) - (1, 20, 888) is not, because there are two ranges,
     // 10-20 and 800-888.
     //
-    // A LEXICOGRAPHIC index is required to support MySQL. MySQL requires a different approach in which we start at
-    // the lower bound and scan everything in the index up to the upper bound. So (1, 10, 800) - (1, 20, 888) is
-    // legal, and could return a row that is lexicographically between these bounds, but outside some range, e.g.
-    // (1, 11, 900). This will also be useful in supporting queries such as select * from t where (x, y) > (5, 7).
-    //
     // A SPATIAL index requires has no requirements other than specifying a match or range on any restricted column.
 
     public enum IndexKind
     {
         CONVENTIONAL,
-        LEXICOGRAPHIC,
         SPATIAL
     }
 }

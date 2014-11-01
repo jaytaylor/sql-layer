@@ -18,7 +18,6 @@
 package com.foundationdb.server.test.it.bugs.bug696156;
 
 import com.foundationdb.ais.model.TestAISBuilder;
-import com.foundationdb.server.api.dml.scan.ScanAllRequest;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.test.it.ITBase;
@@ -40,7 +39,6 @@ public class MultipleNullUniqueIndexIT  extends ITBase {
         builder.unique(SCHEMA, TABLE, "c1");
         builder.indexColumn(SCHEMA, TABLE, COLUMN, COLUMN, 0, true, null);
         ddl().createTable(session(), builder.akibanInformationSchema().getTable(SCHEMA, TABLE));
-        updateAISGeneration();
         final int tid = tableId(SCHEMA, TABLE);
         Object[] data = new Object[1];
         writeRows(row(tid, data));

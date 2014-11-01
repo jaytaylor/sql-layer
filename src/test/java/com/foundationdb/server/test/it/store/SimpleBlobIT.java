@@ -45,7 +45,6 @@ public class SimpleBlobIT extends ITBase {
         builder.pk(SCHEMA, TABLE);
         builder.indexColumn(SCHEMA, TABLE, Index.PRIMARY, "a", 0, true, null);
         ddl().createTable(session(), builder.akibanInformationSchema().getTable(SCHEMA, TABLE));
-        updateAISGeneration();
         return tableId(SCHEMA, TABLE);
     }
     

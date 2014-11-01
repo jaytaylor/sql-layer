@@ -46,7 +46,6 @@ import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.WriteIndexRow;
-import com.foundationdb.qp.storeadapter.OperatorBasedRowCollector;
 import com.foundationdb.qp.storeadapter.RowDataCreator;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.qp.util.SchemaCache;
@@ -55,11 +54,7 @@ import com.foundationdb.server.api.dml.ConstantColumnSelector;
 import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.NiceRow;
-import com.foundationdb.server.api.dml.scan.ScanLimit;
-import com.foundationdb.server.error.CursorCloseBadException;
-import com.foundationdb.server.error.CursorIsUnknownException;
 import com.foundationdb.server.error.NoSuchRowException;
-import com.foundationdb.server.error.RowDefNotFoundException;
 import com.foundationdb.server.error.TableDefinitionMismatchException;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
@@ -82,7 +77,6 @@ import com.persistit.Key;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
@@ -99,12 +93,10 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     private static final InOutTap DELETE_ROW_GI_TAP = Tap.createTimer("write: delete_row_gi");
     private static final InOutTap UPDATE_ROW_GI_TAP = Tap.createTimer("write: update_row_gi");
     private static final InOutTap UPDATE_INDEX_TAP = Tap.createTimer("write: update_index");
-    private static final InOutTap NEW_COLLECTOR_TAP = Tap.createTimer("read: new_collector");
     private static final PointTap SKIP_GI_MAINTENANCE = Tap.createCount("write: skip_gi_maintenance");
     private static final InOutTap PROPAGATE_CHANGE_TAP = Tap.createTimer("write: propagate_hkey_change");
     private static final InOutTap PROPAGATE_REPLACE_TAP = Tap.createTimer("write: propagate_hkey_change_row_replace");
 
-    private static final Session.MapKey<Integer,List<RowCollector>> COLLECTORS = Session.MapKey.mapNamed("collectors");
     protected static final String FEATURE_DDL_WITH_DML_PROP = "fdbsql.feature.ddl_with_dml_on";
 
     protected final TransactionService txnService;
@@ -570,96 +562,6 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     }
 
     @Override
-    public RowCollector newRowCollector(Session session,
-                                        int scanFlags,
-                                        int rowDefId,
-                                        int indexId,
-                                        byte[] columnBitMap,
-                                        RowData start,
-                                        ColumnSelector startColumns,
-                                        RowData end,
-                                        ColumnSelector endColumns,
-                                        ScanLimit scanLimit)
-    {
-        NEW_COLLECTOR_TAP.in();
-        RowCollector rc;
-        try {
-            if(start != null && startColumns == null) {
-                startColumns = createNonNullFieldSelector(start);
-            }
-            if(end != null && endColumns == null) {
-                endColumns = createNonNullFieldSelector(end);
-            }
-            RowDef rowDef = checkRequest(session, rowDefId, start, startColumns, end, endColumns);
-            rc = OperatorBasedRowCollector.newCollector(session,
-                                                        this,
-                                                        scanFlags,
-                                                        rowDef,
-                                                        indexId,
-                                                        columnBitMap,
-                                                        start,
-                                                        startColumns,
-                                                        end,
-                                                        endColumns,
-                                                        scanLimit);
-        } finally {
-            NEW_COLLECTOR_TAP.out();
-        }
-        return rc;
-    }
-
-    @Override
-    public void addSavedRowCollector(final Session session,
-                                     final RowCollector rc) {
-        final Integer tableId = rc.getTableId();
-        final List<RowCollector> list = collectorsForTableId(session, tableId);
-        if (!list.isEmpty()) {
-            LOG.debug("Note: Nested RowCollector on tableId={} depth={}", tableId, list.size() + 1);
-            assert list.get(list.size() - 1) != rc : "Redundant call";
-            //
-            // This disallows the patch because we agreed not to fix the
-            // bug. However, these changes fix a memory leak, which is
-            // important for robustness.
-            //
-            // throw new StoreException(122, "Bug 255 workaround is disabled");
-        }
-        list.add(rc);
-    }
-
-    @Override
-    public RowCollector getSavedRowCollector(final Session session,
-                                             final int tableId) throws CursorIsUnknownException {
-        final List<RowCollector> list = collectorsForTableId(session, tableId);
-        if (list.isEmpty()) {
-            LOG.debug("Nested RowCollector on tableId={} depth={}", tableId, (list.size() + 1));
-            throw new CursorIsUnknownException(tableId);
-        }
-        return list.get(list.size() - 1);
-    }
-
-    @Override
-    public void removeSavedRowCollector(final Session session,
-                                        final RowCollector rc) throws CursorIsUnknownException {
-        final Integer tableId = rc.getTableId();
-        final List<RowCollector> list = collectorsForTableId(session, tableId);
-        if (list.isEmpty()) {
-            throw new CursorIsUnknownException (tableId);
-        }
-        final RowCollector removed = list.remove(list.size() - 1);
-        if (removed != rc) {
-            throw new CursorCloseBadException(tableId);
-        }
-    }
-
-    @Override
-    @Deprecated
-    public long getRowCount(Session session, boolean exact, RowData start, RowData end, byte[] columnBitMap) {
-        // TODO: Compute a reasonable value. The value 2 is special because it is not 0 or 1 but will
-        // still induce MySQL to use an index rather than a full table scan.
-        return 2;
-    }
-
-    @Override
     public void dropGroup(final Session session, Group group) {
         group.getRoot().visit(new AbstractVisitor() {
             @Override
@@ -1037,41 +939,6 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         }
     }
 
-    private List<RowCollector> collectorsForTableId(final Session session, final int tableId) {
-        List<RowCollector> list = session.get(COLLECTORS, tableId);
-        if (list == null) {
-            list = new ArrayList<>();
-            session.put(COLLECTORS, tableId, list);
-        }
-        return list;
-    }
-
-    private RowDef checkRequest(Session session, int rowDefId, RowData start, ColumnSelector startColumns,
-                                RowData end, ColumnSelector endColumns) throws IllegalArgumentException {
-        if (start != null) {
-            if (startColumns == null) {
-                throw new IllegalArgumentException("non-null start row requires non-null ColumnSelector");
-            }
-            if( start.getRowDefId() != rowDefId) {
-                throw new IllegalArgumentException("Start and end RowData must specify the same rowDefId");
-            }
-        }
-        if (end != null) {
-            if (endColumns == null) {
-                throw new IllegalArgumentException("non-null end row requires non-null ColumnSelector");
-            }
-            if (end.getRowDefId() != rowDefId) {
-                throw new IllegalArgumentException("Start and end RowData must specify the same rowDefId");
-            }
-        }
-        final Table table = getAIS(session).getTable(rowDefId);
-        if(table == null) {
-            throw new RowDefNotFoundException(rowDefId);
-        }
-        assert (table.rowDef() != null) : table;
-        return table.rowDef();
-    }
-
     private void updateIndex(Session session,
                              TableIndex index,
                              RowDef oldRowDef,
@@ -1256,16 +1123,6 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         Table table = ais.getTable(tableID);
         assert (table != null) : tableID;
         return table.rowDef();
-    }
-
-    private static ColumnSelector createNonNullFieldSelector(final RowData rowData) {
-        assert rowData != null;
-        return new ColumnSelector() {
-            @Override
-            public boolean includesColumn(int columnPosition) {
-                return !rowData.isNull(columnPosition);
-            }
-        };
     }
 
     protected void fillIdentityColumn(Session session, NewRow row) {

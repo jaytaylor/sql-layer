@@ -24,7 +24,7 @@ import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
-import com.foundationdb.server.TableStatistics;
+import java.util.concurrent.Callable;
 
 public class TableStatusRecoveryIT extends ITBase {
     private final static int ROW_COUNT = 100;
@@ -35,13 +35,11 @@ public class TableStatusRecoveryIT extends ITBase {
         for (int i = 0; i < ROW_COUNT; i++) {
             writeRows(row(tableId, i, "This is record # " + 1));
         }
-        final TableStatistics ts1 = dml().getTableStatistics(session(), tableId, false);
-        assertEquals(ROW_COUNT, ts1.getRowCount());
+        assertEquals(ROW_COUNT, getRowCount(tableId));
 
         safeRestartTestServices();
-        
-        final TableStatistics ts2 = dml().getTableStatistics(session(), tableId, false);
-        assertEquals(ROW_COUNT, ts2.getRowCount());
+
+        assertEquals(ROW_COUNT, getRowCount(tableId));
     }
 
     @Test
@@ -49,22 +47,19 @@ public class TableStatusRecoveryIT extends ITBase {
         NewAISBuilder builder = AISBBasedBuilder.create("test", ddl().getTypesTranslator());
         builder.table("A").autoIncInt("I", 1).colString("V", 255).pk("I");
         ddl().createTable(session(), builder.ais().getTable("test", "A"));
-        updateAISGeneration();
 
         int tableId = tableId("test", "A");
         for (int i = 1; i <= ROW_COUNT; i++) {
             writeRows(row(tableId, i, "This is record # " + 1));
         }
 
-        final TableStatistics ts1 = dml().getTableStatistics(session(), tableId, false);
-        assertEquals("row count before restart", ROW_COUNT, ts1.getRowCount());
-        assertEquals("auto inc before restart", ROW_COUNT, ts1.getAutoIncrementValue());
+        assertEquals("row count before restart", ROW_COUNT, getRowCount(tableId));
+        assertEquals("auto inc before restart", ROW_COUNT, getAutoInc(tableId));
 
         safeRestartTestServices();
 
-        final TableStatistics ts2 = dml().getTableStatistics(session(), tableId, false);
-        assertEquals("row count after restart", ROW_COUNT, ts2.getRowCount());
-        assertEquals("auto inc after restart", ROW_COUNT, ts2.getAutoIncrementValue());
+        assertEquals("row count before restart", ROW_COUNT, getRowCount(tableId));
+        assertEquals("auto inc before restart", ROW_COUNT, getAutoInc(tableId));
     }
 
     @Test
@@ -90,5 +85,25 @@ public class TableStatusRecoveryIT extends ITBase {
 
     private int getOrdinal(final int tableId) throws Exception {
         return getTable(tableId).getOrdinal();
+    }
+
+    private long  getRowCount(final int tableId) {
+        return txnService().run(session(), new Callable<Long>()
+        {
+            @Override
+            public Long call() throws Exception {
+                return getTable(tableId).rowDef().getTableStatus().getRowCount(session());
+            }
+        });
+    }
+
+    private long  getAutoInc(final int tableId) {
+        return txnService().run(session(), new Callable<Long>()
+        {
+            @Override
+            public Long call() throws Exception {
+                return getTable(tableId).rowDef().getTableStatus().getAutoIncrement(session());
+            }
+        });
     }
 }
