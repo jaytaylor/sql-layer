@@ -127,7 +127,6 @@ public class AlterTableBasicIT extends AlterTableITBase {
         Table table = builder.ais().getTable(SCHEMA, "c");
 
         ddl().createTable(session(),  table);
-        updateAISGeneration();
 
         builder = AISBBasedBuilder.create(ddl().getTypesTranslator());
         builder.table(SCHEMA, "c").colInt("c1").colInt("c2").colInt("c3").pk("c1");
@@ -208,7 +207,6 @@ public class AlterTableBasicIT extends AlterTableITBase {
         }
 
         // Check that schema change was rolled back correctly
-        updateAISGeneration();
         expectRows(
                 cid,
                 row(cid, 1, "10"),
@@ -248,7 +246,6 @@ public class AlterTableBasicIT extends AlterTableITBase {
         builder.table(cName).colInt("c1", true).colInt("c2", true).colInt("c3", true);
 
         ddl().createTable(session(), builder.unvalidatedAIS().getTable(cName));
-        updateAISGeneration();
 
         // Note: Not using standard id due to null index contents
         int tableId = tableId(cName);
@@ -264,7 +261,6 @@ public class AlterTableBasicIT extends AlterTableITBase {
         changes.add(TableChange.createAdd("c4"));
 
         ddl().alterTable(session(), cName, builder.unvalidatedAIS().getTable(cName), changes, changes, queryContext());
-        updateAISGeneration();
 
         expectRowsSkipInternal(
                 tableId,
@@ -516,7 +512,6 @@ public class AlterTableBasicIT extends AlterTableITBase {
         changes.add(TableChange.createModify("c3", "c3"));
 
         ddl().alterTable(session(), new TableName(SCHEMA, "c"), newTable, changes, NO_CHANGES, queryContext());
-        updateAISGeneration();
 
         expectRows(
                 cid,
@@ -592,7 +587,6 @@ public class AlterTableBasicIT extends AlterTableITBase {
         changes.add(TableChange.createAdd("foo"));
 
         ddl().alterTable(session(), new TableName(SCHEMA, "c"), table, NO_CHANGES, changes, queryContext());
-        updateAISGeneration();
 
         expectIndexes(cid, "foo", "PRIMARY");
         Index index = getTable(SCHEMA, "c").getIndex("foo");
@@ -626,7 +620,6 @@ public class AlterTableBasicIT extends AlterTableITBase {
         changes.add(TableChange.createModify("foo", "foo"));
 
         ddl().alterTable(session(), new TableName(SCHEMA, "c"), table, NO_CHANGES, changes, queryContext());
-        updateAISGeneration();
 
         expectIndexes(cid, "foo", "PRIMARY");
         Index index = getTable(SCHEMA, "c").getIndex("foo");
@@ -661,7 +654,6 @@ public class AlterTableBasicIT extends AlterTableITBase {
         indexChanges.add(TableChange.createAdd("y"));
 
         ddl().alterTable(session(), new TableName(SCHEMA, "o"), table, columnChanges, indexChanges, queryContext());
-        updateAISGeneration();
 
         expectRows(
                 oid,

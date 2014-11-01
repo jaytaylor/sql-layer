@@ -111,10 +111,6 @@ public class BasicHistogramsIT extends ITBase
         assertEquals(strip(expected), strip(actual));
     }
 
-    private IndexStatisticsService indexStatsService() {
-        return serviceManager().getServiceByClass(IndexStatisticsService.class);
-    }
-
     private String strip(String s) {
         return s.replace("\r", "").trim().replaceAll("Timestamp: .*Z", "Timestamp: null");
     }

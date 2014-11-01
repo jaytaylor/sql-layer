@@ -19,23 +19,14 @@ package com.foundationdb.server.test.it.keyupdate;
 
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.api.dml.scan.ScanAllRequest;
-import com.foundationdb.server.api.dml.scan.ScanFlag;
-import com.foundationdb.server.api.dml.scan.ScanLimit;
-import com.foundationdb.server.api.dml.scan.ScanRequest;
 import com.foundationdb.server.error.InvalidOperationException;
-import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.test.it.ITBase;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import static org.junit.Assert.assertEquals;
 
 public final class BasicKeyUpdateIT extends ITBase {
     protected static final String SCHEMA = "cold";

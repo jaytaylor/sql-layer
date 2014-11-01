@@ -32,7 +32,6 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.api.dml.scan.ScanLimit;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
@@ -42,7 +41,6 @@ import com.persistit.Key;
 import com.persistit.Value;
 
 import java.util.Collection;
-import java.util.List;
 
 public interface Store extends KeyCreator {
 
@@ -84,42 +82,6 @@ public interface Store extends KeyCreator {
      * <p><i>Note: In general, the next value has no relationship to a given transaction's current.</i></p>
      */
     long curSequenceValue(Session session, Sequence sequence);
-
-    /**
-     * Create a new RowCollector.
-     * 
-     * @param session Session to use.
-     * @param scanFlags Flags specifying collection parameters (see flags in {@link RowCollector})
-     * @param rowDefId ID specifying the type of row to that will be collected.
-     * @param indexId The indexId from the given rowDef to collect on or 0 for table scan
-     * @param columnBitMap
-     * @param start RowData containing values to begin the scan from.
-     * @param startColumns ColumnSelector indicating which fields are set in <code>start</code>
-     * @param end RowData containing values to stop the scan at.
-     * @param endColumns ColumnSelector indicating which fields are set in <code>end</code>
-     * @throws Exception 
-     */
-    RowCollector newRowCollector(Session session,
-                                 int scanFlags,
-                                 int rowDefId,
-                                 int indexId,
-                                 byte[] columnBitMap,
-                                 RowData start,
-                                 ColumnSelector startColumns,
-                                 RowData end,
-                                 ColumnSelector endColumns,
-                                 ScanLimit scanLimit);
-
-    /** Get the previously saved RowCollector for the specified tableId. */
-    RowCollector getSavedRowCollector(Session session, int tableId);
-
-    /** Push a RowCollector onto a stack so that it can subsequently be referenced by getSavedRowCollector. */
-    void addSavedRowCollector(Session session, RowCollector rc);
-
-    /** Remove a previously saved RowCollector. Must the the most recently added RowCollector for a table. */
-    void removeSavedRowCollector(Session session, RowCollector rc);
-
-    long getRowCount(Session session, boolean exact, RowData start, RowData end, byte[] columnBitMap);
 
     /**
      * Delete all data associated with the group. This includes

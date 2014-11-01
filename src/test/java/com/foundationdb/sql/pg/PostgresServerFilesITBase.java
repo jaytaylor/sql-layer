@@ -17,20 +17,13 @@
 
 package com.foundationdb.sql.pg;
 
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.sql.TestBase;
-
-import com.foundationdb.server.rowdata.RowDef;
-
-import com.foundationdb.server.api.dml.scan.CursorId;
-import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.api.dml.scan.RowOutput;
-import com.foundationdb.server.api.dml.scan.ScanAllRequest;
-import com.foundationdb.server.api.dml.scan.ScanFlag;
 
 import org.junit.Ignore;
 
 import java.io.File;
-import java.util.EnumSet;
 
 /**
  * A base class for integration tests that use data from files to specify the
@@ -47,28 +40,14 @@ public class PostgresServerFilesITBase extends PostgresServerITBase
 
     protected String dumpData() throws Exception {
         final StringBuilder str = new StringBuilder();
-        CursorId cursorId = dml()
-            .openCursor(session(), aisGeneration(), 
-                        new ScanAllRequest(rootTableId, null, 0,
-                                           EnumSet.of(ScanFlag.DEEP)));
-        dml().scanSome(session(), cursorId,
-                       new RowOutput() {
-                           public void output(NewRow row) {
-                               RowDef rowDef = row.getRowDef();
-                               str.append(rowDef.table().getName().getTableName());
-                               for (int i = 0; i < rowDef.getFieldCount(); i++) {
-                                   str.append(",");
-                                   str.append(row.get(i));
-                               }
-                               str.append("\n");
-                           }
-
-                           public void mark() {
-                           }
-                           public void rewind() {
-                           }
-                       });
-        dml().closeCursor(session(), cursorId);
+        for(Row row : scanAll(getTable(rootTableId).getGroup())) {
+            str.append(row.rowType().table().getName().getTableName());
+            for (int i = 0; i < row.rowType().nFields(); i++) {
+                str.append(",");
+                str.append(ValueSources.toObject(row.value(i)));
+            }
+            str.append("\n");
+        }
         return str.toString();
     }
 

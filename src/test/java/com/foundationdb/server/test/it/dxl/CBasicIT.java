@@ -24,13 +24,8 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.api.FixedCountLimit;
-import com.foundationdb.server.api.dml.scan.*;
-import com.foundationdb.server.error.CursorIsFinishedException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchRowException;
-import com.foundationdb.server.error.OldAISException;
-import com.foundationdb.server.error.RowDefNotFoundException;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
@@ -40,41 +35,27 @@ import static org.junit.Assert.*;
 
 public final class CBasicIT extends ITBase {
 
-    @Test(expected=RowDefNotFoundException.class)
+    @Test
     public void dropTable() throws InvalidOperationException {
-        final int tableId1;
-        try {
-            tableId1 = createTable("testSchema", "customer", "id int not null primary key");
-            ddl().dropTable(session(), tableName("testSchema", "customer"));
+        createTable("testSchema", "customer", "id int not null primary key");
+        ddl().dropTable(session(), tableName("testSchema", "customer"));
 
-            AkibanInformationSchema ais = ddl().getAIS(session());
-            assertNull("expected no table", ais.getTable("testSchema", "customer"));
-            ddl().dropTable(session(), tableName("testSchema", "customer")); // should be no-op; testing it doesn't fail
-        } catch (InvalidOperationException e) {
-            throw new TestException(e);
-        }
-
-        dml().openCursor(session(), ddl().getGenerationAsInt(session()), new ScanAllRequest(tableId1, ColumnSet.ofPositions(0)));
+        AkibanInformationSchema ais = ddl().getAIS(session());
+        assertNull("expected no table", ais.getTable("testSchema", "customer"));
+        ddl().dropTable(session(), tableName("testSchema", "customer")); // should be no-op; testing it doesn't fail
     }
 
-    @Test(expected=RowDefNotFoundException.class)
+    @Test
     public void dropGroup() throws InvalidOperationException {
-        final int tid;
-        try {
-            tid = createTable("test", "t", "id int not null primary key");
-            final TableName groupName = ddl().getAIS(session()).getTable("test", "t").getGroup().getName();
-            ddl().dropGroup(session(), groupName);
+        createTable("test", "t", "id int not null primary key");
+        final TableName groupName = ddl().getAIS(session()).getTable("test", "t").getGroup().getName();
+        ddl().dropGroup(session(), groupName);
 
-            AkibanInformationSchema ais = ddl().getAIS(session());
-            assertNull("expected no table", ais.getTable("test", "t"));
-            assertNull("expected no group", ais.getGroup(groupName));
+        AkibanInformationSchema ais = ddl().getAIS(session());
+        assertNull("expected no table", ais.getTable("test", "t"));
+        assertNull("expected no group", ais.getGroup(groupName));
 
-            ddl().dropGroup(session(), groupName);
-        } catch (InvalidOperationException e) {
-            throw new TestException(e);
-        }
-
-        dml().openCursor(session(), ddl().getGenerationAsInt(session()), new ScanAllRequest(tid, ColumnSet.ofPositions(0)));
+        ddl().dropGroup(session(), groupName);
     }
 
     /*
@@ -97,36 +78,6 @@ public final class CBasicIT extends ITBase {
         writeRow(tidV2, "1", "a", "49.95");
         expectRowCount(tidV2, 1);
         ddl().dropTable(session(), tableName(tidV2));
-    }
-
-    @Test
-    public void scanEmptyTable() throws InvalidOperationException {
-        final int tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
-
-        ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1), 0, null, new FixedCountLimit(1));
-        ListRowOutput output = new ListRowOutput();
-
-        assertEquals("cursors", cursorSet(), dml().getCursors(session()));
-        CursorId cursorId = dml().openCursor(session(), aisGeneration(), request);
-        assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session()));
-        assertEquals("state", CursorState.FRESH, dml().getCursorState(session(), cursorId));
-
-        dml().scanSome(session(), cursorId, output);
-        assertEquals("state", CursorState.FINISHED, dml().getCursorState(session(), cursorId));
-
-        CursorIsFinishedException caught = null;
-        try {
-            dml().scanSome(session(), cursorId, output);
-        } catch (CursorIsFinishedException e) {
-            caught = e;
-        }
-        assertNotNull("expected an exception", caught);
-
-        assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session()));
-        dml().closeCursor(session(), cursorId);
-        assertEquals("cursors", cursorSet(), dml().getCursors(session()));
-
-        assertEquals("rows scanned", Collections.<NewRow>emptyList(), output.getRows());
     }
 
     @Test

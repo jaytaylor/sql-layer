@@ -19,18 +19,11 @@ package com.foundationdb.server.test.it.keyupdate;
 
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.api.dml.ConstantColumnSelector;
-import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.api.dml.scan.ScanAllRequest;
-import com.foundationdb.server.api.dml.scan.ScanFlag;
-import com.foundationdb.server.api.dml.scan.ScanRequest;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
-import java.util.EnumSet;
 import java.util.List;
 
 import static org.junit.Assert.*;

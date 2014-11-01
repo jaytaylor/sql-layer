@@ -19,14 +19,10 @@ package com.foundationdb.server.test.it.dxl;
 
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.api.dml.scan.ScanAllRequest;
-import com.foundationdb.server.api.dml.scan.ScanFlag;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
-import java.util.EnumSet;
 import java.util.List;
 
 import static org.junit.Assert.*;

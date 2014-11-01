@@ -178,7 +178,7 @@ public enum ErrorCode {
         // SubClass 02H - invalid sample size 02H
     INVALID_GUID_FORMAT ("22", "02I", Importance.DEBUG, InvalidGuidFormatException.class),
 
-    TABLE_DEFINITION_CHANGED("22", "501", Importance.DEBUG, TableDefinitionChangedException.class),
+    //22,501
     NEGATIVE_LIMIT          ("22", "502", Importance.DEBUG, NegativeLimitException.class),
     INVALID_ARGUMENT_TYPE   ("22", "503", Importance.DEBUG, InvalidArgumentTypeException.class),
     ZERO_DATE_TIME          ("22", "504", Importance.DEBUG, ZeroDateTimeException.class),
@@ -192,12 +192,8 @@ public enum ErrorCode {
     NOT_NULL_VIOLATION      ("23", "502", Importance.ERROR, NotNullViolationException.class),
     FK_REFERENCING_VIOLATION ("23", "503", Importance.DEBUG, ForeignKeyReferencingViolationException.class),
     FK_REFERENCED_VIOLATION ("23", "504", Importance.DEBUG, ForeignKeyReferencedViolationException.class),
+
     // Class 24 - invalid cursor state
-    CURSOR_IS_FINISHED      ("24", "501", Importance.ERROR, CursorIsFinishedException.class), 
-    CURSOR_IS_UNKNOWN       ("24", "502", Importance.ERROR, CursorIsUnknownException.class),
-    NO_ACTIVE_CURSOR        ("24", "503", Importance.ERROR, NoActiveCursorException.class),
-    CURSOR_CLOSE_BAD        ("24", "504", Importance.ERROR, CursorCloseBadException.class),
-    
 
     // Class 25 - invalid transaction state
         // SubClass 001 - active SQL-transaction
@@ -410,7 +406,7 @@ public enum ErrorCode {
     CONCURRENT_VIOLATION    ("50", "035", Importance.DEBUG, ConcurrentViolationException.class),
 
     // Class 51 - Internal problems created by user configuration
-    STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),
+    //51,001
     // Messaging errors
     MALFORMED_REQUEST       ("51", "010", Importance.ERROR, MalformedRequestException.class),
 
@@ -468,7 +464,6 @@ public enum ErrorCode {
 
     // Class 57 - Insert, Update, Delete processing exceptions
     NO_SUCH_ROW             ("57", "001", Importance.DEBUG, NoSuchRowException.class),
-    CONCURRENT_MODIFICATION ("57", "002", Importance.DEBUG, ConcurrentScanAndUpdateException.class),
     //57003
     //57004
     //57005
