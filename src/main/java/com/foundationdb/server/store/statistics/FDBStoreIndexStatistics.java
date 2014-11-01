@@ -61,14 +61,12 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
         RowDef indexStatisticsRowDef = getIndexStatsRowDef(session);
         RowDef indexStatisticsEntryRowDef = getIndexStatsEntryRowDef(session);
 
-        Key hKey = getStore().createKey();
-        hKey.append(indexStatisticsRowDef.table().getOrdinal())
-            .append((long) indexRowDef.getRowDefId())
-            .append((long) index.getIndexId());
+        FDBStoreData storeData = getStore().createStoreData(session, indexStatisticsRowDef.getGroup());
+        storeData.persistitKey.append(indexStatisticsRowDef.table().getOrdinal())
+        .append((long) indexRowDef.getRowDefId())
+        .append((long) index.getIndexId());
 
         IndexStatistics result = null;
-        FDBStoreData storeData = getStore().createStoreData(session, indexStatisticsRowDef.getGroup());
-        hKey.copyTo(storeData.persistitKey);
         getStore().groupKeyAndDescendantsIterator(session, storeData, true);
         while(storeData.next()) {
             if(result == null) {
@@ -88,13 +86,11 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
         RowDef indexRowDef = index.leafMostTable().rowDef();
         RowDef indexStatisticsRowDef = getIndexStatsRowDef(session);
 
-        Key hKey = getStore().createKey();
-        hKey.append(indexStatisticsRowDef.table().getOrdinal())
-                .append((long) indexRowDef.getRowDefId())
-                .append((long) index.getIndexId());
-
         FDBStoreData storeData = getStore().createStoreData(session, indexStatisticsRowDef.getGroup());
-        hKey.copyTo(storeData.persistitKey);
+        storeData.persistitKey.clear();
+        storeData.persistitKey.append(indexStatisticsRowDef.table().getOrdinal())
+            .append((long) indexRowDef.getRowDefId())
+            .append((long) index.getIndexId());
         getStore().groupKeyAndDescendantsIterator(session, storeData, false);
         while(storeData.next()) {
             RowData rowData = new RowData();

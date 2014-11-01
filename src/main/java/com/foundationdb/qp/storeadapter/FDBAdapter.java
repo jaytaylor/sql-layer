@@ -96,11 +96,6 @@ public class FDBAdapter extends StoreAdapter {
                                         openAllSubCursors);
     }
 
-    //@Override
-    //public HKey newHKey(com.foundationdb.ais.model.HKey hKeyMetadata) {
-    //    return new ValuesHKey(schema.newHKeyRowType(hKeyMetadata), store.getTypesRegistry());
-    //}
-
     @Override
     public void updateRow(Row oldRow, Row newRow) {
         RowDef rowDef = oldRow.rowType().table().rowDef();
