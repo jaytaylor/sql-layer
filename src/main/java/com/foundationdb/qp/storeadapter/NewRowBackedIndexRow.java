@@ -19,14 +19,12 @@ package com.foundationdb.qp.storeadapter;
 
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.TypeDeclarationException;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 

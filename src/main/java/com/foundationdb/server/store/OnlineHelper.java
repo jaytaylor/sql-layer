@@ -428,7 +428,7 @@ public class OnlineHelper implements RowListener
                                    StoreAdapter adapter,
                                    final TransformCache transformCache,
                                    Multimap<Group,RowType> tableIndexes) {
-        final WriteIndexRow buffer = new WriteIndexRow(adapter);
+        final WriteIndexRow buffer = new WriteIndexRow(adapter.getKeyCreator());
         for(Entry<Group, Collection<RowType>> entry : tableIndexes.asMap().entrySet()) {
             if(entry.getValue().isEmpty()) {
                 continue;

@@ -321,7 +321,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
 
     private void advance(int field)
     {
-        MixedOrderScanState scanState = scanStates.get(field);
+        MixedOrderScanState<S> scanState = scanStates.get(field);
         if (scanState.advance()) {
             repositionExchange(field + 1);
         } else {
@@ -406,7 +406,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     private void clear(IndexRow bound)
     {
         assert bound == startKey || bound == endKey;
-        bound.resetForWrite(index(), adapter.createKey()); // TODO: Reuse the existing key
+        bound.resetForWrite(index(), adapter.getKeyCreator().createKey()); // TODO: Reuse the existing key
     }
 
     private boolean beforeStart(Row row)

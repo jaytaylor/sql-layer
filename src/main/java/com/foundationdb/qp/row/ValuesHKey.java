@@ -256,8 +256,20 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
         }        
     }
     
-
+    public void copyFrom(byte[] source) {
+        Key key = new Key(null, 2047);
+        key.setEncodedSize(source.length);
+        System.arraycopy(source, 0, key.getEncodedBytes(), 0, source.length);
+        this.copyFrom(key);
+    }
     
+    public byte[] hKeyBytes() {
+        Key key = new Key (null, 2047);
+        this.copyTo(key);
+        byte[] bytes = new byte[key.getEncodedSize()];
+        System.arraycopy(key.getEncodedBytes(), 0, bytes, 0, bytes.length);
+        return bytes;
+    }
     // AbstractHoldersRow overrides 
     
     @Override

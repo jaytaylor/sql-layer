@@ -30,7 +30,6 @@ import com.foundationdb.ais.util.TableChange.ChangeType;
 import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import com.foundationdb.directory.DirectorySubspace;
 import com.foundationdb.directory.PathUtil;
-import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.WriteIndexRow;
@@ -636,10 +635,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         return new Key(null, 2047);
     }
 
-    @Override
-    public HKey newHKey(com.foundationdb.ais.model.HKey hKey) {
-        throw new UnsupportedOperationException ();
-    }
     //
     // Storage iterators
     //

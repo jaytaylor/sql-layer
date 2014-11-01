@@ -17,7 +17,6 @@
 package com.foundationdb.server.store.statistics;
 
 import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.store.statistics.histograms.Sampler;
 import com.persistit.Key;

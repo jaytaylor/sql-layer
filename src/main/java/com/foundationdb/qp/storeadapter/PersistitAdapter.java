@@ -26,7 +26,6 @@ import com.foundationdb.qp.storeadapter.indexrow.PersistitGroupIndexRow;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitTableIndexRow;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.ValuesHKey;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -41,7 +40,6 @@ import com.foundationdb.server.store.PersistitStore;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.util.tap.InOutTap;
 import com.persistit.Exchange;
-import com.persistit.Key;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
@@ -53,7 +51,7 @@ import org.slf4j.LoggerFactory;
 import java.io.InterruptedIOException;
 import java.util.Collection;
 
-public class PersistitAdapter extends StoreAdapter implements KeyCreator
+public class PersistitAdapter extends StoreAdapter
 {
     private static final Logger logger = LoggerFactory.getLogger(PersistitAdapter.class);
     // StoreAdapter interface
@@ -92,15 +90,9 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
                                API.SortOption sortOption,
                                InOutTap loadTap)
     {
-        //return new PersistitSorter(context, bindings, input, rowType, ordering, sortOption, loadTap);
         return new MergeJoinSorter(context, bindings, input, rowType, ordering, sortOption, loadTap);
     }
 
-    @Override
-    public com.foundationdb.qp.row.HKey newHKey(com.foundationdb.ais.model.HKey hKeyMetadata)
-    {
-        return new ValuesHKey(schema.newHKeyRowType(hKeyMetadata), store.getTypesRegistry());
-    }
 
     @Override
     public void updateRow(Row oldRow, Row newRow) {
@@ -200,6 +192,11 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
         return new PersistitIterationHelper(this, indexRowType);
     }
 
+    @Override
+    public KeyCreator getKeyCreator() {
+        return store;
+    }
+
     public Exchange takeExchange(Group group) throws PersistitException
     {
         return store.getExchange(getSession(), group);
@@ -208,11 +205,6 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
     public Exchange takeExchange(Index index)
     {
         return store.getExchange(getSession(), index);
-    }
-
-    public Key newKey()
-    {
-        return new Key(store.getDb());
     }
 
     public void handlePersistitException(PersistitException e)
@@ -269,7 +261,7 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
     // For use within hierarchy
 
     @Override
-    public Store getUnderlyingStore() {
+    protected Store getUnderlyingStore() {
         return store;
     }
 
@@ -295,12 +287,6 @@ public class PersistitAdapter extends StoreAdapter implements KeyCreator
     public long sequenceCurrentValue(Sequence sequence) {
         return store.curSequenceValue(getSession(), sequence);
     }
-
-    @Override
-    public Key createKey() {
-        return store.createKey();
-    }
-
 
     // Class state
 

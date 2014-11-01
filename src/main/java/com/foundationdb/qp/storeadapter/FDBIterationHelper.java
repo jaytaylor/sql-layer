@@ -147,7 +147,7 @@ public class FDBIterationHelper implements IterationHelper
     /** Advance iterator with logical style (i.e. non-deep) traversal. Emulates Exchange shallow behavior. */
     private boolean advanceLogical() {
         if(spareKey == null) {
-            spareKey = adapter.createKey();
+            spareKey = adapter.getKeyCreator().createKey();
         }
         storeData.persistitKey.copyTo(spareKey);
         int parentIndex = KeyShim.previousElementIndex(storeData.persistitKey, spareKey.getEncodedSize());

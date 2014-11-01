@@ -21,8 +21,8 @@ package com.foundationdb.qp.util;
 // class is to maximize reuse of HKey objects.
 
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.HKey;
+import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.util.SparseArray;
 
 public class HKeyCache<HKEY extends HKey>
@@ -41,11 +41,11 @@ public class HKeyCache<HKEY extends HKey>
         return hKey;
     }
 
-    public HKeyCache(StoreAdapter adapter)
+    public HKeyCache(KeyCreator adapter)
     {
         this.adapter = adapter;
     }
 
-    private final StoreAdapter adapter;
+    private final KeyCreator adapter;
     private final SparseArray<HKEY> ordinalToHKey = new SparseArray<>();
 }

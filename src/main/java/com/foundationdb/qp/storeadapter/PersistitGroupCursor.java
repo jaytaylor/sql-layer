@@ -117,7 +117,7 @@ class PersistitGroupCursor extends RowCursorImpl implements GroupCursor
     {
         this.adapter = adapter;
         this.group = group;
-        this.controllingHKey = adapter.newKey();
+        this.controllingHKey = adapter.getKeyCreator().createKey();
     }
 
     // Class state

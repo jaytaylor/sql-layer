@@ -352,7 +352,7 @@ public class BranchLookup_Nested extends Operator
             try {
                 super.open();
                 Row rowFromBindings = bindings.getRow(inputBindingPosition);
-                assert rowFromBindings.rowType() == inputRowType : rowFromBindings;
+                assert rowFromBindings.rowType().equals(inputRowType) : rowFromBindings;
                 if (inputRowType != sourceRowType) {
                     rowFromBindings = rowFromBindings.subRow(sourceRowType);
                 }
@@ -423,7 +423,7 @@ public class BranchLookup_Nested extends Operator
         {
             super(context, bindingsCursor);
             this.cursor = adapter().newGroupCursor(group);
-            this.hKey = adapter().newHKey(outputRowTypes.get(0).hKey());
+            this.hKey = adapter().getKeyCreator().newHKey(outputRowTypes.get(0).hKey());
         }
 
         // For use by this class
@@ -508,7 +508,7 @@ public class BranchLookup_Nested extends Operator
         // BranchCursor interface
         public BranchCursor(StoreAdapter adapter) {
             this.cursor = adapter.newGroupCursor(group);
-            this.hKey = adapter.newHKey(outputRowTypes.get(0).hKey());
+            this.hKey = adapter.getKeyCreator().newHKey(outputRowTypes.get(0).hKey());
         }
 
         // For use by this class

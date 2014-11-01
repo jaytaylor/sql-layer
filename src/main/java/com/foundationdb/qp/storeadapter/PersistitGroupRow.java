@@ -169,7 +169,7 @@ public class PersistitGroupRow extends AbstractRow
     {
         this.adapter = adapter;
         this.rowData = rowData;
-        this.hKeyCache = new HKeyCache<>(adapter);
+        this.hKeyCache = new HKeyCache<>(adapter.getUnderlyingStore());
     }
 
     private RowDataValueSource valueSource(int i) {

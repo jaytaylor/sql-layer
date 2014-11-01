@@ -323,7 +323,7 @@ class HKeyUnion_Ordered extends Operator
 
         private HKey outputHKey(Row row)
         {
-            HKey outputHKey = adapter().newHKey(outputHKeyTableRowType.hKey());
+            HKey outputHKey = adapter().getKeyCreator().newHKey(outputHKeyTableRowType.hKey());
             row.hKey().copyTo(outputHKey);
             outputHKey.useSegments(outputHKeySegments);
             return outputHKey;

@@ -25,20 +25,19 @@ import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.storeadapter.Sorter;
 import com.foundationdb.qp.storeadapter.indexcursor.IterationHelper;
-import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.Strings;
 import com.foundationdb.util.tap.InOutTap;
-import com.persistit.Key;
 
 import org.junit.Assert;
 
@@ -170,12 +169,6 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public HKey newHKey(com.foundationdb.ais.model.HKey hKeyMetadata)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         protected Store getUnderlyingStore() {
             throw new UnsupportedOperationException();
         }
@@ -253,12 +246,12 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public Key createKey() {
+        public IndexRow newIndexRow(IndexRowType indexRowType) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public IndexRow newIndexRow(IndexRowType indexRowType) {
+        public KeyCreator getKeyCreator() {
             throw new UnsupportedOperationException();
         }
     }

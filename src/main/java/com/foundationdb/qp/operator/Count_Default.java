@@ -178,7 +178,7 @@ class Count_Default extends Operator
                     if (row == null) {
                         setIdle();
                         row = new ValuesRow(resultType, new Value(MNumeric.BIGINT.instance(false), count));
-                    } else if (row.rowType() == countType) {
+                    } else if (row.rowType().equals(countType)) {
                         row = null;
                         count++;
                     }

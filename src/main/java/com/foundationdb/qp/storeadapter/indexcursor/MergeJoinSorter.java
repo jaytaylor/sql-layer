@@ -129,7 +129,7 @@ public class MergeJoinSorter implements Sorter {
         this.loadTap = loadTap;
         this.sortOption = sortOption;
         
-        this.sortKey = context.getStore().createKey(); 
+        this.sortKey = context.getStore().getKeyCreator().createKey(); 
         this.sorterAdapter = new ValueSorterAdapter();
         // Note: init may change this.ordering
         sorterAdapter.init(rowType, this.ordering, this.sortKey, null, this.context, this.bindings, sortOption);

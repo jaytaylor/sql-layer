@@ -23,7 +23,6 @@ import com.foundationdb.sql.embedded.EmbeddedOperatorCompiler;
 import com.foundationdb.sql.optimizer.rule.ASTStatementLoader;
 import com.foundationdb.sql.optimizer.rule.BaseRule;
 import com.foundationdb.sql.optimizer.rule.CreateTableAsRules;
-import com.foundationdb.sql.optimizer.rule.HalloweenRecognizer;
 import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
 
 import com.foundationdb.sql.server.ServerSession;
@@ -42,7 +41,7 @@ public class CreateAsCompiler extends EmbeddedOperatorCompiler {
         initProperties(server.getCompilerProperties());
         initAIS(ais, server.getDefaultSchemaName());
         initParser(server.getParser());
-        initCostEstimator(server.costEstimator(this, adapter));
+        initCostEstimator(server.costEstimator(this, adapter.getKeyCreator()));
         initPipelineConfiguration(server.getPipelineConfiguration());
         initTypesRegistry(server.typesRegistryService());
         initTypesTranslator(server.typesTranslator());

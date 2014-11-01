@@ -402,7 +402,7 @@ class GroupLookup_Default extends Operator
             this.pending = new ArrayDeque<>(ancestors.size() + 1);
             this.lookupCursor = adapter().newGroupCursor(group);
             if (branchOutputRowTypes != null) {
-                this.lookupRowHKey = adapter().newHKey(inputRowType.hKey());
+                this.lookupRowHKey = adapter().getKeyCreator().newHKey(inputRowType.hKey());
             }
             else {
                 this.lookupRowHKey = null;
@@ -433,7 +433,7 @@ class GroupLookup_Default extends Operator
         {
             Row currentRow = input.next();
             if (currentRow != null) {
-                if (currentRow.rowType() == inputRowType) {
+                if (currentRow.rowType().equals(inputRowType)) {
                     findAncestors(currentRow);
                     lookupState = LookupState.ANCESTOR;
                 }
@@ -781,7 +781,7 @@ class GroupLookup_Default extends Operator
                     if (i != keepInputCursorIndex)
                         this.cursors[i] = adapter().newGroupCursor(group);
                     if (i == branchCursorIndex)
-                        this.lookupHKeys[i] = adapter().newHKey(inputRowType.hKey());
+                        this.lookupHKeys[i] = adapter().getKeyCreator().newHKey(inputRowType.hKey());
                 }
             }
             
