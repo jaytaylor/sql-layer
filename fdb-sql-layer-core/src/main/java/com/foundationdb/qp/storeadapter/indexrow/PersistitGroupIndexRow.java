@@ -20,7 +20,6 @@ import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.IndexToHKey;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.persistit.Key;
@@ -33,8 +32,10 @@ public class PersistitGroupIndexRow extends PersistitIndexRow
     @Override
     public HKey ancestorHKey(Table table)
     {
-        PersistitHKey ancestorHKey = hKeyCache.hKey(table);
-        constructHKeyFromIndexKey(ancestorHKey.key(), index.indexToHKey(table.getDepth()));
+        HKey ancestorHKey = hKeyCache.hKey(table);
+        Key hKey = keyCreator.createKey();
+        constructHKeyFromIndexKey(hKey, index.indexToHKey(table.getDepth()));
+        ancestorHKey.copyFrom(hKey);
         return ancestorHKey;
     }
 

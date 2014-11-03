@@ -28,7 +28,6 @@ import com.foundationdb.ais.protobuf.FDBProtobuf.TupleUsage;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.rowdata.RowDataValueSource;
-import com.foundationdb.server.types.Attribute;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;

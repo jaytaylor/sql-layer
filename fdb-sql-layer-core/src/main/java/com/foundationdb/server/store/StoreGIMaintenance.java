@@ -30,8 +30,8 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.rowtype.TableRowType;
-import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.row.FlattenedRow;
+import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.FlattenedRowType;
 import com.foundationdb.qp.rowtype.RowType;
@@ -49,7 +49,7 @@ import java.util.List;
 
 class StoreGIMaintenance {
     public void run(StoreGIHandler.Action action,
-                    PersistitHKey hKey,
+                    HKey hKey,
                     RowData forRow,
                     StoreAdapter adapter,
                     StoreGIHandler handler)

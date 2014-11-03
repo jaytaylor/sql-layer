@@ -48,7 +48,6 @@ import com.foundationdb.qp.rowtype.ProjectedTableRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
-import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.storeadapter.RowDataRow;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.qp.util.SchemaCache;
@@ -451,7 +450,9 @@ public class OnlineHelper implements RowListener
                             spatialColumnHandler = new SpatialColumnHandler(index);
                             zValue = spatialColumnHandler.zValue(rowData);
                         }
-                        store.writeIndexRow(session, index, rowData, ((PersistitHKey)row.hKey()).key(), buffer,
+                        Key hKey = store.createKey();
+                        row.hKey().copyTo(hKey);
+                        store.writeIndexRow(session, index, rowData, hKey, buffer,
                                             spatialColumnHandler, zValue, true);
                     }
                 }
@@ -697,7 +698,8 @@ public class OnlineHelper implements RowListener
                     try {
                         if(handler != null) {
                             //TODO: Not correct but only option for createAs due to hidden PK
-                            Key hKey = ((PersistitHKey)row.hKey()).key();
+                            Key hKey = new Key (null, 2047);
+                            row.hKey().copyTo(hKey);
                             if (!checker.contains(schemaManager, session, hKey)) {
                                 handler.handleRow(row);
                             } else {

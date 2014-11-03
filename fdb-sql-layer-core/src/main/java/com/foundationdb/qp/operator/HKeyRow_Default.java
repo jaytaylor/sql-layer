@@ -19,19 +19,18 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.ais.model.HKeyColumn;
 import com.foundationdb.ais.model.HKeySegment;
-import com.foundationdb.qp.storeadapter.PersistitHKey;
-import com.foundationdb.qp.row.HKeyRow;
+import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.ProjectedRow;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesHKey;
 import com.foundationdb.qp.rowtype.HKeyRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.util.HKeyCache;
-import com.foundationdb.server.PersistitKeyValueTarget;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -167,23 +166,25 @@ class HKeyRow_Default extends Operator
 
         // For use by this class
 
-        private HKeyRow buildHKeyRow() {
+        private Row buildHKeyRow() {
             StoreAdapter store = adapter(rowType.hKey().table());
-            PersistitHKey hkey = (PersistitHKey)store.newHKey(rowType.hKey());
-            target.attach(hkey.key());
-            int index = 0;
-            for (HKeySegment segment : rowType.hKey().segments()) {
-                hkey.extendWithOrdinal(segment.table().getOrdinal());
-                for (HKeyColumn column : segment.columns()) {
-                    TEvaluatableExpression evalExpr = evalExprs.get(index++);
-                    evalExpr.with(context);
-                    evalExpr.with(bindings);
-                    evalExpr.evaluate();
-                    column.column().getType().writeCollating(evalExpr.resultValue(), target);
+            HKey hkey = store.newHKey(rowType.hKey());
+            
+            if (hkey instanceof ValuesHKey) {
+                int columnIndex = 0;
+                for (HKeySegment segment : rowType.hKey().segments()) {
+                    for (HKeyColumn column : segment.columns()) {
+                        TEvaluatableExpression evalExpr = evalExprs.get(columnIndex);
+                        evalExpr.with(context);
+                        evalExpr.with(bindings);
+                        evalExpr.evaluate();
+                        ((ValuesHKey)hkey).copyValueTo(evalExpr.resultValue(), columnIndex++);
+                    }
                 }
+                return (Row)hkey;
+            } else {
+                throw new UnsupportedOperationException ("Not using ValuesHKey");
             }
-            assert (index == rowType.nFields());
-            return new HKeyRow(rowType, hkey, new HKeyCache<>(store));
         }
 
         // Execution interface
@@ -195,6 +196,5 @@ class HKeyRow_Default extends Operator
 
         // Object state
         private final List<TEvaluatableExpression> evalExprs;
-        private final PersistitKeyValueTarget target = new PersistitKeyValueTarget(rowType);
     }
 }

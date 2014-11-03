@@ -64,7 +64,7 @@ public class Schema
 
     public HKeyRowType newHKeyRowType(HKey hKey)
     {
-        return new HKeyRowType(this, nextTypeId(), hKey);
+        return hKeyRowTypes.get(hKey.table().getTableId());
     }
 
     public BufferRowType bufferRowType(RowType rightType)
@@ -103,7 +103,6 @@ public class Schema
         }
         return userTableTypes;
     }
-
     public Set<RowType> allTableTypes()
     {
         Set<RowType> allTableTypes = new HashSet<>();
@@ -128,6 +127,9 @@ public class Schema
             int tableTypeId = tableRowType.typeId();
             rowTypes.put(tableTypeId, tableRowType);
             typeIdToLeast(tableRowType.typeId());
+            
+            HKeyRowType hKeyRowType = new HKeyRowType (this, nextTypeId(), table.hKey());
+            hKeyRowTypes.put(tableTypeId, hKeyRowType);
         }
         // Create RowTypes for AIS TableIndexes
         for (Table table : ais.getTables().values()) {
@@ -183,5 +185,6 @@ public class Schema
     private int typeIdCounter = -1;
     private final AkibanInformationSchema ais;
     private final Map<Integer, AisRowType> rowTypes = new HashMap<>();
+    private final Map<Integer, HKeyRowType> hKeyRowTypes = new HashMap<>();
     private final List<IndexRowType> groupIndexRowTypes = new ArrayList<>();
 }
