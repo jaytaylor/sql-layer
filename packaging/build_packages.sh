@@ -140,12 +140,10 @@ filter_config_files() {
     pushd .
     cd "${PACKAGING_DIR}/conf"
     for f in $(ls); do
-        if [ f -ne "sql-layer-win.policy" ]; then
-            sed -e "s|\\\${datadir}|${2}|g" \
-                -e "s|\\\${logdir}|${3}|g" \
-                -e "s|\\\${tempdir}|${4}|g" \
-                "${f}" > "${1}/${f}${5}"
-        fi
+         sed -e "s|\\\${datadir}|${2}|g" \
+             -e "s|\\\${logdir}|${3}|g" \
+             -e "s|\\\${tempdir}|${4}|g" \
+             "${f}" > "${1}/${f}${5}"
     done
     popd
 }
