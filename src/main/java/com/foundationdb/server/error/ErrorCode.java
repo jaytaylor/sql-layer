@@ -19,6 +19,8 @@ package com.foundationdb.server.error;
 
 import org.slf4j.Logger;
 
+import com.foundationdb.sql.embedded.JDBCException;
+
 import java.sql.SQLException;
 import java.util.ResourceBundle;
 
@@ -541,11 +543,17 @@ public enum ErrorCode {
     public static ErrorCode getCodeForRESTException(Throwable e) {
         if(e instanceof InvalidOperationException) {
             return ((InvalidOperationException)e).getCode();
-        } else if(e instanceof SQLException) {
-            return ErrorCode.valueOfCode(((SQLException)e).getSQLState());
-        } else {
+        }
+        if (e instanceof JDBCException) {
             return ErrorCode.UNEXPECTED_EXCEPTION;
         }
+        if (e instanceof SQLException) {
+            SQLException eSQL = (SQLException)e;
+            if (eSQL.getSQLState() != null) {
+                return ErrorCode.valueOfCode(eSQL.getSQLState());
+            }
+        }
+        return ErrorCode.UNEXPECTED_EXCEPTION;
     }
 
     public void logAtImportance(Logger log, String msg, Object... msgArgs) {
