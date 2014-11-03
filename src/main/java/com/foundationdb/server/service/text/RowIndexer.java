@@ -19,7 +19,6 @@ package com.foundationdb.server.service.text;
 
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.rowtype.TableRowType;
-import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.types.value.ValueSource;
@@ -157,7 +156,8 @@ public class RowIndexer implements Closeable
     }
 
     protected void getKeyBytes(Row row) {
-        Key key = ((PersistitHKey)row.hKey()).key();
+        Key key = new Key (null, 2047);
+        row.hKey().copyTo(key);
         keyEncodedString = encodeBytes(key.getEncodedBytes(), 0, key.getEncodedSize());
         Field field = new StringField(IndexedField.KEY_FIELD, keyEncodedString, Store.YES);
         currentDocument.add(field);

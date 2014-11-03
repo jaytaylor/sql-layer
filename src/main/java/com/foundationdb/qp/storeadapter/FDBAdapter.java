@@ -32,8 +32,10 @@ import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.storeadapter.indexcursor.IterationHelper;
 import com.foundationdb.qp.storeadapter.indexcursor.MergeJoinSorter;
 import com.foundationdb.qp.storeadapter.indexrow.FDBIndexRow;
+import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesHKey;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -97,8 +99,8 @@ public class FDBAdapter extends StoreAdapter {
     }
 
     @Override
-    public PersistitHKey newHKey(com.foundationdb.ais.model.HKey hKeyMetadata) {
-        return new PersistitHKey(store.createKey(), hKeyMetadata);
+    public HKey newHKey(com.foundationdb.ais.model.HKey hKeyMetadata) {
+        return new ValuesHKey(schema.newHKeyRowType(hKeyMetadata), store.getTypesRegistry());
     }
 
     @Override

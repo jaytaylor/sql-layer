@@ -112,7 +112,11 @@ public abstract class AbstractRow implements Row
                 builder.append("NULL");
             }
             else {
-                rowType.typeAt(i).format(value(i), appender);
+                if (value(i).hasAnyValue()) {
+                    rowType.typeAt(i).format(value(i), appender);
+                } else {
+                    builder.append("Unset");
+                }
             }
             if(i+1 < fieldsCount) {
                 builder.append(',').append(' ');

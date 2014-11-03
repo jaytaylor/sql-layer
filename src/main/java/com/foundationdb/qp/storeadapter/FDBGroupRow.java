@@ -32,11 +32,11 @@ import com.persistit.Key;
 
 public class FDBGroupRow extends AbstractRow {
     private final FDBAdapter adapter;
-    private final HKeyCache<PersistitHKey> hKeyCache;
+    private final HKeyCache<HKey> hKeyCache;
     private SparseArray<RowDataValueSource> valueSources;
     private RowData rowData;
     private LegacyRowWrapper row;
-    private PersistitHKey currentHKey;
+    private HKey currentHKey;
 
 
     public FDBGroupRow(FDBAdapter adapter) {
@@ -72,7 +72,7 @@ public class FDBGroupRow extends AbstractRow {
     }
 
     @Override
-    public PersistitHKey hKey()
+    public HKey hKey()
     {
         return currentHKey;
     }
@@ -80,7 +80,7 @@ public class FDBGroupRow extends AbstractRow {
     @Override
     public HKey ancestorHKey(Table table)
     {
-        PersistitHKey ancestorHKey = hKeyCache.hKey(table);
+        HKey ancestorHKey = hKeyCache.hKey(table);
         currentHKey.copyTo(ancestorHKey);
         ancestorHKey.useSegments(table.getDepth() + 1);
         return ancestorHKey;

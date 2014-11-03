@@ -22,7 +22,6 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.server.types.value.ValueSource;
 import com.persistit.Key;
-import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.types.value.Value;
 
 import java.util.EnumMap;

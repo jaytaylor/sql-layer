@@ -22,7 +22,6 @@ package com.foundationdb.qp.rowtype;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.HKey;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.qp.operator.IncompatibleRowException;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.value.ValueSource;

@@ -35,12 +35,11 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.storeadapter.PersistitHKey;
 import com.foundationdb.qp.row.AbstractRow;
-import com.foundationdb.qp.row.HKeyRow;
+import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesHKey;
 import com.foundationdb.qp.rowtype.HKeyRowType;
-import com.foundationdb.qp.util.HKeyCache;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.error.AkibanInternalException;
@@ -58,15 +57,16 @@ import com.foundationdb.server.service.transaction.TransactionService.CallbackTy
 import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
-
 import com.foundationdb.sql.server.ServerCallContextStack;
 import com.foundationdb.sql.server.ServerQueryContext;
 import com.foundationdb.util.Exceptions;
+
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.search.Query;
 
 import com.google.inject.Inject;
 import com.persistit.Key;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -269,7 +269,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             Iterator<byte[]> it = rows.iterator();
             while(it.hasNext()) {
                 byte[] row = it.next();
-                HKeyRow hkeyRow = toHKeyRow(row, indexInfo.getHKeyRowType(), adapter);
+                Row hkeyRow = toHKeyRow(row, indexInfo.getHKeyRowType(), adapter);
                 queryBindings.setRow(0, hkeyRow);
                 cursor = API.cursor(operator, queryContext, queryBindings);
                 rowIndexer.updateDocument(cursor, row);
@@ -433,13 +433,21 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         }
     }
 
-    private HKeyRow toHKeyRow(byte rowBytes[], HKeyRowType hKeyRowType, StoreAdapter store)
+    private Row toHKeyRow(byte rowBytes[], HKeyRowType hKeyRowType, StoreAdapter store)
     {
-        PersistitHKey hkey = (PersistitHKey)store.newHKey(hKeyRowType.hKey());
-        Key key = hkey.key();
+        HKey hkey = store.newHKey(hKeyRowType.hKey());
+        Key key = store.createKey();
+        
         key.setEncodedSize(rowBytes.length);
         System.arraycopy(rowBytes, 0, key.getEncodedBytes(), 0, rowBytes.length);
-        return new HKeyRow(hKeyRowType, hkey, new HKeyCache<>(store));
+        
+        hkey.copyFrom(key);
+        
+        if (hkey instanceof ValuesHKey) {
+            return ((Row)(ValuesHKey)hkey);
+        } else {
+            throw new UnsupportedOperationException("HKey type is not ValuesHKey");
+        }
     }
 
     private class HKeyBytesStream implements Iterable<byte[]>, Closeable

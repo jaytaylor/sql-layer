@@ -108,12 +108,9 @@ public class HKey
                             columnList.add(hKeyColumn.column());
                         }
                     }
+                    
                     Column[] columnsTmp = new Column[columnList.size()];
-                    int c = 0;
-                    for (Column column : columnList) {
-                        columnsTmp[c] = column;
-                        c++;
-                    }
+                    columnsTmp = columnList.toArray(columnsTmp);
                     // keyDepth
                     int[] keyDepthTmp = new int[segments.size() + 1];
                     int hKeySegments = segments.size();

@@ -17,13 +17,32 @@
 
 package com.foundationdb.server.collation;
 
+import com.foundationdb.qp.row.HKey;
+import com.foundationdb.qp.row.ValuesHKey;
+import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.service.tree.KeyCreator;
+import com.foundationdb.server.types.service.TypesRegistryService;
+import com.foundationdb.server.types.service.TypesRegistryServiceImpl;
 import com.persistit.Key;
-import com.persistit.Persistit;
 
 public class TestKeyCreator implements KeyCreator {
 
-    public Key createKey() {
-        return new Key((Persistit) null);
+    public TestKeyCreator (Schema schema) {
+        this.schema = schema;
+        TypesRegistryServiceImpl registryImpl = new TypesRegistryServiceImpl();
+        registryImpl.start();
+        registry = registryImpl;
     }
+
+    public Key createKey() {
+        return new Key(null, 2047);
+    }
+
+    @Override
+    public HKey newHKey(com.foundationdb.ais.model.HKey hKeyMetadata) {
+        return new ValuesHKey(schema.newHKeyRowType(hKeyMetadata), registry);
+    }
+    private final Schema schema;
+    private TypesRegistryService registry;
+
 }

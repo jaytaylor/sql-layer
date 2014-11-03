@@ -30,7 +30,7 @@ import com.foundationdb.util.tap.Tap;
 public class FDBGroupCursor extends RowCursorImpl implements GroupCursor {
     private final FDBAdapter adapter;
     private final FDBStoreData storeData;
-    private PersistitHKey hKey;
+    private HKey hKey;
     private boolean hKeyDeep;
     private GroupScan groupScan;
     private int commitFrequency;
@@ -52,7 +52,7 @@ public class FDBGroupCursor extends RowCursorImpl implements GroupCursor {
     @Override
     public void rebind(HKey hKey, boolean deep) {
         CursorLifecycle.checkClosed(this);
-        this.hKey = (PersistitHKey)hKey;
+        this.hKey = hKey;
         this.hKeyDeep = deep;
     }
 
@@ -110,8 +110,8 @@ public class FDBGroupCursor extends RowCursorImpl implements GroupCursor {
     }
 
     private class HKeyAndDescendantScan extends GroupScan {
-        public HKeyAndDescendantScan(PersistitHKey hKey) {
-            hKey.key().copyTo(storeData.persistitKey);
+        public HKeyAndDescendantScan(HKey hKey) {
+            hKey.copyTo(storeData.persistitKey.clear());
             adapter.getUnderlyingStore().groupKeyAndDescendantsIterator(adapter.getSession(), storeData, false);
         }
     }
@@ -131,9 +131,9 @@ public class FDBGroupCursor extends RowCursorImpl implements GroupCursor {
             }
         }
 
-        public HKeyWithoutDescendantScan(PersistitHKey hKey)
+        public HKeyWithoutDescendantScan(HKey hKey)
         {
-            hKey.key().copyTo(storeData.persistitKey);
+            hKey.copyTo(storeData.persistitKey.clear());
             adapter.getUnderlyingStore().groupKeyIterator(adapter.getSession(), storeData);
         }
     }
