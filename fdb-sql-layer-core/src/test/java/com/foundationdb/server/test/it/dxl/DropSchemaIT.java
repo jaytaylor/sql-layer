@@ -224,7 +224,6 @@ public final class DropSchemaIT extends ITBase {
                 "id int not null primary key, oid int, grouping foreign key(oid) references one.c(id)");
         writeRow(oTableId, 100, 10);
         ddl().dropSchema(session(), "two");
-        updateAISGeneration(); // necessary to run scans below
         expectTables("one", "c");
         expectNotTables("two", "o");
         cTableId = getTable("one", "c").getTableId();

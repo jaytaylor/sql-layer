@@ -20,7 +20,6 @@ package com.foundationdb.rest;
 import com.foundationdb.rest.resources.ResourceHelper;
 import com.foundationdb.server.Quote;
 import com.foundationdb.server.error.ErrorCode;
-import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchRoutineException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.util.AkibanAppender;
@@ -37,7 +36,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -118,11 +116,15 @@ public class RestResponseBuilder {
         return builder.build();
     }
     
-    public static void formatJsonError(StringBuilder builder, String code, String message) {
+    public static void formatJsonError(StringBuilder builder, String code, String message, String note) {
         builder.append("{\"code\":\"");
         builder.append(code);
         builder.append("\", \"message\":\"");
         Quote.JSON_QUOTE.append(AkibanAppender.of(builder), message);
+        if (note != null) {
+            builder.append("\", \"note\":\"");
+            Quote.JSON_QUOTE.append(AkibanAppender.of(builder), note);
+        }
         builder.append("\"}");
     }
 
@@ -133,7 +135,7 @@ public class RestResponseBuilder {
             builder.append(jsonp);
             builder.append('(');
         }
-        formatJsonError(builder, code, message);
+        formatJsonError(builder, code, message, null);
         if(isJsonp) {
             builder.append(')');
         }

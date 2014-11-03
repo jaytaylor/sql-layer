@@ -113,6 +113,7 @@ public abstract class CrossOriginITBase extends ITBase
         config.put("fdbsql.http.cross_origin.enabled", "true");
         config.put("fdbsql.http.cross_origin.allowed_methods", ALLOWED_METHODS);
         config.put("fdbsql.http.cross_origin.allowed_origins", "*");
+        config.put("fdbsql.http.csrf_protection.type", "none");
         return config;
     }
 

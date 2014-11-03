@@ -166,8 +166,7 @@ public final class CreateIndexesIT extends ITBase
         AkibanInformationSchema ais = createAISWithTable(tId);
         Index index = addIndex(ais, tId, "name", false, "name");
         ddl().createIndexes(session(), Arrays.asList(index));
-        updateAISGeneration();
-        
+
         // Index should exist on the Table
         Table table = getTable("test", "t");
         assertNotNull(table);
@@ -202,8 +201,7 @@ public final class CreateIndexesIT extends ITBase
         AkibanInformationSchema ais = createAISWithTable(tId);
         Index index = addIndex(ais, tId, "name", false, "name");
         ddl().createIndexes(session(), Arrays.asList(index));
-        updateAISGeneration();
-        
+
         AkibanInformationSchema aisCheck = ais();
         Index indexCheck = aisCheck.getTable(tId).getIndex("name");
         assertNotNull(indexCheck);
@@ -240,8 +238,7 @@ public final class CreateIndexesIT extends ITBase
         AkibanInformationSchema ais = createAISWithTable(oId);
         Index index = addIndex(ais, oId, "tag", false, "tag");
         ddl().createIndexes(session(), Arrays.asList(index));
-        updateAISGeneration();
-        
+
         // Check that AIS was updated and DDL gets created correctly
         AkibanInformationSchema aisCheck = ais();
         Index indexCheck = aisCheck.getTable(oId).getIndex("tag");
@@ -278,8 +275,7 @@ public final class CreateIndexesIT extends ITBase
         AkibanInformationSchema ais = createAISWithTable(tId);
         Index index = addIndex(ais, tId, "name", false, "first", "last");
         ddl().createIndexes(session(), Arrays.asList(index));
-        updateAISGeneration();
-        
+
         AkibanInformationSchema aisCheck = ais();
         Index indexCompound = aisCheck.getTable(tId).getIndex("name");
         List<IndexColumn> ids = indexCompound.getKeyColumns();
@@ -304,7 +300,6 @@ public final class CreateIndexesIT extends ITBase
         AkibanInformationSchema ais = createAISWithTable(tId);
         Index index = addIndex(ais, tId, "state", true, "state");
         ddl().createIndexes(session(), Arrays.asList(index));
-        updateAISGeneration();
 
         AkibanInformationSchema aisCheck = ais();
         Index indexCheck = aisCheck.getTable(tId).getIndex("state");
@@ -337,7 +332,6 @@ public final class CreateIndexesIT extends ITBase
         } catch(DuplicateKeyException e) {
             // Expected
         }
-        updateAISGeneration();
 
         // Make sure index is not in AIS
         Table table = getTable(tId);
@@ -363,7 +357,6 @@ public final class CreateIndexesIT extends ITBase
         Index index1 = addIndex(ais, tId, "otherId", true, "otherId");
         Index index2 = addIndex(ais, tId, "price", false, "price");
         ddl().createIndexes(session(), Arrays.asList(index1, index2));
-        updateAISGeneration();
 
         AkibanInformationSchema aisCheck = ais();
         Index indexCheck = aisCheck.getTable(tId).getIndex("otherId");
@@ -409,7 +402,6 @@ public final class CreateIndexesIT extends ITBase
         } catch(DuplicateKeyException e) {
             // Expected
         }
-        updateAISGeneration();
 
         // Make sure index is not in AIS
         Table table = getTable(tId);
@@ -435,7 +427,6 @@ public final class CreateIndexesIT extends ITBase
         Index index1 = addIndex(ais, tid, "foo", false, "foo");
         Index index2 = addIndex(ais, uid, "bar", false, "bar");
         ddl().createIndexes(session(), Arrays.asList(index1, index2));
-        updateAISGeneration();
 
         AkibanInformationSchema aisCheck = ais();
         Index tidIndex = aisCheck.getTable(tid).getIndex("foo"); 
@@ -460,7 +451,6 @@ public final class CreateIndexesIT extends ITBase
         AkibanInformationSchema ais = createAISWithTable(tId);
         Index index = addIndex(ais, tId, "foo", false, "foo");
         ddl().createIndexes(session(), Arrays.asList(index));
-        updateAISGeneration();
         checkIndexIDsInGroup(getTable(tId).getGroup());
     }
 
@@ -471,7 +461,6 @@ public final class CreateIndexesIT extends ITBase
         Index index1 = addIndex(ais, tId, "foo", false, "foo");
         Index index2 = addIndex(ais, tId, "bar", false, "bar");
         ddl().createIndexes(session(), Arrays.asList(index1, index2));
-        updateAISGeneration();
         checkIndexIDsInGroup(getTable(tId).getGroup());
     }
 
@@ -481,12 +470,10 @@ public final class CreateIndexesIT extends ITBase
         final AkibanInformationSchema ais = createAISWithTable(tId);
         Index index = addIndex(ais, tId, "foo", false, "foo");
         ddl().createIndexes(session(), Arrays.asList(index));
-        updateAISGeneration();
         checkIndexIDsInGroup(getTable(tId).getGroup());
 
         Index index2 = addIndex(ais, tId, "bar", false, "bar");
         ddl().createIndexes(session(), Arrays.asList(index2));
-        updateAISGeneration();
         checkIndexIDsInGroup(getTable(tId).getGroup());
     }
 }

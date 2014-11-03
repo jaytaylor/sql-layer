@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 FoundationDB, LLC
+ * Copyright (C) 2009-2014 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,20 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.util;
+package com.foundationdb.http;
 
-import java.nio.ByteOrder;
-
-/*
- * Created to centralize control over byte order.
- */
-
-public class ByteBufferFactory
+public class CsrfProtectionNoAuthIT extends CsrfProtectionITBase
 {
-    public static GrowableByteBuffer allocate(int n)
-    {
-        GrowableByteBuffer byteBuffer = new GrowableByteBuffer(n);
-        byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-        return byteBuffer;
+    @Override
+    protected String getUserInfo() {
+        return null;
     }
 }

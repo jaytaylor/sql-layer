@@ -117,7 +117,6 @@ public class RenameTableIT extends ITBase {
     }
 
     private void expectStatusAndScanCount(String schemaName, String tableName, long rowCount) {
-        updateAISGeneration();
         int id = tableId(schemaName, tableName);
         expectRowCount(id, rowCount);
         List<Row> rows = scanAll(id);
@@ -321,7 +320,6 @@ public class RenameTableIT extends ITBase {
             ddl().renameTable(session(), NAME1, NAME3);
             ddl().renameTable(session(), NAME2, NAME1);
             ddl().dropTable(session(), NAME3);
-            updateAISGeneration();
             // Confirm
             List<Row> newTableRows = scanAll(tableId(NAME1));
             assertEquals("Rows scanned after renames and drop on loop "+i, 3, newTableRows.size());

@@ -41,7 +41,6 @@ public class ManyLongTextFieldsIT extends ITBase {
         }
         Table table = builder.akibanInformationSchema().getTable(SCHEMA, TABLE);
         ddl().createTable(session(), table);
-        updateAISGeneration();
 
         Object[] colValues = new Object[fieldCount + 1];
         colValues[0] = 1;

@@ -86,6 +86,10 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     private static final String CONFIG_XORIGIN_MAX_AGE = CONFIG_XORIGIN_PREFIX + "preflight_max_age";
     private static final String CONFIG_XORIGIN_CREDENTIALS = CONFIG_XORIGIN_PREFIX + "allow_credentials";
 
+    private static final String CONFIG_CSRF_PREFIX = CONFIG_HTTP_PREFIX + "csrf_protection.";
+    private static final String CONFIG_CSRF_TYPE = CONFIG_CSRF_PREFIX + "type";
+    private static final String CONFIG_CSRF_ALLOWED_REFERERS = CONFIG_CSRF_PREFIX + "allowed_referers";
+
     private static final String REST_ROLE = "rest-user";
     public  static final String SERVER_TYPE = "REST";
 
@@ -179,6 +183,10 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         return port;
     }
 
+    private static enum CsrfProtectionType {
+        NONE,
+        REFERER
+    }
 
     private static enum AuthenticationType {
         NONE(null, null),
@@ -207,7 +215,16 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         try {
             return AuthenticationType.valueOf(propValue.toUpperCase());
         } catch(IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid " + CONFIG_LOGIN_PROPERTY + " property: " + propValue);
+            throw new IllegalArgumentException("Invalid " + propName + " property: " + propValue);
+        }
+    }
+
+    private CsrfProtectionType safeParseCsrfType(String propName) {
+        String propValue = configurationService.getProperty(propName);
+        try {
+            return CsrfProtectionType.valueOf(propValue.toUpperCase());
+        } catch(IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid " + propName + " property: " + propValue);
         }
     }
 
@@ -287,6 +304,9 @@ public final class HttpConductorImpl implements HttpConductor, Service {
             if (crossOriginOn) {
                 addCrossOriginFilter(localRootContextHandler);
             }
+
+            addCsrfFilter(localRootContextHandler);
+
             localServer.setHandler(localRootContextHandler);
             localServer.start();
         }
@@ -325,6 +345,22 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     @Override
     public void crash() {
         stop();
+    }
+
+    private void addCsrfFilter(ContextHandler handler) throws ServletException {
+        CsrfProtectionType type = safeParseCsrfType(CONFIG_CSRF_TYPE);
+        switch (type) {
+            case NONE:
+                break;
+            case REFERER:
+                FilterRegistration reg = handler.getServletContext().addFilter("CSRFFilter", CsrfProtectionRefererFilter.class);
+                reg.addMappingForServletNames(null, false, "*");
+                reg.setInitParameter(CsrfProtectionRefererFilter.ALLOWED_REFERERS_PARAM,
+                        configurationService.getProperty(CONFIG_CSRF_ALLOWED_REFERERS));
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid " + CONFIG_CSRF_TYPE + " property: " + type);
+        }
     }
 
     private void addCrossOriginFilter(ContextHandler handler) throws ServletException {

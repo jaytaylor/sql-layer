@@ -106,24 +106,8 @@ public class DXLTransactionHook implements DXLFunctionsHook {
                 return true;
 
             // DML that looks at AIS
-            case GET_TABLE_STATISTICS:
-            case SCAN_SOME:
-            case WRITE_ROW:
-            case WRITE_ROWS:
-            case DELETE_ROW:
-            case UPDATE_ROW:
             case TRUNCATE_TABLE:
-            case CONVERT_NEW_ROW:
-            case CONVERT_ROW_DATA:
-            case CONVERT_ROW_DATAS:
-            case OPEN_CURSOR:
                 return true;
-
-            // Remaining DML
-            case GET_CURSOR_STATE:
-            case CLOSE_CURSOR:
-            case GET_CURSORS:
-                return false;
         }
 
         throw new IllegalArgumentException("Unexpected function for hook " + function);

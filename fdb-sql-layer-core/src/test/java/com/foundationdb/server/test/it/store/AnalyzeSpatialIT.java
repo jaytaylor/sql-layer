@@ -18,6 +18,7 @@
 package com.foundationdb.server.test.it.store;
 
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.spatial.Spatial;
 import com.foundationdb.server.test.it.ITBase;
@@ -32,10 +33,10 @@ public final class AnalyzeSpatialIT extends ITBase {
 
         createSpatialTableIndex("schem", "tab", "idxgeo", 0, 2, "lat", "lon");
         writeRow(cid, 10L, "10", "11");
-        dml().getTableStatistics(session(), cid, false);
+        getStats(cid);
         serviceManager().getDXL().ddlFunctions().updateTableStatistics(session(),
                 new TableName("schem", "tab"), Collections.singleton("idxgeo"));
-        dml().getTableStatistics(session(), cid, false);
+        getStats(cid);
     }
 
     @Test
@@ -45,10 +46,10 @@ public final class AnalyzeSpatialIT extends ITBase {
 
         createSpatialTableIndex("schem", "tab", "idxgeo", 0, 2, "lat", "lon", "name");
         writeRow(cid, 10L, "10", "11", "foo");
-        dml().getTableStatistics(session(), cid, false);
+        getStats(cid);
         serviceManager().getDXL().ddlFunctions().updateTableStatistics(session(),
                 new TableName("schem", "tab"), Collections.singleton("idxgeo"));
-        dml().getTableStatistics(session(), cid, false);
+        getStats(cid);
     }
 
     @Test
@@ -64,10 +65,23 @@ public final class AnalyzeSpatialIT extends ITBase {
                                 "cust.lat", "cust.lon", "orders.colour");
         writeRow(cid, 10L, "10", "11", "foo");
         writeRow(oid, 20L, 10L, "red");
-        dml().getTableStatistics(session(), cid, false);
+        getStats(cid);
         serviceManager().getDXL().ddlFunctions().updateTableStatistics(session(),
                 new TableName("schem", "orders"), Collections.singleton("idxgeogrp"));
-        dml().getTableStatistics(session(), cid, false);
-        dml().getTableStatistics(session(), oid, false);
+        getStats(cid);
+        getStats(cid);
+    }
+
+    private void getStats(final int tableID) {
+        txnService().run(session(), new Runnable()
+        {
+            @Override
+            public void run() {
+                Table table = getTable(tableID);
+                for(Index index : table.getIndexesIncludingInternal()) {
+                    indexStatsService().getIndexStatistics(session(), index);
+                }
+            }
+        });
     }
 }

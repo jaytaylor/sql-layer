@@ -21,12 +21,9 @@ import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.DMLFunctions;
 import com.foundationdb.server.error.ServiceNotStartedException;
 import com.foundationdb.server.error.ServiceStartupException;
-import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
-import com.foundationdb.server.service.jmx.JmxManageable;
 import com.foundationdb.server.service.listener.ListenerService;
-import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.SchemaManager;
@@ -39,35 +36,27 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.List;
 
-public class DXLServiceImpl implements DXLService, Service, JmxManageable {
+public class DXLServiceImpl implements DXLService, Service {
     private final static Logger LOG = LoggerFactory.getLogger(DXLServiceImpl.class);
 
     private final Object MONITOR = new Object();
 
-    private volatile HookableDDLFunctions ddlFunctions;
+    private volatile DDLFunctions ddlFunctions;
     private volatile DMLFunctions dmlFunctions;
+
     private final SchemaManager schemaManager;
     private final Store store;
     private final SessionService sessionService;
     private final IndexStatisticsService indexStatisticsService;
-    private final TypesRegistryService typesRegistry;
     private final TransactionService txnService;
     private final ListenerService listenerService;
     private final ConfigurationService configService;
 
     @Override
-    public JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("DXL", new DXLMXBeanImpl(this, sessionService), DXLMXBean.class);
-    }
-
-    @Override
     public void start() {
         List<DXLFunctionsHook> hooks = getHooks();
-        BasicDXLMiddleman middleman = BasicDXLMiddleman.create();
-        HookableDDLFunctions localDdlFunctions
-                = new HookableDDLFunctions(createDDLFunctions(middleman), hooks,sessionService);
-        DMLFunctions localDmlFunctions = new HookableDMLFunctions(createDMLFunctions(middleman, localDdlFunctions),
-                hooks, sessionService);
+        DDLFunctions localDdlFunctions = new HookableDDLFunctions(createDDLFunctions(), hooks, sessionService);
+        DMLFunctions localDmlFunctions = new HookableDMLFunctions(createDMLFunctions(), hooks);
         synchronized (MONITOR) {
             if (ddlFunctions != null) {
                 throw new ServiceStartupException("service already started");
@@ -77,14 +66,13 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
         }
     }
 
-    DMLFunctions createDMLFunctions(BasicDXLMiddleman middleman, DDLFunctions newlyCreatedDDLF) {
-        return new BasicDMLFunctions(middleman, schemaManager, store, newlyCreatedDDLF,
-                                     indexStatisticsService, listenerService);
+    DMLFunctions createDMLFunctions() {
+        return new BasicDMLFunctions(schemaManager, store, listenerService);
     }
 
-    DDLFunctions createDDLFunctions(BasicDXLMiddleman middleman) {
-        return new BasicDDLFunctions(middleman, schemaManager, store, indexStatisticsService,
-                typesRegistry, txnService, listenerService, configService);
+    DDLFunctions createDDLFunctions() {
+        return new BasicDDLFunctions(schemaManager, store, indexStatisticsService,
+                                     txnService, listenerService, configService);
     }
 
     @Override
@@ -95,7 +83,6 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
             }
             ddlFunctions = null;
             dmlFunctions = null;
-            BasicDXLMiddleman.destroy();
         }
     }
 
@@ -123,52 +110,22 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     @Override
     public void crash() {
-        BasicDXLMiddleman.destroy();
     }
 
     @Inject
-    public DXLServiceImpl(SchemaManager schemaManager, Store store, SessionService sessionService,
+    public DXLServiceImpl(SchemaManager schemaManager,
+                          Store store,
+                          SessionService sessionService,
                           IndexStatisticsService indexStatisticsService,
-                          TypesRegistryService typesRegistry, TransactionService txnService,
+                          TransactionService txnService,
                           ListenerService listenerService,
                           ConfigurationService configService) {
         this.schemaManager = schemaManager;
         this.store = store;
         this.sessionService = sessionService;
         this.indexStatisticsService = indexStatisticsService;
-        this.typesRegistry = typesRegistry;
         this.txnService = txnService;
         this.listenerService = listenerService;
         this.configService = configService;
-    }
-
-    // for use by subclasses
-
-    protected final SchemaManager schemaManager() {
-        return schemaManager;
-    }
-
-    protected final Store store() {
-        return store;
-    }
-
-    protected final IndexStatisticsService indexStatisticsService() {
-        return indexStatisticsService;
-    }
-
-    protected final TypesRegistryService typesRegistry() {
-        return typesRegistry;
-    }
-
-    protected final TransactionService txnService() {
-        return txnService;
-    }
-
-    protected final ListenerService listenerService() {
-        return listenerService;
-    }
-
-    protected final Session session() {
-        return null;
     }
 }
