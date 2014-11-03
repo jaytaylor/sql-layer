@@ -30,6 +30,7 @@ import org.eclipse.jetty.server.Request;
 
 import com.foundationdb.rest.RestResponseBuilder;
 import com.foundationdb.server.error.ErrorCode;
+import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.handler.ErrorHandler;
 
 public class JsonErrorHandler extends ErrorHandler {
@@ -43,10 +44,21 @@ public class JsonErrorHandler extends ErrorHandler {
 
         final String message;
         final ErrorCode error;
+        final String note;
         if(response.getStatus() == HttpServletResponse.SC_NOT_FOUND) {
-            message = "Path not supported; try /v1";
+            message = "Path not found";
+            if (!request.getRequestURI().contains("/v1/")) {
+                note = "try including /v1/ in the path";
+            } else {
+                note = null;
+            }
             error = ErrorCode.MALFORMED_REQUEST;
         } else {
+            if (response instanceof Response) {
+                note = ((Response)response).getReason();
+            } else {
+                note = null;
+            }
             message = HttpStatus.getMessage(response.getStatus());
             error = ErrorCode.INTERNAL_ERROR;
         }
@@ -55,7 +67,7 @@ public class JsonErrorHandler extends ErrorHandler {
         response.setHeader(HttpHeaders.CACHE_CONTROL, getCacheControl());
 
         StringBuilder builder = new StringBuilder();
-        RestResponseBuilder.formatJsonError(builder, error.getFormattedValue(), message);
+        RestResponseBuilder.formatJsonError(builder, error.getFormattedValue(), message, note);
         builder.append('\n');
 
         response.setContentLength(builder.length());

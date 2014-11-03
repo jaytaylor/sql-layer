@@ -74,6 +74,7 @@ public class SecurityServiceIT extends ITBase
         properties.put("fdbsql.http.login", "basic"); // "digest"
         properties.put("fdbsql.postgres.login", "md5");
         properties.put("fdbsql.restrict_user_schema", "true");
+        properties.put("fdbsql.http.csrf_protection.type", "none");
         return properties;
     }
 

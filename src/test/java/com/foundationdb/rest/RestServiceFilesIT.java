@@ -124,6 +124,8 @@ public class RestServiceFilesIT extends ITBase {
     protected Map<String,String> startupConfigProperties() {
         Map<String,String> config = new HashMap<>(super.startupConfigProperties());
         config.put("fdbsql.rest.resource", "entity,fulltext,procedurecall,sql,security,version,direct,view");
+
+        config.put("fdbsql.http.csrf_protection.type", "none");
         if ( caseParams.properties != null) {
             for (String line : caseParams.properties.split("\\r?\\n")) {
                 String[] property = line.split("\\t");
@@ -255,6 +257,7 @@ public class RestServiceFilesIT extends ITBase {
         loadDatabase(caseParams.subDir, serviceManager().getServiceByClass(FullTextIndexService.class));
         HttpExchange conn = openConnection(getRestURL(caseParams.requestURI), caseParams.requestMethod);
         try {
+
             // Request
             if (caseParams.requestMethod.equals("POST") || 
                 caseParams.requestMethod.equals("PUT") || 
