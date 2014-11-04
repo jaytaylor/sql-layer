@@ -22,6 +22,7 @@ import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.server.error.InvalidOptimizerPropertyException;
 import com.foundationdb.server.error.NoAggregateWithGroupByException;
+import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.IndexColumn;
@@ -58,10 +59,10 @@ public class AggregateMapper extends BaseRule
     }
 
     static class AggregateFunctionWithAnnotation extends AggregateFunctionExpression {
-        private int level;
+        public int closeness;
         private AggregateSource source;
 
-        public AggregateFunctionWithAnnotation(AggregateFunctionExpression aggregateFunc, int level, AggregateSource source) {
+        public AggregateFunctionWithAnnotation(AggregateFunctionExpression aggregateFunc, int closeness, AggregateSource source) {
             super(aggregateFunc.getFunction(),
                   aggregateFunc.getOperand(),
                   aggregateFunc.isDistinct(),
@@ -70,13 +71,13 @@ public class AggregateMapper extends BaseRule
                   aggregateFunc.getType(),
                   aggregateFunc.getOption(),
                   aggregateFunc.getOrderBy());
-            this.level = level;
+            this.closeness = closeness;
             this.source = source;
         }
 
-        public AggregateFunctionWithAnnotation setQueryAndLevel(Integer level, AggregateSource source) {
-            if (this.level > level) {
-                this.level = level;
+        public AggregateFunctionWithAnnotation setQueryAndCloseness(Integer closeness, AggregateSource source) {
+            if (this.closeness > closeness) {
+                this.closeness = closeness;
                 this.source = source;
             }
             return this;
@@ -225,7 +226,7 @@ public class AggregateMapper extends BaseRule
                 return nexpr.accept(this);
             }
             if (expr instanceof AggregateFunctionWithAnnotation) {
-                return ((AggregateFunctionWithAnnotation)expr).setQueryAndLevel(subqueries.size(), source);
+                return ((AggregateFunctionWithAnnotation)expr).setQueryAndCloseness(subqueries.size(), source);
             }
             if (expr instanceof ColumnExpression) {
                 ColumnExpression column = (ColumnExpression)expr;
@@ -445,6 +446,10 @@ public class AggregateMapper extends BaseRule
 
         protected ExpressionNode addAggregate(AggregateFunctionWithAnnotation expr) {
             AggregateSource source = expr.getSource();
+            if (expr.closeness > 0 && !source.hasAggregate(expr)) {
+                throw new UnsupportedSQLException("Aggregate not allowed in WHERE",
+                                                   expr.getSQLsource());
+            }
             int position;
             if (source.hasAggregate(expr)) {
                 position = source.getPosition(expr);
