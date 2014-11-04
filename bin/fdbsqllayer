@@ -53,7 +53,7 @@ infer_home_dir()
 
     # Only infer if passed no argument
     if [ -z "$1" ]; then
-        if [ -d "$loc_dev/target" ]; then
+        if [ -d "$loc_dev/fdb-sql-layer-core/target" ]; then
             value="$loc_dev"
         elif [ -d "$loc_local" ]; then
             value="$loc_local"
