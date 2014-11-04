@@ -63,7 +63,7 @@ public class AggregateMapper extends BaseRule
         // then actually add the AggregateFunctionExpressions to the corresponding AggregateSource
         for (AggregateSourceState source : sources) {
             AddAggregates addAggregates = new AddAggregates();
-            addAggregates.apply(source.aggregateSource);
+            addAggregates.remap(source.aggregateSource);
         }
     }
 
@@ -161,7 +161,65 @@ public class AggregateMapper extends BaseRule
         }
     }
 
-    static class Mapper implements ExpressionRewriteVisitor, PlanVisitor {
+    static abstract class Remapper implements ExpressionRewriteVisitor, PlanVisitor {
+
+        public void remap(PlanNode n) {
+            while (true) {
+                // Keep going as long as we're feeding something we understand.
+                n = n.getOutput();
+                if (n instanceof Select) {
+                    remap(((Select)n).getConditions());
+                }
+                else if (n instanceof Sort) {
+                    remapA(((Sort)n).getOrderBy());
+                }
+                else if (n instanceof Project) {
+                    Project p = (Project)n;
+                    remap(p.getFields());
+                }
+                else if (n instanceof Limit) {
+                    // Understood not but mapped.
+                }
+                else
+                    break;
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        protected <T extends ExpressionNode> void remap(List<T> exprs) {
+            for (int i = 0; i < exprs.size(); i++) {
+                exprs.set(i, (T)exprs.get(i).accept(this));
+            }
+        }
+
+        protected void remapA(List<? extends AnnotatedExpression> exprs) {
+            for (AnnotatedExpression expr : exprs) {
+                expr.setExpression(expr.getExpression().accept(this));
+            }
+        }
+
+        @Override
+        public boolean visitChildrenFirst(ExpressionNode expr) {
+            return false;
+        }
+
+        @Override
+        public boolean visit(PlanNode n) {
+            return true;
+        }
+
+        @Override
+        public boolean visitEnter(PlanNode n) {
+            return visit(n);
+        }
+
+        @Override
+        public boolean visitLeave(PlanNode n) {
+            return true;
+        }
+    }
+
+    static class Mapper extends Remapper {
         private SchemaRulesContext rulesContext;
         private AggregateSource source;
         private BaseQuery query;
@@ -206,6 +264,7 @@ public class AggregateMapper extends BaseRule
             }
         }
 
+        @Override
         public void remap(PlanNode n) {
             while (true) {
                 // Keep going as long as we're feeding something we understand.
@@ -227,24 +286,6 @@ public class AggregateMapper extends BaseRule
                 else
                     break;
             }
-        }
-
-        @SuppressWarnings("unchecked")
-        protected <T extends ExpressionNode> void remap(List<T> exprs) {
-            for (int i = 0; i < exprs.size(); i++) {
-                exprs.set(i, (T)exprs.get(i).accept(this));
-            }
-        }
-
-        protected void remapA(List<? extends AnnotatedExpression> exprs) {
-            for (AnnotatedExpression expr : exprs) {
-                expr.setExpression(expr.getExpression().accept(this));
-            }
-        }
-
-        @Override
-        public boolean visitChildrenFirst(ExpressionNode expr) {
-            return false;
         }
 
         @Override
@@ -284,11 +325,6 @@ public class AggregateMapper extends BaseRule
         public boolean visitLeave(PlanNode n) {
             if (n instanceof BaseQuery)
                 subqueries.pop();
-            return true;
-        }
-
-        @Override
-        public boolean visit(PlanNode n) {
             return true;
         }
 
@@ -413,47 +449,7 @@ public class AggregateMapper extends BaseRule
         }
     }
 
-    static class AddAggregates implements ExpressionRewriteVisitor, PlanVisitor {
-
-        public void apply(PlanNode n) {
-            while (true) {
-                // Keep going as long as we're feeding something we understand.
-                n = n.getOutput();
-                if (n instanceof Select) {
-                    remap(((Select)n).getConditions());
-                }
-                else if (n instanceof Sort) {
-                    remapA(((Sort)n).getOrderBy());
-                }
-                else if (n instanceof Project) {
-                    Project p = (Project)n;
-                    remap(p.getFields());
-                }
-                else if (n instanceof Limit) {
-                    // Understood not but mapped.
-                }
-                else
-                    break;
-            }
-        }
-
-        @SuppressWarnings("unchecked")
-        protected <T extends ExpressionNode> void remap(List<T> exprs) {
-            for (int i = 0; i < exprs.size(); i++) {
-                exprs.set(i, (T)exprs.get(i).accept(this));
-            }
-        }
-
-        protected void remapA(List<? extends AnnotatedExpression> exprs) {
-            for (AnnotatedExpression expr : exprs) {
-                expr.setExpression(expr.getExpression().accept(this));
-            }
-        }
-
-        @Override
-        public boolean visitChildrenFirst(ExpressionNode expr) {
-            return false;
-        }
+    static class AddAggregates extends Remapper {
 
         @Override
         public ExpressionNode visit(ExpressionNode expr) {
@@ -461,21 +457,6 @@ public class AggregateMapper extends BaseRule
                 return addAggregate((AnnotatedAggregateFunctionExpression)expr);
             }
             return expr;
-        }
-
-        @Override
-        public boolean visitEnter(PlanNode n) {
-            return visit(n);
-        }
-
-        @Override
-        public boolean visitLeave(PlanNode n) {
-            return true;
-        }
-
-        @Override
-        public boolean visit(PlanNode n) {
-            return true;
         }
 
         protected ExpressionNode addAggregate(AnnotatedAggregateFunctionExpression expr) {
