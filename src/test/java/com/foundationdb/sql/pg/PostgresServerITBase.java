@@ -17,6 +17,8 @@
 
 package com.foundationdb.sql.pg;
 
+import com.foundationdb.server.service.is.BasicInfoSchemaTablesService;
+import com.foundationdb.server.service.is.BasicInfoSchemaTablesServiceImpl;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 
@@ -54,6 +56,7 @@ public class PostgresServerITBase extends ITBase
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
+                .bindAndRequire(BasicInfoSchemaTablesService.class, BasicInfoSchemaTablesServiceImpl.class)
                 .bindAndRequire(PostgresService.class, PostgresServerManager.class);
     }
 
