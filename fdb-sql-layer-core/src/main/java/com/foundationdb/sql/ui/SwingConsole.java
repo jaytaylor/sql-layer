@@ -34,7 +34,7 @@ import java.io.PrintStream;
 public class SwingConsole extends JFrame implements WindowListener 
 {
     public static final String TITLE = "FoundationDB SQL Layer";
-    public static final String ICON_PATH = "Akiban_Server_128x128.png";
+    public static final String ICON_PATH = "fdb_128x128.png";
 
     private final ServiceManager serviceManager;
     private JTextArea textArea;
