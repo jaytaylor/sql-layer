@@ -1,0 +1,17 @@
+/* Policy file granting limiting the permissions for routines */
+
+// installation
+grant codeBase "file:${fdbsql.home}/*" {
+  permission java.security.AllPermission;
+};
+
+grant codeBase "file:${fdbsql.home}/server/-" {
+  permission java.security.AllPermission;
+};
+
+grant codeBase "file:${fdbsql.home}/plugins/-" {
+  permission java.security.AllPermission;
+}; 
+
+grant codeBase "file:${fdbsql.home}/fdb-sql-layer-routinefw/*" {
+};
