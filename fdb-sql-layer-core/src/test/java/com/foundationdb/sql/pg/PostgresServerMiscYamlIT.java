@@ -18,8 +18,6 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.junit.SelectedParameterizedRunner;
-import com.foundationdb.server.service.is.BasicInfoSchemaTablesService;
-import com.foundationdb.server.service.is.BasicInfoSchemaTablesServiceImpl;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.text.FullTextIndexService;
 import com.foundationdb.server.service.text.FullTextIndexServiceImpl;
@@ -75,7 +73,6 @@ public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
-                .bindAndRequire(BasicInfoSchemaTablesService.class, BasicInfoSchemaTablesServiceImpl.class)
                 .bindAndRequire(EmbeddedJDBCService.class, EmbeddedJDBCServiceImpl.class)
                 .bindAndRequire(FullTextIndexService.class, FullTextIndexServiceImpl.class);
     }
