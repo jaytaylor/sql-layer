@@ -16,6 +16,7 @@
  */
 package com.foundationdb.server;
 
+import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
@@ -74,6 +75,15 @@ public class MemoryTableStatus implements TableStatus
         if((rowDef != null) && (expectedID != rowDef.getRowDefId())) {
             throw new IllegalArgumentException("RowDef ID " + rowDef.getRowDefId() +
                                                " does not match expected ID " + expectedID);
+        }
+    }
+    
+    @Override 
+    public void setIndex (TableIndex pkTableIndex) {
+        if (expectedID != pkTableIndex.getTable().getTableId().intValue()) {
+            throw new IllegalArgumentException("PK Index table ID " + pkTableIndex.getTable().getTableId().intValue() +
+                    " does not match expected ID " + expectedID);
+            
         }
     }
 

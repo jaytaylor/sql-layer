@@ -27,6 +27,7 @@ import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.WriteIndexRow;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
@@ -63,16 +64,21 @@ public interface Store extends KeyCreator {
     /** Save the TableIndex row for {@code rowData}. {@code hKey} must be populated. */
     void writeIndexRow(Session session, TableIndex index, RowData rowData, Key hKey, WriteIndexRow buffer,
                        SpatialColumnHandler spatialColumnHandler, long zValue, boolean doLock);
-
+    void writeIndexRow(Session session, TableIndex index, Row row, Key hKey, WriteIndexRow buffer,
+                        SpatialColumnHandler spatialColumnHandler, long zValue, boolean doLock);
     /** Clear the TableIndex row for {@code rowData]. {@code hKey} must be populated. */
     void deleteIndexRow(Session session, TableIndex index, RowData rowData, Key hKey, WriteIndexRow buffer,
                         SpatialColumnHandler spatialColumnHandler, long zValue, boolean doLock);
+    void deleteIndexRow(Session session, TableIndex index, Row row, Key hKey, WriteIndexRow buffer,
+            SpatialColumnHandler spatialColumnHandler, long zValue, boolean doLock);
 
     /** Save the GroupIndex rows for {@code rowData}. Locking handed by StoreGIHandler. */
     void writeIndexRows(Session session, Table table, RowData rowData, Collection<GroupIndex> indexes);
+    void writeIndexRows(Session session, Table table, Row row, Collection<GroupIndex> indexes);
 
     /** Clear the GroupIndex rows for {@code rowData}. Locking handled by StoreGIHandler. */
     void deleteIndexRows(Session session, Table table, RowData rowData, Collection<GroupIndex> indexes);
+    void deleteIndexRows(Session session, Table table, Row row, Collection<GroupIndex> indexes);
 
     /** Compute and return the next value for the given sequence */
     long nextSequenceValue(Session session, Sequence sequence);

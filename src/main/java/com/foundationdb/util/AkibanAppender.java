@@ -17,13 +17,9 @@
 
 package com.foundationdb.util;
 
-import com.foundationdb.qp.operator.Cursor;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.nio.charset.Charset;
 
 public abstract class AkibanAppender {

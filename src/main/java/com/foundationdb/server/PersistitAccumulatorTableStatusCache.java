@@ -17,8 +17,8 @@
 
 package com.foundationdb.server;
 
-import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.server.error.PersistitAdapterException;
@@ -84,8 +84,11 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     }
 
     private Tree getTreeForRowDef(RowDef rowDef) {
-        Index index = rowDef.getPKIndex();
-        PersistitStorageDescription storageDescription = (PersistitStorageDescription)index.getStorageDescription();
+        return getTreeForIndex(rowDef.getPKIndex());
+    }
+    
+    private Tree getTreeForIndex(TableIndex pkTableIndex) {
+        PersistitStorageDescription storageDescription = (PersistitStorageDescription)pkTableIndex.getStorageDescription();
         try {
             treeService.populateTreeCache(storageDescription);
             return storageDescription.getTreeCache();
@@ -174,6 +177,18 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             } else {
                 checkExpectedRowDefID(expectedID, rowDef);
                 Tree tree = getTreeForRowDef(rowDef);
+                rowCount = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, tree);
+                autoIncrement = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.AUTO_INC, tree);
+            }
+        }
+        
+        @Override
+        public void setIndex(TableIndex pkTableIndex) {
+            if (pkTableIndex == null) {
+                rowCount = autoIncrement = null;
+            } else {
+                assert pkTableIndex.getTable().getTableId().intValue() == expectedID;
+                Tree tree = getTreeForIndex(pkTableIndex);
                 rowCount = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, tree);
                 autoIncrement = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.AUTO_INC, tree);
             }

@@ -122,6 +122,13 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
         this.serviceManager = serviceManager;
     }
 
+    public void handleInsert(Session session, Table table, Row row) {
+        Handler th = getTableHandler(table);
+        if (th != null) {
+            th.handleInsert(session, row);
+        }
+    }
+    
     public void handleInsert(Session session, Table table, RowData row) {
         Handler th = getTableHandler(table);
         if (th != null) {
@@ -197,6 +204,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
     }
 
     protected interface Handler {
+        public void handleInsert(Session session, Row row);
         public void handleInsert(Session session, RowData row);
         public void handleUpdatePre(Session session, RowData oldRow, RowData newRow);
         public void handleUpdatePost(Session session, RowData oldRow, RowData newRow);
@@ -211,6 +219,13 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
             this.handlers = handlers;
         }
 
+        @Override
+        public void handleInsert (Session session, Row row) {
+            for (Handler handler : handlers) {
+                handler.handleInsert(session, row);
+            }
+        }
+        
         @Override
         public void handleInsert(Session session, RowData row) {
             for (Handler handler : handlers) {
@@ -282,6 +297,11 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
             this.notNull = table.notNull();
         }
 
+        @Override 
+        public void handleInsert(Session session, Row row) {
+            checkNotNull(row);
+        }
+        
         @Override
         public void handleInsert(Session session, RowData row) {
             checkNotNull(row);
@@ -305,6 +325,16 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
         @Override
         public void handleTruncate(Session session) {
             // None
+        }
+
+        private void checkNotNull(Row row) {
+            for (int f = notNull.nextSetBit(0); f >= 0; f = notNull.nextSetBit(f+1)) {
+                if (row.value(f).isNull()) {
+                    throw new NotNullViolationException(table.getName().getSchemaName(),
+                            table.getName().getTableName(),
+                            table.getColumn(f).getName());
+                }
+            }
         }
 
         private void checkNotNull(RowData row) {
@@ -335,6 +365,14 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
             this.crossReferencedColumns = (referenced) ? crossReferenceColumns(foreignKey, false) : null;
         }
 
+        @Override
+        public void handleInsert(Session session, Row row) {
+            if (referencing) {
+                checkReferencing(session, row, foreignKey, crossReferencingColumns,
+                        "insert into");
+            }
+        }
+        
         @Override 
         public void handleInsert(Session session, RowData row) {
             if (referencing) {
@@ -449,6 +487,27 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
     }
 
     @SuppressWarnings("unchecked")
+    protected void checkReferencing (Session session, Row row, 
+            ForeignKey foreignKey, List<Column> columns,
+            String operation) {
+        if (!compareSelfReference(row, foreignKey)) {
+            Index index = foreignKey.getReferencedIndex();
+            SDType storeData = (SDType)store.createStoreData(session, index);
+            Key key = store.getKey(session, storeData);
+            try {
+                boolean anyNull = crossReferenceKey(session, key, row, columns);
+                if (!anyNull) {
+                    assert index.isUnique();
+                    checkReferencing(session, index, storeData, row, foreignKey, operation);
+                }
+            }
+            finally {
+                store.releaseStoreData(session, storeData);
+            }
+        }
+    }
+    
+    @SuppressWarnings("unchecked")
     protected void checkReferencing(Session session, RowData row, 
                                     ForeignKey foreignKey, List<Column> columns,
                                     String operation) {
@@ -467,6 +526,30 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
                 store.releaseStoreData(session, storeData);
             }
         }
+    }
+    
+    protected boolean compareSelfReference (Row row, ForeignKey foreignKey) {
+        boolean selfReference = false;
+        if (row == null) {
+            return selfReference;
+        }
+        if (foreignKey.getReferencedTable() == foreignKey.getReferencingTable()) {
+            selfReference = true;
+            
+            for (JoinColumn join : foreignKey.getJoinColumns()) {
+                ValueSource parent = row.value(join.getParent().getColumn().getPosition().intValue());
+                ValueSource child  = row.value(join.getChild().getColumn().getPosition().intValue());
+                TInstance pInst = parent.getType();
+                TInstance cInst = child.getType();
+                
+                TKeyComparable comparable = typesRegistryService.getKeyComparable(pInst.typeClass(), cInst.typeClass());
+                int c = (comparable != null) ?
+                    comparable.getComparison().compare(pInst, parent, cInst, child) :
+                    TClass.compare(pInst, parent, cInst, child);
+                selfReference &= (c == 0);
+            }
+        }
+        return selfReference;
     }
 
     /**
@@ -499,9 +582,24 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
         }
         return selfReference; 
     }
+    
+    protected abstract void checkReferencing(Session session, Index index, SDType storeData,
+                                             Row row, ForeignKey foreignKey, String operation);
+    
     protected abstract void checkReferencing(Session session, Index index, SDType storeData,
                                              RowData row, ForeignKey foreignKey, String operation);
 
+    
+    protected void notReferencing(Session session, Index index, SDType storeData,
+            Row row, ForeignKey foreignKey, String operation) {
+        String key = formatKey(session, row, foreignKey.getReferencingColumns());
+        throw new ForeignKeyReferencingViolationException(operation,
+                                                          foreignKey.getReferencingTable().getName(),
+                                                          key,
+                                                          foreignKey.getConstraintName().getTableName(),
+                                                          foreignKey.getReferencedTable().getName());
+    }
+    
     protected void notReferencing(Session session, Index index, SDType storeData,
                                   RowData row, ForeignKey foreignKey, String operation) {
         String key = formatKey(session, row, foreignKey.getReferencingColumns());
@@ -535,6 +633,25 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
                                                RowData row, ForeignKey foreignKey, 
                                                boolean selfReference, ForeignKey.Action action, String operation);
     
+
+    @SuppressWarnings("unchecked")
+    protected void stillReferenced(Session session, Index index, SDType storeData,
+                                    Row row, ForeignKey foreignKey, String operation) {
+        String key;
+        if (row == null) {
+        Key foundKey = store.getKey(session, storeData);
+        key = formatKey(session, index, foundKey, foreignKey.getReferencedColumns(), foreignKey.getReferencingColumns());
+        }
+        else {
+        key = formatKey(session, row, foreignKey.getReferencedColumns());
+        }
+        throw new ForeignKeyReferencedViolationException(operation,
+                                          foreignKey.getReferencedTable().getName(),
+                                          key,
+                                          foreignKey.getConstraintName().getTableName(),
+                                          foreignKey.getReferencingTable().getName());
+    }
+    
     @SuppressWarnings("unchecked")
     protected void stillReferenced(Session session, Index index, SDType storeData,
                                    RowData row, ForeignKey foreignKey, String operation) {
@@ -554,6 +671,29 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
                                                          foreignKey.getReferencingTable().getName());
     }
 
+    protected static boolean crossReferenceKey(Session session, Key key, Row row, List<Column> columns) {
+        key.clear();
+        if (row == null) {
+            // This is the truncate case, find all non-null referencing index entries.
+            key.append(null);
+            return false;
+        }
+        boolean anyNull = false;
+
+        PersistitKeyValueTarget target = new PersistitKeyValueTarget(ConstraintHandler.class.getSimpleName());
+        target.attach(key);
+
+        for (Column column : columns) {
+            ValueSource source = row.value(column.getPosition().intValue());
+            if (source.isNull()) {
+                target.putNull();
+                anyNull = true;
+            } else {
+                source.getType().writeCanonical(source, target);
+            }
+        }
+        return anyNull;
+    }
     protected static boolean crossReferenceKey(Session session, Key key,
                                                RowData row, List<Column> columns) {
         key.clear();
@@ -592,6 +732,22 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
         return false;
     }
 
+    public static String formatKey(Session session, Row row, List<Column> columns) {
+        StringBuilder str = new StringBuilder();
+        AkibanAppender appender = AkibanAppender.of(str);
+        for (int i = 0; i < columns.size(); i++) {
+            if (i > 0) {
+                str.append(" and ");
+            }
+            Column column = columns.get(i);
+            str.append(column.getName()).append(" = ");
+            ValueSource source = row.value(column.getPosition());
+            source.getType().format(source, appender);
+        }
+        return str.toString();
+        
+    }
+    
     public static String formatKey(Session session, RowData row, List<Column> columns) {
         RowDataValueSource source = new RowDataValueSource();
         StringBuilder str = new StringBuilder();

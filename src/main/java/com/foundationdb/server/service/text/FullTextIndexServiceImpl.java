@@ -336,6 +336,11 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     //
 
     @Override
+    public void onInsertPost(Session session, Table table, Key hKey, Row row) {
+        trackChange(session, table, hKey);
+    }
+    
+    @Override
     public void onInsertPost(Session session, Table table, Key hKey, RowData row) {
         trackChange(session, table, hKey);
     }

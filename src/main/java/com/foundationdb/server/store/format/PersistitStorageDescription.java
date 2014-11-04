@@ -23,6 +23,7 @@ import com.foundationdb.ais.model.validation.AISValidationFailure;
 import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.PersistitProtobuf;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
 import com.foundationdb.server.error.RowDataCorruptionException;
 import com.foundationdb.server.rowdata.CorruptRowDataException;
@@ -32,8 +33,8 @@ import com.foundationdb.server.service.tree.TreeLink;
 import com.foundationdb.server.store.PersistitStore;
 import com.foundationdb.server.store.StoreStorageDescription;
 import com.persistit.Exchange;
-
 import com.persistit.Tree;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -120,11 +121,32 @@ public class PersistitStorageDescription extends StoreStorageDescription<Persist
         exchange.getValue().directPut(store.getRowDataValueCoder(), rowData, null);
     }
 
+    @Override 
+    public void packRow(PersistitStore store, Session session,
+                        Exchange exchange, Row row) {
+        throw new UnsupportedOperationException ();
+        //exchange.getValue().directPut(store.getRowDataValueCoder(), row, null);
+    }
+    
     @Override
     public void expandRowData(PersistitStore store, Session session,
                               Exchange exchange, RowData rowData) {
         try {
             exchange.getValue().directGet(store.getRowDataValueCoder(), rowData, RowData.class, null);
+        }
+        catch (CorruptRowDataException ex) {
+            LOG.error("Corrupt RowData at key {}: {}", exchange.getKey(), ex.getMessage());
+            throw new RowDataCorruptionException(exchange.getKey());
+        }
+    }
+    
+    @Override
+    public void expandRow (PersistitStore store, Session session,
+                            Exchange exchange, Row row) {
+
+        try {
+            throw new UnsupportedOperationException ();
+            //exchange.getValue().directGet(store.getRowDataValueCoder(), row, Row.class, null);
         }
         catch (CorruptRowDataException ex) {
             LOG.error("Corrupt RowData at key {}: {}", exchange.getKey(), ex.getMessage());

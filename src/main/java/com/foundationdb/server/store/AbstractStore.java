@@ -69,7 +69,9 @@ import com.foundationdb.server.service.listener.RowListener;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.types.service.TypesRegistryService;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.sql.optimizer.rule.PlanGenerator;
+import com.foundationdb.util.AkibanAppender;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
@@ -156,6 +158,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
 
     /** Called when a non-serializable store would need a row lock. */
     protected abstract void lock(Session session, SDType storeData, RowDef rowDef, RowData rowData);
+    protected abstract void lock(Session session, SDType storeData, Row row);
 
     /** Hook for tracking tables Session has written to. */
     protected abstract void trackTableWrite(Session session, Table table);
@@ -225,6 +228,18 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         }
     }
 
+    protected boolean hasNullIndexSegments(Row row, Index index) {
+        int nkeys = index.getKeyColumns().size();
+        IndexRowComposition indexRowComposition = index.indexRowComposition();
+        for (int i = 0; i < nkeys; i++) {
+            int fi = indexRowComposition.getFieldPosition(i);
+            if (row.value(fi).isNull()) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
     protected boolean hasNullIndexSegments(RowData rowData, Index index)
     {
         assert index.leafMostTable().rowDef().getRowDefId() == rowData.getRowDefId();
@@ -276,6 +291,23 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         return tablesRequiringHKeyMaintenance;
     }
 
+    protected String formatIndexRowString(Session session, Row row, Index index) {
+        StringBuilder sb = new StringBuilder();
+        AkibanAppender appender = AkibanAppender.of(sb);
+        sb.append('(');
+        boolean first = true;
+        for (IndexColumn iCol : index.getKeyColumns()) {
+            if(first) {
+                first = false;
+            } else {
+                sb.append(',');
+            }
+            ValueSource source = row.value(iCol.getColumn().getPosition());
+            source.getType().format(source, appender);
+        }
+        return sb.toString();
+    }
+    
     /** Build a user-friendly representation of the Index row for the given RowData. */
     protected String formatIndexRowString(Session session, RowData rowData, Index index) {
         RowDataExtractor extractor = new RowDataExtractor(rowData, getGlobalRowDef(session, rowData));
@@ -303,6 +335,26 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
             ordinals.set(ordinal, true);
         }
         return ordinals;
+    }
+
+    protected void writeRow(Session session, Row row, Collection<TableIndex> tableIndexes,
+                            BitSet tablesRequiringHKeyMaintenance,
+                            boolean propagateHKeyChanges) {
+        Group group = row.rowType().table().getGroup();
+        
+        SDType storeData = createStoreData(session, group);
+        WRITE_ROW_TAP.in();
+        try {
+            lock(session, storeData, row);
+            if(tableIndexes == null) {
+                tableIndexes = row.rowType().table().getIndexesIncludingInternal();
+            }
+            writeRowInternal(session, storeData, row, tableIndexes, tablesRequiringHKeyMaintenance, propagateHKeyChanges);
+        } finally {
+            WRITE_ROW_TAP.out();
+            releaseStoreData(session, storeData);
+        }
+        
     }
 
     protected void writeRow(Session session,
@@ -433,6 +485,28 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         writeRow(session, rowDef, rowData, tableIndexes, groupIndexes);
     }
 
+    
+    public void writeRow (Session session, Row newRow, Collection<TableIndex> tableIndexes, Collection<GroupIndex> groupIndexes) {
+        Table table = newRow.rowType().table();
+        trackTableWrite (session, table);
+        constraintHandler.handleInsert(session, table, newRow);
+        onlineHelper.handleInsert(session, table, newRow);
+        writeRow(session, newRow, tableIndexes, null, true);
+        WRITE_ROW_GI_TAP.in();
+        try {
+            maintainGroupIndexes(session,
+                                 table,
+                                 groupIndexes,
+                                 newRow, null,
+                                 StoreGIHandler.forTable(this, session, table),
+                                 StoreGIHandler.Action.STORE);
+        } finally {
+            WRITE_ROW_GI_TAP.out();
+        }
+        
+    }
+    
+    
     @Override
     public void writeRow(Session session, RowDef rowDef, RowData rowData, Collection<TableIndex> tableIndexes,
                          Collection<GroupIndex> groupIndexes) {
@@ -539,6 +613,18 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     }
 
     @Override
+    public void writeIndexRows(Session session, Table table, Row row, Collection<GroupIndex> indexes) {
+        assert (table == row.rowType().table());
+        maintainGroupIndexes(session,
+                table,
+                indexes,
+                row,
+                null,
+                StoreGIHandler.forTable(this, session, table),
+                StoreGIHandler.Action.STORE);
+        
+    }
+    @Override
     public void writeIndexRows(Session session, Table table, RowData rowData, Collection<GroupIndex> indexes) {
         assert (table.getTableId() == rowData.getRowDefId());
         maintainGroupIndexes(session,
@@ -548,6 +634,19 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                              null,
                              StoreGIHandler.forTable(this, session, table),
                              StoreGIHandler.Action.STORE);
+    }
+
+    @Override
+    public void deleteIndexRows(Session session, Table table, Row row, Collection<GroupIndex> indexes) {
+        assert (table == row.rowType().table());
+        maintainGroupIndexes(session,
+                table,
+                indexes,
+                row,
+                null,
+                StoreGIHandler.forTable(this, session, table),
+                StoreGIHandler.Action.DELETE);
+        
     }
 
     @Override
@@ -666,11 +765,20 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
 
     /** Pack row data according to storage format. */
     @SuppressWarnings("unchecked")
+    public void packRow(Session session, SDType storeData, Row row) {
+        getStorageDescription(storeData).packRow((SType)this, session, storeData, row);
+    }
+    
+    @SuppressWarnings("unchecked")
     public void packRowData(Session session, SDType storeData, RowData rowData) {
         getStorageDescription(storeData).packRowData((SType)this, session, storeData, rowData);
     }
 
     /** Expand row data according to storage format. */
+    @SuppressWarnings("unchecked")
+    public void expandRow (Session session, SDType storeData, Row row) {
+        getStorageDescription(storeData).expandRow((SType)this, session, storeData, row);
+    }
     @SuppressWarnings("unchecked")
     public void expandRowData(Session session, SDType storeData, RowData rowData) {
         getStorageDescription(storeData).expandRowData((SType)this, session, storeData, rowData);
@@ -690,6 +798,76 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     // Internal
     //
 
+    private void writeRowInternal(Session session,
+                                SDType storeData,
+                                Row row,
+                                Collection<TableIndex> indexes,
+                                BitSet tablesRequiringHKeyMaintenance,
+                                boolean propagateHKeyChanges) {
+        Key hKey = getKey(session, storeData);
+        
+        assert row.rowType().hasTable() : "Writing a row with no table - not allowed";
+        // TODO: Is it very unlikely the HKey for the row has been built successfully at this point
+        // Verify the HKey for the row has been constructed at this point. 
+        assert row.hKey() != null : "No HKey for row being written";
+        row.hKey().copyTo(hKey);
+        //constructHKey(session, row, hKey);
+        packRow(session, storeData, row);
+        store(session, storeData);
+        
+        // TODO: The AutoIncrement support in SQL Layer is unsupported and unused
+        // But still remnants still exist - Remove this assert when the last finally 
+        // gets purged. 
+        assert row.rowType().table().getAutoIncrementColumn() == null; 
+
+        boolean bumpCount = false;
+        WriteIndexRow indexRow = new WriteIndexRow(this);
+        for(TableIndex index : indexes) {
+            long zValue = -1;
+            SpatialColumnHandler spatialColumnHandler = null;
+            if (index.isSpatial()) {
+                spatialColumnHandler = new SpatialColumnHandler(index);
+                zValue = spatialColumnHandler.zValue(row);
+            }
+            writeIndexRow(session, index, row, hKey, indexRow, spatialColumnHandler, zValue, false);
+            // Only bump row count if PK row is written (may not be written during an ALTER)
+            // Bump row count *after* uniqueness checks. Avoids drift of TableStatus#getApproximateRowCount. See bug1112940.
+            bumpCount |= index.isPrimaryKey();
+        }
+        if(bumpCount) {
+            row.rowType().table().rowDef().getTableStatus().rowsWritten(session, 1);
+        }
+
+        for(RowListener listener : listenerService.getRowListeners()) {
+            listener.onInsertPost(session, row.rowType().table(), hKey, row);
+        }
+        if(propagateHKeyChanges && row.rowType().table().hasChildren()) {
+            /*
+             * Row being inserted might be the parent of orphan rows already present.
+             * The hKeys of these orphan rows need to be maintained. The ones of interest
+             * contain the PK from the inserted row, and nulls for other hKey fields nearer the root.
+             */
+            hKey.clear();
+            Table table = row.rowType().table();
+            PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKey, table.getName());
+            List<Column> pkColumns = table.getPrimaryKeyIncludingInternal().getColumns();
+            for(HKeySegment segment : table.hKey().segments()) {
+                RowDef segmentRowDef = segment.table().rowDef();
+                hKey.append(segmentRowDef.table().getOrdinal());
+                for(HKeyColumn hKeyColumn : segment.columns()) {
+                    Column column = hKeyColumn.column();
+                    if(pkColumns.contains(column)) {
+                        hKeyAppender.append(row.value(column.getPosition()), column);
+                    } else {
+                        hKey.append(null);
+                    }
+                }
+            }
+            propagateDownGroup(session, row.rowType().table().getAIS(), storeData, tablesRequiringHKeyMaintenance, indexRow, false);
+        }
+
+    }
+    
     private void writeRowInternal(Session session,
                                   SDType storeData,
                                   RowDef rowDef,
@@ -976,6 +1154,47 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         }
     }
 
+    private void maintainGroupIndexes(Session session,
+            Table table,
+            Collection<GroupIndex> groupIndexes,
+            Row row,
+            BitSet columnDifferences,
+            StoreGIHandler handler,
+            StoreGIHandler.Action action) {
+        if(canSkipGIMaintenance(table)) {
+            return;
+        }
+        if(groupIndexes == null) {
+            groupIndexes = table.getGroupIndexes();
+        }
+        SDType storeData = createStoreData(session, table.getGroup());
+        try {
+            Key hKey = getKey(session, storeData);
+            // TODO: Is it very unlikely the HKey for the row has been built successfully at this point
+            // Verify the HKey for the row has been constructed at this point. 
+            assert row.hKey() != null : "No HKey for row being written";
+            row.hKey().copyTo(hKey);
+
+            StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(table.getAIS()));
+            HKey persistitHKey = adapter.getKeyCreator().newHKey(table.hKey());
+            persistitHKey.copyFrom(hKey);
+
+            for(GroupIndex groupIndex : groupIndexes) {
+                if(columnDifferences == null || groupIndex.columnsOverlap(table, columnDifferences)) {
+                    StoreGIMaintenance plan = StoreGIMaintenancePlans
+                            .forAis(table.getAIS())
+                            .forRowType(groupIndex, adapter.schema().tableRowType(table));
+                    plan.run(action, persistitHKey, row, adapter, handler);
+                } else {
+                    SKIP_GI_MAINTENANCE.hit();
+                }
+            }
+        } finally {
+            releaseStoreData(session, storeData);
+        }
+        
+    }
+    
     private void maintainGroupIndexes(Session session,
                                       Table table,
                                       Collection<GroupIndex> groupIndexes,

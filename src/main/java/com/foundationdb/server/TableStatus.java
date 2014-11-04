@@ -17,6 +17,7 @@
 
 package com.foundationdb.server;
 
+import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
 
@@ -40,6 +41,7 @@ public interface TableStatus {
 
     /** Set the RowDef of a given table.*/
     void setRowDef(RowDef rowDef);
+    void setIndex (TableIndex pkTableIndex);
 
     /**
      * @return Current auto-increment value of the associated table.

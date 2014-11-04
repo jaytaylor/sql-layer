@@ -18,6 +18,7 @@
 package com.foundationdb.server.service.listener;
 
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.session.Session;
 import com.persistit.Key;
@@ -26,6 +27,7 @@ public interface RowListener
 {
     /** Called <i>after</i> group row and table indexes are written. */
     void onInsertPost(Session session, Table table, Key hKey, RowData row);
+    void onInsertPost(Session session, Table table, Key hKey, Row row);
 
     /** Called <i>before</i> group row or table indexes are modified. */
     void onUpdatePre(Session session, Table table, Key hKey, RowData oldRow, RowData newRow);
