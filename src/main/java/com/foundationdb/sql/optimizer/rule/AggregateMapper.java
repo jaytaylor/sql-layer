@@ -47,7 +47,13 @@ public class AggregateMapper extends BaseRule
 
     @Override
     public void apply(PlanContext plan) {
-        List<AggregateSourceState> sources = new AggregateSourceFinder(plan).find();
+        AggregateSourceFinder aggregateSourceFinder = new AggregateSourceFinder(plan);
+        List<AggregateSourceState> sources = aggregateSourceFinder.find();
+        List<AggregateFunctionExpression> functions = aggregateSourceFinder.getFunctions();
+        if (sources.isEmpty() && !functions.isEmpty()) {
+            throw new UnsupportedSQLException("Aggregate not allowed in WHERE",
+                                              functions.get(0).getSQLsource());
+        }
         for (AggregateSourceState source : sources) {
             Mapper m = new Mapper((SchemaRulesContext)plan.getRulesContext(), source.aggregateSource, source.containingQuery);
             m.remap(source.aggregateSource);
@@ -83,13 +89,6 @@ public class AggregateMapper extends BaseRule
             return this;
         }
 
-        public boolean isThisIt(AggregateSource source) {
-            if (this.source == source) {
-                return true;
-            }
-            return false;
-        }
-
         public AggregateSource getSource() {
             return source;
         }
@@ -97,6 +96,7 @@ public class AggregateMapper extends BaseRule
 
     static class AggregateSourceFinder extends SubqueryBoundTablesTracker {
         List<AggregateSourceState> result = new ArrayList<>();
+        List<AggregateFunctionExpression> functions = new ArrayList<>();
 
         public AggregateSourceFinder(PlanContext planContext) {
             super(planContext);
@@ -107,11 +107,22 @@ public class AggregateMapper extends BaseRule
             return result;
         }
 
+        public List<AggregateFunctionExpression> getFunctions() {
+            return functions;
+        }
+
         @Override
         public boolean visit(PlanNode n) {
             super.visit(n);
             if (n instanceof AggregateSource)
                 result.add(new AggregateSourceState((AggregateSource)n, currentQuery()));
+            return true;
+        }
+
+        @Override
+        public boolean visit(ExpressionNode n) {
+            if (n instanceof AggregateFunctionExpression)
+                functions.add((AggregateFunctionExpression)n);
             return true;
         }
     }
