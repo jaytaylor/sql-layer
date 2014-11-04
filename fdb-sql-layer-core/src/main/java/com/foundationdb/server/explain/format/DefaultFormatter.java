@@ -273,6 +273,9 @@ public class DefaultFormatter
         case UNION:
             appendUnionOperator(name, atts);
             break;
+        case EXCEPT:
+            appendExceptOperator(name, atts);
+            break;
         case BUFFER_OPERATOR:
             appendBufferOperator(name, atts);
             break;
@@ -811,6 +814,15 @@ public class DefaultFormatter
     }
 
     protected void appendUnionOperator(String name, Attributes atts) {
+        if ((levelOfDetail == LevelOfDetail.VERBOSE_WITHOUT_COST) ||
+                (levelOfDetail == LevelOfDetail.VERBOSE)) {
+            if((Boolean)atts.getValue(Label.PIPELINE)){
+                sb.append("Pipelining");
+            }
+        }
+    }
+
+    protected void appendExceptOperator(String name, Attributes atts) {
         if ((levelOfDetail == LevelOfDetail.VERBOSE_WITHOUT_COST) ||
                 (levelOfDetail == LevelOfDetail.VERBOSE)) {
             if((Boolean)atts.getValue(Label.PIPELINE)){
