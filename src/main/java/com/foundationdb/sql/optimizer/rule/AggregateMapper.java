@@ -47,20 +47,23 @@ public class AggregateMapper extends BaseRule
 
     @Override
     public void apply(PlanContext plan) {
-        AggregateSourceFinder aggregateSourceFinder = new AggregateSourceFinder(plan);
+        AggregateSourceAndFunctionFinder aggregateSourceFinder = new AggregateSourceAndFunctionFinder(plan);
         List<AggregateSourceState> sources = aggregateSourceFinder.find();
         List<AggregateFunctionExpression> functions = aggregateSourceFinder.getFunctions();
         if (sources.isEmpty() && !functions.isEmpty()) {
             throw new UnsupportedSQLException("Aggregate not allowed in WHERE",
                                               functions.get(0).getSQLsource());
         }
+
+        // do a first pass to find the best AggregateSource for each AggregateFunctionExpression
         for (AggregateSourceState source : sources) {
             Mapper m = new Mapper((SchemaRulesContext)plan.getRulesContext(), source.aggregateSource, source.containingQuery);
             m.remap(source.aggregateSource);
         }
+        // then actually add the AggregateFunctionExpressions to the corresponding AggregateSource
         for (AggregateSourceState source : sources) {
-            Mapper2 m2 = new Mapper2();
-            m2.remap(source.aggregateSource);
+            AddAggregates addAggregates = new AddAggregates();
+            addAggregates.apply(source.aggregateSource);
         }
     }
 
@@ -107,7 +110,6 @@ public class AggregateMapper extends BaseRule
 
     static class AggregateSourceFinder extends SubqueryBoundTablesTracker {
         List<AggregateSourceState> result = new ArrayList<>();
-        List<AggregateFunctionExpression> functions = new ArrayList<>();
 
         public AggregateSourceFinder(PlanContext planContext) {
             super(planContext);
@@ -118,10 +120,6 @@ public class AggregateMapper extends BaseRule
             return result;
         }
 
-        public List<AggregateFunctionExpression> getFunctions() {
-            return functions;
-        }
-
         @Override
         public boolean visit(PlanNode n) {
             super.visit(n);
@@ -130,12 +128,25 @@ public class AggregateMapper extends BaseRule
             return true;
         }
 
+    }
+
+    static class AggregateSourceAndFunctionFinder extends AggregateSourceFinder {
+        List<AggregateFunctionExpression> functions = new ArrayList<>();
+
+        public AggregateSourceAndFunctionFinder(PlanContext planContext) {
+            super(planContext);
+        }
+
         @Override
         public boolean visit(ExpressionNode n) {
             super.visit(n);
             if (n instanceof AggregateFunctionExpression)
                 functions.add((AggregateFunctionExpression)n);
             return true;
+        }
+
+        public List<AggregateFunctionExpression> getFunctions() {
+            return functions;
         }
     }
 
@@ -402,9 +413,9 @@ public class AggregateMapper extends BaseRule
         }
     }
 
-    static class Mapper2 implements ExpressionRewriteVisitor, PlanVisitor {
+    static class AddAggregates implements ExpressionRewriteVisitor, PlanVisitor {
 
-        public void remap(PlanNode n) {
+        public void apply(PlanNode n) {
             while (true) {
                 // Keep going as long as we're feeding something we understand.
                 n = n.getOutput();
