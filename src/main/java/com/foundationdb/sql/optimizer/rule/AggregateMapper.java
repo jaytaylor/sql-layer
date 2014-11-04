@@ -121,6 +121,7 @@ public class AggregateMapper extends BaseRule
 
         @Override
         public boolean visit(ExpressionNode n) {
+            super.visit(n);
             if (n instanceof AggregateFunctionExpression)
                 functions.add((AggregateFunctionExpression)n);
             return true;
