@@ -54,4 +54,14 @@
 ---
 - Statement: SELECT n1 + 1 FROM t1 EXCEPT SELECT n2 - 1 FROM t1
 - output: [[3], [5]]
+---
+- Statement: EXPLAIN SELECT 1 EXCEPT SELECT 2
+- output: [
+  ['Except_Ordered()'],
+  ['  Sort_General(Field(0) ASC, SUPPRESS DUPLICATES)'],
+  ['    Project_Default(1)'],
+  ['      ValuesScan_Default([])'],
+  ['  Sort_General(Field(0) ASC, SUPPRESS DUPLICATES)'],
+  ['    Project_Default(2)'],
+  ['      ValuesScan_Default([])']]
 ...
