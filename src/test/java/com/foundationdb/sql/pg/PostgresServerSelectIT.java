@@ -151,7 +151,7 @@ public class PostgresServerSelectIT extends PostgresServerFilesITBase
         ResultSetMetaData md = rs.getMetaData();
         for (int i = 1; i <= md.getColumnCount(); i++) {
             if (i > 1) data.append('\t');
-            data.append(md.getColumnName(i));
+            data.append(md.getColumnLabel(i));
         }
         data.append('\n');
         while (rs.next()) {
