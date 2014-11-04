@@ -66,14 +66,6 @@ public abstract class ITBase extends ApiTestBase {
         return new TestRow(type, fields);
     }
 
-    protected static Collection<? extends BindableRow> bindableRows(Row... rows) {
-        List<BindableRow> bindableRows = new ArrayList<>(rows.length);
-        for(Row r : rows) {
-            bindableRows.add(BindableRow.of(r));
-        }
-        return bindableRows;
-    }
-
     protected void compareRows(Object[][] expected, Table table) {
         Schema schema = SchemaCache.globalSchema(ais());
         TableRowType rowType = schema.tableRowType(table);
@@ -121,16 +113,6 @@ public abstract class ITBase extends ApiTestBase {
 
     protected static void compareRows(Collection<? extends Row> expected, Collection<? extends Row> actual) {
         compareRows(expected, actual, false);
-    }
-
-    protected static void compareRows(Collection<? extends Row> expected, Collection<? extends Row> actual, boolean skipInternalColumns) {
-        Iterator<? extends Row> eIt = expected.iterator();
-        Iterator<? extends Row> aIt = actual.iterator();
-        int i = 0;
-        while(eIt.hasNext() && aIt.hasNext()) {
-            compareTwoRows(eIt.next(), aIt.next(), i++, skipInternalColumns);
-        }
-        assertEquals("row count", expected.size(), actual.size());
     }
 
     protected void compareRows(Row[] expected, RowCursor cursor)
@@ -181,96 +163,6 @@ public abstract class ITBase extends ApiTestBase {
                 cursor.close();
         }
         assertEquals(expected.length, actualRows.size());
-    }
-
-    private static void compareTwoRows(Row expected, Row actual, int rowNumber) {
-        compareTwoRows(expected, actual, rowNumber, false);
-    }
-
-    private static void compareTwoRows(Row expected, Row actual, int rowNumber, boolean skipInternalColumns) {
-        if(!equal(expected, actual,skipInternalColumns)) {
-            assertEquals("row " + rowNumber, String.valueOf(expected), String.valueOf(actual));
-        }
-        if(expected instanceof TestRow) {
-            TestRow expectedTestRow = (TestRow) expected;
-            if (expectedTestRow.persistityString() != null) {
-                Object hKey = (actual != null) ? actual.hKey() : null;
-                String actualHKeyString = String.valueOf(hKey);
-                assertEquals(rowNumber + ": hkey", expectedTestRow.persistityString(), actualHKeyString);
-            }
-        }
-    }
-
-    private static boolean equal(Row expected, Row actual, boolean skipInternalColumns)
-    {
-        int nFields;
-        if(skipInternalColumns){
-            boolean equal = getTotalNonInternalColumns(expected) == getTotalNonInternalColumns(actual);
-            if (!equal)
-                return false;
-            nFields = getTotalNonInternalColumns(actual);
-        }//Used to ignore added pk column when create table as select is used
-        else {
-            boolean equal = expected.rowType().nFields() == actual.rowType().nFields();
-            if (!equal)
-                return false;
-           nFields = actual.rowType().nFields();
-        }
-        Space space = space(expected.rowType());
-        if (space != null) {
-            nFields = nFields - space.dimensions() + 1;
-        }
-        for (int actualPosition = 0, expectedPosition = 0;
-                        actualPosition < nFields && expectedPosition < nFields;
-                        actualPosition++, expectedPosition++) {
-            if(skipInternalColumns) {
-                while (isInternalColumn(actual, actualPosition)) {
-                    if(++actualPosition == nFields)
-                        return true;
-                }
-                while (isInternalColumn(expected, actualPosition)) {
-                    if(++expectedPosition == nFields)
-                        return true;
-                }
-            }
-            ValueSource expectedField = expected.value(expectedPosition);
-            ValueSource actualField = actual.value(actualPosition);
-            TInstance expectedType = expected.rowType().typeAt(expectedPosition);
-            TInstance actualType = actual.rowType().typeAt(actualPosition);
-            assertTrue(expectedType + " != " + actualType, expectedType.equalsExcludingNullable(actualType));
-            int c = TClass.compare(expectedType, expectedField, actualType, actualField);
-            if (c != 0)
-                return false;
-        }
-        return true;
-    }
-
-    private static int getTotalNonInternalColumns(Row row){
-        int count = 0;
-        for(int i = 0; i < row.rowType().nFields();i++){
-            if(!isInternalColumn(row, i))
-                count++;
-        }
-        return count;
-    }
-
-    private static boolean isInternalColumn(Row row, int position){
-        if(row.rowType().hasTable()){
-            return row.rowType().table().getColumnsIncludingInternal().get(position).isInternalColumn();
-        }
-        return false;
-    }
-
-    private static Space space(RowType rowType)
-    {
-        Space space = null;
-        if (rowType instanceof IndexRowType) {
-            Index index = ((IndexRowType)rowType).index();
-            if (index.isSpatial()) {
-                space = index.space();
-            }
-        }
-        return space;
     }
 
     public void lookForDanglingStorage() throws Exception {

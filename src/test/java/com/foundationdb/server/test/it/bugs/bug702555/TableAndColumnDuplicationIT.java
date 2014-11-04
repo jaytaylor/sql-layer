@@ -61,27 +61,27 @@ public final class TableAndColumnDuplicationIT extends ITBase {
                 createTable("schema2","table1", "name varchar(32) not null primary key");
 
         writeRows(
-                createNewRow(schema1Table, 0),
-                createNewRow(schema1Table, 1),
-                createNewRow(schema1Table, 2)
+                row(schema1Table, 0),
+                row(schema1Table, 1),
+                row(schema1Table, 2)
         );
 
         writeRows(
-                createNewRow(schema2Table, "first row"),
-                createNewRow(schema2Table, "second row"),
-                createNewRow(schema2Table, "third row")
+                row(schema2Table, "first row"),
+                row(schema2Table, "second row"),
+                row(schema2Table, "third row")
         );
 
-        expectFullRows(schema1Table,
-                createNewRow(schema1Table, 0),
-                createNewRow(schema1Table, 1),
-                createNewRow(schema1Table, 2)
+        expectRows(schema1Table,
+                row(schema1Table, 0),
+                row(schema1Table, 1),
+                row(schema1Table, 2)
         );
         
-        expectFullRows(schema2Table,
-                createNewRow(schema2Table, "first row"),
-                createNewRow(schema2Table, "second row"),
-                createNewRow(schema2Table, "third row")
+        expectRows(schema2Table,
+                row(schema2Table, "first row"),
+                row(schema2Table, "second row"),
+                row(schema2Table, "third row")
         );
     }
 
@@ -94,27 +94,27 @@ public final class TableAndColumnDuplicationIT extends ITBase {
                 createTable("schema2", schema2TableName, schema2TableKeyCol + " int not null primary key, name varchar(32)");
 
         writeRows(
-                createNewRow(schema1Table, 0, "alpha-0"),
-                createNewRow(schema1Table, 1, "alpha-1"),
-                createNewRow(schema1Table, 2, "alpha-1")
+                row(schema1Table, 0, "alpha-0"),
+                row(schema1Table, 1, "alpha-1"),
+                row(schema1Table, 2, "alpha-1")
         );
 
         writeRows(
-                createNewRow(schema2Table, 0, "bravo-0"),
-                createNewRow(schema2Table, 1, "bravo-1"),
-                createNewRow(schema2Table, 2, "bravo-1")
+                row(schema2Table, 0, "bravo-0"),
+                row(schema2Table, 1, "bravo-1"),
+                row(schema2Table, 2, "bravo-1")
         );
 
-        expectFullRows( schema1Table,
-                createNewRow(schema1Table, 0, "alpha-0"),
-                createNewRow(schema1Table, 1, "alpha-1"),
-                createNewRow(schema1Table, 2, "alpha-1")
+        expectRows( schema1Table,
+                row(schema1Table, 0, "alpha-0"),
+                row(schema1Table, 1, "alpha-1"),
+                row(schema1Table, 2, "alpha-1")
         );
 
-        expectFullRows( schema2Table,
-                createNewRow(schema2Table, 0, "bravo-0"),
-                createNewRow(schema2Table, 1, "bravo-1"),
-                createNewRow(schema2Table, 2, "bravo-1")
+        expectRows( schema2Table,
+                row(schema2Table, 0, "bravo-0"),
+                row(schema2Table, 1, "bravo-1"),
+                row(schema2Table, 2, "bravo-1")
         );
     }
 }

@@ -90,12 +90,12 @@ public class PartialCascadeHKeyIT extends OperatorITBase
 
     private void loadDatabase()
     {
-        db = new NewRow[] {
-            createNewRow(w, 1L),
-            createNewRow(d, 1L, 11L),
-            createNewRow(c, 1L, 11L, 111L),
-            createNewRow(o, 1L, 11L, 111L, 1111L),
-            createNewRow(i, 1L, 11L, 1111L, 11111L),
+        db = new Row[] {
+            row(w, 1L),
+            row(d, 1L, 11L),
+            row(c, 1L, 11L, 111L),
+            row(o, 1L, 11L, 111L, 1111L),
+            row(i, 1L, 11L, 1111L, 11111L),
         };
         use(db);
     }

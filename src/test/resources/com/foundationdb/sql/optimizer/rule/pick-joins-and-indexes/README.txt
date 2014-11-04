@@ -160,6 +160,8 @@ keys-2a: primary and foreign key of non-root
 
 keys-3: all keys including those not present
 
+keys-subquery: primary key from subselect
+
 update-covering-1: Update needs whole row.
 
 update-covering-2: Update with subquery on same table does not.

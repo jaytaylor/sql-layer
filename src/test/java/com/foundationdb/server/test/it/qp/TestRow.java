@@ -23,6 +23,8 @@ import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.types.value.ValueSource;
 
+import java.util.Arrays;
+
 public class TestRow extends AbstractRow
 {
     // Row interface
@@ -68,6 +70,7 @@ public class TestRow extends AbstractRow
     public String persistityString() {
         return hKeyString;
     }
+
 
     // Object state
 

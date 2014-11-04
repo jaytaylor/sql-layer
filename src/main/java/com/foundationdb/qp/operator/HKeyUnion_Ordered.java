@@ -18,12 +18,10 @@
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.HKey;
-import com.foundationdb.qp.row.HKeyRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.HKeyRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.TableRowType;
-import com.foundationdb.qp.util.HKeyCache;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.util.ArgumentValidation;
@@ -247,8 +245,7 @@ class HKeyUnion_Ordered extends Operator
                         setIdle();
                     } else if (previousHKey == null || !previousHKey.prefixOf(nextRow.hKey())) {
                         HKey nextHKey = outputHKey(nextRow);
-                        HKeyCache<HKey> hKeyCache = new HKeyCache<>(adapter);
-                        nextRow = new HKeyRow(outputHKeyRowType, nextHKey, hKeyCache);
+                        nextRow = (Row) nextHKey;
                         previousHKey = nextHKey;
                     } else {
                         nextRow = null;
@@ -287,7 +284,6 @@ class HKeyUnion_Ordered extends Operator
         Execution(QueryContext context, QueryBindingsCursor bindingsCursor)
         {
             super(context, bindingsCursor);
-            adapter = context.getStore();
         }
         
         // For use by this class
@@ -337,7 +333,6 @@ class HKeyUnion_Ordered extends Operator
 
         private Row leftRow;
         private Row rightRow;
-        private final StoreAdapter adapter;
         private HKey previousHKey;
     }
 

@@ -109,12 +109,12 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
                     long pid = 0;
                     long cid = 0;
                     for (int c = 0; c < grandparents; c++) {
-                        dml().writeRow(session(), createNewRow(grandparent, gid, gid));
+                        writeRow(grandparent, gid, gid);
                         for (int o = 0; o < parentsPerGrandparent; o++) {
-                            dml().writeRow(session(), createNewRow(parent, pid, gid, pid));
+                            writeRow(parent, pid, gid, pid);
                             for (int i = 0; i < childrenPerParent; i++) {
-                                dml().writeRow(session(), createNewRow(child1, cid, pid, cid));
-                                dml().writeRow(session(), createNewRow(child2, cid, pid, cid));
+                                writeRow(child1, cid, pid, cid);
+                                writeRow(child2, cid, pid, cid);
                                 cid++;
                             }
                             pid++;

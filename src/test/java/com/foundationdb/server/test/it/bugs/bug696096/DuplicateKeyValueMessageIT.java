@@ -19,6 +19,7 @@ package com.foundationdb.server.test.it.bugs.bug696096;
 
 import java.text.MessageFormat;
 
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.ErrorCode;
@@ -45,16 +46,16 @@ public final class DuplicateKeyValueMessageIT extends ITBase {
                 "CONSTRAINT my_key UNIQUE(c3)"
         );
         writeRows(
-                createNewRow(tableId, 10, 11, 12, 13, "from setup"),
-                createNewRow(tableId, 20, 21, 22, 23, "from setup")
+                row(tableId, 10, 11, 12, 13, "from setup"),
+                row(tableId, 20, 21, 22, 23, "from setup")
         );
     }
 
     @After
     public void tearDown() throws InvalidOperationException {
-        expectFullRows(tableId,
-                createNewRow(tableId, 10, 11, 12, 13, "from setup"),
-                createNewRow(tableId, 20, 21, 22, 23, "from setup")
+        expectRows(tableId,
+                row(tableId, 10, 11, 12, 13, "from setup"),
+                row(tableId, 20, 21, 22, 23, "from setup")
         );
     }
 
@@ -115,7 +116,7 @@ public final class DuplicateKeyValueMessageIT extends ITBase {
 
     private void duplicateOnWrite(String indexName, int c0, int c1, int c2, int c3) {
         try {
-            writeRows(createNewRow(tableId, c0, c1, c2, c3, "from write"));
+            writeRows(row(tableId, c0, c1, c2, c3, "from write"));
         } catch (DuplicateKeyException e) {
             dupMessageValid(e, indexName);
             return;
@@ -127,9 +128,9 @@ public final class DuplicateKeyValueMessageIT extends ITBase {
     
     private void duplicateOnUpdate(String indexName, int c0, int c1, int c2, int c3) {
         try {
-            NewRow oldRow = createNewRow(tableId, 20, 21, 22, 23, "from setup");
-            NewRow newRow = createNewRow(tableId, c0, c1, c2, c3, "from update");
-            dml().updateRow(session(), oldRow, newRow, null);
+            Row oldRow = row(tableId, 20, 21, 22, 23, "from setup");
+            Row newRow = row(tableId, c0, c1, c2, c3, "from update");
+            updateRow(oldRow, newRow);
         } catch (DuplicateKeyException e) {
             dupMessageValid(e, indexName);
             return;

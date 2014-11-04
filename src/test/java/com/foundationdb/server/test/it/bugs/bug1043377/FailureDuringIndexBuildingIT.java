@@ -57,9 +57,9 @@ public final class FailureDuringIndexBuildingIT extends ITBase implements TableL
         final String INDEX = "lat_lon";
         int tid = createTable(SCHEMA, TABLE, "userID int not null primary key, lat decimal(11,7), lon decimal(11,7)");
         writeRows(
-                createNewRow(tid, 1L, "20.5", "11.0"),
-                createNewRow(tid, 2L, "90.0", "90.0"),
-                createNewRow(tid, 3L, "60.2", "5.34")
+                row(tid, 1L, "20.5", "11.0"),
+                row(tid, 2L, "90.0", "90.0"),
+                row(tid, 3L, "60.2", "5.34")
         );
 
         try {

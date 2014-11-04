@@ -20,6 +20,7 @@ package com.foundationdb.server.test.it.qp;
 import java.util.Arrays;
 import java.lang.Long;
 import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.server.types.value.ValueSources;
 import org.junit.Test;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.expression.IndexKeyRange;
@@ -28,7 +29,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -88,16 +88,16 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
         schema = new Schema(ais());
         tRowType = schema.tableRowType(table(t));
         idxRowType = indexType(t, "a", "b", "c");
-        db = new NewRow[] {
-            createNewRow(t, 0L, 1010L, 1L, 11L, 110L),
-            createNewRow(t, 1L, 1011L, 1L, 13L, 130L),
-            createNewRow(t, 2L, 1012L, 1L, (Long)null, 132L),
-            createNewRow(t, 2L, 1013L, 1L, (Long)null, 132L),
-            createNewRow(t, 3L, 1013L, 1L, (Long)null, 132L),
-            createNewRow(t, 4L, 1014L, 1L, 13L, 133L),
-            createNewRow(t, 5L, 1015L, 1L, 13L, 134L),
-            createNewRow(t, 6L, 1016L, 1L, null, 122L),
-            createNewRow(t, 7L, 1017L, 1L, 14L, 142L),
+        db = new Row[] {
+            row(t, 0L, 1010L, 1L, 11L, 110L),
+            row(t, 1L, 1011L, 1L, 13L, 130L),
+            row(t, 2L, 1012L, 1L, (Long)null, 132L),
+            row(t, 2L, 1013L, 1L, (Long)null, 132L),
+            row(t, 3L, 1013L, 1L, (Long)null, 132L),
+            row(t, 4L, 1014L, 1L, 13L, 133L),
+            row(t, 5L, 1015L, 1L, 13L, 134L),
+            row(t, 6L, 1016L, 1L, null, 122L),
+            row(t, 7L, 1017L, 1L, 14L, 142L),
 //            createNewRow(t, 1018L, 1L, 30L, 201L),
 //            createNewRow(t, 1019L, 1L, 30L, null),
 //            createNewRow(t, 1020L, 1L, 30L, null),
@@ -109,16 +109,16 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         use(db);
-        for (NewRow row : db)
+        for (Row row : db)
         {
-            indexRowWithIdMap.put(id((Long)row.get(0), (Long)row.get(1)),
+            indexRowWithIdMap.put(id(ValueSources.getLong(row.value(0)), ValueSources.getLong(row.value(1))),
                                   new TestRow(tRowType,
-                                              new Object[]{row.get(2),  // a
-                                                           row.get(3),  // b
-                                                           row.get(4),  // c
-                                                           row.get(0),  // id1
-                                                           row.get(1)   // id2
-                                              }));
+                                              ValueSources.toObject(row.value(2)),  // a
+                                              ValueSources.toObject(row.value(3)),  // b
+                                              ValueSources.toObject(row.value(4)),  // c
+                                              ValueSources.toObject(row.value(0)),  // id1
+                                              ValueSources.toObject(row.value(1))   // id2
+                                  ));
         }
     }
 

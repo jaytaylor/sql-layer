@@ -106,6 +106,8 @@ import com.fasterxml.jackson.databind.JsonNode;
  * @author peter
  */
 @Ignore                         // Presently no scripts.
+// Since there are no scripts and this test is ignored, when you re-enable it you may run into csrf protection issues
+// take a look at RestServiceFilesIT for an idea for how to fix them
 @RunWith(NamedParameterizedRunner.class)
 public class RestServiceScriptsIT extends ITBase {
 
@@ -162,6 +164,7 @@ public class RestServiceScriptsIT extends ITBase {
     protected Map<String,String> startupConfigProperties() {
         Map<String,String> config = new HashMap<>(super.startupConfigProperties());
         config.put("fdbsql.rest.resource", "entity,fulltext,model,procedurecall,sql,security,version,direct,view");
+        config.put("fdbsql.http.csrf_protection.allowed_referers", "https://somewhere.com");
         return config;
     }
 
@@ -217,6 +220,7 @@ public class RestServiceScriptsIT extends ITBase {
     private static void postContents(HttpExchange httpConn, byte[] request) throws IOException {
         httpConn.setRequestContentType("application/json");
         httpConn.setRequestHeader("Accept", "application/json");
+        httpConn.setRequestHeader("Referer", "https://somewhere.com");
         httpConn.setRequestContentSource(new ByteArrayInputStream(request));
     }
 

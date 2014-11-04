@@ -19,6 +19,7 @@ package com.foundationdb.server.test.it.dxl;
 
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.DuplicateTableNameException;
 import com.foundationdb.server.error.NoSuchTableException;
@@ -60,44 +61,44 @@ public class RenameTableIT extends ITBase {
 
     private int writeCRows() {
         int cid = tableId(SCHEMA, C_NAME);
-        return writeRows(createNewRow(cid, 1L),
-                         createNewRow(cid, 2L),  // no As, Os
-                         createNewRow(cid, 3L),  // no Os
-                         createNewRow(cid, 5L));
+        return writeRows(row(cid, 1L),
+                         row(cid, 2L),  // no As, Os
+                         row(cid, 3L),  // no Os
+                         row(cid, 5L)).size();
     }
 
     private int writeARows() {
         int aid = tableId(SCHEMA, A_NAME);
-        return writeRows(createNewRow(aid, 1L, 1L),
-                         createNewRow(aid, 2L, 3L),
-                         createNewRow(aid, 3L, 4L), // orphan
-                         createNewRow(aid, 5L, 5L));
+        return writeRows(row(aid, 1L, 1L),
+                         row(aid, 2L, 3L),
+                         row(aid, 3L, 4L), // orphan
+                         row(aid, 5L, 5L)).size();
     }
 
     private int writeORows() {
         int oid = tableId(SCHEMA, O_NAME);
-        return writeRows(createNewRow(oid, 1L, 1L),
-                         createNewRow(oid, 2L, 1L), // no Is
-                         createNewRow(oid, 3L, 2L),
-                         createNewRow(oid, 4L, 2L),
-                         createNewRow(oid, 5L, 4L), // orphan
-                         createNewRow(oid, 6L, 4L), // orphan
-                         createNewRow(oid, 9L, 5L));
+        return writeRows(row(oid, 1L, 1L),
+                         row(oid, 2L, 1L), // no Is
+                         row(oid, 3L, 2L),
+                         row(oid, 4L, 2L),
+                         row(oid, 5L, 4L), // orphan
+                         row(oid, 6L, 4L), // orphan
+                         row(oid, 9L, 5L)).size();
     }
 
     private int writeIRows() {
         int iid = tableId(SCHEMA, I_NAME);
-        return writeRows(createNewRow(iid, 1L, 1L),
-                         createNewRow(iid, 2L, 1L),
-                         createNewRow(iid, 3L, 3L),
-                         createNewRow(iid, 4L, 3L),
-                         createNewRow(iid, 5L, 4L),
-                         createNewRow(iid, 6L, 5L),
-                         createNewRow(iid, 7L, 6L),
-                         createNewRow(iid, 8L, 6L),
-                         createNewRow(iid, 9L, 7L), // orphan
-                         createNewRow(iid, 10L, 7L), // orphan
-                         createNewRow(iid, 11L, 9L));
+        return writeRows(row(iid, 1L, 1L),
+                         row(iid, 2L, 1L),
+                         row(iid, 3L, 3L),
+                         row(iid, 4L, 3L),
+                         row(iid, 5L, 4L),
+                         row(iid, 6L, 5L),
+                         row(iid, 7L, 6L),
+                         row(iid, 8L, 6L),
+                         row(iid, 9L, 7L), // orphan
+                         row(iid, 10L, 7L), // orphan
+                         row(iid, 11L, 9L)).size();
 
     }
     
@@ -116,13 +117,10 @@ public class RenameTableIT extends ITBase {
     }
 
     private void expectStatusAndScanCount(String schemaName, String tableName, long rowCount) {
-        updateAISGeneration();
         int id = tableId(schemaName, tableName);
         expectRowCount(id, rowCount);
-        List<RowData> rows = scanFull(scanAllRequest(id));
-        if(rowCount != rows.size()) {
-            assertEquals("Scan rows: " + rows, rowCount, rows.size());
-        }
+        List<Row> rows = scanAll(id);
+        assertEquals("Scan rows: " + rows, rowCount, rows.size());
     }
 
 
@@ -305,26 +303,25 @@ public class RenameTableIT extends ITBase {
 
         int initialTid = createTable(NAME1, COL_DEFS);
         writeRows(
-                createNewRow(initialTid, 1),
-                createNewRow(initialTid, 2),
-                createNewRow(initialTid, 3)
+                row(initialTid, 1),
+                row(initialTid, 2),
+                row(initialTid, 3)
         );
 
         for(int i = 1; i <= LOOPS; ++i) {
             // Create new table, copy old table from a pk scan
             int tid2 = createTable(NAME2, COL_DEFS);
-            List<NewRow> pkRows = scanAllIndex(getTable(tableId(NAME1)).getPrimaryKeyIncludingInternal().getIndex());
+            List<Row> pkRows = scanAllIndex(getTable(tableId(NAME1)).getPrimaryKeyIncludingInternal().getIndex());
             assertEquals("Row scanned from original on loop "+i, 3, pkRows.size());
-            for(NewRow row : pkRows) {
-                writeRow(tid2, row.get(0));
+            for(Row row : pkRows) {
+                writeRow(tid2, row.value(0).getInt64());
             }
             // Rename both
             ddl().renameTable(session(), NAME1, NAME3);
             ddl().renameTable(session(), NAME2, NAME1);
             ddl().dropTable(session(), NAME3);
-            updateAISGeneration();
             // Confirm
-            List<NewRow> newTableRows = scanAll(scanAllRequest(tableId(NAME1)));
+            List<Row> newTableRows = scanAll(tableId(NAME1));
             assertEquals("Rows scanned after renames and drop on loop "+i, 3, newTableRows.size());
         }
     }

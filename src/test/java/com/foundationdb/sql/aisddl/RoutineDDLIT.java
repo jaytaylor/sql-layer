@@ -44,7 +44,6 @@ public class RoutineDDLIT extends AISDDLITBase {
         AISBuilder builder = new AISBuilder();
         builder.sqljJar(SCHEMA_NAME, "ajar", new URL("file://foo.jar"));
         ddl().createSQLJJar(session(), builder.akibanInformationSchema().getSQLJJar(SCHEMA_NAME, "ajar"));
-        updateAISGeneration();
     }
 
     @Test

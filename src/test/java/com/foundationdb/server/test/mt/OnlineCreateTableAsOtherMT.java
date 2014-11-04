@@ -43,14 +43,14 @@ public class OnlineCreateTableAsOtherMT extends OnlineCreateTableAsBase {
         fromTableRowType = SchemaCache.globalSchema(ais()).tableRowType(ftID);
         toTableRowType = SchemaCache.globalSchema(ais()).tableRowType(ttID);
 
-        writeRows(createNewRow(ftID, 1, 10),
-                createNewRow(ftID, 2, 20),
-                createNewRow(ftID, 3, 30),
-                createNewRow(ftID, 4, 40),
-                createNewRow(ttID, 1),
-                createNewRow(ttID, 2),
-                createNewRow(ttID, 3),
-                createNewRow(ttID, 4));
+        writeRows(row(ftID, 1, 10),
+                row(ftID, 2, 20),
+                row(ftID, 3, 30),
+                row(ftID, 4, 40),
+                row(ttID, 1),
+                row(ttID, 2),
+                row(ttID, 3),
+                row(ttID, 4));
 
         fromGroupRows = runPlanTxn(groupScanCreator(ftID));//runs given plan and returns output row
         toGroupRows = runPlanTxn(groupScanCreator(ttID));

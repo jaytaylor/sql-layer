@@ -79,4 +79,12 @@ public class GroupScan extends BaseScan implements TableLoader
     public Collection<? extends ConditionExpression> getConditions() {
         return null;
     }
+
+    @Override
+    public void visitComparands(ExpressionRewriteVisitor v) {
+    }
+
+    @Override
+    public void visitComparands(ExpressionVisitor v) {
+    }
 }

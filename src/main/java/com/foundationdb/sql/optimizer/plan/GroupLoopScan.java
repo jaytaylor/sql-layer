@@ -56,6 +56,14 @@ public class GroupLoopScan extends BaseScan
         return getJoinConditions();
     }
 
+    @Override
+    public void visitComparands(ExpressionRewriteVisitor v) {
+    }
+
+    @Override
+    public void visitComparands(ExpressionVisitor v) {
+    }
+
     public ColumnExpression getOutsideJoinColumn() {
         ComparisonCondition joinCondition = joinConditions.get(0);
         ColumnExpression joinColumn = (ColumnExpression)joinCondition.getLeft();

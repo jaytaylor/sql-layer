@@ -27,7 +27,6 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
 import java.util.EnumSet;
@@ -67,12 +66,12 @@ public class ParentAndChildSkipScanIT extends OperatorITBase
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
-        db = new NewRow[]{
-            createNewRow(parent, 60L, 1L),
-            createNewRow(child, 7000L, 70L, 2L),
-            createNewRow(parent, 80L, 1L),
-            createNewRow(child, 8000L, 80L, 2L),
-            createNewRow(child, 9000L, 90L, 2L),
+        db = new Row[]{
+            row(parent, 60L, 1L),
+            row(child, 7000L, 70L, 2L),
+            row(parent, 80L, 1L),
+            row(child, 8000L, 80L, 2L),
+            row(child, 9000L, 90L, 2L),
         };
         use(db);
     }

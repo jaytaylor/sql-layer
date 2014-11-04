@@ -26,7 +26,6 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.test.ExpressionGenerators;
 import com.foundationdb.server.types.texpressions.Comparison;
 import org.junit.Test;
@@ -57,15 +56,15 @@ public class UnionAll_DefaultIT extends OperatorITBase
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
-        db = new NewRow[]{
-            createNewRow(t, 1000L, 8L),
-            createNewRow(t, 1001L, 9L),
-            createNewRow(t, 1002L, 8L),
-            createNewRow(t, 1003L, 9L),
-            createNewRow(t, 1004L, 8L),
-            createNewRow(t, 1005L, 9L),
-            createNewRow(t, 1006L, 8L),
-            createNewRow(t, 1007L, 9L),
+        db = new Row[]{
+            row(t, 1000L, 8L),
+            row(t, 1001L, 9L),
+            row(t, 1002L, 8L),
+            row(t, 1003L, 9L),
+            row(t, 1004L, 8L),
+            row(t, 1005L, 9L),
+            row(t, 1006L, 8L),
+            row(t, 1007L, 9L),
         };
         use(db);
     }

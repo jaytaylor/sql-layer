@@ -18,6 +18,7 @@
 package com.foundationdb.server.test.it.pstraverse;
 
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
@@ -58,12 +59,12 @@ public abstract class KeysBase extends ITBase {
         );
 
         writeRows(
-                createNewRow(customers, 71L),
-                createNewRow(orders, 71L, 81L),
-                createNewRow(items, 71L, 81L, 91L),
-                createNewRow(items, 71L, 81L, 92L),
-                createNewRow(orders, 72L, 82L),
-                createNewRow(items, 72L, 82L, 93L)
+                row(customers, 71L),
+                row(orders, 71L, 81L),
+                row(items, 71L, 81L, 91L),
+                row(items, 71L, 81L, 92L),
+                row(orders, 72L, 82L),
+                row(items, 72L, 82L, 93L)
 
         );
     }
@@ -120,33 +121,28 @@ public abstract class KeysBase extends ITBase {
 
     @Test
     public void scanCustomers() throws InvalidOperationException {
-
-        List<NewRow> actual = scanAll(scanAllRequest(customers));
-        List<NewRow> expected = Arrays.asList(
-                createNewRow(customers, 71L)
+        expectRows(
+                customers,
+                row(customers, 71L)
         );
-        assertEquals("rows scanned", expected, actual);
     }
 
-    @Test @SuppressWarnings("unused") // invoked via JMX
+    @Test
     public void scanOrders() throws InvalidOperationException {
-
-        List<NewRow> actual = scanAll(scanAllRequest(orders));
-        List<NewRow> expected = Arrays.asList(
-                createNewRow(orders, 71L, 81L),
-                createNewRow(orders, 72L, 82L)
+        expectRows(
+                orders,
+                row(orders, 71L, 81L),
+                row(orders, 72L, 82L)
         );
-        assertEquals("rows scanned", expected, actual);
     }
 
-    @Test @SuppressWarnings("unused") // invoked via JMX
+    @Test
     public void scanItems() throws InvalidOperationException {
-        List<NewRow> actual = scanAll(scanAllRequest(items));
-        List<NewRow> expected = Arrays.asList(
-                createNewRow(items, 71L, 81L, 91L),
-                createNewRow(items, 71L, 81L, 92L),
-                createNewRow(items, 72L, 82L, 93L)
+        expectRows(
+                items,
+                row(items, 71L, 81L, 91L),
+                row(items, 71L, 81L, 92L),
+                row(items, 72L, 82L, 93L)
         );
-        assertEquals("rows scanned", expected, actual);
     }
 }

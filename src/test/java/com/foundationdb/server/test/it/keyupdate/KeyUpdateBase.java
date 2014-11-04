@@ -64,7 +64,7 @@ public abstract class KeyUpdateBase extends ITBase {
         checkInitialState();
     }
 
-    protected void assertSameFields(TestRow expected, TestRow actual) {
+    protected void assertSameFields(KeyUpdateRow expected, KeyUpdateRow actual) {
         Map<Integer,Object> expectedFields = expected.getFields();
         Map<Integer,Object> actualFields = actual.getFields();
         if (!expectedFields.equals(actualFields)) {
@@ -75,7 +75,7 @@ public abstract class KeyUpdateBase extends ITBase {
         }
     }
 
-    protected final void dbInsert(final TestRow row) throws Exception
+    protected final void dbInsert(final KeyUpdateRow row) throws Exception
     {
         transactionally(new Callable<Void>() {
             public Void call() throws Exception {
@@ -88,7 +88,7 @@ public abstract class KeyUpdateBase extends ITBase {
         });
     }
 
-    protected final void dbUpdate(final TestRow oldRow, final TestRow newRow) throws Exception
+    protected final void dbUpdate(final KeyUpdateRow oldRow, final KeyUpdateRow newRow) throws Exception
     {
         transactionally(new Callable<Void>() {
             public Void call() throws Exception {
@@ -98,7 +98,7 @@ public abstract class KeyUpdateBase extends ITBase {
         });
     }
 
-    protected final void dbDelete(final TestRow row) throws Exception
+    protected final void dbDelete(final KeyUpdateRow row) throws Exception
     {
         transactionally(new Callable<Void>() {
             public Void call() throws Exception {
@@ -204,7 +204,7 @@ public abstract class KeyUpdateBase extends ITBase {
                     TreeRecord expected = expectedIterator.next();
                     TreeRecord actual = actualIterator.next();
                     assertEquals(expected, actual);
-                    assertEquals(hKey((TestRow) expected.row()), actual.hKey());
+                    assertEquals(hKey((KeyUpdateRow) expected.row()), actual.hKey());
                     checkInitialState(actual.row());
                     expectedCounts.put(expected.row().getTableId(), expectedCounts.get(expected.row().getTableId()) + 1);
                     actualCounts.put(actual.row().getTableId(), actualCounts.get(actual.row().getTableId()) + 1);
@@ -292,17 +292,17 @@ public abstract class KeyUpdateBase extends ITBase {
         return indexEntries;
     }
 
-    protected TestRow createTestRow(int tableId) {
-        return new TestRow(tableId, getRowDef(tableId), store());
+    protected KeyUpdateRow createTestRow(int tableId) {
+        return new KeyUpdateRow(tableId, getRowDef(tableId), store());
     }
 
-    protected TestRow createTestRow(RowDef rowDef) {
-        return new TestRow(rowDef.getRowDefId(), rowDef, store());
+    protected KeyUpdateRow createTestRow(RowDef rowDef) {
+        return new KeyUpdateRow(rowDef.getRowDefId(), rowDef, store());
     }
 
-    protected TestRow copyRow(TestRow row)
+    protected KeyUpdateRow copyRow(KeyUpdateRow row)
     {
-        TestRow copy = createTestRow(row.getTableId());
+        KeyUpdateRow copy = createTestRow(row.getTableId());
         for (Map.Entry<Integer, Object> entry : row.getFields().entrySet()) {
             copy.put(entry.getKey(), entry.getValue());
         }
@@ -311,23 +311,23 @@ public abstract class KeyUpdateBase extends ITBase {
         return copy;
     }
 
-    protected void updateRow(TestRow row, int column, Object newValue)
+    protected void updateRow(KeyUpdateRow row, int column, Object newValue)
     {
         row.put(column, newValue);
         row.hKey(hKey(row));
     }
 
-    protected void updateRow(TestRow row, int column, Object newValue, TestRow newParent)
+    protected void updateRow(KeyUpdateRow row, int column, Object newValue, KeyUpdateRow newParent)
     {
         row.put(column, newValue);
         row.parent(newParent);
-        TestRow newGrandparent = newParent == null ? null : newParent.parent();
+        KeyUpdateRow newGrandparent = newParent == null ? null : newParent.parent();
         row.hKey(hKey(row, newParent, newGrandparent));
     }
 
-    protected final TestRow row(RowDef table, Object... values)
+    protected final KeyUpdateRow kurow(RowDef table, Object... values)
     {
-        TestRow row = createTestRow(table);
+        KeyUpdateRow row = createTestRow(table);
         int column = 0;
         for (Object value : values) {
             if (value instanceof Integer) {
@@ -339,9 +339,9 @@ public abstract class KeyUpdateBase extends ITBase {
         return row;
     }
 
-    protected TestRow row(TestRow parent, RowDef table, Object... values)
+    protected KeyUpdateRow row(KeyUpdateRow parent, RowDef table, Object... values)
     {
-        TestRow row = createTestRow(table);
+        KeyUpdateRow row = createTestRow(table);
         int column = 0;
         for (Object value : values) {
             if (value instanceof Integer) {
@@ -353,9 +353,9 @@ public abstract class KeyUpdateBase extends ITBase {
         return row;
     }
 
-    protected TestRow row(TestRow parent, TestRow grandparent, RowDef table, Object... values)
+    protected KeyUpdateRow row(KeyUpdateRow parent, KeyUpdateRow grandparent, RowDef table, Object... values)
     {
-        TestRow row = createTestRow(table);
+        KeyUpdateRow row = createTestRow(table);
         int column = 0;
         for (Object value : values) {
             if (value instanceof Integer) {
@@ -402,7 +402,7 @@ public abstract class KeyUpdateBase extends ITBase {
         }
     }
 
-    protected HKey hKey(TestRow row, TestRow newParent)
+    protected HKey hKey(KeyUpdateRow row, KeyUpdateRow newParent)
     {
         return hKey(row, newParent, null);
     }
@@ -412,8 +412,8 @@ public abstract class KeyUpdateBase extends ITBase {
     abstract protected void createSchema() throws Exception;
     abstract protected void populateTables() throws Exception;
     abstract protected boolean checkChildPKs();
-    abstract protected HKey hKey(TestRow row);
-    abstract protected HKey hKey(TestRow row, TestRow newParent, TestRow newGrandparent);
+    abstract protected HKey hKey(KeyUpdateRow row);
+    abstract protected HKey hKey(KeyUpdateRow row, KeyUpdateRow newParent, KeyUpdateRow newGrandparent);
     abstract protected List<List<Object>> vendorPKIndex(List<TreeRecord> records);
     abstract protected List<List<Object>> customerPKIndex(List<TreeRecord> records);
     abstract protected List<List<Object>> orderPKIndex(List<TreeRecord> records);

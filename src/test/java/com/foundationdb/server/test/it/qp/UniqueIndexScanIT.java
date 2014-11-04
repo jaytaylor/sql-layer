@@ -21,11 +21,11 @@ import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.cursor;
@@ -57,19 +57,19 @@ public class UniqueIndexScanIT extends OperatorITBase
         xIndexRowType = indexType(item, "x");
         yIndexRowType = indexType(item, "y");
         xyIndexRowType = indexType(item, "x", "y");
-        db = new NewRow[]{
-            createNewRow(item, 1L, 10L, 10L),
-            createNewRow(item, 2L, 20L, 20L),
-            createNewRow(item, 3L, 30L, 30L),
-            createNewRow(item, 4L, 40L, 40L),
-            createNewRow(item, 5L, 50L, 50L),
-            createNewRow(item, 6L, 60L, 60L),
-            createNewRow(item, 7L, 70L, null),
-            createNewRow(item, 8L, 80L, null),
-            createNewRow(item, 9L, null, 90L),
-            createNewRow(item, 10L, null, 100L),
-            createNewRow(item, 11L, null, null),
-            createNewRow(item, 12L, null, null),
+        db = new Row[]{
+            row(item, 1L, 10L, 10L),
+            row(item, 2L, 20L, 20L),
+            row(item, 3L, 30L, 30L),
+            row(item, 4L, 40L, 40L),
+            row(item, 5L, 50L, 50L),
+            row(item, 6L, 60L, 60L),
+            row(item, 7L, 70L, null),
+            row(item, 8L, 80L, null),
+            row(item, 9L, null, 90L),
+            row(item, 10L, null, 100L),
+            row(item, 11L, null, null),
+            row(item, 12L, null, null),
         };
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);

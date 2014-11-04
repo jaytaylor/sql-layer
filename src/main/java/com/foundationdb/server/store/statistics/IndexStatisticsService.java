@@ -20,10 +20,8 @@ package com.foundationdb.server.store.statistics;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.server.TableStatistics;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.ais.model.Index;
-import com.persistit.exception.PersistitException;
 
 import java.io.Writer;
 import java.util.Collection;
@@ -37,9 +35,6 @@ public interface IndexStatisticsService
 
     /** Get available statistics for the given index. */
     public IndexStatistics getIndexStatistics(Session session, Index index);
-
-    /** deprecated? Get old style table statistics */
-    TableStatistics getTableStatistics(Session session, Table table);
 
     /** Update statistics for the given indexes. */
     public void updateIndexStatistics(Session session, 

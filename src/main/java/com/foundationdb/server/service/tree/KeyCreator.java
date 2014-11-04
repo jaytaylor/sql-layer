@@ -29,5 +29,6 @@ import com.persistit.Key;
 public interface KeyCreator {
 
     Key createKey();
-    
+    com.foundationdb.qp.row.HKey newHKey(com.foundationdb.ais.model.HKey hKeyMetadata);
+
 }

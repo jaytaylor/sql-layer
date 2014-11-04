@@ -20,7 +20,6 @@ package com.foundationdb.server.test.it.qp;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.NegativeLimitException;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.Value;
@@ -34,13 +33,13 @@ public class LimitIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         super.setupPostCreateSchema();
-        NewRow[] dbRows = new NewRow[]{
-            createNewRow(customer, 1L, "northbridge"),
-            createNewRow(customer, 2L, "foundation"),
-            createNewRow(customer, 4L, "highland"),
-            createNewRow(customer, 5L, "matrix"),
-            createNewRow(customer, 6L, "sigma"),
-            createNewRow(customer, 7L, "crv"),
+        Row[] dbRows = new Row[]{
+            row(customer, 1L, "northbridge"),
+            row(customer, 2L, "foundation"),
+            row(customer, 4L, "highland"),
+            row(customer, 5L, "matrix"),
+            row(customer, 6L, "sigma"),
+            row(customer, 7L, "crv"),
         };
         use(dbRows);
     }

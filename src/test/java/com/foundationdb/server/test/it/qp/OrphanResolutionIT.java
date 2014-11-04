@@ -23,7 +23,6 @@ import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.test.ExpressionGenerators;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 
@@ -60,9 +59,9 @@ public class OrphanResolutionIT extends OperatorITBase
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
-        db = new NewRow[] {
-            createNewRow(child, 1L, 100L),
-            createNewRow(child, 1L, 101L),
+        db = new Row[] {
+            row(child, 1L, 100L),
+            row(child, 1L, 101L),
         };
         use(db);
     }

@@ -24,7 +24,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.collation.AkCollator;
 import org.junit.Test;
 
@@ -60,20 +59,20 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
         group = group(t);
         caseSensitiveCollator = tRowType.table().getColumn("cs").getCollator();
         caseInsensitiveCollator = tRowType.table().getColumn("ci").getCollator();
-        db = new NewRow[]{
-            createNewRow(t, 0L, "aa_cs", "aa_ci", 0),
-            createNewRow(t, 1L, "bb_cs", "bb_ci", 0),
-            createNewRow(t, 2L, "aA_cs", "aA_ci", 0),
-            createNewRow(t, 3L, "bB_cs", "bB_ci", 0),
-            createNewRow(t, 4L, "Aa_cs", "Aa_ci", 0),
-            createNewRow(t, 5L, "Bb_cs", "Bb_ci", 0),
-            createNewRow(t, 6L, "AA_cs", "AA_ci", 0),
-            createNewRow(t, 7L, "BB_cs", "BB_ci", 0),
+        db = new Row[]{
+            row(t, 0L, "aa_cs", "aa_ci", 0),
+            row(t, 1L, "bb_cs", "bb_ci", 0),
+            row(t, 2L, "aA_cs", "aA_ci", 0),
+            row(t, 3L, "bB_cs", "bB_ci", 0),
+            row(t, 4L, "Aa_cs", "Aa_ci", 0),
+            row(t, 5L, "Bb_cs", "Bb_ci", 0),
+            row(t, 6L, "AA_cs", "AA_ci", 0),
+            row(t, 7L, "BB_cs", "BB_ci", 0),
             // make sure that all columns have to be examined
-            createNewRow(t, 7L, "x", "x", 0),
-            createNewRow(t, 8L, "x", "x", 0),
-            createNewRow(t, 9L, "x", "x", 0),
-            createNewRow(t, 10L, "x", "x", 0),
+            row(t, 7L, "x", "x", 0),
+            row(t, 8L, "x", "x", 0),
+            row(t, 9L, "x", "x", 0),
+            row(t, 10L, "x", "x", 0),
         };
         use(db);
     }

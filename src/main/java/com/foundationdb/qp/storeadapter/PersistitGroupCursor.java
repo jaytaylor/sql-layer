@@ -50,7 +50,7 @@ class PersistitGroupCursor extends RowCursorImpl implements GroupCursor
     public void rebind(HKey hKey, boolean deep)
     {
         CursorLifecycle.checkClosed(this);
-        this.hKey = (PersistitHKey) hKey;
+        this.hKey =  hKey;
         this.hKeyDeep = deep;
     }
 
@@ -143,7 +143,7 @@ class PersistitGroupCursor extends RowCursorImpl implements GroupCursor
     private final Group group;
     private Exchange exchange;
     private Key controllingHKey;
-    private PersistitHKey hKey;
+    private HKey hKey;
     private boolean hKeyDeep;
     private GroupScan groupScan;
 
@@ -196,7 +196,7 @@ class PersistitGroupCursor extends RowCursorImpl implements GroupCursor
             direction = Key.GT;
         }
 
-        HKeyAndDescendentsScan(PersistitHKey hKey) throws PersistitException
+        HKeyAndDescendentsScan(HKey hKey) throws PersistitException
         {
             hKey.copyTo(exchange.getKey());
             hKey.copyTo(controllingHKey);
@@ -222,7 +222,7 @@ class PersistitGroupCursor extends RowCursorImpl implements GroupCursor
             }
         }
 
-        HKeyWithoutDescendentsScan(PersistitHKey hKey) throws PersistitException
+        HKeyWithoutDescendentsScan(HKey hKey) throws PersistitException
         {
             hKey.copyTo(exchange.getKey());
         }

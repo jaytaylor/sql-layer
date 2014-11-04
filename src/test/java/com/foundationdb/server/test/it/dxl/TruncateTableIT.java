@@ -18,14 +18,11 @@
 package com.foundationdb.server.test.it.dxl;
 
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.api.dml.scan.ScanAllRequest;
-import com.foundationdb.server.api.dml.scan.ScanFlag;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Test;
 
-import java.util.EnumSet;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -37,7 +34,7 @@ public final class TruncateTableIT extends ITBase {
 
         final int rowCount = 5;
         for(int i = 1; i <= rowCount; ++i) {
-            dml().writeRow(session(), createNewRow(tableId, i));
+            writeRow(tableId, i);
         }
         expectRowCount(tableId, rowCount);
 
@@ -47,7 +44,7 @@ public final class TruncateTableIT extends ITBase {
         expectRowCount(tableId, 0);
 
         // Check table scan
-        List<NewRow> rows = scanAll(new ScanAllRequest(tableId, null));
+        List<Row> rows = scanAll(tableId);
         assertEquals("Rows scanned", 0, rows.size());
     }
 
@@ -62,17 +59,16 @@ public final class TruncateTableIT extends ITBase {
                                   "t",
                                   "id int NOT NULL, pid int NOT NULL, PRIMARY KEY(id), UNIQUE(pid)");
 
-        writeRows(createNewRow(tableId, 1, 1),
-                  createNewRow(tableId, 2, 2));
+        writeRows(row(tableId, 1, 1),
+                  row(tableId, 2, 2));
         expectRowCount(tableId, 2);
 
         dml().truncateTable(session(), tableId);
 
         int indexId = ddl().getAIS(session()).getTable("test", "t").getIndex("pid").getIndexId();
-        EnumSet<ScanFlag> scanFlags = EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END);
 
         // Exception originally thrown during dml.doScan: Corrupt RowData at {1,(long)1}
-        List<NewRow> rows = scanAll(new ScanAllRequest(tableId, null, indexId, scanFlags));
+        List<Row> rows = scanAll(tableId, indexId);
         assertEquals("Rows scanned", 0, rows.size());
     }
 
@@ -83,11 +79,11 @@ public final class TruncateTableIT extends ITBase {
                                   "id int not null primary key, tag int, value decimal(10,2), other char(1), name varchar(32), unique(name)");
         createIndex("test", "t", "value", "value");
 
-        writeRows(createNewRow(tableId, 1, 1234, "10.50", 'a', "foo"),
-                  createNewRow(tableId, 2, -421, "14.99", 'b', "bar"),
-                  createNewRow(tableId, 3, 1337, "100.5", 'c', "zap"),
-                  createNewRow(tableId, 4, -987, "12.95", 'd', "dob"),
-                  createNewRow(tableId, 5, 3409, "99.00", 'e', "eek"));
+        writeRows(row(tableId, 1, 1234, "10.50", "a", "foo"),
+                  row(tableId, 2, -421, "14.99", "b", "bar"),
+                  row(tableId, 3, 1337, "100.5", "c", "zap"),
+                  row(tableId, 4, -987, "12.95", "d", "dob"),
+                  row(tableId, 5, 3409, "99.00", "e", "eek"));
         expectRowCount(tableId, 5);
 
         dml().truncateTable(session(), tableId);
@@ -99,22 +95,21 @@ public final class TruncateTableIT extends ITBase {
         final int pkeyIndexId = table.getIndex("PRIMARY").getIndexId();
         final int valueIndexId = table.getIndex("value").getIndexId();
         final int nameIndexId = table.getIndex("name").getIndexId();
-        final EnumSet<ScanFlag> scanFlags = EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END);
 
         // Scan on primary key
-        List<NewRow> rows = scanAll(new ScanAllRequest(tableId, null, pkeyIndexId, scanFlags));
+        List<Row> rows = scanAll(tableId, pkeyIndexId);
         assertEquals("Rows scanned", 0, rows.size());
 
         // Scan on index
-        rows = scanAll(new ScanAllRequest(tableId, null, valueIndexId, scanFlags));
+        rows = scanAll(tableId, valueIndexId);
         assertEquals("Rows scanned", 0, rows.size());
 
         // Scan on unique index
-        rows = scanAll(new ScanAllRequest(tableId, null, nameIndexId, scanFlags));
+        rows = scanAll(tableId, nameIndexId);
         assertEquals("Rows scanned", 0, rows.size());
 
         // Table scan
-        rows = scanAll(new ScanAllRequest(tableId, null));
+        rows = scanAll(tableId);
         assertEquals("Rows scanned", 0, rows.size());
     }
 
@@ -127,13 +122,13 @@ public final class TruncateTableIT extends ITBase {
                                    "child",
                                    "id int not null primary key, pid int, grouping foreign key (pid) references parent(id)");
 
-        dml().writeRow(session(), createNewRow(parentId, 1));
+        writeRow(parentId, 1);
         expectRowCount(parentId, 1);
 
         dml().truncateTable(session(), parentId);
 
         expectRowCount(parentId, 0);
-        List<NewRow> rows = scanAll(new ScanAllRequest(parentId, null));
+        List<Row> rows = scanAll(parentId);
         assertEquals("Rows scanned", 0, rows.size());
     }
 
@@ -146,20 +141,20 @@ public final class TruncateTableIT extends ITBase {
                                    "child",
                                    "id int not null primary key, pid int, grouping foreign key (pid) references parent(id)");
 
-        dml().writeRow(session(), createNewRow(parentId, 1));
+        writeRow(parentId, 1);
         expectRowCount(parentId, 1);
 
-        dml().writeRow(session(), createNewRow(childId, 1, 1));
+        writeRow(childId, 1, 1);
         expectRowCount(childId, 1);
 
         dml().truncateTable(session(), parentId);
 
         expectRowCount(parentId, 0);
-        List<NewRow> rows = scanAll(new ScanAllRequest(parentId, null));
+        List<Row> rows = scanAll(parentId);
         assertEquals("Rows scanned", 0, rows.size());
 
         expectRowCount(childId, 1);
-        rows = scanAll(new ScanAllRequest(childId, null));
+        rows = scanAll(childId);
         assertEquals("Rows scanned", 1, rows.size());
     }
 
@@ -167,13 +162,13 @@ public final class TruncateTableIT extends ITBase {
     public void tableWithNoPK() throws InvalidOperationException {
         int tableId = createTable("test", "t", "c1 CHAR(10) NOT NULL");
 
-        writeRows(createNewRow(tableId, "a"),
-                  createNewRow(tableId, "aaa"),
-                  createNewRow(tableId, "b"),
-                  createNewRow(tableId, "b"),
-                  createNewRow(tableId, "bb"),
-                  createNewRow(tableId, "bbb"),
-                  createNewRow(tableId, "c"));
+        writeRows(row(tableId, "a"),
+                  row(tableId, "aaa"),
+                  row(tableId, "b"),
+                  row(tableId, "b"),
+                  row(tableId, "bb"),
+                  row(tableId, "bbb"),
+                  row(tableId, "c"));
         expectRowCount(tableId, 7);
 
         dml().truncateTable(session(), tableId);
@@ -182,7 +177,7 @@ public final class TruncateTableIT extends ITBase {
         expectRowCount(tableId, 0);
 
         // Check table scan
-        List<NewRow> rows = scanAll(new ScanAllRequest(tableId, null));
+        List<Row> rows = scanAll(tableId);
         assertEquals("Rows scanned", 0, rows.size());
     }
 
@@ -193,9 +188,9 @@ public final class TruncateTableIT extends ITBase {
         int oId = createTable("test", "o", "id int not null primary key, cid int, grouping foreign key (cid) references c(id)");
         int iId = createTable("test", "i", "id int not null primary key, oid int, grouping foreign key (oid) references o(id)");
 
-        dml().writeRow(session(), createNewRow(cId, 1));
-        dml().writeRow(session(), createNewRow(oId, 10, 1));
-        dml().writeRow(session(), createNewRow(iId, 100, 10));
+        writeRow(cId, 1);
+        writeRow(oId, 10, 1);
+        writeRow(iId, 100, 10);
         expectRowCount(cId, 1);
         expectRowCount(oId, 1);
         expectRowCount(iId, 1);
@@ -223,10 +218,10 @@ public final class TruncateTableIT extends ITBase {
         int iId = createTable("test", "i", "id int not null primary key, oid int, grouping foreign key (oid) references o(id)");
         int aId = createTable("test", "a", "id int not null primary key, cid int, grouping foreign key (cid) references c(id)");
 
-        dml().writeRow(session(), createNewRow(cId, 1));
-        dml().writeRow(session(), createNewRow(oId, 10, 1));
-        dml().writeRow(session(), createNewRow(iId, 100, 10));
-        dml().writeRow(session(), createNewRow(aId, 10, 1));
+        writeRow(cId, 1);
+        writeRow(oId, 10, 1);
+        writeRow(iId, 100, 10);
+        writeRow(aId, 10, 1);
         expectRowCount(cId, 1);
         expectRowCount(oId, 1);
         expectRowCount(iId, 1);
@@ -238,10 +233,10 @@ public final class TruncateTableIT extends ITBase {
         expectRowCount(iId, 0);
         expectRowCount(aId, 0);
 
-        dml().writeRow(session(), createNewRow(cId, 1));
-        dml().writeRow(session(), createNewRow(oId, 10, 1));
-        dml().writeRow(session(), createNewRow(iId, 100, 10));
-        dml().writeRow(session(), createNewRow(aId, 10, 1));
+        writeRow(cId, 1);
+        writeRow(oId, 10, 1);
+        writeRow(iId, 100, 10);
+        writeRow(aId, 10, 1);
         expectRowCount(cId, 1);
         expectRowCount(oId, 1);
         expectRowCount(iId, 1);
@@ -259,8 +254,8 @@ public final class TruncateTableIT extends ITBase {
         expectRowCount(iId, 0);
         expectRowCount(aId, 0);
 
-        dml().writeRow(session(), createNewRow(oId, 10, 1));
-        dml().writeRow(session(), createNewRow(iId, 100, 10));
+        writeRow(oId, 10, 1);
+        writeRow(iId, 100, 10);
         expectRowCount(cId, 0);
         expectRowCount(oId, 1);
         expectRowCount(iId, 1);

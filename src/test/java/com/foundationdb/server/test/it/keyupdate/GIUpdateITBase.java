@@ -23,6 +23,7 @@ import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
 import com.foundationdb.server.store.IndexRecordVisitor;
@@ -83,23 +84,23 @@ public abstract class GIUpdateITBase extends ITBase {
         groupName = null;
     }
 
-    void writeAndCheck(NewRow row, String... expectedGiEntries) {
+    void writeAndCheck(Row row, String... expectedGiEntries) {
         writeRows(row);
         checkIndex(groupIndexName, expectedGiEntries);
     }
 
-    void deleteAndCheck(NewRow row, String... expectedGiEntries) {
-        dml().deleteRow(session(), row, false);
+    void deleteAndCheck(Row row, String... expectedGiEntries) {
+        deleteRow(row);
         checkIndex(groupIndexName, expectedGiEntries);
     }
 
-    void deleteCascadeAndCheck(NewRow row, String... expectedGiEntries) {
-        dml().deleteRow(session(), row, true);
+    void deleteCascadeAndCheck(Row row, String... expectedGiEntries) {
+        deleteRow(row, true);
         checkIndex(groupIndexName, expectedGiEntries);
     }
 
-    void updateAndCheck(NewRow oldRow, NewRow newRow, String... expectedGiEntries) {
-        dml().updateRow(session(), oldRow, newRow, null);
+    void updateAndCheck(Row oldRow, Row newRow, String... expectedGiEntries) {
+        updateRow(oldRow, newRow);
         checkIndex(groupIndexName, expectedGiEntries);
     }
 

@@ -29,7 +29,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
@@ -49,10 +48,10 @@ import static com.foundationdb.server.test.ExpressionGenerators.*;
 public class GroupLookup_DefaultLookaheadIT extends GroupLookup_DefaultIT
 {
     protected void moreDB() {
-        NewRow[] daves = new NewRow[]{
-            createNewRow(order, 23L, 2L, "dave"),
-            createNewRow(order, 24L, 2L, "dave"),
-            createNewRow(order, 25L, 2L, "dave")};
+        Row[] daves = new Row[]{
+            row(order, 23L, 2L, "dave"),
+            row(order, 24L, 2L, "dave"),
+            row(order, 25L, 2L, "dave")};
         writeRows(daves);
     }
 

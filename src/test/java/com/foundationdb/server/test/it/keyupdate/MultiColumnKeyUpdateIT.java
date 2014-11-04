@@ -36,11 +36,11 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
     public void testItemFKUpdate() throws Exception
     {
         // Set item.oid1 = 0 for item 1222
-        TestRow originalItem = testStore.find(new HKey(vendorRD, 1L, 1L,
+        KeyUpdateRow originalItem = testStore.find(new HKey(vendorRD, 1L, 1L,
                                                        customerRD, 12L, 12L,
                                                        orderRD, 122L, 122L,
                                                        itemRD, 1222L, 1222L));
-        TestRow updatedItem = copyRow(originalItem);
+        KeyUpdateRow updatedItem = copyRow(originalItem);
         updateRow(updatedItem, i_oid1, 0L, null);
         startMonitoringHKeyPropagation();
         dbUpdate(originalItem, updatedItem);
@@ -58,14 +58,14 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
     public void testItemPKUpdate() throws Exception
     {
         // Set item.iid = 0 for item 1222
-        TestRow order = testStore.find(new HKey(vendorRD, 1L, 1L,
+        KeyUpdateRow order = testStore.find(new HKey(vendorRD, 1L, 1L,
                                                 customerRD, 12L, 12L,
                                                 orderRD, 122L, 122L));
-        TestRow originalItem = testStore.find(new HKey(vendorRD, 1L, 1L,
+        KeyUpdateRow originalItem = testStore.find(new HKey(vendorRD, 1L, 1L,
                                                        customerRD, 12L, 12L,
                                                        orderRD, 122L, 122L,
                                                        itemRD, 1222L, 1222L));
-        TestRow updatedItem = copyRow(originalItem);
+        KeyUpdateRow updatedItem = copyRow(originalItem);
         assertNotNull(order);
         updateRow(updatedItem, i_iid2, 0L, order);
         startMonitoringHKeyPropagation();
@@ -84,14 +84,14 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
     public void testItemPKUpdateCreatingDuplicate() throws Exception
     {
         // Set item.iid = 1223 for item 1222
-        TestRow order = testStore.find(new HKey(vendorRD, 1L, 1L,
+        KeyUpdateRow order = testStore.find(new HKey(vendorRD, 1L, 1L,
                                                 customerRD, 12L, 12L,
                                                 orderRD, 122L, 122L));
-        TestRow originalItem = testStore.find(new HKey(vendorRD, 1L, 1L,
+        KeyUpdateRow originalItem = testStore.find(new HKey(vendorRD, 1L, 1L,
                                                        customerRD, 12L, 12L,
                                                        orderRD, 122L, 122L,
                                                        itemRD, 1222L, 1222L));
-        TestRow updatedItem = copyRow(originalItem);
+        KeyUpdateRow updatedItem = copyRow(originalItem);
         assertNotNull(order);
         updateRow(updatedItem, i_iid1, 1223L, order);
         updateRow(updatedItem, i_iid2, 1223L, order);
@@ -109,21 +109,21 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
     public void testOrderFKUpdate() throws Exception
     {
         // Set order.cid = 0 for order 222
-        TestRow customer = testStore.find(new HKey(vendorRD, 2L, 2L,
+        KeyUpdateRow customer = testStore.find(new HKey(vendorRD, 2L, 2L,
                                                    customerRD, 22L, 22L));
-        TestRow originalOrder = testStore.find(new HKey(vendorRD, 2L, 2L,
+        KeyUpdateRow originalOrder = testStore.find(new HKey(vendorRD, 2L, 2L,
                                                         customerRD, 22L, 22L,
                                                         orderRD, 222L, 222L));
-        TestRow updatedOrder = copyRow(originalOrder);
+        KeyUpdateRow updatedOrder = copyRow(originalOrder);
         updateRow(updatedOrder, o_cid1, 0L, null);
         updateRow(updatedOrder, o_cid2, 0L, null);
         // Propagate change to order 222's items to reflect db state
         for (long iid = 2221; iid <= 2223; iid++) {
-            TestRow oldItemRow = testStore.find(new HKey(vendorRD, 2L, 2L,
+            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 2L, 2L,
                                                          customerRD, 22L, 22L,
                                                          orderRD, 222L, 222L,
                                                          itemRD, iid, iid));
-            TestRow newItemRow = copyRow(oldItemRow);
+            KeyUpdateRow newItemRow = copyRow(oldItemRow);
             newItemRow.hKey(hKey(newItemRow, updatedOrder));
             testStore.deleteTestRow(oldItemRow);
             testStore.writeTestRow(newItemRow);
@@ -134,11 +134,11 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
         checkDB();
         // Revert change
         for (long iid = 2221; iid <= 2223; iid++) {
-            TestRow oldItemRow = testStore.find(new HKey(vendorRD, null, null,
+            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, null, null,
                                                          customerRD, 0L, 0L,
                                                          orderRD, 222L, 222L,
                                                          itemRD, iid, iid));
-            TestRow newItemRow = copyRow(oldItemRow);
+            KeyUpdateRow newItemRow = copyRow(oldItemRow);
             newItemRow.hKey(hKey(newItemRow, originalOrder, customer));
             testStore.deleteTestRow(oldItemRow);
             testStore.writeTestRow(newItemRow);
@@ -154,21 +154,21 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
     public void testOrderPKUpdate() throws Exception
     {
         // Set order.oid = 0 for order 222
-        TestRow customer = testStore.find(new HKey(vendorRD, 2L, 2L,
+        KeyUpdateRow customer = testStore.find(new HKey(vendorRD, 2L, 2L,
                                                    customerRD, 22L, 22L));
-        TestRow originalOrder = testStore.find(new HKey(vendorRD, 2L, 2L,
+        KeyUpdateRow originalOrder = testStore.find(new HKey(vendorRD, 2L, 2L,
                                                         customerRD, 22L, 22L,
                                                         orderRD, 222L, 222L));
-        TestRow udpatedOrder = copyRow(originalOrder);
+        KeyUpdateRow udpatedOrder = copyRow(originalOrder);
         updateRow(udpatedOrder, o_oid1, 0L, customer);
         updateRow(udpatedOrder, o_oid2, 0L, customer);
         // Propagate change to order 222's items to reflect db state
         for (long iid = 2221; iid <= 2223; iid++) {
-            TestRow oldItemRow = testStore.find(new HKey(vendorRD, 2L, 2L,
+            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 2L, 2L,
                                                          customerRD, 22L, 22L,
                                                          orderRD, 222L, 222L,
                                                          itemRD, iid, iid));
-            TestRow newItemRow = copyRow(oldItemRow);
+            KeyUpdateRow newItemRow = copyRow(oldItemRow);
             newItemRow.hKey(hKey(newItemRow, null));
             testStore.deleteTestRow(oldItemRow);
             testStore.writeTestRow(newItemRow);
@@ -179,11 +179,11 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
         checkDB();
         // Revert change
         for (long iid = 2221; iid <= 2223; iid++) {
-            TestRow oldItemRow = testStore.find(new HKey(vendorRD, null, null,
+            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, null, null,
                                                          customerRD,null, null,
                                                          orderRD, 222L, 222L,
                                                          itemRD, iid, iid));
-            TestRow newItemRow = copyRow(oldItemRow);
+            KeyUpdateRow newItemRow = copyRow(oldItemRow);
             newItemRow.hKey(hKey(newItemRow, originalOrder, customer));
             testStore.deleteTestRow(oldItemRow);
             testStore.writeTestRow(newItemRow);
@@ -199,12 +199,12 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
     public void testOrderPKUpdateCreatingDuplicate() throws Exception
     {
         // Set order.oid = 221 for order 222
-        TestRow customer = testStore.find(new HKey(vendorRD, 2L, 2L,
+        KeyUpdateRow customer = testStore.find(new HKey(vendorRD, 2L, 2L,
                                                    customerRD, 22L, 22L));
-        TestRow originalOrder = testStore.find(new HKey(vendorRD, 2L, 2L,
+        KeyUpdateRow originalOrder = testStore.find(new HKey(vendorRD, 2L, 2L,
                                                         customerRD, 22L, 22L,
                                                         orderRD, 222L, 222L));
-        TestRow updatedOrder = copyRow(originalOrder);
+        KeyUpdateRow updatedOrder = copyRow(originalOrder);
         assertNotNull(customer);
         updateRow(updatedOrder, o_oid1, 221L, customer);
         updateRow(updatedOrder, o_oid2, 221L, customer);
@@ -221,26 +221,26 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
     public void testCustomerFKUpdate() throws Exception
     {
         // Set customer.vid = 0 for customer 13
-        TestRow originalCustomer = testStore.find(new HKey(vendorRD, 1L, 1L,
+        KeyUpdateRow originalCustomer = testStore.find(new HKey(vendorRD, 1L, 1L,
                                                            customerRD, 13L, 13L));
-        TestRow udpatedCustomer = copyRow(originalCustomer);
+        KeyUpdateRow udpatedCustomer = copyRow(originalCustomer);
         updateRow(udpatedCustomer, c_vid1, 0L, null);
         updateRow(udpatedCustomer, c_vid2, 0L, null);
         // Propagate change to customer 13s descendents to reflect db state
         for (long oid = 131; oid <= 133; oid++) {
-            TestRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, 1L,
+            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, 1L,
                                                           customerRD, 13L, 13L,
                                                           orderRD, oid, oid));
-            TestRow newOrderRow = copyRow(oldOrderRow);
+            KeyUpdateRow newOrderRow = copyRow(oldOrderRow);
             newOrderRow.hKey(hKey(newOrderRow, udpatedCustomer));
             testStore.deleteTestRow(oldOrderRow);
             testStore.writeTestRow(newOrderRow);
             for (long iid = oid * 10 + 1; iid <= oid * 10 + 3; iid++) {
-                TestRow oldItemRow = testStore.find(new HKey(vendorRD, 1L, 1L,
+                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 1L, 1L,
                                                              customerRD, 13L, 13L,
                                                              orderRD, oid, oid,
                                                              itemRD, iid, iid));
-                TestRow newItemRow = copyRow(oldItemRow);
+                KeyUpdateRow newItemRow = copyRow(oldItemRow);
                 newItemRow.hKey(hKey(newItemRow, newOrderRow, udpatedCustomer));
                 testStore.deleteTestRow(oldItemRow);
                 testStore.writeTestRow(newItemRow);
@@ -252,19 +252,19 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
         checkDB();
         // Revert change
         for (long oid = 131; oid <= 133; oid++) {
-            TestRow oldOrderRow = testStore.find(new HKey(vendorRD, 0L, 0L,
+            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRD, 0L, 0L,
                                                           customerRD, 13L, 13L,
                                                           orderRD, oid, oid));
-            TestRow newOrderRow = copyRow(oldOrderRow);
+            KeyUpdateRow newOrderRow = copyRow(oldOrderRow);
             newOrderRow.hKey(hKey(newOrderRow, originalCustomer));
             testStore.deleteTestRow(oldOrderRow);
             testStore.writeTestRow(newOrderRow);
             for (long iid = oid * 10 + 1; iid <= oid * 10 + 3; iid++) {
-                TestRow oldItemRow = testStore.find(new HKey(vendorRD, 0L, 0L,
+                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 0L, 0L,
                                                              customerRD, 13L, 13L,
                                                              orderRD, oid, oid,
                                                              itemRD, iid, iid));
-                TestRow newItemRow = copyRow(oldItemRow);
+                KeyUpdateRow newItemRow = copyRow(oldItemRow);
                 newItemRow.hKey(hKey(newItemRow, newOrderRow, originalCustomer));
                 testStore.deleteTestRow(oldItemRow);
                 testStore.writeTestRow(newItemRow);
@@ -281,25 +281,25 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
     public void testCustomerPKUpdate() throws Exception
     {
         // Set customer.cid = 0 for customer 22
-        TestRow originalCustomer = testStore.find(new HKey(vendorRD, 2L, 2L,
+        KeyUpdateRow originalCustomer = testStore.find(new HKey(vendorRD, 2L, 2L,
                                                            customerRD, 22L, 22L));
-        TestRow updatedCustomer = copyRow(originalCustomer);
+        KeyUpdateRow updatedCustomer = copyRow(originalCustomer);
         updateRow(updatedCustomer, c_cid2, 23L, null);
         // Propagate change to customer 22's orders and items to reflect db state
         for (long oid = 221; oid <= 223; oid++) {
-            TestRow oldOrderRow = testStore.find(new HKey(vendorRD, 2L, 2L,
+            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRD, 2L, 2L,
                                                           customerRD, 22L, 22L,
                                                           orderRD, oid, oid));
-            TestRow newOrderRow = copyRow(oldOrderRow);
+            KeyUpdateRow newOrderRow = copyRow(oldOrderRow);
             newOrderRow.hKey(hKey(newOrderRow, null));
             testStore.deleteTestRow(oldOrderRow);
             testStore.writeTestRow(newOrderRow);
             for (long iid = oid * 10 + 1; iid <= oid * 10 + 3; iid++) {
-                TestRow oldItemRow = testStore.find(new HKey(vendorRD, 2L, 2L,
+                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 2L, 2L,
                                                              customerRD, 22L, 22L,
                                                              orderRD, oid, oid,
                                                              itemRD, iid, iid));
-                TestRow newItemRow = copyRow(oldItemRow);
+                KeyUpdateRow newItemRow = copyRow(oldItemRow);
                 newItemRow.hKey(hKey(newItemRow, newOrderRow));
                 testStore.deleteTestRow(oldItemRow);
                 testStore.writeTestRow(newItemRow);
@@ -311,19 +311,19 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
         checkDB();
         // Revert change
         for (long oid = 221; oid <= 223; oid++) {
-            TestRow oldOrderRow = testStore.find(new HKey(vendorRD, null, null,
+            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRD, null, null,
                                                           customerRD, 22L, 22L,
                                                           orderRD, oid, oid));
-            TestRow newOrderRow = copyRow(oldOrderRow);
+            KeyUpdateRow newOrderRow = copyRow(oldOrderRow);
             newOrderRow.hKey(hKey(newOrderRow, originalCustomer));
             testStore.deleteTestRow(oldOrderRow);
             testStore.writeTestRow(newOrderRow);
             for (long iid = oid * 10 + 1; iid <= oid * 10 + 3; iid++) {
-                TestRow oldItemRow = testStore.find(new HKey(vendorRD, null, null,
+                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, null, null,
                                                              customerRD, 22L, 22L,
                                                              orderRD, oid, oid,
                                                              itemRD, iid, iid));
-                TestRow newItemRow = copyRow(oldItemRow);
+                KeyUpdateRow newItemRow = copyRow(oldItemRow);
                 newItemRow.hKey(hKey(newItemRow, newOrderRow, originalCustomer));
                 testStore.deleteTestRow(oldItemRow);
                 testStore.writeTestRow(newItemRow);
@@ -340,9 +340,9 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
     public void testCustomerPKUpdateCreatingDuplicate() throws Exception
     {
         // Set customer.cid = 11 for customer 23
-        TestRow originalCustomer = testStore.find(new HKey(vendorRD, 2L, 2L,
+        KeyUpdateRow originalCustomer = testStore.find(new HKey(vendorRD, 2L, 2L,
                                                            customerRD, 23L, 23L));
-        TestRow updatedCustomer = copyRow(originalCustomer);
+        KeyUpdateRow updatedCustomer = copyRow(originalCustomer);
         updateRow(updatedCustomer, c_cid1, 11L, null);
         updateRow(updatedCustomer, c_cid2, 11L, null);
         try {
@@ -358,8 +358,8 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
     public void testVendorPKUpdate() throws Exception
     {
         // Set vendor.vid = 0 for vendor 1
-        TestRow originalVendor = testStore.find(new HKey(vendorRD, 1L, 1L));
-        TestRow updatedVendor = copyRow(originalVendor);
+        KeyUpdateRow originalVendor = testStore.find(new HKey(vendorRD, 1L, 1L));
+        KeyUpdateRow updatedVendor = copyRow(originalVendor);
         updateRow(updatedVendor, v_vid1, 0L, null);
         startMonitoringHKeyPropagation();
         dbUpdate(originalVendor, updatedVendor);
@@ -377,8 +377,8 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
     public void testVendorPKUpdateCreatingDuplicate() throws Exception
     {
         // Set vendor.vid = 2 for vendor 1
-        TestRow originalVendorRow = testStore.find(new HKey(vendorRD, 1L, 1L));
-        TestRow updatedVendorRow = copyRow(originalVendorRow);
+        KeyUpdateRow originalVendorRow = testStore.find(new HKey(vendorRD, 1L, 1L));
+        KeyUpdateRow updatedVendorRow = copyRow(originalVendorRow);
         updateRow(updatedVendorRow, v_vid1, 2L, null);
         updateRow(updatedVendorRow, v_vid2, 2L, null);
         try {
@@ -393,7 +393,7 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
     @Test
     public void testItemDelete() throws Exception
     {
-        TestRow itemRow = testStore.find(new HKey(vendorRD, 2L, 2L,
+        KeyUpdateRow itemRow = testStore.find(new HKey(vendorRD, 2L, 2L,
                                                   customerRD, 22L, 22L,
                                                   orderRD, 222L, 222L,
                                                   itemRD, 2222L, 2222L));
@@ -412,18 +412,18 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
     @Test
     public void testOrderDelete() throws Exception
     {
-        TestRow customerRow = testStore.find(new HKey(vendorRD, 2L, 2L,
+        KeyUpdateRow customerRow = testStore.find(new HKey(vendorRD, 2L, 2L,
                                                       customerRD, 22L, 22L));
-        TestRow orderRow = testStore.find(new HKey(vendorRD, 2L, 2L,
+        KeyUpdateRow orderRow = testStore.find(new HKey(vendorRD, 2L, 2L,
                                                    customerRD, 22L, 22L,
                                                    orderRD, 222L, 222L));
         // Propagate change to order 222's items to reflect db state
         for (long iid = 2221; iid <= 2223; iid++) {
-            TestRow oldItemRow = testStore.find(new HKey(vendorRD, 2L, 2L,
+            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 2L, 2L,
                                                          customerRD, 22L, 22L,
                                                          orderRD, 222L, 222L,
                                                          itemRD, iid, iid));
-            TestRow newItemRow = copyRow(oldItemRow);
+            KeyUpdateRow newItemRow = copyRow(oldItemRow);
             newItemRow.hKey(hKey(newItemRow, null));
             testStore.deleteTestRow(oldItemRow);
             testStore.writeTestRow(newItemRow);
@@ -434,11 +434,11 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
         checkDB();
         // Revert change
         for (long iid = 2221; iid <= 2223; iid++) {
-            TestRow oldItemRow = testStore.find(new HKey(vendorRD, null, null,
+            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, null, null,
                                                          customerRD, null, null,
                                                          orderRD, 222L, 222L,
                                                          itemRD, iid, iid));
-            TestRow newItemRow = copyRow(oldItemRow);
+            KeyUpdateRow newItemRow = copyRow(oldItemRow);
             newItemRow.hKey(hKey(newItemRow, orderRow, customerRow));
             testStore.deleteTestRow(oldItemRow);
             testStore.writeTestRow(newItemRow);
@@ -453,23 +453,23 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
     @Test
     public void testCustomerDelete() throws Exception
     {
-        TestRow customerRow = testStore.find(new HKey(vendorRD, 2L, 2L,
+        KeyUpdateRow customerRow = testStore.find(new HKey(vendorRD, 2L, 2L,
                                                       customerRD, 22L, 22L));
         // Propagate change to customer's descendents to reflect db state
         for (long oid = 221; oid <= 223; oid++) {
-            TestRow oldOrderRow = testStore.find(new HKey(vendorRD, 2L, 2L,
+            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRD, 2L, 2L,
                                                           customerRD, 22L, 22L,
                                                           orderRD, oid, oid));
-            TestRow newOrderRow = copyRow(oldOrderRow);
+            KeyUpdateRow newOrderRow = copyRow(oldOrderRow);
             newOrderRow.hKey(hKey(newOrderRow, null));
             testStore.deleteTestRow(oldOrderRow);
             testStore.writeTestRow(newOrderRow);
             for (long iid = oid * 10 + 1; iid <= oid * 10 + 3; iid++) {
-                TestRow oldItemRow = testStore.find(new HKey(vendorRD, 2L, 2L,
+                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 2L, 2L,
                                                              customerRD, 22L, 22L,
                                                              orderRD, oid, oid,
                                                              itemRD, iid, iid));
-                TestRow newItemRow = copyRow(oldItemRow);
+                KeyUpdateRow newItemRow = copyRow(oldItemRow);
                 newItemRow.hKey(hKey(newItemRow, newOrderRow));
                 testStore.deleteTestRow(oldItemRow);
                 testStore.writeTestRow(newItemRow);
@@ -482,19 +482,19 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
         checkDB();
         // Revert change
         for (long oid = 221; oid <= 223; oid++) {
-            TestRow oldOrderRow = testStore.find(new HKey(vendorRD, null, null,
+            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRD, null, null,
                                                           customerRD, 22L, 22L,
                                                           orderRD, oid, oid));
-            TestRow newOrderRow = copyRow(oldOrderRow);
+            KeyUpdateRow newOrderRow = copyRow(oldOrderRow);
             newOrderRow.hKey(hKey(newOrderRow, customerRow));
             testStore.deleteTestRow(oldOrderRow);
             testStore.writeTestRow(newOrderRow);
             for (long iid = oid * 10 + 1; iid <= oid * 10 + 3; iid++) {
-                TestRow oldItemRow = testStore.find(new HKey(vendorRD, null, null,
+                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, null, null,
                                                              customerRD, 22L, 22L,
                                                              orderRD, oid, oid,
                                                              itemRD, iid, iid));
-                TestRow newItemRow = copyRow(oldItemRow);
+                KeyUpdateRow newItemRow = copyRow(oldItemRow);
                 newItemRow.hKey(hKey(newItemRow, newOrderRow, customerRow));
                 testStore.deleteTestRow(oldItemRow);
                 testStore.writeTestRow(newItemRow);
@@ -510,7 +510,7 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
     @Test
     public void testVendorDelete() throws Exception
     {
-        TestRow vendorRow = testStore.find(new HKey(vendorRD, 1L, 1L));
+        KeyUpdateRow vendorRow = testStore.find(new HKey(vendorRD, 1L, 1L));
         startMonitoringHKeyPropagation();
         dbDelete(vendorRow);
         // TODO: Why not apply the PDG optimization on inserts and deletes?
@@ -664,8 +664,8 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
         //     when = unique, start counting at 9001
         // non-key item fields
         //     ix = iid * 100
-        TestRow customer;
-        TestRow order;
+        KeyUpdateRow customer;
+        KeyUpdateRow order;
         //                               HKey reversed, value
         // Vendor 1
         dbInsert(                                           vendorRow(1,     100));
@@ -758,9 +758,9 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
         dbInsert(             itemRow(customer, order, 2333, 233,            233300));
     }
 
-    private TestRow vendorRow(long vid, long vx)
+    private KeyUpdateRow vendorRow(long vid, long vx)
     {
-        TestRow vendor = createTestRow(vendorId);
+        KeyUpdateRow vendor = createTestRow(vendorId);
         vendor.put(v_vid1, vid);
         vendor.put(v_vid2, vid);
         vendor.put(v_vx, vx);
@@ -768,9 +768,9 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
         return vendor;
     }
 
-    private TestRow customerRow(long cid, long vid, long cx)
+    private KeyUpdateRow customerRow(long cid, long vid, long cx)
     {
-        TestRow customer = createTestRow(customerId);
+        KeyUpdateRow customer = createTestRow(customerId);
         customer.put(c_cid1, cid);
         customer.put(c_cid2, cid);
         customer.put(c_vid1, vid);
@@ -780,9 +780,9 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
         return customer;
     }
     
-    private TestRow orderRow(TestRow customer, long oid, long cid, long ox, long priority, long when)
+    private KeyUpdateRow orderRow(KeyUpdateRow customer, long oid, long cid, long ox, long priority, long when)
     {
-        TestRow order = createTestRow(orderId);
+        KeyUpdateRow order = createTestRow(orderId);
         order.put(o_oid1, oid);
         order.put(o_oid2, oid);
         order.put(o_cid1, cid);
@@ -797,9 +797,9 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
         return order;
     }
     
-    private TestRow itemRow(TestRow customer, TestRow order, long iid, long oid, long ix)
+    private KeyUpdateRow itemRow(KeyUpdateRow customer, KeyUpdateRow order, long iid, long oid, long ix)
     {
-        TestRow item = createTestRow(itemId);
+        KeyUpdateRow item = createTestRow(itemId);
         item.put(i_iid1, iid);
         item.put(i_iid2, iid);
         item.put(i_oid1, oid);
@@ -814,7 +814,7 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
     }
 
     @Override
-    protected HKey hKey(TestRow row)
+    protected HKey hKey(KeyUpdateRow row)
     {
         HKey hKey = null;
         RowDef rowDef = row.getRowDef();
@@ -847,7 +847,7 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
     }
 
     @Override
-    protected HKey hKey(TestRow row, TestRow parent, TestRow grandparent)
+    protected HKey hKey(KeyUpdateRow row, KeyUpdateRow parent, KeyUpdateRow grandparent)
     {
         HKey hKey = null;
         RowDef rowDef = row.getRowDef();

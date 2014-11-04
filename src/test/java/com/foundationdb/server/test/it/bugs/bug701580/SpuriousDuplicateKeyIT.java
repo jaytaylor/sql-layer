@@ -48,9 +48,9 @@ public final class SpuriousDuplicateKeyIT extends ITBase {
         confirmIds("t2", 1, 2);
 
         writeRows(
-                createNewRow(t2, 1, "0"),
-                createNewRow(t2, 2, "1"),
-                createNewRow(t2, 3, "2")
+                row(t2, 1, "0"),
+                row(t2, 2, "1"),
+                row(t2, 3, "2")
         );
         dropAllTables();
     }

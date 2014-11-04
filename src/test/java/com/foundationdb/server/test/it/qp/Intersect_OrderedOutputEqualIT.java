@@ -27,7 +27,6 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
 import java.util.EnumSet;
@@ -77,59 +76,59 @@ public class Intersect_OrderedOutputEqualIT extends OperatorITBase
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
-        db = new NewRow[]{
+        db = new Row[]{
             // 0x: Both index scans empty
             // 1x: Left empty
-            createNewRow(parent, 1000L, -1L, 11L),
-            createNewRow(parent, 1001L, -1L, 11L),
-            createNewRow(parent, 1002L, -1L, 11L),
+            row(parent, 1000L, -1L, 11L),
+            row(parent, 1001L, -1L, 11L),
+            row(parent, 1002L, -1L, 11L),
             // 2x: Right empty
-            createNewRow(parent, 2000L, 22L, -1L),
-            createNewRow(parent, 2001L, 22L, -1L),
-            createNewRow(parent, 2002L, 22L, -1L),
+            row(parent, 2000L, 22L, -1L),
+            row(parent, 2001L, 22L, -1L),
+            row(parent, 2002L, 22L, -1L),
             // 3x: Both non-empty, and no overlap
-            createNewRow(parent, 3000L, 31L, -1L),
-            createNewRow(parent, 3001L, 31L, -1L),
-            createNewRow(parent, 3002L, 31L, -1L),
-            createNewRow(parent, 3003L, 9999L, 32L),
-            createNewRow(parent, 3004L, 9999L, 32L),
-            createNewRow(parent, 3005L, 9999L, 32L),
+            row(parent, 3000L, 31L, -1L),
+            row(parent, 3001L, 31L, -1L),
+            row(parent, 3002L, 31L, -1L),
+            row(parent, 3003L, 9999L, 32L),
+            row(parent, 3004L, 9999L, 32L),
+            row(parent, 3005L, 9999L, 32L),
             // 4x: left contains right
-            createNewRow(parent, 4000L, 44L, -1L),
-            createNewRow(parent, 4001L, 44L, 44L),
-            createNewRow(parent, 4002L, 44L, 44L),
-            createNewRow(parent, 4003L, 44L, 9999L),
+            row(parent, 4000L, 44L, -1L),
+            row(parent, 4001L, 44L, 44L),
+            row(parent, 4002L, 44L, 44L),
+            row(parent, 4003L, 44L, 9999L),
             // 5x: right contains left
-            createNewRow(parent, 5000L, -1L, 55L),
-            createNewRow(parent, 5001L, 55L, 55L),
-            createNewRow(parent, 5002L, 55L, 55L),
-            createNewRow(parent, 5003L, 9999L, 55L),
+            row(parent, 5000L, -1L, 55L),
+            row(parent, 5001L, 55L, 55L),
+            row(parent, 5002L, 55L, 55L),
+            row(parent, 5003L, 9999L, 55L),
             // 6x: overlap but neither side contains the other
-            createNewRow(parent, 6000L, -1L, 66L),
-            createNewRow(parent, 6001L, -1L, 66L),
-            createNewRow(parent, 6002L, 66L, 66L),
-            createNewRow(parent, 6003L, 66L, 66L),
-            createNewRow(parent, 6004L, 66L, 9999L),
-            createNewRow(parent, 6005L, 66L, 9999L),
+            row(parent, 6000L, -1L, 66L),
+            row(parent, 6001L, -1L, 66L),
+            row(parent, 6002L, 66L, 66L),
+            row(parent, 6003L, 66L, 66L),
+            row(parent, 6004L, 66L, 9999L),
+            row(parent, 6005L, 66L, 9999L),
             // 7x: parent with no children
-            createNewRow(parent, 7000L, 70L, 70L),
+            row(parent, 7000L, 70L, 70L),
             // 8x: parent with children
-            createNewRow(parent, 8000L, 88L, 88L),
-            createNewRow(child, 800000L, 8000L, 88L),
-            createNewRow(parent, 8001L, 88L, 88L),
-            createNewRow(child, 800100L, 8001L, 88L),
-            createNewRow(child, 800101L, 8001L, 88L),
-            createNewRow(parent, 8002L, 88L, 88L),
-            createNewRow(child, 800200L, 8002L, 88L),
-            createNewRow(child, 800201L, 8002L, 88L),
-            createNewRow(child, 800202L, 8002L, 88L),
+            row(parent, 8000L, 88L, 88L),
+            row(child, 800000L, 8000L, 88L),
+            row(parent, 8001L, 88L, 88L),
+            row(child, 800100L, 8001L, 88L),
+            row(child, 800101L, 8001L, 88L),
+            row(parent, 8002L, 88L, 88L),
+            row(child, 800200L, 8002L, 88L),
+            row(child, 800201L, 8002L, 88L),
+            row(child, 800202L, 8002L, 88L),
             // 9x child with no parent
-            createNewRow(parent, 9000L, 99L, 99L),
-            createNewRow(child, 900100L, 9001L, 99L),
-            createNewRow(parent, 9002L, 99L, 99L),
-            createNewRow(child, 900300L, 9003L, 99L),
+            row(parent, 9000L, 99L, 99L),
+            row(child, 900100L, 9001L, 99L),
+            row(parent, 9002L, 99L, 99L),
+            row(child, 900300L, 9003L, 99L),
             // 12x right join (child on right)
-            createNewRow(child, 1200000L, null, 12L),
+            row(child, 1200000L, null, 12L),
         };
         use(db);
     }
