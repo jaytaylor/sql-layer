@@ -57,7 +57,7 @@ public class AggregateMapper extends BaseRule
 
         // do a first pass to find the best AggregateSource for each AggregateFunctionExpression
         for (AggregateSourceState source : sources) {
-            Mapper m = new Mapper((SchemaRulesContext)plan.getRulesContext(), source.aggregateSource, source.containingQuery);
+            FindBestSource m = new FindBestSource((SchemaRulesContext)plan.getRulesContext(), source.aggregateSource, source.containingQuery);
             m.remap(source.aggregateSource);
         }
         // then actually add the AggregateFunctionExpressions to the corresponding AggregateSource
@@ -219,7 +219,7 @@ public class AggregateMapper extends BaseRule
         }
     }
 
-    static class Mapper extends Remapper {
+    static class FindBestSource extends Remapper {
         private SchemaRulesContext rulesContext;
         private AggregateSource source;
         private BaseQuery query;
@@ -248,7 +248,7 @@ public class AggregateMapper extends BaseRule
             return implicitAggregateSetting;
         }
 
-        public Mapper(SchemaRulesContext rulesContext, AggregateSource source, BaseQuery query) {
+        public FindBestSource(SchemaRulesContext rulesContext, AggregateSource source, BaseQuery query) {
             this.rulesContext = rulesContext;
             this.source = source;
             this.query = query;
