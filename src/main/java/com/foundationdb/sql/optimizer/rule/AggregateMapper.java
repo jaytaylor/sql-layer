@@ -60,7 +60,7 @@ public class AggregateMapper extends BaseRule
             FindBestSource m = new FindBestSource((SchemaRulesContext)plan.getRulesContext(), source.aggregateSource, source.containingQuery);
             m.remap(source.aggregateSource);
         }
-        // Step 2: add those AggregateFunctionExpressions to AggregateSources within their own subquery, and save them for step 3
+        // Step 2: add those AggregateFunctionExpressions not in WHERE clauses to the appropriate AggregateSource
         Map<AnnotatedAggregateFunctionExpression, AggregateSource> functionsToSources =
                 new HashMap<AnnotatedAggregateFunctionExpression, AggregateSource>();
         for (AggregateSourceState source : sources) {
@@ -68,7 +68,7 @@ public class AggregateMapper extends BaseRule
             addAggregates.remap(source.aggregateSource);
             functionsToSources.putAll(addAggregates.getFunctionMap());
         }
-        // Step 3: try to match AggregateFunctionExpressions without AggregateSources within their own subquery
+        // Step 3: try to match AggregateFunctionExpressions in WHERE clauses to the appropriate AggregateSource
         for (AggregateSourceState source : sources) {
             AddAggregatesPart2 addAggregates = new AddAggregatesPart2(functionsToSources);
             addAggregates.remap(source.aggregateSource);
