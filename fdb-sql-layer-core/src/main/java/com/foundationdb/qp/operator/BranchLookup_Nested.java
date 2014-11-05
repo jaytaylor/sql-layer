@@ -352,7 +352,7 @@ public class BranchLookup_Nested extends Operator
             try {
                 super.open();
                 Row rowFromBindings = bindings.getRow(inputBindingPosition);
-                assert rowFromBindings.rowType() == inputRowType : rowFromBindings; 
+                assert rowFromBindings.rowType() == inputRowType : rowFromBindings;
                 if (inputRowType != sourceRowType) {
                     rowFromBindings = rowFromBindings.subRow(sourceRowType);
                 }
