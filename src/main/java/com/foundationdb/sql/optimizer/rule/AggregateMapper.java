@@ -501,7 +501,6 @@ public class AggregateMapper extends BaseRule
     }
 
     static class AddAggregatesInWhereClauses extends AddAggregates {
-        Map<AnnotatedAggregateFunctionExpression, AggregateSource> functionsToSources;
 
         public AddAggregatesInWhereClauses(Map<AnnotatedAggregateFunctionExpression, AggregateSource> functionsToSources) {
             this.functionsToSources = functionsToSources;
