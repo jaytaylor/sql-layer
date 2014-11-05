@@ -34,6 +34,7 @@
     </modules>
 
     <properties>
+         <main.basedir>${project.basedir}</main.basedir>
          <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -186,7 +187,7 @@
                 <artifactId>maven-license-plugin</artifactId>
                 <version>1.10.b1</version>
                 <configuration>
-                    <header>fdb-sql-layer-common/etc/header.txt</header>
+                    <header>${main.basedir}/fdb-sql-layer-common/etc/header.txt</header>
                     <headerSections>
                         <headerSection>
                             <key>__YEAR_SECTION__</key>
