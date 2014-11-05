@@ -42,11 +42,6 @@ public class ExpressionRowUpdateFunction implements UpdateFunction
     /* UpdateFunction */
 
     @Override
-    public boolean rowIsSelected(Row row) {
-        return row.rowType().equals(rowType);
-    }
-
-    @Override
     public Row evaluate(Row original, QueryContext context, QueryBindings bindings) {
         OverlayingRow result = new OverlayingRow(original);
         int nfields = rowType.nFields();

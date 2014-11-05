@@ -19,7 +19,6 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.qp.exec.UpdatePlannable;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.rowtype.IndexRowType;
@@ -843,11 +842,6 @@ public class API
     }
 
     // Insert
-    /* Deprecated */
-    public static UpdatePlannable insert_Default(Operator inputOperator)
-    {
-        return new Insert_Default(inputOperator);
-    }
 
     public static Operator insert_Returning (Operator inputOperator)
     {
@@ -856,13 +850,6 @@ public class API
 
     // Update
 
-    /* Deprecated */
-    public static UpdatePlannable update_Default(Operator inputOperator,
-                                                 UpdateFunction updateFunction)
-    {
-        return new Update_Default(inputOperator, updateFunction);
-    }
-    
     public static Operator update_Returning (Operator inputOperator,
                                             UpdateFunction updateFunction)
     {
@@ -870,12 +857,6 @@ public class API
     }
     
     // Delete
-    /* Deprecated */
-    public static UpdatePlannable delete_Default(Operator inputOperator)
-    {
-        return new Delete_Default(inputOperator);
-    }
-
     public static Operator delete_Returning (Operator inputOperator, boolean cascadeDelete)
     {
         return new Delete_Returning(inputOperator, cascadeDelete);

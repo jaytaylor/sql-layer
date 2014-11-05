@@ -19,7 +19,7 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.Row;
 
-public interface UpdateFunction extends SelectionFunction {
+public interface UpdateFunction {
     /**
      * Updates the given row by returning another row with the required modifications.
      * @param original the original row, which will remain untouched
@@ -27,7 +27,6 @@ public interface UpdateFunction extends SelectionFunction {
      * @param bindings the variable bindings for evaluation
      * @return a row of the same type as the original, but different fields
      * @throws IllegalArgumentException if the row could not be updated
-     * (ie, if {@linkplain #rowIsSelected(Row)} returned {@code false})
      */
     Row evaluate(Row original, QueryContext context, QueryBindings bindings);
 }

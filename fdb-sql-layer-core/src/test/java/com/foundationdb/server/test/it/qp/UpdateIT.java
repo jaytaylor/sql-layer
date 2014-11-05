@@ -17,8 +17,6 @@
 
 package com.foundationdb.server.test.it.qp;
 
-import com.foundationdb.qp.exec.UpdatePlannable;
-import com.foundationdb.qp.exec.UpdateResult;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
@@ -33,10 +31,12 @@ import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.texpressions.TPreparedFunction;
 import com.foundationdb.server.types.texpressions.TValidatedScalar;
+import com.foundationdb.server.types.value.ValueSources;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static com.foundationdb.qp.operator.API.*;
 import static java.util.Arrays.asList;
@@ -49,16 +49,9 @@ public class UpdateIT extends OperatorITBase
         use(db);
 
         UpdateFunction updateFunction = new UpdateFunction() {
-
-            @Override
-            public boolean rowIsSelected(Row row) {
-                return row.rowType().equals(customerRowType);
-            }
-
             @Override
             public Row evaluate(Row original, QueryContext context, QueryBindings bindings) {
-                String name = original.value(1).getString();
-                // TODO eventually use Expression for this
+                String name = ValueSources.toStringSimple(original.value(1));
                 name = name.toUpperCase();
                 name = name + name;
                 return new OverlayingRow(original).overlay(1, name);
@@ -66,10 +59,10 @@ public class UpdateIT extends OperatorITBase
         };
 
         Operator groupScan = groupScan_Default(coi);
-        UpdatePlannable updateOperator = update_Default(groupScan, updateFunction);
-        UpdateResult result = updateOperator.run(queryContext, queryBindings);
-        assertEquals("rows modified", 2, result.rowsModified());
-        assertEquals("rows touched", db.length, result.rowsTouched());
+        Operator filterScan = filter_Default(groupScan, Collections.singleton(customerRowType));
+        Operator updateOperator = update_Returning(filterScan, updateFunction);
+        List<Row> result = runPlan(queryContext, queryBindings, updateOperator);
+        assertEquals("rows modified", 2, result.size());
 
         Cursor executable = cursor(groupScan, queryContext, queryBindings);
         Row[] expected = new Row[]{row(customerRowType, 1L, "XYZXYZ"),
@@ -105,11 +98,6 @@ public class UpdateIT extends OperatorITBase
         
         UpdateFunction updateFunction = new UpdateFunction() {
                 @Override
-                public boolean rowIsSelected(Row row) {
-                    return row.rowType().equals(itemRowType);
-                }
-
-                @Override
                 public Row evaluate(Row original, QueryContext context, QueryBindings bindings) { 
                     long id = original.value(0).getInt64();
                     // Make smaller to avoid Halloween (see next test).
@@ -117,10 +105,9 @@ public class UpdateIT extends OperatorITBase
                 }
             };
 
-        UpdatePlannable updateOperator = update_Default(scan, updateFunction);
-        UpdateResult result = updateOperator.run(queryContext, queryBindings);
-        assertEquals("rows touched", 8, result.rowsTouched());
-        assertEquals("rows modified", 8, result.rowsModified());
+        Operator updateOperator = update_Returning(scan, updateFunction);
+        List<Row> result = runPlan(queryContext, queryBindings, updateOperator);
+        assertEquals("rows touched", 8, result.size());
 
         Cursor executable = cursor(scan, queryContext, queryBindings);
         Row[] expected = new Row[] { 
@@ -298,15 +285,9 @@ public class UpdateIT extends OperatorITBase
             public Row evaluate(Row original, QueryContext context, QueryBindings bindings) {
                 return row(customerRowType, 2L, "zzz");
             }
-
-            @Override
-            public boolean rowIsSelected(Row row) {
-                return true;
-            }
         };
-        UpdatePlannable insertPlan = update_Default(rowsToValueScan(rows), updateFunction);
-        UpdateResult result = insertPlan.run(queryContext, queryBindings);
-        assertEquals("rows touched", rows.length, result.rowsTouched());
-        assertEquals("rows modified", rows.length, result.rowsModified());
+        Operator insertPlan = update_Returning(rowsToValueScan(rows), updateFunction);
+        List<Row> result = runPlan(queryContext, queryBindings, insertPlan);
+        assertEquals("rows touched", rows.length, result.size());
     }
 }
