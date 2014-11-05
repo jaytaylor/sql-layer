@@ -34,7 +34,6 @@ import com.foundationdb.qp.operator.API.Ordering;
 import com.foundationdb.qp.operator.API.SortOption;
 import com.foundationdb.qp.storeadapter.Sorter;
 import com.foundationdb.qp.storeadapter.indexcursor.IterationHelper;
-import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
@@ -42,10 +41,10 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.store.format.MemoryTableStorageDescription;
 import com.foundationdb.util.tap.InOutTap;
-import com.persistit.Key;
 
 import java.util.Collection;
 
@@ -74,11 +73,6 @@ public class MemoryAdapter extends StoreAdapter {
         return new MemoryGroupCursor(this, group);
     }
 
-    @Override
-    public HKey newHKey(
-            com.foundationdb.ais.model.HKey hKeyMetadata) {
-        throw new UnsupportedOperationException();
-    }
 
     @Override
     protected Store getUnderlyingStore() {
@@ -145,7 +139,8 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
-    public Key createKey() {
+    public KeyCreator getKeyCreator() {
         throw new UnsupportedOperationException();
     }
+
 }

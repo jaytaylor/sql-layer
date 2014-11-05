@@ -399,10 +399,10 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             assert false : ordering;
         }
         this.startKey = adapter.takeIndexRow(keyRange.indexRowType());
-        this.startKeyKey = adapter.createKey();
+        this.startKeyKey = adapter.getKeyCreator().createKey();
         this.startBoundColumns = keyRange.boundColumns();
 
-        this.endKeyKey = adapter.createKey();
+        this.endKeyKey = adapter.getKeyCreator().createKey();
         // Set up type info, allowing for spatial indexes
         //this.collators = sortKeyAdapter.createAkCollators(startBoundColumns);
         this.types = sortKeyAdapter.createTInstances(startBoundColumns);

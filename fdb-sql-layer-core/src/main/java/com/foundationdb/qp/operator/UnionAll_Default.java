@@ -213,7 +213,7 @@ final class UnionAll_Default extends SetOperatorBase {
 
         private Row wrapped(Row inputRow) {
             assert inputRow != null;
-            if (!inputRow.rowType().equals(currentInputRowType)) {
+            if (!(inputRow.rowType() == currentInputRowType)) {
                 throw new WrongRowTypeException(inputRow, currentInputRowType);
             }
             if (currentInputRowType == rowType()) {

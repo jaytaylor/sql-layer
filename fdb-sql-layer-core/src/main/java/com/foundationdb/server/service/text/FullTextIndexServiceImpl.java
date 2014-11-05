@@ -435,14 +435,8 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 
     private Row toHKeyRow(byte rowBytes[], HKeyRowType hKeyRowType, StoreAdapter store)
     {
-        HKey hkey = store.newHKey(hKeyRowType.hKey());
-        Key key = store.createKey();
-        
-        key.setEncodedSize(rowBytes.length);
-        System.arraycopy(rowBytes, 0, key.getEncodedBytes(), 0, rowBytes.length);
-        
-        hkey.copyFrom(key);
-        
+        HKey hkey = store.getKeyCreator().newHKey(hKeyRowType.hKey());
+        hkey.copyFrom(rowBytes);
         if (hkey instanceof ValuesHKey) {
             return ((Row)(ValuesHKey)hkey);
         } else {

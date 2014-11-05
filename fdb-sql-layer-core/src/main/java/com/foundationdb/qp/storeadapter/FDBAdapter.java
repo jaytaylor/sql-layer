@@ -33,10 +33,8 @@ import com.foundationdb.qp.storeadapter.indexcursor.IterationHelper;
 import com.foundationdb.qp.storeadapter.indexcursor.MergeJoinSorter;
 import com.foundationdb.qp.storeadapter.indexrow.IndexRowPool;
 import com.foundationdb.qp.storeadapter.indexrow.FDBIndexRow;
-import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.ValuesHKey;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -53,11 +51,11 @@ import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBTransactionService;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.FDBException;
-import com.persistit.Key;
 
 import java.io.InterruptedIOException;
 import java.util.Collection;
@@ -97,11 +95,6 @@ public class FDBAdapter extends StoreAdapter {
                                         ordering,
                                         scanSelector,
                                         openAllSubCursors);
-    }
-
-    @Override
-    public HKey newHKey(com.foundationdb.ais.model.HKey hKeyMetadata) {
-        return new ValuesHKey(schema.newHKeyRowType(hKeyMetadata), store.getTypesRegistry());
     }
 
     @Override
@@ -169,7 +162,7 @@ public class FDBAdapter extends StoreAdapter {
     @Override
     public IndexRow newIndexRow(IndexRowType indexRowType)
     {
-        return new FDBIndexRow (this, indexRowType);
+        return new FDBIndexRow (this.store, indexRowType);
     }
     
     @Override
@@ -188,17 +181,16 @@ public class FDBAdapter extends StoreAdapter {
     public IterationHelper createIterationHelper(IndexRowType indexRowType) {
         return new FDBIterationHelper(this, indexRowType);
     }
+    
+    @Override
+    public KeyCreator getKeyCreator() {
+        return store;
+    }
 
     @Override
     protected FDBStore getUnderlyingStore() {
         return store;
     }
-
-    @Override
-    public Key createKey() {
-        return store.createKey();
-    }
-
 
     public FDBTransactionService.TransactionState getTransaction() {
         return txnService.getTransaction(getSession());

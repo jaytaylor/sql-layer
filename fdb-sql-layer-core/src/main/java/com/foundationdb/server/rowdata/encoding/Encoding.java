@@ -19,7 +19,6 @@ package com.foundationdb.server.rowdata.encoding;
 
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.server.rowdata.FieldDef;
-import com.persistit.Key;
 
 public interface Encoding {
 

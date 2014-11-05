@@ -168,7 +168,7 @@ class HKeyRow_Default extends Operator
 
         private Row buildHKeyRow() {
             StoreAdapter store = adapter(rowType.hKey().table());
-            HKey hkey = store.newHKey(rowType.hKey());
+            HKey hkey = store.getKeyCreator().newHKey(rowType.hKey());
             
             if (hkey instanceof ValuesHKey) {
                 int columnIndex = 0;

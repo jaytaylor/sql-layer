@@ -19,7 +19,6 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
-import com.foundationdb.ais.model.HKey;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.TableIndex;
@@ -47,7 +46,7 @@ import com.foundationdb.util.tap.InOutTap;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicLong;
 
-public abstract class StoreAdapter implements KeyCreator
+public abstract class StoreAdapter
 {
     public abstract GroupCursor newGroupCursor(Group group);
 
@@ -63,8 +62,6 @@ public abstract class StoreAdapter implements KeyCreator
                                              API.Ordering ordering,
                                              IndexScanSelector scanSelector,
                                              boolean openAllSubCursors);
-
-    public abstract com.foundationdb.qp.row.HKey newHKey(HKey hKeyMetadata);
 
     public final Schema schema()
     {
@@ -144,6 +141,8 @@ public abstract class StoreAdapter implements KeyCreator
     public final ConfigurationService getConfig() {
         return config;
     }
+    
+    public abstract KeyCreator getKeyCreator();
 
     protected abstract Store getUnderlyingStore();
 

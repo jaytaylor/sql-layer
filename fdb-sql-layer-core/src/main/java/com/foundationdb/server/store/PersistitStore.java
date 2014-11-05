@@ -23,7 +23,6 @@ import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.qp.loadableplan.std.PersistitCLILoadablePlan;
 import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
-import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.WriteIndexRow;
 import com.foundationdb.qp.rowtype.Schema;
@@ -131,11 +130,6 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         return new Key(treeService.getDb());
     }
     
-    @Override
-    public HKey newHKey (com.foundationdb.ais.model.HKey hkey) {
-        throw new UnsupportedOperationException ();
-    }
-
     public Persistit getDb() {
         return treeService.getDb();
     }

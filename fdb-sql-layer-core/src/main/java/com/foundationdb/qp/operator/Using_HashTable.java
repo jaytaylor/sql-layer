@@ -202,7 +202,7 @@ class Using_HashTable extends Operator
             hashTable.setTComparisons(tComparisons);
             hashTable.setCollators(collators);
             while ((row = loadCursor.next()) != null) {
-                assert(row.rowType().equals(hashedRowType));
+                assert(row.rowType() == hashedRowType) : row;
                 hashTable.put(row, evaluatableComparisonFields, bindings);
             }
             loadCursor.closeTopLevel();

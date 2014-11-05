@@ -375,7 +375,7 @@ class Flatten_HKeyOrdered extends Operator
         Execution(QueryContext context, Cursor input)
         {
             super(context, input);
-            this.leftJoinHKey = adapter().newHKey(childType.hKey());
+            this.leftJoinHKey = adapter().getKeyCreator().newHKey(childType.hKey());
         }
 
         // For use by this class
@@ -396,7 +396,7 @@ class Flatten_HKeyOrdered extends Operator
                         "so this Flatten should specify LEFT_JOIN_SHORTENS_HKEY also",
                         this, parent.hKey());
                 // Copy leftJoinHKey to avoid aliasing problems. (leftJoinHKey changes on each parent row.)
-                HKey hKey = adapter().newHKey(childType.hKey());
+                HKey hKey = adapter().getKeyCreator().newHKey(childType.hKey());
                 leftJoinHKey.copyTo(hKey);
                 pending.add(new FlattenedRow(flattenType, parent, null, hKey));
                 // Prevent generation of another left join row for the same parent

@@ -43,5 +43,6 @@ public interface HKey extends Comparable<HKey>
     // Lower level interface
     public void copyTo (Key start);
     public void copyFrom(Key source);
-
+    public void copyFrom (byte[] source);
+    public byte[] hKeyBytes();
 }

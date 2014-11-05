@@ -382,7 +382,7 @@ public class BranchLookup_Default extends Operator
         {
             super(context, input);
             this.lookupCursor = adapter().newGroupCursor(group);
-            this.lookupRowHKey = adapter().newHKey(outputRowType.hKey());
+            this.lookupRowHKey = adapter().getKeyCreator().newHKey(outputRowType.hKey());
         }
 
         // For use by this class

@@ -45,6 +45,7 @@ import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesHKey;
 import com.foundationdb.qp.row.WriteIndexRow;
 import com.foundationdb.qp.storeadapter.RowDataCreator;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
@@ -653,6 +654,12 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         }
     }
 
+    @Override
+    public HKey newHKey(com.foundationdb.ais.model.HKey hKey) {
+        com.foundationdb.qp.rowtype.Schema schema = SchemaCache.globalSchema(hKey.table().getAIS());
+        return new ValuesHKey(schema.newHKeyRowType(hKey), this.typesRegistryService);
+    }
+
     public SchemaManager getSchemaManager() {
         return schemaManager;
     }
@@ -676,6 +683,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     public TypesRegistryService getTypesRegistry() {
         return typesRegistryService;
     }
+    
     
 
     //
@@ -895,7 +903,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                                       WriteIndexRow indexRowBuffer,
                                       boolean cascadeDelete)
     {
-        Iterator it = createDescendantIterator(session, storeData);
+        Iterator<Void> it = createDescendantIterator(session, storeData);
         PROPAGATE_CHANGE_TAP.in();
         try {
             Key hKey = getKey(session, storeData);
@@ -987,7 +995,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
             constructHKey(session, table.rowDef(), rowData, hKey);
 
             StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(table.getAIS()));
-            HKey persistitHKey = adapter.newHKey(table.hKey());
+            HKey persistitHKey = adapter.getKeyCreator().newHKey(table.hKey());
             persistitHKey.copyFrom(hKey);
 
             for(GroupIndex groupIndex : groupIndexes) {

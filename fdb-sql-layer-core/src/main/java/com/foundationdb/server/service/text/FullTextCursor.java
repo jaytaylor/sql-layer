@@ -20,13 +20,11 @@ package com.foundationdb.server.service.text;
 import com.foundationdb.qp.operator.CursorLifecycle;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.RowCursorImpl;
-import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHKey;
 import com.foundationdb.qp.rowtype.HKeyRowType;
 import com.foundationdb.server.error.AkibanInternalException;
-import com.persistit.Key;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.search.IndexSearcher;
@@ -125,13 +123,9 @@ public class FullTextCursor extends RowCursorImpl
     /* Allocate a new <code>HKey</code> and copy the given
      * key bytes into it. */
     protected Row toHkeyRow(String encoded) {
-        HKey hkey = context.getStore().newHKey(rowType.hKey());
-        Key key = context.getStore().createKey();
+        HKey hkey = context.getStore().getKeyCreator().newHKey(rowType.hKey());
         byte decodedBytes[] = RowIndexer.decodeString(encoded);
-        key.setEncodedSize(decodedBytes.length);
-        System.arraycopy(decodedBytes, 0, key.getEncodedBytes(), 0, decodedBytes.length);
-        hkey.copyFrom(key);
+        hkey.copyFrom(decodedBytes);
         return (Row)(ValuesHKey)hkey;
     }
-
 }

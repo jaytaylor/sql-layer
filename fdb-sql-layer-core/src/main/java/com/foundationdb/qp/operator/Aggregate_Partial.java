@@ -329,7 +329,7 @@ final class Aggregate_Partial extends Operator
                         setIdle();
                         return output;
                     }
-                    if (!input.rowType().equals(inputRowType)) {
+                    if (!(input.rowType() == inputRowType)) {
                         if (LOG_EXECUTION) {
                             LOG.debug("Aggregate_Partial: yield {}", input);
                         }

@@ -23,7 +23,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.Strings;
-import com.persistit.Key;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -156,9 +155,9 @@ public class RowIndexer implements Closeable
     }
 
     protected void getKeyBytes(Row row) {
-        Key key = new Key (null, 2047);
-        row.hKey().copyTo(key);
-        keyEncodedString = encodeBytes(key.getEncodedBytes(), 0, key.getEncodedSize());
+        
+        byte[] bytes = row.hKey().hKeyBytes();
+        keyEncodedString = encodeBytes(bytes, 0, bytes.length);
         Field field = new StringField(IndexedField.KEY_FIELD, keyEncodedString, Store.YES);
         currentDocument.add(field);
     }

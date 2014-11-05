@@ -23,7 +23,6 @@ import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.PersistitKeyValueSource;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.UnsupportedIndexDataTypeException;
 import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
 import com.foundationdb.server.store.IndexVisitor;

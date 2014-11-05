@@ -423,7 +423,7 @@ public class BranchLookup_Nested extends Operator
         {
             super(context, bindingsCursor);
             this.cursor = adapter().newGroupCursor(group);
-            this.hKey = adapter().newHKey(outputRowTypes.get(0).hKey());
+            this.hKey = adapter().getKeyCreator().newHKey(outputRowTypes.get(0).hKey());
         }
 
         // For use by this class
@@ -508,7 +508,7 @@ public class BranchLookup_Nested extends Operator
         // BranchCursor interface
         public BranchCursor(StoreAdapter adapter) {
             this.cursor = adapter.newGroupCursor(group);
-            this.hKey = adapter.newHKey(outputRowTypes.get(0).hKey());
+            this.hKey = adapter.getKeyCreator().newHKey(outputRowTypes.get(0).hKey());
         }
 
         // For use by this class

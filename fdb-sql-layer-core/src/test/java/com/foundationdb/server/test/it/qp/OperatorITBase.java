@@ -29,6 +29,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.*;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.test.it.ITBase;
@@ -37,6 +38,7 @@ import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.Strings;
+
 import org.junit.After;
 import org.junit.Before;
 import org.slf4j.Logger;
@@ -111,7 +113,8 @@ public class OperatorITBase extends ITBase
     }
 
     protected void setupPostCreateSchema() {
-        schema = new Schema(ais());
+        schema = SchemaCache.globalSchema(ais());
+        assert schema != null : "no schema in ais";
         customerRowType = schema.tableRowType(table(customer));
         orderRowType = schema.tableRowType(table(order));
         itemRowType = schema.tableRowType(table(item));
