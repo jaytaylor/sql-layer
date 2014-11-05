@@ -433,7 +433,7 @@ class GroupLookup_Default extends Operator
         {
             Row currentRow = input.next();
             if (currentRow != null) {
-                if (currentRow.rowType().equals(inputRowType)) {
+                if (currentRow.rowType() == inputRowType) {
                     findAncestors(currentRow);
                     lookupState = LookupState.ANCESTOR;
                 }

@@ -358,7 +358,8 @@ class AncestorLookup_Nested extends Operator
         public void open() {
             super.open();
             Row rowFromBindings = bindings.getRow(inputBindingPosition);
-            assert rowFromBindings.rowType().equals(rowType) : rowFromBindings;
+            assert rowFromBindings.rowType() == rowType : rowFromBindings;
+            //assert rowFromBindings.rowType().equals(rowType) : rowFromBindings;
             for (int i = 0; i < hKeys.length; i++) {
                 hKeys[i] = rowFromBindings.ancestorHKey(ancestors.get(i));
                 cursors[i].rebind(hKeys[i], false);

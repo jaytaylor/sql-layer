@@ -140,7 +140,6 @@ public class MemoryAdapter extends StoreAdapter {
 
     @Override
     public KeyCreator getKeyCreator() {
-        // TODO Auto-generated method stub
         throw new UnsupportedOperationException();
     }
 

@@ -113,7 +113,7 @@ class HashTableLookup_Default extends Operator
                 Row next = null;
                 if(innerRowListPosition < innerRowList.size()) {
                     next = innerRowList.get(innerRowListPosition++);
-                    assert(next.rowType().equals(hashedRowType));
+                    assert(next.rowType() == hashedRowType);
                 }
                 if (LOG_EXECUTION) {
                     LOG.debug("HashJoin: yield {}", next);

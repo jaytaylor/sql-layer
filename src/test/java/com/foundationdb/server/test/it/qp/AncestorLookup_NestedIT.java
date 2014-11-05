@@ -24,9 +24,10 @@ import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.SetColumnSelector;
+
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -68,7 +69,8 @@ public class AncestorLookup_NestedIT extends OperatorITBase
 
     @Override
     protected void setupPostCreateSchema() {
-        schema = new Schema(ais());
+        schema = SchemaCache.globalSchema(ais());
+        assert schema != null : "no schema in ais";
         rRowType = schema.tableRowType(table(r));
         aRowType = schema.tableRowType(table(a));
         bRowType = schema.tableRowType(table(b));
