@@ -48,9 +48,11 @@ public class AggregateMapper extends BaseRule
     @Override
     public void apply(PlanContext plan) {
         AggregateSourceAndFunctionFinder aggregateSourceFinder = new AggregateSourceAndFunctionFinder(plan);
+
         List<AggregateSourceState> sources = aggregateSourceFinder.find();
         List<AggregateFunctionExpression> functions = aggregateSourceFinder.getFunctions();
         if (sources.isEmpty() && !functions.isEmpty()) {
+            // if there are AggregateFunctionExpressions but no AggregateSources
             throw new UnsupportedSQLException("Aggregate not allowed in WHERE",
                                               functions.get(0).getSQLsource());
         }
@@ -60,7 +62,8 @@ public class AggregateMapper extends BaseRule
             FindBestSource m = new FindBestSource((SchemaRulesContext)plan.getRulesContext(), source.aggregateSource, source.containingQuery);
             m.remap(source.aggregateSource);
         }
-        // Step 2: add those AggregateFunctionExpressions not in WHERE clauses to the appropriate AggregateSource
+        // Step 2: add those AggregateFunctionExpressions not in WHERE clauses to the appropriate AggregateSource,
+        //         and save the mapping to use in Step 3
         Map<AnnotatedAggregateFunctionExpression, AggregateSource> functionsToSources =
                 new HashMap<AnnotatedAggregateFunctionExpression, AggregateSource>();
         for (AggregateSourceState source : sources) {
@@ -70,7 +73,7 @@ public class AggregateMapper extends BaseRule
         }
         // Step 3: try to match AggregateFunctionExpressions in WHERE clauses to the appropriate AggregateSource
         for (AggregateSourceState source : sources) {
-            AddAggregatesPart2 addAggregates = new AddAggregatesPart2(functionsToSources);
+            AddAggregatesInWhereClauses addAggregates = new AddAggregatesInWhereClauses(functionsToSources);
             addAggregates.remap(source.aggregateSource);
         }
     }
@@ -113,6 +116,12 @@ public class AggregateMapper extends BaseRule
                                                    this.getType(),
                                                    this.getOption(),
                                                    this.getOrderBy());
+        }
+
+        @Override
+        public ExpressionNode accept(ExpressionRewriteVisitor v) {
+            ExpressionNode result = v.visit(this);
+            return result;
         }
     }
 
@@ -301,15 +310,15 @@ public class AggregateMapper extends BaseRule
             ExpressionNode nexpr = map.get(expr);
             if (nexpr != null)
                 return nexpr;
+            if (expr instanceof AnnotatedAggregateFunctionExpression) {
+                return ((AnnotatedAggregateFunctionExpression)expr).setQueryAndCloseness(subqueries.size(), source);
+            }
             if (expr instanceof AggregateFunctionExpression) {
                 nexpr = rewrite((AggregateFunctionExpression)expr);
                 if (nexpr == null) {
                     return new AnnotatedAggregateFunctionExpression((AggregateFunctionExpression)expr, subqueries.size(), source);
                 }
                 return nexpr.accept(this);
-            }
-            if (expr instanceof AnnotatedAggregateFunctionExpression) {
-                return ((AnnotatedAggregateFunctionExpression)expr).setQueryAndCloseness(subqueries.size(), source);
             }
             if (expr instanceof ColumnExpression) {
                 ColumnExpression column = (ColumnExpression)expr;
@@ -491,10 +500,10 @@ public class AggregateMapper extends BaseRule
         }
     }
 
-    static class AddAggregatesPart2 extends AddAggregates {
+    static class AddAggregatesInWhereClauses extends AddAggregates {
         Map<AnnotatedAggregateFunctionExpression, AggregateSource> functionsToSources;
 
-        public AddAggregatesPart2(Map<AnnotatedAggregateFunctionExpression, AggregateSource> functionsToSources) {
+        public AddAggregatesInWhereClauses(Map<AnnotatedAggregateFunctionExpression, AggregateSource> functionsToSources) {
             this.functionsToSources = functionsToSources;
         }
 
