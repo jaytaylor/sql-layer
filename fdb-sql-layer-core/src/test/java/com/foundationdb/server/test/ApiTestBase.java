@@ -181,7 +181,7 @@ public class ApiTestBase {
 
     private void clearFDBData() throws Exception {
         final FDBHolder holder = sm.getServiceByClass(FDBHolder.class);
-        holder.getRootDirectory().remove(holder.getDatabase()).get();
+        holder.getRootDirectory().remove(holder.getTransactionContext()).get();
     }
 
     @Before

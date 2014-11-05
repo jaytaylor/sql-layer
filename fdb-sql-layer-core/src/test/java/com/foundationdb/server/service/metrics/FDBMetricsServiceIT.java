@@ -40,7 +40,7 @@ public class FDBMetricsServiceIT extends FDBITBase
         fdbService = fdbHolder();
 
         metricsService.completeBackgroundWork();
-        fdbService.getDatabase().run(new Function<Transaction,Void>() {
+        fdbService.getTransactionContext().run(new Function<Transaction,Void>() {
                                          @Override
                                          public Void apply(Transaction tr) {
                                              tr.options().setAccessSystemKeys();
@@ -95,7 +95,7 @@ public class FDBMetricsServiceIT extends FDBITBase
         metricsService.completeBackgroundWork();
         final FDBMetric<Boolean> m1 = (FDBMetric<Boolean>)testBoolean;
         final FDBMetric<Long> m2 = (FDBMetric<Long>)testLong;
-        TestValues values = fdbService.getDatabase()
+        TestValues values = fdbService.getTransactionContext()
             .run(new Function<Transaction,TestValues> () {
                      @Override
                      public TestValues apply(Transaction tr) {

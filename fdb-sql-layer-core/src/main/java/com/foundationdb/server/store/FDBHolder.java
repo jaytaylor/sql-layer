@@ -18,11 +18,13 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.Database;
 import com.foundationdb.FDB;
+import com.foundationdb.TransactionContext;
 import com.foundationdb.directory.DirectorySubspace;
 
 public interface FDBHolder {
     int getAPIVersion();
     FDB getFDB();
     Database getDatabase();
+    TransactionContext getTransactionContext();
     DirectorySubspace getRootDirectory();
 }
