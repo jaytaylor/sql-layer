@@ -56,7 +56,7 @@ public class JDBCStatement implements Statement
             throws SQLException {
         if (context == null) {
             if (stmt.getParameterMetaData() != null)
-                throw new JDBCException("Statement requires parameters; must prepare");
+                throw new JDBCException("Statement requires parameters; must prepare", ErrorCode.UNPREPARED_STATEMENT_WITH_PARAMETERS);
             context = new EmbeddedQueryContext(this);
         }
         if (bindings == null) {
@@ -116,7 +116,7 @@ public class JDBCStatement implements Statement
                                           QueryBindings bindings)
             throws SQLException {
         boolean hasResultSet = executeInternal(stmt, context, bindings);
-        if (!hasResultSet) throw new JDBCException("Statement is not SELECT");
+        if (!hasResultSet) throw new JDBCException("Statement is not SELECT", ErrorCode.RESULTSET_SELECT_MISMATCH);
         return getResultSet();
     }
 
@@ -125,7 +125,7 @@ public class JDBCStatement implements Statement
                                      QueryBindings bindings)
             throws SQLException {
         boolean hasResultSet = executeInternal(stmt, context, bindings);
-        if (hasResultSet) throw new JDBCException("Statement is SELECT");
+        if (hasResultSet) throw new JDBCException("Statement is SELECT", ErrorCode.RESULTSET_SELECT_MISMATCH);
         return getUpdateCount();
     }
     

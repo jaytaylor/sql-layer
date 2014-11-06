@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.embedded;
 
+import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.error.InvalidOperationException;
 
 import java.sql.SQLException;
@@ -28,8 +29,8 @@ public class JDBCException extends SQLException
         super();
     }
 
-    public JDBCException(String reason) {
-        super(reason);
+    public JDBCException(String reason, ErrorCode code) {
+        super(reason, code.getFormattedValue());
     }
     
     public JDBCException(InvalidOperationException cause) {
@@ -55,8 +56,8 @@ public class JDBCException extends SQLException
         }
     }
 
-    protected static RuntimeException wrapped(String reason) {
-        return new Wrapper(new JDBCException(reason));
+    protected static RuntimeException wrapped(String reason, ErrorCode code) {
+        return new Wrapper(new JDBCException(reason, code));
     }
 
     protected static RuntimeException throwUnwrapped(RuntimeException ex) throws SQLException {
