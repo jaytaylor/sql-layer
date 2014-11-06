@@ -28,14 +28,17 @@ import org.eclipse.jetty.util.security.Credential;
 
 public class SecurityServiceLoginService extends MappedLoginService
 {
+
     public enum CredentialType { BASIC, DIGEST }
 
     private final SecurityService securityService;
     private final CredentialType credentialType;
     private final long cacheMillis;
     private volatile long lastCachePurge;
+    private String realm;
 
-    public SecurityServiceLoginService(SecurityService securityService, CredentialType credentialType, int cacheSeconds) {
+    public SecurityServiceLoginService(SecurityService securityService, CredentialType credentialType, int cacheSeconds,
+                                       String realm) {
         ArgumentValidation.isGTE("cacheSeconds", cacheSeconds, 0);
         if(credentialType != CredentialType.BASIC && credentialType != CredentialType.DIGEST) {
             throw new IllegalArgumentException("Unknown credential: " + credentialType);
@@ -43,6 +46,7 @@ public class SecurityServiceLoginService extends MappedLoginService
         this.securityService = securityService;
         this.credentialType = credentialType;
         this.cacheMillis = cacheSeconds * 1000;
+        this.realm = realm;
     }
 
     @Override
@@ -53,6 +57,11 @@ public class SecurityServiceLoginService extends MappedLoginService
             lastCachePurge = now;
         }
         return super.login(username, credentials);
+    }
+
+    @Override
+    public String getName() {
+        return realm;
     }
 
     @Override

@@ -47,44 +47,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.CoreMatchers.containsString;
 
-public abstract class CsrfProtectionITBase extends ITBase
+public abstract class CsrfProtectionITBase extends RestServiceITBase
 {
-    private static final String SCHEMA = "test";
-    private static final String TABLE = "t";
-
-
-    private int port;
-    private String restContext;
-    private HttpResponse response;
-    private CloseableHttpClient client;
-
-    @Before
-    public final void setUp() {
-        port = serviceManager().getServiceByClass(HttpConductor.class).getPort();
-        restContext = serviceManager().getServiceByClass(RestService.class).getContextPath();
-        createTable(SCHEMA, TABLE, "id int not null primary key");
-        client = HttpClientBuilder.create().build();
-    }
-
-    @After
-    public final void tearDown() throws IOException {
-        if(response != null) {
-            EntityUtils.consume(response.getEntity());
-        }
-        if(client != null) {
-            client.close();
-        }
-    }
-
 
     protected abstract String getUserInfo();
-
-
-    @Override
-    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
-        return super.serviceBindingsProvider()
-                .bindAndRequire(RestService.class, RestServiceImpl.class);
-    }
 
     @Override
     protected Map<String,String> startupConfigProperties() {
@@ -93,15 +59,9 @@ public abstract class CsrfProtectionITBase extends ITBase
         return config;
     }
 
-    private String entityEndpoint() {
-        return String.format("%s/entity/%s.%s", restContext, SCHEMA, TABLE);
-    }
-
     @Test
     public void requestBlockedWithMissingReferer() throws Exception{
-        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
-
-        HttpUriRequest request = new HttpPut(uri);
+        HttpUriRequest request = new HttpPut(defaultURI());
 
         response = client.execute(request);
         assertEquals("status", HttpStatus.SC_FORBIDDEN, response.getStatusLine().getStatusCode());
@@ -110,9 +70,7 @@ public abstract class CsrfProtectionITBase extends ITBase
 
     @Test
     public void requestBlockedWithEmptyReferer() throws Exception{
-        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
-
-        HttpUriRequest request = new HttpPut(uri);
+        HttpUriRequest request = new HttpPut(defaultURI());
         request.setHeader("Referer","");
 
         response = client.execute(request);
@@ -124,9 +82,7 @@ public abstract class CsrfProtectionITBase extends ITBase
     public void getBlockedWithBadHost() throws Exception{
         // Although we let blank & empty referers through for get requests, there is no benefit to
         // letting incorrect referers through, so those are always blocked.
-        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
-
-        HttpUriRequest request = new HttpGet(uri);
+        HttpUriRequest request = new HttpGet(defaultURI());
         request.setHeader("Referer", "https://coolest.site.edu.fake.com:4320");
 
         response = client.execute(request);
@@ -136,9 +92,7 @@ public abstract class CsrfProtectionITBase extends ITBase
 
     @Test
     public void postBlockedWithBadHost() throws Exception{
-        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
-
-        HttpUriRequest request = new HttpPost(uri);
+        HttpUriRequest request = new HttpPost(defaultURI());
         request.setHeader("Referer", "https://coolest.site.edu.fake.com:4320");
 
         response = client.execute(request);
@@ -148,9 +102,7 @@ public abstract class CsrfProtectionITBase extends ITBase
 
     @Test
     public void putBlockedWithMissingReferer() throws Exception{
-        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
-
-        HttpUriRequest request = new HttpPut(uri);
+        HttpUriRequest request = new HttpPut(defaultURI());
 
         response = client.execute(request);
         assertEquals("status", HttpStatus.SC_FORBIDDEN, response.getStatusLine().getStatusCode());
@@ -158,9 +110,7 @@ public abstract class CsrfProtectionITBase extends ITBase
     }
     @Test
     public void putBlockedWithBlankReferer() throws Exception{
-        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
-
-        HttpUriRequest request = new HttpPut(uri);
+        HttpUriRequest request = new HttpPut(defaultURI());
         request.setHeader("Referer","");
 
         response = client.execute(request);
@@ -172,9 +122,7 @@ public abstract class CsrfProtectionITBase extends ITBase
     public void getAllowedWithNoReferer() throws Exception{
         // Since GET requests don't have side effects, the cross-origin header will prevent
         // third-party javascript from viewing the result, meaning that we can allow this through.
-        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
-
-        HttpUriRequest request = new HttpGet(uri);
+        HttpUriRequest request = new HttpGet(defaultURI());
 
         response = client.execute(request);
         assertEquals("status", HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
@@ -184,9 +132,7 @@ public abstract class CsrfProtectionITBase extends ITBase
     public void getAllowedWithBlankReferer() throws Exception{
         // Since GET requests don't have side effects, the cross-origin header will prevent
         // third-party javascript from viewing the result, meaning that we can allow this through.
-        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
-
-        HttpUriRequest request = new HttpGet(uri);
+        HttpUriRequest request = new HttpGet(defaultURI());
         request.setHeader("Referer","");
 
         response = client.execute(request);
@@ -195,9 +141,7 @@ public abstract class CsrfProtectionITBase extends ITBase
 
     @Test
     public void getAllowed1() throws Exception{
-        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
-
-        HttpUriRequest request = new HttpGet(uri);
+        HttpUriRequest request = new HttpGet(defaultURI());
         request.setHeader("Referer","http://somewhere.com");
 
         response = client.execute(request);
@@ -206,9 +150,7 @@ public abstract class CsrfProtectionITBase extends ITBase
 
     @Test
     public void getAllowed2() throws Exception{
-        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
-
-        HttpUriRequest request = new HttpGet(uri);
+        HttpUriRequest request = new HttpGet(defaultURI());
         request.setHeader("Referer","https://coolest.site.edu:4320");
 
         response = client.execute(request);
@@ -217,9 +159,7 @@ public abstract class CsrfProtectionITBase extends ITBase
 
     @Test
     public void postAllowed() throws Exception{
-        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
-
-        HttpPost request = new HttpPost(uri);
+        HttpPost request = new HttpPost(defaultURI());
         request.setHeader("Referer","http://somewhere.com");
         request.setHeader("Content-Type", "application/json");
         request.setEntity(new StringEntity("{\"id\": \"1\"}"));
@@ -230,9 +170,7 @@ public abstract class CsrfProtectionITBase extends ITBase
 
     @Test
     public void putAllowed() throws Exception{
-        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint() + "/1", null, null);
-
-        HttpPut request = new HttpPut(uri);
+        HttpPut request = new HttpPut(defaultURI("/1"));
         request.setHeader("Referer","http://somewhere.com");
         request.setHeader("Content-Type", "application/json");
         request.setEntity(new StringEntity("{\"id\": \"1\"}"));
@@ -243,9 +181,7 @@ public abstract class CsrfProtectionITBase extends ITBase
 
     @Test
     public void deleteAllowed() throws Exception{
-        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint() + "/1", null, null);
-
-        HttpUriRequest request = new HttpDelete(uri);
+        HttpUriRequest request = new HttpDelete(defaultURI("/1"));
         request.setHeader("Referer","http://somewhere.com");
 
         response = client.execute(request);

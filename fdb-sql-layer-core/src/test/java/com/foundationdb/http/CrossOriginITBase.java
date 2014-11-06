@@ -20,23 +20,14 @@ package com.foundationdb.http;
 import com.foundationdb.rest.RestService;
 import com.foundationdb.rest.RestServiceImpl;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
-import com.foundationdb.server.test.it.ITBase;
 
-import org.apache.http.Header;
-import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpOptions;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
@@ -65,47 +56,11 @@ import static org.junit.Assert.assertEquals;
  *              Access-Control-Allow-Methods = ...
  *              Access-Control-Allow-Headers = ...
  */
-public abstract class CrossOriginITBase extends ITBase
-{
-    private static final String SCHEMA = "test";
-    private static final String TABLE = "t";
+public abstract class CrossOriginITBase extends RestServiceITBase {
     private static final String ORIGIN = "http://example.com";
     private static final String ALLOWED_METHODS = "GET,POST,PUT";
     private static final String HEADER_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
 
-
-    private int port;
-    private String restContext;
-    private HttpResponse response;
-    private CloseableHttpClient client;
-
-    @Before
-    public final void setUp() {
-        port = serviceManager().getServiceByClass(HttpConductor.class).getPort();
-        restContext = serviceManager().getServiceByClass(RestService.class).getContextPath();
-        createTable(SCHEMA, TABLE, "id int not null primary key");
-        client = HttpClientBuilder.create().build();
-    }
-
-    @After
-    public final void tearDown() throws IOException {
-        if(response != null) {
-            EntityUtils.consume(response.getEntity());
-        }
-        if(client != null) {
-            client.close();
-        }
-    }
-
-
-    protected abstract String getUserInfo();
-
-
-    @Override
-    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
-        return super.serviceBindingsProvider()
-                .bindAndRequire(RestService.class, RestServiceImpl.class);
-    }
 
     @Override
     protected Map<String,String> startupConfigProperties() {
@@ -115,15 +70,6 @@ public abstract class CrossOriginITBase extends ITBase
         config.put("fdbsql.http.cross_origin.allowed_origins", "*");
         config.put("fdbsql.http.csrf_protection.type", "none");
         return config;
-    }
-
-    private String entityEndpoint() {
-        return String.format("%s/entity/%s.%s", restContext, SCHEMA, TABLE);
-    }
-
-    private static String headerValue(HttpResponse response, String key) {
-        Header header = response.getFirstHeader(key);
-        return (header != null) ? header.getValue() : null;
     }
 
 
@@ -155,9 +101,7 @@ public abstract class CrossOriginITBase extends ITBase
 
     @Test
     public void simpleMethod() throws Exception {
-        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint(), null, null);
-
-        HttpUriRequest request = new HttpGet(uri);
+        HttpUriRequest request = new HttpGet(defaultURI());
         request.setHeader("Origin", ORIGIN);
 
         response = client.execute(request);
@@ -167,9 +111,7 @@ public abstract class CrossOriginITBase extends ITBase
 
     @Test
     public void nonSimpleMethod() throws Exception {
-        URI uri = new URI("http", getUserInfo(), "localhost", port, entityEndpoint() + "/1", null, null);
-
-        HttpUriRequest request = new HttpDelete(uri);
+        HttpUriRequest request = new HttpDelete(defaultURI("/1"));
         request.setHeader("Origin", ORIGIN);
 
         response = client.execute(request);
