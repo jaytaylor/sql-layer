@@ -18,7 +18,6 @@
 package com.foundationdb.server.test.pt.qp;
 
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.qp.exec.UpdatePlannable;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
@@ -145,8 +144,7 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
             filter_Default(
                 groupScan_Default(group),
                 Collections.singleton(parentRowType));
-        final UpdatePlannable updatePlan =
-            update_Default(scanPlan,
+        final Operator updatePlan = update_Returning(scanPlan,
                            new UpdateFunction()
                            {
                                @Override
@@ -156,12 +154,6 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
                                    long i = original.value(1).getInt64();
                                    updatedRow.overlay(1, i - 1000000);
                                    return updatedRow;
-                               }
-
-                               @Override
-                               public boolean rowIsSelected(Row row)
-                               {
-                                   return true;
                                }
                            });
         long start = Long.MIN_VALUE;
@@ -178,7 +170,7 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
                             Tap.setEnabled(".*propagate.*", true);
                             start = System.nanoTime();
                         }
-                        updatePlan.run(queryContext, queryBindings);
+                        runPlan(queryContext, queryBindings, updatePlan);
                         return start;
                     }
                 });
@@ -208,8 +200,7 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
                     groupScan_Default(group),
                     Collections.singleton(grandparentRowType)),
                 1);
-        final UpdatePlannable updatePlan =
-            update_Default(scanPlan,
+        final Operator updatePlan = update_Returning(scanPlan,
                            new UpdateFunction()
                            {
                                @Override
@@ -220,15 +211,8 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
                                    updatedRow.overlay(0, i - 1000000);
                                    return updatedRow;
                                }
-
-                               @Override
-                               public boolean rowIsSelected(Row row)
-                               {
-                                   return true;
-                               }
                            });
-        final UpdatePlannable revertPlan =
-            update_Default(scanPlan,
+        final Operator revertPlan = update_Returning(scanPlan,
                            new UpdateFunction()
                            {
                                @Override
@@ -238,12 +222,6 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
                                    long i = original.value(0).getInt64();
                                    updatedRow.overlay(0, i + 1000000);
                                    return updatedRow;
-                               }
-
-                               @Override
-                               public boolean rowIsSelected(Row row)
-                               {
-                                   return true;
                                }
                            });
         long start = Long.MIN_VALUE;
@@ -260,8 +238,8 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
                             Tap.setEnabled(".*propagate.*", true);
                             start = System.nanoTime();
                         }
-                        updatePlan.run(queryContext, queryBindings);
-                        revertPlan.run(queryContext, queryBindings);
+                        runPlan(queryContext, queryBindings, updatePlan);
+                        runPlan(queryContext, queryBindings, revertPlan);
                         return start;
                     }
                 });

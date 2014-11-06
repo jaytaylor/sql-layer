@@ -18,7 +18,7 @@
 package com.foundationdb.server.test.it.qp;
 
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.qp.exec.UpdatePlannable;
+import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.Schema;
@@ -71,11 +71,8 @@ public class OrphanResolutionIT extends OperatorITBase
     @Test
     public void test()
     {
-        UpdatePlannable insertPlan =
-            insert_Default(
-                valuesScan_Default(
-                    Arrays.asList(parentRow(1, 10)), parentRowType));
-        insertPlan.run(queryContext, queryBindings);
+        Operator insertPlan = insert_Returning(valuesScan_Default(Arrays.asList(parentRow(1, 10)), parentRowType));
+        runPlan(queryContext, queryBindings, insertPlan);
         // Execution of insertPlan used to hang before 1020342 was fixed.
         Row[] expected = new Row[] {
             row(parentRowType, 1L, 10L),

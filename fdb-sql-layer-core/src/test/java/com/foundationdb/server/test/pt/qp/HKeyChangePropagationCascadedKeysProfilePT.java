@@ -18,7 +18,6 @@
 package com.foundationdb.server.test.pt.qp;
 
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.qp.exec.UpdatePlannable;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
@@ -34,7 +33,7 @@ import org.junit.Test;
 import java.util.concurrent.Callable;
 
 import static com.foundationdb.qp.operator.API.groupScan_Default;
-import static com.foundationdb.qp.operator.API.update_Default;
+import static com.foundationdb.qp.operator.API.update_Returning;
 
 public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
 {
@@ -149,8 +148,7 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
         populateDB(GRANDPARENTS, PARENTS_PER_GRANDPARENT, CHILDREN_PER_PARENT);
         // Change gid of every row of every type
         Operator scanPlan = groupScan_Default(group);
-        final UpdatePlannable updatePlan =
-            update_Default(scanPlan,
+        final Operator updatePlan = update_Returning(scanPlan,
                            new UpdateFunction()
                            {
                                @Override
@@ -160,12 +158,6 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
                                    long i = original.value(0).getInt64();
                                    updatedRow.overlay(0, i - 1000000);
                                    return updatedRow;
-                               }
-
-                               @Override
-                               public boolean rowIsSelected(Row row)
-                               {
-                                   return true;
                                }
                            });
         long start = Long.MIN_VALUE;
@@ -182,7 +174,7 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
                             Tap.setEnabled(".*propagate.*", true);
                             start = System.nanoTime();
                         }
-                        updatePlan.run(queryContext, queryBindings);
+                        runPlan(queryContext, queryBindings, updatePlan);
                         return start;
                     }
                 });
