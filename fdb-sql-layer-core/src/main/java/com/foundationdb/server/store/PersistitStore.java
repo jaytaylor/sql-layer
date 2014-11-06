@@ -205,6 +205,33 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
 
     @Override
     public IndexRow readIndexRow(Session session,
+                                Index parentPKIndex,
+                                Exchange exchange,
+                                Row childRow)
+    {
+        PersistitKeyAppender keyAppender = PersistitKeyAppender.create(exchange.getKey(), parentPKIndex.getIndexName());
+        for (Column column : childRow.rowType().table().getParentJoin().getChildColumns()) {
+            keyAppender.append(childRow.value(column.getPosition()), column);
+        }
+
+        try {
+
+            PersistitIndexRowBuffer indexRow = null;
+            // Method only called if looking up a pk for which there is at least one
+            // column missing from child row. Key contains the logical parent of it.
+            if(exchange.hasChildren()) {
+                exchange.next(true);
+                indexRow = new PersistitIndexRowBuffer(this);
+                indexRow.resetForRead(parentPKIndex, exchange.getKey(), null);
+            }
+            return indexRow;
+        } catch(PersistitException | RollbackException e) {
+            throw PersistitAdapter.wrapPersistitException(session, e);
+        }
+    }
+                                
+    @Override
+    public IndexRow readIndexRow(Session session,
                                                 Index parentPKIndex,
                                                 Exchange exchange,
                                                 RowDef childRowDef,

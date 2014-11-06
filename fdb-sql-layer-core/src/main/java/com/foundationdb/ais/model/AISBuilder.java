@@ -89,18 +89,6 @@ public class AISBuilder {
         return Table.create(ais, schemaName, tableName, nameGenerator.generateTableID(new TableName(schemaName, tableName)));
     }
 
-    @Deprecated
-    public Table tableInitialAutoIncrement(String schemaName,
-            String tableName, Long initialAutoIncrementValue) {
-        LOG.trace("tableInitialAutoIncrement: " + schemaName + "."
-                + tableName + " = " + initialAutoIncrementValue);
-        Table table = ais.getTable(schemaName, tableName);
-        checkFound(table, "setting initial autoincrement value", "user table",
-                concat(schemaName, tableName));
-        table.setInitialAutoIncrementValue(initialAutoIncrementValue);
-        return table;
-    }
-
     public void view(String schemaName, String tableName,
                      String definition, Properties definitionProperties,
                      Map<TableName,Collection<String>> tableColumnReferences) {
@@ -124,7 +112,6 @@ public class AISBuilder {
                           String defaultValue, String defaultFunction) {
         LOG.trace("column: " + table + "." + columnName);
         Column column = Column.create(table, columnName, position, type);
-        column.setAutoIncrement(autoIncrement);
         column.setDefaultValue(defaultValue);
         column.setDefaultFunction(defaultFunction);
         column.finishCreating();

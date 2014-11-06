@@ -143,23 +143,6 @@ public class Column implements ColumnContainer, Visitable
     }
 
     /**
-     * The initial auto-increment value used in the MySQL 
-     * generated table identity columns. 
-     */
-    @Deprecated
-    public Long getInitialAutoIncrementValue()
-    {
-        return initialAutoIncrementValue;
-    }
-
-    @Deprecated
-    public void setInitialAutoIncrementValue(Long initialAutoIncrementValue)
-    {
-        this.initialAutoIncrementValue = initialAutoIncrementValue;
-        columnar.markColumnsStale();
-    }
-
-    /**
      * <p>
      * This is a three state boolean:
      * <ul>

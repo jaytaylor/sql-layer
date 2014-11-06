@@ -864,11 +864,6 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         packRow(session, storeData, row);
         store(session, storeData);
         
-        // TODO: The AutoIncrement support in SQL Layer is unsupported and unused
-        // But still remnants still exist - Remove this assert when the last finally 
-        // gets purged. 
-        assert row.rowType().table().getAutoIncrementColumn() == null; 
-
         boolean bumpCount = false;
         WriteIndexRow indexRow = new WriteIndexRow(this);
         for(TableIndex index : indexes) {
@@ -940,13 +935,6 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
          */
         packRowData(session, storeData, rowData);
         store(session, storeData);
-        if(rowDef.isAutoIncrement()) {
-            final long location = rowDef.fieldLocation(rowData, rowDef.getAutoIncrementField());
-            if(location != 0) {
-                long autoIncrementValue = rowData.getIntegerValue((int) location, (int) (location >>> 32));
-                rowDef.getTableStatus().setAutoIncrement(session, autoIncrementValue);
-            }
-        }
 
         boolean bumpCount = false;
         WriteIndexRow indexRow = new WriteIndexRow(this);

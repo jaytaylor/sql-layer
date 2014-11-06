@@ -36,17 +36,9 @@ public interface TableStatus {
     /** Reset, but do not remove, the state of a table. */
     void truncate(Session session);
 
-    /** Set the auto-increment value of a given table. */
-    void setAutoIncrement(Session session, long value);
-
     /** Set the RowDef of a given table.*/
     void setRowDef(RowDef rowDef);
     void setIndex (TableIndex pkTableIndex);
-
-    /**
-     * @return Current auto-increment value of the associated table.
-     */
-    long getAutoIncrement(Session session);
 
     /**
      * @return Current number of rows in the associated table.

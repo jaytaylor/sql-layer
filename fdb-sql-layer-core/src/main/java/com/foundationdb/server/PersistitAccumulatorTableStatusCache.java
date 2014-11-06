@@ -101,19 +101,9 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     private class AccumulatorStatus implements TableStatus {
         private final int expectedID;
         private volatile AccumulatorAdapter rowCount;
-        private volatile AccumulatorAdapter autoIncrement;
 
         public AccumulatorStatus(int expectedID) {
             this.expectedID = expectedID;
-        }
-
-        @Override
-        public long getAutoIncrement(Session session) {
-            try {
-                return autoIncrement.getSnapshot();
-            } catch(PersistitException | RollbackException e) {
-                throw PersistitAdapter.wrapPersistitException(null, e);
-            }
         }
 
         @Override
@@ -159,51 +149,35 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         public void truncate(Session session) {
             try {
                 internalSetRowCount(0);
-                internalSetAutoIncrement(0, true);
             } catch(PersistitException | RollbackException e) {
                 throw PersistitAdapter.wrapPersistitException(null, e);
             }
         }
 
         @Override
-        public void setAutoIncrement(Session session, long value) {
-            internalSetAutoIncrement(value, false);
-        }
-
-        @Override
         public void setRowDef(RowDef rowDef) {
             if(rowDef == null) {
-                rowCount = autoIncrement = null;
+                rowCount = null;
             } else {
                 checkExpectedRowDefID(expectedID, rowDef);
                 Tree tree = getTreeForRowDef(rowDef);
                 rowCount = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, tree);
-                autoIncrement = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.AUTO_INC, tree);
             }
         }
         
         @Override
         public void setIndex(TableIndex pkTableIndex) {
             if (pkTableIndex == null) {
-                rowCount = autoIncrement = null;
+                rowCount = null;
             } else {
                 assert pkTableIndex.getTable().getTableId().intValue() == expectedID;
                 Tree tree = getTreeForIndex(pkTableIndex);
                 rowCount = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, tree);
-                autoIncrement = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.AUTO_INC, tree);
             }
         }
 
         private void internalSetRowCount(long rowCountValue) throws PersistitInterruptedException {
             rowCount.set(rowCountValue);
-        }
-
-        private void internalSetAutoIncrement(long autoIncrementValue, boolean evenIfLess) {
-            try {
-                autoIncrement.set(autoIncrementValue, evenIfLess);
-            } catch(PersistitException | RollbackException e) {
-                throw PersistitAdapter.wrapPersistitException(null, e);
-            }
         }
     }
 }

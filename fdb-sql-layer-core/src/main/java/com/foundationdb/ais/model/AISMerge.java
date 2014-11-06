@@ -619,9 +619,6 @@ public class AISMerge {
         
         // columns
         for (Column column : table.getColumnsIncludingInternal()) {
-            // No longer supported, verify this here. 
-            assert column.getInitialAutoIncrementValue() == null : column;
-
             builder.column(schemaName, tableName, 
                     column.getName(), column.getPosition(), 
                     column.getType(), 
@@ -754,7 +751,7 @@ public class AISMerge {
                                    newReferences);
         for (Column col : oldView.getColumns()) {
             Column.create(newView, col.getName(), col.getPosition(),
-                          col.getType(), col.getInitialAutoIncrementValue());
+                          col.getType(), null);
         }
         newAIS.addView(newView);
     }

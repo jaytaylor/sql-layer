@@ -301,17 +301,6 @@ public class Table extends Columnar implements HasGroup, Visitable
         return childJoins;
     }
 
-    public Column getAutoIncrementColumn()
-    {
-        Column autoIncrementColumn = null;
-        for (Column column : getColumns()) {
-            if (column.getInitialAutoIncrementValue() != null) {
-                autoIncrementColumn = column;
-            }
-        }
-        return autoIncrementColumn;
-    }
-    
     public Column getIdentityColumn() 
     {
         Column identity = null;
@@ -335,16 +324,6 @@ public class Table extends Columnar implements HasGroup, Visitable
             possibleDescendant = possibleDescendant.getParentTable();
         }
         return false;
-    }
-
-    @Deprecated
-    public void setInitialAutoIncrementValue(Long initialAutoIncrementValue)
-    {
-        for (Column column : getColumns()) {
-            if (column.getInitialAutoIncrementValue() != null) {
-                column.setInitialAutoIncrementValue(initialAutoIncrementValue);
-            }
-        }
     }
 
     public synchronized PrimaryKey getPrimaryKey()
