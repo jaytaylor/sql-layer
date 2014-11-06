@@ -337,6 +337,7 @@ public class Table extends Columnar implements HasGroup, Visitable
         return false;
     }
 
+    @Deprecated
     public void setInitialAutoIncrementValue(Long initialAutoIncrementValue)
     {
         for (Column column : getColumns()) {

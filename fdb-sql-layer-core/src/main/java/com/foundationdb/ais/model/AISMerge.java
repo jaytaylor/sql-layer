@@ -619,17 +619,16 @@ public class AISMerge {
         
         // columns
         for (Column column : table.getColumnsIncludingInternal()) {
+            // No longer supported, verify this here. 
+            assert column.getInitialAutoIncrementValue() == null : column;
+
             builder.column(schemaName, tableName, 
                     column.getName(), column.getPosition(), 
                     column.getType(), 
-                    column.getInitialAutoIncrementValue() != null, 
+                    false, 
                     column.getDefaultValue(), column.getDefaultFunction());
             Column newColumn = targetTable.getColumnsIncludingInternal().get(column.getPosition());
             newColumn.setUuid(column.getUuid());
-            // if an auto-increment column, set the starting value. 
-            if (column.getInitialAutoIncrementValue() != null) {
-                newColumn.setInitialAutoIncrementValue(column.getInitialAutoIncrementValue());
-            }
             if (!table.hasMemoryTableFactory() && column.getDefaultIdentity() != null) {
                 addIdentitySequence(builder, schemaName, tableName, column.getName(),
                                     column.getDefaultIdentity(), column.getIdentityGenerator());

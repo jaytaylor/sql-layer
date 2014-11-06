@@ -43,7 +43,6 @@ import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.server.store.format.tuple.TupleRowDataConverter;
 import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
-import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.server.types.value.ValueTarget;

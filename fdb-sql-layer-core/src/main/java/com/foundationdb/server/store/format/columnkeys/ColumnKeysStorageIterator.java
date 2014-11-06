@@ -22,7 +22,6 @@ import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.FDBStoreDataIterator;
 import com.foundationdb.KeyValue;
 import com.foundationdb.async.AsyncIterator;
-import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple2;
 
 import java.util.HashMap;

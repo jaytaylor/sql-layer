@@ -89,6 +89,7 @@ public class AISBuilder {
         return Table.create(ais, schemaName, tableName, nameGenerator.generateTableID(new TableName(schemaName, tableName)));
     }
 
+    @Deprecated
     public Table tableInitialAutoIncrement(String schemaName,
             String tableName, Long initialAutoIncrementValue) {
         LOG.trace("tableInitialAutoIncrement: " + schemaName + "."
