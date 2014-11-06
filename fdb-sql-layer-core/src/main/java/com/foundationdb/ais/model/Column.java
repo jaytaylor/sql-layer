@@ -65,7 +65,7 @@ public class Column implements ColumnContainer, Visitable
     public static Column create(Columnar columnar, Column column, String name, Integer position) {
         Integer finalPosition = (position != null) ? position : column.position;
         String finalName = (name != null) ? name :  column.getName();
-        Column out = create(columnar, finalName, finalPosition, column.type, column.initialAutoIncrementValue,
+        Column out = create(columnar, finalName, finalPosition, column.type, null,
                             column.maxStorageSize, column.prefixSize);
         if(column.identityGenerator != null) {
             Sequence newGenerator = columnar.getAIS().getSequence(column.identityGenerator.getSequenceName());
@@ -92,13 +92,6 @@ public class Column implements ColumnContainer, Visitable
     }
 
     public void finishCreating() {
-    }
-
-    @Deprecated
-    public void setAutoIncrement(Boolean autoIncrement)
-    {
-        this.initialAutoIncrementValue = autoIncrement ? 1L /* mysql default */ : null;
-        columnar.markColumnsStale();
     }
 
     public final void setDefaultIdentity(Boolean defaultIdentity) {
@@ -445,7 +438,6 @@ public class Column implements ColumnContainer, Visitable
         this.columnName = columnName;
         this.position = position;
         this.type = type;
-        this.initialAutoIncrementValue = initialAutoIncValue;
         this.maxStorageSize = maxStorageSize;
         this.prefixSize = prefixSize;
     }
@@ -471,7 +463,6 @@ public class Column implements ColumnContainer, Visitable
     private final Integer position;
     private TInstance type;
     private UUID uuid;
-    private Long initialAutoIncrementValue;
 
     // TODO: Should be final, but the multi-part construction of a valid Column needs to be cleaned up
     private volatile Long maxStorageSize;
