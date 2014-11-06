@@ -18,9 +18,11 @@
 package com.foundationdb.server.store;
 
 import com.foundationdb.KeyValue;
+import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.Table;
@@ -276,6 +278,32 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         };
     }
 
+    @Override
+    protected IndexRow readIndexRow(Session session, Index parentPKIndex, FDBStoreData storeData, Row childRow) {
+        Key parentPkKey = storeData.persistitKey;
+        PersistitKeyAppender keyAppender = PersistitKeyAppender.create(parentPkKey, parentPKIndex.getIndexName());
+         for (Column column : childRow.rowType().table().getParentJoin().getChildColumns()) {
+             keyAppender.append(childRow.value(column.getPosition()), column);
+         }
+        // Only called when child row does not contain full HKey.
+        // Key contents are the logical parent of the actual index entry (if it exists).
+        byte[] packed = packedTuple(parentPKIndex, parentPkKey);
+        byte[] end = packedTuple(parentPKIndex, parentPkKey, Key.AFTER);
+        TransactionState txn = txnService.getTransaction(session);
+        List<KeyValue> pkValue = txn.getRangeAsValueList(packed, end);
+        FDBIndexRow indexRow = null;
+        if (!pkValue.isEmpty()) {
+            assert pkValue.size() == 1 : parentPKIndex;
+            KeyValue kv = pkValue.get(0);
+            assert kv.getValue().length == 0 : parentPKIndex + ", " + kv;
+            indexRow = new FDBIndexRow(this);
+            FDBStoreDataHelper.unpackTuple(parentPKIndex, parentPkKey, kv.getKey());
+            indexRow.resetForRead(parentPKIndex, parentPkKey, null);
+        }
+        return indexRow;
+        
+    }
+    
     @Override
     protected IndexRow readIndexRow(Session session,
                                                    Index parentPKIndex,

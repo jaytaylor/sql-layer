@@ -19,7 +19,11 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.storeadapter.RowDataCreator;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple2;
@@ -131,7 +135,16 @@ public class FDBStoreDataHelper
     }
     
     public static void packRow(Row row, FDBStoreData storeData) {
-        throw new UnsupportedOperationException();
+        
+        RowDef rowDef = row.rowType().table().rowDef();
+        RowDataCreator creator = new RowDataCreator();
+        NewRow niceRow = new NiceRow(rowDef.getRowDefId(), rowDef);
+        int fields = rowDef.table().getColumnsIncludingInternal().size();
+        for(int i = 0; i < fields; ++i) {
+            creator.put(row.value(i), niceRow, i);
+        }
+        RowData rowData = niceRow.toRowData();
+        storeData.rawValue = Arrays.copyOfRange(rowData.getBytes(), rowData.getRowStart(), rowData.getRowEnd());
     }
 
 }

@@ -17,20 +17,18 @@
 
 package com.foundationdb.server.store.format.protobuf;
 
-import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.CommonProtobuf.ProtobufRowFormat;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.error.ProtobufReadException;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
-import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
-
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -105,11 +103,23 @@ public class FDBProtobufStorageDescription extends TupleStorageDescription imple
     }
 
     @Override
+    public void packRow(FDBStore store, Session session,
+                        FDBStoreData storeData, Row row) {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
     public void packRowData(FDBStore store, Session session,
                             FDBStoreData storeData, RowData rowData) {
         ensureConverter();
         DynamicMessage msg = converter.encode(rowData);
         storeData.rawValue = msg.toByteArray();        
+    }
+
+    @Override 
+    public void expandRow (FDBStore store, Session session,
+                            FDBStoreData storeData, Row row) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

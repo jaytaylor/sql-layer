@@ -61,7 +61,7 @@ public class WriteIndexRow extends AbstractRow {
             } else {
                 if (indexRowComp.isInRowData(indexField)) {
                     int position = indexRowComp.getFieldPosition(indexField);
-                    Column column = row.rowType().table().getColumn(position);
+                    Column column = row.rowType().table().getColumnsIncludingInternal().get(position);
                     ValueSource source = row.value(column.getPosition());
                     pKeyTarget().append(source, column.getType());
                 } else if (indexRowComp.isInHKey(indexField)) {

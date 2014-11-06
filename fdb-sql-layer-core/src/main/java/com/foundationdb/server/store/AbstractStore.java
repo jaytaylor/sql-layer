@@ -156,6 +156,8 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                                                             RowDef childRowDef,
                                                             RowData childRowData);
 
+    protected abstract IndexRow readIndexRow(Session session , Index parentPKIndex, SDType storeData, Row row);
+    
     /** Called when a non-serializable store would need a row lock. */
     protected abstract void lock(Session session, SDType storeData, RowDef rowDef, RowData rowData);
     protected abstract void lock(Session session, SDType storeData, Row row);
@@ -172,6 +174,52 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         return createStoreData(session, (SSDType)object.getStorageDescription());
     }
 
+    protected void constructHKey (Session session, Row row, Key hKeyOut) {
+        // Initialize the HKey being constructed
+        hKeyOut.clear();
+        PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKeyOut, row.rowType().table().getName());
+
+        // Metadata for the row's table
+        Table table = row.rowType().table();
+
+        // Only set if parent row is looked up
+        int i2hPosition = 0;
+        IndexToHKey indexToHKey = null;
+        SDType parentStoreData = null;
+        IndexRow parentPKIndexRow = null;
+
+        // All columns of all segments of the HKey
+        for(HKeySegment hKeySegment : table.hKey().segments()) {
+            hKeyAppender.append(hKeySegment.table().getOrdinal());
+            for (HKeyColumn hKeyColumn : hKeySegment.columns()) {
+                Table hKeyColumnTable = hKeyColumn.column().getTable();
+                if (hKeyColumnTable != table) {
+                    if (parentStoreData == null) {
+                        TableIndex parentPkIndex = row.rowType().table().getParentTable().getPrimaryKey().getIndex();
+                        parentStoreData = createStoreData(session, parentPkIndex);
+                        indexToHKey = parentPkIndex.indexToHKey();
+                        parentPKIndexRow = readIndexRow(session, parentPkIndex, parentStoreData, row);
+                        i2hPosition = hKeyColumn.positionInHKey();
+                    }
+                    if(indexToHKey.isOrdinal(i2hPosition)) {
+                        assert indexToHKey.getOrdinal(i2hPosition) == hKeySegment.table().getOrdinal() : hKeyColumn;
+                        ++i2hPosition;
+                    }
+                    if(parentPKIndexRow != null) {
+                        parentPKIndexRow.appendFieldTo(indexToHKey.getIndexRowPosition(i2hPosition), hKeyAppender.key());
+                    } else {
+                        // Orphan row
+                        hKeyAppender.appendNull();
+                    }
+                    ++i2hPosition;
+                } else {
+                    // HKey column from rowData
+                    Column column = hKeyColumn.column();
+                    hKeyAppender.append(row.value(column.getPosition()), column);
+                }
+            }
+        }        
+    }
     protected void constructHKey(Session session, RowDef rowDef, RowData rowData, Key hKeyOut) {
         // Initialize the HKey being constructed
         hKeyOut.clear();
@@ -809,8 +857,9 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         assert row.rowType().hasTable() : "Writing a row with no table - not allowed";
         // TODO: Is it very unlikely the HKey for the row has been built successfully at this point
         // Verify the HKey for the row has been constructed at this point. 
-        assert row.hKey() != null : "No HKey for row being written";
-        row.hKey().copyTo(hKey);
+        //assert row.hKey() != null : "No HKey for row being written";
+        //row.hKey().copyTo(hKey);
+        this.constructHKey(session, row, hKey);
         //constructHKey(session, row, hKey);
         packRow(session, storeData, row);
         store(session, storeData);
@@ -1170,10 +1219,13 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         SDType storeData = createStoreData(session, table.getGroup());
         try {
             Key hKey = getKey(session, storeData);
-            // TODO: Is it very unlikely the HKey for the row has been built successfully at this point
-            // Verify the HKey for the row has been constructed at this point. 
-            assert row.hKey() != null : "No HKey for row being written";
-            row.hKey().copyTo(hKey);
+            // TODO : Replace the second construction of the Key HKey with retrieving 
+            // from the Row, as every(?) path here has already calculated this
+            // and it has the potential for one or more database reads. 
+            //assert row.hKey() != null : "No HKey for row being written";
+            //row.hKey().copyTo(hKey);
+
+            this.constructHKey(session, row, hKey);
 
             StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(table.getAIS()));
             HKey persistitHKey = adapter.getKeyCreator().newHKey(table.hKey());

@@ -54,6 +54,8 @@ public interface Store extends KeyCreator {
     void writeRow(Session session, RowDef rowDef, RowData row, Collection<TableIndex> tableIndexes, Collection<GroupIndex> groupIndexes);
     void writeNewRow(Session session, NewRow row);
 
+    void writeRow(Session session, Row row, Collection<TableIndex> tableIndexes, Collection<GroupIndex> groupIndexes);
+
     void deleteRow(Session session, RowData row, boolean cascadeDelete);
     void deleteRow(Session session, RowDef rowDef, RowData row, boolean cascadeDelete);
 

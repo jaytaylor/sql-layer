@@ -17,17 +17,16 @@
 
 package com.foundationdb.server.store.format.protobuf;
 
-import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.CommonProtobuf.ProtobufRowFormat;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.PersistitStore;
 import com.foundationdb.server.store.format.PersistitStorageDescription;
-
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.DynamicMessage;
 import com.persistit.Exchange;
@@ -92,6 +91,12 @@ public class PersistitProtobufStorageDescription extends PersistitStorageDescrip
         }
         return converter;
     }
+    
+    @Override
+    public void packRow (PersistitStore store, Session session, 
+                        Exchange exchange, Row row) {
+        throw new UnsupportedOperationException();
+    }
 
     @Override
     public void packRowData(PersistitStore store, Session session,
@@ -102,6 +107,12 @@ public class PersistitProtobufStorageDescription extends PersistitStorageDescrip
         exchange.getValue().directPut(store.getProtobufValueCoder(), holder, null);
     }
 
+    @Override 
+    public void expandRow (PersistitStore store, Session session, 
+                            Exchange exchange, Row row) {
+        throw new UnsupportedOperationException();
+    }
+    
     @Override
     public void expandRowData(PersistitStore store, Session session,
                               Exchange exchange, RowData rowData) {
