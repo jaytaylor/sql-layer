@@ -70,7 +70,7 @@ public class FDBTableStatusCache implements TableStatusCache {
     public FDBTableStatusCache(FDBHolder holder, FDBTransactionService txnService) {
         this.db = holder.getDatabase();
         this.txnService = txnService;
-        this.packedTableStatusPrefix = holder.getRootDirectory().createOrOpen(holder.getDatabase(),
+        this.packedTableStatusPrefix = holder.getRootDirectory().createOrOpen(holder.getTransactionContext(),
                                                                               TABLE_STATUS_DIR_PATH).get().pack();
     }
 

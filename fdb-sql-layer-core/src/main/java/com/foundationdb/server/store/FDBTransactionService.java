@@ -72,26 +72,27 @@ import static com.foundationdb.server.service.session.Session.StackKey;
 public class FDBTransactionService implements TransactionService {
     private static final Logger LOG = LoggerFactory.getLogger(FDBTransactionService.class);
 
-    private static final Key<TransactionState> TXN_KEY = Key.named("TXN_KEY");
-    private static final Key<Boolean> ROLLBACK_KEY = Key.named("TXN_ROLLBACK");
-    private static final Key<FDBPendingIndexChecks.CheckTime> CONSTRAINT_CHECK_TIME_KEY = Key.named("CONSTRAINT_CHECK_TIME");
-    private static final Key<TransactionCheckCounter> TXN_CHECK_KEY = Key.named("TXN_CHECK_KEY");
-    private static final StackKey<Callback> PRE_COMMIT_KEY = StackKey.stackNamed("TXN_PRE_COMMIT");
-    private static final StackKey<Callback> AFTER_END_KEY = StackKey.stackNamed("TXN_AFTER_END");
-    private static final StackKey<Callback> AFTER_COMMIT_KEY = StackKey.stackNamed("TXN_AFTER_COMMIT");
-    private static final StackKey<Callback> AFTER_ROLLBACK_KEY = StackKey .stackNamed("TXN_AFTER_ROLLBACK");
-    private static final String CONFIG_COMMIT_AFTER_MILLIS = "fdbsql.fdb.periodically_commit.after_millis";
-    private static final String CONFIG_COMMIT_AFTER_BYTES = "fdbsql.fdb.periodically_commit.after_bytes";
-    private static final String CONFIG_COMMIT_SCAN_LIMIT = "fdbsql.fdb.periodically_commit.scan_limit";
-    private static final String CONFIG_READ_AHEAD_DISABLE = "fdbsql.fdb.xact.read_ahead_disable";
-    private static final String CONFIG_READ_YOUR_WRITES_DISABLE = "fdbsql.fdb.xact.read_your_writes_disable";
-    private static final String UNIQUENESS_CHECKS_METRIC = "SQLLayerUniquenessPending";
+    protected static final Key<TransactionState> TXN_KEY = Key.named("TXN_KEY");
+    protected static final Key<Boolean> ROLLBACK_KEY = Key.named("TXN_ROLLBACK");
+    protected static final Key<FDBPendingIndexChecks.CheckTime> CONSTRAINT_CHECK_TIME_KEY = Key.named("CONSTRAINT_CHECK_TIME");
+    protected static final Key<TransactionCheckCounter> TXN_CHECK_KEY = Key.named("TXN_CHECK_KEY");
+    protected static final StackKey<Callback> PRE_COMMIT_KEY = StackKey.stackNamed("TXN_PRE_COMMIT");
+    protected static final StackKey<Callback> AFTER_END_KEY = StackKey.stackNamed("TXN_AFTER_END");
+    protected static final StackKey<Callback> AFTER_COMMIT_KEY = StackKey.stackNamed("TXN_AFTER_COMMIT");
+    protected static final StackKey<Callback> AFTER_ROLLBACK_KEY = StackKey .stackNamed("TXN_AFTER_ROLLBACK");
+    protected static final String CONFIG_COMMIT_AFTER_MILLIS = "fdbsql.fdb.periodically_commit.after_millis";
+    protected static final String CONFIG_COMMIT_AFTER_BYTES = "fdbsql.fdb.periodically_commit.after_bytes";
+    protected static final String CONFIG_COMMIT_SCAN_LIMIT = "fdbsql.fdb.periodically_commit.scan_limit";
+    protected static final String CONFIG_READ_AHEAD_DISABLE = "fdbsql.fdb.xact.read_ahead_disable";
+    protected static final String CONFIG_READ_YOUR_WRITES_DISABLE = "fdbsql.fdb.xact.read_your_writes_disable";
+    protected static final String UNIQUENESS_CHECKS_METRIC = "SQLLayerUniquenessPending";
 
-    private static final List<String> TRANSACTION_CHECK_DIR_PATH = Arrays.asList("transactionCheck");
+    protected static final List<String> TRANSACTION_CHECK_DIR_PATH = Arrays.asList("transactionCheck");
 
-    private final FDBHolder fdbHolder;
-    private final ConfigurationService configService;
-    private final MetricsService metricsService;
+    protected final FDBHolder fdbHolder;
+    protected final ConfigurationService configService;
+    protected final MetricsService metricsService;
+
     private long commitAfterMillis, commitAfterBytes;
     private int commitScanLimit;
     private boolean readAheadDisable, readYourWritesDisable;
@@ -118,11 +119,7 @@ public class FDBTransactionService implements TransactionService {
         final Session session;
 
         public TransactionState(FDBPendingIndexChecks.CheckTime checkTime, Session session) {
-            this.transaction = fdbHolder.getDatabase().createTransaction();
-            if (readAheadDisable)
-                transaction.options().setReadAheadDisable();
-            if (readYourWritesDisable)
-                transaction.options().setReadYourWritesDisable();
+            this.transaction = createTransaction();
             if ((checkTime != null) && checkTime.isDelayed())
                 this.indexChecks = new FDBPendingIndexChecks(checkTime,
                                                              uniquenessChecksMetric);
@@ -312,7 +309,7 @@ public class FDBTransactionService implements TransactionService {
     }
 
     public byte[] dirPathPrefix(List<String> dirPath) {
-        return fdbHolder.getRootDirectory().createOrOpen(fdbHolder.getDatabase(), dirPath).get().pack();
+        return fdbHolder.getRootDirectory().createOrOpen(fdbHolder.getTransactionContext(), dirPath).get().pack();
     }
 
     //
@@ -546,7 +543,7 @@ public class FDBTransactionService implements TransactionService {
     }
 
     public <T> T runTransaction (Function<Transaction,T> retryable) {
-        return fdbHolder.getDatabase().run(retryable);
+        return fdbHolder.getTransactionContext().run(retryable);
     }
     
     @Override
@@ -641,23 +638,32 @@ public class FDBTransactionService implements TransactionService {
     // Helpers
     //
 
-    private TransactionState getTransactionInternal(Session session) {
+    protected TransactionState getTransactionInternal(Session session) {
         return session.get(TXN_KEY);
     }
 
-    private void requireInactive(TransactionState txn) {
+    protected void requireInactive(TransactionState txn) {
         if(txn != null) {
             throw new IllegalStateException("Transaction already began");
         }
     }
 
-    private void requireActive(TransactionState txn) {
+    protected void requireActive(TransactionState txn) {
         if(txn == null) {
             throw new IllegalStateException("No transaction open");
         }
     }
 
-    private void end(Session session, TransactionState txn, boolean clearState, RuntimeException cause) {
+    protected Transaction createTransaction() {
+        Transaction transaction = fdbHolder.getDatabase().createTransaction();
+        if (readAheadDisable)
+            transaction.options().setReadAheadDisable();
+        if (readYourWritesDisable)
+            transaction.options().setReadYourWritesDisable();
+        return transaction;
+    }
+
+    protected void end(Session session, TransactionState txn, boolean clearState, RuntimeException cause) {
         RuntimeException re = cause;
         try {
             if(clearState) {
@@ -678,14 +684,14 @@ public class FDBTransactionService implements TransactionService {
         }
     }
 
-    private void clearStack(Session session, Session.StackKey<Callback> key) {
+    protected void clearStack(Session session, Session.StackKey<Callback> key) {
         Deque<Callback> stack = session.get(key);
         if(stack != null) {
             stack.clear();
         }
     }
 
-    private void runCallbacks(Session session, Session.StackKey<Callback> key, long timestamp, RuntimeException cause) {
+    protected void runCallbacks(Session session, Session.StackKey<Callback> key, long timestamp, RuntimeException cause) {
         RuntimeException exceptions = cause;
         Callback cb;
         while((cb = session.pop(key)) != null) {
@@ -700,7 +706,7 @@ public class FDBTransactionService implements TransactionService {
         }
     }
 
-    private static Session.StackKey<Callback> getCallbackKey(CallbackType type) {
+    protected static Session.StackKey<Callback> getCallbackKey(CallbackType type) {
         switch(type) {
             case PRE_COMMIT:    return PRE_COMMIT_KEY;
             case COMMIT:        return AFTER_COMMIT_KEY;

@@ -696,7 +696,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
 
     private void initSchemaManagerDirectory() {
         rootDir = holder.getRootDirectory();
-        smDirectory = rootDir.createOrOpen(holder.getDatabase(), SCHEMA_MANAGER_PATH).get();
+        smDirectory = rootDir.createOrOpen(holder.getTransactionContext(), SCHEMA_MANAGER_PATH).get();
         // Cache as this is checked on every transaction
         packedGenKey = smDirectory.pack(GENERATION_KEY);
         // And these are checked for every AIS load

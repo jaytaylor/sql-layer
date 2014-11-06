@@ -27,6 +27,7 @@ import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.Database;
 import com.foundationdb.FDB;
 import com.foundationdb.FDBException;
+import com.foundationdb.TransactionContext;
 import com.foundationdb.util.ArgumentValidation;
 import com.google.inject.Inject;
 
@@ -39,7 +40,7 @@ import java.util.List;
 import java.util.Properties;
 
 public class FDBHolderImpl implements FDBHolder, Service {
-    private static final Logger LOG = LoggerFactory.getLogger(FDBHolderImpl.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(FDBHolderImpl.class);
 
     private static final String CONFIG_API_VERSION = "fdbsql.fdb.api_version";
     private static final String CONFIG_CLUSTER_FILE = "fdbsql.fdb.cluster_file";
@@ -98,7 +99,7 @@ public class FDBHolderImpl implements FDBHolder, Service {
         }
         String rootDirName = configService.getProperty(CONFIG_ROOT_DIR);
         List<String> rootDirPath = parseDirString(rootDirName);
-        rootDirectory = new DirectoryLayer().createOrOpen(db, rootDirPath).get();
+        rootDirectory = new DirectoryLayer().createOrOpen(getTransactionContext(), rootDirPath).get();
     }
 
     @Override
@@ -130,6 +131,11 @@ public class FDBHolderImpl implements FDBHolder, Service {
 
     @Override
     public Database getDatabase() {
+        return db;
+    }
+
+    @Override
+    public TransactionContext getTransactionContext() {
         return db;
     }
 
