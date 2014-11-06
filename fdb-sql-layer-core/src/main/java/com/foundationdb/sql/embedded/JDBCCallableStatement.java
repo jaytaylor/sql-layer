@@ -18,11 +18,11 @@
 package com.foundationdb.sql.embedded;
 
 import com.foundationdb.ais.model.Routine;
+import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.util.AkibanAppender;
 
 import java.sql.*;
-
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -44,7 +44,7 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
                 return i;
             }
         }
-        throw new JDBCException("Parameter not found: " + parameterName);
+        throw new JDBCException("Parameter not found: " + parameterName, ErrorCode.PARAMETER_NOT_FOUND);
     }
 
     public Routine getRoutine() {

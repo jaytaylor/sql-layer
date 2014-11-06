@@ -366,7 +366,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     public void setAutoCommit(boolean autoCommit) throws SQLException {
         switch (commitMode) {
         case INHERITED:
-            throw new JDBCException("Cannot set auto commit with outer transaction");
+            throw new JDBCException("Cannot set auto commit with outer transaction", ErrorCode.AUTO_COMMIT_USAGE);
         case AUTO:
             if (!autoCommit)
                 commitMode = CommitMode.MANUAL;
@@ -388,9 +388,9 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     public void commit() throws SQLException {
         switch (commitMode) {
         case AUTO:
-            throw new JDBCException("Commit not allowed in auto-commit mode");
+            throw new JDBCException("Commit not allowed in auto-commit mode", ErrorCode.AUTO_COMMIT_USAGE);
         case INHERITED:
-            throw new JDBCException("Commit not allowed with outer transaction");
+            throw new JDBCException("Commit not allowed with outer transaction", ErrorCode.AUTO_COMMIT_USAGE);
         }
         try {
             commitTransaction();
@@ -406,9 +406,9 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     public void rollback() throws SQLException {
         switch (commitMode) {
         case AUTO:
-            throw new JDBCException("Rollback not allowed in auto-commit mode");
+            throw new JDBCException("Rollback not allowed in auto-commit mode", ErrorCode.AUTO_COMMIT_USAGE);
         case INHERITED:
-            throw new JDBCException("Rollback not allowed with outer transaction");
+            throw new JDBCException("Rollback not allowed with outer transaction", ErrorCode.AUTO_COMMIT_USAGE);
         }
         try {
             rollbackTransaction();
