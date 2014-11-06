@@ -93,6 +93,7 @@ public enum ErrorCode {
     STALE_STATEMENT         ("0A", "50A", Importance.ERROR, StaleStatementException.class),
     UNSUPPORTED_FULL_OUTER_JOIN("0A", "50B", Importance.DEBUG, UnsupportedFullOuterJoinException.class),
     UNSUPPORTED_GROUP_BY_ROLLUP("0A", "50C", Importance.DEBUG, UnsupportedGroupByRollupException.class),
+    UNSUPPORTED_TRIGGER("0A", "50D", Importance.DEBUG, UnsupportedTriggerException.class),
     
     // Class 0D - invalid target type specification
     // Class 0E - invalid schema name list specification
