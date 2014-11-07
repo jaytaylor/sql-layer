@@ -135,11 +135,10 @@ public class FDBStoreDataHelper
     }
     
     public static void packRow(Row row, FDBStoreData storeData) {
-        
         RowDef rowDef = row.rowType().table().rowDef();
         RowDataCreator creator = new RowDataCreator();
         NewRow niceRow = new NiceRow(rowDef.getRowDefId(), rowDef);
-        int fields = rowDef.table().getColumnsIncludingInternal().size();
+        int fields = rowDef.getFieldCount();
         for(int i = 0; i < fields; ++i) {
             creator.put(row.value(i), niceRow, i);
         }

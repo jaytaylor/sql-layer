@@ -1037,7 +1037,7 @@ public class OnlineHelper implements RowListener
                 projections.add(pExp);
             }
         }
-        return new ProjectedTableRowType(newRowType.schema(), newTable, projections, !isGroupChange);
+        return new ProjectedTableRowType(newRowType.schema(), newTable, projections, true);//!isGroupChange
     }
 
     // This should be quite similar to ExpressionAssembler#assembleColumnDefault()
