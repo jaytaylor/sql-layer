@@ -93,6 +93,8 @@ select-select-null: SELECT NULL for value is NULL if empty, NULL if not.
 
 select-null: SELECT NULL;
 
+union-null: union with both sides being null
+
 unnecessary-all: ALL of condition that must be true is also true if empty. 
                  true either way.
 
