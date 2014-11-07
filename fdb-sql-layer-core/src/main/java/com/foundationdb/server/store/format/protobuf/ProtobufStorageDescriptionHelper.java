@@ -109,7 +109,7 @@ class ProtobufStorageDescriptionHelper
         return sum;
     }
 
-    static ProtobufRowDataConverter buildConverter(HasStorage object,
+    static ProtobufRowDataConverter buildRowDataConverter(HasStorage object,
                                                    FileDescriptorProto fileProto) {
         Group group = (Group)object;
         FileDescriptor fileDescriptor;
@@ -121,5 +121,18 @@ class ProtobufStorageDescriptionHelper
         }
         return ProtobufRowDataConverter.forGroup(group, fileDescriptor);
     }
-
+    
+    static ProtobufRowConverter buildRowConverter(HasStorage object, FileDescriptorProto fileProto) {
+        Group group = (Group) object;
+        FileDescriptor fileDescriptor;
+        try {
+            fileDescriptor = FileDescriptor.buildFrom(fileProto, DEPENDENCIES);
+        }
+        catch (DescriptorValidationException ex) {
+            throw new ProtobufBuildException(ex);
+        }
+        return ProtobufRowConverter.forGroup(group, fileDescriptor);
+        
+        
+    }
 }
