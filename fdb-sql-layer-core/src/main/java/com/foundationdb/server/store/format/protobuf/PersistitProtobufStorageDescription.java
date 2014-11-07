@@ -37,7 +37,8 @@ public class PersistitProtobufStorageDescription extends PersistitStorageDescrip
 {
     private ProtobufRowFormat.Type formatType;
     private FileDescriptorProto fileProto;
-    private transient ProtobufRowDataConverter converter;
+    private transient ProtobufRowDataConverter rowDataConverter;
+    private transient ProtobufRowConverter rowConverter;
 
     public PersistitProtobufStorageDescription(HasStorage forObject, String storageFormat) {
         super(forObject, storageFormat);
@@ -85,11 +86,18 @@ public class PersistitProtobufStorageDescription extends PersistitStorageDescrip
         fileProto = validateAndGenerate(object, formatType, fileProto, output);
     }
 
-    public synchronized ProtobufRowDataConverter ensureConverter() {
-        if (converter == null) {
-            converter = buildConverter(object, fileProto);
+    public synchronized ProtobufRowDataConverter ensureRowDataConverter() {
+        if (rowDataConverter == null) {
+            rowDataConverter = buildRowDataConverter(object, fileProto);
         }
-        return converter;
+        return rowDataConverter;
+    }
+    
+    public synchronized ProtobufRowConverter ensureRowConverter() {
+        if (rowConverter == null) {
+            rowConverter = buildRowConverter(object, fileProto);
+        }
+        return rowConverter;
     }
     
     @Override
@@ -101,9 +109,9 @@ public class PersistitProtobufStorageDescription extends PersistitStorageDescrip
     @Override
     public void packRowData(PersistitStore store, Session session,
                             Exchange exchange, RowData rowData) {
-        ensureConverter();
-        DynamicMessage msg = converter.encode(rowData);
-        PersistitProtobufRow holder = new PersistitProtobufRow(converter, msg);
+        ensureRowDataConverter();
+        DynamicMessage msg = rowDataConverter.encode(rowData);
+        PersistitProtobufRow holder = new PersistitProtobufRow(rowDataConverter, msg);
         exchange.getValue().directPut(store.getProtobufValueCoder(), holder, null);
     }
 
@@ -116,10 +124,10 @@ public class PersistitProtobufStorageDescription extends PersistitStorageDescrip
     @Override
     public void expandRowData(PersistitStore store, Session session,
                               Exchange exchange, RowData rowData) {
-        ensureConverter();
-        PersistitProtobufRow holder = new PersistitProtobufRow(converter, null);
+        ensureRowDataConverter();
+        PersistitProtobufRow holder = new PersistitProtobufRow(rowDataConverter, null);
         exchange.getValue().directGet(store.getProtobufValueCoder(), holder, PersistitProtobufRow.class, null);
-        converter.decode(holder.getMessage(), rowData);
+        rowDataConverter.decode(holder.getMessage(), rowData);
     }
 
 }
