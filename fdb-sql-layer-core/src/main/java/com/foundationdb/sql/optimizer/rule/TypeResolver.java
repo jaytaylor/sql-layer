@@ -854,7 +854,6 @@ public final class TypeResolver extends BaseRule {
                 DataTypeDescriptor rightType = rightExpr.getSQLtype();
 
                 DataTypeDescriptor projectType = null;
-                // Case of SELECT null UNION SELECT null -> pick a type
                 if (leftType == null && rightType == null)
                     projectType = null;
                 else if (leftType == null)
@@ -868,10 +867,14 @@ public final class TypeResolver extends BaseRule {
                         projectType = null;
                     }
                 }
-                TInstance projectInst = typesTranslator.typeForSQLType(projectType);
+                // no point in casting to an unknown type
+                // i.e. SELECT NULL as t1 UNION SELECT NULL as t1
+                if (projectType != null) {
+                    TInstance projectInst = typesTranslator.typeForSQLType(projectType);
 
-                leftProject.applyCast(i, projectType, projectInst);
-                rightProject.applyCast(i, projectType, projectInst);
+                    leftProject.applyCast(i, projectType, projectInst);
+                    rightProject.applyCast(i, projectType, projectInst);
+                }
 
                 ResultField leftField = leftResult.getFields().get(i);
                 ResultField rightField = rightResult.getFields().get(i);
