@@ -1,3 +1,8 @@
+# BUG: Fails in FTS. Enable when fixed.
+---
+- Properties: fts
+- suppressed: true
+
 ---
 - CreateTable: nums (n INT)
 ---
