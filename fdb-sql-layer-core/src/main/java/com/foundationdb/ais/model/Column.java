@@ -33,23 +33,17 @@ import java.util.UUID;
 public class Column implements ColumnContainer, Visitable
 {
     public static Column create(Columnar table, String name, Integer position, TInstance type) {
-        return create(table, name, position, type, null, null, null);
+        return create(table, name, position, type, null, null);
     }
 
-    public static Column create(Columnar table, String name, Integer position, TInstance type, Long initialAutoIncValue)
-    {
-        return create(table, name, position, type, initialAutoIncValue,
-                      null, null);
-    }
-
-    public static Column create(Columnar table, String name, Integer position, TInstance type, Long initialAutoIncValue,
+    public static Column create(Columnar table, String name, Integer position, TInstance type,
                                 Long maxStorageSize, Integer prefixSize)
     {
         table.checkMutability();
         AISInvariants.checkNullName(name, "column", "column name");
         AISInvariants.checkDuplicateColumnsInTable(table, name);
         AISInvariants.checkDuplicateColumnPositions(table, position);
-        Column column = new Column(table, name, position, type, initialAutoIncValue,
+        Column column = new Column(table, name, position, type,
                                    maxStorageSize, prefixSize);
         table.addColumn(column);
         return column;
@@ -65,7 +59,7 @@ public class Column implements ColumnContainer, Visitable
     public static Column create(Columnar columnar, Column column, String name, Integer position) {
         Integer finalPosition = (position != null) ? position : column.position;
         String finalName = (name != null) ? name :  column.getName();
-        Column out = create(columnar, finalName, finalPosition, column.type, null,
+        Column out = create(columnar, finalName, finalPosition, column.type,
                             column.maxStorageSize, column.prefixSize);
         if(column.identityGenerator != null) {
             Sequence newGenerator = columnar.getAIS().getSequence(column.identityGenerator.getSequenceName());
@@ -430,7 +424,6 @@ public class Column implements ColumnContainer, Visitable
                    String columnName,
                    Integer position,
                    TInstance type,
-                   Long initialAutoIncValue,
                    Long maxStorageSize,
                    Integer prefixSize)
     {

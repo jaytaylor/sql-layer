@@ -751,7 +751,7 @@ public class AISMerge {
                                    newReferences);
         for (Column col : oldView.getColumns()) {
             Column.create(newView, col.getName(), col.getPosition(),
-                          col.getType(), null);
+                          col.getType());
         }
         newAIS.addView(newView);
     }

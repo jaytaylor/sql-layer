@@ -34,7 +34,7 @@ public class ColumnMaxAndPrefixSizesMatchTest {
     private static AkibanInformationSchema createAIS(Long maxStorage, Integer prefix) {
         AkibanInformationSchema ais = new AkibanInformationSchema();
         Table table = Table.create(ais, SCHEMA, TABLE, 1);
-        Column.create(table, "id", 0, TestTypesRegistry.MCOMPAT.getTypeClass("MCOMPAT", "BIGINT").instance(false), null, maxStorage, prefix);
+        Column.create(table, "id", 0, TestTypesRegistry.MCOMPAT.getTypeClass("MCOMPAT", "BIGINT").instance(false), maxStorage, prefix);
         return ais;
     }
 

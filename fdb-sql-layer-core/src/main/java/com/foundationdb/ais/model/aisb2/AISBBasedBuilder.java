@@ -248,11 +248,6 @@ public class AISBBasedBuilder
                               initValue, 1L, initValue, Long.MAX_VALUE,
                               false);
                 aisb.columnAsIdentity(schema, object, name, sequenceName, defaultIdentity);
-                // TODO No longer used
-                //aisb.akibanInformationSchema().
-                //     getTable(schema, object).
-                //     getColumn(name).
-                     //setInitialAutoIncrementValue(initValue);
             }
             return this;
         }
