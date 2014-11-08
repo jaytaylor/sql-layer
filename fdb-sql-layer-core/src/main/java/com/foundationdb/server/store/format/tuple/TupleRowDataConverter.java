@@ -106,6 +106,8 @@ public class TupleRowDataConverter
 
     public static Tuple2 tupleFromRow (Row row) {
         int nfields = row.rowType().nFields();
+        assert nfields == row.rowType().table().getColumnsIncludingInternal().size() : 
+             "Row Type: " + nfields + " Vs. table: " + row.rowType().table();
         Object[] objects = new Object[nfields];
         for (int i = 0; i < nfields ; i++) {
             objects[i] = ValueSources.toObject(row.value(i));
@@ -136,6 +138,7 @@ public class TupleRowDataConverter
     public static void tupleToRowData(Tuple2 tuple, RowDef rowDef, RowData rowData) {
         int nfields = rowDef.getFieldCount();
         Object[] objects = new Object[nfields];
+        assert tuple.size() == nfields : "Tuple Size: " + tuple.size() + " != RowDef size: " + nfields;
         for (int i = 0; i < nfields; i++) {
             objects[i] = tuple.get(i);
         }
