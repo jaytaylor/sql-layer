@@ -39,7 +39,10 @@ import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHKey;
+import com.foundationdb.qp.row.ValuesHolderRow;
+import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.qp.rowtype.HKeyRowType;
+import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.error.AkibanInternalException;
@@ -57,6 +60,8 @@ import com.foundationdb.server.service.transaction.TransactionService.CallbackTy
 import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
+import com.foundationdb.server.types.value.ValueSources;
+import com.foundationdb.server.types.value.ValueTargets;
 import com.foundationdb.sql.server.ServerCallContextStack;
 import com.foundationdb.sql.server.ServerQueryContext;
 import com.foundationdb.util.Exceptions;
@@ -568,19 +573,15 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     }
 
     private void trackChange(Session session, Table table, Key hKey) {
-        NiceRow row = null;
-        for(Index index : table.getFullTextIndexes()) {
-            if(row == null) {
-                AkibanInformationSchema ais = getAIS(session);
-                Table changeTable = ais.getTable(CHANGES_TABLE);
-                row = new NiceRow(changeTable.getTableId(), changeTable.rowDef());
-            }
-            row.put(0, index.getIndexName().getSchemaName());
-            row.put(1, index.getIndexName().getTableName());
-            row.put(2, index.getIndexName().getName());
-            row.put(3, index.getIndexId());
-            row.put(4, Arrays.copyOf(hKey.getEncodedBytes(), hKey.getEncodedSize()));
-            store.writeNewRow(session, row);
+        RowType rowType = SchemaCache.globalSchema(getAIS(session)).tableRowType(table);
+        for (Index index : table.getFullTextIndexes()) {
+            ValuesHolderRow row = new ValuesHolderRow(rowType,
+                    index.getIndexName().getSchemaName(),
+                    index.getIndexName().getTableName(),
+                    index.getIndexName().getName(),
+                    index.getIndexId(),
+                    Arrays.copyOf(hKey.getEncodedBytes(), hKey.getEncodedSize()));
+            store.writeRow(session, row, null, null);
         }
     }
 
