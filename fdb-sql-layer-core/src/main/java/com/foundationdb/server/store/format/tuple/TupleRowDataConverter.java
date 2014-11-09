@@ -26,7 +26,7 @@ import com.foundationdb.ais.model.PrimaryKey;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.protobuf.FDBProtobuf.TupleUsage;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.ValuesRow;
+import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
@@ -132,7 +132,7 @@ public class TupleRowDataConverter
         for (int i = 0; i < nfields; i++) {
             objects[i] = tuple.get(i);
         }
-        ValuesRow newRow = new ValuesRow (rowType, objects);
+        ValuesHolderRow newRow = new ValuesHolderRow (rowType, objects);
         return newRow;
     }
     public static void tupleToRowData(Tuple2 tuple, RowDef rowDef, RowData rowData) {

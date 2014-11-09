@@ -35,7 +35,7 @@ import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.ValuesRow;
+import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.server.error.ErrorCode;
@@ -199,14 +199,13 @@ public class ServerSchemaTablesServiceImpl
                 
                 Long compile_time = ManagementFactory.getCompilationMXBean().getTotalCompilationTime();
                 
-                ValuesRow row = new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                         serverInterface.getServerName(),
                         serverInterface.getVersionInfo().versionLong,
                         hostName,
                         store.getName(),
                         compile_time,
                         ++rowCounter);
-                return row;
             }
         }
     }
@@ -239,13 +238,12 @@ public class ServerSchemaTablesServiceImpl
                     return null;
                 }
                 ServerMonitor server = servers.next();
-                ValuesRow row = new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                                               server.getServerType(),
                                               (server.getLocalPort() < 0) ? null : Long.valueOf(server.getLocalPort()),
                                               server.getStartTimeMillis()/1000,
                                               Long.valueOf(server.getSessionCount()),
                                               ++rowCounter);
-                return row;
             }
         }
     }
@@ -280,7 +278,7 @@ public class ServerSchemaTablesServiceImpl
                 }
                 SessionMonitor session = sessions.next();
                 MonitorStage stage = session.getCurrentStage();
-                ValuesRow row = new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                                               (long)session.getSessionId(),
                                               session.getCallerSessionId() < 0 ? null : (long)session.getCallerSessionId(),
                                               (int)(session.getStartTimeMillis()/1000),
@@ -294,7 +292,6 @@ public class ServerSchemaTablesServiceImpl
                                               session.getRowsProcessed() < 0 ? null : (long)session.getRowsProcessed(),
                                               session.getCurrentStatementPreparedName(),
                                               ++rowCounter);
-                return row;
             }
         }
     }
@@ -326,7 +323,7 @@ public class ServerSchemaTablesServiceImpl
             public Row next() {
                 if (rowCounter >= codes.length)
                     return null;
-                return new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                         codes[(int)rowCounter].getFormattedValue(),
                         codes[(int)rowCounter].name(),
                         codes[(int)rowCounter].getMessage(),
@@ -363,7 +360,7 @@ public class ServerSchemaTablesServiceImpl
             public Row next() {
                 if (rowCounter >= classes.size())
                     return null;
-                return new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                         classes.get((int)rowCounter).getKey(),
                         classes.get((int)rowCounter).getDescription(),
                         ++rowCounter);
@@ -399,7 +396,7 @@ public class ServerSchemaTablesServiceImpl
                 if (!propertyIt.hasNext())
                     return null;
                 Map.Entry<String,String> prop = propertyIt.next();
-                return new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                                       prop.getKey(),
                                       prop.getValue(),
                                       ++rowCounter);
@@ -436,7 +433,7 @@ public class ServerSchemaTablesServiceImpl
                     return null;
                 }
                 MemoryPoolMXBean pool = it.next();
-                return new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                                       pool.getName(),
                                       pool.getType().name(),
                                       pool.getUsage().getUsed(),
@@ -476,7 +473,7 @@ public class ServerSchemaTablesServiceImpl
                     return null;
                 }
                 GarbageCollectorMXBean pool = it.next();
-                return new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                                       pool.getName(),
                                       pool.getCollectionCount(),
                                       pool.getCollectionTime(),
@@ -519,7 +516,7 @@ public class ServerSchemaTablesServiceImpl
                     return null;
                 }
                 TapReport report = reports[it++];
-                return new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                                       report.getName(),
                                       report.getInCount(),
                                       report.getOutCount(),
@@ -567,14 +564,13 @@ public class ServerSchemaTablesServiceImpl
                     statements = sessions.next().getPreparedStatements().iterator();
                 }
                 PreparedStatementMonitor preparedStatement = statements.next();
-                ValuesRow row = new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                                               (long)preparedStatement.getSessionId(),
                                               preparedStatement.getName(),
                                               preparedStatement.getSQL(),
                                               preparedStatement.getPrepareTimeMillis()/1000,
                                               preparedStatement.getEstimatedRowCount() < 0 ? null : (long)preparedStatement.getEstimatedRowCount(),
                                               ++rowCounter);
-                return row;
             }
         }
     }
@@ -617,7 +613,7 @@ public class ServerSchemaTablesServiceImpl
                     statements = sessions.next().getCursors().iterator();
                 }
                 CursorMonitor cursor = statements.next();
-                ValuesRow row = new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                                               (long)cursor.getSessionId(),
                                               cursor.getName(),
                                               cursor.getSQL(),
@@ -625,7 +621,6 @@ public class ServerSchemaTablesServiceImpl
                                               cursor.getCreationTimeMillis()/1000,
                                               (long)cursor.getRowCount(),
                                               ++rowCounter);
-                return row;
             }
         }
     }
@@ -659,11 +654,10 @@ public class ServerSchemaTablesServiceImpl
                     return null;
                 }
                 UserMonitor user = users.next();
-                ValuesRow row = new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                                             user.getUserName(),
                                             user.getStatementCount(),
                                             ++rowCounter);
-                return row;
             }
         }
     }

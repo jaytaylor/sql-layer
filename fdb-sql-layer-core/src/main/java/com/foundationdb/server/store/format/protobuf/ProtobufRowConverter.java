@@ -22,7 +22,7 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.ValuesRow;
+import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Descriptors.Descriptor;
@@ -233,7 +233,7 @@ public abstract class ProtobufRowConverter
                 }
             }
 
-            ValuesRow row = new ValuesRow (rowType, objects);
+            ValuesHolderRow row = new ValuesHolderRow (rowType, objects);
             return row;
         }
     }

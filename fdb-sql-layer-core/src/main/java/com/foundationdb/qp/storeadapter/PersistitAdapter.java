@@ -116,10 +116,8 @@ public class PersistitAdapter extends StoreAdapter
     }
     @Override
     public void writeRow(Row newRow, Collection<TableIndex> indexes, Collection<GroupIndex> groupIndexes) {
-        RowDef rowDef = newRow.rowType().table().rowDef();
         try {
-            RowData newRowData = rowData (rowDef, newRow, rowDataCreator());
-            store.writeRow(getSession(), rowDef, newRowData, indexes, groupIndexes);
+            store.writeRow(getSession(), newRow, indexes, groupIndexes);
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;

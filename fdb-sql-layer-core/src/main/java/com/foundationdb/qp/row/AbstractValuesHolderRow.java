@@ -21,9 +21,11 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.server.types.value.ValueTargets;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -61,6 +63,26 @@ class AbstractValuesHolderRow extends AbstractRow {
         }
     }
 
+    AbstractValuesHolderRow(RowType rowType, Object... objects) {
+        this.isMutable = false;
+        this.rowType = rowType;
+        assert rowType.nFields() == objects.length;
+        
+        List<Value> valueList = new ArrayList<>(rowType.nFields());
+        for (int i = 0; i < objects.length; i++) {
+            valueList.add(ValueSources.valuefromObject(objects[i], rowType.typeAt(i)));
+        }
+       
+        this.values = Collections.unmodifiableList(valueList);
+    }
+
+    AbstractValuesHolderRow(RowType rowType, Value... values) {
+        this.isMutable = false;
+        this.rowType = rowType;
+        assert rowType.nFields() == values.length;
+        this.values = Collections.unmodifiableList(Arrays.asList(values));
+    }
+   
     AbstractValuesHolderRow(RowType rowType, List<Value> values) {
         this.isMutable = false;
         this.rowType = rowType;

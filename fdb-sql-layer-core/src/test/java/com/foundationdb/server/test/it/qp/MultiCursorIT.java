@@ -18,12 +18,13 @@
 package com.foundationdb.server.test.it.qp;
 
 import com.foundationdb.qp.operator.RowCursor;
-import com.foundationdb.qp.row.ValuesRow;
+import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.util.MultiCursor;
 import com.foundationdb.server.api.dml.ColumnSelector;
+
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -197,7 +198,7 @@ public class MultiCursorIT extends OperatorITBase
 
         public Row row()
         {
-            return new ValuesRow(tRowType, items[position]);
+            return new ValuesHolderRow(tRowType, items[position]);
         }
 
         // Object state

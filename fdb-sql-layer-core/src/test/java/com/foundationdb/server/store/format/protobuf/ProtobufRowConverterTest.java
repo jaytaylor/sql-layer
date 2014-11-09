@@ -29,7 +29,7 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.protobuf.CommonProtobuf.ProtobufRowFormat;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.ValuesRow;
+import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.rowdata.RowDef;
@@ -104,7 +104,7 @@ public class ProtobufRowConverterTest {
             RowType rowType, 
             Object... values) 
                     throws Exception {
-        Row rowIn = new ValuesRow(rowType, values);
+        Row rowIn = new ValuesHolderRow(rowType, values);
         DynamicMessage msg = converter.encode(rowIn);
         Row rowOut = converter.decode(msg, rowType);
         assertTrue (rowIn.compareTo(rowOut, 0, 0, rowType.nFields()) == 0);

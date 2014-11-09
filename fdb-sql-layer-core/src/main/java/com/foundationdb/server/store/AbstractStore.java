@@ -582,6 +582,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         deleteRow(session, rowDef, rowData, cascadeDelete);
     }
 
+    
     @Override
     public void deleteRow(Session session, RowDef rowDef, RowData rowData, boolean cascadeDelete) {
         Table table = rowDef.table();
