@@ -63,15 +63,15 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
             else if (value.value().isNull()) {
                 anyNull = true;
             }
-            if (allConstant && routine.isDeterministic()) {
-                ValueRoutineInvocation invocation = new TPreptimeValueRoutineInvocation(routine, values);
-                ServerJavaRoutine javaRoutine = javaRoutine((ServerQueryContext)context, null, invocation);
-                evaluate(javaRoutine);
-                constantSource = invocation.getReturnValue();
-            }
-            if (anyNull && !routine.isCalledOnNullInput()) {
-                constantSource = ValueSources.getNullSource(resultType());
-            }
+        }
+        if (allConstant && routine.isDeterministic()) {
+            ValueRoutineInvocation invocation = new TPreptimeValueRoutineInvocation(routine, values);
+            ServerJavaRoutine javaRoutine = javaRoutine((ServerQueryContext)context, null, invocation);
+            evaluate(javaRoutine);
+            constantSource = invocation.getReturnValue();
+        }
+        if (anyNull && !routine.isCalledOnNullInput()) {
+            constantSource = ValueSources.getNullSource(resultType());
         }
         return new TPreptimeValue(resultType(), constantSource);
     }

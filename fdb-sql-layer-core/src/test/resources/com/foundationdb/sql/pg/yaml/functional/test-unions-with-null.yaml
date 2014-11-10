@@ -85,6 +85,10 @@
                UNION ALL SELECT id, NULL AS T1, NULL AS T2, T3 FROM table3) tables
              LEFT OUTER JOIN joinable ON tables.id = joinable.T3;
 - output: [[1, 2, null, null, null, null, null], [5, null, 6, null, null, null, null], [9, null, null, 10, 1, 5, 9]]
+---
+- Statement: SELECT NULL AS t1 UNION ALL SELECT NULL AS t1;
+- output: [[null], [null]]
+
 
 # BUG: Fails in FTS. Enable when fixed.
 ---
