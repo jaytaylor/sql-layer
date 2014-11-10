@@ -40,6 +40,7 @@ import com.foundationdb.sql.server.ServerSession;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.error.UnsupportedSQLException;
+import com.foundationdb.server.error.UnsupportedTriggerException;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 
@@ -125,6 +126,8 @@ public class AISDDL
                 return;
             }
             break;
+        case NodeTypes.CREATE_TRIGGER_NODE:
+            throw new UnsupportedTriggerException();
         }
         throw new UnsupportedSQLException(ddl.statementToString(), ddl);
     }
