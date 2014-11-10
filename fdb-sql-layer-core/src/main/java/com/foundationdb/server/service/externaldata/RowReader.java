@@ -22,11 +22,11 @@ import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.qp.storeadapter.RowDataCreator;
-import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.api.dml.scan.NiceRow;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesHolderRow;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.types.service.TypesRegistryService;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.types.ErrorHandlingMode;
 import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TExecutionContext;
@@ -36,6 +36,7 @@ import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
+import com.foundationdb.server.types.value.ValueTargets;
 import com.foundationdb.server.types.texpressions.TCastExpression;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
@@ -55,18 +56,16 @@ import java.util.List;
 /** Read rows from an external source. */
 public abstract class RowReader
 {
-    private final RowDef rowDef;
     private final int[] fieldColumns; // fieldIndex -> columnIndex
     private final boolean[] nullable; // indexed by field index
     private final int[] constColumns, evalColumns;
     private final byte[] nullBytes;
-    private final int tableId;
+    private final RowType tableRowType;
     private final Value vstring;
     private final Value[] values; // indexed by column index
-    private final RowDataCreator rowCreator;
     private final TExecutionContext[] executionContexts; // indexed by column index
     private final TEvaluatableExpression[] expressions; // indexed by field index
-    private NewRow row;
+    private ValuesHolderRow row;
     private byte[] fieldBuffer = new byte[128];
     private int fieldIndex, fieldLength;
     private final String encoding;
@@ -77,9 +76,11 @@ public abstract class RowReader
     protected RowReader(Table table, List<Column> columns, 
                         InputStream inputStream, String encoding, byte[] nullBytes,
                         QueryContext queryContext, TypesTranslator typesTranslator) {
-        this.tableId = table.getTableId();
-        this.rowDef = table.rowDef();
+        
+        this.tableRowType = SchemaCache.globalSchema(table.getAIS()).tableRowType(table);
+        
         this.fieldColumns = new int[columns.size()];
+
         this.nullable = new boolean[fieldColumns.length];
         for (int i = 0; i < fieldColumns.length; i++) {
             Column column = columns.get(i);
@@ -109,7 +110,7 @@ public abstract class RowReader
             evalColumns[i] = functionColumns.get(i).getPosition();
         }
         this.vstring = new Value(typesTranslator.typeForString());
-        this.values = new Value[rowDef.getFieldCount()];
+        this.values = new Value[tableRowType.nFields()];
         this.executionContexts = new TExecutionContext[values.length];
         List<TInstance> inputs = Collections.singletonList(vstring.getType());
         for (int fi = 0; fi < fieldColumns.length; fi++) {
@@ -180,23 +181,23 @@ public abstract class RowReader
             eval.with(queryContext);
             expressions[fi] = eval;
         }
-        this.rowCreator = new RowDataCreator();
         this.inputStream = inputStream;
         this.encoding = encoding;
         this.nullBytes = nullBytes;
     }
 
-    protected NewRow row() {
+    protected ValuesHolderRow row() {
         return row;
     }
 
-    protected NewRow newRow() {
-        row = new NiceRow(tableId, rowDef);
+    protected ValuesHolderRow newRow() {
+        row = new ValuesHolderRow (tableRowType);
+        //row = new NiceRow(tableId, rowDef);
         fieldIndex = fieldLength = 0;
         return row;
     }
 
-    public abstract NewRow nextRow() throws IOException;
+    public abstract Row nextRow() throws IOException;
 
     protected int read() throws IOException {
         while (true) {
@@ -228,19 +229,19 @@ public abstract class RowReader
     }
 
     protected void addField(boolean quoted) {
+        int columnIndex = fieldColumns[fieldIndex];
         if (!quoted && nullable[fieldIndex] && fieldMatches(nullBytes)) {
-            row.put(fieldColumns[fieldIndex++], null);
+            row.valueAt(columnIndex).putNull();
             fieldLength = 0;
             return;
         }
-        int columnIndex = fieldColumns[fieldIndex];
         // bytes -> string -> parsed typed value -> Java object.
         String string = decodeField();
         vstring.putString(string, null);
         Value value = values[columnIndex];
         value.getType().typeClass()
             .fromObject(executionContexts[columnIndex], vstring, value);
-        rowCreator.put(value, row, columnIndex);
+        ValueTargets.copyFrom(value, row.valueAt(columnIndex));
         fieldIndex++;
         fieldLength = 0;
     }
@@ -288,18 +289,18 @@ public abstract class RowReader
         }
     }
 
-    protected NewRow finishRow() {
+    protected ValuesHolderRow finishRow() {
         for (int i = 0; i < constColumns.length; i++) {
             int columnIndex = constColumns[i];
             ValueSource value = values[columnIndex];
-            rowCreator.put(value, row, columnIndex);
+            ValueTargets.copyFrom(value, row.valueAt(columnIndex));
         }
         for (int i = 0; i < evalColumns.length; i++) {
             int columnIndex = evalColumns[i];
             TEvaluatableExpression expr = expressions[i];
             expr.evaluate();
             ValueSource value = expr.resultValue();
-            rowCreator.put(value, row, columnIndex);
+            ValueTargets.copyFrom(value, row.valueAt(columnIndex));
         }
         return row;
     }

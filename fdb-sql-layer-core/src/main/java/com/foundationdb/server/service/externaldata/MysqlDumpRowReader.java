@@ -20,7 +20,7 @@ package com.foundationdb.server.service.externaldata;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.error.ExternalRowReaderException;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 
@@ -76,7 +76,7 @@ public class MysqlDumpRowReader extends RowReader
     }
 
     @Override
-    public NewRow nextRow() throws IOException {
+    public Row nextRow() throws IOException {
         while (true) {
             int b = read();
             switch (state) {
