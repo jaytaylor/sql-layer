@@ -309,7 +309,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
     public void testSpatialQueryLatLon()
     {
         loadDB();
-        final int N = 100;
+        final int N = 1; // 100;
         BigDecimal latLo;
         BigDecimal latHi;
         BigDecimal lonLo;

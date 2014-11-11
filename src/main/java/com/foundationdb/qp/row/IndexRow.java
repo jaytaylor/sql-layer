@@ -20,10 +20,11 @@ package com.foundationdb.qp.row;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.server.types.TInstance;
+import com.geophile.z.Record;
 import com.persistit.Key;
 import com.persistit.Value;
 
-public abstract class IndexRow extends AbstractRow
+public abstract class IndexRow extends AbstractRow implements com.geophile.z.Record
 {
     // Row interface
 
@@ -65,7 +66,28 @@ public abstract class IndexRow extends AbstractRow
     public abstract void tableBitmap(long bitmap);
     public abstract long tableBitmap(); 
 
-    
+    // com.geophile.z.Record interface
+
+    @Override
+    public final long z()
+    {
+        assert false;
+        return 0;
+    }
+
+    @Override
+    public final void z(long z)
+    {
+        assert false;
+    }
+
+    @Override
+    public final void copyTo(Record record)
+    {
+        assert false;
+    }
+
+
     // TODO: Remove these as we get rid of the Key use in the upper layers
     
     public abstract void copyPersistitKeyTo(Key key);
