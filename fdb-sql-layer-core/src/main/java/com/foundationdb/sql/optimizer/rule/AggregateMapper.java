@@ -160,7 +160,7 @@ public class AggregateMapper extends BaseRule
             if (n instanceof AggregateFunctionExpression) {
                 if (!functionsStack.isEmpty()) {
                     throw new UnsupportedSQLException("Cannot nest aggregate functions",
-                                                      n.getSQLsource());
+                                                      functionsStack.peek().getSQLsource());
                 } else {
                     functionsStack.push((AggregateFunctionExpression)n);
                 }
