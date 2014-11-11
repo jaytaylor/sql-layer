@@ -1,0 +1,11 @@
+/* AUTOMATICALLY GENERATED ON Wed Oct 29 10:34:49 EDT 2014*/
+/* DO NOT EDIT */
+
+grant codeBase "file:${fdbsql.home}/fdb-sql-layer-core/target/-" {
+  permission java.security.AllPermission;
+};
+
+grant codeBase "file:${fdbsql.home}/fdb-sql-layer-routinefw/target/*" {
+};
+
+
