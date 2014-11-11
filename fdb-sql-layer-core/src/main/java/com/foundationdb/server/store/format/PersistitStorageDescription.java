@@ -17,6 +17,8 @@
 
 package com.foundationdb.server.store.format;
 
+import java.util.Arrays;
+
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.validation.AISValidationFailure;
@@ -24,10 +26,14 @@ import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.PersistitProtobuf;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.storeadapter.RowDataCreator;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
 import com.foundationdb.server.error.RowDataCorruptionException;
 import com.foundationdb.server.rowdata.CorruptRowDataException;
 import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.TreeLink;
 import com.foundationdb.server.store.PersistitStore;
@@ -124,8 +130,15 @@ public class PersistitStorageDescription extends StoreStorageDescription<Persist
     @Override 
     public void packRow(PersistitStore store, Session session,
                         Exchange exchange, Row row) {
-        throw new UnsupportedOperationException ();
-        //exchange.getValue().directPut(store.getRowDataValueCoder(), row, null);
+        RowDef rowDef = row.rowType().table().rowDef();
+        RowDataCreator creator = new RowDataCreator();
+        NewRow niceRow = new NiceRow(rowDef.getRowDefId(), rowDef);
+        int fields = rowDef.getFieldCount();
+        for(int i = 0; i < fields; ++i) {
+            creator.put(row.value(i), niceRow, i);
+        }
+        RowData rowData = niceRow.toRowData();
+        exchange.getValue().directPut(store.getRowDataValueCoder(), rowData, null);
     }
     
     @Override

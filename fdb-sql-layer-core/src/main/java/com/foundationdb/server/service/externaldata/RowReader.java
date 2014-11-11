@@ -192,7 +192,6 @@ public abstract class RowReader
 
     protected ValuesHolderRow newRow() {
         row = new ValuesHolderRow (tableRowType);
-        //row = new NiceRow(tableId, rowDef);
         fieldIndex = fieldLength = 0;
         return row;
     }

@@ -23,6 +23,7 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Index.IndexType;
 import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
@@ -569,14 +570,17 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     }
 
     private void trackChange(Session session, Table table, Key hKey) {
-        RowType rowType = SchemaCache.globalSchema(getAIS(session)).tableRowType(table);
+        RowType rowType = SchemaCache.globalSchema(getAIS(session)).tableRowType(getAIS(session).getTable(CHANGES_TABLE));
+        Sequence sequence = rowType.table().getIdentityColumn().getIdentityGenerator();
+        Long identity = store.nextSequenceValue(session, sequence);
         for (Index index : table.getFullTextIndexes()) {
             ValuesHolderRow row = new ValuesHolderRow(rowType,
                     index.getIndexName().getSchemaName(),
                     index.getIndexName().getTableName(),
                     index.getIndexName().getName(),
                     index.getIndexId(),
-                    Arrays.copyOf(hKey.getEncodedBytes(), hKey.getEncodedSize()));
+                    Arrays.copyOf(hKey.getEncodedBytes(), hKey.getEncodedSize()),
+                    identity);
             store.writeRow(session, row, null, null);
         }
     }
