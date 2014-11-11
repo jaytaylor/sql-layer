@@ -149,9 +149,23 @@ public class AggregateMapper extends BaseRule
 
     static class AggregateSourceAndFunctionFinder extends AggregateSourceFinder {
         List<AggregateFunctionExpression> functions = new ArrayList<>();
+        Deque<AggregateFunctionExpression> functionsStack = new ArrayDeque<>();
 
         public AggregateSourceAndFunctionFinder(PlanContext planContext) {
             super(planContext);
+        }
+
+        @Override
+        public boolean visitEnter(ExpressionNode n) {
+            if (n instanceof AggregateFunctionExpression) {
+                if (!functionsStack.isEmpty()) {
+                    throw new UnsupportedSQLException("Cannot nest aggregate functions",
+                                                      n.getSQLsource());
+                } else {
+                    functionsStack.push((AggregateFunctionExpression)n);
+                }
+            }
+            return visit(n);
         }
 
         @Override
@@ -164,6 +178,14 @@ public class AggregateMapper extends BaseRule
 
         public List<AggregateFunctionExpression> getFunctions() {
             return functions;
+        }
+
+        @Override
+        public boolean visitLeave(ExpressionNode n) {
+            if (n instanceof AggregateFunctionExpression) {
+                functionsStack.pop();
+            }
+            return true;
         }
     }
 

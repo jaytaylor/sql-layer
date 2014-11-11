@@ -1604,10 +1604,6 @@ public class ASTStatementLoader extends BaseRule
                 }
                 else {
                     operand = toExpression(aggregateNode.getOperand(), projects);
-                    if (hasAggregateFunction(operand)) {
-                        throw new UnsupportedSQLException("Cannot nest aggregate functions",
-                                                          aggregateNode);
-                    }
                 }
                 
                 if (aggregateNode instanceof GroupConcatNode)
