@@ -31,10 +31,13 @@ public interface RowListener
 
     /** Called <i>before</i> group row or table indexes are modified. */
     void onUpdatePre(Session session, Table table, Key hKey, RowData oldRow, RowData newRow);
+    void onUpdatePre(Session session, Table table, Key hKey, Row oldRow, Row newRow);
 
     /** Called <i>after</i> group row and table indexes are modified. */
     void onUpdatePost(Session session, Table table, Key hKey, RowData oldRow, RowData newRow);
+    void onUpdatePost(Session session, Table table, Key hKey, Row oldRow, Row newRow);
 
     /** Called <i>before</i> group row or table indexes are cleared. */
     void onDeletePre(Session session, Table table, Key hKey, RowData row);
+    void onDeletePre(Session session, Table table, Key hKey, Row row);
 }

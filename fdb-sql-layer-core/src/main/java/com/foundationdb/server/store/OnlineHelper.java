@@ -212,7 +212,19 @@ public class OnlineHelper implements RowListener
         
     }
    
-
+    @Override
+    public void onUpdatePre(Session session, Table table, Key hKey, Row oldRow, Row newRow) {
+        TableTransform transform = getConcurrentDMLTransform(session, table);
+        if(transform == null) {
+            return;
+        }
+        try {
+            concurrentDML(session, transform, hKey, oldRow, null);
+        } catch(ConstraintViolationException e) {
+            setOnlineError(session, table, e);
+        }
+    }
+    
     @Override
     public void onUpdatePre(Session session, Table table, Key hKey, RowData oldRowData, RowData newRowData) {
         TableTransform transform = getConcurrentDMLTransform(session, table);
@@ -221,6 +233,19 @@ public class OnlineHelper implements RowListener
         }
         try {
             concurrentDML(session, transform, hKey, oldRowData, null);
+        } catch(ConstraintViolationException e) {
+            setOnlineError(session, table, e);
+        }
+    }
+
+    @Override
+    public void onUpdatePost(Session session, Table table, Key hKey, Row oldRow, Row newRow) {
+        TableTransform transform = getConcurrentDMLTransform(session, table);
+        if(transform == null) {
+            return;
+        }
+        try {
+            concurrentDML(session, transform, hKey, null, newRow);
         } catch(ConstraintViolationException e) {
             setOnlineError(session, table, e);
         }
@@ -239,6 +264,19 @@ public class OnlineHelper implements RowListener
         }
     }
 
+    @Override 
+    public void onDeletePre(Session session, Table table, Key hKey, Row row) {
+        TableTransform transform = getConcurrentDMLTransform(session, table);
+        if(transform == null) {
+            return;
+        }
+        try {
+            concurrentDML(session, transform, hKey, row, null);
+        } catch(ConstraintViolationException e) {
+            setOnlineError(session, table, e);
+        }
+    }
+    
     @Override
     public void onDeletePre(Session session, Table table, Key hKey, RowData rowData) {
         TableTransform transform = getConcurrentDMLTransform(session, table);
@@ -291,6 +329,23 @@ public class OnlineHelper implements RowListener
         }
     }
 
+    public void handleUpdatePre(Session session, Table table, Row oldRow, Row newRow) {
+        TableTransform transform = getConcurrentDMLTransform(session, table);
+        if(transform == null) {
+            return;
+        }
+        if(transform.checkConstraints) {
+            boolean orig = txnService.setForceImmediateForeignKeyCheck(session, true);
+            try {
+                constraintHandler.handleUpdatePre(session, transform.rowType.table(), oldRow, newRow);
+            } catch(ConstraintViolationException e) {
+                setOnlineError(session, table, e);
+            } finally {
+                txnService.setForceImmediateForeignKeyCheck(session, orig);
+            }
+        }
+    }
+    
     public void handleUpdatePre(Session session, Table table, RowData oldRow, RowData newRow) {
         TableTransform transform = getConcurrentDMLTransform(session, table);
         if(transform == null) {
@@ -308,6 +363,24 @@ public class OnlineHelper implements RowListener
         }
     }
 
+    
+    public void handleUpdatePost(Session session, Table table, Row oldRow, Row newRow) {
+        TableTransform transform = getConcurrentDMLTransform(session, table);
+        if(transform == null) {
+            return;
+        }
+        if(transform.checkConstraints) {
+            boolean orig = txnService.setForceImmediateForeignKeyCheck(session, true);
+            try {
+                constraintHandler.handleUpdatePost(session, transform.rowType.table(), oldRow, newRow);
+            } catch(ConstraintViolationException e) {
+                setOnlineError(session, table, e);
+            } finally {
+                txnService.setForceImmediateForeignKeyCheck(session, orig);
+            }
+        }
+    }
+    
     public void handleUpdatePost(Session session, Table table, RowData oldRow, RowData newRow) {
         TableTransform transform = getConcurrentDMLTransform(session, table);
         if(transform == null) {
@@ -325,6 +398,23 @@ public class OnlineHelper implements RowListener
         }
     }
 
+    public void handleDelete(Session session, Table table, Row row) {
+        TableTransform transform = getConcurrentDMLTransform(session, table);
+        if(transform == null) {
+            return;
+        }
+        if(transform.checkConstraints) {
+            boolean orig = txnService.setForceImmediateForeignKeyCheck(session, true);
+            try {
+                constraintHandler.handleDelete(session, transform.rowType.table(), row);
+            } catch(ConstraintViolationException e) {
+                setOnlineError(session, table, e);
+            } finally {
+                txnService.setForceImmediateForeignKeyCheck(session, orig);
+            }
+        }
+    }
+    
     public void handleDelete(Session session, Table table, RowData row) {
         TableTransform transform = getConcurrentDMLTransform(session, table);
         if(transform == null) {

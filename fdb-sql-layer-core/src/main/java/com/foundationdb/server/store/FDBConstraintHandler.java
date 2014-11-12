@@ -90,6 +90,38 @@ public class FDBConstraintHandler extends ConstraintHandler<FDBStore,FDBStoreDat
 
     @Override
     protected void checkNotReferenced(Session session, Index index, FDBStoreData storeData,
+                                        Row row, ForeignKey foreignKey,
+                                        boolean selfReference, ForeignKey.Action action,
+                                        String operation) {
+        TransactionState txn = txnService.getTransaction(session);
+        FDBPendingIndexChecks.CheckPass finalPass =
+            (action == ForeignKey.Action.RESTRICT) ?
+            FDBPendingIndexChecks.CheckPass.ROW :
+            txn.isDeferred(foreignKey) ?
+            FDBPendingIndexChecks.CheckPass.TRANSACTION :
+            FDBPendingIndexChecks.CheckPass.STATEMENT;
+        FDBPendingIndexChecks.PendingCheck<?> check =
+            FDBPendingIndexChecks.foreignKeyNotReferencedCheck(session, txn, index, storeData.persistitKey, (row == null),
+                                                               foreignKey, selfReference, finalPass, operation);
+        if (txn.getForceImmediateForeignKeyCheck() ||
+            ((finalPass == FDBPendingIndexChecks.CheckPass.ROW) &&
+            ((txn.getIndexChecks(false) == null) || !txn.getIndexChecks(false).isDelayed()))) {
+            check.blockUntilReady(txn);
+            if (!check.check(session, txn, index)) {
+                if (row == null) {
+                    // Need actual key found for error message.
+                    FDBStoreDataHelper.unpackTuple(index, storeData.persistitKey, check.getRawKey());
+                }
+                stillReferenced(session, index, storeData, row, foreignKey, operation);
+            }
+        }
+        else {
+            txn.getIndexChecks(true).add(session, txn, index, check);
+        }
+    }
+
+    @Override
+    protected void checkNotReferenced(Session session, Index index, FDBStoreData storeData,
                                       RowData row, ForeignKey foreignKey,
                                       boolean selfReference, ForeignKey.Action action,
                                       String operation) {

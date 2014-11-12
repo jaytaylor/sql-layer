@@ -347,16 +347,30 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         trackChange(session, table, hKey);
     }
 
+    @Override 
+    public void onUpdatePre(Session session, Table table, Key hKey, Row oldRow, Row newRow) {
+        // None
+    }
     @Override
     public void onUpdatePre(Session session, Table table, Key hKey, RowData oldRow, RowData newRow) {
         // None
     }
 
     @Override
+    public void onUpdatePost(Session session, Table table, Key hKey, Row oldRow, Row newRow) {
+        trackChange(session, table, hKey);
+    }
+    
+    @Override
     public void onUpdatePost(Session session, Table table, Key hKey, RowData oldRow, RowData newRow) {
         trackChange(session, table, hKey);
     }
 
+    @Override
+    public void onDeletePre(Session session, Table table, Key hKey, Row row) {
+        trackChange(session, table, hKey);
+    }
+    
     @Override
     public void onDeletePre(Session session, Table table, Key hKey, RowData row) {
         trackChange(session, table, hKey);
@@ -487,7 +501,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                     break;
                 }
 
-                store.deleteRow(session, ((AbstractRow)row).rowData(), false);
+                store.deleteRow(session, row, false);
                 indexName = null;
                 row = null;
             }
@@ -564,7 +578,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 if(row == null) {
                     throw new IllegalStateException();
                 }
-                store.deleteRow(session, ((AbstractRow)row).rowData(), false);
+                store.deleteRow(session, row, false);
             }
         }
     }

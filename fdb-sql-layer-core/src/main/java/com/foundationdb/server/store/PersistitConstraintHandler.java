@@ -18,6 +18,7 @@
 package com.foundationdb.server.store;
 
 import com.foundationdb.ais.model.ForeignKey;
+import com.foundationdb.ais.model.ForeignKey.Action;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.storeadapter.PersistitAdapter;
@@ -116,6 +117,13 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
         checkNotReferenced(session, index, exchange, row, foreignKey, selfReference, action, operation, false);
     }
 
+    @Override
+    protected void checkNotReferenced(Session session, Index index,
+            Exchange exchange, Row row, ForeignKey foreignKey,
+            boolean selfReference, Action action, String operation) {
+        checkNotReferenced(session, index, exchange, row, foreignKey, selfReference, action, operation, false);
+    }
+
     protected void checkNotReferenced(Session session, Index index, Exchange exchange,
                                         Row row, ForeignKey foreignKey,
                                         boolean selfReference, ForeignKey.Action action, String operation,
@@ -155,7 +163,7 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
             }
         }
     }
-    
+
     protected void checkNotReferenced(Session session, Index index, Exchange exchange,
                                       RowData row, ForeignKey foreignKey,
                                       boolean selfReference, ForeignKey.Action action, String operation,
@@ -346,4 +354,5 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
         }
         return new KeyState(key);            
     }
+
 }
