@@ -177,6 +177,7 @@ public final class PersistitValueValueSource implements ValueSource {
     // private
     
     private void clear() {
+        // TODO TInstance.unset or TInstance.unknown?
         value.underlying(null);
     }
     
