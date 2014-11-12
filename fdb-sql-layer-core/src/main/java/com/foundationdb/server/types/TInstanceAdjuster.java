@@ -18,6 +18,7 @@
 package com.foundationdb.server.types;
 
 public interface TInstanceAdjuster {
+    // TODO when tightening this method, note that there are uses that assume null is a valid response
     TInstance get(int i);
     TInstanceBuilder adjust(int i);
     void replace(int i, TInstance type);
