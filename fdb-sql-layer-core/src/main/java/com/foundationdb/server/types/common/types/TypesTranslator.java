@@ -435,36 +435,25 @@ public abstract class TypesTranslator
     public TInstance typeForJDBCType(int jdbcType, boolean nullable,
                                      String schemaName, String tableName, String columnName) {
         TClass tclass = typeClassForJDBCType(jdbcType, schemaName, tableName, columnName);
-        if (tclass == null)
-            return null;
-        else
-            return tclass.instance(nullable);
+        return tclass.instance(nullable);
     }
 
     public TInstance typeForJDBCType(int jdbcType, int att, boolean nullable,
                                      String schemaName, String tableName, String columnName) {
         TClass tclass = typeClassForJDBCType(jdbcType, schemaName, tableName, columnName);
-        if (tclass == null)
-            return null;
-        else
             return tclass.instance(att, nullable);
     }
 
     public TInstance typeForJDBCType(int jdbcType, int att1, int att2, boolean nullable,
                                      String schemaName, String tableName, String columnName) {
         TClass tclass = typeClassForJDBCType(jdbcType, schemaName, tableName, columnName);
-        if (tclass == null)
-            return null;
-        else
-            return tclass.instance(att1, att2, nullable);
+        return tclass.instance(att1, att2, nullable);
     }
 
     protected TInstance typeForStringType(int jdbcType, DataTypeDescriptor type,
                                           int defaultCharsetId, int defaultCollationId,
                                           String schemaName, String tableName, String columnName) {
         TClass tclass = typeClassForJDBCType(jdbcType, schemaName, tableName, columnName);
-        if (tclass == null)
-            return null;
         return typeForStringType(tclass, type,
                 defaultCharsetId, defaultCollationId,
                 schemaName, tableName, columnName);
@@ -496,6 +485,11 @@ public abstract class TypesTranslator
         return typeClassForJDBCType(jdbcType, null, null, null);
     }
 
+    /**
+     * This does not return null
+     * @throws com.foundationdb.server.error.UnsupportedColumnDataTypeException if an appropriate TClass can't be found
+     * @throws com.foundationdb.server.error.UnsupportedDataTypeException if an appropriate TClass can't be found
+     */
     public TClass typeClassForJDBCType(int jdbcType,
                                        String schemaName, String tableName, String columnName) {
         switch (jdbcType) {
