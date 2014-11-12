@@ -172,7 +172,7 @@ class StoreGIMaintenance {
             Row row;
             while ((row = cursor.next()) != null) {
                 boolean actioned = false;
-                if (row.rowType().equals(planOperator.rowType())) {
+                if (row.rowType() == planOperator.rowType()) {
                     doAction(action, handler, row);
                     actioned = true;
                 }

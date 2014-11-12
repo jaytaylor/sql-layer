@@ -316,7 +316,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
             keyField.set(pkFieldPosition, true);
         }
         if (oldRow.rowType().table().getParentJoin() != null) {
-            for(Column column : oldRow.rowType().table().getParentJoin().getParentColumns()) {
+            for(Column column : oldRow.rowType().table().getParentJoin().getChildColumns()) {
                 keyField.set(column.getPosition().intValue(), true);
             }
         }
@@ -1499,6 +1499,8 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                     StoreGIMaintenance plan = StoreGIMaintenancePlans
                             .forAis(table.getAIS())
                             .forRowType(groupIndex, adapter.schema().tableRowType(table));
+                    
+                   
                     plan.run(action, persistitHKey, row, adapter, handler);
                 } else {
                     SKIP_GI_MAINTENANCE.hit();

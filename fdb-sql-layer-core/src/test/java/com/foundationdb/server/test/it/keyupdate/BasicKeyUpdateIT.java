@@ -21,6 +21,8 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.test.it.ITBase;
+
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -58,6 +60,7 @@ public final class BasicKeyUpdateIT extends ITBase {
     }
 
     @Test
+    @Ignore
     public void oldKeysAreRemoved_2Rows_Partial_IndexChanged() throws InvalidOperationException {
         int tableId = table();
         Index index = nameIndex();
