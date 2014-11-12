@@ -5,7 +5,7 @@
     <groupId>com.foundationdb</groupId>
     <artifactId>fdb-sql-layer</artifactId>
     <version>2.1.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
 
     <name>FoundationDB SQL Layer</name>
     <inceptionYear>2009</inceptionYear>
@@ -28,257 +28,22 @@
         <connection>scm:git:git@github.com:foundationdb/sql-layer.git</connection>
     </scm>
 
+    <modules>
+      <module>fdb-sql-layer-routinefw</module>
+      <module>fdb-sql-layer-core</module>
+    </modules>
+
     <properties>
-        <fdbsql.release>0</fdbsql.release>
-        <fdbsql.test.extraJvmArgs></fdbsql.test.extraJvmArgs>
-        <fdbsql.test.JmxJvmArgs>-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=8082 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false</fdbsql.test.JmxJvmArgs>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <protobuf.bin>../protobuf-2.5.0/src</protobuf.bin>
-        <protobuf.include>../protobuf-2.5.0/src</protobuf.include>
+         <main.basedir>${project.basedir}</main.basedir>
+         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-    
-    <dependencies>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-math</artifactId>
-            <version>2.2</version>
-        </dependency>
-        <dependency>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
-            <version>1.13</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.inject</groupId>
-            <artifactId>guice</artifactId>
-            <version>3.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>17.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jgrapht</groupId>
-            <artifactId>jgrapht-jdk1.5</artifactId>
-            <version>0.7.3</version>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.11</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-library</artifactId>
-            <version>1.3</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.akiban</groupId>
-            <artifactId>akiban-persistit</artifactId>
-            <version>3.2.9</version>
-        </dependency>
-        <dependency>
-            <groupId>com.foundationdb</groupId>
-            <artifactId>fdb-sql-parser</artifactId>
-            <version>1.5.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.7.7</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>1.7.7</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.protobuf</groupId>
-            <artifactId>protobuf-java</artifactId>
-            <version>2.5.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.foundationdb</groupId>
-            <artifactId>fdb-sql-parser</artifactId>
-            <version>1.5.0-SNAPSHOT</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.foundationdb</groupId>
-            <artifactId>fdb-sql-layer-jdbc</artifactId>
-            <version>2.1-0-jdbc41-SNAPSHOT</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>joda-time</groupId>
-            <artifactId>joda-time</artifactId>
-            <version>2.3</version>
-        </dependency>
-        <dependency>
-            <groupId>com.ibm.icu</groupId>
-            <artifactId>icu4j</artifactId>
-            <version>53.1</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.4.0</version>
-        </dependency>
-        <!-- Spatial query support -->
-        <dependency>
-            <groupId>com.geophile</groupId>
-            <artifactId>geophile</artifactId>
-            <version>2.0.2-SNAPSHOT</version>
-        </dependency>
-        <!-- jts -->
-        <dependency>
-          <groupId>com.vividsolutions</groupId>
-          <artifactId>jts</artifactId>
-          <version>1.8</version>
-        </dependency>
-        <!-- CheckParserUsagesIT -->
-        <dependency>
-            <groupId>org.ow2.asm</groupId>
-            <artifactId>asm</artifactId>
-            <version>5.0.3</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.reflections</groupId>
-            <artifactId>reflections</artifactId>
-            <version>0.9.9-RC1</version>
-            <scope>test</scope>
-        </dependency>
-        <!-- HttpConductor -->
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-server</artifactId>
-            <version>8.1.3.v20120416</version>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-servlet</artifactId>
-            <version>8.1.3.v20120416</version>
-        </dependency>
-        <!-- For CrossOriginFilter -->
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-servlets</artifactId>
-            <version>8.1.3.v20120416</version>
-        </dependency>
-        <!-- REST -->
-        <dependency>
-            <groupId>org.glassfish.jersey.containers</groupId>
-            <artifactId>jersey-container-jetty-servlet</artifactId>
-            <version>2.13</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-core</artifactId>
-            <version>4.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-analyzers-common</artifactId>
-            <version>4.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-queryparser</artifactId>
-            <version>4.0.0</version>
-        </dependency>
-        <dependency>
-           <groupId>com.fasterxml.util</groupId>
-           <artifactId>java-merge-sort</artifactId>
-           <version>1.0.0</version>
-        </dependency>
-        <dependency>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpclient</artifactId>
-          <version>4.3.4</version>
-          <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.foundationdb</groupId>
-            <artifactId>fdb-java</artifactId>
-            <version>2.0.8</version>
-        </dependency>
-    </dependencies>
 
     <build>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>true</filtering>
-                <includes>
-                    <include>version/fdbsql_version.properties</include>
-                </includes>
-            </resource>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>false</filtering>
-                <excludes>
-                    <exclude>version/fdbsql_version.properties</exclude>
-                </excludes>
-            </resource>
-        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
                 <version>2.6</version>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>2.4</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <version>1.8</version>
-                <executions>
-                    <execution>
-                        <id>reserve-network-port</id>
-                        <goals>
-                            <goal>reserve-network-port</goal>
-                        </goals>
-                        <phase>process-resources</phase>
-                        <configuration>
-                            <portNames>
-                                <portName>fdbsql.port</portName>
-                                <portName>debug.port</portName>
-                                <portName>fdbsql.postgres.port</portName>
-                                <portName>fdbsql.http.port</portName>
-                            </portNames>
-                        </configuration>
-                    </execution>
-                    <execution>
-                      <id>add-test-sources</id>
-                      <phase>generate-test-sources</phase>
-                      <goals>
-                          <goal>add-test-source</goal>
-                      </goals>
-                      <configuration>
-                          <sources>
-                              <source>${project.build.directory}/generated-test-sources</source>
-                          </sources>
-                      </configuration>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -290,7 +55,10 @@
                     <!-- apparently this is backwards, false here means use incremental compilation
                          Maven issue for this: https://jira.codehaus.org/browse/MCOMPILER-209 -->
                     <useIncrementalCompilation>false</useIncrementalCompilation>
-                    <compilerArgument>-Xlint</compilerArgument>
+                    <compilerArguments>
+                        <Xlint:all />
+                        <Werror />
+                    </compilerArguments>
                 </configuration>
             </plugin>
             <plugin>
@@ -329,11 +97,12 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.17</version>
                 <configuration>
+		    <failIfNoTests>false</failIfNoTests>
                     <systemPropertyVariables>
                         <fdbsql.port>${fdbsql.port}</fdbsql.port>
                         <fdbsql.postgres.port>${fdbsql.postgres.port}</fdbsql.postgres.port>
                     </systemPropertyVariables>
-                    <argLine>-Xmx512m ${fdbsql.test.extraJvmArgs} ${fdbsql.test.JmxJvmArgs} ${surefireJacocoArg}</argLine>
+                    <argLine>-Xmx512m ${fdbsql.test.extraJvmArgs} ${fdbsql.test.JmxJvmArgs} ${surefireJacocoArg} </argLine>
                     <includes>
                         <include>**/*Test.java</include>
                         <include>**/*Test?.java</include>
@@ -380,11 +149,45 @@
                 </configuration>
             </plugin>
             <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>1.8</version>
+                <executions>
+                    <execution>
+                        <id>reserve-network-port</id>
+                        <goals>
+                            <goal>reserve-network-port</goal>
+                        </goals>
+                        <phase>process-resources</phase>
+                        <configuration>
+                            <portNames>
+                                <portName>fdbsql.port</portName>
+                                <portName>debug.port</portName>
+                                <portName>fdbsql.postgres.port</portName>
+                                <portName>fdbsql.http.port</portName>
+                            </portNames>
+                        </configuration>
+                    </execution>
+                    <execution>
+                      <id>add-test-sources</id>
+                      <phase>generate-test-sources</phase>
+                      <goals>
+                          <goal>add-test-source</goal>
+                      </goals>
+                      <configuration>
+                          <sources>
+                              <source>${project.build.directory}/generated-test-sources</source>
+                          </sources>
+                      </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>com.mycila.maven-license-plugin</groupId>
                 <artifactId>maven-license-plugin</artifactId>
                 <version>1.10.b1</version>
                 <configuration>
-                    <header>src/etc/header.txt</header>
+                    <header>${main.basedir}/fdb-sql-layer-common/etc/header.txt</header>
                     <headerSections>
                         <headerSection>
                             <key>__YEAR_SECTION__</key>
@@ -403,6 +206,7 @@
                         <exclude>bin/fdbsqllayer</exclude>
                         <!-- Files requiring a specific format (packaging control, test output, etc) -->
                         <exclude>README.md</exclude>
+                        <exclude>SECURITY.md</exclude>
                         <exclude>conf/**</exclude>
                         <exclude>packaging/**</exclude>
                         <exclude>src/main/protobuf/*.proto</exclude>
@@ -425,152 +229,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>com.github.igor-petruk.protobuf</groupId>
-                <artifactId>protobuf-maven-plugin</artifactId>
-                <version>0.6.3</version>
-                <configuration>
-                    <includeDirectories>
-                         <includeDirectory>${protobuf.include}</includeDirectory>
-                    </includeDirectories>
-                    <protocCommand>${protobuf.bin}/protoc</protocCommand>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>test-protobuf</id>
-                        <phase>generate-test-sources</phase>
-                        <configuration>
-                            <includeDirectories>
-                                 <includeDirectory>src/main/protobuf</includeDirectory>
-                            </includeDirectories>
-                            <inputDirectories>
-                                 <inputDirectory>src/test/protobuf</inputDirectory>
-                            </inputDirectories>
-                            <outputDirectory>${project.build.directory}/generated-test-sources</outputDirectory>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <version>1.3.1</version>
-                <executions>
-                    <execution>
-                        <id>enforce-versions</id>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                        <rules>
-                            <requireJavaVersion>
-                                <version>1.7</version>
-                            </requireJavaVersion>
-                        </rules>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>pl.project13.maven</groupId>
-                <artifactId>git-commit-id-plugin</artifactId>
-                <version>2.1.9</version>
-                <executions>
-                    <execution>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>revision</goal>
-                         </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
-                    <dateFormat>yyyy-MM-dd'T'HH:mm:ssXXX</dateFormat>
-                    <generateGitPropertiesFile>false</generateGitPropertiesFile>
-                    <failOnNoGitDirectory>false</failOnNoGitDirectory>
-                    <gitDescribe>
-                        <abbrev>7</abbrev>
-                        <dirty>-dirty</dirty>
-                        <forceLongFormat>false</forceLongFormat>
-                    </gitDescribe>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
-    
-    <profiles>
-        <profile>
-            <id>test-coverage</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.jacoco</groupId>
-                        <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>0.7.1.201405082137</version>
-                        <executions>
-                            <!--
-                                Prepares the property pointing to the JaCoCo runtime agent which
-                                is passed as VM argument when Maven the Surefire plugin is executed.
-                            -->
-                            <execution>
-                                <id>pre-unit-test</id>
-                                <goals>
-                                    <goal>prepare-agent</goal>
-                                </goals>
-                                <configuration>
-                                    <!-- Sets the path to the file which contains the execution data. -->
-                                    <destFile>${project.build.directory}/coverage-reports/jacoco-ut.exec</destFile>
-                                    <!--
-                                        Sets the name of the property containing the settings
-                                        for JaCoCo runtime agent.
-                                    -->
-                                    <propertyName>surefireJacocoArg</propertyName>
-                                </configuration>
-                            </execution>
-                            <!--
-                                Prepares the property pointing to the JaCoCo runtime agent which
-                                is passed as VM argument when Maven the Failsafe plugin is executed.
-                            -->
-                            <execution>
-                                <id>pre-integration-test</id>
-                                <phase>pre-integration-test</phase>
-                                <goals>
-                                    <goal>prepare-agent</goal>
-                                </goals>
-                                <configuration>
-                                    <!-- Sets the path to the file which contains the execution data. -->
-                                    <destFile>${project.build.directory}/coverage-reports/jacoco-it.exec</destFile>
-                                    <!--
-                                        Sets the name of the property containing the settings
-                                        for JaCoCo runtime agent.
-                                    -->
-                                    <propertyName>failsafeJacocoArg</propertyName>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>default</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <properties>
-                <surefireJacocoArg></surefireJacocoArg>
-                <failsafeJacocoArg></failsafeJacocoArg>
-            </properties>
-        </profile>
-    </profiles>
-    
 </project>

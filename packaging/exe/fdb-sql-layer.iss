@@ -204,18 +204,20 @@ var
   Index, DollarBrace, EndBrace: Integer;
   Key: String;
 begin
-  if FileExists(FileName) then begin
-    LoadStringsFromFile(FileName, FileLines);
-    for Index := 0 to GetArrayLength(FileLines) - 1 do begin
-      DollarBrace := Pos('${', FileLines[Index]);
-      if DollarBrace <> 0 then begin
-        EndBrace := Pos('}', FileLines[Index]);
-        Key := Copy(FileLines[Index], DollarBrace + 2, EndBrace - DollarBrace - 2);
-        Delete(FileLines[Index], DollarBrace, EndBrace - DollarBrace + 1);
-        Insert(ExpandKey(Key), FileLines[Index], DollarBrace);
-      end
+  if (Pos('.policy', FileName) = 0 ) then begin
+    if FileExists(FileName) then begin
+      LoadStringsFromFile(FileName, FileLines);
+      for Index := 0 to GetArrayLength(FileLines) - 1 do begin
+        DollarBrace := Pos('${', FileLines[Index]);
+        if DollarBrace <> 0 then begin
+          EndBrace := Pos('}', FileLines[Index]);
+          Key := Copy(FileLines[Index], DollarBrace + 2, EndBrace - DollarBrace - 2);
+          Delete(FileLines[Index], DollarBrace, EndBrace - DollarBrace + 1);
+          Insert(ExpandKey(Key), FileLines[Index], DollarBrace);
+        end
+      end;
+      SaveStringsToFile(FileName, FileLines, false);
     end;
-    SaveStringsToFile(FileName, FileLines, false);
   end;
 end;
 

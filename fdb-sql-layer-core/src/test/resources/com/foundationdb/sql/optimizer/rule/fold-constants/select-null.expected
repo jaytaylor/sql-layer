@@ -1,0 +1,5 @@
+SelectQuery@5868324f
+  ResultSet@20bf0de1[_SQL_COL_1]
+    Project@5f283f92[NULL]
+      Select@4b65bb0c[]
+        ExpressionsSource@3db3780([[]])

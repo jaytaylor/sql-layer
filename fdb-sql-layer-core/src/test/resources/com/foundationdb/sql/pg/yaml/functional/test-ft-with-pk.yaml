@@ -1,0 +1,27 @@
+# Tests with changed primary key
+
+---
+- Properties: fts 
+- suppressed: true
+
+---
+- CreateTable: t (id int primary key not null, name varchar(224));
+---
+- Statement: INSERT INTO t values (1, 'foo1');
+---
+- Statement: INSERT INTO t values (2, 'foo2');
+---
+- Statement: create index idx1 on t (full_text(name));
+---
+- Statement: CALL sys.full_text_background_wait()
+---
+- Statement: SELECT id FROM t where full_text_search(name = 'foo1');
+- output: [[1]]
+---
+- Statement: UPDATE t SET id = 3 where id = 1;
+---
+- Statement: CALL sys.full_text_background_wait()
+---
+- Statement: SELECT id FROM t where full_text_search(name = 'foo1');
+- output: [[3]]
+...

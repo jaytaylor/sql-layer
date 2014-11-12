@@ -1,0 +1,58 @@
+# test that full text indices are updated (and populated) properly
+
+---
+- Properties: fts 
+- suppressed: true
+
+---
+- CreateTable: t (id int, name varchar(224));
+---
+- CreateTable: t2 (id int, name2 varchar(224));
+---
+- Statement: INSERT INTO t2 VALUES (1, 'foo1');
+---
+- Statement: INSERT INTO t2 VALUES (2, 'foo2');
+---
+- Statement: INSERT INTO  t VALUES (1, 'bar1');
+---
+- Statement: INSERT INTO  t VALUES (2, 'bar1');
+---
+- Statement: INSERT INTO  t VALUES (3, 'bar3');
+---
+- Statement: INSERT INTO  t VALUES (4, 'bar4');
+---
+- Statement: CREATE INDEX idx ON t (full_text(name));
+---
+- Statement: CALL sys.full_text_background_wait()
+---
+- Statement: CREATE INDEX idx2 on t2(full_text(name2));
+---
+- Statement: CALL sys.full_text_background_wait()
+---
+- Statement: SELECT id from t2 where full_text_search(name2 = 'foo1');
+- output: [[1]]
+---
+- Statement: select id from t where full_text_search(name = 'bar1');
+- output: [[1], [2]]
+---
+- Statement: UPDATE t set name='foo' WHERE id = 1;
+---
+- Statement: CALL sys.full_text_background_wait()
+---
+- Statement: select id from t where full_text_search(name = 'bar1');
+- output: [[2]]
+---
+- Statement: SELECT id from t where full_text_search(name = 'bar4');
+- output: [[4]]
+---
+- Statement: DELETE FROM t where id = 4;
+---
+- Statement: CALL sys.full_text_background_wait()
+---
+- Statement: SELECT id from t where full_text_search(name = 'bar4');
+- row_count: 0
+---
+- DropTable: t
+---
+- DropTable: t2
+...

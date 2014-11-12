@@ -9,6 +9,15 @@ for f in "${DIR}"/*.new; do
     fi
 done
 
+# remove .new file if old and new are equal
+for file in "${DIR}"/*.new; do
+    WITHOUT_NEW="${file%.new}"
+    diff ${file} ${WITHOUT_NEW} > /dev/null
+    if [ $? -eq 0 ]; then
+       rm ${file}
+    fi
+done 
+
 /bin/launchctl load -w /Library/LaunchDaemons/com.foundationdb.layer.sql.plist
 
 exit 0

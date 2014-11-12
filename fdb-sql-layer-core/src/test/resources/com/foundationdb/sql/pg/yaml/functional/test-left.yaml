@@ -1,0 +1,86 @@
+## test left
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types(varchar_field, bigint_field, double_field)
+              VALUES ('foobar', 1, 1.0);
+# Test with literals
+---
+- Statement: SELECT left('foobarbar', 5); 
+- output: [['fooba']]
+---
+- Statement: SELECT left('foobarbar', -1) from all_types;
+- output: [['']]
+---
+- Statement: SELECT left('foobarbar', 30) from all_types;
+- output: [['foobarbar']]
+---
+- Statement: SELECT left('foobarbar', 0) from all_types;
+- output: [['']]
+## Test with nulls
+---
+- Statement: SELECT left(null, 4);
+- output: [[null]]
+---
+- Statement: SELECT LEFT('a', null);
+- output: [[null]]
+---
+- Message: "Test with nulls - NPE when both args are null"
+#---
+#- Statement: SELECT left(null, null);
+#- output: [[null]]
+---
+- Statement: SELECT bigint_field from all_types WHERE left('foobarbar', 5) = 'fooba';
+- output: [[1]]
+---
+- Statement: SELECT bigint_field from all_types WHERE left(null, 4) IS NULL;
+- output: [[1]]
+---
+- Statement: SELECT bigint_field from all_types WHERE left('abc', null) IS NULL;
+- output: [[1]]
+---
+- Statement: SELECT bigint_field from all_types WHERE left(null, null) IS NULL;
+- output: [[1]]
+---
+- Message: "test with params -  NPE when both args are unknown"
+#---
+#- Statement: SELECT left(?, ?);
+#- params: [['1234', 3]]
+#- output: [['123']]
+---
+- Statement: SELECT left(?, 3) from all_types;
+- params: [['12345']]
+- output: [['123']]
+---
+- Statement: SELECT left('abcd', ?) from all_types;
+- params: [[1]]
+- output: [['a']]
+---
+- Message: "Test with parames - NPE when both args are unknown "
+#---
+#- Statement: SELECT bigint_field from all_types WHERE left(?, ?) = 'abc';
+#- params: [['abc124', 3]]
+#- output: [[1]]
+---
+- Statement: SELECT bigint_field from all_types WHERE left('abc124', ?) = 'abc';
+- params: [[3]]
+- output: [[1]]
+---
+- Statement: SELECT bigint_field from all_types WHERE left(?, 3) = 'abc';
+- params: [['abc124']]
+- output: [[1]]
+## test with fields
+---
+- Statement: SELECT left(varchar_field, bigint_field) from all_types;
+- output: [['f']]
+---
+- Statement: SELECT bigint_field from all_types WHERE left(varchar_field, double_field) = 'f';
+- output: [[1]]
+## test arity
+---
+- Statement: SELECT left() from all_types;
+- error: !select-engine { all: [42000], sys-mysql: [1064] } 
+---
+- Statement: SELECT left('abc', 1, 2) from all_types;
+- error: !select-engine { all: [42000], sys-mysql: [1064] }
+...

@@ -1,0 +1,11 @@
+SelectQuery@33b60848
+  ResultSet@73d9c97d[t1]
+    Union@5f3b68f6(ALL)
+      ResultSet@35681f52[t1]
+        Project@46e05be2[NULL]
+          Select@33b076c8[]
+            ExpressionsSource@6465efb([[]])
+      ResultSet@7605b3f4[t1]
+        Project@706994b4[NULL]
+          Select@23a1ef14[]
+            ExpressionsSource@5c571c52([[]])

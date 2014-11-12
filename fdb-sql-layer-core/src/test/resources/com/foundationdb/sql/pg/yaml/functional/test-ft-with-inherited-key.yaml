@@ -1,0 +1,33 @@
+# test full-text updates with inherited keys
+
+---
+- Properties: fts 
+- suppressed: true
+
+---
+- CreateTable: t1(id INT NOT NULL PRIMARY KEY);
+---
+- CreateTable: t2(id INT NOT NULL PRIMARY KEY, pid INT NOT NULL, GROUPING FOREIGN KEY(pid) REFERENCES t1(id));
+---
+- CreateTable: t3(id INT NOT NULL PRIMARY KEY, pid INT NOT NULL, GROUPING FOREIGN KEY(pid) REFERENCES t2(id), name VARCHAR(16) COLLATE en_us_ci);
+---
+- Statement: INSERT INTO t1 VALUES(1),(2);
+---
+- Statement: INSERT INTO t2 VALUES(11, 1);
+---
+- Statement: INSERT INTO t3 VALUES(111, 11, 'Fred'),(112, 11, 'Barney');
+---
+- Statement: CREATE INDEX t3_ft ON t3(FULL_TEXT(name));
+---
+- Statement: CALL sys.full_text_background_wait()
+---
+- Statement: SELECT * FROM t3 WHERE FULL_TEXT_SEARCH(name, 'fred');
+- output: [[111, 11, 'Fred']]
+---
+- Statement: UPDATE t2 SET pid = 2 WHERE pid = 1;
+---
+- Statement: CALL sys.full_text_background_wait()
+---
+- Statement: SELECT * FROM t3 WHERE FULL_TEXT_SEARCH(name, 'fred');
+- output: [[111, 11, 'Fred']]
+...

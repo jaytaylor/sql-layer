@@ -1,0 +1,61 @@
+## Test the ELT function
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types(bigint_field, double_field, varchar_field, date_field, datetime_field, boolean_field) 
+                VALUES(2, 3.5, '4.5', '2012-03-15', '2009-03-15 15:45:10', 1);
+---
+- Statement: SELECT ELT(1, 1) from all_types;
+- output: [["1"]]
+---
+- Statement: SELECT ELT(2, 1, 2.0, 3.5, 5.4) from all_types;
+- output: [['2.0']]
+---
+- Statement: SELECT ELT(null, 1) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT ELT(5, 1, 2) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT ELT(-4, 'one', 'two') from all_types;
+- output: [[null]]
+---
+- Statement: SELECT ELT(3, 'one', 'two', 'three') from all_types;
+- output: [['three']]
+---
+- Statement: SELECT bigint_field from all_types WHERE ELT(1, DATE('2009-12-12'), 2) = '2009-12-12';
+- output: [[2]]
+## test with params
+---
+- Statement: SELECT ELT(?, 'one', 'two', 'three') from all_types;
+- params: [[2]]
+- output: [['two']]
+---
+- Statement: SELECT ELT(2, 'one', ?, 'two', 3.5) from all_types;
+- params: [['6']]
+- output: [['6']]
+---
+- Statement: SELECT ELT(1, 'one', ?, 'two') from all_types;
+- params: [['3']]
+- output: [['one']]
+---
+- Statement: SELECT bigint_field from all_types WHERE ELT(-4, 'one') IS NULL;
+- output: [[2]]
+## Test with fields
+---
+- Statement: SELECT ELT(1, bigint_field, double_field) from all_types;
+- output_types: [VARCHAR]
+- output: [['2']]
+---
+- Statement: SELECT ELT(1, bigint_field, double_field, date_field) from all_types;
+- output_types: [VARCHAR]
+- output: [['2']]
+## test wrong arity
+---
+- Statement: SELECT ELT() from all_types;
+- error: [4250C]
+---
+- Statement: explain VERBOSE select ELT(1, CAST(? AS CHAR(1)), 'abc' )
+- output: [['Project_Default(ELT(1, CAST($1 AS VARCHAR(3)), ''abc''))'],
+          ['  ValuesScan_Default([])']]
+...

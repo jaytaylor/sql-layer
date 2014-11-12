@@ -3,3 +3,4 @@
 /etc/foundationdb/sql/log4j.properties
 /etc/foundationdb/sql/server.properties
 /etc/foundationdb/sql/services-config.yaml
+/etc/foundationdb/sql/sql-layer.policy
