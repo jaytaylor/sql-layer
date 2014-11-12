@@ -34,12 +34,20 @@ public abstract class BaseExpression extends BasePlanElement implements Expressi
     private ValueNode sqlSource;
     private TPreptimeValue preptimeValue;
 
+    // TODO Ideally type here won't ever be null, which would mean that getType() will never return null,
+    // but the value origin is complicated, so hopefully every higher up TInstance parameter passing will cause
+    // a warning in my list. Should probably come back and check
     protected BaseExpression(DataTypeDescriptor sqlType, ValueNode sqlSource,
                              TInstance type) {
+        this(sqlType, sqlSource, type == null ? null : new TPreptimeValue(type));
+    }
+
+    // See comment on other constructor
+    protected BaseExpression(DataTypeDescriptor sqlType, ValueNode sqlSource, TPreptimeValue value) {
+
         this.sqlType = sqlType;
         this.sqlSource = sqlSource;
-        if (type != null)
-            this.preptimeValue = new TPreptimeValue(type);
+        this.preptimeValue = value;
     }
 
     @Override

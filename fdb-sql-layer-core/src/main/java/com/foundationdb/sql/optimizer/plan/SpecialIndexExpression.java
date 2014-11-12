@@ -17,6 +17,8 @@
 
 package com.foundationdb.sql.optimizer.plan;
 
+import com.foundationdb.server.types.TInstance;
+
 import java.util.List;
 
 /** A special function used in an index. 
@@ -29,7 +31,7 @@ public class SpecialIndexExpression extends BaseExpression
     private List<ExpressionNode> operands;
 
     public SpecialIndexExpression(Function function, List<ExpressionNode> operands) {
-        super(null, null, null);
+        super(null, null, (TInstance)null);
         this.function = function;
         this.operands = operands;
     }

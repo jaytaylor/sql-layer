@@ -419,6 +419,7 @@ public final class OverloadResolver<V extends TValidatedOverload> {
             }
 
             TPreptimeValue inputTpv = inputs.get(i);
+            // TODO locally isolated, but it should probably use TInstance.LiteralNull or TInstance.Parameter
             TInstance inputInstance = (inputTpv == null) ? null : inputTpv.type();
             // allow this input if...
             // ... input set takes ANY, and it isn't marked as an exact. If it's marked as an exact, we'll figure it
@@ -541,6 +542,7 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                     }
                     if(AtoB) {
                         // current more specific
+                        // set B to null so that we know not to add it to castGroup
                         B = null;
                         break;
                     } else if(BtoA) {
