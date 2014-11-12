@@ -49,6 +49,7 @@ public final class RowsBuilder {
     public RowsBuilder row(Object... objs) {
         ValueSource[] values = new ValueSource[objs.length];
         for (int i = 0; i < objs.length; ++i) {
+            // TODO ensure tinsts[i] is never null
             values[i] = ValueSources.valuefromObject(objs[i], tinsts[i]);
 /*            
             ValueSource psource = ValueSources.fromObject(objs[i], tinsts[i]).value();

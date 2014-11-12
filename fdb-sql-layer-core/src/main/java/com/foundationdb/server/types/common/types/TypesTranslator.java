@@ -306,6 +306,7 @@ public abstract class TypesTranslator
                                     int defaultCharsetId, int defaultCollationId,
                                     String schemaName, String tableName, String columnName) {
         TInstance type;
+        // TODO ensure sqlType is not null, because this cannot be null, or if sqlType is null, get an appropriate TInsntance
         if (sqlType == null) 
             return null;
         else

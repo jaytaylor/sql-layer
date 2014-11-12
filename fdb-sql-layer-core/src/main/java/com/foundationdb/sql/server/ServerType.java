@@ -31,8 +31,9 @@ public abstract class ServerType
         DECIMAL_PG_NUMERIC_VAR, UUID
     }
 
-    private TInstance type;
+    private final TInstance type;
 
+    // TODO ensure this is never called with null
     protected ServerType(TInstance type) {
         this.type = type;
     }

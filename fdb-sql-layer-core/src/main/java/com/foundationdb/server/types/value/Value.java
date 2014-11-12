@@ -41,6 +41,7 @@ public final class Value implements ValueSource, ValueTarget {
 
     @Override
     public final void putNull() {
+        // TODO should this check that the type is nullable?
         setRawValues(State.NULL, -1, null, null);
     }
 

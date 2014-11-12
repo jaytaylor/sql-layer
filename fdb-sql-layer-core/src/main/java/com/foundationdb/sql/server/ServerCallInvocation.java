@@ -143,6 +143,7 @@ public class ServerCallInvocation extends ServerRoutineInvocation
                 TInstance type = null;
                 if (constantArgs[i] == null)
                     type = this.getType(i);
+                // TODO ensure type is not null
                 target.setValue(i, ValueSources.valuefromObject(constantArgs[i], type));
             }
             else {

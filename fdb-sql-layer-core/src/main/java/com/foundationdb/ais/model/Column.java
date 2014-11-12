@@ -184,6 +184,7 @@ public class Column implements ColumnContainer, Visitable
         return identityGenerator;
      }
 
+    // TODO ensure this never returns null
     public TInstance getType() {
         return type;
     }

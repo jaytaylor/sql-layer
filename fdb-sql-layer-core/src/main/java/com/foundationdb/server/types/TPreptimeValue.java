@@ -37,6 +37,7 @@ public final class TPreptimeValue {
         return type == null || type.nullability();
     }
 
+    // TODO ensure this is never null
     public TInstance type() {
         return type;
     }

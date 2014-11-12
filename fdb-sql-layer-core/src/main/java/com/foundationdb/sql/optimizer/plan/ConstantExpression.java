@@ -63,6 +63,7 @@ public class ConstantExpression extends BaseExpression
                    type.nullability());
         }
 
+        //TODO ensure type is not null ever
         setPreptimeValue(ValueSources.fromObject(value, type));
     }
    

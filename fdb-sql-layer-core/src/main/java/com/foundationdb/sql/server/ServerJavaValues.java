@@ -67,6 +67,7 @@ public abstract class ServerJavaValues
     protected abstract int size();
     protected abstract ServerQueryContext getContext();
     protected abstract ValueSource getValue(int index);
+    // TODO ensure this is never null
     protected abstract TInstance getType(int index);
     protected abstract void setValue(int index, ValueSource source);
     protected abstract ResultSet toResultSet(int index, Object resultSet);
