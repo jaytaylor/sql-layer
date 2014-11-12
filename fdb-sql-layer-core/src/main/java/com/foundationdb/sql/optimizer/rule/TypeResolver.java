@@ -443,6 +443,7 @@ public final class TypeResolver extends BaseRule {
 
             TOverloadResult overloadResultStrategy = overload.resultStrategy();
             TInstance resultInstance;
+            // This is set to null here to indicate that no casting is required
             TInstance castTo;
 
             TPreptimeContext context;
@@ -740,6 +741,7 @@ public final class TypeResolver extends BaseRule {
                 return expression;
             }
             else if (columnSource instanceof NullSource) {
+                // TODO TInstance.LiteralNull
                 expression.setPreptimeValue(new TPreptimeValue(null, null));
                 return expression;
             }
@@ -763,6 +765,7 @@ public final class TypeResolver extends BaseRule {
                 expression.setPreptimeValue(tpv);
             }
             else if (columnSource instanceof CreateAs){
+                // TODO huh? why is the type null here
                 expression.setPreptimeValue(new TPreptimeValue(null, null));
                 return expression;
             }
@@ -1250,6 +1253,8 @@ public final class TypeResolver extends BaseRule {
     }
 
     private static TInstance type(ExpressionNode node) {
+        // TODO for resolving the fact that we're returning null for the TInstance here, see BaseExpressionNode
+        // Ideally node.getPreptimeValue would never return null
         TPreptimeValue ptv = node.getPreptimeValue();
         return ptv == null ? null : ptv.type();
     }

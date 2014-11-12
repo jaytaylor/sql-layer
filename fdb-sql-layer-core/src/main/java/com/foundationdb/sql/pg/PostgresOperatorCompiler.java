@@ -117,6 +117,8 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
             pgType = PostgresType.fromDerby(sqlType, type);
         }
         else {
+            // TODO a fourth usage of null, the postgres unknown type. I don't believe parameter or null is the same
+            // although parameter might fit under this.
             pgType = new PostgresType(PostgresType.TypeOid.UNKNOWN_TYPE_OID,
                                       (short)-1, -1, null);
         }

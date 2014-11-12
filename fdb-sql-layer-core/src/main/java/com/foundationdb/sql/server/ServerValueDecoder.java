@@ -61,7 +61,8 @@ public class ServerValueDecoder
     public void decodeValue(byte[] encoded, ServerType type, boolean binary,
                             QueryBindings bindings, int index,
                             QueryContext queryContext, TypesRegistryService typesRegistryService) {
-       
+        // TODO This concludes type == null => value == null, which appears to work, but this will need to be updated
+        // when TInstance is no longer null
         TInstance targetType = type != null ? type.getType() : null;
         if (targetType == null && encoded != null) {
             throw new UnknownDataTypeException(null);

@@ -111,6 +111,9 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
                 // decode it properly.
                 PostgresType.TypeOid oid = PostgresType.TypeOid.fromOid(paramTypes[i]);
                 if (oid != null) {
+                    // TODO TInstance.ParameterType
+                    // But then again, the other PostgresType has a TInstance
+                    // see also PostgresJavaRoutine.parameterTypes
                     if (pgType == null)
                         pgType = new PostgresType(oid, (short)-1, -1, null);
                     else

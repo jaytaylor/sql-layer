@@ -281,13 +281,17 @@ public abstract class TypesTranslator
      */
     public abstract void setTimestampMillisValue(ValueTarget value, long millis, int nanos);
 
-    /** Translate the given parser type to the corresponding type instance. */
+    /**
+     * Translate the given parser type to the corresponding type instance.
+     * Will only return null if sqlType is null
+     */
     public TInstance typeForSQLType(DataTypeDescriptor sqlType) {
         return typeForSQLType(sqlType,
                 StringFactory.DEFAULT_CHARSET_ID,
                 StringFactory.DEFAULT_COLLATION_ID);
     }
 
+    /** Will only return null if sqlType is null **/
     public TInstance typeForSQLType(DataTypeDescriptor sqlType,
                                     String schemaName, String tableName, String columnName) {
         return typeForSQLType(sqlType,
@@ -296,12 +300,14 @@ public abstract class TypesTranslator
                 schemaName, tableName, columnName);
     }
 
+    /** Will only return null if sqlType is null **/
     public TInstance typeForSQLType(DataTypeDescriptor sqlType,
                                     int defaultCharsetId, int defaultCollationId) {
         return typeForSQLType(sqlType, defaultCharsetId, defaultCollationId,
                 null, null, null);
     }
 
+    /** Will only return null if sqlType is null **/
     public TInstance typeForSQLType(DataTypeDescriptor sqlType,
                                     int defaultCharsetId, int defaultCollationId,
                                     String schemaName, String tableName, String columnName) {
@@ -315,6 +321,12 @@ public abstract class TypesTranslator
                     schemaName, tableName, columnName);
     }
 
+    /**
+     *
+     * @return not null
+     * @throws com.foundationdb.server.error.UnsupportedDataTypeException
+     * @throws com.foundationdb.server.error.UnsupportedColumnDataTypeException
+     */
     protected TInstance typeForSQLType(TypeId typeId, DataTypeDescriptor sqlType,
                                        int defaultCharsetId, int defaultCollationId,
                                        String schemaName, String tableName, String columnName) {
@@ -432,24 +444,28 @@ public abstract class TypesTranslator
         throw new UnknownDataTypeException(name);
     }
 
+    /** never returns null **/
     public TInstance typeForJDBCType(int jdbcType, boolean nullable,
                                      String schemaName, String tableName, String columnName) {
         TClass tclass = typeClassForJDBCType(jdbcType, schemaName, tableName, columnName);
         return tclass.instance(nullable);
     }
 
+    /** never returns null **/
     public TInstance typeForJDBCType(int jdbcType, int att, boolean nullable,
                                      String schemaName, String tableName, String columnName) {
         TClass tclass = typeClassForJDBCType(jdbcType, schemaName, tableName, columnName);
-            return tclass.instance(att, nullable);
+        return tclass.instance(att, nullable);
     }
 
+    /** never returns null **/
     public TInstance typeForJDBCType(int jdbcType, int att1, int att2, boolean nullable,
                                      String schemaName, String tableName, String columnName) {
         TClass tclass = typeClassForJDBCType(jdbcType, schemaName, tableName, columnName);
         return tclass.instance(att1, att2, nullable);
     }
 
+    /** never returns null **/
     protected TInstance typeForStringType(int jdbcType, DataTypeDescriptor type,
                                           int defaultCharsetId, int defaultCollationId,
                                           String schemaName, String tableName, String columnName) {
@@ -459,6 +475,7 @@ public abstract class TypesTranslator
                 schemaName, tableName, columnName);
     }
 
+    /** never returns null **/
     protected TInstance typeForStringType(TClass tclass, DataTypeDescriptor type,
                                           int defaultCharsetId, int defaultCollationId,
                                           String schemaName, String tableName, String columnName) {

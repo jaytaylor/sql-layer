@@ -132,6 +132,7 @@ public class PostgresJavaRoutineJsonOutputter extends PostgresOutputter<ServerJa
         PostgresType[] pgTypes = new PostgresType[ncols];
         for (int i = 0; i < ncols; i++) {
             DataTypeDescriptor sqlType = resultColumnSQLType(metaData, i+1);
+            // TODO, I don't even know; I'll have to come back to this after a break
             pgTypes[i] = PostgresType.fromDerby(sqlType, null);
         }
         encoder.appendString("[");
@@ -235,6 +236,7 @@ public class PostgresJavaRoutineJsonOutputter extends PostgresOutputter<ServerJa
         int ncols = metaData.getColumnCount();
         for (int i = 0; i < ncols; i++) {
             DataTypeDescriptor sqlType = resultColumnSQLType(metaData, i+1);
+            // TODO same as other todo in this file
             PostgresType pgType = PostgresType.fromDerby(sqlType, null);
 
             if (i > 0)

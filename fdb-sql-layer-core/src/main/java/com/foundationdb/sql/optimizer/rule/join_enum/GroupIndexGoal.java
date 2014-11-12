@@ -1842,6 +1842,8 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         }
         if (columnMatches(col1, op1) && columnMatches(col2, op2) &&
             constantOrBound(op3) && constantOrBound(op4)) {
+            // TODO I guess geospatial functions don't have types
+            // there's a couple similar uses GroupIndexGoal.matchZnear and OperatorAssembler.assembleSpatialIndexKeyRange
             return new FunctionExpression("_center_radius",
                                           Arrays.asList(op3, op4, right),
                                           null, null, null);
