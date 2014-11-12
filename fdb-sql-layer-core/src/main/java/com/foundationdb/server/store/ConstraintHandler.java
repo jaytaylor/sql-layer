@@ -26,12 +26,12 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.JoinColumn;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.qp.exec.UpdatePlannable;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.expression.RowBasedUnboundExpressions;
 import com.foundationdb.qp.expression.UnboundExpressions;
 import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
@@ -926,7 +926,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
     
     protected static class Plan implements ColumnSelector, UpdateFunction {
         Schema schema;
-        UpdatePlannable plannable;
+        Operator operator;
         int ncols;
         FieldDef[] referencedFields;
         int[] referencedColumns;
@@ -943,13 +943,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
         }
 
         /* UpdateFunction */
-        
-        @Override
-        public boolean rowIsSelected(Row row) {
-            assert (updatePositions != null);
-            return true;
-        }
-        
+
         @Override
         public Row evaluate(Row original, QueryContext context, QueryBindings bindings) {
             OverlayingRow overlay = new OverlayingRow(original);
@@ -1032,7 +1026,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
                 action = foreignKey.getDeleteAction();
                 if (action == ForeignKey.Action.CASCADE) {
                     // DELETE FROM referencing ...
-                    plan.plannable = API.delete_Default(input);
+                    plan.operator = API.delete_Returning(input, false);
                     break takeAction;
                 }
             }
@@ -1063,7 +1057,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
             for (int i = 0; i < plan.ncols; i++) {
                 plan.updatePositions[i] = foreignKey.getReferencingColumns().get(i).getPosition();
             }
-            plan.plannable = API.update_Default(input, plan);
+            plan.operator = API.update_Returning(input, plan);
         }
         if (LOG.isDebugEnabled()) {
             ExplainContext context = new ExplainContext();
@@ -1081,9 +1075,9 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
                                  PrimitiveExplainer.getInstance(plan.ncols + i));
                 atts.put(Label.EXPRESSIONS, var);
             }
-            context.putExtraInfo(plan.plannable, 
+            context.putExtraInfo(plan.operator,
                                  new CompoundExplainer(Type.EXTRA_INFO, atts));
-            Explainer explainer = plan.plannable.getExplainer(context);
+            Explainer explainer = plan.operator.getExplainer(context);
             LOG.debug("Plan for " + foreignKey.getConstraintName().getTableName() + ":\n" +
                       Strings.join(new DefaultFormatter(tableName.getSchemaName()).format(explainer)));
         }
@@ -1110,7 +1104,16 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
                     bindings.setValue(plan.bindValues.length + i, plan.bindValues[i]);
                 }
             }
-            plan.plannable.run(context, bindings);
+            Cursor cursor = API.cursor(plan.operator, context, bindings);
+            cursor.openTopLevel();
+            try {
+                Row row;
+                do {
+                    row = cursor.next();
+                } while(row != null);
+            } finally {
+                cursor.closeTopLevel();
+            }
     }
     
     protected void runOperatorPlan(Plan plan, Session session,
@@ -1138,7 +1141,16 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
                 bindings.setValue(plan.bindValues.length + i, plan.bindValues[i]);
             }
         }
-        plan.plannable.run(context, bindings);
+        Cursor cursor = API.cursor(plan.operator, context, bindings);
+        cursor.openTopLevel();
+        try {
+            Row row;
+            do {
+                row = cursor.next();
+            } while(row != null);
+        } finally {
+            cursor.closeTopLevel();
+        }
     }
 
 }

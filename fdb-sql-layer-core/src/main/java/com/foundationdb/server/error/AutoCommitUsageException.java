@@ -15,11 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.qp.exec;
 
-import com.foundationdb.qp.operator.QueryBindings;
-import com.foundationdb.qp.operator.QueryContext;
+package com.foundationdb.server.error;
 
-public interface UpdatePlannable extends Plannable {
-    UpdateResult run(QueryContext context, QueryBindings bindings);
+public class AutoCommitUsageException extends InvalidOperationException
+{
+    public AutoCommitUsageException(String msg) {
+        super(ErrorCode.AUTO_COMMIT_USAGE, msg);
+    }
 }

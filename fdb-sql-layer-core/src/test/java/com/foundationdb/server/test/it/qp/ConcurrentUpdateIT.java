@@ -18,7 +18,7 @@
 package com.foundationdb.server.test.it.qp;
 
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.qp.exec.UpdatePlannable;
+import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
@@ -102,13 +102,6 @@ public class ConcurrentUpdateIT extends OperatorITBase
         }
         UpdateFunction updateAFunction = new UpdateFunction()
         {
-
-            @Override
-            public boolean rowIsSelected(Row row)
-            {
-                return row.rowType().equals(aRowType);
-            }
-
             @Override
             public Row evaluate(Row original, QueryContext context, QueryBindings bindings)
             {
@@ -118,13 +111,6 @@ public class ConcurrentUpdateIT extends OperatorITBase
         };
         UpdateFunction updateBFunction = new UpdateFunction()
         {
-
-            @Override
-            public boolean rowIsSelected(Row row)
-            {
-                return row.rowType().equals(bRowType);
-            }
-
             @Override
             public Row evaluate(Row original, QueryContext context, QueryBindings bindings)
             {
@@ -132,13 +118,10 @@ public class ConcurrentUpdateIT extends OperatorITBase
                 return new OverlayingRow(original).overlay(1, -bx);
             }
         };
-        UpdatePlannable updateA = update_Default(groupScan_Default(aGroup), updateAFunction);
-        UpdatePlannable updateB = update_Default(groupScan_Default(bGroup), updateBFunction);
-/*
-        TestThread threadA = new TestThread(aGroup, updateA);
-        threadA.start();
-        threadA.join();
-*/
+
+        Operator updateA = update_Returning(groupScan_Default(aGroup), updateAFunction);
+        Operator updateB = update_Returning(groupScan_Default(bGroup), updateBFunction);
+
         TestThread threadA = new TestThread(aGroup, updateA);
         TestThread threadB = new TestThread(bGroup, updateB);
         threadA.start();
@@ -158,7 +141,7 @@ public class ConcurrentUpdateIT extends OperatorITBase
                 StoreAdapter adapter = newStoreAdapter(session, schema);
                 QueryContext queryContext = queryContext(adapter);
                 try(TransactionService.CloseableTransaction txn = txnService().beginCloseableTransaction(session)) {
-                    plan.run(queryContext, queryBindings);
+                    runPlan(queryContext, queryBindings, plan);
                     dump(cursor(groupScan_Default(group), queryContext, queryBindings));
                     txn.commit();
                 } catch (Throwable e) {
@@ -168,7 +151,7 @@ public class ConcurrentUpdateIT extends OperatorITBase
             }
         }
 
-        public TestThread(Group group, UpdatePlannable plan)
+        public TestThread(Group group, Operator plan)
         {
             setName(group.getName().toString());
             this.group = group;
@@ -176,7 +159,7 @@ public class ConcurrentUpdateIT extends OperatorITBase
         }
 
         private Group  group;
-        private UpdatePlannable plan;
+        private Operator plan;
     }
 
     private int a;

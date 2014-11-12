@@ -17,18 +17,18 @@
 
 package com.foundationdb.server.test.it.qp;
 
-import com.foundationdb.qp.exec.UpdatePlannable;
-import com.foundationdb.qp.exec.UpdateResult;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
+import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.List;
 
 import static com.foundationdb.qp.operator.API.cursor;
-import static com.foundationdb.qp.operator.API.delete_Default;
+import static com.foundationdb.qp.operator.API.delete_Returning;
 import static com.foundationdb.qp.operator.API.filter_Default;
 import static com.foundationdb.qp.operator.API.groupScan_Default;
 import static com.foundationdb.qp.operator.API.indexScan_Default;
@@ -94,9 +94,8 @@ public class DeleteIT extends OperatorITBase {
         Row[] rows = {
                 row(customerRowType, new Object[]{2, "abc"})
         };
-        UpdatePlannable insertPlan = delete_Default(rowsToValueScan(rows));
-        UpdateResult result = insertPlan.run(queryContext, queryBindings);
-        assertEquals("rows touched", rows.length, result.rowsTouched());
-        assertEquals("rows modified", rows.length, result.rowsModified());
+        Operator deletePlan = delete_Returning(rowsToValueScan(rows), false);
+        List<Row> result = runPlan(queryContext, queryBindings, deletePlan);
+        assertEquals("rows touched", rows.length, result.size());
     }
 }

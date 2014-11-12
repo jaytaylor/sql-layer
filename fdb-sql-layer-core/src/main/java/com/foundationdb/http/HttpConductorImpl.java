@@ -77,6 +77,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     private static final String CONFIG_PORT_PROPERTY = CONFIG_HTTP_PREFIX + "port";
     private static final String CONFIG_SSL_PROPERTY = CONFIG_HTTP_PREFIX + "ssl";
     private static final String CONFIG_LOGIN_PROPERTY = CONFIG_HTTP_PREFIX + "login";
+    private static final String CONFIG_REALM = CONFIG_HTTP_PREFIX + "realm";
     private static final String CONFIG_LOGIN_CACHE_SECONDS = CONFIG_HTTP_PREFIX + "login_cache_seconds";
     private static final String CONFIG_XORIGIN_PREFIX = CONFIG_HTTP_PREFIX + "cross_origin.";
     private static final String CONFIG_XORIGIN_ENABLED = CONFIG_XORIGIN_PREFIX + "enabled";
@@ -295,7 +296,8 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                 sh.setConstraintMappings(Collections.singletonList(cm));
 
                 LoginService loginService =
-                        new SecurityServiceLoginService(securityService, login.getCredentialType(), loginCacheSeconds);
+                        new SecurityServiceLoginService(securityService, login.getCredentialType(), loginCacheSeconds,
+                                configurationService.getProperty(CONFIG_REALM));
                 sh.setLoginService(loginService);
 
                 localRootContextHandler.setSecurityHandler(sh);

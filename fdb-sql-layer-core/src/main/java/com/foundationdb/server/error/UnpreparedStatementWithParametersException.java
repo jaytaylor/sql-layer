@@ -14,17 +14,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.foundationdb.server.store;
 
-import com.foundationdb.Database;
-import com.foundationdb.FDB;
-import com.foundationdb.TransactionContext;
-import com.foundationdb.directory.DirectorySubspace;
 
-public interface FDBHolder {
-    int getAPIVersion();
-    FDB getFDB();
-    Database getDatabase();
-    TransactionContext getTransactionContext();
-    DirectorySubspace getRootDirectory();
+package com.foundationdb.server.error;
+
+public class UnpreparedStatementWithParametersException extends InvalidOperationException
+{
+    public UnpreparedStatementWithParametersException(String msg) {
+        super(ErrorCode.UNPREPARED_STATEMENT_WITH_PARAMETERS, msg);
+    }
 }

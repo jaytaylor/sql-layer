@@ -17,17 +17,12 @@
 
 package com.foundationdb.server.test.it.qp;
 
-import com.foundationdb.qp.exec.UpdatePlannable;
-import com.foundationdb.qp.exec.UpdateResult;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.rowtype.RowType;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -35,9 +30,8 @@ import static com.foundationdb.qp.operator.API.cursor;
 import static com.foundationdb.qp.operator.API.filter_Default;
 import static com.foundationdb.qp.operator.API.groupScan_Default;
 import static com.foundationdb.qp.operator.API.indexScan_Default;
-import static com.foundationdb.qp.operator.API.insert_Default;
+import static com.foundationdb.qp.operator.API.insert_Returning;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 public class InsertIT extends OperatorITBase {
     @Test
@@ -116,9 +110,8 @@ public class InsertIT extends OperatorITBase {
                 row(customerRowType, new Object[]{3, "jkl"}),
                 row(customerRowType, new Object[]{5, "ooo"})
         };
-        UpdatePlannable insertPlan = insert_Default(rowsToValueScan(rows));
-        UpdateResult result = insertPlan.run(queryContext, queryBindings);
-        assertEquals("rows touched", rows.length, result.rowsTouched());
-        assertEquals("rows modified", rows.length, result.rowsModified());
+        Operator insertPlan = insert_Returning(rowsToValueScan(rows));
+        List<Row> result = runPlan(queryContext, queryBindings, insertPlan);
+        assertEquals("rows touched", rows.length, result.size());
     }
 }

@@ -15,10 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.qp.operator;
+package com.foundationdb.server.error;
 
-import com.foundationdb.qp.row.Row;
-
-public interface SelectionFunction {
-    boolean rowIsSelected(Row row);
+public class UnsupportedTriggerException extends
+        InvalidOperationException {
+    public UnsupportedTriggerException() {
+        super (ErrorCode.UNSUPPORTED_TRIGGER);
+    }
 }

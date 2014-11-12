@@ -798,13 +798,7 @@ public class ConstantFolder extends BaseRule
         protected static enum Constantness { VARIABLE, CONSTANT, NULL }
 
         protected ExpressionNode evalNow(ExpressionNode node) {
-            try {
-                return expressionAssembler.evalNow(planContext, node);
-            }
-            catch (Exception ex) {
-                logger.debug("Error evaluating as constant", ex);
-            }
-            return node;
+            return expressionAssembler.evalNow(planContext, node);
         }
 
         protected boolean checkConstantBoolean(ExpressionNode node) {

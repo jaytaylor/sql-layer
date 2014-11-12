@@ -94,6 +94,16 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
         return position;
     }
 
+    public boolean hasAggregate(AggregateFunctionExpression aggregate) {
+        if (aggregates.contains(aggregate)) 
+            return true;
+        return false;
+    }
+
+    public int getPosition(AggregateFunctionExpression aggregate) {
+        return groupBy.size() + aggregates.indexOf(aggregate);
+    }
+
     public ExpressionNode getField(int position) {
         assert !projectSplitOff;
         if (position < nGroupBy)

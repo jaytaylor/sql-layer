@@ -69,7 +69,7 @@ public class BlobAsyncIT extends FDBITBase
         final byte[] testBytes1 = generateBytes(100);
         final byte[] testBytes2 = generateBytes(100);
         final byte[] testBytesBoth = ByteArrayUtil.join(testBytes1, testBytes2);
-        fdbHolder().getDatabase().run(new Function<Transaction, Void>() {
+        fdbHolder().getTransactionContext().run(new Function<Transaction, Void>() {
             @Override
             public Void apply(Transaction tr) {
                 BlobAsync blob = new BlobAsync(getDir(tr));
@@ -89,7 +89,7 @@ public class BlobAsyncIT extends FDBITBase
     @Test
     public void truncate() {
         final byte[] testBytes = generateBytes(100);
-        fdbHolder().getDatabase().run(new Function<Transaction, Void>() {
+        fdbHolder().getTransactionContext().run(new Function<Transaction, Void>() {
             @Override
             public Void apply(Transaction tr) {
                 BlobAsync blob = new BlobAsync(getDir(tr));
@@ -110,7 +110,7 @@ public class BlobAsyncIT extends FDBITBase
     @Test
     public void writePartial() {
         final byte[] testBytes = generateBytes(100);
-        fdbHolder().getDatabase().run(new Function<Transaction, Void>() {
+        fdbHolder().getTransactionContext().run(new Function<Transaction, Void>() {
             @Override
             public Void apply(Transaction tr) {
                 BlobAsync blob = new BlobAsync(getDir(tr));
@@ -137,7 +137,7 @@ public class BlobAsyncIT extends FDBITBase
     @Test
     public void readPartial() {
         final byte[] testBytes = generateBytes(100);
-        fdbHolder().getDatabase().run(new Function<Transaction, Void>() {
+        fdbHolder().getTransactionContext().run(new Function<Transaction, Void>() {
             @Override
             public Void apply(Transaction tr) {
                 BlobAsync blob = new BlobAsync(getDir(tr));
@@ -155,7 +155,7 @@ public class BlobAsyncIT extends FDBITBase
     @Test
     public void scanBounds() {
         final byte[] testBytes = generateBytes(4096);
-        fdbHolder().getDatabase().run(new Function<Transaction, Void>() {
+        fdbHolder().getTransactionContext().run(new Function<Transaction, Void>() {
             @Override
             public Void apply(Transaction tr) {
                 DirectorySubspace dir = getDir(tr);
@@ -179,7 +179,7 @@ public class BlobAsyncIT extends FDBITBase
 
     private void writeAndRead(final int len) {
         final byte[] testBytes = generateBytes(len);
-        fdbHolder().getDatabase().run(new Function<Transaction, Void>() {
+        fdbHolder().getTransactionContext().run(new Function<Transaction, Void>() {
             @Override
             public Void apply(Transaction tr) {
                 BlobAsync blob = new BlobAsync(getDir(tr));

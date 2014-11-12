@@ -76,7 +76,6 @@ import com.foundationdb.server.service.ServiceManagerImpl;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.config.TestConfigService;
 import com.foundationdb.server.service.dxl.DXLService;
-import com.foundationdb.server.service.dxl.DXLTestHooks;
 import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
@@ -182,7 +181,7 @@ public class ApiTestBase {
 
     private void clearFDBData() throws Exception {
         final FDBHolder holder = sm.getServiceByClass(FDBHolder.class);
-        holder.getRootDirectory().remove(holder.getDatabase()).get();
+        holder.getRootDirectory().remove(holder.getTransactionContext()).get();
     }
 
     @Before
@@ -923,11 +922,6 @@ public class ApiTestBase {
                                                                      QueryBindings bindings) {
                                                      return newRow;
                                                  }
-
-                                                 @Override
-                                                 public boolean rowIsSelected(Row row) {
-                                                     return row == oldRow;
-                                                 }
                                              });
         return runPlan(session, oldRow.rowType().schema(), plan);
     }
@@ -991,7 +985,11 @@ public class ApiTestBase {
     protected List<Row> runPlanInternal(Session session, Schema schema, Operator plan) {
         StoreAdapter adapter = newStoreAdapter(session, schema);
         QueryContext context = queryContext(adapter);
-        Cursor cursor = API.cursor(plan, context, context.createBindings());
+        return runPlan(context, context.createBindings(), plan);
+    }
+
+    protected static List<Row> runPlan(QueryContext context, QueryBindings bindings, Operator plan) {
+        Cursor cursor = API.cursor(plan, context, bindings);
         cursor.openTopLevel();
         try {
             List<Row> output = new ArrayList<>();

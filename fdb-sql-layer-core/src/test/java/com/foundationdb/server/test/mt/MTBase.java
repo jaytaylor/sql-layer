@@ -196,11 +196,6 @@ public abstract class MTBase extends ITBase implements ServiceHolder
                         public Row evaluate(Row original, QueryContext context, QueryBindings bindings) {
                             return newRow;
                         }
-
-                        @Override
-                        public boolean rowIsSelected(Row row) {
-                            return row.value(0).getInt32() == oldRow.value(0).getInt32();
-                        }
                     });
             }
         };

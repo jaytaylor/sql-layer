@@ -18,9 +18,9 @@
         <fdbsql.release>0</fdbsql.release>
         <fdbsql.test.extraJvmArgs></fdbsql.test.extraJvmArgs>
         <fdbsql.test.JmxJvmArgs>-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=8082 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false</fdbsql.test.JmxJvmArgs>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <protobuf.bin>../protobuf-2.5.0/src</protobuf.bin>
-        <protobuf.include>../../protobuf-2.5.0/src</protobuf.include>
+        <main.basedir>${project.parent.basedir}</main.basedir>
+        <protobuf.bin>${main.basedir}/../protobuf-2.5.0/src</protobuf.bin>
+        <protobuf.include>${main.basedir}/../protobuf-2.5.0/src</protobuf.include>
     </properties>
     
     <dependencies>
@@ -75,7 +75,7 @@
         <dependency>
             <groupId>com.foundationdb</groupId>
             <artifactId>fdb-sql-parser</artifactId>
-            <version>1.5.0-SNAPSHOT</version>
+            <version>1.6.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>

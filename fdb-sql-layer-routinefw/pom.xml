@@ -13,4 +13,8 @@
 
     <name>FoundationDB SQL Layer Routine Firewall</name>
 
+    <properties>
+        <main.basedir>${project.parent.basedir}</main.basedir>
+    </properties>
+
 </project>

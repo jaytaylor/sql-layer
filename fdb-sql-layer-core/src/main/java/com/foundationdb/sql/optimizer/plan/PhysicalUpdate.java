@@ -18,13 +18,11 @@
 package com.foundationdb.sql.optimizer.plan;
 
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.qp.exec.UpdatePlannable;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.format.DefaultFormatter;
 import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
-import com.foundationdb.sql.types.DataTypeDescriptor;
 
 import java.util.Arrays;
 import java.util.List;
@@ -49,10 +47,6 @@ public class PhysicalUpdate extends BasePlannable
         this.putInCache = putInCache;
     }
     
-    public UpdatePlannable getUpdatePlannable() {
-        return (UpdatePlannable)getPlannable();
-    }
-
     public boolean isReturning() {
         return returning;
     }
