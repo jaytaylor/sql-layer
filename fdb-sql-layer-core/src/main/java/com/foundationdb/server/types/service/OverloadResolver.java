@@ -42,7 +42,13 @@ public final class OverloadResolver<V extends TValidatedOverload> {
 
     public static class OverloadResult<V extends TValidatedOverload> {
         private V overload;
+        /**
+         * TODO should any of these be nullable
+         */
         private TInstance[] instances;
+        /**
+         * null if there is no pickingSet in the overload, or if one of `instances` is null.
+         */
         private TInstance pickedInstance;
 
         private class AdjusterImpl implements TInstanceAdjuster {
@@ -128,6 +134,8 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                     adjuster.copyBack();
                 }
             }
+            // TODO find out what OverloadResolver is. findPickedInstance can return null sometimes, but it looks like
+            // if you ever try to access pickedInstance, and it was null, it will throw an exception.
             pickedInstance = findPickedInstance(overload, inputs);
         }
 
@@ -209,6 +217,10 @@ public final class OverloadResolver<V extends TValidatedOverload> {
             }
         }
 
+        /**
+         * Never returns null.
+         * Note: if inputSet.isPicking() and no common tclass can be found, then varchar will be returned.
+         */
         private TInstance findCommon(V overload, TInputSet inputSet,
                                   List<? extends TPreptimeValue> inputs, TCastResolver resolver)
         {
