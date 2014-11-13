@@ -74,7 +74,6 @@ public abstract class RowType
 
     public abstract int nFields();
 
-    // TODO ensure that this never returns null
     public abstract TInstance typeAt(int index);
 
     public HKey hKey()
