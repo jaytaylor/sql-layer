@@ -61,7 +61,7 @@ public abstract class SubqueryExpression extends BaseExpression
 
     @Override
     public String toString() {
-        return subquery.summaryString(PlanToString.Configuration.DEFAULT);
+        return subquery.summaryString(PlanNode.SummaryConfiguration.DEFAULT);
     }
 
     @Override

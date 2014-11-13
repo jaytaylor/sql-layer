@@ -28,10 +28,20 @@ public interface PlanNode extends PlanElement
     /** One-line summary of just this node.
      * @param configuration configuration options for how the plan should be printed
      */
-    public String summaryString(PlanToString.Configuration configuration);
+    public String summaryString(SummaryConfiguration configuration);
 
     /** Hierarchical format of this node and any inputs.
      * @param configuration configuration options for how the plan should be printed
      */
-    public String planString(PlanToString.Configuration configuration);
+    public String planString(SummaryConfiguration configuration);
+
+    class SummaryConfiguration {
+        public final boolean includeRowTypes;
+
+        public SummaryConfiguration(boolean includeRowTypes) {
+            this.includeRowTypes = includeRowTypes;
+        }
+
+        public static final SummaryConfiguration DEFAULT = new SummaryConfiguration(false);
+    }
 }

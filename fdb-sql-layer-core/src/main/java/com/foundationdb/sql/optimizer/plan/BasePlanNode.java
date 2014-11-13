@@ -35,18 +35,18 @@ public abstract class BasePlanNode extends BasePlanElement implements PlanNode
     }
 
     @Override
-    public String summaryString(PlanToString.Configuration configuration) {
+    public String summaryString(SummaryConfiguration configuration) {
         return getClass().getSimpleName() + "@" + Integer.toString(hashCode(), 16);
     }
 
     @Override
-    public String planString(PlanToString.Configuration configuration) {
+    public String planString(SummaryConfiguration configuration) {
         return PlanToString.of(this, configuration);
     }
 
     @Override
     public String toString() {
-        return summaryString(PlanToString.Configuration.DEFAULT);
+        return summaryString(SummaryConfiguration.DEFAULT);
     }
 
     @Override

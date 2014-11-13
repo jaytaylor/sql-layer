@@ -52,7 +52,7 @@ public class AncestorLookup extends BaseLookup
     }
 
     @Override
-    public String summaryString(PlanToString.Configuration configuration) {
+    public String summaryString(SummaryConfiguration configuration) {
         return super.summaryString(configuration) + "(" + descendant + " -> " + ancestors + ")";
     }
 

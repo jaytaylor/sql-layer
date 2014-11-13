@@ -209,7 +209,7 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
     }
 
     @Override
-    public String summaryString(PlanToString.Configuration configuration) {
+    public String summaryString(SummaryConfiguration configuration) {
         StringBuilder str = new StringBuilder(super.summaryString(configuration));
         str.append("(");
         summarizeJoins(str);

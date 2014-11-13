@@ -24,7 +24,7 @@ public class Buffer extends BasePlanWithInput
     }
 
     @Override
-    public String summaryString(PlanToString.Configuration configuration) {
+    public String summaryString(SummaryConfiguration configuration) {
         return super.summaryString(configuration) + "()";
     }
 }

@@ -119,7 +119,7 @@ public abstract class BasePlannable extends BasePlanNode
     }
 
     @Override
-    public String planString(PlanToString.Configuration configuration) {
+    public String planString(SummaryConfiguration configuration) {
         // Similar to above, but with @hash for consistency and verbose
         return withIndentedExplain(new StringBuilder(super.summaryString(configuration)), null, null, DefaultFormatter.LevelOfDetail.VERBOSE_WITHOUT_COST);
     }

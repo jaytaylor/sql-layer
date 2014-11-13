@@ -188,7 +188,7 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
-    protected String summarizeIndex(int indentation, PlanToString.Configuration configuration) {
+    protected String summarizeIndex(int indentation, SummaryConfiguration configuration) {
         boolean pretty = indentation >= 0;
         int nextIndentation = pretty ? indentation + 1 : -1;
 
@@ -215,7 +215,7 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     private void summarizeChildIndex(IndexScan child, int indentation, StringBuilder sb,
-                                     PlanToString.Configuration configuration) {
+                                     SummaryConfiguration configuration) {
         int skips = child.getAllColumns().size() - getOrderingFields(child);
         sb.append("skip ").append(skips).append(": ");
         child.buildSummaryString(sb, indentation, false, configuration);

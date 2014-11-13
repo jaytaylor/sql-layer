@@ -112,7 +112,7 @@ public class SetPlanNode extends BasePlanNode implements PlanWithInput, TypedPla
     }
 
     @Override
-    public String summaryString(PlanToString.Configuration configuration) {
+    public String summaryString(SummaryConfiguration configuration) {
         StringBuilder sb = new StringBuilder(opName);
         sb.append('@');
         sb.append(Integer.toString(hashCode(), 16));

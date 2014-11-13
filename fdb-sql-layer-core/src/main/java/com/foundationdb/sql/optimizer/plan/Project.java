@@ -62,7 +62,7 @@ public class Project extends BasePlanWithInput implements ColumnSource, TypedPla
     }
 
     @Override
-    public String summaryString(PlanToString.Configuration configuration) {
+    public String summaryString(SummaryConfiguration configuration) {
         StringBuilder stringBuilder = new StringBuilder(super.summaryString(configuration));
         if (configuration.includeRowTypes) {
             stringBuilder.append('[');

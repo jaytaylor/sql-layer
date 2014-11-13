@@ -82,7 +82,7 @@ public class GroupLoopScan extends BaseScan
     }
 
     @Override
-    public String summaryString(PlanToString.Configuration configuration) {
+    public String summaryString(SummaryConfiguration configuration) {
         StringBuilder str = new StringBuilder(super.summaryString(configuration));
         str.append('(');
         str.append(outsideTable.getName());

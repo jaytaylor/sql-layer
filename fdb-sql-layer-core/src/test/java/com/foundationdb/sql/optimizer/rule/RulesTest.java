@@ -25,7 +25,7 @@ import com.foundationdb.sql.optimizer.FunctionsTypeComputer;
 import com.foundationdb.sql.optimizer.NestedResultSetTypeComputer;
 import com.foundationdb.sql.optimizer.OptimizerTestBase;
 import com.foundationdb.sql.optimizer.plan.AST;
-import com.foundationdb.sql.optimizer.plan.PlanToString;
+import com.foundationdb.sql.optimizer.plan.PlanNode;
 import com.foundationdb.sql.parser.DMLStatementNode;
 import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.ais.model.AkibanInformationSchema;
@@ -172,7 +172,7 @@ public class RulesTest extends OptimizerTestBase
         AST ast = new AST((DMLStatementNode)stmt, parser.getParameterList());
         PlanContext plan = new PlanContext(rules, ast);
         rules.applyRules(plan);
-        PlanToString.Configuration configuration = new PlanToString.Configuration(Boolean.parseBoolean(properties.getProperty("showRowTypes", "false")));
+        PlanNode.SummaryConfiguration configuration = new PlanNode.SummaryConfiguration(Boolean.parseBoolean(properties.getProperty("showRowTypes", "false")));
         String result = plan.planString(configuration);
         if (Boolean.parseBoolean(properties.getProperty("showParameterTypes", "false")))
             result = ast.formatParameterTypes() + result;

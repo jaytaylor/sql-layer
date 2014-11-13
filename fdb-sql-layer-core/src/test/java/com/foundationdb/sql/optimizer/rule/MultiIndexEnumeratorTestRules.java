@@ -69,7 +69,7 @@ public final class MultiIndexEnumeratorTestRules {
         private PlanNode useHooks(final PlanNode plan, IntersectionViewer intersections) {
             List<String> scanDescriptions = new ArrayList<>(intersections.indexScans.size());
             for (IndexScan intersection : intersections.indexScans) {
-                String str = intersection.summaryString(true, PlanToString.Configuration.DEFAULT);
+                String str = intersection.summaryString(true, PlanNode.SummaryConfiguration.DEFAULT);
                 scanDescriptions.add(str);
             }
             final String summary = Strings.join(scanDescriptions);
@@ -91,12 +91,12 @@ public final class MultiIndexEnumeratorTestRules {
                 }
 
                 @Override
-                public String summaryString(PlanToString.Configuration configuration) {
+                public String summaryString(SummaryConfiguration configuration) {
                     return summary;
                 }
 
                 @Override
-                public String planString(PlanToString.Configuration configuration) {
+                public String planString(SummaryConfiguration configuration) {
                     return PlanToString.of(this, configuration);
                 }
 

@@ -57,7 +57,7 @@ public class BranchLookup extends BaseLookup
     }
 
     @Override
-    public String summaryString(PlanToString.Configuration configuration) {
+    public String summaryString(SummaryConfiguration configuration) {
         StringBuilder str = new StringBuilder(super.summaryString(configuration));
         str.append("(").append(source).append(" -> ").append(branch);
         if (ancestor != source)

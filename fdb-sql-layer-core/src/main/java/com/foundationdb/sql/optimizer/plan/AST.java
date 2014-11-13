@@ -54,7 +54,7 @@ public class AST extends BasePlanNode
     }
     
     @Override
-    public String summaryString(PlanToString.Configuration configuration) {
+    public String summaryString(SummaryConfiguration configuration) {
         StringBuilder str = new StringBuilder(super.summaryString(configuration));
         str.append("(");
         try {

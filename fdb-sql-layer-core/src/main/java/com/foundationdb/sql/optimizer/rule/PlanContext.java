@@ -18,7 +18,6 @@
 package com.foundationdb.sql.optimizer.rule;
 
 import com.foundationdb.sql.optimizer.plan.PlanNode;
-import com.foundationdb.sql.optimizer.plan.PlanToString;
 import com.foundationdb.sql.optimizer.plan.PlanVisitor;
 
 import com.foundationdb.qp.operator.QueryContext;
@@ -97,7 +96,7 @@ public class PlanContext
     /** Format a hierarchical view of the current plan.
      * @param configuration configuration options for how the plan should be printed
      */
-    public String planString(PlanToString.Configuration configuration) {
+    public String planString(PlanNode.SummaryConfiguration configuration) {
         return plan.planString(configuration);
     }
 }

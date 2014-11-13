@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
-import com.foundationdb.sql.optimizer.plan.PlanToString;
+import com.foundationdb.sql.optimizer.plan.PlanNode;
 import org.slf4j.Logger;
 
 import java.util.List;
@@ -66,7 +66,7 @@ public class RulesContext
             Logger logger = rule.getLogger();
             boolean debug = logger.isDebugEnabled();
             if (debug && !logged) {
-                logger.debug("Before {}:\n{}", rule.getName(), plan.planString(PlanToString.Configuration.DEFAULT));
+                logger.debug("Before {}:\n{}", rule.getName(), plan.planString(PlanNode.SummaryConfiguration.DEFAULT));
             }
             beginRule(rule);
             try {
@@ -74,7 +74,7 @@ public class RulesContext
             }
             catch (RuntimeException e) {
                 if (debug) {
-                    String msg = "error while applying " + rule.getName() + " to " + plan.planString(PlanToString.Configuration.DEFAULT);
+                    String msg = "error while applying " + rule.getName() + " to " + plan.planString(PlanNode.SummaryConfiguration.DEFAULT);
                     logger.debug(msg, e);
                 }
                 throw e;
@@ -83,7 +83,7 @@ public class RulesContext
                 endRule(rule);
             }
             if (debug) {
-                logger.debug("After {}:\n{}", rule.getName(), plan.planString(PlanToString.Configuration.DEFAULT));
+                logger.debug("After {}:\n{}", rule.getName(), plan.planString(PlanNode.SummaryConfiguration.DEFAULT));
             }
             logged = debug;
         }

@@ -291,7 +291,7 @@ public class MapFolder extends BaseRule
         @Override
         public String toString() {
             StringBuilder str = new StringBuilder(getClass().getSimpleName());
-            str.append("(").append(childMap.summaryString(PlanToString.Configuration.DEFAULT));
+            str.append("(").append(childMap.summaryString(PlanNode.SummaryConfiguration.DEFAULT));
             for (ColumnSource source : allSources) {
                 str.append(",");
                 if (innerSources.contains(source))

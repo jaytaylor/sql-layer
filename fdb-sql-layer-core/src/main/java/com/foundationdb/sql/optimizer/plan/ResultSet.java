@@ -99,7 +99,7 @@ public class ResultSet extends BasePlanWithInput
     }
 
     @Override
-    public String summaryString(PlanToString.Configuration configuration) {
+    public String summaryString(SummaryConfiguration configuration) {
         StringBuilder stringBuilder = new StringBuilder(super.summaryString(configuration));
         if (configuration.includeRowTypes) {
             stringBuilder.append('[');
