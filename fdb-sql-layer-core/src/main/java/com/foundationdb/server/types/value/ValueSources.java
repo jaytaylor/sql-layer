@@ -155,6 +155,16 @@ public final class ValueSources {
         }
         return out;
     }
+
+    public static TPreptimeValue preptimeValueFromObject(Object object) {
+        if (object == null) {
+            Value nv = new Value(null);
+            return new TPreptimeValue(nv);
+        } else {
+            Value value = fromObject(object);
+            return new TPreptimeValue(value);
+        }
+    }
     /**
      * Reflectively create a {@linkplain TPreptimeValue} from the given object and the {@linkplain TInstance}
      * 
@@ -172,12 +182,19 @@ public final class ValueSources {
         }
         return new TPreptimeValue (type,value);
     }
-   
-    private static Value fromObject(Object object) {
+
+    /**
+     * Creates a Value from the given object, deriving the type from the object.
+     * @throws java.lang.UnsupportedOperationException if the type cannot be inferred
+     */
+    public static Value fromObject(Object object) {
         final TInstance type;
         Value value = null;
-           
-        if (object instanceof String) {
+        if (object == null) {
+            value = new Value(null);
+            value.putNull();
+        }
+        else if (object instanceof String) {
             String s = (String) object;
             type = MString.VARCHAR.instance(
                     s.length(), StringFactory.DEFAULT_CHARSET.ordinal(), StringFactory.NULL_COLLATION_ID, false);

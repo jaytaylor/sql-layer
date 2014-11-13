@@ -205,7 +205,7 @@ public class IndexStatisticsYamlLoader
             if (value == null)
                 pvalue = ValueSources.fromObject(value, type);
             else
-                pvalue = ValueSources.fromObject(value, (TInstance) null);
+                pvalue = ValueSources.preptimeValueFromObject(value);
             TExecutionContext context = new TExecutionContext(null,
                                                               Collections.singletonList(pvalue.type()),
                     type,

@@ -166,23 +166,28 @@ public abstract class TClass {
         return DEFAULT_VALUE_IO;
     }
 
+    /** must not return null */
     public abstract TInstance instance(boolean nullable);
 
+    /** must not return null */
     public TInstance instance(int arg0, boolean nullable)
     {
         return createInstance(1, arg0, EMPTY, EMPTY, EMPTY, nullable);
     }
 
+    /** must not return null */
     public TInstance instance(int arg0, int arg1, boolean nullable)
     {
         return createInstance(2, arg0, arg1, EMPTY, EMPTY, nullable);
     }
 
+    /** must not return null */
     public TInstance instance(int arg0, int arg1, int arg2, boolean nullable)
     {
         return createInstance(3, arg0, arg1, arg2, EMPTY, nullable);
     }
 
+    /** must not return null */
     public TInstance instance(int arg0, int arg1, int arg2, int arg3, boolean nullable)
     {
         return createInstance(4, arg0, arg1, arg2, arg3, nullable);

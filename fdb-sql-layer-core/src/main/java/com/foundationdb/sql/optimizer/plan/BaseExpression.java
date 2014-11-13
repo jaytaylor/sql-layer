@@ -36,10 +36,14 @@ public abstract class BaseExpression extends BasePlanElement implements Expressi
 
     protected BaseExpression(DataTypeDescriptor sqlType, ValueNode sqlSource,
                              TInstance type) {
+        this(sqlType, sqlSource, type == null ? null : new TPreptimeValue(type));
+    }
+
+    protected BaseExpression(DataTypeDescriptor sqlType, ValueNode sqlSource, TPreptimeValue value) {
+
         this.sqlType = sqlType;
         this.sqlSource = sqlSource;
-        if (type != null)
-            this.preptimeValue = new TPreptimeValue(type);
+        this.preptimeValue = value;
     }
 
     @Override

@@ -17,6 +17,13 @@
 
 package com.foundationdb.server.types;
 
+/**
+ * TInstanceBuilder provides an efficient mechanism for altering various attributes/nullability of an existing TInstance.
+ * If you call get() a new TInstance will be returned with the effects of setNullable/setAttribute.
+ * Further setNullable/setAttribute calls can be made,
+ * calling get() will then reflect the total set of modifications in a new TInstance.
+ * Note: TInstanceBuilder's are bound to the typeClass & enumClass of the original type
+ */
 public final class TInstanceBuilder {
 
     public TInstanceBuilder setNullable(boolean nullable) {
@@ -52,6 +59,10 @@ public final class TInstanceBuilder {
         return this;
     }
 
+    /**
+     * Resets all attributes/nullability to the values of the given type. This must have the same typeClass & enumClass
+     * as the original type for this builder.
+     */
     public TInstanceBuilder copyFrom(TInstance type) {
         if (type.typeClass() != orig.typeClass() || type.enumClass() != orig.enumClass())
             throw new IllegalArgumentException("can't copy " + type + " to a builder based on " + orig);
@@ -86,5 +97,9 @@ public final class TInstanceBuilder {
     private int attr2;
     private int attr3;
     private boolean nullable;
+    /**
+     * An underlying clone of the original TInstance plus any modifications.
+     * This becomes null once the TInstance being built becomes different from the original.
+     */
     private TInstance workingCopy;
 }
