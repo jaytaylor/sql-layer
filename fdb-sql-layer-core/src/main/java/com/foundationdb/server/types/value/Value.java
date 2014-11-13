@@ -41,7 +41,6 @@ public final class Value implements ValueSource, ValueTarget {
 
     @Override
     public final void putNull() {
-        // TODO should this check for nullable type? looks like the tests call putNull on NonNull types
         setRawValues(State.NULL, -1, null, null);
     }
 

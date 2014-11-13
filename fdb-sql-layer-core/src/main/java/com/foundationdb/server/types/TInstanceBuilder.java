@@ -62,8 +62,6 @@ public final class TInstanceBuilder {
     /**
      * Resets all attributes/nullability to the values of the given type. This must have the same typeClass & enumClass
      * as the original type for this builder.
-     * @param type
-     * @return
      */
     public TInstanceBuilder copyFrom(TInstance type) {
         if (type.typeClass() != orig.typeClass() || type.enumClass() != orig.enumClass())
