@@ -113,10 +113,26 @@ public class SetPlanNode extends BasePlanNode implements PlanWithInput, TypedPla
 
     @Override
     public String summaryString(PlanToString.Configuration configuration) {
-        if (all)
-            return opName + "@" + Integer.toString(hashCode(), 16) + "(ALL)";
-        else
-            return opName + "@" + Integer.toString(hashCode(), 16);
+        StringBuilder sb = new StringBuilder(opName);
+        sb.append('@');
+        sb.append(Integer.toString(hashCode(), 16));
+        if (all) {
+            sb.append("(ALL)");
+        }
+        if (configuration.includeRowTypes) {
+            sb.append('[');
+            for (ResultField field : results) {
+                sb.append(field);
+                sb.append(" (");
+                sb.append(field.getType());
+                sb.append("), ");
+            }
+            if (results.size() > 0) {
+                sb.setLength(sb.length()-2);
+            }
+            sb.append(']');
+        }
+        return sb.toString();
     }
 
     @Override

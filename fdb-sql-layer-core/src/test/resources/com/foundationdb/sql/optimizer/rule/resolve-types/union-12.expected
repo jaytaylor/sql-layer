@@ -1,6 +1,6 @@
 SelectQuery@78ded602
   ResultSet@47e5bddb[cid (MCOMPAT_ INT(11) NOT NULL), name (MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NULL)]
-    Union@436f5202
+    Union@436f5202[cid (MCOMPAT_ INT(11) NOT NULL), name (MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NULL)]
       ResultSet@417123e4[cid (MCOMPAT_ INT(11) NOT NULL), name (MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NULL)]
         Project@6aeb6f4c[customers.cid (MCOMPAT_ INT(11) NOT NULL), Cast(customers.name AS MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NULL) (MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NULL)]
           Select@6d81d6b[]
