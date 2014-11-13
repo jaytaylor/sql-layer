@@ -47,15 +47,86 @@ public class AggregateMapper extends BaseRule
 
     @Override
     public void apply(PlanContext plan) {
-        List<AggregateSourceState> sources = new AggregateSourceFinder(plan).find();
+        AggregateSourceAndFunctionFinder aggregateSourceFinder = new AggregateSourceAndFunctionFinder(plan);
+
+        List<AggregateSourceState> sources = aggregateSourceFinder.find();
+        List<AggregateFunctionExpression> functions = aggregateSourceFinder.getFunctions();
+        if (sources.isEmpty() && !functions.isEmpty()) {
+            // if there are AggregateFunctionExpressions but no AggregateSources
+            throw new UnsupportedSQLException("Aggregate not allowed in WHERE",
+                                              functions.get(0).getSQLsource());
+        }
+
+        // Step 1: do a pass to find the best AggregateSource for each AggregateFunctionExpression
         for (AggregateSourceState source : sources) {
-            Mapper m = new Mapper((SchemaRulesContext)plan.getRulesContext(), source.aggregateSource, source.containingQuery);
+            FindBestSource m = new FindBestSource((SchemaRulesContext)plan.getRulesContext(), source.aggregateSource, source.containingQuery);
             m.remap(source.aggregateSource);
+        }
+        // Step 2: add those AggregateFunctionExpressions not in WHERE clauses to the appropriate AggregateSource,
+        //         and save the mapping to use in Step 3
+        Map<AnnotatedAggregateFunctionExpression, AggregateSource> functionsToSources =
+                new HashMap<AnnotatedAggregateFunctionExpression, AggregateSource>();
+        for (AggregateSourceState source : sources) {
+            AddAggregates addAggregates = new AddAggregates();
+            addAggregates.remap(source.aggregateSource);
+            functionsToSources.putAll(addAggregates.getFunctionMap());
+        }
+        // Step 3: try to match AggregateFunctionExpressions in WHERE clauses to the appropriate AggregateSource
+        for (AggregateSourceState source : sources) {
+            AddAggregatesInWhereClauses addAggregates = new AddAggregatesInWhereClauses(functionsToSources);
+            addAggregates.remap(source.aggregateSource);
+        }
+    }
+
+    static class AnnotatedAggregateFunctionExpression extends AggregateFunctionExpression {
+        public int closeness;
+        private AggregateSource source;
+
+        public AnnotatedAggregateFunctionExpression(AggregateFunctionExpression aggregateFunc, int closeness, AggregateSource source) {
+            super(aggregateFunc.getFunction(),
+                  aggregateFunc.getOperand(),
+                  aggregateFunc.isDistinct(),
+                  aggregateFunc.getSQLtype(),
+                  aggregateFunc.getSQLsource(),
+                  aggregateFunc.getType(),
+                  aggregateFunc.getOption(),
+                  aggregateFunc.getOrderBy());
+            this.closeness = closeness;
+            this.source = source;
+        }
+
+        public AnnotatedAggregateFunctionExpression setQueryAndCloseness(Integer closeness, AggregateSource source) {
+            if (this.closeness > closeness) {
+                this.closeness = closeness;
+                this.source = source;
+            }
+            return this;
+        }
+
+        public AggregateSource getSource() {
+            return source;
+        }
+
+        public AggregateFunctionExpression getWithoutAnnotation() {
+            return new AggregateFunctionExpression(this.getFunction(),
+                                                   this.getOperand(),
+                                                   this.isDistinct(),
+                                                   this.getSQLtype(),
+                                                   this.getSQLsource(),
+                                                   this.getType(),
+                                                   this.getOption(),
+                                                   this.getOrderBy());
+        }
+
+        @Override
+        public ExpressionNode accept(ExpressionRewriteVisitor v) {
+            ExpressionNode result = v.visit(this);
+            return result;
         }
     }
 
     static class AggregateSourceFinder extends SubqueryBoundTablesTracker {
-        List<AggregateSourceState> result = new ArrayList<>();
+        List<AggregateSourceState> sources = new ArrayList<>();
 
         public AggregateSourceFinder(PlanContext planContext) {
             super(planContext);
@@ -63,14 +134,57 @@ public class AggregateMapper extends BaseRule
 
         public List<AggregateSourceState> find() {
             run();
-            return result;
+            return sources;
         }
 
         @Override
         public boolean visit(PlanNode n) {
             super.visit(n);
             if (n instanceof AggregateSource)
-                result.add(new AggregateSourceState((AggregateSource)n, currentQuery()));
+                sources.add(new AggregateSourceState((AggregateSource)n, currentQuery()));
+            return true;
+        }
+
+    }
+
+    static class AggregateSourceAndFunctionFinder extends AggregateSourceFinder {
+        List<AggregateFunctionExpression> functions = new ArrayList<>();
+        Deque<AggregateFunctionExpression> functionsStack = new ArrayDeque<>();
+
+        public AggregateSourceAndFunctionFinder(PlanContext planContext) {
+            super(planContext);
+        }
+
+        @Override
+        public boolean visitEnter(ExpressionNode n) {
+            if (n instanceof AggregateFunctionExpression) {
+                if (!functionsStack.isEmpty()) {
+                    throw new UnsupportedSQLException("Cannot nest aggregate functions",
+                                                      functionsStack.peek().getSQLsource());
+                } else {
+                    functionsStack.push((AggregateFunctionExpression)n);
+                }
+            }
+            return visit(n);
+        }
+
+        @Override
+        public boolean visit(ExpressionNode n) {
+            super.visit(n);
+            if (n instanceof AggregateFunctionExpression)
+                functions.add((AggregateFunctionExpression)n);
+            return true;
+        }
+
+        public List<AggregateFunctionExpression> getFunctions() {
+            return functions;
+        }
+
+        @Override
+        public boolean visitLeave(ExpressionNode n) {
+            if (n instanceof AggregateFunctionExpression) {
+                functionsStack.pop();
+            }
             return true;
         }
     }
@@ -86,50 +200,7 @@ public class AggregateMapper extends BaseRule
         }
     }
 
-    static class Mapper implements ExpressionRewriteVisitor, PlanVisitor {
-        private SchemaRulesContext rulesContext;
-        private AggregateSource source;
-        private BaseQuery query;
-        private Deque<BaseQuery> subqueries = new ArrayDeque<>();
-        private Set<ColumnSource> aggregated = new HashSet<>();
-        private Map<ExpressionNode,ExpressionNode> map = 
-            new HashMap<>();
-        private enum ImplicitAggregateSetting {
-            ERROR, FIRST, FIRST_IF_UNIQUE
-        };
-        private ImplicitAggregateSetting implicitAggregateSetting;
-        private Set<TableSource> uniqueGroupedTables;
-
-        protected ImplicitAggregateSetting getImplicitAggregateSetting() {
-            if (implicitAggregateSetting == null) {
-                String setting = rulesContext.getProperty("implicitAggregate", "error");
-                if ("error".equals(setting))
-                    implicitAggregateSetting = ImplicitAggregateSetting.ERROR;
-                else if ("first".equals(setting))
-                    implicitAggregateSetting = ImplicitAggregateSetting.FIRST;
-                else if ("firstIfUnique".equals(setting))
-                    implicitAggregateSetting = ImplicitAggregateSetting.FIRST_IF_UNIQUE;
-                else
-                    throw new InvalidOptimizerPropertyException("implicitAggregate", setting);
-            }
-            return implicitAggregateSetting;
-        }
-
-        public Mapper(SchemaRulesContext rulesContext, AggregateSource source, BaseQuery query) {
-            this.rulesContext = rulesContext;
-            this.source = source;
-            this.query = query;
-            aggregated.add(source);
-            // Map all the group by expressions at the start.
-            // This means that if you GROUP BY x+1, you can ORDER BY
-            // x+1, or x+1+1, but not x+2. Postgres is like that, too.
-            List<ExpressionNode> groupBy = source.getGroupBy();
-            for (int i = 0; i < groupBy.size(); i++) {
-                ExpressionNode expr = groupBy.get(i);
-                map.put(expr, new ColumnExpression(source, i, 
-                                                   expr.getSQLtype(), expr.getSQLsource(), expr.getType()));
-            }
-        }
+    static abstract class Remapper implements ExpressionRewriteVisitor, PlanVisitor {
 
         public void remap(PlanNode n) {
             while (true) {
@@ -144,7 +215,6 @@ public class AggregateMapper extends BaseRule
                 else if (n instanceof Project) {
                     Project p = (Project)n;
                     remap(p.getFields());
-                    aggregated.add(p);
                 }
                 else if (n instanceof Limit) {
                     // Understood not but mapped.
@@ -173,12 +243,104 @@ public class AggregateMapper extends BaseRule
         }
 
         @Override
+        public boolean visit(PlanNode n) {
+            return true;
+        }
+
+        @Override
+        public boolean visitEnter(PlanNode n) {
+            return visit(n);
+        }
+
+        @Override
+        public boolean visitLeave(PlanNode n) {
+            return true;
+        }
+    }
+
+    static class FindBestSource extends Remapper {
+        private SchemaRulesContext rulesContext;
+        private AggregateSource source;
+        private BaseQuery query;
+        private Deque<BaseQuery> subqueries = new ArrayDeque<>();
+        private Set<ColumnSource> aggregated = new HashSet<>();
+        private Map<ExpressionNode,ExpressionNode> map = 
+            new HashMap<>();
+        private enum ImplicitAggregateSetting {
+            ERROR, FIRST, FIRST_IF_UNIQUE
+        };
+        private ImplicitAggregateSetting implicitAggregateSetting;
+        private Set<TableSource> uniqueGroupedTables;
+
+        protected ImplicitAggregateSetting getImplicitAggregateSetting() {
+            if (implicitAggregateSetting == null) {
+                String setting = rulesContext.getProperty("implicitAggregate", "error");
+                if ("error".equals(setting))
+                    implicitAggregateSetting = ImplicitAggregateSetting.ERROR;
+                else if ("first".equals(setting))
+                    implicitAggregateSetting = ImplicitAggregateSetting.FIRST;
+                else if ("firstIfUnique".equals(setting))
+                    implicitAggregateSetting = ImplicitAggregateSetting.FIRST_IF_UNIQUE;
+                else
+                    throw new InvalidOptimizerPropertyException("implicitAggregate", setting);
+            }
+            return implicitAggregateSetting;
+        }
+
+        public FindBestSource(SchemaRulesContext rulesContext, AggregateSource source, BaseQuery query) {
+            this.rulesContext = rulesContext;
+            this.source = source;
+            this.query = query;
+            aggregated.add(source);
+            // Map all the group by expressions at the start.
+            // This means that if you GROUP BY x+1, you can ORDER BY
+            // x+1, or x+1+1, but not x+2. Postgres is like that, too.
+            List<ExpressionNode> groupBy = source.getGroupBy();
+            for (int i = 0; i < groupBy.size(); i++) {
+                ExpressionNode expr = groupBy.get(i);
+                map.put(expr, new ColumnExpression(source, i, 
+                                                   expr.getSQLtype(), expr.getSQLsource(), expr.getType()));
+            }
+        }
+
+        @Override
+        public void remap(PlanNode n) {
+            while (true) {
+                // Keep going as long as we're feeding something we understand.
+                n = n.getOutput();
+                if (n instanceof Select) {
+                    remap(((Select)n).getConditions());
+                }
+                else if (n instanceof Sort) {
+                    remapA(((Sort)n).getOrderBy());
+                }
+                else if (n instanceof Project) {
+                    Project p = (Project)n;
+                    remap(p.getFields());
+                    aggregated.add(p);
+                }
+                else if (n instanceof Limit) {
+                    // Understood not but mapped.
+                }
+                else
+                    break;
+            }
+        }
+
+        @Override
         public ExpressionNode visit(ExpressionNode expr) {
             ExpressionNode nexpr = map.get(expr);
             if (nexpr != null)
                 return nexpr;
+            if (expr instanceof AnnotatedAggregateFunctionExpression) {
+                return ((AnnotatedAggregateFunctionExpression)expr).setQueryAndCloseness(subqueries.size(), source);
+            }
             if (expr instanceof AggregateFunctionExpression) {
-                return addAggregate((AggregateFunctionExpression)expr);
+                nexpr = rewrite((AggregateFunctionExpression)expr);
+                if (nexpr == null) {
+                    return new AnnotatedAggregateFunctionExpression((AggregateFunctionExpression)expr, subqueries.size(), source);
+                }
+                return nexpr.accept(this);
             }
             if (expr instanceof ColumnExpression) {
                 ColumnExpression column = (ColumnExpression)expr;
@@ -202,11 +364,6 @@ public class AggregateMapper extends BaseRule
         public boolean visitLeave(PlanNode n) {
             if (n instanceof BaseQuery)
                 subqueries.pop();
-            return true;
-        }
-
-        @Override
-        public boolean visit(PlanNode n) {
             return true;
         }
 
@@ -331,4 +488,64 @@ public class AggregateMapper extends BaseRule
         }
     }
 
+    static class AddAggregates extends Remapper {
+        Map<AnnotatedAggregateFunctionExpression, AggregateSource> functionsToSources = 
+                new HashMap<AnnotatedAggregateFunctionExpression, AggregateSource>();
+
+        @Override
+        public ExpressionNode visit(ExpressionNode expr) {
+            if (expr instanceof AnnotatedAggregateFunctionExpression) {
+                return addAggregate((AnnotatedAggregateFunctionExpression)expr);
+            }
+            return expr;
+        }
+
+        protected ExpressionNode addAggregate(AnnotatedAggregateFunctionExpression expr) {
+            AggregateSource source = expr.getSource();
+            if (expr.closeness > 0 && !source.hasAggregate(expr)) {
+                return expr;
+            }
+            int position;
+            if (source.hasAggregate(expr)) {
+                position = source.getPosition(expr.getWithoutAnnotation());
+            } else {
+                position = source.addAggregate(expr.getWithoutAnnotation());
+            }
+            functionsToSources.put(expr, source);
+            ExpressionNode nexpr = new ColumnExpression(source, position,
+                                         expr.getSQLtype(), expr.getSQLsource(), expr.getType());
+            return nexpr;
+        }
+
+        public Map<AnnotatedAggregateFunctionExpression, AggregateSource> getFunctionMap() {
+            return functionsToSources;
+        }
+    }
+
+    static class AddAggregatesInWhereClauses extends AddAggregates {
+
+        public AddAggregatesInWhereClauses(Map<AnnotatedAggregateFunctionExpression, AggregateSource> functionsToSources) {
+            this.functionsToSources = functionsToSources;
+        }
+
+        @Override
+        protected ExpressionNode addAggregate(AnnotatedAggregateFunctionExpression expr) {
+            AggregateSource source;
+            if (functionsToSources.containsKey(expr)) {
+                source = functionsToSources.get(expr);
+            } else {
+                throw new UnsupportedSQLException("Aggregate not allowed in WHERE",
+                                                  expr.getSQLsource());
+            }
+            int position;
+            if (source.hasAggregate(expr)) {
+                position = source.getPosition(expr.getWithoutAnnotation());
+            } else {
+                position = source.addAggregate(expr.getWithoutAnnotation());
+            }
+            ExpressionNode nexpr = new ColumnExpression(source, position,
+                                         expr.getSQLtype(), expr.getSQLsource(), expr.getType());
+            return nexpr;
+        }
+    }
 }

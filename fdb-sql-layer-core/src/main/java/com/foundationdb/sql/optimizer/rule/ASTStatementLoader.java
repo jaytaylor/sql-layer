@@ -555,9 +555,6 @@ public class ASTStatementLoader extends BaseRule
                 input = new ExpressionsSource(Collections.singletonList(Collections.<ExpressionNode>emptyList()));
             }
             ConditionList conditions = toConditions(selectNode.getWhereClause());
-            if (hasAggregateFunction(conditions))
-                throw new UnsupportedSQLException("Aggregate not allowed in WHERE",
-                                                  selectNode.getWhereClause());
             return new Select(input, conditions);
         }
 
@@ -1609,10 +1606,6 @@ public class ASTStatementLoader extends BaseRule
                 }
                 else {
                     operand = toExpression(aggregateNode.getOperand(), projects);
-                    if (hasAggregateFunction(operand)) {
-                        throw new UnsupportedSQLException("Cannot nest aggregate functions",
-                                                          aggregateNode);
-                    }
                 }
                 
                 if (aggregateNode instanceof GroupConcatNode)
