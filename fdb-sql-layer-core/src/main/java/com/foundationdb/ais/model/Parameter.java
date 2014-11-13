@@ -62,7 +62,6 @@ public class Parameter
         return name;
     }
 
-    // TODO ensure this never returns null
     public TInstance getType() {
         return type;
     }
