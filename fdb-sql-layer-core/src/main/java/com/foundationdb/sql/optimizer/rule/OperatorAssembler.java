@@ -1749,8 +1749,7 @@ public class OperatorAssembler extends BaseRule
                 ExpressionNode radius = operands.get(2);
                 // Make circle into box. Comparison still remains to eliminate corners.
                 // TODO: May need some casts.
-                // TODO: I have no idea why these 4 creations of FunctionExpression have null types, or what they should be
-                // I guess it's supposed to be the output type...
+                // Note: the types of the 4 functions below, get set by the resolveAddedExpression
                 ExpressionNode bottom = new FunctionExpression("minus",
                                                                Arrays.asList(centerY, radius),
                                                                null, null, null);
