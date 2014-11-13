@@ -32,6 +32,11 @@ import com.foundationdb.server.error.OutOfRangeException;
 import com.foundationdb.server.spatial.Spatial;
 import com.geophile.z.Space;
 import com.geophile.z.spatialobject.d2.Box;
+import com.geophile.z.spatialobject.jts.JTS;
+import com.geophile.z.spatialobject.jts.JTSSpatialObject;
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Envelope;
+import com.vividsolutions.jts.geom.GeometryFactory;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -135,12 +140,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
             // Delete rows with odd ids
             for (int id = 1; id < nIds; id += 2) {
                 JTSSpatialObject box = boxes.get(id);
-                dml().deleteRow(session(), createNewRow(boxTable,
-                                                        id,
-                                                        before(id),
-                                                        after(id),
-                                                        box),
-                                false);
+                deleteRow(row(boxTable, id, before(id), after(id), box), false);
             }
         }
         {
@@ -180,10 +180,10 @@ public class BoxTableIndexScanIT extends OperatorITBase
                 double yLo = envelope.getMinY();
                 double yHi = envelope.getMaxY();
                 JTSSpatialObject shiftedBox = box(xLo, xHi, yLo + 1, yHi + 1);
-                NewRow oldRow = createNewRow(boxTable, id, before(id), after(id), box);
-                NewRow newRow = createNewRow(boxTable, id, before(id), after(id), shiftedBox);
+                Row oldRow = row(boxTable, id, before(id), after(id), box);
+                Row newRow = row(boxTable, id, before(id), after(id), shiftedBox);
                 recordZToId(id, shiftedBox);
-                dml().updateRow(session(), oldRow, newRow, null);
+                updateRow(oldRow, newRow);
             }
         }
         {
@@ -202,6 +202,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
         }
     }
 
+    @Ignore
     @Test
     public void testSpatialQueryLatLon()
     {
@@ -241,7 +242,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
             Set<Integer> actual = new HashSet<>();
             IndexBound boxBound = new IndexBound(row(boxBlobIndexRowType, queryBox),
                                                  new SetColumnSelector(0));
-            IndexKeyRange box = IndexKeyRange.spatial(boxBlobIndexRowType, boxBound);
+            IndexKeyRange box = IndexKeyRange.spatial(boxBlobIndexRowType, boxBound, boxBound);
             Operator plan = indexScan_Default(boxBlobIndexRowType, box, lookaheadQuantum());
             Cursor cursor = API.cursor(plan, queryContext, queryBindings);
             cursor.openTopLevel();
@@ -263,10 +264,9 @@ public class BoxTableIndexScanIT extends OperatorITBase
         for (long y = LAT_LO; y + BOX_WIDTH <= LAT_HI; y += DLAT) {
             for (long x = LON_LO; x + BOX_WIDTH < LON_HI; x += DLON) {
                 JTSSpatialObject box = box(y, y + BOX_WIDTH, x, x + BOX_WIDTH);
-                dml().writeRow(session(), createNewRow(boxTable, id, before(id),  after(id), box));
+                writeRow(session(), row(boxTable, id, before(id), after(id), box));
                 recordZToId(id, box);
                 boxes.add(box);
-                System.out.format("%d: %s\n", id, box);
                 id++;
             }
         }

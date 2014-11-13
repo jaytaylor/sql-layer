@@ -29,9 +29,13 @@ import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.types.TBigDecimal;
+import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.spatial.Spatial;
 import com.geophile.z.Space;
+import com.geophile.z.SpatialObject;
+import com.geophile.z.spatialobject.d2.Point;
+import com.vividsolutions.jts.io.ParseException;
 
 public class SpatialColumnHandler
 {
@@ -143,6 +147,7 @@ public class SpatialColumnHandler
     private final int lastSpatialField;
     private SpatialObject spatialObject;
     private long[] zs;
+    private final double[] coords = new double[2];
 
     // Inner classes
 

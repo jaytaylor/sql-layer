@@ -694,7 +694,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                                   SDType storeData,
                                   RowDef rowDef,
                                   final RowData rowData,
-                                  final TableIndex[] indexes,
+                                  final Collection<TableIndex> indexes,
                                   BitSet tablesRequiringHKeyMaintenance,
                                   boolean propagateHKeyChanges) {
         final Key hKey = getKey(session, storeData);

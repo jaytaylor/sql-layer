@@ -56,7 +56,6 @@ public class Spatial
                               interleave);
     }
 
-    /** @deprecated */
     public static long shuffle(Space space, double x, double y)
     {
         com.geophile.z.spatialobject.d2.Point point = new com.geophile.z.spatialobject.d2.Point(x, y);
