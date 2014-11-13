@@ -29,6 +29,16 @@ import com.foundationdb.util.AkibanAppender;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * A type including nullability and various other attributes (such as collation).
+ *
+ * Note:
+ * A null TInstance can represent one of 4 things:
+ * * A literal NULL, e.g. (SELECT NULL)
+ * * A Parameter, e.g. (SELECT ?)
+ * * An unkown return value, presumably due to one of the two above
+ * * Temporarily unset type until it has been figured out.
+ */
 public final class TInstance {
 
     // static helpers
