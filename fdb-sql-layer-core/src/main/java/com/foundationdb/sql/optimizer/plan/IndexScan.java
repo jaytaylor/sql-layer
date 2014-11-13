@@ -159,24 +159,24 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
 
     @Override
     public String summaryString(PlanToString.Configuration configuration) {
-        return summaryString(-1);
+        return summaryString(-1, configuration);
     }
     
-    public String summaryString(boolean prettyFormat) {
-        return summaryString(prettyFormat ? 0 : -1);
+    public String summaryString(boolean prettyFormat, PlanToString.Configuration configuration) {
+        return summaryString(prettyFormat ? 0 : -1, configuration);
     }
 
-    private String summaryString(int indentation) {
+    private String summaryString(int indentation, PlanToString.Configuration configuration) {
         StringBuilder sb = new StringBuilder();
-        buildSummaryString(sb, indentation, true);
+        buildSummaryString(sb, indentation, true, configuration);
         return sb.toString();
     }
      
-    protected void buildSummaryString(StringBuilder str, int indentation, boolean full) {
-        // TODO come back and pass configuraiton down
-        str.append(super.summaryString(PlanToString.Configuration.DEFAULT));
+    protected void buildSummaryString(StringBuilder str, int indentation, boolean full,
+                                      PlanToString.Configuration configuration) {
+        str.append(super.summaryString(configuration));
         str.append('(');
-        str.append(summarizeIndex(indentation));
+        str.append(summarizeIndex(indentation, configuration));
         if (indentation < 0) {
             str.append(", ");
         }
@@ -242,7 +242,7 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
         return str;
     }
 
-    protected abstract String summarizeIndex(int indentation);
+    protected abstract String summarizeIndex(int indentation, PlanToString.Configuration configuration);
     protected void describeConditionRange(StringBuilder output) {}
     protected void describeEqualityComparands(StringBuilder output) {}
 }
