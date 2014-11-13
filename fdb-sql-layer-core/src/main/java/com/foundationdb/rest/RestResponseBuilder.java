@@ -149,11 +149,7 @@ public class RestResponseBuilder {
     public WebApplicationException wrapException(Throwable e) {
         final ErrorCode code = ErrorCode.getCodeForRESTException(e);
         Response.Status status = EXCEPTION_STATUS_MAP.get(e.getClass());
-        if (e instanceof JDBCException) {
-            if (e.getCause() != null) {
-                e = e.getCause();
-            }
-        }
+        Throwable cause = e instanceof JDBCException ? e.getCause() : null;
         if(status == null) {
             status = Response.Status.CONFLICT;
         }
@@ -162,7 +158,7 @@ public class RestResponseBuilder {
                 LOG.isDebugEnabled() ? "Exception from request(method: {}, url: {}, params: {})"
                                      : "Exception from request(method: {}, url: {}, params: {}): {}",
                 request.getMethod(), request.getRequestURL(), request.getQueryString(),
-                e
+                cause == null ? e : cause
         );
         String exMsg = (e.getMessage() != null) ? e.getMessage() : e.getClass().getName();
         return new WebApplicationException(
