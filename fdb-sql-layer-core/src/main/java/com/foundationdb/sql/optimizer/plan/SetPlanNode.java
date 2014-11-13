@@ -112,7 +112,7 @@ public class SetPlanNode extends BasePlanNode implements PlanWithInput, TypedPla
     }
 
     @Override
-    public String summaryString() {
+    public String summaryString(PlanToString.Configuration configuration) {
         if (all)
             return opName + "@" + Integer.toString(hashCode(), 16) + "(ALL)";
         else

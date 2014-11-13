@@ -39,7 +39,6 @@ import com.foundationdb.sql.optimizer.rule.RulesTestHelper;
 import com.foundationdb.sql.parser.DMLStatementNode;
 import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.StatementNode;
-import com.foundationdb.sql.views.ViewDefinition;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 
@@ -158,7 +157,7 @@ public class Tester
                                         new AST((DMLStatementNode)stmt,
                                                 parser.getParameterList()));
                     rulesContext.applyRules(plan);
-                    System.out.println(PlanToString.of(plan.getPlan()));
+                    System.out.println(PlanToString.of(plan.getPlan(), PlanToString.Configuration.DEFAULT));
                 }
                 break;
             case OPERATORS:

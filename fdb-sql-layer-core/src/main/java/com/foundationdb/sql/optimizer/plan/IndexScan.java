@@ -158,7 +158,7 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
     public static final boolean INCLUDE_SCAN_COST_IN_SUMMARY = false;
 
     @Override
-    public String summaryString() {
+    public String summaryString(PlanToString.Configuration configuration) {
         return summaryString(-1);
     }
     
@@ -173,7 +173,8 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
     }
      
     protected void buildSummaryString(StringBuilder str, int indentation, boolean full) {
-        str.append(super.summaryString());
+        // TODO come back and pass configuraiton down
+        str.append(super.summaryString(PlanToString.Configuration.DEFAULT));
         str.append('(');
         str.append(summarizeIndex(indentation));
         if (indentation < 0) {

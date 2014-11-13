@@ -61,8 +61,8 @@ public class Product extends BasePlanNode implements PlanWithInput
     }
 
     @Override
-    public String summaryString() {
-        StringBuilder str = new StringBuilder(super.summaryString());
+    public String summaryString(PlanToString.Configuration configuration) {
+        StringBuilder str = new StringBuilder(super.summaryString(configuration));
         if (ancestor != null) {
             str.append("(").append(ancestor).append(")");
         }

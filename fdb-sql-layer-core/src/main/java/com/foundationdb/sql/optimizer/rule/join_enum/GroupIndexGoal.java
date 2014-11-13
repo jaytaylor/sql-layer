@@ -1536,7 +1536,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder();
-        str.append(tables.summaryString());
+        str.append(tables.summaryString(PlanToString.Configuration.DEFAULT));
         str.append("\n");
         str.append(conditions);
         str.append("\n[");

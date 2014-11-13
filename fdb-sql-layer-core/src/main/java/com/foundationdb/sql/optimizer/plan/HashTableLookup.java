@@ -74,8 +74,8 @@ public class HashTableLookup extends BaseJoinable
     }
 
     @Override
-    public String summaryString() {
-        StringBuilder str = new StringBuilder(super.summaryString());
+    public String summaryString(PlanToString.Configuration configuration) {
+        StringBuilder str = new StringBuilder(super.summaryString(configuration));
         str.append("(");
         str.append(hashTable);
         str.append(", ");

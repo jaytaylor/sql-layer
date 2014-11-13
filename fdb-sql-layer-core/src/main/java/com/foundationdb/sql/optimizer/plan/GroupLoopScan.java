@@ -19,7 +19,6 @@ package com.foundationdb.sql.optimizer.plan;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 public class GroupLoopScan extends BaseScan
 {
@@ -83,8 +82,8 @@ public class GroupLoopScan extends BaseScan
     }
 
     @Override
-    public String summaryString() {
-        StringBuilder str = new StringBuilder(super.summaryString());
+    public String summaryString(PlanToString.Configuration configuration) {
+        StringBuilder str = new StringBuilder(super.summaryString(configuration));
         str.append('(');
         str.append(outsideTable.getName());
         str.append(" - ");

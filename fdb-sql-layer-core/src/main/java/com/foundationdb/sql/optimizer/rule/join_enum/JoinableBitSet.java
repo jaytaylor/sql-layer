@@ -18,6 +18,7 @@
 package com.foundationdb.sql.optimizer.rule.join_enum;
 
 import com.foundationdb.sql.optimizer.plan.Joinable;
+import com.foundationdb.sql.optimizer.plan.PlanToString;
 
 import java.util.List;
 
@@ -110,7 +111,7 @@ public class JoinableBitSet
                     first = false;
                 else
                     str.append(", ");
-                str.append(items.get(i).summaryString());
+                str.append(items.get(i).summaryString(PlanToString.Configuration.DEFAULT));
             }
         }
         str.append("]");

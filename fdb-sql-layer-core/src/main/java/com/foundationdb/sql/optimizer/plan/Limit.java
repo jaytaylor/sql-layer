@@ -51,8 +51,8 @@ public class Limit extends BasePlanWithInput
     }
 
     @Override
-    public String summaryString() {
-        StringBuilder str = new StringBuilder(super.summaryString());
+    public String summaryString(PlanToString.Configuration configuration) {
+        StringBuilder str = new StringBuilder(super.summaryString(configuration));
         str.append("(");
         if (offset > 0) {
             str.append("OFFSET ");

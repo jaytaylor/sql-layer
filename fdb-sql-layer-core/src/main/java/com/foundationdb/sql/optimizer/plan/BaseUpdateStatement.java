@@ -53,8 +53,8 @@ public class BaseUpdateStatement extends BasePlanWithInput
     }
 
     @Override
-    public String summaryString() {
-        StringBuilder str = new StringBuilder(super.summaryString());
+    public String summaryString(PlanToString.Configuration configuration) {
+        StringBuilder str = new StringBuilder(super.summaryString(configuration));
         str.append('(');
         fillSummaryString(str);
         //if (requireStepIsolation)

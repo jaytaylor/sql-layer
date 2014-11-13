@@ -219,8 +219,8 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
     }
     
     @Override
-    public String summaryString() {
-        StringBuilder str = new StringBuilder(super.summaryString());
+    public String summaryString(PlanToString.Configuration configuration) {
+        StringBuilder str = new StringBuilder(super.summaryString(configuration));
         str.append("(");
         if (implementation != null) {
             str.append(implementation);

@@ -19,8 +19,6 @@ package com.foundationdb.sql.optimizer.plan;
 
 import com.foundationdb.sql.optimizer.plan.JoinNode.JoinType;
 
-import java.util.*;
-
 /** A join implementation using Map. */
 public class MapJoin extends BasePlanNode implements PlanWithInput
 {
@@ -80,8 +78,8 @@ public class MapJoin extends BasePlanNode implements PlanWithInput
     }
 
     @Override
-    public String summaryString() {
-        StringBuilder str = new StringBuilder(super.summaryString());
+    public String summaryString(PlanToString.Configuration configuration) {
+        StringBuilder str = new StringBuilder(super.summaryString(configuration));
         str.append("(");
         if (joinType != null) {
             str.append(joinType);

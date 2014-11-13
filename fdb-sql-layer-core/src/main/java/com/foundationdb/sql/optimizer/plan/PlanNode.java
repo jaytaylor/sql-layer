@@ -25,9 +25,13 @@ public interface PlanNode extends PlanElement
 
     public boolean accept(PlanVisitor v);
 
-    /** One-line summary of just this node. */
-    public String summaryString();
+    /** One-line summary of just this node.
+     * @param configuration configuration options for how the plan should be printed
+     */
+    public String summaryString(PlanToString.Configuration configuration);
 
-    /** Hierarchical format of this node and any inputs. */
-    public String planString();
+    /** Hierarchical format of this node and any inputs.
+     * @param configuration configuration options for how the plan should be printed
+     */
+    public String planString(PlanToString.Configuration configuration);
 }

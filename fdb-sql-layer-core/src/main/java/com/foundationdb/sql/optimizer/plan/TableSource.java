@@ -99,8 +99,8 @@ public class TableSource extends BaseJoinable implements ColumnSource
     }
     
     @Override
-    public String summaryString() {
-        StringBuilder str = new StringBuilder(super.summaryString());
+    public String summaryString(PlanToString.Configuration configuration) {
+        StringBuilder str = new StringBuilder(super.summaryString(configuration));
         str.append("(");
         str.append(name);
         if (parentJoin != null) {
