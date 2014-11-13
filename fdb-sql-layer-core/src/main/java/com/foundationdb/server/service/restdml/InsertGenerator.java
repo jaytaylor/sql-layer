@@ -113,7 +113,6 @@ public class InsertGenerator extends OperatorGenerator {
         int i = 0;
         for(String v : inputValues) {
             insts[i] = getTypesTranslator().typeForString(v);
-            // TODO ensure that insts[i] != null, ever
             exprs.add(new TPreparedLiteral(insts[i], ValueSources.valuefromObject(v, insts[i])));
             ++i;
         }

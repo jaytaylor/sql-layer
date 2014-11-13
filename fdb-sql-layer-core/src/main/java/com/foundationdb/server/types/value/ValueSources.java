@@ -158,7 +158,6 @@ public final class ValueSources {
 
     public static TPreptimeValue preptimeValueFromObject(Object object) {
         if (object == null) {
-            // TODO TInstance.LiteralNull
             Value nv = new Value(null);
             return new TPreptimeValue(nv);
         } else {
@@ -174,7 +173,6 @@ public final class ValueSources {
      * @return
      */
     public static TPreptimeValue fromObject(Object object, TInstance type) {
-        // TODO ensure type is never null, perhaps just call typeless overload
         ValueSource value = valuefromObject(object, type);
         if (type == null) {
             if (value.getType() == null) {

@@ -177,7 +177,6 @@ public final class PersistitValueValueSource implements ValueSource {
     // private
     
     private void clear() {
-        // TODO TInstance.unset or TInstance.unknown?
         value.underlying(null);
     }
     
@@ -189,7 +188,6 @@ public final class PersistitValueValueSource implements ValueSource {
     }
 
     private com.persistit.Value persistitValue;
-    // TODO TInstance.unset or TInstance.unknown?
     private Value value = new Value();
     private Object cacheObject = null;
     

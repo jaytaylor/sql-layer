@@ -35,7 +35,6 @@ public class ConstantExpression extends BaseExpression
 
     public static ConstantExpression typedNull(DataTypeDescriptor sqlType, ValueNode sqlSource, TInstance type) {
         if (sqlType == null) {
-            // TInstance.LiteralNull
             ValueSource nullSource = ValueSources.getNullSource(null);
             return new ConstantExpression(new TPreptimeValue(nullSource));
         }
@@ -43,7 +42,6 @@ public class ConstantExpression extends BaseExpression
             ValueSource nullSource = ValueSources.getNullSource(type);
             return new ConstantExpression((Object)null, sqlType, sqlSource, new TPreptimeValue(type, nullSource));
         } else {
-            // TInstance.LiteralNull
             return new ConstantExpression((Object)null, sqlType, sqlSource, new TPreptimeValue());
         }
     }
@@ -75,7 +73,6 @@ public class ConstantExpression extends BaseExpression
                     type.nullability());
         }
 
-        //TODO ensure type is not null ever
         return ValueSources.fromObject(value, type);
     }
 

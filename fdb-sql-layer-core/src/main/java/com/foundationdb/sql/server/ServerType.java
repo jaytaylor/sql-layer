@@ -33,7 +33,6 @@ public abstract class ServerType
 
     private final TInstance type;
 
-    // TODO ensure this is never called with null
     protected ServerType(TInstance type) {
         this.type = type;
     }

@@ -31,7 +31,6 @@ public class SpecialIndexExpression extends BaseExpression
     private List<ExpressionNode> operands;
 
     public SpecialIndexExpression(Function function, List<ExpressionNode> operands) {
-        // TODO I don't know why there is no type here. It should evaluate to something, right?
         super(null, null, (TInstance)null);
         this.function = function;
         this.operands = operands;

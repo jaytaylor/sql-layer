@@ -657,7 +657,6 @@ public class ASTStatementLoader extends BaseRule
                                     List<ExpressionNode> projects)
                 throws StandardException {
             DataTypeDescriptor conditionType = null;
-            // This should be set to not-null before reading
             TInstance conditionInst;
             switch (condition.getNodeType()) {
             case NodeTypes.BINARY_EQUALS_OPERATOR_NODE:
@@ -1529,7 +1528,6 @@ public class ASTStatementLoader extends BaseRule
                                               List<ExpressionNode> projects)
                 throws StandardException {
             if (valueNode == null) {
-                // TODO This should either be TInstance.LiteralNull, or a new method: ConstantExpression.typedNull
                 return ConstantExpression.typedNull(null, null, null);
             }
             DataTypeDescriptor sqlType = valueNode.getType();

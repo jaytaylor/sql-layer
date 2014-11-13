@@ -36,8 +36,6 @@ import java.util.TimeZone;
 public final class TExecutionContext {
 
     public TInstance inputTypeAt(int index) {
-        // TODO sometimes inputTypes is null, like for TPreparedParameter.evaluate, but if you then called
-        // inputTypeAt, you get NPE. I don't know what external restriction prevents that from happening
         return inputTypes.get(index);
     }
 

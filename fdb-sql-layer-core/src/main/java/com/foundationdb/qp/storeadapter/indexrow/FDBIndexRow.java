@@ -49,8 +49,6 @@ public class FDBIndexRow extends IndexRow {
 
     @Override
     protected ValueSource uncheckedValue(int i) {
-        // If Column.getType() is correctly not returning null, and Index.ensureTypeInfo is still working, these types
-        // will never be null as long as types is null
         PersistitKeyValueSource source = new PersistitKeyValueSource(types[i]);
         source.attach(iKey, i, types[i]);
         return source;
@@ -282,9 +280,6 @@ public class FDBIndexRow extends IndexRow {
     
     public FDBIndexRow (KeyCreator keyCreator)
     {
-        // TODO an FDBIndexRow created in this way cannot have it value read (it would throw NPE in uncheckedValue)
-        // This.types is final, so either the resulting IndexRow is never used, or its values are never read...
-        // Presumably with an indexRowType of null, it will never try to load the values
         ArgumentValidation.notNull("keyCreator", keyCreator);
         this.keyCreator = keyCreator;
         this.indexRowType = null;

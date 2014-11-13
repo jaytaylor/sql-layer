@@ -58,8 +58,6 @@ public class TOverloadResult {
     }
     
     public TInstance customRuleCastSource(boolean nullable) {
-        // TODO what is a TOverloadResult and why is a custom one sometimes created without a castSource?
-        // perhaps subclassing TOverloadResult would clean this up.
         return castSource == null ? null : castSource.setNullable(nullable);
     }
 
