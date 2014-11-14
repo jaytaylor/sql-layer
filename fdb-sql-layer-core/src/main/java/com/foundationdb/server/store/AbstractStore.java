@@ -1008,15 +1008,12 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                                 Collection<TableIndex> indexes,
                                 BitSet tablesRequiringHKeyMaintenance,
                                 boolean propagateHKeyChanges) {
+        //TODO: It may be useful to move the constructHKey to higher in the
+        // stack, and store the result in the row to avoid building it 
+        // multiple times for GroupIndex maintenance. 
         Key hKey = getKey(session, storeData);
-        
-        assert row.rowType().hasTable() : "Writing a row with no table - not allowed";
-        // TODO: Is it very unlikely the HKey for the row has been built successfully at this point
-        // Verify the HKey for the row has been constructed at this point. 
-        //assert row.hKey() != null : "No HKey for row being written";
-        //row.hKey().copyTo(hKey);
         this.constructHKey(session, row, hKey);
-        //constructHKey(session, row, hKey);
+
         packRow(session, storeData, row);
         store(session, storeData);
         
