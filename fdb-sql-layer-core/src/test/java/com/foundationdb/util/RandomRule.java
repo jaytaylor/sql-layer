@@ -28,6 +28,9 @@ import java.util.Random;
  * fdbsql.test.seed
  *
  * If you want to access this in the @Parameters, use the @ClassRule attribute and make it static
+ *   Also, you should call reset() at the top of the parameters. I don't know why but intellij is really weird, possibly
+ *   broken if you try to run a single parameter it will run the parameters method twice, and then look for the test
+ *   in the second run, which will be different if you don't reset the seed.
  * If you want to access this in the tests,before or after, use the @Rule attribute
  * If you want both assign the field with the @Rule attribute to the @ClassRule field.
  *
@@ -48,10 +51,6 @@ public class RandomRule implements TestRule {
         random = new Random(seed);
     }
 
-    public long nextLong() {
-        return getRandom().nextLong();
-    }
-
     @Override
     public Statement apply(final Statement statement, Description description) {
         return new Statement() {
@@ -59,7 +58,7 @@ public class RandomRule implements TestRule {
             public void evaluate() throws Throwable {
                 // We want to reseed, because we don't want the values going into the test to be tainted by how many
                 // tests ran before
-                random.setSeed(seed);
+                reset();
                 boolean success = false;
                 try {
                     // Note: this will include execution of before/after methods
@@ -72,6 +71,11 @@ public class RandomRule implements TestRule {
                 }
             }
         };
+    }
+
+    public Random reset() {
+        random.setSeed(seed);
+        return random;
     }
 
     public Random getRandom() {

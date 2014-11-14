@@ -196,6 +196,7 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
 
     @Parameters(name="{0}")
     public static List<Object[]> params() throws Exception {
+        Random random = classRandom.reset();
         Collection<List<OrderByOptions>> orderByPerms = IndexScanUnboundedMixedOrderDT.orderByPermutations();
         List<Object[]> params = new ArrayList<>();
         for(List<OrderByOptions> ordering : orderByPerms) {
@@ -207,7 +208,6 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
                 }
             }
             if(nonEmpty) {
-                Random random = classRandom.getRandom();
                 List<Integer> loBounds = getLowerBounds(MIN_VALUE, MAX_VALUE, TOTAL_COLS, random);
                 List<Integer> hiBounds = getUpperBounds(MIN_VALUE, MAX_VALUE, TOTAL_COLS, loBounds, random);
                 List<Boolean> loInclusive = getBooleans(TOTAL_COLS, random);
