@@ -27,14 +27,15 @@ import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.error.InvalidRoutineException;
 import com.foundationdb.server.error.NoSuchRoutineException;
 import com.foundationdb.server.error.NoSuchSQLJJarException;
+import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.parser.CreateAliasNode;
 import com.foundationdb.sql.parser.DropAliasNode;
-
 import com.foundationdb.sql.types.RoutineAliasInfo;
+
 import java.sql.ParameterMetaData;
 
 import static com.foundationdb.sql.aisddl.DDLHelper.skipOrThrow;
@@ -59,8 +60,6 @@ public class RoutineDDL {
                                             Routine.CallingConvention.JAVA),
         new ParameterStyleCallingConvention("JAVA", "FOUNDATIONDB_LOADABLE_PLAN",
                                             Routine.CallingConvention.LOADABLE_PLAN),
-        new ParameterStyleCallingConvention("SQL", "ROW", 
-                                            Routine.CallingConvention.SQL_ROW),
         new ParameterStyleCallingConvention(null, "VARIABLES", 
                                             Routine.CallingConvention.SCRIPT_BINDINGS),
         new ParameterStyleCallingConvention(null, "JAVA", 
@@ -117,7 +116,6 @@ public class RoutineDDL {
         Routine.CallingConvention callingConvention = findCallingConvention(schemaName, routineName, language, aliasInfo.getParameterStyle(),
                                                                             routineLoader, session);
         switch (callingConvention) {
-        case SQL_ROW:
         case SCRIPT_BINDINGS:
         case SCRIPT_BINDINGS_JSON:
         case SCRIPT_LIBRARY:
@@ -129,6 +127,8 @@ public class RoutineDDL {
             if (createAlias.getExternalName() == null) {
                 throw new InvalidRoutineException(schemaName, routineName, "must have EXTERNAL NAME function_name");
             }
+        default:
+            break;
         }
 
         TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
