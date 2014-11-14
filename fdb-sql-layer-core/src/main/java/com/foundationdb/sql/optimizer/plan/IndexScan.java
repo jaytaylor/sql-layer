@@ -158,24 +158,25 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
     public static final boolean INCLUDE_SCAN_COST_IN_SUMMARY = false;
 
     @Override
-    public String summaryString() {
-        return summaryString(-1);
+    public String summaryString(SummaryConfiguration configuration) {
+        return summaryString(-1, configuration);
     }
     
-    public String summaryString(boolean prettyFormat) {
-        return summaryString(prettyFormat ? 0 : -1);
+    public String summaryString(boolean prettyFormat, SummaryConfiguration configuration) {
+        return summaryString(prettyFormat ? 0 : -1, configuration);
     }
 
-    private String summaryString(int indentation) {
+    private String summaryString(int indentation, SummaryConfiguration configuration) {
         StringBuilder sb = new StringBuilder();
-        buildSummaryString(sb, indentation, true);
+        buildSummaryString(sb, indentation, true, configuration);
         return sb.toString();
     }
      
-    protected void buildSummaryString(StringBuilder str, int indentation, boolean full) {
-        str.append(super.summaryString());
+    protected void buildSummaryString(StringBuilder str, int indentation, boolean full,
+                                      SummaryConfiguration configuration) {
+        str.append(super.summaryString(configuration));
         str.append('(');
-        str.append(summarizeIndex(indentation));
+        str.append(summarizeIndex(indentation, configuration));
         if (indentation < 0) {
             str.append(", ");
         }
@@ -241,7 +242,7 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
         return str;
     }
 
-    protected abstract String summarizeIndex(int indentation);
+    protected abstract String summarizeIndex(int indentation, SummaryConfiguration configuration);
     protected void describeConditionRange(StringBuilder output) {}
     protected void describeEqualityComparands(StringBuilder output) {}
 }

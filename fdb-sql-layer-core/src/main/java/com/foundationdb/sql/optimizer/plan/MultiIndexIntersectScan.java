@@ -188,7 +188,7 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
-    protected String summarizeIndex(int indentation) {
+    protected String summarizeIndex(int indentation, SummaryConfiguration configuration) {
         boolean pretty = indentation >= 0;
         int nextIndentation = pretty ? indentation + 1 : -1;
 
@@ -200,7 +200,7 @@ public final class MultiIndexIntersectScan extends IndexScan {
         else {
             sb.append("INTERSECT(compare ").append(getComparisonFields()).append(", ");
         }
-        summarizeChildIndex(outputScan, nextIndentation, sb);
+        summarizeChildIndex(outputScan, nextIndentation, sb, configuration);
         if (pretty) {
             sb.append(Strings.NL);
             indent(sb, nextIndentation);
@@ -208,16 +208,17 @@ public final class MultiIndexIntersectScan extends IndexScan {
         else {
             sb.append(" AND ");
         }
-        summarizeChildIndex(selectorScan, nextIndentation, sb);
+        summarizeChildIndex(selectorScan, nextIndentation, sb, configuration);
         if (!pretty)
             sb.append(')');
         return sb.toString();
     }
 
-    private void summarizeChildIndex(IndexScan child, int indentation, StringBuilder sb) {
+    private void summarizeChildIndex(IndexScan child, int indentation, StringBuilder sb,
+                                     SummaryConfiguration configuration) {
         int skips = child.getAllColumns().size() - getOrderingFields(child);
         sb.append("skip ").append(skips).append(": ");
-        child.buildSummaryString(sb, indentation, false);
+        child.buildSummaryString(sb, indentation, false, configuration);
     }
 
     @Override

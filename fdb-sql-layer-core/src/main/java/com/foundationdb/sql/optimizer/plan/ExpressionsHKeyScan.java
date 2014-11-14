@@ -21,7 +21,6 @@ import com.foundationdb.ais.model.HKey;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 public class ExpressionsHKeyScan extends BaseScan implements EqualityColumnsScan
 {
@@ -107,8 +106,8 @@ public class ExpressionsHKeyScan extends BaseScan implements EqualityColumnsScan
     }
 
     @Override
-    public String summaryString() {
-        StringBuilder str = new StringBuilder(super.summaryString());
+    public String summaryString(SummaryConfiguration configuration) {
+        StringBuilder str = new StringBuilder(super.summaryString(configuration));
         str.append('(');
         str.append(table);
         for (ExpressionNode key : keys) {

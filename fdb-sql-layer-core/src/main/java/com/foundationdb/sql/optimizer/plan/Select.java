@@ -48,8 +48,8 @@ public class Select extends BasePlanWithInput
     }
     
     @Override
-    public String summaryString() {
-        return super.summaryString() + conditions.toString();
+    public String summaryString(SummaryConfiguration configuration) {
+        return super.summaryString(configuration) + conditions.toString();
     }
 
     @Override

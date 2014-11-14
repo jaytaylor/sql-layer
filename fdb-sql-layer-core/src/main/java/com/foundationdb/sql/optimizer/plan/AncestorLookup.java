@@ -52,8 +52,8 @@ public class AncestorLookup extends BaseLookup
     }
 
     @Override
-    public String summaryString() {
-        return super.summaryString() + "(" + descendant + " -> " + ancestors + ")";
+    public String summaryString(SummaryConfiguration configuration) {
+        return super.summaryString(configuration) + "(" + descendant + " -> " + ancestors + ")";
     }
 
 }
