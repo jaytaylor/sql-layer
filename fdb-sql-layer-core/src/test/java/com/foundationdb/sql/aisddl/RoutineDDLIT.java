@@ -109,6 +109,12 @@ public class RoutineDDLIT extends AISDDLITBase {
         assertEquals("y", proc.getParameters().get(1).getName());
         assertEquals("DOUBLE", proc.getParameters().get(1).getTypeName());
         assertEquals(Parameter.Direction.IN, proc.getParameters().get(1).getDirection());
+        assertEquals("s", proc.getParameters().get(2).getName());
+        assertEquals(Parameter.Direction.OUT, proc.getParameters().get(2).getDirection());
+        assertEquals("DOUBLE", proc.getParameters().get(2).getTypeName());
+        assertEquals("d", proc.getParameters().get(3).getName());
+        assertEquals(Parameter.Direction.OUT, proc.getParameters().get(3).getDirection());
+        assertEquals("DOUBLE", proc.getParameters().get(3).getTypeName());
         assertNull(proc.getSQLAllowed());
         assertEquals(0, proc.getDynamicResultSets());
     }
@@ -135,6 +141,12 @@ public class RoutineDDLIT extends AISDDLITBase {
         assertEquals("y", proc.getParameters().get(1).getName());
         assertEquals("DOUBLE", proc.getParameters().get(1).getTypeName());
         assertEquals(Parameter.Direction.IN, proc.getParameters().get(1).getDirection());
+        assertEquals("s", proc.getParameters().get(2).getName());
+        assertEquals(Parameter.Direction.OUT, proc.getParameters().get(2).getDirection());
+        assertEquals("DOUBLE", proc.getParameters().get(2).getTypeName());
+        assertEquals("p", proc.getParameters().get(3).getName());
+        assertEquals(Parameter.Direction.OUT, proc.getParameters().get(3).getDirection());
+        assertEquals("DOUBLE", proc.getParameters().get(3).getTypeName());
         assertNull(proc.getSQLAllowed());
         assertEquals(0, proc.getDynamicResultSets());
         
