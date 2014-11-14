@@ -38,7 +38,6 @@ public interface TableStatus {
 
     /** Set the RowDef of a given table.*/
     void setRowDef(RowDef rowDef);
-    void setIndex (TableIndex pkTableIndex);
 
     /**
      * @return Current number of rows in the associated table.

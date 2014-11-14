@@ -18,6 +18,7 @@
 package com.foundationdb.qp.row;
 
 import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
@@ -77,16 +78,21 @@ class AbstractValuesHolderRow extends AbstractRow {
     }
 
     AbstractValuesHolderRow(RowType rowType, Value... values) {
-        this.isMutable = false;
-        this.rowType = rowType;
-        assert rowType.nFields() == values.length;
-        this.values = Collections.unmodifiableList(Arrays.asList(values));
+        this (rowType, Arrays.asList(values));
     }
    
     AbstractValuesHolderRow(RowType rowType, List<Value> values) {
         this.isMutable = false;
         this.rowType = rowType;
         this.values = Collections.unmodifiableList(values);
+        assert rowType.nFields() == values.size();
+        for (int i = 0, max = values.size(); i < max; ++i) {
+            TClass requiredType = rowType.typeAt(i).typeClass();
+            TClass actualType = TInstance.tClass(values.get(i).getType());
+            if (requiredType != actualType)
+                throw new IllegalArgumentException("value " + i + " should be " + requiredType
+                        + " but was " + actualType);
+        }
     }
 
     AbstractValuesHolderRow(RowType rowType, boolean isMutable,

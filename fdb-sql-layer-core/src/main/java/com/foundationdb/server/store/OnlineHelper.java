@@ -485,7 +485,11 @@ public class OnlineHelper implements RowListener
         }
     }
 
-    public void createAsSelect(final Session session, QueryContext context, final ServerSession server, String queryExpression, TableName tableName){
+    public void createAsSelect(final Session session, 
+            QueryContext context, 
+            final ServerSession server, 
+            String queryExpression, 
+            TableName tableName) {
         LOG.debug("Creating Table As Select Online");
 
         txnService.beginTransaction(session);
@@ -655,7 +659,6 @@ public class OnlineHelper implements RowListener
                     context = new SimpleQueryContext(adapter);
                     QueryBindings bindings = context.createBindings();
                     if (doDelete) {
-                        //Row origOldRow = new RowDataRow(transform.rowType, oldRowData);
                         bindings.setRow(OperatorAssembler.CREATE_AS_BINDING_POSITION, oldRow);
                         try {
                             runPlan(context, transform.deleteOperator, bindings);
@@ -664,7 +667,6 @@ public class OnlineHelper implements RowListener
                         }
                     }
                     if (doWrite) {
-                        //Row origOldRow = new RowDataRow(transform.rowType, newRowData);
                         bindings.setRow(OperatorAssembler.CREATE_AS_BINDING_POSITION, newRow);
                         try {
                             runPlan(context, transform.insertOperator, bindings);
@@ -680,7 +682,6 @@ public class OnlineHelper implements RowListener
                 context = new SimpleQueryContext(adapter);
                 QueryBindings bindings = context.createBindings();
                 if(doDelete) {
-                    //Row origOldRow = new RowDataRow(transform.rowType, oldRowData);
                     Row newOldRow = transformRow(context, bindings, transform, oldRow);
                     try {
                         adapter.deleteRow(newOldRow, false);
@@ -689,7 +690,6 @@ public class OnlineHelper implements RowListener
                     }
                 }
                 if(doWrite) {
-                    //Row origNewRow = new RowDataRow(transform.rowType, newRowData);
                     Row newNewRow = transformRow(context, bindings, transform, newRow);
                     adapter.writeRow(newNewRow, transform.tableIndexes, transform.groupIndexes);
                 }
@@ -1127,7 +1127,7 @@ public class OnlineHelper implements RowListener
                 projections.add(pExp);
             }
         }
-        return new ProjectedTableRowType(newRowType.schema(), newTable, projections, true);//!isGroupChange
+        return new ProjectedTableRowType(newRowType.schema(), newTable, projections, true);
     }
 
     // This should be quite similar to ExpressionAssembler#assembleColumnDefault()

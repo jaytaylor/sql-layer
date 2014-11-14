@@ -622,6 +622,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
 
     
     public void writeRow (Session session, Row newRow, Collection<TableIndex> tableIndexes, Collection<GroupIndex> groupIndexes) {
+        assert newRow.rowType().hasTable();
         Table table = newRow.rowType().table();
         trackTableWrite (session, table);
         constraintHandler.handleInsert(session, table, newRow);
@@ -731,14 +732,10 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     
     @Override
     public void updateRow(Session session, Row oldRow, Row newRow) {
-        assert oldRow.rowType().hasTable() : "Cannot update where old row type is without a table: " + oldRow.rowType();
-        assert newRow.rowType().hasTable() : "Cannot update where new row type is without a table: " + newRow.rowType();
+        assert oldRow.rowType() == newRow.rowType() : "Update old row type: " + oldRow.rowType() + " does not match new row type: " + newRow.rowType();
+        assert oldRow.rowType().hasTable() : "Cannot update where row type is without a table: " + oldRow.rowType();
         Table table = oldRow.rowType().table();
         trackTableWrite(session, table);
-        // Note:  all cases where newRow Type is not the same as oldRow Type should
-        // be disallowed when there are constraints present.
-        assert ((oldRow.rowType() == newRow.rowType()) || table.getForeignKeys().isEmpty())
-            : table;
         constraintHandler.handleUpdatePre(session, table, oldRow, newRow);
         onlineHelper.handleUpdatePre(session, table, oldRow, newRow);
         if(canSkipGIMaintenance(table)) {
@@ -1238,10 +1235,6 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         if(!existed) {
             throw new NoSuchRowException(hKey);
         }
-
-        //RowData currentRow = new RowData();
-        //expandRowData(session, storeData, currentRow);
-        //RowData mergedRow = mergeRows(oldRowDef, currentRow, newRowDef, newRow, selector);
 
         BitSet tablesRequiringHKeyMaintenance = null;
         

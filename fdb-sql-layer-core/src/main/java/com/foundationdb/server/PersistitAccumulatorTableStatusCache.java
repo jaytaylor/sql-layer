@@ -165,17 +165,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             }
         }
         
-        @Override
-        public void setIndex(TableIndex pkTableIndex) {
-            if (pkTableIndex == null) {
-                rowCount = null;
-            } else {
-                assert pkTableIndex.getTable().getTableId().intValue() == expectedID;
-                Tree tree = getTreeForIndex(pkTableIndex);
-                rowCount = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, tree);
-            }
-        }
-
         private void internalSetRowCount(long rowCountValue) throws PersistitInterruptedException {
             rowCount.set(rowCountValue);
         }

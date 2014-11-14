@@ -25,7 +25,6 @@ import com.foundationdb.Database;
 import com.foundationdb.MutationType;
 import com.foundationdb.Transaction;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
@@ -159,18 +158,6 @@ public class FDBTableStatusCache implements TableStatusCache {
                 assert rowDef.getRowDefId() == tableID;
                 byte[] prefixBytes = FDBStoreDataHelper.prefixBytes(rowDef.getPKIndex());
                 this.rowCountKey = ByteArrayUtil.join(packedTableStatusPrefix, prefixBytes, ROW_COUNT_PACKED);
-            }
-        }
-
-        @Override 
-        public void setIndex(TableIndex pkTableIndex) {
-            if (pkTableIndex == null) {
-                this.rowCountKey = null;
-            } else {
-                assert pkTableIndex.getTable().getTableId() == tableID;
-                byte[] prefixBytes = FDBStoreDataHelper.prefixBytes(pkTableIndex);
-                this.rowCountKey = ByteArrayUtil.join(packedTableStatusPrefix, prefixBytes, ROW_COUNT_PACKED);
-                
             }
         }
 
