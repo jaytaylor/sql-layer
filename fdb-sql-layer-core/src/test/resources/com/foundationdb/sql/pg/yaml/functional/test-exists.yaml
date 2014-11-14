@@ -1,0 +1,25 @@
+---
+- CreateTable: nodes (id INTEGER NOT NULL, data VARCHAR(30) NULL, PRIMARY KEY (id));
+---
+- CreateTable: node_to_nodes (left_node_id INTEGER NOT NULL, right_node_id INTEGER NOT NULL,
+               PRIMARY KEY (left_node_id, right_node_id),
+               FOREIGN KEY(left_node_id) REFERENCES nodes (id), FOREIGN KEY(right_node_id) REFERENCES nodes (id));
+---
+- Statement: INSERT INTO nodes (id, data)
+             VALUES (1, 'n1'), (2, 'n2'), (3, 'n6'), (4, 'n7'), (5, 'n3'), (6, 'n5'), (7, 'n4');
+---
+- Statement: INSERT INTO node_to_nodes (left_node_id, right_node_id)
+             VALUES (5, 6), (5, 7), (2, 5), (2, 3), (2, 4), (1, 2), (1, 5), (1, 7);
+---
+- Statement: SELECT nodes.id AS nodes_id, nodes.data AS nodes_data FROM nodes WHERE EXISTS (
+               SELECT 1 FROM node_to_nodes AS node_to_nodes_1, nodes AS nodes_1
+                 WHERE nodes.id = node_to_nodes_1.left_node_id AND nodes_1.id = node_to_nodes_1.right_node_id AND nodes_1.data = 'n3')
+             ORDER BY nodes.data;
+- output: [[1, 'n1'], [2, 'n2']]
+---
+- Statement: SELECT nodes.id AS nodes_id, nodes.data AS nodes_data FROM nodes WHERE NOT (EXISTS (
+               SELECT 1 FROM node_to_nodes AS node_to_nodes_1, nodes AS nodes_1
+                 WHERE nodes.id = node_to_nodes_1.left_node_id AND nodes_1.id = node_to_nodes_1.right_node_id AND nodes_1.id = 8))
+             ORDER BY nodes.data;
+- output: [[2, 'n2'], [3, 'n6'], [4, 'n7'], [6, 'n5'], [7, 'n4']]
+...
