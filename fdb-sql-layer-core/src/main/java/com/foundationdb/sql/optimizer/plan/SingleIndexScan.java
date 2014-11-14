@@ -261,7 +261,7 @@ public final class SingleIndexScan extends IndexScan implements EqualityColumnsS
     }
 
     @Override
-    protected String summarizeIndex(int indentation) {
+    protected String summarizeIndex(int indentation, SummaryConfiguration configuration) {
         return String.valueOf(index);
     }
 

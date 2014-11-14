@@ -91,8 +91,8 @@ public class DuplicatePlanTest extends OptimizerTestBase
         PlanNode duplicate = (PlanNode)plan.duplicate();
         assertFalse(plan == duplicate);
         assertEqualsWithoutHashes(caseName, 
-                                  PlanToString.of(plan), 
-                                  PlanToString.of(duplicate));
+                                  PlanToString.of(plan, PlanNode.SummaryConfiguration.DEFAULT),
+                                  PlanToString.of(duplicate, PlanNode.SummaryConfiguration.DEFAULT));
     }
 
 }

@@ -20,10 +20,8 @@ package com.foundationdb.sql.optimizer.rule;
 import com.foundationdb.sql.optimizer.plan.PlanNode;
 import com.foundationdb.sql.optimizer.plan.PlanVisitor;
 
-import com.foundationdb.qp.exec.Plannable;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.SimpleQueryContext;
-import com.foundationdb.server.explain.ExplainContext;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -95,8 +93,10 @@ public class PlanContext
     }
 
 
-    /** Format a hierarchical view of the current plan. */
-    public String planString() {
-        return plan.planString();
+    /** Format a hierarchical view of the current plan.
+     * @param configuration configuration options for how the plan should be printed
+     */
+    public String planString(PlanNode.SummaryConfiguration configuration) {
+        return plan.planString(configuration);
     }
 }

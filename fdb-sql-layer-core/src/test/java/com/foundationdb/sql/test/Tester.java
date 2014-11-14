@@ -29,6 +29,7 @@ import com.foundationdb.sql.optimizer.OperatorCompiler;
 import com.foundationdb.sql.optimizer.OperatorCompilerTest;
 import com.foundationdb.sql.optimizer.SubqueryFlattener;
 import com.foundationdb.sql.optimizer.plan.AST;
+import com.foundationdb.sql.optimizer.plan.PlanNode;
 import com.foundationdb.sql.optimizer.plan.PlanToString;
 import com.foundationdb.sql.optimizer.rule.BaseRule;
 import static com.foundationdb.sql.optimizer.rule.DefaultRules.*;
@@ -39,7 +40,6 @@ import com.foundationdb.sql.optimizer.rule.RulesTestHelper;
 import com.foundationdb.sql.parser.DMLStatementNode;
 import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.StatementNode;
-import com.foundationdb.sql.views.ViewDefinition;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 
@@ -158,7 +158,7 @@ public class Tester
                                         new AST((DMLStatementNode)stmt,
                                                 parser.getParameterList()));
                     rulesContext.applyRules(plan);
-                    System.out.println(PlanToString.of(plan.getPlan()));
+                    System.out.println(PlanToString.of(plan.getPlan(), PlanNode.SummaryConfiguration.DEFAULT));
                 }
                 break;
             case OPERATORS:

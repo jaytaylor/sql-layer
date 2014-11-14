@@ -22,8 +22,12 @@ import java.util.ArrayDeque;
 
 public class PlanToString implements PlanVisitor, ExpressionVisitor
 {
-    public static String of(PlanNode plan) {
-        PlanToString str = new PlanToString();
+    public PlanToString(PlanNode.SummaryConfiguration configuration) {
+        this.summaryConfiguration = configuration;
+    }
+
+    public static String of(PlanNode plan, PlanNode.SummaryConfiguration configuration) {
+        PlanToString str = new PlanToString(configuration);
         str.add(plan);
         return str.toString();
     }
@@ -31,6 +35,8 @@ public class PlanToString implements PlanVisitor, ExpressionVisitor
     private StringBuilder string = new StringBuilder();
     private Deque<PlanNode> pending = new ArrayDeque<>();
     private int planDepth = 0, expressionDepth = 0;
+    private final PlanNode.SummaryConfiguration summaryConfiguration;
+
 
     protected void add(PlanNode n) {
         pending.addLast(n);
@@ -70,7 +76,7 @@ public class PlanToString implements PlanVisitor, ExpressionVisitor
         if (string.length() > 0) string.append("\n");
         for (int i = 0; i < planDepth; i++)
             string.append("  ");
-        string.append(n.summaryString());
+        string.append(n.summaryString(summaryConfiguration));
         return true;
     }
     
@@ -91,4 +97,5 @@ public class PlanToString implements PlanVisitor, ExpressionVisitor
     public boolean visit(ExpressionNode n) {
         return true;
     }
+
 }
