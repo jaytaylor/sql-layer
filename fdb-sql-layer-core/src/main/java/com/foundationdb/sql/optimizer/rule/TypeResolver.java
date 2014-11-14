@@ -443,6 +443,7 @@ public final class TypeResolver extends BaseRule {
 
             TOverloadResult overloadResultStrategy = overload.resultStrategy();
             TInstance resultInstance;
+            // This is set to null here to indicate that no casting is required
             TInstance castTo;
 
             TPreptimeContext context;

@@ -38,6 +38,10 @@ public final class TInExpression {
         return prepare(lhs, rhs, null, null, queryContext);
     }
 
+    /**
+     * @param rhsInstance May be null if comparable is null
+     * @param comparable If this is not null, rhsInstance must be assigned
+     */
     public static TPreparedExpression prepare(TPreparedExpression lhs, List<? extends TPreparedExpression> rhs,
                                               TInstance rhsInstance, TKeyComparable comparable,
                                               QueryContext queryContext) {

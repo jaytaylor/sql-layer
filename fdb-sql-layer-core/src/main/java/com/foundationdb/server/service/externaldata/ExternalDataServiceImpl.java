@@ -145,7 +145,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
             } else {
                 for (List<Object> key : keys) {
                     for (int i = 0; i < key.size(); i++) {
-                        ValueSource value = ValueSources.fromObject(key.get(i), null).value();
+                        ValueSource value = ValueSources.fromObject(key.get(i));
                         queryBindings.setValue(i, value);
                     }
                     if (json.writeRows(cursor, appender, begun ? ",\n" : "\n", rowWriter, options))

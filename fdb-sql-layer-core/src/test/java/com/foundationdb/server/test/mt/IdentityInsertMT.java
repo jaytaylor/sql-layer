@@ -39,7 +39,7 @@ public class IdentityInsertMT extends PostgresMTBase
 {
     private static final Logger LOG = LoggerFactory.getLogger(IdentityInsertMT.class);
 
-    private static final int TOTAL_STEPS = 150;
+    private static final int TOTAL_STEPS = 1000;
     private static final String TABLE_NAME = "t";
     private static final String DROP_STMT = "DROP TABLE IF EXISTS " + TABLE_NAME;
     private static final String CREATE_STMT = "CREATE TABLE " + TABLE_NAME + "(id SERIAL PRIMARY KEY, x INT)";
@@ -101,33 +101,33 @@ public class IdentityInsertMT extends PostgresMTBase
         statements.get(0).execute(DROP_STMT);
         statements.get(0).execute(CREATE_STMT);
 
-        for(int i = 1; i <= TOTAL_STEPS; ++i) {
-            for(int j = 0; j < statements.size(); ++j) {
-                int v = random.nextInt(100);
-                String stmt;
-                if(v < 10) {
-                    stmt = ROLLBACK_STMT;
-                } else if(v < 30) {
-                    stmt = COMMIT_STMT;
-                } else {
-                    stmt = String.format(INSERT_STMT_FMT, v);
+        for(int i = 0; i < TOTAL_STEPS; ++i) {
+            int sIdx = random.nextInt(statements.size());
+            Statement s = statements.get(sIdx);
+
+            int v = random.nextInt(100);
+            String stmt;
+            if(v < 10) {
+                stmt = ROLLBACK_STMT;
+            } else if(v < 30) {
+                stmt = COMMIT_STMT;
+            } else {
+                stmt = String.format(INSERT_STMT_FMT, v);
+            }
+            try {
+                LOG.debug("conn{}: {}", sIdx, stmt);
+                if(s.execute(stmt)) {
+                    ResultSet rs = s.getResultSet();
+                    while(rs.next()) {
+                        LOG.debug("  Inserted: ({},{})", rs.getInt(1), rs.getInt(2));
+                    }
+                    rs.close();
                 }
-                try {
-                    LOG.debug("conn{}: {}", j+1, stmt);
-                    Statement s = statements.get(j);
-                    if(s.execute(stmt)) {
-                        ResultSet rs = s.getResultSet();
-                        while(rs.next()) {
-                            LOG.debug("  Inserted: ({},{})", rs.getInt(1), rs.getInt(2));
-                        }
-                        rs.close();
-                    }
-                } catch(SQLException e) {
-                    if(!e.getSQLState().startsWith("40")) {
-                        fail(String.format("Non-retryable error on step %d: (%s) %s\n", i, e.getSQLState(), e.getMessage()));
-                    } else {
-                        LOG.debug("  Retryable error: {}", e.getSQLState());
-                    }
+            } catch(SQLException e) {
+                if(!e.getSQLState().startsWith("40")) {
+                    fail(String.format("Non-retryable error on step %d: (%s) %s\n", i, e.getSQLState(), e.getMessage()));
+                } else {
+                    LOG.debug("  Retryable error: {}", e.getSQLState());
                 }
             }
         }
