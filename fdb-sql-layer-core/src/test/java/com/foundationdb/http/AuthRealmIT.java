@@ -44,6 +44,8 @@ import static org.hamcrest.CoreMatchers.containsString;
 
 @RunWith(SelectedParameterizedRunner.class)
 public class AuthRealmIT extends RestServiceITBase {
+    private static final String LOGIN_PROPERTY = "fdbsql.http.login";
+    private static final String REALM_PROPERTY = "fdbsql.http.realm";
 
     private static final String ROLE = "rest-user";
     private static final String USER = "u";
@@ -51,6 +53,7 @@ public class AuthRealmIT extends RestServiceITBase {
 
     private final String authType;
     private final String realm;
+    private String expectedRealm;
 
 
     @Parameterized.Parameters(name="{0} auth with realm={1}")
@@ -80,10 +83,10 @@ public class AuthRealmIT extends RestServiceITBase {
     protected Map<String,String> startupConfigProperties() {
         Map<String,String> config = new HashMap<>(super.startupConfigProperties());
         if (authType != null) {
-            config.put("fdbsql.http.login", authType);
+            config.put(LOGIN_PROPERTY, authType);
         }
         if (realm != null) {
-            config.put("fdbsql.http.realm", realm);
+            config.put(REALM_PROPERTY, realm);
         }
 
         return config;
@@ -96,6 +99,11 @@ public class AuthRealmIT extends RestServiceITBase {
 
     @Before
     public final void createUser() {
+        if(realm == null) {
+            expectedRealm = configService().getProperty(REALM_PROPERTY);
+        } else {
+            expectedRealm = realm;
+        }
         SecurityService securityService = securityService();
         securityService.addRole(ROLE);
         securityService.addUser(USER, PASS, Arrays.asList(ROLE));
@@ -113,9 +121,8 @@ public class AuthRealmIT extends RestServiceITBase {
 
         response = client.execute(request);
         assertEquals("status", HttpStatus.SC_UNAUTHORIZED, response.getStatusLine().getStatusCode());
-        String realmOrEmpty = realm == null ? "" : realm;
             assertThat("reason", headerValue(response, "WWW-Authenticate"),
-                    containsString("realm=\"" + realmOrEmpty + "\""));
+                    containsString("realm=\"" + expectedRealm + "\""));
     }
 
     @Test
