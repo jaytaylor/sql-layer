@@ -27,7 +27,6 @@ import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.error.InvalidRoutineException;
 import com.foundationdb.server.error.NoSuchRoutineException;
 import com.foundationdb.server.error.NoSuchSQLJJarException;
-import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.types.TInstance;
