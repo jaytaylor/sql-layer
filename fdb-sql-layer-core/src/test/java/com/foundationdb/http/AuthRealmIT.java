@@ -24,6 +24,7 @@ import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.util.EntityUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,13 +32,12 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Pattern;
 
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -55,10 +55,13 @@ public class AuthRealmIT extends RestServiceITBase {
 
     @Parameterized.Parameters(name="{0} auth with realm={1}")
     public static Iterable<Object[]> queries() throws Exception {
+        // null in list below means use system defaults
         return Arrays.asList(
                 new Object[] {"basic", null},
+                new Object[] {"basic", ""},
                 new Object[] {"basic", "My realm"},
                 new Object[] {"digest", null},
+                new Object[] {"digest", ""},
                 new Object[] {"digest", "My realm"});
     }
 
@@ -115,4 +118,11 @@ public class AuthRealmIT extends RestServiceITBase {
                     containsString("realm=\"" + realmOrEmpty + "\""));
     }
 
+    @Test
+    public void testGet() throws Exception {
+        HttpUriRequest request = new HttpGet(defaultURI());
+        response = client.execute(request);
+        assertEquals("status", HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+        assertThat("response", EntityUtils.toString(response.getEntity()), is(not("")));
+    }
 }
