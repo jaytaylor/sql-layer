@@ -20,6 +20,7 @@ package com.foundationdb.qp.storeadapter.indexrow;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.WriteIndexRow;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
@@ -30,6 +31,7 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.spatial.Spatial;
 import com.geophile.z.Space;
 
@@ -43,6 +45,8 @@ public class SpatialColumnHandler
         tinstances = new TInstance[dimensions];
         fieldDefs = new FieldDef[dimensions];
         coords = new double[dimensions];
+        positions = new int[dimensions];
+        
         rowDataSource = new RowDataValueSource();
         firstSpatialField = index.firstSpatialArgument();
         lastSpatialField = index.lastSpatialArgument();
@@ -52,6 +56,7 @@ public class SpatialColumnHandler
             Column column = indexColumn.getColumn();
             tinstances[c] = column.getType();
             fieldDefs[c] = column.getFieldDef();
+            positions[c] = column.getPosition().intValue();
         }
     }
 
@@ -64,12 +69,38 @@ public class SpatialColumnHandler
         return indexField >= firstSpatialField && indexField <= lastSpatialField;
     }
 
+    public long zValue (Row row) 
+    {
+        bind (row);
+        return Spatial.shuffle(space, coords[0], coords[1]);
+    }
+    
     public long zValue(RowData rowData)
     {
         bind(rowData);
         return Spatial.shuffle(space, coords[0], coords[1]);
     }
 
+    private void bind (Row row) {
+        for (int d = 0; d < dimensions; d++) {
+            ValueSource source = row.value(positions[d]);
+            TClass tclass = source.getType().typeClass();
+            if (tclass == MNumeric.DECIMAL) {
+                BigDecimalWrapper wrapper = TBigDecimal.getWrapper(source, tinstances[d]);
+                coords[d] = wrapper.asBigDecimal().doubleValue();
+            }
+            else if (tclass == MNumeric.BIGINT) {
+                coords[d] = source.getInt64();
+            }
+            else if (tclass == MNumeric.INT) {
+                coords[d] = source.getInt32();
+            }
+            else {
+                assert false : row.rowType().table().getColumn(positions[d]);
+            }
+        }
+    }
+    
     private void bind(RowData rowData)
     {
         for (int d = 0; d < dimensions; d++) {
@@ -95,6 +126,8 @@ public class SpatialColumnHandler
 
     private final Space space;
     private final int dimensions;
+    private final int[] positions;
+    
     private final TInstance[] tinstances;
     private final FieldDef[] fieldDefs;
     private final double[] coords;

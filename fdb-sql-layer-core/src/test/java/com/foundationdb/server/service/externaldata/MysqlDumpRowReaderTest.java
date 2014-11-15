@@ -19,12 +19,14 @@ package com.foundationdb.server.service.externaldata;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.rowdata.SchemaFactory;
 import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.Strings;
 
 import org.junit.Test;
+
 import static org.junit.Assert.*;
 
 import java.io.*;
@@ -56,8 +58,8 @@ public final class MysqlDumpRowReaderTest {
         MysqlDumpRowReader reader = new MysqlDumpRowReader(t1, t1.getColumns(), 
                                                            istr, "UTF-8",
                                                            null, MTypesTranslator.INSTANCE);
-        List<NewRow> rows = new ArrayList<>();
-        NewRow row;
+        List<Row> rows = new ArrayList<>();
+        Row row;
         while ((row = reader.nextRow()) != null)
             rows.add(row);
         istr.close();
@@ -65,9 +67,9 @@ public final class MysqlDumpRowReaderTest {
         for (int i = 0; i < ROWS.length; i++) {
             Object[] orow = ROWS[i];
             row = rows.get(i);
-            assertEquals("row " + i + " size", orow.length, row.getRowDef().getFieldCount());
+            assertEquals("row " + i + " size", orow.length, row.rowType().nFields());
             for (int j = 0; j < orow.length; j++) {
-                assertEquals("row " + i + " col " + j, orow[j], row.get(j));
+                assertEquals("row " + i + " col " + j, orow[j], ValueSources.toObject(row.value(j)));
             }
         }
     }

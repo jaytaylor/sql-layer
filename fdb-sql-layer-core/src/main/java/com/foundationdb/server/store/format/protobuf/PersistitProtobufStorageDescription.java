@@ -17,17 +17,16 @@
 
 package com.foundationdb.server.store.format.protobuf;
 
-import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.CommonProtobuf.ProtobufRowFormat;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.PersistitStore;
 import com.foundationdb.server.store.format.PersistitStorageDescription;
-
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.DynamicMessage;
 import com.persistit.Exchange;
@@ -38,7 +37,8 @@ public class PersistitProtobufStorageDescription extends PersistitStorageDescrip
 {
     private ProtobufRowFormat.Type formatType;
     private FileDescriptorProto fileProto;
-    private transient ProtobufRowDataConverter converter;
+    private transient ProtobufRowDataConverter rowDataConverter;
+    private transient ProtobufRowConverter rowConverter;
 
     public PersistitProtobufStorageDescription(HasStorage forObject, String storageFormat) {
         super(forObject, storageFormat);
@@ -86,29 +86,48 @@ public class PersistitProtobufStorageDescription extends PersistitStorageDescrip
         fileProto = validateAndGenerate(object, formatType, fileProto, output);
     }
 
-    public synchronized ProtobufRowDataConverter ensureConverter() {
-        if (converter == null) {
-            converter = buildConverter(object, fileProto);
+    public synchronized ProtobufRowDataConverter ensureRowDataConverter() {
+        if (rowDataConverter == null) {
+            rowDataConverter = buildRowDataConverter(object, fileProto);
         }
-        return converter;
+        return rowDataConverter;
+    }
+    
+    public synchronized ProtobufRowConverter ensureRowConverter() {
+        if (rowConverter == null) {
+            rowConverter = buildRowConverter(object, fileProto);
+        }
+        return rowConverter;
+    }
+    
+    @Override
+    public void packRow (PersistitStore store, Session session, 
+                        Exchange exchange, Row row) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void packRowData(PersistitStore store, Session session,
                             Exchange exchange, RowData rowData) {
-        ensureConverter();
-        DynamicMessage msg = converter.encode(rowData);
-        PersistitProtobufRow holder = new PersistitProtobufRow(converter, msg);
+        ensureRowDataConverter();
+        DynamicMessage msg = rowDataConverter.encode(rowData);
+        PersistitProtobufRow holder = new PersistitProtobufRow(rowDataConverter, msg);
         exchange.getValue().directPut(store.getProtobufValueCoder(), holder, null);
     }
 
+    @Override 
+    public void expandRow (PersistitStore store, Session session, 
+                            Exchange exchange, Row row) {
+        throw new UnsupportedOperationException();
+    }
+    
     @Override
     public void expandRowData(PersistitStore store, Session session,
                               Exchange exchange, RowData rowData) {
-        ensureConverter();
-        PersistitProtobufRow holder = new PersistitProtobufRow(converter, null);
+        ensureRowDataConverter();
+        PersistitProtobufRow holder = new PersistitProtobufRow(rowDataConverter, null);
         exchange.getValue().directGet(store.getProtobufValueCoder(), holder, PersistitProtobufRow.class, null);
-        converter.decode(holder.getMessage(), rowData);
+        rowDataConverter.decode(holder.getMessage(), rowData);
     }
 
 }

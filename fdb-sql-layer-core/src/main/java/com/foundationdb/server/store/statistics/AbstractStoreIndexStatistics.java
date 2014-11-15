@@ -19,6 +19,10 @@ package com.foundationdb.server.store.statistics;
 
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesHolderRow;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
@@ -104,9 +108,6 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
     private static final int LT_COUNT_FIELD_INDEX = 7;
     private static final int DISTINCT_COUNT_FIELD_INDEX = 8;
 
-    private static final int INITIAL_ROW_SIZE = 4096;
-
-
     protected final IndexStatistics decodeIndexStatisticsRow(RowData rowData,
                                                              RowDef indexStatisticsRowDef,
                                                              Index index) {
@@ -155,24 +156,22 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
     /** Store statistics into database. */
     public final void storeIndexStatistics(Session session, Index index, IndexStatistics indexStatistics) {
         int tableId = index.leafMostTable().rowDef().getRowDefId();
-        RowDef indexStatisticsRowDef = getIndexStatsRowDef(session);
-        RowDef indexStatisticsEntryRowDef = getIndexStatsEntryRowDef(session);
+        RowType indexStatisticsRowType = SchemaCache.globalSchema(index.getAIS()).tableRowType(store.getAIS(session).getTable(INDEX_STATISTICS_TABLE_NAME));
+        RowType indexStatisticsEntryRowType = SchemaCache.globalSchema(index.getAIS()).tableRowType(store.getAIS(session).getTable(INDEX_STATISTICS_ENTRY_TABLE_NAME));
 
         // Remove existing statistics for the index
         removeStatistics(session, index);
 
         // Parent header row.
-        RowData rowData = new RowData(new byte[INITIAL_ROW_SIZE]);
-        rowData.createRow(indexStatisticsRowDef, new Object[] {
-                tableId,
-                index.getIndexId(),
-                indexStatistics.getAnalysisTimestamp() / 1000,
-                indexStatistics.getRowCount(),
-                indexStatistics.getSampledCount()
-        });
-        store.writeRow(session, rowData, null, null);
-
-        // Multi-column
+        Row row = new ValuesHolderRow (indexStatisticsRowType,
+                        tableId, 
+                        index.getIndexId(),
+                        indexStatistics.getAnalysisTimestamp() / 1000,
+                        indexStatistics.getRowCount(),
+                        indexStatistics.getSampledCount());
+        store.writeRow(session, row, null, null);
+                       
+         // Multi-column
         for(int prefixColumns = 1; prefixColumns <= index.getKeyColumns().size(); prefixColumns++) {
             Histogram histogram = indexStatistics.getHistogram(0, prefixColumns);
             if(histogram != null) {
@@ -180,8 +179,7 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
                                           index,
                                           tableId,
                                           histogram.getColumnCount(),
-                                          indexStatisticsEntryRowDef,
-                                          rowData,
+                                          indexStatisticsEntryRowType,
                                           histogram);
             }
         }
@@ -194,8 +192,7 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
                                           index,
                                           tableId,
                                           -histogram.getFirstColumn() - 1,
-                                          indexStatisticsEntryRowDef,
-                                          rowData,
+                                          indexStatisticsEntryRowType,
                                           histogram);
             }
         }
@@ -205,25 +202,23 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
                                            Index index,
                                            int tableId,
                                            int columnCount,
-                                           RowDef indexStatisticsEntryRowDef,
-                                           RowData rowData,
+                                           RowType indexStatisticsEntryRowType,
                                            Histogram histogram)
     {
         if (histogram != null) {
             int itemNumber = 0;
             for (HistogramEntry entry : histogram.getEntries()) {
-                rowData.createRow(indexStatisticsEntryRowDef, new Object[] {
-                    tableId,
-                    index.getIndexId(),
-                    columnCount,
-                    ++itemNumber,
-                    entry.getKeyString(),
-                    entry.getKeyBytes(),
-                    entry.getEqualCount(),
-                    entry.getLessCount(),
-                    entry.getDistinctCount()
-                });
-                store.writeRow(session, rowData, null, null);
+                Row row = new ValuesHolderRow (indexStatisticsEntryRowType,
+                            tableId,
+                            index.getIndexId(),
+                            columnCount,
+                            ++itemNumber,
+                            entry.getKeyString(),
+                            entry.getKeyBytes(),
+                            entry.getEqualCount(),
+                            entry.getLessCount(),
+                            entry.getDistinctCount());
+                store.writeRow(session, row, null, null);
             }
         }
     }

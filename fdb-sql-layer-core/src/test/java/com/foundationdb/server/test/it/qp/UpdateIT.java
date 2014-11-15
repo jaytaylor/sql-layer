@@ -31,6 +31,7 @@ import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.texpressions.TPreparedFunction;
 import com.foundationdb.server.types.texpressions.TValidatedScalar;
+import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSources;
 import org.junit.Test;
 
@@ -101,7 +102,8 @@ public class UpdateIT extends OperatorITBase
                 public Row evaluate(Row original, QueryContext context, QueryBindings bindings) { 
                     long id = original.value(0).getInt64();
                     // Make smaller to avoid Halloween (see next test).
-                    return new OverlayingRow(original).overlay(0, id - 100);
+                    return new OverlayingRow(original).overlay(0,
+                            new Value(original.rowType().typeAt(0), (int)(id - 100)));
                 }
             };
 

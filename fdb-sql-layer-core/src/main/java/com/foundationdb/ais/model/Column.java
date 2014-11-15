@@ -33,23 +33,17 @@ import java.util.UUID;
 public class Column implements ColumnContainer, Visitable
 {
     public static Column create(Columnar table, String name, Integer position, TInstance type) {
-        return create(table, name, position, type, null, null, null);
+        return create(table, name, position, type, null, null);
     }
 
-    public static Column create(Columnar table, String name, Integer position, TInstance type, Long initialAutoIncValue)
-    {
-        return create(table, name, position, type, initialAutoIncValue,
-                      null, null);
-    }
-
-    public static Column create(Columnar table, String name, Integer position, TInstance type, Long initialAutoIncValue,
+    public static Column create(Columnar table, String name, Integer position, TInstance type,
                                 Long maxStorageSize, Integer prefixSize)
     {
         table.checkMutability();
         AISInvariants.checkNullName(name, "column", "column name");
         AISInvariants.checkDuplicateColumnsInTable(table, name);
         AISInvariants.checkDuplicateColumnPositions(table, position);
-        Column column = new Column(table, name, position, type, initialAutoIncValue,
+        Column column = new Column(table, name, position, type,
                                    maxStorageSize, prefixSize);
         table.addColumn(column);
         return column;
@@ -65,7 +59,7 @@ public class Column implements ColumnContainer, Visitable
     public static Column create(Columnar columnar, Column column, String name, Integer position) {
         Integer finalPosition = (position != null) ? position : column.position;
         String finalName = (name != null) ? name :  column.getName();
-        Column out = create(columnar, finalName, finalPosition, column.type, column.initialAutoIncrementValue,
+        Column out = create(columnar, finalName, finalPosition, column.type,
                             column.maxStorageSize, column.prefixSize);
         if(column.identityGenerator != null) {
             Sequence newGenerator = columnar.getAIS().getSequence(column.identityGenerator.getSequenceName());
@@ -92,12 +86,6 @@ public class Column implements ColumnContainer, Visitable
     }
 
     public void finishCreating() {
-    }
-
-    public void setAutoIncrement(Boolean autoIncrement)
-    {
-        this.initialAutoIncrementValue = autoIncrement ? 1L /* mysql default */ : null;
-        columnar.markColumnsStale();
     }
 
     public final void setDefaultIdentity(Boolean defaultIdentity) {
@@ -139,21 +127,6 @@ public class Column implements ColumnContainer, Visitable
     public Table getTable()
     {
         return (Table)columnar;
-    }
-
-    /**
-     * The initial auto-increment value used in the MySQL 
-     * generated table identity columns. 
-     */
-    public Long getInitialAutoIncrementValue()
-    {
-        return initialAutoIncrementValue;
-    }
-
-    public void setInitialAutoIncrementValue(Long initialAutoIncrementValue)
-    {
-        this.initialAutoIncrementValue = initialAutoIncrementValue;
-        columnar.markColumnsStale();
     }
 
     /**
@@ -451,7 +424,6 @@ public class Column implements ColumnContainer, Visitable
                    String columnName,
                    Integer position,
                    TInstance type,
-                   Long initialAutoIncValue,
                    Long maxStorageSize,
                    Integer prefixSize)
     {
@@ -459,7 +431,6 @@ public class Column implements ColumnContainer, Visitable
         this.columnName = columnName;
         this.position = position;
         this.type = type;
-        this.initialAutoIncrementValue = initialAutoIncValue;
         this.maxStorageSize = maxStorageSize;
         this.prefixSize = prefixSize;
     }
@@ -485,7 +456,6 @@ public class Column implements ColumnContainer, Visitable
     private final Integer position;
     private TInstance type;
     private UUID uuid;
-    private Long initialAutoIncrementValue;
 
     // TODO: Should be final, but the multi-part construction of a valid Column needs to be cleaned up
     private volatile Long maxStorageSize;

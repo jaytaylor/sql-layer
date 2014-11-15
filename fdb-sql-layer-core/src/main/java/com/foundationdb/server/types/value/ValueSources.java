@@ -25,6 +25,7 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.aksql.aktypes.AkGUID;
+import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
 import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
@@ -33,6 +34,7 @@ import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.util.ByteSource;
 import com.foundationdb.util.WrappingByteSource;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -215,6 +217,12 @@ public final class ValueSources {
         else if (object instanceof Float) {
             type = MApproximateNumber.FLOAT.instance(false);
             value = new Value(type, (Float)object);
+        }
+        else if (object instanceof BigDecimalWrapper) {
+            BigDecimalWrapper bdw = (BigDecimalWrapper)object;
+            type = MNumeric.DECIMAL.instance(bdw.getPrecision(), bdw.getScale(), false);
+            value = new Value(type);
+            value.putObject(bdw);
         }
         else if (object instanceof BigDecimal) {
             BigDecimal bd = (BigDecimal) object;

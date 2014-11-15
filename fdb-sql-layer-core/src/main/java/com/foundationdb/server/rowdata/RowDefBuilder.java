@@ -149,12 +149,6 @@ public class RowDefBuilder
         rowDef.setGroupIndexes(groupIndexList.toArray(new GroupIndex[groupIndexList.size()]));
 
         rowDef.getTableStatus().setRowDef(rowDef);
-        Column autoIncColumn = table.getAutoIncrementColumn();
-        if(autoIncColumn != null) {
-            long initialAutoIncrementValue = autoIncColumn.getInitialAutoIncrementValue();
-            rowDef.getTableStatus().setAutoIncrement(session, initialAutoIncrementValue);
-        }
-
         return rowDef;
     }
 

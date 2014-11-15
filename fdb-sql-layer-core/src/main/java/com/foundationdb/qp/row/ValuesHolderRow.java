@@ -48,4 +48,12 @@ public class ValuesHolderRow extends AbstractValuesHolderRow {
     public ValuesHolderRow(RowType rowType, List<Value> values) {
         super(rowType, values);
     }
+    
+    public ValuesHolderRow(RowType rowType, Value... values) {
+        super(rowType, values);
+    }
+    
+    public ValuesHolderRow(RowType rowType, Object... objects) {
+        super(rowType, objects);
+    }
 }

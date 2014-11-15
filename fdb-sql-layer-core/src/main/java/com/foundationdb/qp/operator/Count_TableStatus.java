@@ -17,7 +17,7 @@
 
 package com.foundationdb.qp.operator;
 
-import com.foundationdb.qp.row.ValuesRow;
+import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.TableRowType;
@@ -29,6 +29,7 @@ import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -161,7 +162,7 @@ class Count_TableStatus extends Operator
                 if (isActive()) {
                     long rowCount = adapter().rowCount(adapter().getSession(), tableType);
                     setIdle();
-                    output = new ValuesRow(resultType, new Value(MNumeric.BIGINT.instance(false), rowCount));
+                    output = new ValuesHolderRow(resultType, new Value(MNumeric.BIGINT.instance(false), rowCount));
                 }
                 else {
                     output = null;

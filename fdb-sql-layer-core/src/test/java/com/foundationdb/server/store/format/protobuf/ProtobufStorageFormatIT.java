@@ -46,8 +46,8 @@ public class ProtobufStorageFormatIT  extends ITBase
 
         txnService().beginTransaction(session());
 
-        Object[] r1 = { 1L, "Fred" };
-        Object[] r2 = { 2L, "Barney" };
+        Object[] r1 = { 1, "Fred" };
+        Object[] r2 = { 2, "Barney" };
         writeRow(t1, r1);
         writeRow(t1, r2);
 

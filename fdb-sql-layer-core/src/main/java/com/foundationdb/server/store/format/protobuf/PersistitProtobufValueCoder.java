@@ -79,7 +79,7 @@ public class PersistitProtobufValueCoder implements ValueDisplayer, ValueRendere
         if (root != null) {
             StorageDescription storage = root.getGroup().getStorageDescription();
             if (storage instanceof PersistitProtobufStorageDescription) {
-                ProtobufRowDataConverter converter = ((PersistitProtobufStorageDescription)storage).ensureConverter();
+                ProtobufRowDataConverter converter = ((PersistitProtobufStorageDescription)storage).ensureRowDataConverter();
                 PersistitProtobufRow holder = new PersistitProtobufRow(converter, null);
                 try {
                     render(value, holder, clazz, context);
