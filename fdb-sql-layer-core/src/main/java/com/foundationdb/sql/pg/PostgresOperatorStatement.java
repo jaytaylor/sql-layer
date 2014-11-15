@@ -18,12 +18,14 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.sql.optimizer.plan.CostEstimate;
 import com.foundationdb.qp.operator.*;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.Tap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,6 +127,11 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
         }
         catch (IOException e) {
             exceptionDuringExecution = e;
+        } catch (InvalidOperationException e) {
+            e.getCode().logAtImportance(logger, 
+                    "Caught unexpected InvalidOperationException during execution: {}", 
+                    e.getLocalizedMessage());
+            runtimeExDuringExecution = e;
         } catch (RuntimeException e) {
             logger.error("Caught unexpected runtime exception during execution {}", e.getLocalizedMessage());
             runtimeExDuringExecution = e;
@@ -133,8 +140,12 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
             RuntimeException exceptionDuringCleanup = null;
             try {
                 suspended = context.finishCursor(this, cursor, nrows, suspended);
-            }
-            catch (RuntimeException e) {
+            } catch (InvalidOperationException e) {
+                e.getCode().logAtImportance(logger, 
+                        "Caught unexpected InvalidOperationException during cleanup: {}", 
+                        e.getLocalizedMessage());
+                exceptionDuringCleanup = e;
+            } catch (RuntimeException e) {
                 exceptionDuringCleanup = e;
                 logger.error("Caught exception while cleaning up cursor for {} : {}", resultOperator.describePlan(), e.getLocalizedMessage());
             }
