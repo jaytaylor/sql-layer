@@ -980,8 +980,8 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
 
     /** Expand row data according to storage format. */
     @SuppressWarnings("unchecked")
-    public void expandRow (Session session, SDType storeData, Row row) {
-        getStorageDescription(storeData).expandRow((SType)this, session, storeData, row);
+    public Row expandRow (Session session, SDType storeData) {
+        return getStorageDescription(storeData).expandRow((SType)this, session, storeData);
     }
     @SuppressWarnings("unchecked")
     public void expandRowData(Session session, SDType storeData, RowData rowData) {

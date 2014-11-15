@@ -22,6 +22,7 @@ import com.foundationdb.qp.operator.GroupCursor;
 import com.foundationdb.qp.operator.RowCursorImpl;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.HKey;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.util.tap.PointTap;
@@ -79,10 +80,14 @@ public class FDBGroupCursor extends RowCursorImpl implements GroupCursor {
             groupScan.advance();
             next = isActive();
             if (next) {
-                RowData rowData = new RowData();
-                adapter.getUnderlyingStore().expandGroupData(adapter.getSession(), storeData, rowData);
-                row = new FDBGroupRow(adapter);
-                row.set(storeData.persistitKey, rowData);
+                Row tempRow = adapter.getUnderlyingStore().expandGroupData(adapter.getSession(), storeData);
+                //row = new FDBGroupRow(adapter)
+                
+                
+                //RowData rowData = new RowData();
+                //adapter.getUnderlyingStore().expandGroupData(adapter.getSession(), storeData, rowData);
+                //row = new FDBGroupRow(adapter);
+                //row.set(storeData.persistitKey, rowData);
             }
         }
         return row;

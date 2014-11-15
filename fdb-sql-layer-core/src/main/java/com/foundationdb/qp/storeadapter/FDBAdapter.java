@@ -47,8 +47,6 @@ import com.foundationdb.server.error.FDBNotCommittedException;
 import com.foundationdb.server.error.FDBPastVersionException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.QueryCanceledException;
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.KeyCreator;

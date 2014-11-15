@@ -612,6 +612,11 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         }
     }
 
+    public Row expandGroupData(Session session, FDBStoreData storeData) {
+        unpackKey(storeData);
+        return expandRow(session, storeData);
+    }
+    
     public void expandGroupData(Session session, FDBStoreData storeData, RowData rowData) {
         unpackKey(storeData);
         expandRowData(session, storeData, rowData);

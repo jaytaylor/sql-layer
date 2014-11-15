@@ -18,13 +18,21 @@
 package com.foundationdb.server.store;
 
 import com.foundationdb.ais.model.HasStorage;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesHolderRow;
+import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.storeadapter.RowDataCreator;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.NiceRow;
+import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.rowdata.RowDataExtractor;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.store.format.FDBStorageDescription;
+import com.foundationdb.server.types.value.ValueTargets;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple2;
 import com.persistit.Key;
@@ -106,8 +114,21 @@ public class FDBStoreDataHelper
         storeData.persistitValue.putEncodedBytes(storeData.rawValue, 0, storeData.rawValue.length);
     }
 
-    public static void expandRow (Row row, FDBStoreData storeData) {
-        throw new UnsupportedOperationException();
+    public static Row expandRow (Schema schema, FDBStoreData storeData) {
+        RowData rowData = new RowData();
+        rowData.reset(storeData.rawValue);
+        Table table = schema.ais().getTable(rowData.getRowDefId());
+        RowDef rowDef = table.rowDef();
+        ValuesHolderRow row = new ValuesHolderRow(schema.tableRowType(table));
+        
+        RowDataExtractor extractor = new RowDataExtractor(rowData, rowDef);
+        
+        for (int i = 0 ; i < rowDef.getFieldCount(); i++) {
+            FieldDef fieldDef = rowDef.getFieldDef(i);
+            ValueTargets.copyFrom(extractor.getValueSource(fieldDef), row.valueAt(i));
+        }
+        
+        return row;
     }
     
     public static void expandRowData(RowData rowData, FDBStoreData storeData, boolean copyBytes) {

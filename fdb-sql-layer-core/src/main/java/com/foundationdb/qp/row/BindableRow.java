@@ -117,7 +117,7 @@ public abstract class BindableRow {
         private final RowType rowType;
     }
 
-    private static class RowPCopier implements Iterator<ValueSource>  {
+    public static class RowPCopier implements Iterator<ValueSource>  {
 
         @Override
         public boolean hasNext() {
@@ -134,7 +134,7 @@ public abstract class BindableRow {
             throw new UnsupportedOperationException();
         }
 
-        private RowPCopier(Row sourceRow) {
+        public RowPCopier(Row sourceRow) {
             this.sourceRow = sourceRow;
         }
 

@@ -17,10 +17,22 @@
 
 package com.foundationdb.server.rowdata;
 
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 
 public final class RowDataExtractor {
 
+    public ValueSource getValueSource(FieldDef fieldDef) {
+        int f = fieldDef.getFieldIndex();
+        RowDataValueSource source = sources[f];
+        if (source == null) {
+            source = new RowDataValueSource();
+            sources[f] = source;
+        }
+        source.bind(fieldDef, rowData);
+        return source;
+    }
+    
     public Object get(FieldDef fieldDef) {
         int f = fieldDef.getFieldIndex();
         RowDataValueSource source = sources[f];

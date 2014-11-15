@@ -18,58 +18,40 @@ package com.foundationdb.qp.storeadapter;
 
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.AbstractRow;
+import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.row.HKey;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.util.HKeyCache;
 import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDataValueSource;
 import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.SparseArray;
 import com.persistit.Key;
 
-public class FDBGroupRow extends AbstractRow {
-    private final FDBAdapter adapter;
-    private final HKeyCache<HKey> hKeyCache;
-    private SparseArray<RowDataValueSource> valueSources;
-    private RowData rowData;
-    private LegacyRowWrapper row;
+public class FDBGroupRow extends ValuesHolderRow {
+    //private final FDBAdapter adapter;
+    private final KeyCreator keyCreator;
+    //private final HKeyCache<HKey> hKeyCache;
+    //private SparseArray<RowDataValueSource> valueSources;
+    //private RowData rowData;
+    //private LegacyRowWrapper row;
     private HKey currentHKey;
 
 
-    public FDBGroupRow(FDBAdapter adapter) {
-        this.adapter = adapter;
-        this.hKeyCache = new HKeyCache<>(adapter.getUnderlyingStore());
-    }
-
-    public void set(Key key, RowData rowData) {
-        this.rowData = rowData;
-        RowDef rowDef = adapter.schema().ais().getTable(rowData.getRowDefId()).rowDef();
-        row = new LegacyRowWrapper(rowDef, rowData);
-
-        currentHKey = hKeyCache.hKey(rowDef.table());
+    public FDBGroupRow(KeyCreator keyCreator, Row abstractRow, Key key) {
+        super(abstractRow.rowType(), new BindableRow.RowPCopier(abstractRow));
+        this.keyCreator = keyCreator;
+        currentHKey = keyCreator.newHKey(rowType().table().hKey());
         if(key != null) {
             currentHKey.copyFrom(key);
         }
     }
 
-
-    @Override
-    public RowType rowType()
-    {
-        return adapter.schema().tableRowType(rowDef().table());
-    }
-
-    @Override
-    public ValueSource uncheckedValue(int i) {
-        FieldDef fieldDef = rowDef().getFieldDef(i);
-        RowData rowData = rowData();
-        RowDataValueSource valueSource = ValueSource(i);
-        valueSource.bind(fieldDef, rowData);
-        return valueSource;
-    }
 
     @Override
     public HKey hKey()
@@ -80,7 +62,7 @@ public class FDBGroupRow extends AbstractRow {
     @Override
     public HKey ancestorHKey(Table table)
     {
-        HKey ancestorHKey = hKeyCache.hKey(table);
+        HKey ancestorHKey = keyCreator.newHKey(table.hKey());
         currentHKey.copyTo(ancestorHKey);
         ancestorHKey.useSegments(table.getDepth() + 1);
         return ancestorHKey;
@@ -89,37 +71,7 @@ public class FDBGroupRow extends AbstractRow {
     @Override
     public boolean containsRealRowOf(Table table)
     {
-        return row.getRowDef().table() == table;
-    }
-
-    RowDef rowDef()
-    {
-        if (row != null) {
-            return row.getRowDef();
-        }
-        if (rowData != null) {
-            return adapter.schema().ais().getTable(rowData.getRowDefId()).rowDef();
-        }
-        throw new IllegalStateException("no active row");
-    }
-
-    @Override
-    public RowData rowData()
-    {
-        return rowData;
-    }
-
-    private RowDataValueSource ValueSource(int i) {
-        if (valueSources == null) {
-            valueSources = new SparseArray<RowDataValueSource>()
-            {
-                @Override
-                protected RowDataValueSource initialValue() {
-                    return new RowDataValueSource();
-                }
-            };
-        }
-        return valueSources.get(i);
+        return rowType().table() == table;
     }
 
     @Override
