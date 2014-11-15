@@ -147,7 +147,10 @@ public class JDBCResultSetMetaData implements ResultSetMetaData
 
     @Override
     public boolean isAutoIncrement(int column) throws SQLException {
-        return getColumn(column).getAISColumn().getIdentityGenerator() != null;
+        Column aisColumn = getColumn(column).getAISColumn();
+        if (aisColumn == null)
+            return false;
+        return aisColumn.getIdentityGenerator() != null;
     }
 
     @Override

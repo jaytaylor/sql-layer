@@ -393,6 +393,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
             ValueSource source = row.value(iCol.getColumn().getPosition());
             source.getType().format(source, appender);
         }
+        sb.append(')');
         return sb.toString();
     }
     
