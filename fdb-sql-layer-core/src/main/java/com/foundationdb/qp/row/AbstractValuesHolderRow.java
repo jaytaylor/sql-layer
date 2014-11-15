@@ -18,12 +18,15 @@
 package com.foundationdb.qp.row;
 
 import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.server.types.value.ValueTargets;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -61,10 +64,35 @@ class AbstractValuesHolderRow extends AbstractRow {
         }
     }
 
+    AbstractValuesHolderRow(RowType rowType, Object... objects) {
+        this.isMutable = false;
+        this.rowType = rowType;
+        assert rowType.nFields() == objects.length;
+        
+        List<Value> valueList = new ArrayList<>(rowType.nFields());
+        for (int i = 0; i < objects.length; i++) {
+            valueList.add(ValueSources.valuefromObject(objects[i], rowType.typeAt(i)));
+        }
+       
+        this.values = Collections.unmodifiableList(valueList);
+    }
+
+    AbstractValuesHolderRow(RowType rowType, Value... values) {
+        this (rowType, Arrays.asList(values));
+    }
+   
     AbstractValuesHolderRow(RowType rowType, List<Value> values) {
         this.isMutable = false;
         this.rowType = rowType;
         this.values = Collections.unmodifiableList(values);
+        assert rowType.nFields() == values.size();
+        for (int i = 0, max = values.size(); i < max; ++i) {
+            TClass requiredType = rowType.typeAt(i).typeClass();
+            TClass actualType = TInstance.tClass(values.get(i).getType());
+            if (requiredType != actualType)
+                throw new IllegalArgumentException("value " + i + " should be " + requiredType
+                        + " but was " + actualType);
+        }
     }
 
     AbstractValuesHolderRow(RowType rowType, boolean isMutable,

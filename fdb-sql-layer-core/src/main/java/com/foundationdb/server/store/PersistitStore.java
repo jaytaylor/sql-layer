@@ -24,6 +24,7 @@ import com.foundationdb.qp.loadableplan.std.PersistitCLILoadablePlan;
 import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.row.IndexRow;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.WriteIndexRow;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
@@ -151,6 +152,21 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     }
 
     private void constructIndexRow(Session session,
+                                    Exchange exchange,
+                                    Row row,
+                                    Index index,
+                                    Key hKey,
+                                    WriteIndexRow indexRow,
+                                    SpatialColumnHandler spatialColumnHander,
+                                    long zValue,
+                                    boolean forInsert) throws PersistitException
+    {
+        indexRow.resetForWrite(index, exchange.getKey(), exchange.getValue());
+        indexRow.initialize(row, hKey, spatialColumnHander, zValue);
+        indexRow.close(session, this, forInsert);
+    }
+    
+    private void constructIndexRow(Session session,
                                    Exchange exchange,
                                    RowData rowData,
                                    Index index,
@@ -187,6 +203,33 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         return (PersistitStorageDescription)exchange.getAppCache();
     }
 
+    @Override
+    public IndexRow readIndexRow(Session session,
+                                Index parentPKIndex,
+                                Exchange exchange,
+                                Row childRow)
+    {
+        PersistitKeyAppender keyAppender = PersistitKeyAppender.create(exchange.getKey(), parentPKIndex.getIndexName());
+        for (Column column : childRow.rowType().table().getParentJoin().getChildColumns()) {
+            keyAppender.append(childRow.value(column.getPosition()), column);
+        }
+
+        try {
+
+            PersistitIndexRowBuffer indexRow = null;
+            // Method only called if looking up a pk for which there is at least one
+            // column missing from child row. Key contains the logical parent of it.
+            if(exchange.hasChildren()) {
+                exchange.next(true);
+                indexRow = new PersistitIndexRowBuffer(this);
+                indexRow.resetForRead(parentPKIndex, exchange.getKey(), null);
+            }
+            return indexRow;
+        } catch(PersistitException | RollbackException e) {
+            throw PersistitAdapter.wrapPersistitException(session, e);
+        }
+    }
+                                
     @Override
     public IndexRow readIndexRow(Session session,
                                                 Index parentPKIndex,
@@ -226,6 +269,25 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     }
 
     @Override
+    public void writeIndexRow (Session session, TableIndex index, Row row, Key hKey,
+                                WriteIndexRow indexRow, SpatialColumnHandler spatialColumnHandler,
+                                long zValue, boolean  doLock) {
+        Exchange iEx = getExchange(session, index);
+        try {
+            if(doLock) {
+                lockKeysForIndex(session, index, row);
+            }
+            constructIndexRow(session, iEx, row, index, hKey, indexRow, spatialColumnHandler, zValue, true);
+            checkUniqueness(session, row, index, iEx);
+            iEx.store();
+        } catch(PersistitException | RollbackException e) {
+            throw PersistitAdapter.wrapPersistitException(session, e);
+        } finally {
+            releaseExchange(session, iEx);
+        }
+    }
+    
+    @Override
     public void writeIndexRow(Session session,
                               TableIndex index,
                               RowData rowData,
@@ -249,6 +311,30 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         }
     }
 
+    private void checkUniqueness(Session session, Row row, Index index, Exchange iEx) throws PersistitException
+    {
+        if (index.isUnique() && !hasNullIndexSegments(row, index)) {
+            Key key = iEx.getKey();
+            int nColumns = index.getKeyColumns().size();
+            final boolean existed;
+            if (nColumns < key.getDepth()) {
+                KeyState orig = new KeyState(key);
+                key.setDepth(nColumns);
+                existed = iEx.hasChildren();
+                // prevent write skew for concurrent checks
+                iEx.lock();
+                orig.copyTo(key);
+            } else {
+                existed = iEx.traverse(Key.Direction.EQ, true, -1);
+            }
+            if (existed) {
+                LOG.debug("Duplicate key for index {}, raw: {}", index.getIndexName(), key);
+                String msg = formatIndexRowString(session, row, index);
+                throw new DuplicateKeyException(index.getIndexName(), msg);
+            }
+        }
+    }
+    
     private void checkUniqueness(Session session, RowData rowData, Index index, Exchange iEx) throws PersistitException
     {
         if (index.isUnique() && !hasNullIndexSegments(rowData, index)) {
@@ -273,6 +359,16 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         }
     }
 
+    private void deleteIndexRow (Session session, TableIndex index, Exchange exchange, Row row,
+                                Key hKey, WriteIndexRow indexRowBuffer, SpatialColumnHandler spatialColumnHandler,
+                                long zValue) throws PersistitException {
+        
+        constructIndexRow(session, exchange, row, index, hKey, indexRowBuffer, spatialColumnHandler, zValue, false);
+        if(!exchange.remove()) {
+            LOG.debug("Index {} had no entry for hkey {}", index, hKey);
+        }
+    }
+    
     private void deleteIndexRow(Session session,
                                 TableIndex index,
                                 Exchange exchange,
@@ -289,6 +385,22 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         }
     }
 
+    @Override
+    public void deleteIndexRow(Session session, TableIndex index, Row row, Key hKey, WriteIndexRow buffer,
+            SpatialColumnHandler spatialColumnHandler, long zValue, boolean doLock) {
+        Exchange iEx = getExchange(session, index);
+        try {
+            if(doLock) {
+                lockKeysForIndex(session, index, row);
+            }
+            deleteIndexRow(session, index, iEx, row, hKey, buffer, spatialColumnHandler, zValue);
+        } catch(PersistitException | RollbackException e) {
+            throw PersistitAdapter.wrapPersistitException(session, e);
+        } finally {
+            releaseExchange(session, iEx);
+        }
+    }
+    
     @Override
     public void deleteIndexRow(Session session,
                                TableIndex index,
@@ -389,6 +501,16 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
             throw PersistitAdapter.wrapPersistitException(session, e);
         }
     }
+    
+    @Override 
+    protected void lock (Session session, Exchange storeData, Row row) {
+        try {
+            lockKeysForTable(row, storeData);
+        } catch(PersistitException | RollbackException e) {
+            throw PersistitAdapter.wrapPersistitException(session, e);
+        }
+    }
+    
 
     /** Table IDs for every table written to in the current transaction. Checked pre-commit. */
     @Override
@@ -476,6 +598,16 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         // None
     }
 
+    private void lockKeysForIndex(Session session, TableIndex index, Row row) throws PersistitException {
+        Table table = index.getTable();
+        Exchange ex = getExchange(session, table.getGroup());
+        try {
+            lockKeysForTable(row, ex);
+        } finally {
+            releaseExchange(session, ex);
+        }
+    }
+    
     private void lockKeysForIndex(Session session, TableIndex index, RowData rowData) throws PersistitException {
         Table table = index.getTable();
         Exchange ex = getExchange(session, table.getGroup());
@@ -486,6 +618,21 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         }
     }
 
+    private void lockKeysForTable (Row row, Exchange exchange) throws PersistitException 
+    {
+        if (!writeLockEnabled) return;
+        Table table = row.rowType().table();
+        Key lockKey = createKey();
+        PersistitKeyAppender lockKeyAppender = PersistitKeyAppender.create(lockKey, table.getName());
+        List<Column> pkColumns = table.getPrimaryKeyIncludingInternal().getColumns();
+        lockKey(row, table, pkColumns, lockKeyAppender, exchange);
+        Join parentJoin = table.getParentJoin();
+        if (parentJoin != null) {
+            List<Column> childColumns = parentJoin.getChildColumns();
+            lockKey(row, table, childColumns, lockKeyAppender, exchange);
+        }
+    }
+    
     private void lockKeysForTable(RowDef rowDef, RowData rowData, Exchange exchange) throws PersistitException
     {
         // Temporary fix for #1118871 and #1078331 
@@ -513,6 +660,21 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         }
     }
 
+    private void lockKey(Row row, 
+                        Table lockTable,
+                        List<Column> columns,
+                        PersistitKeyAppender lockKeyAppender,
+                        Exchange exchange) 
+        throws PersistitException
+    {
+        lockKeyAppender.key().append(lockTable.getOrdinal());
+        for (Column column : columns) {
+            lockKeyAppender.append(row.value(column.getPosition().intValue()), column);
+        }
+        exchange.lock(lockKeyAppender.key());
+        lockKeyAppender.clear();
+    }
+                        
     private void lockKey(RowData rowData,
                          Table lockTable,
                          FieldDef[] fieldDefs,

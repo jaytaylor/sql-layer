@@ -26,6 +26,7 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.aksql.aktypes.AkGUID;
+import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
 import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
@@ -36,6 +37,7 @@ import com.foundationdb.util.ByteSource;
 import com.foundationdb.util.WrappingByteSource;
 import com.geophile.z.SpatialObject;
 import com.geophile.z.spatialobject.jts.JTSSpatialObject;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -158,6 +160,16 @@ public final class ValueSources {
         }
         return out;
     }
+
+    public static TPreptimeValue preptimeValueFromObject(Object object) {
+        if (object == null) {
+            Value nv = new Value(null);
+            return new TPreptimeValue(nv);
+        } else {
+            Value value = fromObject(object);
+            return new TPreptimeValue(value);
+        }
+    }
     /**
      * Reflectively create a {@linkplain TPreptimeValue} from the given object and the {@linkplain TInstance}
      * 
@@ -175,12 +187,19 @@ public final class ValueSources {
         }
         return new TPreptimeValue (type,value);
     }
-   
-    private static Value fromObject(Object object) {
+
+    /**
+     * Creates a Value from the given object, deriving the type from the object.
+     * @throws java.lang.UnsupportedOperationException if the type cannot be inferred
+     */
+    public static Value fromObject(Object object) {
         final TInstance type;
         Value value = null;
-           
-        if (object instanceof String) {
+        if (object == null) {
+            value = new Value(null);
+            value.putNull();
+        }
+        else if (object instanceof String) {
             String s = (String) object;
             type = MString.VARCHAR.instance(
                     s.length(), StringFactory.DEFAULT_CHARSET.ordinal(), StringFactory.NULL_COLLATION_ID, false);
@@ -201,6 +220,12 @@ public final class ValueSources {
         else if (object instanceof Float) {
             type = MApproximateNumber.FLOAT.instance(false);
             value = new Value(type, (Float)object);
+        }
+        else if (object instanceof BigDecimalWrapper) {
+            BigDecimalWrapper bdw = (BigDecimalWrapper)object;
+            type = MNumeric.DECIMAL.instance(bdw.getPrecision(), bdw.getScale(), false);
+            value = new Value(type);
+            value.putObject(bdw);
         }
         else if (object instanceof BigDecimal) {
             BigDecimal bd = (BigDecimal) object;

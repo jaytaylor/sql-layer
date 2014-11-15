@@ -77,13 +77,13 @@ public class TableJoins extends BasePlanWithInput implements Joinable
     }
 
     @Override
-    public String summaryString() {
-        StringBuilder str = new StringBuilder(super.summaryString());
+    public String summaryString(SummaryConfiguration configuration) {
+        StringBuilder str = new StringBuilder(super.summaryString(configuration));
         str.append("(");
         str.append(group);
         if (scan != null) {
             str.append(" - ");
-            str.append(scan.summaryString());
+            str.append(scan.summaryString(configuration));
         }
         str.append(")");
         return str.toString();

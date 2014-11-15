@@ -18,9 +18,6 @@
 package com.foundationdb.sql.optimizer.plan;
 
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.collation.AkCollatorFactory;
-import com.foundationdb.sql.types.DataTypeDescriptor;
-import com.foundationdb.sql.types.CharacterTypeAttributes;
 
 import java.util.List;
 
@@ -87,8 +84,8 @@ public class Sort extends BasePlanWithInput
     }
     
     @Override
-    public String summaryString() {
-        return super.summaryString() + orderBy;
+    public String summaryString(SummaryConfiguration configuration) {
+        return super.summaryString(configuration) + orderBy;
     }
 
     @Override

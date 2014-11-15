@@ -44,16 +44,16 @@ public class CompoundRowTest {
         RowType customerType = schema.tableRowType(customer);
         RowType orderType = schema.tableRowType(order);
         
-        ValuesRow customerRow = new ValuesRow(customerType, new Integer(1), new String ("fred"));
-        ValuesRow orderRow = new ValuesRow(orderType, new Integer (1000), new Integer(1), new Integer(45));
+        ValuesHolderRow customerRow = new ValuesHolderRow(customerType, new Integer(1), new String ("fred"));
+        ValuesHolderRow orderRow = new ValuesHolderRow(orderType, new Integer (1000), new Integer(1), new Integer(45));
 
         FlattenedRowType flattenType = schema.newFlattenType(customerType, orderType);
         
-        FlattenedRow flattenRow = new FlattenedRow(flattenType, customerRow, orderRow, orderRow.hKey());
+        FlattenedRow flattenRow = new FlattenedRow(flattenType, customerRow, orderRow, null);
         
         assertTrue(flattenRow.containsRealRowOf(customer));
         assertTrue (flattenRow.containsRealRowOf(order));
-        // Can't test this because ValuesRow throws UnsupportedOperationException for this check.
+        // Can't test this because ValuesHolderRow throws UnsupportedOperationException for this check.
         //assertFalse(flattenRow.containsRealRowOf(state));
         
         //assertEquals(ApiTestBase.getLong(flattenRow, 0), Long.valueOf(1));
@@ -74,8 +74,8 @@ public class CompoundRowTest {
         RowType customerType = schema.tableRowType(customer);
         RowType orderType = schema.tableRowType(order);
         
-        ValuesRow customerRow = new ValuesRow(customerType, new Integer(1), new String("Fred"));
-        ValuesRow ordersRow = new ValuesRow(orderType, new Integer(1000), new Integer(1), new Integer(45));
+        ValuesHolderRow customerRow = new ValuesHolderRow(customerType, new Integer(1), new String("Fred"));
+        ValuesHolderRow ordersRow = new ValuesHolderRow(orderType, new Integer(1000), new Integer(1), new Integer(45));
         
         ProductRowType productType = schema.newProductType(customerType, (TableRowType)customerType, orderType);
         

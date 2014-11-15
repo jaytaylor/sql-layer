@@ -29,7 +29,6 @@ import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
 
-import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.server.service.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +41,7 @@ import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.tree.TreeService;
@@ -217,7 +217,7 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                return new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                         getJMXAttribute (mbeanName, "AlertLevel"),
                         getJMXAttribute (mbeanName, "WarnLogTimeInterval"),
                         getJMXAttribute (mbeanName, "ErrorLogTimeInterval"),
@@ -266,7 +266,7 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter >= bufferPools.length) {
                     return null;
                 }
-                return new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                         bufferPools[bufferPoolCounter].getBufferSize(),
                         bufferPools[bufferPoolCounter].getBufferCount(),
                         bufferPools[bufferPoolCounter].getValidPageCount(),
@@ -312,7 +312,7 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                return new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                             getJMXAttribute(mbeanName, "CheckpointInterval"),
                             ++rowCounter /* Hidden PK */);
             }
@@ -344,7 +344,7 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                return new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                         getJMXAttribute(mbeanName, "AcceptedCount"),
                         getJMXAttribute(mbeanName, "RefusedCount"),
                         getJMXAttribute(mbeanName, "PerformedCount"),
@@ -382,7 +382,7 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                return new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                         getJMXAttribute(mbeanName, "IoRate"),
                         getJMXAttribute(mbeanName, "QuiescentIOthreshold"),
                         getJMXAttribute(mbeanName, "LogFile"),
@@ -421,7 +421,7 @@ public class StorageSchemaTablesServiceImpl
                     return null;
                 }
                 parameter.set(0, IOMeterMXBean.OPERATIONS[(int)rowCounter+1]);
-                return new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                         IOMeterMXBean.OPERATION_NAMES[(int)rowCounter+1],
                         getJMXInvoke (mbeanName, "totalBytes", parameter.toArray()),
                         getJMXInvoke (mbeanName, "totalOperations", parameter.toArray()),
@@ -464,7 +464,7 @@ public class StorageSchemaTablesServiceImpl
                 }
                 String[] params = new String[0]; 
                                
-                ValuesRow row = new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                         journal.getBlockSize(),
                         journal.getBaseAddress(),
                         journal.getCurrentJournalAddress(),
@@ -491,7 +491,6 @@ public class StorageSchemaTablesServiceImpl
                         getJMXAttribute(mbeanName, "JournalFilePath"),
                         ((Long)getJMXAttribute(mbeanName, "JournalCreatedTime")).longValue()/1000,
                         ++rowCounter);
-                return row;
             }
         }
     }
@@ -525,9 +524,9 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                ValuesRow row;
+                ValuesHolderRow row;
                 try {
-                    row = new ValuesRow(rowType,
+                    row = new ValuesHolderRow(rowType,
                             boolResult(db_manage.isInitialized()),
                             boolResult(db_manage.isUpdateSuspended()),
                             boolResult(db_manage.isShutdownSuspended()),
@@ -572,7 +571,7 @@ public class StorageSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                ValuesRow row =  new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                         getJMXAttribute(mbeanName, "ActiveTransactionFloor"),
                         getJMXAttribute(mbeanName, "ActiveTransactionCeiling"),
                         getJMXAttribute(mbeanName, "ActiveTransactionCount"),
@@ -582,7 +581,6 @@ public class StorageSchemaTablesServiceImpl
                         getJMXAttribute(mbeanName, "FreeCount"),
                         getJMXAttribute(mbeanName, "DroppedCount"),
                         ++rowCounter);
-                return row;
             }
         }
     }
@@ -631,7 +629,7 @@ public class StorageSchemaTablesServiceImpl
 
             @Override
             public Row next() {
-                ValuesRow row;
+                ValuesHolderRow row;
                 if (volumes == null) {
                     return null;
                 }
@@ -642,7 +640,7 @@ public class StorageSchemaTablesServiceImpl
                     return null;
                 }
 
-                row = new ValuesRow(rowType,
+                row = new ValuesHolderRow(rowType,
                         volumes[volumeIndex].getName(),
                         trees[treeIndex].getName(),
                         trees[treeIndex].getStatus(),
@@ -714,7 +712,7 @@ public class StorageSchemaTablesServiceImpl
                     return null;
                 }
                 
-                ValuesRow row = new ValuesRow(rowType,
+                ValuesHolderRow row = new ValuesHolderRow(rowType,
                         volumes[volumeRowCounter].getName(),
                         volumes[volumeRowCounter].getPath(),
                         boolResult(volumes[volumeRowCounter].isTransient()),

@@ -23,6 +23,7 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Index.IndexType;
 import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.ais.model.Routine;
+import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
@@ -39,9 +40,10 @@ import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHKey;
+import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.HKeyRowType;
+import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.Service;
@@ -336,20 +338,39 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     //
 
     @Override
+    public void onInsertPost(Session session, Table table, Key hKey, Row row) {
+        trackChange(session, table, hKey);
+    }
+    
+    @Override
     public void onInsertPost(Session session, Table table, Key hKey, RowData row) {
         trackChange(session, table, hKey);
     }
 
+    @Override 
+    public void onUpdatePre(Session session, Table table, Key hKey, Row oldRow, Row newRow) {
+        // None
+    }
     @Override
     public void onUpdatePre(Session session, Table table, Key hKey, RowData oldRow, RowData newRow) {
         // None
     }
 
     @Override
+    public void onUpdatePost(Session session, Table table, Key hKey, Row oldRow, Row newRow) {
+        trackChange(session, table, hKey);
+    }
+    
+    @Override
     public void onUpdatePost(Session session, Table table, Key hKey, RowData oldRow, RowData newRow) {
         trackChange(session, table, hKey);
     }
 
+    @Override
+    public void onDeletePre(Session session, Table table, Key hKey, Row row) {
+        trackChange(session, table, hKey);
+    }
+    
     @Override
     public void onDeletePre(Session session, Table table, Key hKey, RowData row) {
         trackChange(session, table, hKey);
@@ -480,7 +501,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                     break;
                 }
 
-                store.deleteRow(session, ((AbstractRow)row).rowData(), false);
+                store.deleteRow(session, row, false);
                 indexName = null;
                 row = null;
             }
@@ -557,25 +578,24 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 if(row == null) {
                     throw new IllegalStateException();
                 }
-                store.deleteRow(session, ((AbstractRow)row).rowData(), false);
+                store.deleteRow(session, row, false);
             }
         }
     }
 
     private void trackChange(Session session, Table table, Key hKey) {
-        NiceRow row = null;
-        for(Index index : table.getFullTextIndexes()) {
-            if(row == null) {
-                AkibanInformationSchema ais = getAIS(session);
-                Table changeTable = ais.getTable(CHANGES_TABLE);
-                row = new NiceRow(changeTable.getTableId(), changeTable.rowDef());
-            }
-            row.put(0, index.getIndexName().getSchemaName());
-            row.put(1, index.getIndexName().getTableName());
-            row.put(2, index.getIndexName().getName());
-            row.put(3, index.getIndexId());
-            row.put(4, Arrays.copyOf(hKey.getEncodedBytes(), hKey.getEncodedSize()));
-            store.writeNewRow(session, row);
+        RowType rowType = SchemaCache.globalSchema(getAIS(session)).tableRowType(getAIS(session).getTable(CHANGES_TABLE));
+        Sequence sequence = rowType.table().getIdentityColumn().getIdentityGenerator();
+        Long identity = store.nextSequenceValue(session, sequence);
+        for (Index index : table.getFullTextIndexes()) {
+            ValuesHolderRow row = new ValuesHolderRow(rowType,
+                    index.getIndexName().getSchemaName(),
+                    index.getIndexName().getTableName(),
+                    index.getIndexName().getName(),
+                    index.getIndexId(),
+                    Arrays.copyOf(hKey.getEncodedBytes(), hKey.getEncodedSize()),
+                    identity);
+            store.writeRow(session, row, null, null);
         }
     }
 

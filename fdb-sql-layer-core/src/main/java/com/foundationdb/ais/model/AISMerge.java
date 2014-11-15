@@ -622,14 +622,10 @@ public class AISMerge {
             builder.column(schemaName, tableName, 
                     column.getName(), column.getPosition(), 
                     column.getType(), 
-                    column.getInitialAutoIncrementValue() != null, 
+                    false, 
                     column.getDefaultValue(), column.getDefaultFunction());
             Column newColumn = targetTable.getColumnsIncludingInternal().get(column.getPosition());
             newColumn.setUuid(column.getUuid());
-            // if an auto-increment column, set the starting value. 
-            if (column.getInitialAutoIncrementValue() != null) {
-                newColumn.setInitialAutoIncrementValue(column.getInitialAutoIncrementValue());
-            }
             if (!table.hasMemoryTableFactory() && column.getDefaultIdentity() != null) {
                 addIdentitySequence(builder, schemaName, tableName, column.getName(),
                                     column.getDefaultIdentity(), column.getIdentityGenerator());
@@ -755,7 +751,7 @@ public class AISMerge {
                                    newReferences);
         for (Column col : oldView.getColumns()) {
             Column.create(newView, col.getName(), col.getPosition(),
-                          col.getType(), col.getInitialAutoIncrementValue());
+                          col.getType());
         }
         newAIS.addView(newView);
     }

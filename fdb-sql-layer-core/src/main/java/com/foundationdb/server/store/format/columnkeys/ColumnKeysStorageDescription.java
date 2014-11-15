@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.store.format.columnkeys;
 
+import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Join;
@@ -28,6 +29,7 @@ import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.FDBProtobuf;
 import com.foundationdb.ais.protobuf.FDBProtobuf.ColumnKeys;
 import com.foundationdb.ais.protobuf.FDBProtobuf.TupleUsage;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
 import com.foundationdb.server.rowdata.FieldDef;
@@ -41,7 +43,9 @@ import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.server.store.format.tuple.TupleRowDataConverter;
 import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
+import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple2;
 import com.persistit.Key;
@@ -122,6 +126,17 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
     }
 
     @Override
+    public void packRow (FDBStore store, Session session, 
+                        FDBStoreData storeData, Row row) {
+        int nfields = row.rowType().nFields();
+        Map<String,Object> value = new HashMap<>(nfields); // Intermediate form of value.
+        for (int i = 0; i < nfields; i++) {
+            value.put(row.rowType().table().getColumn(i).getName(), ValueSources.toObject(row.value(i)));
+        }
+        storeData.otherValue = value;
+    }
+    
+    @Override
     public void packRowData(FDBStore store, Session session,
                             FDBStoreData storeData, RowData rowData) {
         RowDef rowDef = rowDefFromId(((Group)object).getRoot(), rowData.getRowDefId());
@@ -152,6 +167,19 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
         return null;
     }
 
+    @Override 
+    @SuppressWarnings("unchecked")
+    public void expandRow(FDBStore store, Session session, 
+                            FDBStoreData storeData, Row row) {
+        Map<String,Object> value = (Map<String,Object>)storeData.otherValue;
+        int nfields = row.rowType().nFields();
+        for (int i = 0; i < nfields; i++) {
+            Column column = row.rowType().table().getColumn(i);
+            ValueSource val = ValueSources.valuefromObject(value.get(column.getName()), column.getType());
+            column.getType().writeCollating(val, (ValueTarget)row.value(i));
+        }
+    }
+    
     @Override
     @SuppressWarnings("unchecked")
     public void expandRowData(FDBStore store, Session session,

@@ -72,8 +72,8 @@ public class Flatten extends BasePlanWithInput
     }
 
     @Override
-    public String summaryString() {
-        StringBuilder str = new StringBuilder(super.summaryString());
+    public String summaryString(SummaryConfiguration configuration) {
+        StringBuilder str = new StringBuilder(super.summaryString(configuration));
         str.append("(");
         for (int i = 0; i < tableNodes.size(); i++) {
             if (i > 0) {

@@ -150,9 +150,7 @@ public class JDBCResultSetMetaData implements ResultSetMetaData
         Column aisColumn = getColumn(column).getAISColumn();
         if (aisColumn == null)
             return false;
-        else
-            // No isAutoIncrement().
-            return (aisColumn.getInitialAutoIncrementValue() != null);
+        return aisColumn.getIdentityGenerator() != null;
     }
 
     @Override

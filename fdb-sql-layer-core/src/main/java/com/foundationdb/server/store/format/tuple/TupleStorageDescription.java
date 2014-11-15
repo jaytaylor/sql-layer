@@ -29,6 +29,7 @@ import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.FDBProtobuf.TupleUsage;
 import com.foundationdb.ais.protobuf.FDBProtobuf;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
 import com.foundationdb.server.rowdata.RowData;
@@ -39,9 +40,6 @@ import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple2;
-import com.google.protobuf.Descriptors.FileDescriptor;
-import com.google.protobuf.DynamicMessage;
-import com.google.protobuf.InvalidProtocolBufferException;
 import com.persistit.Key;
 import com.persistit.KeyShim;
 
@@ -245,6 +243,16 @@ public class TupleStorageDescription extends FDBStorageDescription
     }
 
     @Override
+    public void packRow (FDBStore store, Session session, FDBStoreData storeData, Row row) {
+        if (usage == TupleUsage.KEY_AND_ROW) {
+            Tuple2 t = TupleRowDataConverter.tupleFromRow(row);
+            storeData.rawValue = t.pack();
+        } else {
+            super.packRow(store, session, storeData, row);
+        }
+    }
+    
+    @Override
     public void packRowData(FDBStore store, Session session,
                             FDBStoreData storeData, RowData rowData) {
         if (usage == TupleUsage.KEY_AND_ROW) {
@@ -257,6 +265,12 @@ public class TupleStorageDescription extends FDBStorageDescription
         }
     }
 
+    @Override
+    public void expandRow(FDBStore store, Session session, 
+                            FDBStoreData storeData, Row row) {
+        throw new UnsupportedOperationException();
+    }
+    
     @Override
     public void expandRowData(FDBStore store, Session session,
                               FDBStoreData storeData, RowData rowData) {

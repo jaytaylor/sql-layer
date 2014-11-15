@@ -20,7 +20,6 @@ package com.foundationdb.sql.optimizer.plan;
 import com.foundationdb.ais.model.FullTextIndex;
 
 import java.util.List;
-import java.util.Set;
 
 public class FullTextScan extends BaseScan
 {
@@ -78,8 +77,8 @@ public class FullTextScan extends BaseScan
     }
 
     @Override
-    public String summaryString() {
-        StringBuilder str = new StringBuilder(super.summaryString());
+    public String summaryString(SummaryConfiguration configuration) {
+        StringBuilder str = new StringBuilder(super.summaryString(configuration));
         str.append('(');
         str.append(indexTable.getName());
         str.append(" - ");

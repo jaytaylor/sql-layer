@@ -17,10 +17,8 @@
 
 package com.foundationdb.sql.optimizer.rule;
 
-import com.foundationdb.qp.row.ValuesRow;
 import com.foundationdb.server.error.UnknownDataTypeException;
 import com.foundationdb.server.types.*;
-import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.optimizer.*;
 import com.foundationdb.sql.optimizer.plan.*;
@@ -29,7 +27,6 @@ import com.foundationdb.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.foundationdb.sql.optimizer.plan.ResultSet.ResultField;
 import com.foundationdb.sql.optimizer.plan.Sort.OrderByExpression;
 import com.foundationdb.sql.optimizer.plan.UpdateStatement.UpdateColumn;
-
 import com.foundationdb.sql.optimizer.rule.ExpressionAssembler.ColumnExpressionContext;
 import com.foundationdb.sql.optimizer.rule.ExpressionAssembler.ColumnExpressionToIndex;
 import com.foundationdb.sql.optimizer.rule.ExpressionAssembler.SubqueryOperatorAssembler;
@@ -37,7 +34,6 @@ import com.foundationdb.sql.optimizer.rule.range.ColumnRanges;
 import com.foundationdb.sql.optimizer.rule.range.RangeSegment;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ParameterNode;
-
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
@@ -61,10 +57,8 @@ import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.texpressions.TPreparedField;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.Value;
-
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.UnsupportedSQLException;
-
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.API.IntersectOption;
 import com.foundationdb.qp.operator.IndexScanSelector;
@@ -72,18 +66,15 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.UpdateFunction;
 import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.*;
-
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.expression.RowBasedUnboundExpressions;
 import com.foundationdb.qp.expression.UnboundExpressions;
-
 import com.foundationdb.server.service.text.FullTextQueryBuilder;
 import com.foundationdb.server.service.text.FullTextQueryExpression;
-
 import com.foundationdb.server.explain.*;
-
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.IndexRowPrefixSelector;
 import com.foundationdb.util.tap.PointTap;
@@ -91,9 +82,6 @@ import com.foundationdb.util.tap.Tap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-
-
 import java.util.*;
 
 public class OperatorAssembler extends BaseRule
@@ -387,12 +375,12 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = new RowStream();
             TableSource tableSource = createAs.getTableSource();
             TableRowType rowType = tableRowType(tableSource);
-            com.foundationdb.server.types.value.Value values[] = new com.foundationdb.server.types.value.Value[rowType.nFields()];
+            List<Value> values = new ArrayList<>(rowType.nFields());
             for(int i = 0; i < rowType.nFields(); i++){
-                values[i] = new Value(rowType.typeAt(i));
-                values[i].putNull();
+                values.add(new Value(rowType.typeAt(i)));
+                values.get(i).putNull();
             }
-            ValuesRow valuesRow = new ValuesRow(rowType, values);
+            ValuesHolderRow valuesRow = new ValuesHolderRow(rowType, values);
             Collection<BindableRow> bindableRows = new ArrayList<>();
             bindableRows.add(BindableRow.of(valuesRow));
 
@@ -1749,6 +1737,7 @@ public class OperatorAssembler extends BaseRule
                 ExpressionNode radius = operands.get(2);
                 // Make circle into box. Comparison still remains to eliminate corners.
                 // TODO: May need some casts.
+                // Note: the types of the 4 functions below, get set by the resolveAddedExpression
                 ExpressionNode bottom = new FunctionExpression("minus",
                                                                Arrays.asList(centerY, radius),
                                                                null, null, null);

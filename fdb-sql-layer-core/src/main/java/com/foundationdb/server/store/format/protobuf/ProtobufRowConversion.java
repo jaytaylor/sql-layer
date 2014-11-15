@@ -234,12 +234,16 @@ public abstract class ProtobufRowConversion
             switch (underlying) {
             case INT_8:
                 lval = value.getInt8();
+                break;
             case UINT_16: 
                 lval = value.getUInt16();
+                break;
             case INT_16: 
                 lval = value.getInt16();
+                break;
             case INT_32:
                 lval = value.getInt32();
+                break;
             case INT_64:
             default:
                 lval = value.getInt64();

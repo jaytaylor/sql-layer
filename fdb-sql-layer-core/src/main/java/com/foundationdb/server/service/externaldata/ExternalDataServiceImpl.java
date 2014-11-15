@@ -29,13 +29,11 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.api.DMLFunctions;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchTableException;
-import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -49,8 +47,8 @@ import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.AkibanAppender;
-
 import com.google.inject.Inject;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -147,7 +145,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
             } else {
                 for (List<Object> key : keys) {
                     for (int i = 0; i < key.size(); i++) {
-                        ValueSource value = ValueSources.fromObject(key.get(i), null).value();
+                        ValueSource value = ValueSources.fromObject(key.get(i));
                         queryBindings.setValue(i, value);
                     }
                     if (json.writeRows(cursor, appender, begun ? ",\n" : "\n", rowWriter, options))
@@ -242,15 +240,11 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                                           InputStream inputStream, RowReader reader, 
                                           long commitFrequency, int maxRetries)
             throws IOException {
-        DMLFunctions dml = dxlService.dmlFunctions();
         long pending = 0, total = 0;
-        List<RowData> rowDatas = null;
-        if (maxRetries > 0)
-            rowDatas = new ArrayList<>();
+        List<Row> rows = maxRetries > 0 ? new ArrayList<Row>() : null;
         boolean transaction = false;
         try {
-            NewRow row;
-            RowData rowData = null;
+            Row row;
             do {
                 if (!transaction) {
                     // A transaction is needed, even to read rows, because of auto
@@ -261,10 +255,8 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                 row = reader.nextRow();
                 logger.trace("Read row: {}", row);
                 if (row != null) {
-                    rowData = row.toRowData().copy();
-                    if (rowDatas != null) {
-                        // Make a copy now so that what we keep is compacter.
-                        rowDatas.add(rowData);
+                    if (rows != null) {
+                        rows.add(row);
                     }
                     total++;
                     pending++;
@@ -286,7 +278,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                         retryHook(session, i, maxRetries, retryException);
                         if (i == 0) {
                             if (row != null) {
-                                store.writeRow(session, rowData);
+                                store.writeRow(session, row, null, null);
                             }
                         }
                         else {
@@ -299,7 +291,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                                                                   retryException,
                                                                   sessionCounter)) {
                                 logger.debug("transaction had succeeded");
-                                rowDatas.clear();
+                                rows.clear();
                                 break;
                             }
                             // If another exception occurs before here, that is,
@@ -309,8 +301,8 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                             retryException = null;
                             // And errors before another commit cannot be spurious.
                             sessionCounter = -1;
-                            for (RowData aRowData : rowDatas) {
-                                store.writeRow(session, aRowData);
+                            for (Row aRow : rows) {
+                                store.writeRow(session, aRow, null, null);
                             }
                         }
                         if (commit) {
@@ -321,8 +313,8 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                             sessionCounter = transactionService.markForCheck(session);
                             transaction = false;
                             transactionService.commitTransaction(session);
-                            if (rowDatas != null) {
-                                rowDatas.clear();
+                            if (rows != null) {
+                                rows.clear();
                             }
                         }
                         break;

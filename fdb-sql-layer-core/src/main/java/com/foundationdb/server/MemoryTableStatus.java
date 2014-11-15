@@ -24,7 +24,6 @@ public class MemoryTableStatus implements TableStatus
 {
     private final int expectedID;
     private final MemoryTableFactory factory;
-    private long autoIncrement = 0;
     private long rowCount = 0;
 
     public MemoryTableStatus(int expectedID) {
@@ -34,11 +33,6 @@ public class MemoryTableStatus implements TableStatus
     public MemoryTableStatus(int expectedID, MemoryTableFactory factory) {
         this.expectedID = expectedID;
         this.factory = factory;
-    }
-
-    @Override
-    public synchronized long getAutoIncrement(Session session) {
-        return autoIncrement;
     }
 
     @Override
@@ -76,7 +70,7 @@ public class MemoryTableStatus implements TableStatus
                                                " does not match expected ID " + expectedID);
         }
     }
-
+    
     @Override
     public synchronized void rowDeleted(Session session) {
         rowCount = Math.max(0, rowCount - 1);
@@ -88,14 +82,7 @@ public class MemoryTableStatus implements TableStatus
     }
 
     @Override
-    public synchronized void setAutoIncrement(Session session, long autoIncrement) {
-        this.autoIncrement = Math.max(this.autoIncrement, autoIncrement);
-    }
-
-
-    @Override
     public synchronized void truncate(Session session) {
-        autoIncrement = 0;
         rowCount = 0;
     }
 }

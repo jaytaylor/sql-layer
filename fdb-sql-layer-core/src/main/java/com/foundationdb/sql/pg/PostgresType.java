@@ -41,6 +41,10 @@ import java.sql.Types;
 /** A type according to the PostgreSQL regime.
  * Information corresponds more-or-less directly to what's in the 
  * <code>pg_attribute</code> table.
+ *
+ * The Type in ServerType is the type that is supposed to be there. e.g. if I have a prepared statement that expects an
+ * MCOMPAT_ INT(11) NOT NULL, but then when binding on the client say that it will be a "text".
+ * The resulting PostgresType will have a typeOid=TEXT_TYPE_OID and type=MCOMPAT_ INT(11) NOT NULL.
  */
 public class PostgresType extends ServerType
 {

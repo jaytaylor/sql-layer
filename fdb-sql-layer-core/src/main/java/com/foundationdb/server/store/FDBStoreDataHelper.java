@@ -18,11 +18,17 @@
 package com.foundationdb.server.store;
 
 import com.foundationdb.ais.model.HasStorage;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.storeadapter.RowDataCreator;
+import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple2;
 import com.persistit.Key;
+
 import java.util.Arrays;
 
 public class FDBStoreDataHelper
@@ -100,6 +106,10 @@ public class FDBStoreDataHelper
         storeData.persistitValue.putEncodedBytes(storeData.rawValue, 0, storeData.rawValue.length);
     }
 
+    public static void expandRow (Row row, FDBStoreData storeData) {
+        throw new UnsupportedOperationException();
+    }
+    
     public static void expandRowData(RowData rowData, FDBStoreData storeData, boolean copyBytes) {
         expandRowData(rowData, storeData.rawValue, copyBytes);
     }
@@ -121,6 +131,18 @@ public class FDBStoreDataHelper
     }
 
     public static void packRowData(RowData rowData, FDBStoreData storeData) {
+        storeData.rawValue = Arrays.copyOfRange(rowData.getBytes(), rowData.getRowStart(), rowData.getRowEnd());
+    }
+    
+    public static void packRow(Row row, FDBStoreData storeData) {
+        RowDef rowDef = row.rowType().table().rowDef();
+        RowDataCreator creator = new RowDataCreator();
+        NewRow niceRow = new NiceRow(rowDef.getRowDefId(), rowDef);
+        int fields = rowDef.getFieldCount();
+        for(int i = 0; i < fields; ++i) {
+            creator.put(row.value(i), niceRow, i);
+        }
+        RowData rowData = niceRow.toRowData();
         storeData.rawValue = Arrays.copyOfRange(rowData.getBytes(), rowData.getRowStart(), rowData.getRowEnd());
     }
 

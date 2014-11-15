@@ -51,11 +51,6 @@ public class RowDef {
     private int[] parentJoinFields;
 
     /**
-     * Field index of the auto-increment column; -1 if none.
-     */
-    private int autoIncrementField;
-
-    /**
      * For a user table, the number of Persistit Key segments uses to encode the
      * hkey for rows of this table.
      */
@@ -96,10 +91,6 @@ public class RowDef {
         fieldCoordinates = new int[(fieldDefs.length + 7) / 8][];
         varLenFieldMap = new byte[(fieldDefs.length + 7) / 8][];
         preComputeFieldCoordinates(fieldDefs);
-        autoIncrementField = -1;
-        if (table.getAutoIncrementColumn() != null) {
-            autoIncrementField = table.getAutoIncrementColumn().getPosition();
-        }
     }
 
     public Table table() {
@@ -305,10 +296,6 @@ public class RowDef {
         this.parentJoinFields = parentJoinFields;
     }
 
-    public int getAutoIncrementField() {
-        return autoIncrementField;
-    }
-    
     public int getHKeyDepth() {
         return hkeyDepth;
     }
@@ -319,10 +306,6 @@ public class RowDef {
         } else {
             return null;
         }
-    }
-
-    public boolean isAutoIncrement() {
-        return autoIncrementField != -1;
     }
 
     /**

@@ -22,8 +22,10 @@ import com.foundationdb.server.Quote;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.error.NoSuchRoutineException;
 import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.sql.embedded.JDBCException;
 import com.foundationdb.util.AkibanAppender;
 import com.fasterxml.jackson.core.JsonParseException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +34,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
+
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -146,13 +149,16 @@ public class RestResponseBuilder {
     public WebApplicationException wrapException(Throwable e) {
         final ErrorCode code = ErrorCode.getCodeForRESTException(e);
         Response.Status status = EXCEPTION_STATUS_MAP.get(e.getClass());
+        Throwable cause = e instanceof JDBCException ? e.getCause() : null;
         if(status == null) {
             status = Response.Status.CONFLICT;
         }
         code.logAtImportance(
-                LOG, "Exception from request(method: {}, url: {}, params: {})",
+                LOG,
+                LOG.isDebugEnabled() ? "Exception from request(method: {}, url: {}, params: {})"
+                                     : "Exception from request(method: {}, url: {}, params: {}): {}",
                 request.getMethod(), request.getRequestURL(), request.getQueryString(),
-                e
+                cause == null ? e : cause
         );
         String exMsg = (e.getMessage() != null) ? e.getMessage() : e.getClass().getName();
         return new WebApplicationException(

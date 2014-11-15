@@ -249,15 +249,15 @@ public class TableGroupJoinTree extends BaseJoinable
         return v.visitLeave(this);
     }
 
-    public String summaryString() {
-        StringBuilder str = new StringBuilder(super.summaryString());
+    public String summaryString(SummaryConfiguration configuration) {
+        StringBuilder str = new StringBuilder(super.summaryString(configuration));
         str.append("(");
         str.append(group);
         str.append(", ");
         summarizeJoins(str);
         if (scan != null) {
             str.append(" - ");
-            str.append(scan.summaryString());
+            str.append(scan.summaryString(configuration));
         }
         str.append(")");
         return str.toString();

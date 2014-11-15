@@ -20,7 +20,6 @@ package com.foundationdb.server.store.format;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.FDBProtobuf;
-import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
 import com.foundationdb.sql.parser.StorageFormatNode;
 
 public class FDBStorageFormat extends StorageFormat<FDBStorageDescription>

@@ -620,54 +620,6 @@ public class AISBuilderTest
     }
 
     @Test
-    public void testInitialAutoInc()
-    {
-        AISBuilder builder = new AISBuilder();
-        builder.table("s", "b");
-        builder.column("s", "b", "x", 0, type("MCOMPAT", "int", false), false, null, null);
-        builder.column("s", "b", "y", 1, type("MCOMPAT", "int", false), true, null, null);
-        builder.column("s", "b", "z", 2, type("MCOMPAT", "int", false), false, null, null);
-        builder.tableInitialAutoIncrement("s", "b", 5L);
-        builder.basicSchemaIsComplete();
-        builder.groupingIsComplete();
-        // Check autoinc state
-        AkibanInformationSchema ais = builder.akibanInformationSchema();
-        Table table = ais.getTable("s", "b");
-        Assert.assertEquals(3, table.getColumns().size());
-        Assert.assertEquals(table.getColumn("y"), table.getAutoIncrementColumn());
-        Assert.assertEquals(null, table.getColumn("x").getInitialAutoIncrementValue());
-        Assert.assertEquals(5L, table.getColumn("y").getInitialAutoIncrementValue().longValue());
-        Assert.assertEquals(null, table.getColumn("z").getInitialAutoIncrementValue());
-
-        Assert.assertEquals(1, 
-                builder.akibanInformationSchema().validate(AISValidations.BASIC_VALIDATIONS).failures().size());
-    }
-
-    @Test
-    public void testInitialAutoIncNoAutoInc()
-    {
-        AISBuilder builder = new AISBuilder();
-        builder.table("s", "b");
-        builder.column("s", "b", "x", 0, type("MCOMPAT", "int", false), false, null, null);
-        builder.column("s", "b", "y", 1, type("MCOMPAT", "int", false), false, null, null);
-        builder.column("s", "b", "z", 2, type("MCOMPAT", "int", false), false, null, null);
-        builder.tableInitialAutoIncrement("s", "b", 5L);
-        builder.basicSchemaIsComplete();
-        builder.groupingIsComplete();
-        // Check autoinc state
-        AkibanInformationSchema ais = builder.akibanInformationSchema();
-        Table table = ais.getTable("s", "b");
-        Assert.assertEquals(3, table.getColumns().size());
-        Assert.assertEquals(null, table.getAutoIncrementColumn());
-        Assert.assertEquals(null, table.getColumn("x").getInitialAutoIncrementValue());
-        Assert.assertEquals(null, table.getColumn("y").getInitialAutoIncrementValue());
-        Assert.assertEquals(null, table.getColumn("z").getInitialAutoIncrementValue());
-
-        Assert.assertEquals(1, 
-                builder.akibanInformationSchema().validate(AISValidations.BASIC_VALIDATIONS).failures().size());
-    }
-
-    @Test
     public void testCycles()
     {
         AISBuilder builder = new AISBuilder();

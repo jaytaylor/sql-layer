@@ -154,7 +154,7 @@ public final class ExpressionGenerators {
         return new ExpressionGenerator() {
             @Override
             public TPreparedExpression getTPreparedExpression() {
-                TPreptimeValue tpv = ValueSources.fromObject(value, (TInstance) null);
+                TPreptimeValue tpv = ValueSources.preptimeValueFromObject(value);
                 
                 //FromObjectValueSource valueSource = new FromObjectValueSource().setReflectively(value);
                 //TPreptimeValue tpv = ValueSources.fromObject(value, valueSource.getConversionType());

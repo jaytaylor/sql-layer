@@ -79,8 +79,15 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
         }
     }
 
-    // TODO: Will need a separate interface for this when class loader
+    // TODO: Will need a separate interface for these when class loader
     // isolated implementation classes from stored procedures.
+
+    /** Return a <code>PreparedStatement</code> with the same SQL but
+     * separate results.
+     */
+    public JDBCPreparedStatement duplicate() {
+        return new JDBCPreparedStatement(connection, sql, executableStatement);
+    }
 
     /** Return the estimated number of rows that will be returned or
      * <code>-1</code> if unknown.

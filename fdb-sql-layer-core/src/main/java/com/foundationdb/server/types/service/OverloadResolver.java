@@ -42,7 +42,11 @@ public final class OverloadResolver<V extends TValidatedOverload> {
 
     public static class OverloadResult<V extends TValidatedOverload> {
         private V overload;
+        /** Could be have null values, or be null itself */
         private TInstance[] instances;
+        /**
+         * null if there is no pickingSet in the overload, or if one of `instances` is null.
+         */
         private TInstance pickedInstance;
 
         private class AdjusterImpl implements TInstanceAdjuster {
@@ -209,6 +213,10 @@ public final class OverloadResolver<V extends TValidatedOverload> {
             }
         }
 
+        /**
+         * Never returns null.
+         * Note: if inputSet.isPicking() and no common tclass can be found, then varchar will be returned.
+         */
         private TInstance findCommon(V overload, TInputSet inputSet,
                                   List<? extends TPreptimeValue> inputs, TCastResolver resolver)
         {
@@ -529,6 +537,7 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                     }
                     if(AtoB) {
                         // current more specific
+                        // set B to null so that we know not to add it to castGroup
                         B = null;
                         break;
                     } else if(BtoA) {

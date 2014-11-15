@@ -71,7 +71,7 @@ public class DeleteProcessor extends DMLProcessor {
 
             for (List<Object> key : pks) {
                 for (int i = 0; i < key.size(); i++) {
-                    ValueSource value = ValueSources.fromObject(key.get(i), null).value();
+                    ValueSource value = ValueSources.fromObject(key.get(i));
                     context.queryBindings.setValue(i, value);
                 }
     

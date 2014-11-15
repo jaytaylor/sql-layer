@@ -18,6 +18,7 @@
 package com.foundationdb.util;
 
 import com.foundationdb.server.error.InvalidParameterValueException;
+import com.foundationdb.sql.unparser.NodeToString;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
@@ -49,37 +50,6 @@ import java.util.jar.JarEntry;
 public abstract class Strings {
     
     public static final String NL = nl();
-
-    public static final Set<String> PROTECTED_KEYWORDS = new HashSet<String>();
-
-    static {
-        PROTECTED_KEYWORDS.addAll(Arrays.asList( "ADD", "ALL", "ALLOCATE", "ALTER", "AND", "ANY", "ARE", "AS", "AT",
-            "AUTHORIZATION", "AVG", "BEGIN", "BETWEEN", "BIT", "BOTH", "BY", "CASCADED", "CASE",
-            "CAST", "CHAR", "CHARACTER_LENGTH", "CHAR_LENGTH", "CHECK", "CLOSE", "COLLATE", "COLUMN",
-            "COMMIT", "CONNECT", "CONNECTION", "CONSTRAINT", "CONTINUE", "CONVERT", "CORRESPONDING",
-            "CREATE", "CROSS", "CURRENT", "CURRENT_DATE", "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER",
-            "CURSOR", "DEALLOCATE", "DEC", "DECIMAL", "DECLARE", "_DEFAULT", "DELETE", "DESCRIBE",
-            "DISCONNECT", "DISTINCT", "DOUBLE", "DROP", "ELSE", "END", "ENDEXEC", "ESCAPE", "EXCEPT",
-            "EXEC", "EXECUTE", "EXISTS", "EXTERNAL", "FALSE", "FETCH", "FLOAT", "FOR", "FOREIGN",
-            "FROM", "FULL", "FUNCTION", "GET", "GET_CURRENT_CONNECTION", "GLOBAL", "GRANT", "GROUP",
-            "GROUP_CONCAT", "HAVING", "HOUR", "IDENTITY", "IMMEDIATE", "IN", "INDEX", "INDICATOR",
-            "INNER", "INOUT", "INPUT", "INSENSITIVE", "INSERT", "INT", "INTEGER", "INTERSECT",
-            "INTERVAL", "INTO", "IS", "JOIN", "LEADING", "LEFT", "LIKE", "LIMIT", "LOWER", "MATCH",
-            "MAX", "MIN", "MINUTE", "NATIONAL", "NATURAL", "NCHAR", "NVARCHAR", "NEXT", "NO", "NONE",
-            "NOT", "NULL", "NULLIF", "NUMERIC", "OCTET_LENGTH", "OF", "ON", "ONLY", "OPEN", "OR",
-            "ORDER", "OUT", "OUTER", "OUTPUT", "OVERLAPS", "PARTITION", "PREPARE", "PRIMARY",
-            "PROCEDURE", "PUBLIC", "REAL", "REFERENCES", "RESTRICT", "RETURNING", "REVOKE", "RIGHT",
-            "ROLLBACK", "ROWS", "SCHEMA", "SCROLL", "SECOND", "SELECT", "SESSION_USER", "SET",
-            "SMALLINT", "SOME", "SQL", "SQLCODE", "SQLERROR", "SQLSTATE", "STRAIGHT_JOIN",
-            "SUBSTRING", "SUM", "SYSTEM_USER", "TABLE", "TIMEZONE_HOUR", "TIMEZONE_MINUTE", "TO",
-            "TRAILING", "TRANSLATE", "TRANSLATION", "TRUE", "UNION", "UNIQUE", "UNKNOWN", "UPDATE",
-            "UPPER", "USER", "USING", "VALUES", "VARCHAR", "VARYING", "WHENEVER", "WHERE", "WITH",
-            "YEAR", "BOOLEAN", "CALL", "CURRENT_ROLE", "CURRENT_SCHEMA", "EXPLAIN", "GROUPING",
-            "LTRIM", "RTRIM", "TRIM", "SUBSTR", "XML", "XMLPARSE", "XMLSERIALIZE", "XMLEXISTS",
-            "XMLQUERY", "Z_ORDER_LAT_LON" ));
-    };
-
-
 
     public static List<String> entriesToString(Map<?, ?> map) {
         List<String> result = new ArrayList<>(map.size());
@@ -544,8 +514,7 @@ public abstract class Strings {
              s = s.replaceAll( ("[" + quoteS + "]") , quoteS + quoteS );
         }
 
-        if (!force  && (!PROTECTED_KEYWORDS.contains(s.toUpperCase()))
-                            && s.matches("[A-Za-z][_A-Za-z0-9$]*") ) {
+        if (!force && !NodeToString.isReserved(s) && s.matches("[A-Za-z][_A-Za-z0-9$]*") ) {
             return s;
         }
         else {

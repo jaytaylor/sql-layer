@@ -24,7 +24,6 @@ import com.foundationdb.sql.optimizer.plan.PlanNode;
 import com.foundationdb.sql.optimizer.plan.PlanToString;
 import com.foundationdb.sql.optimizer.plan.PlanVisitor;
 import com.foundationdb.sql.optimizer.plan.PlanWithInput;
-import com.foundationdb.sql.optimizer.rule.PlanContext;
 import com.foundationdb.sql.optimizer.rule.PlanContext.DefaultWhiteboardMarker;
 import com.foundationdb.sql.optimizer.rule.PlanContext.WhiteboardMarker;
 import com.foundationdb.sql.optimizer.rule.join_enum.GroupIndexGoalHooks;
@@ -34,7 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 @SuppressWarnings("unused") // created by reflection from rules.yml
@@ -71,7 +69,7 @@ public final class MultiIndexEnumeratorTestRules {
         private PlanNode useHooks(final PlanNode plan, IntersectionViewer intersections) {
             List<String> scanDescriptions = new ArrayList<>(intersections.indexScans.size());
             for (IndexScan intersection : intersections.indexScans) {
-                String str = intersection.summaryString(true);
+                String str = intersection.summaryString(true, PlanNode.SummaryConfiguration.DEFAULT);
                 scanDescriptions.add(str);
             }
             final String summary = Strings.join(scanDescriptions);
@@ -93,13 +91,13 @@ public final class MultiIndexEnumeratorTestRules {
                 }
 
                 @Override
-                public String summaryString() {
+                public String summaryString(SummaryConfiguration configuration) {
                     return summary;
                 }
 
                 @Override
-                public String planString() {
-                    return PlanToString.of(this);
+                public String planString(SummaryConfiguration configuration) {
+                    return PlanToString.of(this, configuration);
                 }
 
                 @Override

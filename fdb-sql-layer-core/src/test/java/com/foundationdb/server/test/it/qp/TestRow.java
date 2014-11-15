@@ -19,7 +19,7 @@ package com.foundationdb.server.test.it.qp;
 
 import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKey;
-import com.foundationdb.qp.row.ValuesRow;
+import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.types.value.ValueSource;
 
@@ -53,14 +53,14 @@ public class TestRow extends AbstractRow
 
     public TestRow(RowType rowType, Object[] fields, String hKeyString)
     {
-        this(rowType, new ValuesRow(rowType, fields), hKeyString);
+        this(rowType, new ValuesHolderRow(rowType, fields), hKeyString);
     }
 
     public TestRow(RowType rowType, Object... fields) {
         this(rowType, fields, null);
     }
 
-    public TestRow(RowType rowType, ValuesRow valueRow, String hKeyString) {
+    public TestRow(RowType rowType, ValuesHolderRow valueRow, String hKeyString) {
         this.valueRow = valueRow;
         this.hKeyString = hKeyString;
     }
@@ -72,6 +72,6 @@ public class TestRow extends AbstractRow
 
     // Object state
 
-    private final ValuesRow valueRow;
+    private final ValuesHolderRow valueRow;
     private final String hKeyString;
 }
