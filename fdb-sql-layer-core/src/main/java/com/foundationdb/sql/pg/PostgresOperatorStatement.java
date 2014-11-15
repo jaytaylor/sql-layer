@@ -126,7 +126,7 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
         catch (IOException e) {
             exceptionDuringExecution = e;
         } catch (RuntimeException e) {
-            logger.error("Caught unexpected runtime exception during execution {}", e);
+            logger.error("Caught unexpected runtime exception during execution {}", e.getLocalizedMessage());
             runtimeExDuringExecution = e;
         }
         finally {
@@ -136,7 +136,7 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
             }
             catch (RuntimeException e) {
                 exceptionDuringCleanup = e;
-                logger.error("Caught exception while cleaning up cursor for {} : {}", resultOperator.describePlan(), e);
+                logger.error("Caught exception while cleaning up cursor for {} : {}", resultOperator.describePlan(), e.getLocalizedMessage());
             }
             finally {
                 postExecute(context, DXLFunction.UNSPECIFIED_DML_READ);
