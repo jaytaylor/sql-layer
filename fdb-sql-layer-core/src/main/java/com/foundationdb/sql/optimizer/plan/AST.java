@@ -24,7 +24,6 @@ import com.foundationdb.sql.unparser.NodeToString;
 
 import com.foundationdb.server.types.TInstance;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.List;
@@ -55,8 +54,8 @@ public class AST extends BasePlanNode
     }
     
     @Override
-    public String summaryString() {
-        StringBuilder str = new StringBuilder(super.summaryString());
+    public String summaryString(SummaryConfiguration configuration) {
+        StringBuilder str = new StringBuilder(super.summaryString(configuration));
         str.append("(");
         try {
             str.append(new NodeToString().toString(statement));

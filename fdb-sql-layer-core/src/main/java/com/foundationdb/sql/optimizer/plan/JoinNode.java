@@ -209,8 +209,8 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
     }
 
     @Override
-    public String summaryString() {
-        StringBuilder str = new StringBuilder(super.summaryString());
+    public String summaryString(SummaryConfiguration configuration) {
+        StringBuilder str = new StringBuilder(super.summaryString(configuration));
         str.append("(");
         summarizeJoins(str);
         str.append(")");
