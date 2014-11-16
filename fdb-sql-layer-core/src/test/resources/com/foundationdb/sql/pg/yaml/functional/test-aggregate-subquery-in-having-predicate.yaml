@@ -1,0 +1,104 @@
+---
+- Statement: create table agents (aid char(3) not null, aname varchar(13), city varchar(20), percent int, primary key (aid) );
+---
+- Statement: create table products (pid char(3) not null, pname varchar(13), city varchar(20), quantity int, price decimal(10,2), primary key (pid) );
+---
+- Statement: create table customers (cid char(4) not null, cname varchar(20), city varchar(20), discnt decimal(10,2), primary key (cid) );
+---
+- Statement: create table orders (ordno int not null, month char(3), cid char(4), aid char(3), pid char(3), qty int, dollars decimal(10,2), primary key (ordno), foreign key (cid) references customers, foreign key (aid) references agents, foreign key (pid) references products );
+---
+- Statement: insert into products values ('p01','comb','Dallas',111400,0.50);
+---
+- Statement: insert into products values ('p02','brush','Newark',203000,0.50);
+---
+- Statement: insert into products values ('p03','razor','Duluth',150600,1.00);
+---
+- Statement: insert into products values ('p04','pen','Duluth',125300,1.00);
+---
+- Statement: insert into products values ('p05','pencil','Dallas',221400,1.00);
+---
+- Statement: insert into products values ('p06','folder','Dallas',123100,2.00);
+---
+- Statement: insert into products values ('p07','case','Newark',100500,1.00);
+---
+- Statement: insert into agents values ('a01','Smith','New York',6);
+---
+- Statement: insert into agents values ('a02','Jones','Newark',6);
+---
+- Statement: insert into agents values ('a03','Brown','Tokyo',7);
+---
+- Statement: insert into agents values ('a04','Gray','New York',6);
+---
+- Statement: insert into agents values ('a05','Otasi','Duluth',5);
+---
+- Statement: insert into agents values ('a06','Smith','Dallas',5);
+---
+- Statement: insert into customers values ('c001','TipTop','Duluth',10.00);
+---
+- Statement: insert into customers values ('c002','Basics','Dallas',12.00);
+---
+- Statement: insert into customers values ('c003','Allied','Dallas',8.00);
+---
+- Statement: insert into customers values ('c004','ACME','Duluth',8.00);
+---
+- Statement: insert into customers values ('c006','ACME','Kyoto',0.00);
+---
+- Statement: insert into orders values (1011,'jan','c001','a01','p01',1000,450.00);
+---
+- Statement: insert into orders values (1012,'jan','c001','a01','p01',1000,450.00);
+---
+- Statement: insert into orders values (1019,'feb','c001','a02','p02',400,180.00);
+---
+- Statement: insert into orders values (1017,'feb','c001','a06','p03',600,540.00);
+---
+- Statement: insert into orders values (1018,'feb','c001','a03','p04',600,540.00);
+---
+- Statement: insert into orders values (1023,'mar','c001','a04','p05',500,450.00);
+---
+- Statement: insert into orders values (1022,'mar','c001','a05','p06',400,720.00);
+---
+- Statement: insert into orders values (1025,'apr','c001','a05','p07',800,720.00);
+---
+- Statement: insert into orders values (1013,'jan','c002','a03','p03',1000,880.00);
+---
+- Statement: insert into orders values (1026,'may','c002','a05','p03',800,704.00);
+---
+- Statement: insert into orders values (1015,'jan','c003','a03','p05',1200,1104.00);
+---
+- Statement: insert into orders values (1014,'jan','c003','a03','p05',1200,1104.00);
+---
+- Statement: insert into orders values (1021,'feb','c004','a06','p01',1000,460.00);
+---
+- Statement: insert into orders values (1016,'jan','c006','a01','p01',1000,500.00);
+---
+- Statement: insert into orders values (1020,'feb','c006','a03','p07',600,600.00);
+---
+- Statement: insert into orders values (1024,'mar','c006','a06','p01',800,400.00);
+---
+- Statement: SELECT cid FROM (SELECT cid,pid FROM orders WHERE pid IN (SELECT pid FROM products) GROUP BY pid,cid) as T GROUP BY cid HAVING COUNT(*) = (SELECT COUNT(*) FROM products);
+- output: [['c001']]
+---
+- Statement: SELECT cid FROM (SELECT cid,pid FROM orders WHERE pid IN (SELECT pid FROM products) GROUP BY pid,cid) as T GROUP BY cid HAVING COUNT(*) = AVG(cid) OR COUNT(*) = (SELECT COUNT(*) FROM products);
+- output: [['c001']]
+---
+- Statement: SELECT cid FROM (SELECT cid,pid FROM orders WHERE pid IN (SELECT pid FROM products) GROUP BY pid,cid) as T GROUP BY cid HAVING COUNT(*) = AVG(cid) AND COUNT(*) = (SELECT COUNT(*) FROM products);
+- row_count: 0
+---
+- Statement: SELECT cid, MAX(o1.dollars), (SELECT COUNT(*) FROM orders o2 WHERE o2.dollars = MAX(o1.dollars)) FROM orders o1 GROUP BY cid;
+- output: [['c001', '720.00', 2], ['c002', '880.00', 1], ['c003', '1104.00', 2], ['c004', '460.00', 1], ['c006', '600.00', 1]]
+---
+- Statement: SELECT cid, (SELECT COUNT(*) FROM orders o2 WHERE o2.dollars = MAX(o1.dollars)), MAX(o1.dollars) FROM orders o1 GROUP BY cid;
+- output: [['c001', 2, '720.00'], ['c002', 1, '880.00'], ['c003', 2, '1104.00'], ['c004', 1, '460.00'], ['c006', 1, '600.00']]
+---
+- Statement: SELECT cid,COUNT(*) FROM (SELECT cid,pid FROM orders WHERE pid IN (SELECT pid FROM products) GROUP BY pid,cid) as T GROUP BY cid HAVING COUNT(*) = (SELECT COUNT(city) FROM agents);
+- row_count: 0
+---
+- Statement: SELECT cid, MAX(o1.dollars), (SELECT COUNT(*) FROM orders o2 WHERE o2.dollars = MAX(o1.ordno)) FROM orders o1 GROUP BY cid;
+- error: [0A500]
+---
+- Statement: SELECT cid, MAX(o1.dollars), (SELECT COUNT(*) FROM orders o2 WHERE o2.dollars = MAX(o2.ordno)) FROM orders o1 GROUP BY cid;
+- error: [0A500]
+---
+- Statement: SELECT cid, MAX(o1.dollars), (SELECT COUNT(*) FROM orders o2 WHERE o2.dollars = MAX(o1.ordno)) FROM orders o1 GROUP BY cid;
+- error: [0A500] 
+...
