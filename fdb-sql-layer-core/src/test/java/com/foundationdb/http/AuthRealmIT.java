@@ -24,6 +24,7 @@ import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.util.EntityUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,19 +32,20 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Pattern;
 
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.CoreMatchers.containsString;
 
 @RunWith(SelectedParameterizedRunner.class)
 public class AuthRealmIT extends RestServiceITBase {
+    private static final String LOGIN_PROPERTY = "fdbsql.http.login";
+    private static final String REALM_PROPERTY = "fdbsql.http.realm";
 
     private static final String ROLE = "rest-user";
     private static final String USER = "u";
@@ -51,14 +53,18 @@ public class AuthRealmIT extends RestServiceITBase {
 
     private final String authType;
     private final String realm;
+    private String expectedRealm;
 
 
     @Parameterized.Parameters(name="{0} auth with realm={1}")
     public static Iterable<Object[]> queries() throws Exception {
+        // null in list below means use system defaults
         return Arrays.asList(
                 new Object[] {"basic", null},
+                new Object[] {"basic", ""},
                 new Object[] {"basic", "My realm"},
                 new Object[] {"digest", null},
+                new Object[] {"digest", ""},
                 new Object[] {"digest", "My realm"});
     }
 
@@ -77,10 +83,10 @@ public class AuthRealmIT extends RestServiceITBase {
     protected Map<String,String> startupConfigProperties() {
         Map<String,String> config = new HashMap<>(super.startupConfigProperties());
         if (authType != null) {
-            config.put("fdbsql.http.login", authType);
+            config.put(LOGIN_PROPERTY, authType);
         }
         if (realm != null) {
-            config.put("fdbsql.http.realm", realm);
+            config.put(REALM_PROPERTY, realm);
         }
 
         return config;
@@ -93,6 +99,11 @@ public class AuthRealmIT extends RestServiceITBase {
 
     @Before
     public final void createUser() {
+        if(realm == null) {
+            expectedRealm = configService().getProperty(REALM_PROPERTY);
+        } else {
+            expectedRealm = realm;
+        }
         SecurityService securityService = securityService();
         securityService.addRole(ROLE);
         securityService.addUser(USER, PASS, Arrays.asList(ROLE));
@@ -110,9 +121,15 @@ public class AuthRealmIT extends RestServiceITBase {
 
         response = client.execute(request);
         assertEquals("status", HttpStatus.SC_UNAUTHORIZED, response.getStatusLine().getStatusCode());
-        String realmOrEmpty = realm == null ? "" : realm;
             assertThat("reason", headerValue(response, "WWW-Authenticate"),
-                    containsString("realm=\"" + realmOrEmpty + "\""));
+                    containsString("realm=\"" + expectedRealm + "\""));
     }
 
+    @Test
+    public void testGet() throws Exception {
+        HttpUriRequest request = new HttpGet(defaultURI());
+        response = client.execute(request);
+        assertEquals("status", HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+        assertThat("response", EntityUtils.toString(response.getEntity()), is(not("")));
+    }
 }
