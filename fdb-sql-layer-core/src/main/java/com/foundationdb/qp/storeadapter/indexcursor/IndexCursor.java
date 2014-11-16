@@ -97,20 +97,24 @@ public abstract class IndexCursor extends RowCursorImpl implements BindingsAware
                                      IterationHelper iterationHelper,
                                      boolean openAllSubCursors)
     {
-        if(keyRange != null && keyRange.spatial()) {
-            if(keyRange.hi() == null) {
-                return IndexCursorSpatial_NearPoint.create(context, iterationHelper, keyRange);
+        IndexCursor indexCursor;
+        if (keyRange != null && keyRange.spatialCoordsIndex()) {
+            if (keyRange.hi() == null) {
+                indexCursor = IndexCursorSpatial_NearPoint.create(context, iterationHelper, keyRange);
             } else {
-                return IndexCursorSpatial_InBox.create(context, iterationHelper, keyRange, openAllSubCursors);
+                indexCursor = IndexCursorSpatial_InBox.create(context, iterationHelper, keyRange, openAllSubCursors);
             }
+        } else if (keyRange != null && keyRange.spatialObjectIndex()) {
+            indexCursor = IndexCursorSpatial_InBox.create(context, iterationHelper, keyRange, openAllSubCursors);
         } else {
             SortKeyAdapter<?, ?> adapter = ValueSortKeyAdapter.INSTANCE;
             if(ordering.allAscending() || ordering.allDescending()) {
-                return IndexCursorUnidirectional.create(context, iterationHelper, keyRange, ordering, adapter);
+                indexCursor = IndexCursorUnidirectional.create(context, iterationHelper, keyRange, ordering, adapter);
             } else {
-                return IndexCursorMixedOrder.create(context, iterationHelper, keyRange, ordering, adapter);
+                indexCursor = IndexCursorMixedOrder.create(context, iterationHelper, keyRange, ordering, adapter);
             }
         }
+        return indexCursor;
     }
 
     // For use by subclasses

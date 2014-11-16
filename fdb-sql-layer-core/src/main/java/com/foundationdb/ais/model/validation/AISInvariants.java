@@ -80,7 +80,7 @@ public class AISInvariants {
         int lastSpatialInput = Integer.MIN_VALUE;
         if (index.isSpatial()) {
             firstSpatialInput = index.firstSpatialArgument();
-            lastSpatialInput = firstSpatialInput + index.dimensions() - 1;
+            lastSpatialInput = firstSpatialInput + index.spatialColumns() - 1;
         }
         for(IndexColumn icol : index.getKeyColumns()) {
             int indexColumnPosition = icol.getPosition();

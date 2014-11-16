@@ -86,7 +86,7 @@ public class FDBIndexRow extends IndexRow {
                 if (index.isSpatial()) {
                     // A spatial index has a single key column (the z-value), representing the declared spatial key columns.
                     if (indexField > index.firstSpatialArgument())
-                        indexField -= index.dimensions() - 1;
+                        indexField -= index.spatialColumns() - 1;
                 }
                 Key keySource = iKey;
                 if (indexField < 0 || indexField > keySource.getDepth()) {

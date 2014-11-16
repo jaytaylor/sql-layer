@@ -30,10 +30,14 @@ import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.types.TBigDecimal;
+import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.spatial.Spatial;
 import com.geophile.z.Space;
+import com.geophile.z.SpatialObject;
+import com.geophile.z.spatialobject.d2.Point;
+import com.vividsolutions.jts.io.ParseException;
 
 public class SpatialColumnHandler
 {
@@ -42,15 +46,14 @@ public class SpatialColumnHandler
         space = index.space();
         dimensions = space.dimensions();
         assert index.dimensions() == dimensions;
-        tinstances = new TInstance[dimensions];
-        fieldDefs = new FieldDef[dimensions];
-        coords = new double[dimensions];
-        positions = new int[dimensions];
-        
         rowDataSource = new RowDataValueSource();
         firstSpatialField = index.firstSpatialArgument();
         lastSpatialField = index.lastSpatialArgument();
         int spatialColumns = lastSpatialField - firstSpatialField + 1;
+        tinstances = new TInstance[spatialColumns];
+        fieldDefs = new FieldDef[spatialColumns];
+        coords = new double[spatialColumns];
+        positions = new int[spatialColumns];
         for (int c = 0; c < spatialColumns; c++) {
             IndexColumn indexColumn = index.getKeyColumns().get(firstSpatialField + c);
             Column column = indexColumn.getColumn();
@@ -81,57 +84,139 @@ public class SpatialColumnHandler
         return Spatial.shuffle(space, coords[0], coords[1]);
     }
 
+    public void processSpatialObject(RowData rowData, Operation operation)
+    {
+        bind(rowData);
+        long[] zs = zArray();
+        Spatial.shuffle(space, spatialObject, zs);
+        for (int i = 0; i < zs.length && zs[i] != Space.Z_NULL; i++) {
+            operation.handleZValue(zs[i]);
+        }
+    }
+
+    public void processSpatialObject(Row rowData, Operation operation)
+    {
+        bind(rowData);
+        long[] zs = zArray();
+        Spatial.shuffle(space, spatialObject, zs);
+        for (int i = 0; i < zs.length && zs[i] != Space.Z_NULL; i++) {
+            operation.handleZValue(zs[i]);
+        }
+    }
+
     private void bind (Row row) {
-        for (int d = 0; d < dimensions; d++) {
-            ValueSource source = row.value(positions[d]);
+        if (lastSpatialField > firstSpatialField) {
+            // Point coordinates stored in two columns
+            assert dimensions == 2 : dimensions;
+            double coord = Double.NaN;
+            double x = Double.NaN;
+            double y = Double.NaN;
+            for (int d = 0; d < dimensions; d++) {
+                ValueSource source = row.value(positions[d]);
+                TClass tclass = source.getType().typeClass();
+                if (tclass == MNumeric.DECIMAL) {
+                    BigDecimalWrapper wrapper = TBigDecimal.getWrapper(source, tinstances[d]);
+                    coord = wrapper.asBigDecimal().doubleValue();
+                }
+                else if (tclass == MNumeric.BIGINT) {
+                    coord = source.getInt64();
+                }
+                else if (tclass == MNumeric.INT) {
+                    coord = source.getInt32();
+                }
+                else {
+                    assert false : row.rowType().table().getColumn(positions[d]);
+                }
+                if (d == 0) {
+                    x = coord;
+                } else {
+                    y = coord;
+                }
+                coords[d] = coord;
+            }
+            spatialObject = new Point(x, y);
+        } else {
+            ValueSource source = row.value(positions[0]);
             TClass tclass = source.getType().typeClass();
-            if (tclass == MNumeric.DECIMAL) {
-                BigDecimalWrapper wrapper = TBigDecimal.getWrapper(source, tinstances[d]);
-                coords[d] = wrapper.asBigDecimal().doubleValue();
-            }
-            else if (tclass == MNumeric.BIGINT) {
-                coords[d] = source.getInt64();
-            }
-            else if (tclass == MNumeric.INT) {
-                coords[d] = source.getInt32();
-            }
-            else {
-                assert false : row.rowType().table().getColumn(positions[d]);
+            assert tclass == MBinary.BLOB : tclass;
+            try {
+                spatialObject = Spatial.deserialize(space, source.getBytes());
+            } catch (ParseException e) {
+                assert false; // There must be something better to do here.
             }
         }
     }
-    
+
     private void bind(RowData rowData)
     {
-        for (int d = 0; d < dimensions; d++) {
-            rowDataSource.bind(fieldDefs[d], rowData);
-
-            RowDataValueSource rowDataValueSource = (RowDataValueSource)rowDataSource;
-            TClass tclass = tinstances[d].typeClass();
-            if (tclass == MNumeric.DECIMAL) {
-                BigDecimalWrapper wrapper = TBigDecimal.getWrapper(rowDataValueSource, tinstances[d]);
-                coords[d] = wrapper.asBigDecimal().doubleValue();
+        if (lastSpatialField > firstSpatialField) {
+            // Point coordinates stored in two columns
+            assert dimensions == 2 : dimensions;
+            double coord = Double.NaN;
+            double x = Double.NaN;
+            double y = Double.NaN;
+            for (int d = 0; d < dimensions; d++) {
+                rowDataSource.bind(fieldDefs[d], rowData);
+                RowDataValueSource rowDataValueSource = (RowDataValueSource) rowDataSource;
+                TClass tclass = tinstances[d].typeClass();
+                if (tclass == MNumeric.DECIMAL) {
+                    BigDecimalWrapper wrapper = TBigDecimal.getWrapper(rowDataValueSource, tinstances[d]);
+                    coord = wrapper.asBigDecimal().doubleValue();
+                } else if (tclass == MNumeric.BIGINT) {
+                    coord = rowDataValueSource.getInt64();
+                } else if (tclass == MNumeric.INT) {
+                    coord = rowDataValueSource.getInt32();
+                } else {
+                    assert false : fieldDefs[d].column();
+                }
+                if (d == 0) {
+                    x = coord;
+                } else {
+                    y = coord;
+                }
+                coords[d] = coord;
             }
-            else if (tclass == MNumeric.BIGINT) {
-                coords[d] = rowDataValueSource.getInt64();
-            }
-            else if (tclass == MNumeric.INT) {
-                coords[d] = rowDataValueSource.getInt32();
-            }
-            else {
-                assert false : fieldDefs[d].column();
+            spatialObject = new Point(x, y);
+        } else {
+            // Spatial object encoded in blob
+            rowDataSource.bind(fieldDefs[0], rowData);
+            RowDataValueSource rowDataValueSource = (RowDataValueSource) rowDataSource;
+            TClass tclass = tinstances[0].typeClass();
+            assert tclass == MBinary.BLOB : tclass;
+            try {
+                spatialObject = Spatial.deserialize(space, rowDataValueSource.getBytes());
+            } catch (ParseException e) {
+                assert false; // There must be something better to do here.
             }
         }
+    }
+
+    private long[] zArray()
+    {
+        assert spatialObject != null;
+        int maxZ = spatialObject.maxZ();
+        if (zs == null || maxZ > zs.length) {
+            zs = new long[maxZ];
+        }
+        return zs;
     }
 
     private final Space space;
     private final int dimensions;
-    private final int[] positions;
-    
+    private final int[] positions;    
     private final TInstance[] tinstances;
     private final FieldDef[] fieldDefs;
-    private final double[] coords;
     private final RowDataSource rowDataSource;
     private final int firstSpatialField;
     private final int lastSpatialField;
+    private SpatialObject spatialObject;
+    private long[] zs;
+    private final double[] coords;
+
+    // Inner classes
+
+    public static abstract class Operation
+    {
+        public abstract void handleZValue(long z);
+    }
 }

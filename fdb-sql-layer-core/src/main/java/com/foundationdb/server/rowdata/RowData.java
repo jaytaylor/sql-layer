@@ -21,7 +21,10 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.AkServerUtil;
 import com.foundationdb.server.rowdata.encoding.EncodingException;
+import com.foundationdb.server.spatial.Spatial;
 import com.foundationdb.util.AkibanAppender;
+
+import java.util.Arrays;
 
 /**
  * Represent one or more rows of table data. The backing store is a byte array
@@ -300,15 +303,20 @@ public class RowData {
         if (values.length > rowDef.getFieldCount()) {
             throw new IllegalArgumentException("Too many values.");
         }
-
+        // Serialize spatial objects
+        Object[] valuesWithSpatialObjectsSerialized = new Object[values.length];
+        for (int i = 0; i < values.length; i++) {
+            valuesWithSpatialObjectsSerialized[i] = Spatial.serializeIfSpatial(values[i]);
+        }
+        //
         RowDataBuilder builder = new RowDataBuilder(rowDef, this);
         builder.startAllocations();
         for (int i=0; i < values.length; ++i) {
             FieldDef fieldDef = rowDef.getFieldDef(i);
-            builder.allocate(fieldDef, values[i]);
+            builder.allocate(fieldDef, valuesWithSpatialObjectsSerialized[i]);
         }
         builder.startPuts();
-        for (Object object : values) {
+        for (Object object : valuesWithSpatialObjectsSerialized) {
             builder.putObject(object);
         }
         rowEnd = builder.finalOffset();

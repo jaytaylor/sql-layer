@@ -96,7 +96,7 @@ class IndexCursorSpatial_InBox extends IndexCursor
                                                   IndexKeyRange keyRange,
                                                   boolean openAll)
     {
-        return  new IndexCursorSpatial_InBox(context, iterationHelper, keyRange, openAll);
+        return new IndexCursorSpatial_InBox(context, iterationHelper, keyRange, openAll);
     }
 
     // For use by this class
@@ -107,15 +107,14 @@ class IndexCursorSpatial_InBox extends IndexCursor
                                      boolean openEarly)
     {
         super(context, iterationHelper);
-        assert keyRange.spatial();
         this.keyRange = keyRange;
-        this.multiCursor = new MultiCursor(openEarly);
-        this.iterationHelper = iterationHelper;
         this.index = keyRange.indexRowType().index();
+        assert keyRange.spatial();
         assert index.isSpatial() : index;
+        this.space = spatialIndex.space();
         this.loExpressions = keyRange.lo().boundExpressions(context, bindings);
         this.hiExpressions = keyRange.hi().boundExpressions(context, bindings);
-        this.space = index.space();
+        this.iterationHelper = iterationHelper;
         API.Ordering zOrdering = new API.Ordering();
         IndexRowType rowType = keyRange.indexRowType().physicalRowType();
         for (int f = 0; f < rowType.nFields(); f++) {
@@ -175,8 +174,7 @@ class IndexCursorSpatial_InBox extends IndexCursor
     private SpatialObject spatialObject()
     {
         SpatialObject spatialObject;
-        int nSpatialColumns = index.lastSpatialArgument() - index.firstSpatialArgument() + 1;
-        if (nSpatialColumns == 1) {
+        if (index.spatialColumns() == 1) {
             // Spatial object
             ValueRecord expressions = keyRange.lo().boundExpressions(context, bindings);
             spatialObject = (SpatialObject) expressions.value(index.firstSpatialArgument()).getObject();
