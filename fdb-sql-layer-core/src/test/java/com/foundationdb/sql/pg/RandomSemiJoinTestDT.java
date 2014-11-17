@@ -77,22 +77,25 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         }
         StringBuilder stringBuilder = new StringBuilder();
         // TODO pick which table of the joins to grab main from ?
-        stringBuilder.append("SELECT TAB1.");
+        stringBuilder.append("SELECT TAB0.");
         stringBuilder.append(firstQuery ? "main" : randomColumn(random));
         stringBuilder.append(" FROM ");
         stringBuilder.append(randomTable(random));
-        stringBuilder.append(" AS TAB1");
+        stringBuilder.append(" AS TAB0");
+        int tableAliasCount = 1;
         switch (random.nextInt(2)) {
             case 0:
                 // Just the FROM
                 break;
             case 1:
                 // INNER JOIN
-                addInnerJoin(stringBuilder, random);
+                tableAliasCount++;
+                addInnerJoin(stringBuilder, random, tableAliasCount);
                 break;
             default:
                 throw new IllegalStateException("not enough casses for random values");
         }
+
 
         return stringBuilder.toString();
     }
@@ -140,24 +143,39 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         return sb.toString();
     }
 
-    private static void addInnerJoin(StringBuilder sb, Random random) {
+    private static void addInnerJoin(StringBuilder sb, Random random, int tableAliasCount) {
         // TODO incrementing counter
         sb.append(" INNER JOIN ");
         sb.append(randomTable(random));
-        sb.append(" AS TAB2 ON ");
+        sb.append(" AS TAB");
+        sb.append(tableAliasCount-1);
+        sb.append(" ON ");
         // no cross joins right now
         int conditionCount = random.nextInt(3);
         for (int i=0; i<conditionCount+1; i++) {
             if (i > 0) {
                 sb.append(" AND ");
             }
-            boolean first1 = random.nextBoolean();
-            sb.append(first1 ? "TAB1." : "TAB2.");
-            sb.append(randomColumn(random));
-            sb.append(" = "); // TODO random comparison
-            sb.append(first1 ? "TAB2." : "TAB1.");
-            sb.append(randomColumn(random));
+            randomComparison(sb, random, tableAliasCount);
         }
+    }
+
+    private static void randomComparison(StringBuilder sb, Random random, int tableAliasCount) {
+        assert tableAliasCount > 1 : "Need two tables for comparisons";
+        int firstTable = random.nextInt(tableAliasCount);
+        int secondTable = random.nextInt(tableAliasCount);
+        if (secondTable == firstTable) {
+            secondTable = (firstTable + 1) % tableAliasCount;
+        }
+        sb.append("TAB");
+        sb.append(firstTable);
+        sb.append(".");
+        sb.append(randomColumn(random));
+        sb.append(" = "); // TODO random comparison
+        sb.append("TAB");
+        sb.append(secondTable);
+        sb.append(".");
+        sb.append(randomColumn(random));
     }
 
     private static String randomTable(Random random) {
@@ -192,11 +210,8 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         }
 
         int indexCount = random.nextInt(MAX_INDEX_COUNT);
-        System.out.println(indexCount);
         for (int k=0; k<indexCount; k++) {
-            String indexSql = createIndexSql(random, "index" + k);
-            System.out.println(indexSql);
-            sql(indexSql);
+            sql(createIndexSql(random, "index" + k));
         }
         // TODO create random groups & group indexes
     }
