@@ -93,17 +93,20 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         this.testSeed = testSeed;
     }
 
-    private static int randomValue(Random random) {
-        return random.nextInt(MAX_VALUE-MIN_VALUE) + MIN_VALUE;
+    private static Integer randomValue(Random random) {
+        int val = random.nextInt(MAX_VALUE-MIN_VALUE) + MIN_VALUE;
+        if (val == MAX_VALUE) {
+            return null;
+        } else {
+            return val;
+        }
     }
 
     private static String buildQuery(Random random, boolean useExists, boolean firstQuery) {
-        // TODO for real
         if (firstQuery && random.nextInt(20) == 0) {
             return randomTable(random);
         }
         StringBuilder stringBuilder = new StringBuilder();
-        // TODO pick which table of the joins to grab main from ?
         stringBuilder.append("SELECT ta0.");
         stringBuilder.append(firstQuery ? "main" : randomColumn(random));
         stringBuilder.append(" FROM ");
@@ -159,7 +162,6 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
             sb.append(j);
             for (int k=0; k<COLUMN_COUNT; k++) {
                 sb.append(",");
-                // TODO sometimes null
                 sb.append(randomValue(random));
             }
             sb.append(")");
@@ -193,7 +195,6 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
     }
 
     private static void addJoin(String type, StringBuilder sb, Random random, int tableAliasCount) {
-        // TODO incrementing counter
         sb.append(" ");
         sb.append(type);
         sb.append(" JOIN ");
