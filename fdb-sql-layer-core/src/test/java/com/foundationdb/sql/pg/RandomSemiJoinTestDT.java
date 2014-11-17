@@ -213,7 +213,18 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
                 aliasedSource(sb, random, firstTable);
             }
         }
-        sb.append(" = "); // TODO random comparison
+        int whichComparison = random.nextInt(6);
+        switch (whichComparison) {
+            case 0:
+                sb.append(" < ");
+                break;
+            case 1:
+                sb.append(" > ");
+                break;
+            default:
+                sb.append(" = ");
+                break;
+        }
         if (oneIsConstant == 1) {
             sb.append(randomValue(random));
         } else {
