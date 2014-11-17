@@ -173,16 +173,16 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         }
         int columnsInIndex = random.nextInt(COLUMN_COUNT);
         StringBuilder sb = new StringBuilder("CREATE ");
-        if (columnsInIndex == 0) {
-            sb.append("UNIQUE ");
-        }
         sb.append("INDEX ");
         sb.append(indexName);
         sb.append( " ON ");
         sb.append(randomTable(random));
         sb.append("(");
         sb.append(columns.remove(random.nextInt(COLUMN_COUNT)));
-        for (int i=1; i<columnsInIndex; i++) {
+        while (!columns.isEmpty()) {
+            if (random.nextInt(4) == 0) {
+                break;
+            }
             sb.append(", ");
             sb.append(columns.remove(random.nextInt(columns.size())));
         }
