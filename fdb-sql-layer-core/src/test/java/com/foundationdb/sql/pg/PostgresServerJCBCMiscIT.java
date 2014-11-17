@@ -36,7 +36,7 @@ public class PostgresServerJCBCMiscIT extends PostgresServerITBase
         Statement s = conn.createStatement();
         ResultSet rs = s.executeQuery("SELECT ABS( CAST('1234.567' AS DECIMAL(12,7)) )");
         ResultSetMetaData md = rs.getMetaData();
-        assertEquals("column type", Types.NUMERIC, md.getColumnType(1));
+        assertEquals("column type", Types.DECIMAL, md.getColumnType(1));
         assertEquals("precision", 12, md.getPrecision(1));
         assertEquals("scale", 7, md.getScale(1));
         assertTrue(rs.next());
