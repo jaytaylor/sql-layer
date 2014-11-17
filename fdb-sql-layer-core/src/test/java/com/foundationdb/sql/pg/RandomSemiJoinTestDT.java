@@ -24,6 +24,7 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ErrorCollector;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -53,11 +54,19 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
     private static final int MAX_CONDITION_COUNT = 10;
     private static final int JOIN_CONSTANT_LIKELYHOOD = 6;
     private static final int WHERE_CONSTANT_LIKELYHOOD = 4;
+    private static final int MAX_VALUE = MAX_ROW_COUNT * 2;
+    private static final int MIN_VALUE = MAX_ROW_COUNT * -2;
 
     @ClassRule
     public static final RandomRule randomRule = new RandomRule();
     @Rule
     public final RandomRule testRandom = randomRule;
+    @Rule
+    public final ErrorCollector collector = new ErrorCollector();
+
+    /**
+     * The seed used for individual parameterized tests, so that they can have different DDL & DML
+     */
     private Long testSeed;
 
     @Parameterized.Parameters(name="Test Seed: {0}")
@@ -73,6 +82,10 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
     public RandomSemiJoinTestDT(Long testSeed) {
 
         this.testSeed = testSeed;
+    }
+
+    private static int randomValue(Random random) {
+        return random.nextInt(MAX_VALUE-MIN_VALUE) + MIN_VALUE;
     }
 
     private static String buildQuery(Random random, boolean useExists, boolean firstQuery) {
@@ -130,9 +143,8 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
             sb.append(j);
             for (int k=0; k<COLUMN_COUNT; k++) {
                 sb.append(",");
-                // TODO change this so there's actually some matches sometimes. (like nextInt(MAX_ROWS*3))
                 // TODO sometimes null
-                sb.append(random.nextInt());
+                sb.append(randomValue(random));
             }
             sb.append(")");
             sql(sb.toString());
@@ -192,7 +204,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         // 0 => first is constant, 1 => second is constant, else neither
         int oneIsConstant = random.nextInt(constantBias);
         if (oneIsConstant == 0) {
-            sb.append(random.nextInt());
+            sb.append(randomValue(random));
         } else {
             mainIsFirst = random.nextBoolean();
             if (mainIsFirst && forceMainEqualsClause) {
@@ -203,7 +215,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         }
         sb.append(" = "); // TODO random comparison
         if (oneIsConstant == 1) {
-            sb.append(random.nextInt());
+            sb.append(randomValue(random));
         } else {
             if (mainIsFirst || !forceMainEqualsClause) {
                 aliasedSource(sb, random, secondTable);
@@ -288,19 +300,22 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         List<Object> expected = new ArrayList<>();
         for (List<?> outerRow : results) {
             List<List<?>> innerResults = sql(String.format(query2, outerRow.get(0)));
+            System.out.println(String.format(query2, outerRow.get(0)));
+            System.out.println("  Returned " + innerResults);
             if (negative == (innerResults.size() == 0)) {
                 expected.add(outerRow.get(0));
             }
         }
         String q1 = query1IsJustATable ? query1 : "(" + query1 + ")";
-        List<List<?>> sqlResults = sql("SELECT main FROM " + q1 + " AS T1 WHERE " + existsClause +
-                " (" + String.format(query2, "T1.main") + ")");
+        String finalQuery = "SELECT main FROM " + q1 + " AS T1 WHERE " + existsClause +
+                " (" + String.format(query2, "T1.main") + ")";
+        List<List<?>> sqlResults = sql(finalQuery);
         List<Object> actual = new ArrayList<>();
         for (List<?> actualRow : sqlResults) {
             assertEquals("Expected 1 column" + actualRow, 1, actualRow.size());
             actual.add(actualRow.get(0));
         }
-        assertEqualLists("Checking lists", expected, actual);
+        assertEqualLists("Results different for " + finalQuery, expected, actual);
     }
 
     private void testOneQueryIn(String query1, String query2) {
