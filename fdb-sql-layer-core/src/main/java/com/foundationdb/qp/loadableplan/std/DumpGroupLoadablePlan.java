@@ -259,9 +259,9 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             String name = tableNames.get(table);
             if (name == null) {
                 TableName tableName = table.getName();
-                name = Strings.quotedIdent(tableName.getTableName(), '`', false);
+                name = Strings.quotedIdent(tableName.getTableName(), '"', true);
                 if (!tableName.getSchemaName().equals(currentSchema)) {
-                    name = Strings.quotedIdent(tableName.getSchemaName(), '`', false) + "." + name;
+                    name = Strings.quotedIdent(tableName.getSchemaName(), '"', true) + "." + name;
                 }
                 tableNames.put(table, name);
             }
