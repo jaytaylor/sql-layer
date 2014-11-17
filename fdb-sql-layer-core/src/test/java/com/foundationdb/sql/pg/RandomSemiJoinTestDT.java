@@ -79,11 +79,11 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         }
         StringBuilder stringBuilder = new StringBuilder();
         // TODO pick which table of the joins to grab main from ?
-        stringBuilder.append("SELECT TAB0.");
+        stringBuilder.append("SELECT ta0.");
         stringBuilder.append(firstQuery ? "main" : randomColumn(random));
         stringBuilder.append(" FROM ");
         stringBuilder.append(randomTable(random));
-        stringBuilder.append(" AS TAB0");
+        stringBuilder.append(" AS ta0");
         int tableAliasCount = 1;
         switch (random.nextInt(2)) {
             case 0:
@@ -138,7 +138,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         List<String> columns = new ArrayList<>();
         columns.add("main");
         for (int i=0; i<COLUMN_COUNT; i++) {
-            columns.add("column" + i);
+            columns.add("c" + i);
         }
         int columnsInIndex = random.nextInt(COLUMN_COUNT);
         StringBuilder sb = new StringBuilder("CREATE ");
@@ -163,7 +163,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         // TODO incrementing counter
         sb.append(" INNER JOIN ");
         sb.append(randomTable(random));
-        sb.append(" AS TAB");
+        sb.append(" AS ta");
         sb.append(tableAliasCount-1);
         sb.append(" ON ");
         // no cross joins right now
@@ -198,7 +198,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
     }
 
     private static void aliasedSource(StringBuilder sb, Random random, int firstTable) {
-        sb.append("TAB");
+        sb.append("ta");
         sb.append(firstTable);
         sb.append(".");
         sb.append(randomColumn(random));
@@ -209,7 +209,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
     }
 
     private static String randomColumn(Random random) {
-        return "column" + random.nextInt(COLUMN_COUNT);
+        return "c" + random.nextInt(COLUMN_COUNT);
     }
 
     private static String table(int index) {
@@ -226,7 +226,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
             stringBuilder.append(table(i));
             stringBuilder.append(" (main INT PRIMARY KEY");
             for (int j=0; j<COLUMN_COUNT; j++) {
-                stringBuilder.append(", column");
+                stringBuilder.append(", c");
                 stringBuilder.append(j);
                 stringBuilder.append(" INT");
             }
