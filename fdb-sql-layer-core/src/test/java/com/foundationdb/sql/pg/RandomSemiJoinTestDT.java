@@ -72,8 +72,6 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
     public static final RandomRule randomRule = new RandomRule();
     @Rule
     public final RandomRule testRandom = randomRule;
-    @Rule
-    public final ErrorCollector collector = new ErrorCollector();
 
     /**
      * The seed used for individual parameterized tests, so that they can have different DDL & DML
