@@ -46,6 +46,8 @@ import static org.junit.Assert.assertEquals;
  *   SELECT id FROM (Query1) WHERE id IN (Query2)
  * Manually compute results from stored results,
  * and compare with whole query.
+ * Also handles NOT IN and EXISTS and NOT EXISTS, could handle more
+ *
  */
 @RunWith(SelectedParameterizedRunner.class)
 public class RandomSemiJoinTestDT extends PostgresServerITBase {
@@ -359,8 +361,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         for (List<?> row : results1) {
             boolean rowIsInResults2 = false;
             for (List<?> row2 : results2) {
-                // TODO what about null
-                if (Objects.equals(row.get(0), row2.get(0))) {
+                if (nullableEquals(row.get(0), row2.get(0))) {
                     rowIsInResults2 = true;
                     break;
                 }
@@ -378,7 +379,17 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
             assertEquals("Expected 1 column" + actualRow, 1, actualRow.size());
             actual.add(actualRow.get(0));
         }
-        assertEqualLists("Checking lists", expected, actual);
+        assertEqualLists("Results different for " + finalQuery, expected, actual);
+    }
+
+    /**
+     * Object comparison in the same way that SQL does it, i.e. null != null
+     */
+    private boolean nullableEquals(Object o1, Object o2) {
+        if (o1 == null || o2 == null) {
+            return false;
+        }
+        return o1.equals(o2);
     }
 
     private class NullableIntegerComparator implements Comparator<Integer> {
