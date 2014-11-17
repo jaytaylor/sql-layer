@@ -22,6 +22,7 @@ import com.foundationdb.util.RandomRule;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -55,6 +56,8 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
 
     @ClassRule
     public static final RandomRule randomRule = new RandomRule();
+    @Rule
+    public final RandomRule testRandom = randomRule;
     private Long testSeed;
 
     @Parameterized.Parameters(name="Test Seed: {0}")

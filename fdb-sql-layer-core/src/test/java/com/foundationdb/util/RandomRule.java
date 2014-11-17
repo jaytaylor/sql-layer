@@ -27,12 +27,26 @@ import java.util.Random;
  * Contains a random value that is optionally seeded by the environment variable:
  * fdbsql.test.seed
  *
- * If you want to access this in the @Parameters, use the @ClassRule attribute and make it static
+ * Add a new Rule to your test class to get a random generator:
+ * <code>
+ *   @Rule
+ *   public final RandomRule randomRule = new RandomRule();
+ * </code>
+ *
+ * If you want to access this in the @Parameters, use the @ClassRule attribute and make it static; assign the @Rule field
+ * to the same value
+ * <code>
+ *   @ClassRule
+ *   public static final RandomRule classRandom = new RandomRule();
+ *   @Rule
+ *   public final RandomRule randomRule = classRandom;
+ * </code>
+ *
  *   Also, you should call reset() at the top of the parameters. I don't know why but intellij is really weird, possibly
  *   broken if you try to run a single parameter it will run the parameters method twice, and then look for the test
  *   in the second run, which will be different if you don't reset the seed.
- * If you want to access this in the tests,before or after, use the @Rule attribute
- * If you want both assign the field with the @Rule attribute to the @ClassRule field.
+ *
+ *
  *
  * It will reset the seed before every test, and before setting up the class.
  */
@@ -52,7 +66,7 @@ public class RandomRule implements TestRule {
     }
 
     @Override
-    public Statement apply(final Statement statement, Description description) {
+    public Statement apply(final Statement statement, final Description description) {
         return new Statement() {
             @Override
             public void evaluate() throws Throwable {
@@ -66,6 +80,7 @@ public class RandomRule implements TestRule {
                     success = true;
                 } finally {
                     if (!success) {
+                        // This only prints if the @Rule attribute is used, not if @ClassRule is used by itself
                         System.err.printf("Test failed with seed %d\n", seed);
                     }
                 }
