@@ -27,9 +27,14 @@ import org.junit.Test;
 import org.junit.rules.ErrorCollector;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
@@ -44,6 +49,8 @@ import static org.junit.Assert.assertEquals;
  */
 @RunWith(SelectedParameterizedRunner.class)
 public class RandomSemiJoinTestDT extends PostgresServerITBase {
+
+    private static final Logger LOG = LoggerFactory.getLogger(RandomSemiJoinTestDT.class);
 
     private static final int DDL_COUNT = 10;
     private static final int QUERY_COUNT = 30;
@@ -101,17 +108,24 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         stringBuilder.append(randomTable(random));
         stringBuilder.append(" AS ta0");
         int tableAliasCount = 1;
-        switch (random.nextInt(2)) {
+        switch (random.nextInt(4)) {
             case 0:
                 // Just the FROM
                 break;
             case 1:
-                // INNER JOIN
                 tableAliasCount++;
-                addInnerJoin(stringBuilder, random, tableAliasCount);
+                addJoin("INNER", stringBuilder, random, tableAliasCount);
+                break;
+            case 2:
+                tableAliasCount++;
+                addJoin("LEFT OUTER", stringBuilder, random, tableAliasCount);
+                break;
+            case 3:
+                tableAliasCount++;
+                addJoin("RIGHT OUTER", stringBuilder, random, tableAliasCount);
                 break;
             default:
-                throw new IllegalStateException("not enough casses for random values");
+                throw new IllegalStateException("not enough cases for random values");
         }
         generateWhereClause(stringBuilder, random, tableAliasCount, !firstQuery && useExists);
         return stringBuilder.toString();
@@ -176,9 +190,11 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         return sb.toString();
     }
 
-    private static void addInnerJoin(StringBuilder sb, Random random, int tableAliasCount) {
+    private static void addJoin(String type, StringBuilder sb, Random random, int tableAliasCount) {
         // TODO incrementing counter
-        sb.append(" INNER JOIN ");
+        sb.append(" ");
+        sb.append(type);
+        sb.append(" JOIN ");
         sb.append(randomTable(random));
         sb.append(" AS ta");
         sb.append(tableAliasCount-1);
@@ -305,59 +321,84 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
     private void testOneQueryExists(String query1, String query2) {
         boolean negative = randomRule.getRandom().nextBoolean();
         String existsClause = negative ? "NOT EXISTS" : "EXISTS";
-        System.out.println(String.format("SELECT main FROM (%s) AS T1 WHERE id %s (%s)",query1, existsClause, query2));
         boolean query1IsJustATable = query1.startsWith("table");
+        LOG.debug("Outer: {}", query1);
+        LOG.debug("Inner: {}", query2);
         List<List<?>> results = sql(query1IsJustATable ? "SELECT main FROM " + query1 : query1);
-        List<Object> expected = new ArrayList<>();
+        List<Integer> expected = new ArrayList<>();
         for (List<?> outerRow : results) {
             List<List<?>> innerResults = sql(String.format(query2, outerRow.get(0)));
-            System.out.println(String.format(query2, outerRow.get(0)));
-            System.out.println("  Returned " + innerResults);
             if (negative == (innerResults.size() == 0)) {
-                expected.add(outerRow.get(0));
+                expected.add((Integer) outerRow.get(0));
             }
         }
         String q1 = query1IsJustATable ? query1 : "(" + query1 + ")";
         String finalQuery = "SELECT main FROM " + q1 + " AS T1 WHERE " + existsClause +
                 " (" + String.format(query2, "T1.main") + ")";
+        LOG.debug("Final: {}", finalQuery);
         List<List<?>> sqlResults = sql(finalQuery);
-        List<Object> actual = new ArrayList<>();
+        List<Integer> actual = new ArrayList<>();
         for (List<?> actualRow : sqlResults) {
             assertEquals("Expected 1 column" + actualRow, 1, actualRow.size());
-            actual.add(actualRow.get(0));
+            actual.add((Integer) actualRow.get(0));
         }
+        Collections.sort(expected, new NullableIntegerComparator());
+        Collections.sort(actual, new NullableIntegerComparator());
         assertEqualLists("Results different for " + finalQuery, expected, actual);
     }
 
     private void testOneQueryIn(String query1, String query2) {
         boolean useIn = randomRule.getRandom().nextBoolean();
         String inClause = useIn ? "IN" : "NOT IN";
-        System.out.println(String.format("The Query: SELECT main FROM (%s) AS T1 WHERE id %s (%s)",query1, inClause, query2));
+        LOG.debug("Outer: {}", query1);
+        LOG.debug("Inner: {}", query2);
         boolean query1IsJustATable = query1.startsWith("table");
         List<List<?>> results1 = sql(query1IsJustATable ? "SELECT main FROM " + query1 : query1);
         List<List<?>> results2 = sql(query2);
-        List<Object> expected = new ArrayList<>();
+        List<Integer> expected = new ArrayList<>();
         for (List<?> row : results1) {
             boolean rowIsInResults2 = false;
             for (List<?> row2 : results2) {
                 // TODO what about null
-                if (row.get(0).equals(row2.get(0))) {
+                if (Objects.equals(row.get(0), row2.get(0))) {
                     rowIsInResults2 = true;
-                    expected.add((Object)row.get(0));
                     break;
                 }
             }
             if (useIn == rowIsInResults2) {
-                expected.add(row.get(0));
+                expected.add((Integer) row.get(0));
             }
         }
         String q1 = query1IsJustATable ? query1 : "(" + query1 + ")";
-        List<List<?>> sqlResults = sql("SELECT main FROM " + q1 + " AS T1 WHERE main " + inClause + " (" + query2 + ")");
+        String finalQuery = "SELECT main FROM " + q1 + " AS T1 WHERE main " + inClause + " (" + query2 + ")";
+        LOG.debug("Final: {}", finalQuery);
+        List<List<?>> sqlResults = sql(finalQuery);
         List<Object> actual = new ArrayList<>();
         for (List<?> actualRow : sqlResults) {
             assertEquals("Expected 1 column" + actualRow, 1, actualRow.size());
             actual.add(actualRow.get(0));
         }
         assertEqualLists("Checking lists", expected, actual);
+    }
+
+    private class NullableIntegerComparator implements Comparator<Integer> {
+        @Override
+        public int compare(Integer o1, Integer o2) {
+            if (Objects.equals(o1, o2)) {
+                return 0;
+            }
+            if (o1 == null) {
+                return Integer.MIN_VALUE;
+            }
+            if (o2 == null) {
+                return Integer.MAX_VALUE;
+            }
+            return o1-o2;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof NullableIntegerComparator;
+        }
     }
 }
