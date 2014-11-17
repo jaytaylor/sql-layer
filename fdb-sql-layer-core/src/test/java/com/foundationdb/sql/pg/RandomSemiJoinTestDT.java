@@ -259,21 +259,29 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
     }
 
     private void testOneQuery(String query1, String query2) {
-        System.out.println(String.format("SELECT main FROM (%s) AS T1 WHERE id IN (%s)",query1, query2));
+        boolean useIn = randomRule.getRandom().nextBoolean();
+        String inClause = useIn ? "IN" : "NOT IN";
+        System.out.println(String.format("SELECT main FROM (%s) AS T1 WHERE id %s (%s)",query1, inClause, query2));
         boolean query1IsJustATable = query1.startsWith("table");
         List<List<?>> results1 = sql(query1IsJustATable ? "SELECT main FROM " + query1 : query1);
         List<List<?>> results2 = sql(query2);
         List<Object> expected = new ArrayList<>();
         for (List<?> row : results1) {
+            boolean rowIsInResults2 = false;
             for (List<?> row2 : results2) {
                 // TODO what about null
                 if (row.get(0).equals(row2.get(0))) {
+                    rowIsInResults2 = true;
                     expected.add((Object)row.get(0));
+                    break;
                 }
+            }
+            if (useIn == rowIsInResults2) {
+                expected.add(row.get(0));
             }
         }
         String q1 = query1IsJustATable ? query1 : "(" + query1 + ")";
-        List<List<?>> sqlResults = sql("SELECT main FROM " + q1 + " AS T1 WHERE main IN (" + query2 + ")");
+        List<List<?>> sqlResults = sql("SELECT main FROM " + q1 + " AS T1 WHERE main " + inClause + " (" + query2 + ")");
         List<Object> actual = new ArrayList<>();
         for (List<?> actualRow : sqlResults) {
             assertEquals("Expected 1 column" + actualRow, 1, actualRow.size());
