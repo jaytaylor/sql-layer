@@ -22,6 +22,7 @@ import com.foundationdb.util.RandomRule;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
@@ -49,6 +50,7 @@ import static org.junit.Assert.assertEquals;
  * Also handles NOT IN and EXISTS and NOT EXISTS, could handle more
  *
  */
+//@Ignore("Waiting until this passes most of the time")
 @RunWith(SelectedParameterizedRunner.class)
 public class RandomSemiJoinTestDT extends PostgresServerITBase {
 
