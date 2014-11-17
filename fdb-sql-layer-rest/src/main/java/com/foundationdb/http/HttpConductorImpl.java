@@ -72,12 +72,12 @@ import static com.foundationdb.http.SecurityServiceLoginService.CredentialType;
 public final class HttpConductorImpl implements HttpConductor, Service {
     private static final Logger logger = LoggerFactory.getLogger(HttpConductorImpl.class);
 
-    private static final String CONFIG_HTTP_PREFIX = "fdbsql.http.";
+    private static final String CONFIG_REALM = "fdbsql.security.realm"; // See also SecurityServiceImpl
+    private static final String CONFIG_HTTP_PREFIX = "plugins.rest.";
     private static final String CONFIG_HOST_PROPERTY = CONFIG_HTTP_PREFIX + "host";
     private static final String CONFIG_PORT_PROPERTY = CONFIG_HTTP_PREFIX + "port";
     private static final String CONFIG_SSL_PROPERTY = CONFIG_HTTP_PREFIX + "ssl";
     private static final String CONFIG_LOGIN_PROPERTY = CONFIG_HTTP_PREFIX + "login";
-    private static final String CONFIG_REALM = CONFIG_HTTP_PREFIX + "realm"; // See also SecurityServiceImpl
     private static final String CONFIG_LOGIN_CACHE_SECONDS = CONFIG_HTTP_PREFIX + "login_cache_seconds";
     private static final String CONFIG_XORIGIN_PREFIX = CONFIG_HTTP_PREFIX + "cross_origin.";
     private static final String CONFIG_XORIGIN_ENABLED = CONFIG_XORIGIN_PREFIX + "enabled";

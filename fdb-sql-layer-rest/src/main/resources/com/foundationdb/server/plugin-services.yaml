@@ -1,0 +1,6 @@
+- bind:
+    com.foundationdb.http.HttpConductor : com.foundationdb.http.HttpConductorImpl
+    com.foundationdb.rest.RestService : com.foundationdb.rest.RestServiceImpl
+    com.foundationdb.server.service.restdml.RestDMLService: com.foundationdb.server.service.restdml.RestDMLServiceImpl
+- require:
+    - com.foundationdb.server.service.restdml.RestDMLService

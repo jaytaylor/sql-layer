@@ -163,8 +163,8 @@ public class RestServiceScriptsIT extends ITBase {
     @Override
     protected Map<String,String> startupConfigProperties() {
         Map<String,String> config = new HashMap<>(super.startupConfigProperties());
-        config.put("fdbsql.rest.resource", "entity,fulltext,model,procedurecall,sql,security,version,direct,view");
-        config.put("fdbsql.http.csrf_protection.allowed_referers", "https://somewhere.com");
+        config.put("plugins.rest.resource", "entity,fulltext,model,procedurecall,sql,security,version,direct,view");
+        config.put("plugins.rest.csrf_protection.allowed_referers", "https://somewhere.com");
         return config;
     }
 

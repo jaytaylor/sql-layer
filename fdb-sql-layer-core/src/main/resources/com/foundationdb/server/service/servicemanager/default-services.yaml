@@ -19,9 +19,6 @@
     com.foundationdb.server.service.plugins.PluginsFinder : com.foundationdb.server.service.plugins.HomeDirPluginsFinder
     com.foundationdb.server.service.externaldata.ExternalDataService : com.foundationdb.server.service.externaldata.ExternalDataServiceImpl
     com.foundationdb.server.service.security.SecurityService : com.foundationdb.server.service.security.SecurityServiceImpl
-    com.foundationdb.http.HttpConductor : com.foundationdb.http.HttpConductorImpl
-    com.foundationdb.rest.RestService : com.foundationdb.rest.RestServiceImpl
-    com.foundationdb.server.service.restdml.RestDMLService: com.foundationdb.server.service.restdml.RestDMLServiceImpl
     com.foundationdb.server.service.listener.ListenerService : com.foundationdb.server.service.listener.ListenerServiceImpl
     ##
     ##

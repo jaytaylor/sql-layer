@@ -20,11 +20,10 @@ package com.foundationdb.server.service.security;
 import com.foundationdb.http.HttpConductor;
 import com.foundationdb.rest.RestService;
 import com.foundationdb.rest.RestServiceImpl;
+import com.foundationdb.server.service.plugins.ITPluginsFinder;
+import com.foundationdb.server.service.plugins.PluginsFinder;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.test.it.ITBase;
-import com.foundationdb.sql.embedded.EmbeddedJDBCService;
-import com.foundationdb.sql.embedded.EmbeddedJDBCServiceImpl;
-import com.foundationdb.sql.pg.PostgresService;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -49,69 +48,25 @@ import static com.foundationdb.util.JsonUtils.readTree;
 import static org.junit.Assert.*;
 
 import java.net.URI;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SecurityServiceIT extends ITBase
+public class RestSecurityIT extends SecurityServiceITBase
 {
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
-            .bindAndRequire(SecurityService.class, SecurityServiceImpl.class)
-            .bindAndRequire(EmbeddedJDBCService.class, EmbeddedJDBCServiceImpl.class)
-            .bindAndRequire(RestService.class, RestServiceImpl.class);
+            .bindAndRequire(RestService.class, RestServiceImpl.class)
+            .bind(PluginsFinder.class, ITPluginsFinder.class);
     }
 
     @Override
     protected Map<String, String> startupConfigProperties() {
-        Map<String, String> properties = new HashMap<>();
-        properties.put("fdbsql.http.login", "basic"); // "digest"
-        properties.put("fdbsql.postgres.login", "md5");
-        properties.put("fdbsql.restrict_user_schema", "true");
-        properties.put("fdbsql.http.csrf_protection.type", "none");
+        Map<String, String> properties = super.startupConfigProperties();
+        properties.put("plugins.rest.login", "basic"); // "digest"
+        properties.put("plugins.rest.csrf_protection.type", "none");
         return properties;
-    }
-
-    @Before
-    public void setUp() {
-        int t1 = createTable("user1", "utable", "id int primary key not null");
-        int t2 = createTable("user2", "utable", "id int primary key not null");        
-        writeRow(t1, 1L);
-        writeRow(t2, 2L);
-        
-        SecurityService securityService = securityService();
-        securityService.addRole("rest-user");
-        securityService.addRole("admin");
-        securityService.addUser("user1", "password", Arrays.asList("rest-user"));
-        securityService.addUser("akiban", "topsecret", Arrays.asList("rest-user", "admin"));
-    }
-
-    @After
-    public void cleanUp() {
-        securityService().clearAll(session());
-    }
-
-    @Test
-    public void getUser() {
-        SecurityService securityService = securityService();
-        User user = securityService.getUser("user1");
-        assertNotNull("user found", user);
-        assertTrue("user has role", user.hasRole("rest-user"));
-        assertFalse("user does not have role", user.hasRole("admin"));
-        assertEquals("users roles", "[rest-user]", user.getRoles().toString());
-        assertEquals("user password basic", "MD5:5F4DCC3B5AA765D61D8327DEB882CF99", user.getBasicPassword());
-        assertEquals("user password digest", "MD5:BDAA29D9E7DCE23995599F595AA8832D", user.getDigestPassword());
-    }
-
-    @Test
-    public void authenticate() {
-        assertEquals("user1", securityService().authenticate(session(), "user1", "password").getName());
     }
 
     private int openRestURL(String request, String query, String userInfo, boolean post)
@@ -207,56 +162,6 @@ public class SecurityServiceIT extends ITBase
         client.close();
         assertEquals(HttpStatus.SC_OK, code);
         assertNull(securityService.getUser("user3"));
-    }
-
-    private Connection openPostgresConnection(String user, String password) 
-            throws Exception {
-        int port = serviceManager().getServiceByClass(PostgresService.class).getPort();
-        String host = serviceManager().getServiceByClass(PostgresService.class).getHost();
-        String url = String.format("jdbc:fdbsql://%s:%d/%s", host, port, user);
-        return DriverManager.getConnection(url, user, password);
-    }
-
-    @Test(expected = SQLException.class)
-    public void postgresUnauthenticated() throws Exception {
-        openPostgresConnection(null, null).close();
-    }
-
-    @Test
-    public void postgresAuthenticated() throws Exception {
-        Connection conn = openPostgresConnection("user1", "password");
-        Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery("SELECT id FROM utable");
-        assertTrue(rs.next());
-        assertEquals(1, rs.getInt(1));
-        rs.close();
-        stmt.execute("DROP TABLE utable");
-        stmt.close();
-        conn.close();
-    }
-
-    @Test(expected = SQLException.class)
-    public void postgresBadUser() throws Exception {
-        openPostgresConnection("user2", "whatever").close();
-    }
-
-    @Test(expected = SQLException.class)
-    public void postgresBadPassword() throws Exception {
-        openPostgresConnection("user1", "nope").close();
-    }
-
-    @Test(expected = SQLException.class)
-    public void postgresWrongSchema() throws Exception {
-        Connection conn = openPostgresConnection("user1", "password");
-        Statement stmt = conn.createStatement();
-        stmt.executeQuery("SELECT id FROM user2.utable");
-    }
-
-    @Test(expected = SQLException.class)
-    public void postgresWrongSchemaDDL() throws Exception {
-        Connection conn = openPostgresConnection("user1", "password");
-        Statement stmt = conn.createStatement();
-        stmt.executeQuery("DROP TABLE user2.utable");
     }
 
 }

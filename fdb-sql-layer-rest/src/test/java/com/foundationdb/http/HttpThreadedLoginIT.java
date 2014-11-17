@@ -52,7 +52,7 @@ public class HttpThreadedLoginIT extends ITBase
     @Override
     protected Map<String, String> startupConfigProperties() {
         Map<String, String> properties = new HashMap<>();
-        properties.put("fdbsql.http.login", "basic");
+        properties.put("plugins.rest.login", "basic");
         return properties;
     }
 

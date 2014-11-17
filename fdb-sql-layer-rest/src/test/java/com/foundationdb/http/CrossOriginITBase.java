@@ -65,10 +65,10 @@ public abstract class CrossOriginITBase extends RestServiceITBase {
     @Override
     protected Map<String,String> startupConfigProperties() {
         Map<String,String> config = new HashMap<>(super.startupConfigProperties());
-        config.put("fdbsql.http.cross_origin.enabled", "true");
-        config.put("fdbsql.http.cross_origin.allowed_methods", ALLOWED_METHODS);
-        config.put("fdbsql.http.cross_origin.allowed_origins", "*");
-        config.put("fdbsql.http.csrf_protection.type", "none");
+        config.put("plugins.rest.cross_origin.enabled", "true");
+        config.put("plugins.rest.cross_origin.allowed_methods", ALLOWED_METHODS);
+        config.put("plugins.rest.cross_origin.allowed_origins", "*");
+        config.put("plugins.rest.csrf_protection.type", "none");
         return config;
     }
 

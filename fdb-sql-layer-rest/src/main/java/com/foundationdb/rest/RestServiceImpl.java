@@ -43,7 +43,7 @@ public class RestServiceImpl implements RestService, Service {
 
 	private volatile ServletHolder servletHolder;
 	
-	private static final String RESOURCE_LIST = "fdbsql.rest.resource";
+	private static final String RESOURCE_LIST = "plugins.rest.resource";
 	
 
 	@Inject
@@ -70,7 +70,7 @@ public class RestServiceImpl implements RestService, Service {
 
     @Override
     public String getContextPath() {
-        return configService.getProperty("fdbsql.rest.context_path");
+        return configService.getProperty("plugins.rest.context_path");
     }
 
 	@Override

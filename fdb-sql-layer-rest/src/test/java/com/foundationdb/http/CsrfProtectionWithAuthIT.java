@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 FoundationDB, LLC
+ * Copyright (C) 2009-2014 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -27,7 +27,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CrossOriginWithAuthIT extends CrossOriginITBase
+public class CsrfProtectionWithAuthIT extends CsrfProtectionITBase
 {
     private static final String ROLE = "rest-user";
     private static final String USER = "u";
@@ -43,7 +43,7 @@ public class CrossOriginWithAuthIT extends CrossOriginITBase
     @Override
     protected Map<String,String> startupConfigProperties() {
         Map<String,String> config = new HashMap<>(super.startupConfigProperties());
-        config.put("fdbsql.http.login", "basic");
+        config.put("plugins.rest.login", "basic");
         return config;
     }
 

@@ -123,9 +123,9 @@ public class RestServiceFilesIT extends ITBase {
     @Override
     protected Map<String,String> startupConfigProperties() {
         Map<String,String> config = new HashMap<>(super.startupConfigProperties());
-        config.put("fdbsql.rest.resource", "entity,fulltext,procedurecall,sql,security,version,direct,view");
+        config.put("plugins.rest.resource", "entity,fulltext,procedurecall,sql,security,version,direct,view");
 
-        config.put("fdbsql.http.csrf_protection.type", "none");
+        config.put("plugins.rest.csrf_protection.type", "none");
         if ( caseParams.properties != null) {
             for (String line : caseParams.properties.split("\\r?\\n")) {
                 String[] property = line.split("\\t");
