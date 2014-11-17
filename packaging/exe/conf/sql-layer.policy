@@ -1,15 +1,17 @@
-/* Policy file granting limiting the permissions for routines */
+/* Policy file limiting the permissions for routines
+   Installed version */
 
-// Installed version
 grant codeBase "file:${fdbsql.home}/lib/*" {
   permission java.security.AllPermission;
 };
-
 
 grant codeBase "file:${fdbsql.home}/lib/server/-" {
   permission java.security.AllPermission;
 };
 
+grant codeBase "file:${fdbsql.home}/plugins/-" {
+  permission java.security.AllPermission;
+};
 
 grant codeBase "file:${fdbsql.home}/lib/fdb-sql-layer-routinefw/*" {
 };
