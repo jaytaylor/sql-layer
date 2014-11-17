@@ -27,7 +27,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Random;
 
@@ -50,6 +49,9 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
     private static final int COLUMN_COUNT = 10;
     private static final int MAX_ROW_COUNT = 100;
     private static final int MAX_INDEX_COUNT = 5;
+    private static final int MAX_CONDITION_COUNT = 10;
+    private static final int JOIN_CONSTANT_LIKELYHOOD = 6;
+    private static final int WHERE_CONSTANT_LIKELYHOOD = 4;
 
     @ClassRule
     public static final RandomRule randomRule = new RandomRule();
@@ -95,9 +97,23 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
             default:
                 throw new IllegalStateException("not enough casses for random values");
         }
-
-
+        generateWhereClause(stringBuilder, random, tableAliasCount);
         return stringBuilder.toString();
+    }
+
+    private static void generateWhereClause(StringBuilder stringBuilder, Random random, int tableAliasCount) {
+        if (random.nextInt(5) == 0) {
+            return;
+        }
+        stringBuilder.append(" WHERE ");
+        randomCondition(stringBuilder, random, tableAliasCount, WHERE_CONSTANT_LIKELYHOOD);
+        for (int i=0; i<MAX_CONDITION_COUNT; i++) {
+            if (random.nextInt(5) == 0) {
+                break;
+            }
+            stringBuilder.append(random.nextBoolean() ? " AND " : " OR ");
+            randomCondition(stringBuilder, random, tableAliasCount, WHERE_CONSTANT_LIKELYHOOD);
+        }
     }
 
     private void fillRowData(Random random, int tableIndex) {
@@ -156,24 +172,34 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
             if (i > 0) {
                 sb.append(" AND ");
             }
-            randomComparison(sb, random, tableAliasCount);
+            randomCondition(sb, random, tableAliasCount, JOIN_CONSTANT_LIKELYHOOD);
         }
     }
 
-    private static void randomComparison(StringBuilder sb, Random random, int tableAliasCount) {
-        assert tableAliasCount > 1 : "Need two tables for comparisons";
+    private static void randomCondition(StringBuilder sb, Random random, int tableAliasCount, int constantBias) {
         int firstTable = random.nextInt(tableAliasCount);
         int secondTable = random.nextInt(tableAliasCount);
         if (secondTable == firstTable) {
             secondTable = (firstTable + 1) % tableAliasCount;
         }
+        // 0 => first is constant, 1 => second is constant, else neither
+        int oneIsConstant = random.nextInt(constantBias);
+        if (oneIsConstant == 0) {
+            sb.append(random.nextInt());
+        } else {
+            aliasedSource(sb, random, firstTable);
+        }
+        sb.append(" = "); // TODO random comparison
+        if (oneIsConstant == 1) {
+            sb.append(random.nextInt());
+        } else {
+            aliasedSource(sb, random, secondTable);
+        }
+    }
+
+    private static void aliasedSource(StringBuilder sb, Random random, int firstTable) {
         sb.append("TAB");
         sb.append(firstTable);
-        sb.append(".");
-        sb.append(randomColumn(random));
-        sb.append(" = "); // TODO random comparison
-        sb.append("TAB");
-        sb.append(secondTable);
         sb.append(".");
         sb.append(randomColumn(random));
     }
