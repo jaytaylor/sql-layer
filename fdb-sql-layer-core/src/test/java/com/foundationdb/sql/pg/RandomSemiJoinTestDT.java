@@ -45,7 +45,7 @@ import static org.junit.Assert.assertEquals;
 @RunWith(SelectedParameterizedRunner.class)
 public class RandomSemiJoinTestDT extends PostgresServerITBase {
 
-    private static final int DDL_COUNT = 1;
+    private static final int DDL_COUNT = 10;
     private static final int QUERY_COUNT = 30;
     private static final int TABLE_COUNT = 3;
     private static final int COLUMN_COUNT = 10;
@@ -246,8 +246,8 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
 
     @Before
     public void setup() {
-        // TODO get seed for method from test info, so that these are different, but still deterministic
-        Random random = randomRule.getRandom();
+        // RandomRule is used to generate parameters, so that we have different DDL sets of tests
+        Random random = new Random(testSeed);
         for (int i=0; i<TABLE_COUNT; i++) {
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.append("CREATE TABLE ");
