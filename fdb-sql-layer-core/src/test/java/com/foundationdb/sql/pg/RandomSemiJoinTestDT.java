@@ -75,7 +75,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         this.testSeed = testSeed;
     }
 
-    private static String buildQuery(Random random, boolean firstQuery) {
+    private static String buildQuery(Random random, boolean useExists, boolean firstQuery) {
         // TODO for real
         if (firstQuery && random.nextInt(20) == 0) {
             return randomTable(random);
@@ -100,22 +100,23 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
             default:
                 throw new IllegalStateException("not enough casses for random values");
         }
-        generateWhereClause(stringBuilder, random, tableAliasCount);
+        generateWhereClause(stringBuilder, random, tableAliasCount, !firstQuery && useExists);
         return stringBuilder.toString();
     }
 
-    private static void generateWhereClause(StringBuilder stringBuilder, Random random, int tableAliasCount) {
-        if (random.nextInt(5) == 0) {
+    private static void generateWhereClause(StringBuilder stringBuilder, Random random,
+                                            int tableAliasCount, boolean forceMainEqualsClause) {
+        if (!forceMainEqualsClause && random.nextInt(5) == 0) {
             return;
         }
         stringBuilder.append(" WHERE ");
-        randomCondition(stringBuilder, random, tableAliasCount, WHERE_CONSTANT_LIKELYHOOD);
+        randomCondition(stringBuilder, random, tableAliasCount, WHERE_CONSTANT_LIKELYHOOD, forceMainEqualsClause);
         for (int i=0; i<MAX_CONDITION_COUNT; i++) {
             if (random.nextInt(5) == 0) {
                 break;
             }
             stringBuilder.append(random.nextBoolean() ? " AND " : " OR ");
-            randomCondition(stringBuilder, random, tableAliasCount, WHERE_CONSTANT_LIKELYHOOD);
+            randomCondition(stringBuilder, random, tableAliasCount, WHERE_CONSTANT_LIKELYHOOD, false);
         }
     }
 
@@ -129,6 +130,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
             sb.append(j);
             for (int k=0; k<COLUMN_COUNT; k++) {
                 sb.append(",");
+                // TODO change this so there's actually some matches sometimes. (like nextInt(MAX_ROWS*3))
                 // TODO sometimes null
                 sb.append(random.nextInt());
             }
@@ -175,28 +177,39 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
             if (i > 0) {
                 sb.append(" AND ");
             }
-            randomCondition(sb, random, tableAliasCount, JOIN_CONSTANT_LIKELYHOOD);
+            randomCondition(sb, random, tableAliasCount, JOIN_CONSTANT_LIKELYHOOD, false);
         }
     }
 
-    private static void randomCondition(StringBuilder sb, Random random, int tableAliasCount, int constantBias) {
+    private static void randomCondition(StringBuilder sb, Random random, int tableAliasCount, int constantBias,
+                                        boolean forceMainEqualsClause) {
         int firstTable = random.nextInt(tableAliasCount);
         int secondTable = random.nextInt(tableAliasCount);
         if (secondTable == firstTable) {
             secondTable = (firstTable + 1) % tableAliasCount;
         }
+        boolean mainIsFirst = false;
         // 0 => first is constant, 1 => second is constant, else neither
         int oneIsConstant = random.nextInt(constantBias);
         if (oneIsConstant == 0) {
             sb.append(random.nextInt());
         } else {
-            aliasedSource(sb, random, firstTable);
+            mainIsFirst = random.nextBoolean();
+            if (mainIsFirst && forceMainEqualsClause) {
+                sb.append("%s");
+            } else {
+                aliasedSource(sb, random, firstTable);
+            }
         }
         sb.append(" = "); // TODO random comparison
         if (oneIsConstant == 1) {
             sb.append(random.nextInt());
         } else {
-            aliasedSource(sb, random, secondTable);
+            if (mainIsFirst || !forceMainEqualsClause) {
+                aliasedSource(sb, random, secondTable);
+            } else {
+                sb.append("%s");
+            }
         }
     }
 
@@ -257,14 +270,43 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
     public void Test() {
         Random random = new Random(testSeed);
         for (int i=0; i<QUERY_COUNT; i++) {
-            testOneQuery(buildQuery(random, true), buildQuery(random, false));
+            boolean useExists  = random.nextBoolean();
+            if (useExists) {
+                testOneQueryExists(buildQuery(random, useExists, true), buildQuery(random, useExists, false));
+            } else {
+                testOneQueryIn(buildQuery(random, useExists, true), buildQuery(random, useExists, false));
+            }
         }
     }
 
-    private void testOneQuery(String query1, String query2) {
+    private void testOneQueryExists(String query1, String query2) {
+        boolean negative = randomRule.getRandom().nextBoolean();
+        String existsClause = negative ? "NOT EXISTS" : "EXISTS";
+        System.out.println(String.format("SELECT main FROM (%s) AS T1 WHERE id %s (%s)",query1, existsClause, query2));
+        boolean query1IsJustATable = query1.startsWith("table");
+        List<List<?>> results = sql(query1IsJustATable ? "SELECT main FROM " + query1 : query1);
+        List<Object> expected = new ArrayList<>();
+        for (List<?> outerRow : results) {
+            List<List<?>> innerResults = sql(String.format(query2, outerRow.get(0)));
+            if (negative == (innerResults.size() == 0)) {
+                expected.add(outerRow.get(0));
+            }
+        }
+        String q1 = query1IsJustATable ? query1 : "(" + query1 + ")";
+        List<List<?>> sqlResults = sql("SELECT main FROM " + q1 + " AS T1 WHERE " + existsClause +
+                " (" + String.format(query2, "T1.main") + ")");
+        List<Object> actual = new ArrayList<>();
+        for (List<?> actualRow : sqlResults) {
+            assertEquals("Expected 1 column" + actualRow, 1, actualRow.size());
+            actual.add(actualRow.get(0));
+        }
+        assertEqualLists("Checking lists", expected, actual);
+    }
+
+    private void testOneQueryIn(String query1, String query2) {
         boolean useIn = randomRule.getRandom().nextBoolean();
         String inClause = useIn ? "IN" : "NOT IN";
-        System.out.println(String.format("SELECT main FROM (%s) AS T1 WHERE id %s (%s)",query1, inClause, query2));
+        System.out.println(String.format("The Query: SELECT main FROM (%s) AS T1 WHERE id %s (%s)",query1, inClause, query2));
         boolean query1IsJustATable = query1.startsWith("table");
         List<List<?>> results1 = sql(query1IsJustATable ? "SELECT main FROM " + query1 : query1);
         List<List<?>> results2 = sql(query2);
