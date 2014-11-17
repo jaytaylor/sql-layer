@@ -49,6 +49,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
     private static final int TABLE_COUNT = 3;
     private static final int COLUMN_COUNT = 10;
     private static final int MAX_ROW_COUNT = 100;
+    private static final int MAX_INDEX_COUNT = 5;
 
     @ClassRule
     public static final RandomRule randomRule = new RandomRule();
@@ -94,6 +95,49 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         }
 
         return stringBuilder.toString();
+    }
+
+    private void fillRowData(Random random, int tableIndex) {
+        int row_count = random.nextInt(MAX_ROW_COUNT);
+        for (int j=0; j<row_count; j++) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("INSERT INTO ");
+            sb.append(table(tableIndex));
+            sb.append(" VALUES (");
+            sb.append(j);
+            for (int k=0; k<COLUMN_COUNT; k++) {
+                sb.append(",");
+                // TODO sometimes null
+                sb.append(random.nextInt());
+            }
+            sb.append(")");
+            sql(sb.toString());
+        }
+    }
+
+    private static String createIndexSql(Random random, String indexName) {
+        List<String> columns = new ArrayList<>();
+        columns.add("main");
+        for (int i=0; i<COLUMN_COUNT; i++) {
+            columns.add("column" + i);
+        }
+        int columnsInIndex = random.nextInt(COLUMN_COUNT);
+        StringBuilder sb = new StringBuilder("CREATE ");
+        if (columnsInIndex == 0) {
+            sb.append("UNIQUE ");
+        }
+        sb.append("INDEX ");
+        sb.append(indexName);
+        sb.append( " ON ");
+        sb.append(randomTable(random));
+        sb.append("(");
+        sb.append(columns.remove(random.nextInt(COLUMN_COUNT)));
+        for (int i=1; i<columnsInIndex; i++) {
+            sb.append(", ");
+            sb.append(columns.remove(random.nextInt(columns.size())));
+        }
+        sb.append(")");
+        return sb.toString();
     }
 
     private static void addInnerJoin(StringBuilder sb, Random random) {
@@ -144,36 +188,23 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
             }
             stringBuilder.append(")");
             sql(stringBuilder.toString());
-            Date before = new Date();
             fillRowData(random, i);
-            Date after = new Date();
-            System.out.println("Diff " + (after.getTime() - before.getTime()));
         }
-        // TODO create random indexes
+
+        int indexCount = random.nextInt(MAX_INDEX_COUNT);
+        System.out.println(indexCount);
+        for (int k=0; k<indexCount; k++) {
+            String indexSql = createIndexSql(random, "index" + k);
+            System.out.println(indexSql);
+            sql(indexSql);
+        }
+        // TODO create random groups & group indexes
     }
 
     @After
     public void teardown() {
         for (int i=0; i<TABLE_COUNT; i++) {
             sql("DROP TABLE " + table(i));
-        }
-    }
-
-    public void fillRowData(Random random, int tableIndex) {
-        int row_count = random.nextInt(MAX_ROW_COUNT);
-        for (int j=0; j<row_count; j++) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("INSERT INTO ");
-            sb.append(table(tableIndex));
-            sb.append(" VALUES (");
-            sb.append(j);
-            for (int k=0; k<COLUMN_COUNT; k++) {
-                sb.append(",");
-                // TODO sometimes null
-                sb.append(random.nextInt());
-            }
-            sb.append(")");
-            sql(sb.toString());
         }
     }
 
