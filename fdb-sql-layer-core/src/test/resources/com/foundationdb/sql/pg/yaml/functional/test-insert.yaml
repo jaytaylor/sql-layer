@@ -28,7 +28,7 @@
 ---
 - Statement: SELECT (bigint_unsigned_field) from all_types
 - output: [[0], [1], [9223372036854775807]]
-- output_types: [NUMERIC]
+- output_types: [DECIMAL]
 ---
 - Statement: DELETE from all_types
 
@@ -89,7 +89,7 @@
 ---
 - Statement: SELECT (decimal_field) from all_types
 - output: [[1], [123456], [-123456], [1234567], [-1234567], [9999999999], [-9999999999]]
-- output_types: !select-engine { all: [NUMERIC], sys-mysql: [DECIMAL] } 
+- output_types: [DECIMAL]
 ---
 - Statement: DELETE from all_types
 
@@ -148,7 +148,7 @@
 ---
 - Statement: SELECT (numeric_field) from all_types
 - output: [[1]]
-- output_types: !select-engine { all: [NUMERIC], sys-mysql: [DECIMAL] } 
+- output_types: [DECIMAL]
 ---
 - Statement: DELETE from all_types
 
@@ -157,7 +157,7 @@
 ---
 - Statement: SELECT (real_field) from all_types
 - output: [[1.0]]
-- output_types: !select-engine {it: [REAL], all: [FLOAT] }
+- output_types: [FLOAT] 
 ---
 - Statement: DELETE from all_types
 
@@ -185,7 +185,7 @@
 ---
 - Statement: SELECT (timestamp_field) from all_types
 - output: [[!re '2000-01-02 04:00:00([.]0)?']]
-- output_types: [TIMESTAMP]
+- output_types: [DATETIME]
 ---
 - Statement: DELETE from all_types
 

@@ -9,5 +9,5 @@
 ---
 - Statement: SELECT * FROM test_defaults
 - output: [[1, 'hello', !select-engine { it: 'auser', all: 'test' }, !datetime ]]
-- output_types: [INTEGER, VARCHAR, VARCHAR, TIMESTAMP]
+- output_types: [INTEGER, VARCHAR, VARCHAR, DATETIME]
 ...

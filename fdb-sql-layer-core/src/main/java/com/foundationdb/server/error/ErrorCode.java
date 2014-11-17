@@ -317,6 +317,7 @@ public enum ErrorCode {
     RESULTSET_INDEX_OUT_OF_BOUNDS        ("42", "905", Importance.DEBUG, ResultsetIndexOutOfBoundsException.class),
     UNPREPARED_STATEMENT_WITH_PARAMETERS ("42", "906", Importance.DEBUG, UnpreparedStatementWithParametersException.class),
     RESULTSET_SELECT_MISMATCH            ("42", "907", Importance.DEBUG, ResultsetSelectMismatchException.class),
+    RESOLVE_TYPE_FAILED                  ("42", "908", Importance.DEBUG, JDBCTypeResolveException.class),
 
     // Class 44 - with check option violation
 

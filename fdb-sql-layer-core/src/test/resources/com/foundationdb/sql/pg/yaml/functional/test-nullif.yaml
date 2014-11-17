@@ -69,4 +69,4 @@
 - Statement: SELECT NULLIF(?, 2.3) FROM all_types;
 - params: [[3]]
 - output: [[3]]
-- output_types : [NUMERIC]
+- output_types : [DECIMAL]

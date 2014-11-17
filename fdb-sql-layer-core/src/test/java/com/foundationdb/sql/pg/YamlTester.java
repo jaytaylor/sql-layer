@@ -61,7 +61,9 @@ import java.util.Map.Entry;
 import java.util.Stack;
 import java.util.regex.Pattern;
 
+import com.foundationdb.server.error.JDBCTypeResolveException;
 import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.sql.jdbc.jdbc4.Jdbc4Connection;
 import com.foundationdb.util.Strings;
 import org.junit.ComparisonFailure;
 import org.slf4j.Logger;
@@ -75,6 +77,7 @@ import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.nodes.NodeTuple;
 import org.yaml.snakeyaml.nodes.ScalarNode;
 import org.yaml.snakeyaml.nodes.Tag;
+
 
 /** A utility for testing SQL access over a Postgres server connection based on the contents of a YAML file. */
 /* Here's an overview of the syntax of the YAML file.
@@ -165,35 +168,7 @@ import org.yaml.snakeyaml.nodes.Tag;
 class YamlTester
 {
     private static final Logger LOG = LoggerFactory.getLogger(YamlTester.class);
-
-    private static final Map<String, Integer> typeNameToNumber = new HashMap<>();
-    private static final Map<Integer, String> typeNumberToName = new HashMap<>();
-
-    static {
-        addTypeNameAndNumber("VARBINARY", Types.BINARY); // name to number overwritten below
-        addTypeNameAndNumber("BIGINT", Types.BIGINT);
-        addTypeNameAndNumber("BLOB", Types.BLOB);
-        addTypeNameAndNumber("BOOLEAN", Types.BIT); // TODO: Postgres JDBC claims it is Types.BIT (-7) instead of Types.BOOLEAN (16)
-        addTypeNameAndNumber("CHAR", Types.CHAR);
-        addTypeNameAndNumber("CLOB", Types.CLOB);
-        addTypeNameAndNumber("DATE", Types.DATE);
-        addTypeNameAndNumber("DECIMAL", Types.DECIMAL);
-        addTypeNameAndNumber("DOUBLE", Types.DOUBLE);
-        addTypeNameAndNumber("FLOAT", Types.FLOAT);
-        addTypeNameAndNumber("INTEGER", Types.INTEGER);
-        addTypeNameAndNumber("LONGVARBINARY", Types.LONGVARBINARY);
-        addTypeNameAndNumber("LONGVARCHAR", Types.LONGVARCHAR);
-        addTypeNameAndNumber("NUMERIC", Types.NUMERIC);
-        addTypeNameAndNumber("REAL", Types.REAL);
-        addTypeNameAndNumber("SMALLINT", Types.SMALLINT);
-        addTypeNameAndNumber("TIME", Types.TIME);
-        addTypeNameAndNumber("TIMESTAMP", Types.TIMESTAMP);
-        addTypeNameAndNumber("TINYINT", Types.TINYINT);
-        addTypeNameAndNumber("VARBINARY", Types.VARBINARY);
-        addTypeNameAndNumber("VARCHAR", Types.VARCHAR);
-        addTypeNameAndNumber("OTHER", Types.OTHER);
-    }
-
+    
     /** Matches all engines. */
     private static final String ALL_ENGINE = "all";
     /** Matches the IT engine. */
@@ -1568,17 +1543,26 @@ class YamlTester
 
     }
 
-    private static void addTypeNameAndNumber(String name, int number) {
-        typeNameToNumber.put(name, number);
-        typeNumberToName.put(number, name);
+    private String getTypeName(int sqlTypeNumber) {
+        if (connection instanceof Jdbc4Connection)
+            try {
+                return ((Jdbc4Connection) connection).getTypeInfo().getNameFromSQL(sqlTypeNumber);
+            } catch (SQLException e) {
+                throw new JDBCTypeResolveException("Unable to resolve type name");
+            }
+        else
+            throw new JDBCTypeResolveException("connection is no JDBC4Connection");
     }
-
-    private static String getTypeName(int typeNumber) {
-        return typeNumberToName.get(typeNumber);
-    }
-
-    private static Integer getTypeNumber(String typeName) {
-        return typeNameToNumber.get(typeName);
+  
+    private Integer getTypeNumber(String typeName) {
+        if (connection instanceof Jdbc4Connection)
+            try {
+                return ((Jdbc4Connection) connection).getTypeInfo().getSQLType(typeName);
+            } catch (SQLException e) {
+                throw new JDBCTypeResolveException("Unable to retrieve type number");
+            }
+        else
+            throw new JDBCTypeResolveException("connection is no JDBC4Connection");
     }
 
     /** An assertion error that includes context information. */

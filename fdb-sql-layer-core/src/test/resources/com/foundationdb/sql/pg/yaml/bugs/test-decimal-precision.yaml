@@ -8,5 +8,6 @@
 - Statement: INSERT INTO dec_test values (2.5)
 ---
 - Statement: SELECT * FROM dec_test
+- output_types: [DECIMAL]
 - output: [['2.50']]
 ...
