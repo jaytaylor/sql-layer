@@ -93,6 +93,16 @@ public class Spatial
             : JTS.spatialObject(space, geometry);
     }
 
+    public static String toHexString(byte[] bytes)
+    {
+        StringBuilder buffer = new StringBuilder(bytes.length * 2 + 2);
+        buffer.append("0x");
+        for (int i = 0; i < bytes.length; i++) {
+            buffer.append(Integer.toHexString(bytes[i] & 0xff));
+        }
+        return buffer.toString();
+    }
+
     public static final int LAT_LON_DIMENSIONS = 2;
     public static final double MIN_LAT = -90;
     public static final double MAX_LAT = 90;

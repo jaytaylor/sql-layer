@@ -22,6 +22,7 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.WriteIndexRow;
+import com.foundationdb.server.error.InvalidSpatialObjectException;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDataSource;
@@ -139,10 +140,11 @@ public class SpatialColumnHandler
             ValueSource source = row.value(positions[0]);
             TClass tclass = source.getType().typeClass();
             assert tclass == MBinary.BLOB : tclass;
+            byte[] spatialObjectBytes = source.getBytes();
             try {
-                spatialObject = Spatial.deserialize(space, source.getBytes());
+                spatialObject = Spatial.deserialize(space, spatialObjectBytes);
             } catch (ParseException e) {
-                assert false; // There must be something better to do here.
+                throw new InvalidSpatialObjectException(Spatial.toHexString(spatialObjectBytes));
             }
         }
     }
@@ -183,10 +185,11 @@ public class SpatialColumnHandler
             RowDataValueSource rowDataValueSource = (RowDataValueSource) rowDataSource;
             TClass tclass = tinstances[0].typeClass();
             assert tclass == MBinary.BLOB : tclass;
+            byte[] spatialObjectBytes = rowDataValueSource.getBytes();
             try {
-                spatialObject = Spatial.deserialize(space, rowDataValueSource.getBytes());
+                spatialObject = Spatial.deserialize(space, spatialObjectBytes);
             } catch (ParseException e) {
-                assert false; // There must be something better to do here.
+                throw new InvalidSpatialObjectException(Spatial.toHexString(spatialObjectBytes));
             }
         }
     }
