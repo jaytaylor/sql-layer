@@ -27,6 +27,7 @@ import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
+import com.geophile.z.Record;
 
 public class NewRowBackedIndexRow implements Row
 {
@@ -95,6 +96,27 @@ public class NewRowBackedIndexRow implements Row
     public int compareTo(Row row, int leftStartIndex, int rightStartIndex, int fieldCount)
     {
         throw new UnsupportedOperationException();
+    }
+
+    // Geophile Record interface
+
+    @Override
+    public long z()
+    {
+        assert false;
+        return -1L;
+    }
+
+    @Override
+    public void z(long z)
+    {
+        assert false;
+    }
+
+    @Override
+    public void copyTo(Record record)
+    {
+        assert false;
     }
 
     // Object state

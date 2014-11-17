@@ -109,9 +109,8 @@ class IndexCursorSpatial_InBox extends IndexCursor
         super(context, iterationHelper);
         this.keyRange = keyRange;
         this.index = keyRange.indexRowType().index();
-        assert keyRange.spatial();
         assert index.isSpatial() : index;
-        this.space = spatialIndex.space();
+        this.space = this.index.space();
         this.loExpressions = keyRange.lo().boundExpressions(context, bindings);
         this.hiExpressions = keyRange.hi().boundExpressions(context, bindings);
         this.iterationHelper = iterationHelper;
@@ -220,6 +219,6 @@ class IndexCursorSpatial_InBox extends IndexCursor
     private final ValueRecord loExpressions;
     private final ValueRecord hiExpressions;
     private final ColumnSelector indexColumnSelector;
-    private final MultiCursor multiCursor;
+    private MultiCursor multiCursor;
     private final IterationHelper iterationHelper;
 }

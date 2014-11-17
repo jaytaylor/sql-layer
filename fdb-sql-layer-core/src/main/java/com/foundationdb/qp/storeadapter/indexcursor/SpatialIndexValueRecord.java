@@ -20,6 +20,7 @@ package com.foundationdb.qp.storeadapter.indexcursor;
 import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
+import com.geophile.z.Record;
 
 class SpatialIndexValueRecord implements ValueRecord
 {
@@ -41,6 +42,27 @@ class SpatialIndexValueRecord implements ValueRecord
     public SpatialIndexValueRecord(int nFields)
     {
         valueSources = new Value[nFields];
+    }
+
+    // Geophile Record interface
+
+    @Override
+    public long z()
+    {
+        assert false;
+        return -1L;
+    }
+
+    @Override
+    public void z(long z)
+    {
+        assert false;
+    }
+
+    @Override
+    public void copyTo(Record record)
+    {
+        assert false;
     }
 
     // Object state

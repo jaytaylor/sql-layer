@@ -17,8 +17,9 @@
 
 package com.foundationdb.server.types.value;
 
-import com.foundationdb.server.types.value.ValueSource;
+import com.geophile.z.Record;
 
-public interface ValueRecord {
+public interface ValueRecord extends Record
+{
     ValueSource value(int index);
 }
