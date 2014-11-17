@@ -103,6 +103,7 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
         int nrows = 0;
         Cursor cursor = null;
         IOException exceptionDuringExecution = null;
+        InvalidOperationException exceptionFromExecution = null;
         RuntimeException runtimeExDuringExecution = null;
         boolean suspended = false;
         try {
@@ -130,8 +131,8 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
         } catch (InvalidOperationException e) {
             e.getCode().logAtImportance(logger, 
                     "Caught unexpected InvalidOperationException during execution: {}", 
-                    e.getLocalizedMessage());
-            runtimeExDuringExecution = e;
+                    e.getLocalizedMessage(), e);
+            exceptionFromExecution = e;
         } catch (RuntimeException e) {
             logger.error("Caught unexpected runtime exception during execution {}", e.getLocalizedMessage());
             runtimeExDuringExecution = e;
@@ -141,13 +142,12 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
             try {
                 suspended = context.finishCursor(this, cursor, nrows, suspended);
             } catch (InvalidOperationException e) {
-                e.getCode().logAtImportance(logger, 
-                        "Caught unexpected InvalidOperationException during cleanup: {}", 
+                logger.warn("Caught InvalidOperationException during cleanup: {}", 
                         e.getLocalizedMessage());
                 exceptionDuringCleanup = e;
             } catch (RuntimeException e) {
                 exceptionDuringCleanup = e;
-                logger.error("Caught exception while cleaning up cursor for {} : {}", resultOperator.describePlan(), e.getLocalizedMessage());
+                logger.error("Caught unexpected exception while cleaning up cursor for {} : {}", resultOperator.describePlan(), e.getLocalizedMessage());
             }
             finally {
                 postExecute(context, DXLFunction.UNSPECIFIED_DML_READ);
@@ -156,6 +156,8 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
                 throw exceptionDuringExecution;
             } else if (runtimeExDuringExecution != null) {
                 throw runtimeExDuringExecution;
+            } else if (exceptionFromExecution != null) {
+                throw exceptionFromExecution;
             } else if (exceptionDuringCleanup != null) {
                 throw exceptionDuringCleanup;
             }
