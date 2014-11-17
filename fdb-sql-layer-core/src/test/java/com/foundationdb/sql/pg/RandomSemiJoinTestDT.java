@@ -180,7 +180,8 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
 
     @Test
     public void Test() {
-        List<List<?>> results1 = sql(query1.startsWith("table") ? "SELECT main FROM " + query1 : query1);
+        boolean query1IsJustATable = query1.startsWith("table");
+        List<List<?>> results1 = sql(query1IsJustATable ? "SELECT main FROM " + query1 : query1);
         List<List<?>> results2 = sql(query2);
         List<Object> expected = new ArrayList<>();
         for (List<?> row : results1) {
@@ -191,7 +192,8 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
                 }
             }
         }
-        List<List<?>> sqlResults = sql("SELECT main FROM (" + query1 + ") AS T1 WHERE main IN (" + query2 + ")");
+        String q1 = query1IsJustATable ? query1 : "(" + query1 + ")";
+        List<List<?>> sqlResults = sql("SELECT main FROM " + q1 + " AS T1 WHERE main IN (" + query2 + ")");
         List<Object> actual = new ArrayList<>();
         for (List<?> actualRow : sqlResults) {
             assertEquals("Expected 1 column" + actualRow, 1, actualRow.size());
