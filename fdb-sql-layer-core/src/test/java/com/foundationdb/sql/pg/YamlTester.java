@@ -43,7 +43,6 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
-import java.sql.Types;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -54,14 +53,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Stack;
 import java.util.regex.Pattern;
 
-import com.foundationdb.server.error.JDBCTypeResolveException;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.sql.jdbc.jdbc4.Jdbc4Connection;
 import com.foundationdb.util.Strings;
@@ -996,7 +993,7 @@ class YamlTester
             assertEquals("Wrong number of output types:", outputTypes.size(), numColumns);
             for(int i = 1; i <= numColumns; i++) {
                 int columnType = metaData.getColumnType(i);
-                String columnTypeName = getTypeName(columnType);
+                String columnTypeName = metaData.getColumnTypeName(i);
                 if(columnTypeName == null) {
                     columnTypeName = "<unknown " + metaData.getColumnTypeName(i) + " (" + columnType + ")>";
                 }
@@ -1540,18 +1537,6 @@ class YamlTester
             long testResult = date.getTime() - now.getTime();
             return Math.abs(testResult) < (1 * MINUTES_IN_SECONDS * SECONDS_IN_MILLISECONDS);
         }
-
-    }
-
-    private String getTypeName(int sqlTypeNumber) {
-        if (connection instanceof Jdbc4Connection)
-            try {
-                return ((Jdbc4Connection) connection).getTypeInfo().getNameFromSQL(sqlTypeNumber);
-            } catch (SQLException e) {
-                throw new JDBCTypeResolveException("Unable to resolve type name");
-            }
-        else
-            throw new JDBCTypeResolveException("connection is no JDBC4Connection");
     }
   
     private Integer getTypeNumber(String typeName) {
@@ -1559,10 +1544,10 @@ class YamlTester
             try {
                 return ((Jdbc4Connection) connection).getTypeInfo().getSQLType(typeName);
             } catch (SQLException e) {
-                throw new JDBCTypeResolveException("Unable to retrieve type number");
+                throw new AssertionError("Unable to retrieve type number");
             }
         else
-            throw new JDBCTypeResolveException("connection is no JDBC4Connection");
+            throw new AssertionError("connection is no JDBC4Connection");
     }
 
     /** An assertion error that includes context information. */
