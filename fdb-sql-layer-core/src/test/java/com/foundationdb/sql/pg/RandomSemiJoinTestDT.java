@@ -98,8 +98,9 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
             return randomTable(random);
         }
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("SELECT ta0.");
-        stringBuilder.append(firstQuery ? "main" : randomColumn(random));
+        String returningSource = "ta0." + (firstQuery ? "main" : randomColumn(random));
+        stringBuilder.append("SELECT ");
+        stringBuilder.append(returningSource);
         stringBuilder.append(" FROM ");
         stringBuilder.append(randomTable(random));
         stringBuilder.append(" AS ta0");
@@ -124,14 +125,14 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
                 throw new IllegalStateException("not enough cases for random values");
         }
         addWhereClause(stringBuilder, random, tableAliasCount, !firstQuery && useExists);
-        addLimitClause(stringBuilder, random, tableAliasCount);
+        addLimitClause(stringBuilder, random, returningSource);
         return stringBuilder.toString();
     }
 
-    private static void addLimitClause(StringBuilder stringBuilder, Random random, int tableAliasCount) {
+    private static void addLimitClause(StringBuilder stringBuilder, Random random, String returningSource) {
         if (random.nextInt(10) == 0) {
             stringBuilder.append(" ORDER BY ");
-            addAliasedSource(stringBuilder, random, random.nextInt(tableAliasCount));
+            stringBuilder.append(returningSource);
             stringBuilder.append(" LIMIT ");
             stringBuilder.append(random.nextInt(10)+1);
         }
