@@ -28,7 +28,13 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         RIGHT,
         FULL_OUTER,
         // These are beyond what flatten supports, used to represent EXISTS or IN (sometimes).
+        /**
+         * Select all rows in the left/outer source for which at least one row in the right/inner source matches.
+         */
         SEMI,
+        /**
+         * Select all rows in the left/outer source for which no row in the right/inner source matches.
+         */
         ANTI,
         // These are intermediate to represent when a semi-join can be
         // turned into a regular join.
