@@ -22,10 +22,8 @@ import com.foundationdb.util.RandomRule;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ErrorCollector;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
@@ -50,7 +48,7 @@ import static org.junit.Assert.assertEquals;
  * Also handles NOT IN and EXISTS and NOT EXISTS, could handle more
  *
  */
-@Ignore("Waiting until this passes most of the time")
+//@Ignore("Waiting until this passes most of the time")
 @RunWith(SelectedParameterizedRunner.class)
 public class RandomSemiJoinTestDT extends PostgresServerITBase {
 
@@ -93,15 +91,6 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         this.testSeed = testSeed;
     }
 
-    private static Integer randomValue(Random random) {
-        int val = random.nextInt(MAX_VALUE-MIN_VALUE) + MIN_VALUE;
-        if (val == MAX_VALUE) {
-            return null;
-        } else {
-            return val;
-        }
-    }
-
     private static String buildQuery(Random random, boolean useExists, boolean firstQuery) {
         if (firstQuery && random.nextInt(20) == 0) {
             return randomTable(random);
@@ -119,48 +108,137 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
                 break;
             case 1:
                 tableAliasCount++;
-                addJoin("INNER", stringBuilder, random, tableAliasCount);
+                addJoinClause("INNER", stringBuilder, random, tableAliasCount);
                 break;
             case 2:
                 tableAliasCount++;
-                addJoin("LEFT OUTER", stringBuilder, random, tableAliasCount);
+                addJoinClause("LEFT OUTER", stringBuilder, random, tableAliasCount);
                 break;
             case 3:
                 tableAliasCount++;
-                addJoin("RIGHT OUTER", stringBuilder, random, tableAliasCount);
+                addJoinClause("RIGHT OUTER", stringBuilder, random, tableAliasCount);
                 break;
             default:
                 throw new IllegalStateException("not enough cases for random values");
         }
-        generateWhereClause(stringBuilder, random, tableAliasCount, !firstQuery && useExists);
-        generateLimit(stringBuilder, random);
+        addWhereClause(stringBuilder, random, tableAliasCount, !firstQuery && useExists);
+        addLimitClause(stringBuilder, random);
         return stringBuilder.toString();
     }
 
-    private static void generateLimit(StringBuilder stringBuilder, Random random) {
+    private static void addLimitClause(StringBuilder stringBuilder, Random random) {
         if (random.nextInt(10) == 0) {
             stringBuilder.append(" LIMIT ");
             stringBuilder.append(random.nextInt(10)+1);
         }
     }
 
-    private static void generateWhereClause(StringBuilder stringBuilder, Random random,
-                                            int tableAliasCount, boolean forceMainEqualsClause) {
+    private static void addWhereClause(StringBuilder stringBuilder, Random random,
+                                       int tableAliasCount, boolean forceMainEqualsClause) {
         if (!forceMainEqualsClause && random.nextInt(5) == 0) {
             return;
         }
         stringBuilder.append(" WHERE ");
-        randomCondition(stringBuilder, random, tableAliasCount, WHERE_CONSTANT_LIKELYHOOD, forceMainEqualsClause);
+        addCondition(stringBuilder, random, tableAliasCount, WHERE_CONSTANT_LIKELYHOOD, forceMainEqualsClause);
         for (int i=0; i<MAX_CONDITION_COUNT; i++) {
             if (random.nextInt(5) == 0) {
                 break;
             }
             stringBuilder.append(random.nextBoolean() ? " AND " : " OR ");
-            randomCondition(stringBuilder, random, tableAliasCount, WHERE_CONSTANT_LIKELYHOOD, false);
+            addCondition(stringBuilder, random, tableAliasCount, WHERE_CONSTANT_LIKELYHOOD, false);
         }
     }
 
-    private void fillRowData(Random random, int tableIndex) {
+    private static void addJoinClause(String type, StringBuilder sb, Random random, int tableAliasCount) {
+        sb.append(" ");
+        sb.append(type);
+        sb.append(" JOIN ");
+        sb.append(randomTable(random));
+        sb.append(" AS ta");
+        sb.append(tableAliasCount-1);
+        sb.append(" ON ");
+        // no cross joins right now
+        int conditionCount = random.nextInt(3);
+        for (int i=0; i<conditionCount+1; i++) {
+            if (i > 0) {
+                sb.append(" AND ");
+            }
+            addCondition(sb, random, tableAliasCount, JOIN_CONSTANT_LIKELYHOOD, false);
+        }
+    }
+
+    private static void addCondition(StringBuilder sb, Random random, int tableAliasCount, int constantBias,
+                                     boolean forceMainEqualsClause) {
+        int firstTable = random.nextInt(tableAliasCount);
+        int secondTable = random.nextInt(tableAliasCount);
+        if (secondTable == firstTable) {
+            secondTable = (firstTable + 1) % tableAliasCount;
+        }
+        boolean mainIsFirst = false;
+        // 0 => first is constant, 1 => second is constant, else neither
+        int oneIsConstant = random.nextInt(constantBias);
+        if (oneIsConstant == 0) {
+            sb.append(randomValue(random));
+        } else {
+            mainIsFirst = random.nextBoolean();
+            if (mainIsFirst && forceMainEqualsClause) {
+                sb.append("%s");
+            } else {
+                addAliasedSource(sb, random, firstTable);
+            }
+        }
+        int whichComparison = random.nextInt(6);
+        switch (whichComparison) {
+            case 0:
+                sb.append(" < ");
+                break;
+            case 1:
+                sb.append(" > ");
+                break;
+            default:
+                sb.append(" = ");
+                break;
+        }
+        if (oneIsConstant == 1) {
+            sb.append(randomValue(random));
+        } else {
+            if (mainIsFirst || !forceMainEqualsClause) {
+                addAliasedSource(sb, random, secondTable);
+            } else {
+                sb.append("%s");
+            }
+        }
+    }
+
+    private static void addAliasedSource(StringBuilder sb, Random random, int firstTable) {
+        sb.append("ta");
+        sb.append(firstTable);
+        sb.append(".");
+        sb.append(randomColumn(random));
+    }
+
+    private static String randomColumn(Random random) {
+        return "c" + random.nextInt(COLUMN_COUNT);
+    }
+
+    private static String randomTable(Random random) {
+        return table(random.nextInt(TABLE_COUNT));
+    }
+
+    private static String table(int index) {
+        return "table" + index;
+    }
+
+    private static Integer randomValue(Random random) {
+        int val = random.nextInt(MAX_VALUE-MIN_VALUE) + MIN_VALUE;
+        if (val == MAX_VALUE) {
+            return null;
+        } else {
+            return val;
+        }
+    }
+
+    private void insertRows(Random random, int tableIndex) {
         int row_count = random.nextInt(MAX_ROW_COUNT);
         for (int j=0; j<row_count; j++) {
             StringBuilder sb = new StringBuilder();
@@ -202,86 +280,6 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         return sb.toString();
     }
 
-    private static void addJoin(String type, StringBuilder sb, Random random, int tableAliasCount) {
-        sb.append(" ");
-        sb.append(type);
-        sb.append(" JOIN ");
-        sb.append(randomTable(random));
-        sb.append(" AS ta");
-        sb.append(tableAliasCount-1);
-        sb.append(" ON ");
-        // no cross joins right now
-        int conditionCount = random.nextInt(3);
-        for (int i=0; i<conditionCount+1; i++) {
-            if (i > 0) {
-                sb.append(" AND ");
-            }
-            randomCondition(sb, random, tableAliasCount, JOIN_CONSTANT_LIKELYHOOD, false);
-        }
-    }
-
-    private static void randomCondition(StringBuilder sb, Random random, int tableAliasCount, int constantBias,
-                                        boolean forceMainEqualsClause) {
-        int firstTable = random.nextInt(tableAliasCount);
-        int secondTable = random.nextInt(tableAliasCount);
-        if (secondTable == firstTable) {
-            secondTable = (firstTable + 1) % tableAliasCount;
-        }
-        boolean mainIsFirst = false;
-        // 0 => first is constant, 1 => second is constant, else neither
-        int oneIsConstant = random.nextInt(constantBias);
-        if (oneIsConstant == 0) {
-            sb.append(randomValue(random));
-        } else {
-            mainIsFirst = random.nextBoolean();
-            if (mainIsFirst && forceMainEqualsClause) {
-                sb.append("%s");
-            } else {
-                aliasedSource(sb, random, firstTable);
-            }
-        }
-        int whichComparison = random.nextInt(6);
-        switch (whichComparison) {
-            case 0:
-                sb.append(" < ");
-                break;
-            case 1:
-                sb.append(" > ");
-                break;
-            default:
-                sb.append(" = ");
-                break;
-        }
-        if (oneIsConstant == 1) {
-            sb.append(randomValue(random));
-        } else {
-            if (mainIsFirst || !forceMainEqualsClause) {
-                aliasedSource(sb, random, secondTable);
-            } else {
-                sb.append("%s");
-            }
-        }
-    }
-
-    private static void aliasedSource(StringBuilder sb, Random random, int firstTable) {
-        sb.append("ta");
-        sb.append(firstTable);
-        sb.append(".");
-        sb.append(randomColumn(random));
-    }
-
-    private static String randomTable(Random random) {
-        return table(random.nextInt(TABLE_COUNT));
-    }
-
-    private static String randomColumn(Random random) {
-        return "c" + random.nextInt(COLUMN_COUNT);
-    }
-
-    private static String table(int index) {
-        return "table" + index;
-    }
-
     @Before
     public void setup() {
         // RandomRule is used to generate parameters, so that we have different DDL sets of tests
@@ -298,7 +296,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
             }
             stringBuilder.append(")");
             sql(stringBuilder.toString());
-            fillRowData(random, i);
+            insertRows(random, i);
         }
 
         int indexCount = random.nextInt(MAX_INDEX_COUNT);
@@ -314,7 +312,6 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
             sql("DROP TABLE " + table(i));
         }
     }
-
 
     @Test
     public void Test() {
