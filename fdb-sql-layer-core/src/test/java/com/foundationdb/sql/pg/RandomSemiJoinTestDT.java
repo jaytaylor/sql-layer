@@ -133,7 +133,15 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
                 throw new IllegalStateException("not enough cases for random values");
         }
         generateWhereClause(stringBuilder, random, tableAliasCount, !firstQuery && useExists);
+        generateLimit(stringBuilder, random);
         return stringBuilder.toString();
+    }
+
+    private static void generateLimit(StringBuilder stringBuilder, Random random) {
+        if (random.nextInt(10) == 0) {
+            stringBuilder.append(" LIMIT ");
+            stringBuilder.append(random.nextInt(10)+1);
+        }
     }
 
     private static void generateWhereClause(StringBuilder stringBuilder, Random random,
