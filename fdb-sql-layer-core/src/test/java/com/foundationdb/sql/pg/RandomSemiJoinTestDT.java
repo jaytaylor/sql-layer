@@ -65,6 +65,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
     private static final int WHERE_CONSTANT_LIKELYHOOD = 4;
     private static final int MAX_VALUE = MAX_ROW_COUNT * 2;
     private static final int MIN_VALUE = MAX_ROW_COUNT * -2;
+    private static final int MAX_OUTER_LIMIT = 10;
 
     @ClassRule
     public static final RandomRule randomRule = new RandomRule();
@@ -318,15 +319,16 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         Random random = new Random(testSeed);
         for (int i=0; i<QUERY_COUNT; i++) {
             boolean useExists  = random.nextBoolean();
+            int limitOutside = random.nextInt(MAX_OUTER_LIMIT * 10);
             if (useExists) {
-                testOneQueryExists(buildQuery(random, useExists, true), buildQuery(random, useExists, false));
+                testOneQueryExists(buildQuery(random, useExists, true), buildQuery(random, useExists, false), limitOutside);
             } else {
-                testOneQueryIn(buildQuery(random, useExists, true), buildQuery(random, useExists, false));
+                testOneQueryIn(buildQuery(random, useExists, true), buildQuery(random, useExists, false), limitOutside);
             }
         }
     }
 
-    private void testOneQueryExists(String query1, String query2) {
+    private void testOneQueryExists(String query1, String query2, int limitOutside) {
         boolean negative = randomRule.getRandom().nextBoolean();
         String existsClause = negative ? "NOT EXISTS" : "EXISTS";
         boolean query1IsJustATable = query1.startsWith("table");
@@ -342,7 +344,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         }
         String q1 = query1IsJustATable ? query1 : "(" + query1 + ")";
         String finalQuery = "SELECT main FROM " + q1 + " AS T1 WHERE " + existsClause +
-                " (" + String.format(query2, "T1.main") + ")";
+                " (" + String.format(query2, "T1.main") + ")" + finalQueryLimit(limitOutside);
         LOG.debug("Final: {}", finalQuery);
         List<List<?>> sqlResults = sql(finalQuery);
         List<Integer> actual = new ArrayList<>();
@@ -352,10 +354,29 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         }
         Collections.sort(expected, new NullableIntegerComparator());
         Collections.sort(actual, new NullableIntegerComparator());
+        expected = applyLimit(expected, limitOutside);
         assertEqualLists("Results different for " + finalQuery, expected, actual);
     }
 
-    private void testOneQueryIn(String query1, String query2) {
+    private List<Integer> applyLimit(List<Integer> expected, int limitOutside) {
+        if (limitOutside < MAX_OUTER_LIMIT) {
+            Collections.sort(expected, new NullableIntegerComparator());
+            if (limitOutside+1 < expected.size()) {
+                return expected.subList(0, limitOutside + 1);
+            }
+        }
+        return expected;
+    }
+
+    private String finalQueryLimit(int limitOutside) {
+        if (limitOutside < 10) {
+            return " ORDER BY T1.main LIMIT " + (limitOutside + 1);
+        } else {
+            return "";
+        }
+    }
+
+    private void testOneQueryIn(String query1, String query2, int limitOutside) {
         boolean useIn = randomRule.getRandom().nextBoolean();
         String inClause = useIn ? "IN" : "NOT IN";
         LOG.debug("Outer: {}", query1);
@@ -377,7 +398,8 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
             }
         }
         String q1 = query1IsJustATable ? query1 : "(" + query1 + ")";
-        String finalQuery = "SELECT main FROM " + q1 + " AS T1 WHERE main " + inClause + " (" + query2 + ")";
+        String finalQuery = "SELECT main FROM " + q1 + " AS T1 WHERE main " + inClause + " (" + query2 + ")" +
+                finalQueryLimit(limitOutside);
         LOG.debug("Final: {}", finalQuery);
         List<List<?>> sqlResults = sql(finalQuery);
         List<Object> actual = new ArrayList<>();
@@ -385,6 +407,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
             assertEquals("Expected 1 column" + actualRow, 1, actualRow.size());
             actual.add(actualRow.get(0));
         }
+        expected = applyLimit(expected, limitOutside);
         assertEqualLists("Results different for " + finalQuery, expected, actual);
     }
 
