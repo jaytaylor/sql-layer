@@ -310,13 +310,6 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         // TODO create random groups & group indexes
     }
 
-    @After
-    public void teardown() {
-        for (int i=0; i<TABLE_COUNT; i++) {
-            sql("DROP TABLE " + table(i));
-        }
-    }
-
     @Test
     public void Test() {
         Random random = new Random(testSeed);
