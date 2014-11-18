@@ -94,11 +94,11 @@
 - row_count: 0
 ---
 - Statement: SELECT cid, MAX(o1.dollars), (SELECT COUNT(*) FROM orders o2 WHERE o2.dollars = MAX(o1.ordno)) FROM orders o1 GROUP BY cid;
-- error: [0A500]
+- output: [['c002', '880.00', 0], ['c004', '460.00', 0], ['c001', '720.00', 0], ['c006', '600.00', 0], ['c003', '1104.00', 0]] 
+---
+- Statement: SELECT o1.cid, MAX(o1.ordno), (SELECT MIN(o2.cid) FROM orders o2 WHERE o2.cid = o1.cid OR COUNT(o1.ordno) = 1) FROM orders o1 GROUP BY o1.cid;
+- output: [['c002', '1026', 'c002'], ['c004', '1021', 'c001'], ['c001', '1025', 'c001'], ['c006', '1024', 'c006'], ['c003', '1015', 'c003']]
 ---
 - Statement: SELECT cid, MAX(o1.dollars), (SELECT COUNT(*) FROM orders o2 WHERE o2.dollars = MAX(o2.ordno)) FROM orders o1 GROUP BY cid;
 - error: [0A500]
----
-- Statement: SELECT cid, MAX(o1.dollars), (SELECT COUNT(*) FROM orders o2 WHERE o2.dollars = MAX(o1.ordno)) FROM orders o1 GROUP BY cid;
-- error: [0A500] 
 ...
