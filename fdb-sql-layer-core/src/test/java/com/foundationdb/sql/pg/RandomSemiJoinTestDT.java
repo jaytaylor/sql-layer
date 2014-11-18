@@ -361,24 +361,6 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         assertEqualLists("Results different for " + finalQuery, expected, actual);
     }
 
-    private List<Integer> applyLimit(List<Integer> expected, int limitOutside) {
-        if (limitOutside < MAX_OUTER_LIMIT) {
-            Collections.sort(expected, new NullableIntegerComparator());
-            if (limitOutside+1 < expected.size()) {
-                return expected.subList(0, limitOutside + 1);
-            }
-        }
-        return expected;
-    }
-
-    private String finalQueryLimit(int limitOutside) {
-        if (limitOutside < 10) {
-            return " ORDER BY T1.main LIMIT " + (limitOutside + 1);
-        } else {
-            return "";
-        }
-    }
-
     private void testOneQueryIn(String query1, String query2, int limitOutside) {
         boolean useIn = randomRule.getRandom().nextBoolean();
         String inClause = useIn ? "IN" : "NOT IN";
@@ -412,6 +394,24 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         }
         expected = applyLimit(expected, limitOutside);
         assertEqualLists("Results different for " + finalQuery, expected, actual);
+    }
+
+    private List<Integer> applyLimit(List<Integer> expected, int limitOutside) {
+        if (limitOutside < MAX_OUTER_LIMIT) {
+            Collections.sort(expected, new NullableIntegerComparator());
+            if (limitOutside+1 < expected.size()) {
+                return expected.subList(0, limitOutside + 1);
+            }
+        }
+        return expected;
+    }
+
+    private String finalQueryLimit(int limitOutside) {
+        if (limitOutside < 10) {
+            return " ORDER BY T1.main LIMIT " + (limitOutside + 1);
+        } else {
+            return "";
+        }
     }
 
     /**
