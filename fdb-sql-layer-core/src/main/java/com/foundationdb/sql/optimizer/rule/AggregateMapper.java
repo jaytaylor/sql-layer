@@ -545,12 +545,12 @@ public class AggregateMapper extends BaseRule
         public void find(AnnotatedAggregateFunctionExpression expr) {
             AggregateSource source = expr.getSource();
             if (source == null && expr.getOperand() instanceof ColumnExpression) {
-                ColumnExpression col = (ColumnExpression)expr.getOperand();
-                if (tablesToQueries.containsKey(col.getTable().getName())) {
-                    Collection<BaseQuery> queries = tablesToQueries.get(col.getTable().getName());
+                String tableName = ((ColumnExpression)expr.getOperand()).getTable().getName();
+                if (tablesToQueries.containsKey(tableName)) {
+                    Collection<BaseQuery> queries = tablesToQueries.get(tableName);
                     if (queries.size() == 1) {
-                        BaseQuery subquery = queries.iterator().next();
-                        if (subquery != subqueries.peek() && subqueries.contains(subquery)) {
+                        BaseQuery query = queries.iterator().next();
+                        if (query != subqueries.peek() && subqueries.contains(query)) {
                             source = queriesToSources.get(queries.iterator().next());
                             expr.setSource(source);
                         }
