@@ -70,9 +70,9 @@ public class AggregateMapper extends BaseRule
             addAggregates.remap(source.aggregateSource);
         }
         CheckForProblems checkForProblems = new CheckForProblems(plan.getPlan(),
-                aggregateSourceFinder.getQueriesToTables(),
-                aggregateSourceFinder.getTablesToQueries(),
-                aggregateSourceFinder.getQueriesToSources());
+                                                                 aggregateSourceFinder.getQueriesToTables(),
+                                                                 aggregateSourceFinder.getTablesToQueries(),
+                                                                 aggregateSourceFinder.getQueriesToSources());
         checkForProblems.run();
         // Step 3: try to match AggregateFunctionExpressions in WHERE clauses to the appropriate AggregateSource
         for (AggregateSourceState source : sources) {
@@ -582,6 +582,7 @@ public class AggregateMapper extends BaseRule
                         BaseQuery subquery = queries.iterator().next();
                         if (subquery != subqueries.peek() && subqueries.contains(subquery)) {
                             source = queriesToSources.get(queries.iterator().next());
+                            expr.setQueryAndCloseness(0, source);
                         }
                     }
                 }
@@ -647,20 +648,7 @@ public class AggregateMapper extends BaseRule
 
         @Override
         protected ExpressionNode addAggregate(AnnotatedAggregateFunctionExpression expr) {
-            AggregateSource source = null;
-            if (expr.getOperand() instanceof ColumnExpression) {
-                ColumnExpression col = (ColumnExpression)expr.getOperand();
-                if (tablesToQueries.containsKey(col.getTable().getName())) {
-                    Collection<BaseQuery> queries = tablesToQueries.get(col.getTable().getName());
-                    if (queries.size() == 1) {
-                        source = queriesToSources.get(queries.iterator().next());
-                    }
-                }
-            }
-            if (source == null) {
-                throw new UnsupportedSQLException("Aggregate not allowed in WHERE",
-                        expr.getSQLsource());
-            }
+            AggregateSource source = expr.getSource();
             int position;
             if (source.hasAggregate(expr)) {
                 position = source.getPosition(expr.getWithoutAnnotation());
