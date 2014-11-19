@@ -23,7 +23,7 @@ import com.foundationdb.sql.optimizer.rule.cost.CostModelFactory;
 import com.foundationdb.sql.optimizer.rule.cost.RandomCostModelService;
 import org.junit.Test;
 
-import java.io.File;
+import java.net.URL;
 
 /**
  * Run tests specified as YAML files that end with the .yaml extension.  By
@@ -33,8 +33,8 @@ import java.io.File;
  */
 public class PostgresServerRandomCostYamlDT extends PostgresServerMiscYamlIT
 {
-    public PostgresServerRandomCostYamlDT(String caseName, File file) {
-        super(caseName, file);
+    public PostgresServerRandomCostYamlDT(String caseName, URL url) {
+        super(caseName, url);
     }
 
     @Override

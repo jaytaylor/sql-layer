@@ -26,10 +26,16 @@ import com.foundationdb.sql.embedded.EmbeddedJDBCServiceImpl;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 
 import org.joda.time.DateTimeZone;
@@ -45,29 +51,33 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(SelectedParameterizedRunner.class)
 public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase
 {
+    static {
+        String timezone = "UTC";
+        DateTimeZone.setDefault(DateTimeZone.forID(timezone));
+        TimeZone.setDefault(TimeZone.getTimeZone(timezone));
+    }
+
     private static final String CLASSNAME = PostgresServerMiscYamlIT.class.getName();
 
     /**
      * A regular expression matching the names of the YAML files in the
      * resource directory, not including the extension, to use for tests.
      */
-    private static final String CASE_NAME_REGEXP = System.getProperty(CLASSNAME + ".CASE_NAME_REGEXP", "test-.*");
+    private static final String CASE_NAME_REGEXP_PROPERTY = CLASSNAME + ".CASE_NAME_REGEXP";
 
     /** The directory containing the YAML files. */
-    private static final File RESOURCE_DIR;
-
-    static {
-        String s = System.getProperty(CLASSNAME + ".RESOURCE_DIR");
-        RESOURCE_DIR = (s != null) ? new File(s) : new File(PostgresServerITBase.RESOURCE_DIR, "yaml");
-    }
+    private static final String RESOURCE_DIR_PROPERTY = CLASSNAME + ".RESOURCE_DIR";
 
     /** Whether to search the resource directory recursively for test files. */
-    private static final boolean RECURSIVE = Boolean.valueOf(System.getProperty(CLASSNAME + ".RECURSIVE", "true"));
+    private static final String RECURSIVE_PROPERTY = CLASSNAME + ".RECURSIVE";
 
-    private final File file;
+    /** A resource known to be in the root to look for and find where the rest are. */
+    private static final String RESOURCE_MARKER = "/com/foundationdb/sql/test/yaml/README";
 
-    public PostgresServerMiscYamlIT(String caseName, File file) {
-        this.file = file;
+    private final URL url;
+
+    public PostgresServerMiscYamlIT(String caseName, URL url) {
+        this.url = url;
     }
 
     @Override
@@ -84,45 +94,117 @@ public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase
 
     @Test
     public void testYaml() throws Exception {
-        testYaml(file);
+        testYaml(url);
     }
 
     @Parameters(name="{0}")
     public static Iterable<Object[]> queries() throws Exception {
+        String classname = PostgresServerMiscYamlIT.class.getName();
+        String caseNameRegexp = System.getProperty(CASE_NAME_REGEXP_PROPERTY, "test-.*");
+        Pattern filenamePattern = Pattern.compile(caseNameRegexp + "[.]yaml");
+        boolean recursive = Boolean.valueOf(System.getProperty(RECURSIVE_PROPERTY, "true"));
+        String resourceDir = System.getProperty(RESOURCE_DIR_PROPERTY);
+        
         Collection<Object[]> params = new ArrayList<>();
-        collectParams(RESOURCE_DIR, Pattern.compile(CASE_NAME_REGEXP + "[.]yaml"), params);
-        return params;
-    }
 
-    static {
-        String timezone = "UTC";
-        DateTimeZone.setDefault(DateTimeZone.forID(timezone));
-        TimeZone.setDefault(TimeZone.getTimeZone(timezone));
+        if (resourceDir != null) {
+            // User-specified file location.
+            collectFiles(params, new File(resourceDir),
+                         recursive, filenamePattern);
+        }
+        else {
+            URL url = PostgresServerMiscYamlIT.class.getResource(RESOURCE_MARKER);
+            if (url == null) {
+                throw new RuntimeException("Problem finding tests: " + RESOURCE_MARKER);
+            }
+            if ("file".equals(url.getProtocol())) {
+                // Maven-specified file location.
+                collectFiles(params, new File(url.getPath()).getParentFile(),
+                             true, filenamePattern);
+            }
+            else {
+                // Inside test.jar.
+                collectResources(params, url, filenamePattern);
+            }
+        }
+        return params;
     }
 
     /**
      * Add files from the directory that match the pattern to params, recursing
      * if appropriate.
      */
-    private static void collectParams(File directory, final Pattern pattern, final Collection<Object[]> params) {
+    private static void collectFiles(final Collection<Object[]> params, File directory,
+                                     final boolean recursive, final Pattern pattern) {
         File[] files = directory.listFiles(
-            new FileFilter()
-            {
+            new FileFilter() {
+                @Override
                 public boolean accept(File file) {
-                    if(RECURSIVE && file.isDirectory()) {
-                        collectParams(file, pattern, params);
-                    } else {
+                    if (file.isDirectory()) {
+                        if (recursive) {
+                            collectFiles(params, file, recursive, pattern);
+                        }
+                    }
+                    else {
                         String name = file.getName();
-                        if(pattern.matcher(name).matches()) {
-                            params.add(new Object[]{ name.substring(0, name.length() - 5), file });
+                        if (pattern.matcher(name).matches()) {
+                            try {
+                                params.add(new Object[] {
+                                               name.substring(0, name.length() - 5),
+                                               file.toURI().toURL()
+                                           });
+                            }
+                            catch (MalformedURLException ex) {
+                                throw new RuntimeException(ex);
+                            }
                         }
                     }
                     return false;
                 }
             }
         );
-        if(files == null) {
+        if (files == null) {
             throw new RuntimeException("Problem accessing directory: " + directory);
+        }
+    }
+
+    // In normal operation, where mvn test is run from the sql-layer
+    // root, Maven's reactor will substitute access to files in the
+    // sibling module, which is much nicer for iterative development.
+    // This is for the case where the test-jar is actually being used,
+    // such as when mvn test is run in the fdb-sql-layer-core child.
+    private static void collectResources(Collection<Object[]> params, URL url,
+                                         Pattern pattern) {
+        String fullURL = url.toString();
+        int bang = fullURL.indexOf('!');
+        if (!fullURL.startsWith("jar:file:") ||
+            (bang < 0)) {
+            throw new RuntimeException("Unexpected resource location: " + fullURL);
+        }
+        String jarFilename = fullURL.substring(9, bang);
+        try {
+            JarFile jarFile = new JarFile(jarFilename);
+            Enumeration<JarEntry> e = jarFile.entries();
+            while (e.hasMoreElements()) {
+                JarEntry jarEntry = e.nextElement();
+                if (jarEntry.isDirectory()) continue;
+                String filename = jarEntry.getName();
+                int idx = filename.lastIndexOf('/');
+                String name = (idx < 0) ? filename : filename.substring(idx+1);
+                if (pattern.matcher(name).matches()) {
+                    params.add(new Object[] {
+                                   name.substring(0, name.length() - 5),
+                                   new URL("jar:file:" + jarFilename +
+                                           "!/" + filename)
+                               });
+                }
+            }
+        }
+        catch (MalformedURLException ex) {
+            throw new RuntimeException(ex);
+        }
+        catch (IOException ex) {
+            throw new RuntimeException("Error reading from " + jarFilename, ex);
         }
     }
 }

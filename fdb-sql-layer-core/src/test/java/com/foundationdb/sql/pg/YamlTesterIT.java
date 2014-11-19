@@ -30,7 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Test the {@code YamlTester} class. */
-public class YamlTesterIT extends PostgresServerYamlITBase {
+public class YamlTesterIT extends PostgresServerITBase {
     private static final Logger LOG = LoggerFactory.getLogger(YamlTesterIT.class);
 
     static
@@ -209,7 +209,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 		  "---\n" +
 		  "- Statement: INSERT INTO c VALUES (1), (2)\n");
 	testYaml("---\n" +
-		 "- Include: " + include + "\n" +
+		 "- Include: " + include.toURI().toURL() + "\n" +
 		 "---\n" +
 		 "- Statement: SELECT * FROM c\n" +
 		 "- output: [[1], [2]]\n");
@@ -223,14 +223,14 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	include2.deleteOnExit();
 	writeFile(include1,
 		  "---\n" +
-		  "- Include: " + include2 + "\n" +
+		  "- Include: " + include2.toURI().toURL() + "\n" +
 		  "---\n" +
 		  "- Statement: INSERT INTO c VALUES (1), (2)\n");
 	writeFile(include2,
 		  "---\n" +
 		  "- CreateTable: c (cid int)\n");
 	testYaml("---\n" +
-		 "- Include: " + include1 + "\n" +
+		 "- Include: " + include1.toURI().toURL() + "\n" +
 		 "---\n" +
 		 "- Statement: SELECT * FROM c\n" +
 		 "- output: [[1], [2]]\n");
@@ -262,7 +262,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 		  "---\n" +
 		  "- CreateTable: c (cid int)\n");
 	testYaml("---\n" +
-		 "- Include: " + include1 + "\n" +
+		 "- Include: " + include1.toURI().toURL() + "\n" +
 		 "---\n" +
 		 "- Statement: SELECT * FROM c\n" +
 		 "- output: [[1], [2]]\n");
@@ -296,7 +296,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
          * they need to be doubled for Java strings, and double again for
          * regexps.
          */
-        String include = includeFile.getPath().replaceAll("\\\\", "\\\\");
+        String include = includeFile.toURI().toURL().toString().replaceAll("\\\\", "\\\\");
 	testYaml("---\n" +
 		 "- Include: !select-engine { foo: bar, it: '" + include +
 		 "' }\n" +
@@ -2042,7 +2042,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    }
 	}
 	try {
-	    new YamlTester(null, new StringReader(yaml), getConnection()).test();
+	    new YamlTester(new StringReader(yaml), getConnection()).test();
 	} catch (Exception e) {
         LOG.debug("Test failed:", e);
         forgetConnection();
@@ -2064,7 +2064,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    }
 	}
         try {
-	    new YamlTester(null, new StringReader(yaml), getConnection()).test();
+	    new YamlTester(new StringReader(yaml), getConnection()).test();
         LOG.debug("Test failed: Expected exception");
 	} catch (Throwable t) {
         LOG.debug("Caught", t);

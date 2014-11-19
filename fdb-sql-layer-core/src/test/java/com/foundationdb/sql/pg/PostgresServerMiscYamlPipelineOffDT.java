@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.pg;
 
-import java.io.File;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,8 +30,8 @@ public class PostgresServerMiscYamlPipelineOffDT extends PostgresServerMiscYamlI
                                                         "fdbsql.pipeline.unionAll.openBoth=false",
                                                         "fdbsql.pipeline.selectBloomFilter.enabled=false"};
 
-    public PostgresServerMiscYamlPipelineOffDT(String caseName, File file) {
-        super(caseName, file);
+    public PostgresServerMiscYamlPipelineOffDT(String caseName, URL url) {
+        super(caseName, url);
     }
     
     @Override
