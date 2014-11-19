@@ -56,7 +56,7 @@ public class ResourceHelper {
     }
 
     public static void checkSchemaAccessible(SecurityService security, HttpServletRequest request, String schema) {
-        if(!security.isAccessible(request, schema)) {
+        if(!security.isAccessible(request.getUserPrincipal(), request.isUserInRole(SecurityService.ADMIN_ROLE), schema)) {
             throw new WebApplicationException(FORBIDDEN_RESPONSE);
         }
     }

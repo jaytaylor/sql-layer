@@ -19,8 +19,7 @@ package com.foundationdb.server.service.security;
 
 import com.foundationdb.server.service.session.Session;
 
-import javax.servlet.http.HttpServletRequest;
-
+import java.security.Principal;
 import java.util.Collection;
 
 public interface SecurityService
@@ -34,7 +33,7 @@ public interface SecurityService
     public User authenticate(Session session, String name, String password, byte[] salt);
 
     public boolean isAccessible(Session session, String schema);
-    public boolean isAccessible(HttpServletRequest request, String schema);
+    public boolean isAccessible(Principal user, boolean inAdminRole, String schema);
     public boolean hasRestrictedAccess(Session session);
 
     public void addRole(String name);
