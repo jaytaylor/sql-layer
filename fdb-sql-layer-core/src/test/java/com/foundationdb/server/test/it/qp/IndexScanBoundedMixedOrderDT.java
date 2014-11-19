@@ -20,6 +20,7 @@ package com.foundationdb.server.test.it.qp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -195,7 +196,7 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
 
     @Parameters(name="{0}")
     public static List<Object[]> params() throws Exception {
-        R.setSeed(SEED);
+        Random random = classRandom.reset();
         Collection<List<OrderByOptions>> orderByPerms = IndexScanUnboundedMixedOrderDT.orderByPermutations();
         List<Object[]> params = new ArrayList<>();
         for(List<OrderByOptions> ordering : orderByPerms) {
@@ -207,11 +208,11 @@ public class IndexScanBoundedMixedOrderDT extends IndexScanUnboundedMixedOrderDT
                 }
             }
             if(nonEmpty) {
-                List<Integer> loBounds = getLowerBounds(MIN_VALUE, MAX_VALUE, TOTAL_COLS, R);
-                List<Integer> hiBounds = getUpperBounds(MIN_VALUE, MAX_VALUE, TOTAL_COLS, loBounds, R);
-                List<Boolean> loInclusive = getBooleans(TOTAL_COLS, R);
-                List<Boolean> hiInclusive = getBooleans(TOTAL_COLS, R);
-                List<Boolean> skipped = getBooleans(TOTAL_COLS, R);
+                List<Integer> loBounds = getLowerBounds(MIN_VALUE, MAX_VALUE, TOTAL_COLS, random);
+                List<Integer> hiBounds = getUpperBounds(MIN_VALUE, MAX_VALUE, TOTAL_COLS, loBounds, random);
+                List<Boolean> loInclusive = getBooleans(TOTAL_COLS, random);
+                List<Boolean> hiInclusive = getBooleans(TOTAL_COLS, random);
+                List<Boolean> skipped = getBooleans(TOTAL_COLS, random);
                 String name = makeTestName(ordering, loBounds, loInclusive, hiBounds, hiInclusive, skipped);
                 Object[] param = new Object[]{ name, ordering, loBounds, hiBounds, loInclusive, hiInclusive, skipped };
                 params.add(param);
