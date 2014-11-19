@@ -82,6 +82,7 @@ public class ScriptCache {
         if (null == routine)
             throw new NoSuchRoutineException(routineName);
         long currentVersion = routine.getVersion();        
+        Thread.currentThread().setContextClassLoader(engineProvider.getSafeClassLoader());
         CacheEntry entry = cache.get(routineName);
         if ((entry != null) && (entry.version == currentVersion))
             return entry;

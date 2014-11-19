@@ -25,5 +25,5 @@ import javax.script.ScriptEngineManager;
 public interface ScriptEngineManagerProvider {
     public static final String CLASS_PATH = "fdbsql.routines.script_class_path";
     public ScriptEngineManager getManager();
-    public ClassLoader getSafeClassloader();
+    public ClassLoader getSafeClassLoader();
 }

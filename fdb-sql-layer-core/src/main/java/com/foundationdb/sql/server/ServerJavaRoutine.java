@@ -23,6 +23,7 @@ import java.util.Queue;
 import com.foundationdb.ais.model.Parameter;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.explain.Explainable;
+import com.foundationdb.server.service.routines.*;
 import com.foundationdb.sql.routinefw.ShieldedInvokable;
 import com.foundationdb.sql.routinefw.RoutineFirewall;
 
@@ -63,6 +64,8 @@ public abstract class ServerJavaRoutine implements Explainable, ShieldedInvokabl
     }
 
     public void invoke() {
+        ScriptEngineManagerProvider semp = this.context.getServiceManager().getServiceByClass(ScriptEngineManagerProvider.class);
+        Thread.currentThread().setContextClassLoader(semp.getSafeClassLoader());
         RoutineFirewall.callInvoke(this);
     }
     
