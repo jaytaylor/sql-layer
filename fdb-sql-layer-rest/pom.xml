@@ -19,6 +19,7 @@
         <fdbsql.test.extraJvmArgs></fdbsql.test.extraJvmArgs>
         <fdbsql.test.JmxJvmArgs>-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=8082 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false</fdbsql.test.JmxJvmArgs>
         <main.basedir>${project.parent.basedir}</main.basedir>
+        <plugins.path>../plugins</plugins.path>
         <surefireJacocoArg></surefireJacocoArg>
         <failsafeJacocoArg></failsafeJacocoArg>
     </properties>
@@ -100,21 +101,29 @@
             </resource>
         </resources>
 	<plugins>
-            <!-- Temporary until decide where to put artefacts. -->
             <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <configuration>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                </configuration>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.7</version>
                 <executions>
                     <execution>
-                        <id>make-assembly</id>
                         <phase>package</phase>
                         <goals>
-                            <goal>single</goal>
+                            <goal>run</goal>
                         </goals>
+                        <configuration>
+                            <target>
+                                <property name="plugins.dir" location="${plugins.path}"/>
+                                <mkdir dir="${plugins.dir}"/>
+                                <delete includeEmptyDirs="true">
+                                  <fileset dir="${plugins.dir}" includes="${project.artifactId}*/**"/>
+                                </delete>
+                                <copy todir="${plugins.dir}" file="${project.build.directory}/${project.build.finalName}.jar"/>
+                                <copy todir="${plugins.dir}/${project.build.finalName}">
+                                    <fileset dir="${project.build.directory}/dependency"/>
+                                </copy>
+                            </target>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
