@@ -98,10 +98,6 @@ public class AggregateMapper extends BaseRule
             return this;
         }
 
-        public boolean hasSource() {
-            return source != null;
-        }
-
         public AggregateSource getSource() {
             return source;
         }
