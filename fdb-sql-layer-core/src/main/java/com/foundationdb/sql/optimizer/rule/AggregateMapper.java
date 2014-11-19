@@ -59,7 +59,7 @@ public class AggregateMapper extends BaseRule
                                               functions.get(0).getSQLsource());
         }
 
-        // Step 1: do a first pass to handle aggregate functions in having clauses
+        // Step 1: do a first pass to find sources for Having aggregates
         for (AggregateSourceState source : sources) {
             FindHavingSources findHavingSources = new FindHavingSources((SchemaRulesContext)plan.getRulesContext(),
                                                                         source.aggregateSource,
