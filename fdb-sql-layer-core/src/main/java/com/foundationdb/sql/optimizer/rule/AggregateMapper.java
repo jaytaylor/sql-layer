@@ -578,7 +578,7 @@ public class AggregateMapper extends BaseRule
             if (n instanceof BaseQuery) {
                 subqueries.push((BaseQuery)n);
             }
-            return true;
+            return visit(n);
         }
 
         @Override
