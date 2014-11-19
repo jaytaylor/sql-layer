@@ -97,7 +97,7 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
             throw new NoSuchSQLJJarException(jarName);
         long currentVersion = sqljJar.getVersion();
         synchronized (classLoaders) {
-            VersionedItem<ClassLoader> entry = classLoaders.get(jarName);
+            VersionedItem<ClassLoader> entry = classLoaders.get(jarName);  
             if ((entry != null) && (entry.version == currentVersion))
                 return entry.item;
             ClassLoader loader = new URLClassLoader(new URL[] { sqljJar.getURL() });
@@ -136,7 +136,7 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
                 entry.version = currentVersion;
                 entry.item = classLoader;
             }
-            else {
+            else { 
                 entry = new VersionedItem<>(currentVersion, classLoader);
                 classLoaders.put(jarName, entry);
             }
