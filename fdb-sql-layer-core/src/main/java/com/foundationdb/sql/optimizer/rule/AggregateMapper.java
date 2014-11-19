@@ -59,23 +59,18 @@ public class AggregateMapper extends BaseRule
                                               functions.get(0).getSQLsource());
         }
 
-        // Step 1: do a first pass to find sources for Having aggregates
+        // Step 1: do a first pass to find sources for Having aggregates, check columnexpressions
         for (AggregateSourceState source : sources) {
             FindHavingSources findHavingSources = new FindHavingSources((SchemaRulesContext)plan.getRulesContext(),
                                                                         source.aggregateSource,
                                                                         source.containingQuery);
             findHavingSources.remap(source.aggregateSource);
         }
-        // Step 2: find sources for the remaining aggregates and check for aggregates in where clauses without appropriate sources
-        FindRemainingSources findRemainingSources = new FindRemainingSources(plan.getPlan(),
-                                                                             aggregateSourceFinder.getTablesToQueries(),
-                                                                             aggregateSourceFinder.getQueriesToSources());
-        findRemainingSources.find();
-        // Step 3: add AggregateFunctions to their AggregateSources
-        for (AggregateSourceState source : sources) {
-            AddAggregates addAggregates = new AddAggregates();
-            addAggregates.remap(source.aggregateSource);
-        }
+        // Step 2: if possible add all aggregates to sources. throw an error otherwise.
+        AddAggregates addAggregates = new AddAggregates(plan.getPlan(),
+                                                        aggregateSourceFinder.getTablesToQueries(),
+                                                        aggregateSourceFinder.getQueriesToSources());
+        addAggregates.run();
     }
 
     static class AnnotatedAggregateFunctionExpression extends AggregateFunctionExpression {
@@ -516,13 +511,13 @@ public class AggregateMapper extends BaseRule
         }
     }
 
-    static class FindRemainingSources implements PlanVisitor, ExpressionVisitor {
+    static class AddAggregates implements PlanVisitor, ExpressionRewriteVisitor {
         PlanNode plan;
         Deque<BaseQuery> subqueries = new ArrayDeque<>();
         Multimap<String, BaseQuery> tablesToQueries;
         Map<BaseQuery, AggregateSource> queriesToSources;
 
-        public FindRemainingSources(PlanNode plan,
+        public AddAggregates(PlanNode plan,
                                 Multimap<String, BaseQuery> tablesToQueries,
                                 Map<BaseQuery, AggregateSource> queriesToSources) {
             this.plan = plan;
@@ -530,11 +525,11 @@ public class AggregateMapper extends BaseRule
             this.queriesToSources = queriesToSources;
         }
 
-        public void find() {
+        public void run() {
             plan.accept(this);
         }
 
-        public void find(AnnotatedAggregateFunctionExpression expr) {
+        public ExpressionNode addAggregate(AnnotatedAggregateFunctionExpression expr) {
             AggregateSource source = expr.getSource();
             if (source == null && expr.getOperand() instanceof ColumnExpression) {
                 String tableName = ((ColumnExpression)expr.getOperand()).getTable().getName();
@@ -553,24 +548,28 @@ public class AggregateMapper extends BaseRule
                 throw new UnsupportedSQLException("Aggregate not allowed in WHERE",
                         expr.getSQLsource());
             }
-        }
-
-        @Override
-        public boolean visitEnter(ExpressionNode n) {
-            return visit(n);
-        }
-
-        @Override
-        public boolean visitLeave(ExpressionNode n) {
-            return true;
-        }
-
-        @Override
-        public boolean visit(ExpressionNode n) {
-            if (n instanceof AnnotatedAggregateFunctionExpression) {
-                find((AnnotatedAggregateFunctionExpression)n);
+            int position;
+            if (source.hasAggregate(expr)) {
+                position = source.getPosition(expr.getWithoutAnnotation());
+            } else {
+                position = source.addAggregate(expr.getWithoutAnnotation());
             }
-            return true;
+            ExpressionNode nexpr = new ColumnExpression(source, position,
+                                         expr.getSQLtype(), expr.getSQLsource(), expr.getType());
+            return nexpr;
+        }
+
+        @Override
+        public boolean visitChildrenFirst(ExpressionNode n) {
+            return false;
+        }
+
+        @Override
+        public ExpressionNode visit(ExpressionNode n) {
+            if (n instanceof AnnotatedAggregateFunctionExpression) {
+                return addAggregate((AnnotatedAggregateFunctionExpression)n);
+            }
+            return n;
         }
 
         @Override
@@ -592,29 +591,6 @@ public class AggregateMapper extends BaseRule
         @Override
         public boolean visit(PlanNode n) {
             return true;
-        }
-    }
-
-    static class AddAggregates extends Remapper {
-        @Override
-        public ExpressionNode visit(ExpressionNode expr) {
-            if (expr instanceof AnnotatedAggregateFunctionExpression) {
-                return addAggregate((AnnotatedAggregateFunctionExpression)expr);
-            }
-            return expr;
-        }
-
-        protected ExpressionNode addAggregate(AnnotatedAggregateFunctionExpression expr) {
-            AggregateSource source = expr.getSource();
-            int position;
-            if (source.hasAggregate(expr)) {
-                position = source.getPosition(expr.getWithoutAnnotation());
-            } else {
-                position = source.addAggregate(expr.getWithoutAnnotation());
-            }
-            ExpressionNode nexpr = new ColumnExpression(source, position,
-                                         expr.getSQLtype(), expr.getSQLsource(), expr.getType());
-            return nexpr;
         }
     }
 }
