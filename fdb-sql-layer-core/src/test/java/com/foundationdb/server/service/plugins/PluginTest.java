@@ -22,6 +22,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
+import java.util.List;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
@@ -92,7 +93,7 @@ public final class PluginTest {
         }
 
         @Override
-        public URL getClassLoaderURL() {
+        public List<URL> getClassLoaderURLs() {
             throw new UnsupportedOperationException();
         }
 
@@ -117,7 +118,7 @@ public final class PluginTest {
     private static class ExceptionalPlugin extends Plugin {
 
         @Override
-        public URL getClassLoaderURL() {
+        public List<URL> getClassLoaderURLs() {
             throw new UnsupportedOperationException();
         }
 

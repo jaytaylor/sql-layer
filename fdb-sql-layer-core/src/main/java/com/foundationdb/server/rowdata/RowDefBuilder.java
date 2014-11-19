@@ -77,7 +77,7 @@ public class RowDefBuilder
             rowDef.computeFieldAssociations(ordinalMap);
         }
 
-        LOG.debug("Built RowDefs: {}", this);
+        LOG.trace("Built RowDefs: {}", this);
     }
 
     private RowDef createRowDefCommon(Table table, MemoryTableFactory factory) {
