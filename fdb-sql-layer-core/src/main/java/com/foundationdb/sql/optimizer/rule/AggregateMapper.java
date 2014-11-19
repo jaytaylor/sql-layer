@@ -68,7 +68,6 @@ public class AggregateMapper extends BaseRule
         }
         // Step 2: find sources for the remaining aggregates and check for aggregates in where clauses without appropriate sources
         FindRemainingSources findRemainingSources = new FindRemainingSources(plan.getPlan(),
-                                                                             aggregateSourceFinder.getQueriesToTables(),
                                                                              aggregateSourceFinder.getTablesToQueries(),
                                                                              aggregateSourceFinder.getQueriesToSources());
         findRemainingSources.find();
@@ -144,7 +143,6 @@ public class AggregateMapper extends BaseRule
     static class AggregateSourceAndFunctionFinder extends AggregateSourceFinder {
         List<AggregateFunctionExpression> functions = new ArrayList<>();
         Deque<AggregateFunctionExpression> functionsStack = new ArrayDeque<>();
-        Multimap<BaseQuery, String> queriesToTables = HashMultimap.create();
         Multimap<String, BaseQuery> tablesToQueries = HashMultimap.create();
         Map<BaseQuery, AggregateSource> queriesToSources = new HashMap<BaseQuery, AggregateSource>();
 
@@ -154,10 +152,6 @@ public class AggregateMapper extends BaseRule
 
         public List<AggregateFunctionExpression> getFunctions() {
             return functions;
-        }
-
-        public Multimap<BaseQuery, String> getQueriesToTables() {
-            return queriesToTables;
         }
 
         public Multimap<String, BaseQuery> getTablesToQueries() {
@@ -187,7 +181,6 @@ public class AggregateMapper extends BaseRule
             if (n instanceof TableSource) {
                 String tableSourceName = ((TableSource)n).getName();
                 BaseQuery query = subqueries.isEmpty() ? rootQuery : subqueries.peek().subquery;
-                queriesToTables.put(query, tableSourceName);
                 tablesToQueries.put(tableSourceName, query);
             }
             if (n instanceof AggregateSource) {
@@ -524,16 +517,13 @@ public class AggregateMapper extends BaseRule
     static class FindRemainingSources implements PlanVisitor, ExpressionVisitor {
         PlanNode plan;
         Deque<BaseQuery> subqueries = new ArrayDeque<>();
-        Multimap<BaseQuery, String> queriesToTables;
         Multimap<String, BaseQuery> tablesToQueries;
         Map<BaseQuery, AggregateSource> queriesToSources;
 
         public FindRemainingSources(PlanNode plan,
-                                Multimap<BaseQuery, String> queriesToTables,
                                 Multimap<String, BaseQuery> tablesToQueries,
                                 Map<BaseQuery, AggregateSource> queriesToSources) {
             this.plan = plan;
-            this.queriesToTables = queriesToTables;
             this.tablesToQueries = tablesToQueries;
             this.queriesToSources = queriesToSources;
         }
