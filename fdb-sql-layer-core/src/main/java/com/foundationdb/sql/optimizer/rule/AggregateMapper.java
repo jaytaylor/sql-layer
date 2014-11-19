@@ -143,6 +143,8 @@ public class AggregateMapper extends BaseRule
     static class AggregateSourceAndFunctionFinder extends AggregateSourceFinder {
         List<AggregateFunctionExpression> functions = new ArrayList<>();
         Deque<AggregateFunctionExpression> functionsStack = new ArrayDeque<>();
+
+        // collect this stuff to use in FindRemainingSources
         Multimap<String, BaseQuery> tablesToQueries = HashMultimap.create();
         Map<BaseQuery, AggregateSource> queriesToSources = new HashMap<BaseQuery, AggregateSource>();
 
