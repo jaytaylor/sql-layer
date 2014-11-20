@@ -221,6 +221,13 @@ public abstract class DPhyp<P>
                 // The one that produced this edge.
                 JoinOperator operator = operators.get(e/2);
                 JoinType joinType = operator.getJoinType();
+                // TODO is there an early place where we can do this check
+                // would it make sense to check and only grab from one side of any directional join
+                // imagine SELECT * FROM T WHERE EXISTS (... 10 joins ...)
+                // It would be nice to not try T with each of the 10 inner tables, and all of their join combos.
+                if (!isValidDirectionalJoin(s1,s2,joinType,operator)) {
+                    return;
+                }
                 if (joinType != JoinType.INNER) {
                     join12 = joinType;
                     join21 = commuteJoinType(joinType);
@@ -247,6 +254,25 @@ public abstract class DPhyp<P>
             plan = evaluateJoin(s2, p2, s1, p1, s, plan, 
                                 join21, evaluateOperators, outsideOperators);
         setPlan(s, plan);
+    }
+
+    private boolean isValidDirectionalJoin(long s1, long s2, JoinType joinType, JoinOperator operator) {
+        System.out.println("Checking " + operator + "(" + joinType + ") " + s1 + " -> " + s2);
+        switch (joinType) {
+            case INNER:
+            case FULL_OUTER:
+                return true;
+            case SEMI_INNER_ALREADY_DISTINCT:
+            case SEMI_INNER_IF_DISTINCT:
+            case SEMI:
+            case LEFT:
+                return JoinableBitSet.equals(operator.rightTables, s2);
+            case RIGHT:
+                return JoinableBitSet.equals(operator.leftTables, s1);
+            default:
+                assert false : "Invalid JoinType";
+        }
+        return false;
     }
 
     /**
@@ -526,7 +552,8 @@ public abstract class DPhyp<P>
                 op.rightTables = getTableBit(right); 
             }
             op.predicateTables = visitor.getTables(op.joinConditions);
-            if (visitor.wasNullTolerant() && !op.allInnerJoins)
+            // TODO investigate and think about this for real, and make sure it's not just a hack.
+            if (JoinableBitSet.isEmpty(op.predicateTables) || (visitor.wasNullTolerant() && !op.allInnerJoins))
                 op.tes = op.getTables();
             else
                 op.tes = JoinableBitSet.intersection(op.getTables(), op.predicateTables);
