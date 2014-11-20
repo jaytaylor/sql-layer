@@ -265,6 +265,7 @@ public abstract class DPhyp<P>
             case SEMI_INNER_ALREADY_DISTINCT:
             case SEMI_INNER_IF_DISTINCT:
             case SEMI:
+            case ANTI:
             case LEFT:
                 return JoinableBitSet.equals(operator.rightTables, s2);
             case RIGHT:
