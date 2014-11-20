@@ -221,13 +221,6 @@ public abstract class DPhyp<P>
                 // The one that produced this edge.
                 JoinOperator operator = operators.get(e/2);
                 JoinType joinType = operator.getJoinType();
-                // TODO is there an early place where we can do this check
-                // would it make sense to check and only grab from one side of any directional join
-                // imagine SELECT * FROM T WHERE EXISTS (... 10 joins ...)
-                // It would be nice to not try T with each of the 10 inner tables, and all of their join combos.
-                if (!isValidDirectionalJoin(s1,s2,joinType,operator)) {
-                    return;
-                }
                 if (joinType != JoinType.INNER) {
                     join12 = joinType;
                     join21 = commuteJoinType(joinType);
@@ -553,8 +546,7 @@ public abstract class DPhyp<P>
                 op.rightTables = getTableBit(right); 
             }
             op.predicateTables = visitor.getTables(op.joinConditions);
-            // TODO investigate and think about this for real, and make sure it's not just a hack.
-            if (JoinableBitSet.isEmpty(op.predicateTables) || (visitor.wasNullTolerant() && !op.allInnerJoins))
+            if (visitor.wasNullTolerant() && !op.allInnerJoins)
                 op.tes = op.getTables();
             else
                 op.tes = JoinableBitSet.intersection(op.getTables(), op.predicateTables);
