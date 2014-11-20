@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.service.restdml;
+package com.foundationdb.rest.dml;
 
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;

@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.foundationdb.server.service.restdml;
+package com.foundationdb.rest.dml;
 
 import java.util.Iterator;
 import java.util.Map;
