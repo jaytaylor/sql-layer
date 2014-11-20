@@ -627,7 +627,7 @@ public class OnlineHelper implements RowListener
     }
 
     private void concurrentDML(final Session session,
-                               TableTransform transform,
+                               final TableTransform transform,
                                final Key hKey,
                                final Row oldRow,
                                final Row newRow) {
