@@ -116,8 +116,8 @@ public class PersistitProtobufStorageDescription extends PersistitStorageDescrip
     }
 
     @Override 
-    public void expandRow (PersistitStore store, Session session, 
-                            Exchange exchange, Row row) {
+    public Row expandRow (PersistitStore store, Session session, 
+                            Exchange exchange) {
         throw new UnsupportedOperationException();
     }
     

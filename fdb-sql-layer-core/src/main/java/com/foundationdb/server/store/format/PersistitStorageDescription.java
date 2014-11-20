@@ -17,8 +17,6 @@
 
 package com.foundationdb.server.store.format;
 
-import java.util.Arrays;
-
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.validation.AISValidationFailure;
@@ -154,8 +152,8 @@ public class PersistitStorageDescription extends StoreStorageDescription<Persist
     }
     
     @Override
-    public void expandRow (PersistitStore store, Session session,
-                            Exchange exchange, Row row) {
+    public Row expandRow (PersistitStore store, Session session,
+                            Exchange exchange) {
 
         try {
             throw new UnsupportedOperationException ();

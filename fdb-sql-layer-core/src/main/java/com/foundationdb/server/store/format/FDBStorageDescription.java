@@ -149,12 +149,6 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
         return FDBStoreDataHelper.expandRow(schema, storeData);
     }
     
-    @Override 
-    public void expandRow (FDBStore store, Session session, 
-                            FDBStoreData storeData, Row row) {
-        FDBStoreDataHelper.expandRow(row, storeData);
-    }
-
     @Override
     public void packRowData(FDBStore store, Session session,
                             FDBStoreData storeData, RowData rowData) {

@@ -30,6 +30,10 @@ import com.foundationdb.ais.protobuf.FDBProtobuf;
 import com.foundationdb.ais.protobuf.FDBProtobuf.ColumnKeys;
 import com.foundationdb.ais.protobuf.FDBProtobuf.TupleUsage;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesHolderRow;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
 import com.foundationdb.server.rowdata.FieldDef;
@@ -169,15 +173,20 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
 
     @Override 
     @SuppressWarnings("unchecked")
-    public void expandRow(FDBStore store, Session session, 
-                            FDBStoreData storeData, Row row) {
+    public Row expandRow(FDBStore store, Session session, 
+                            FDBStoreData storeData) {
         Map<String,Object> value = (Map<String,Object>)storeData.otherValue;
-        int nfields = row.rowType().nFields();
+        
+        Table table = TupleStorageDescription.tableFromOrdinals((Group)object, storeData);
+        Schema schema = SchemaCache.globalSchema(store.getAIS(session));
+        RowType rowType = schema.tableRowType(table);
+        int nfields = rowType.nFields();
+        Object[] objects = new Object[nfields];
         for (int i = 0; i < nfields; i++) {
-            Column column = row.rowType().table().getColumn(i);
-            ValueSource val = ValueSources.valuefromObject(value.get(column.getName()), column.getType());
-            column.getType().writeCollating(val, (ValueTarget)row.value(i));
+            objects[i] = value.get(rowType.fieldColumn(i).getName());
         }
+        Row row = new ValuesHolderRow(rowType, objects);
+        return row;
     }
     
     @Override

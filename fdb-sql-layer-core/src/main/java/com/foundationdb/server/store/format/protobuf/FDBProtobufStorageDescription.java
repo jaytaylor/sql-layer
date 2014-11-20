@@ -23,6 +23,7 @@ import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.CommonProtobuf.ProtobufRowFormat;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.error.ProtobufReadException;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.session.Session;
@@ -127,9 +128,18 @@ public class FDBProtobufStorageDescription extends TupleStorageDescription imple
     }
 
     @Override 
-    public void expandRow (FDBStore store, Session session,
-                            FDBStoreData storeData, Row row) {
-        throw new UnsupportedOperationException();
+    public Row expandRow (FDBStore store, Session session,
+                            FDBStoreData storeData) {
+        ensureRowConverter();
+        DynamicMessage msg;
+        try {
+            msg = DynamicMessage.parseFrom(rowConverter.getMessageType(), storeData.rawValue);
+        } catch (InvalidProtocolBufferException ex) {
+            ProtobufReadException nex = new ProtobufReadException(rowDataConverter.getMessageType().getName(), ex.getMessage());
+            nex.initCause(ex);
+            throw nex;
+        }
+        return rowConverter.decode(msg);
     }
 
     @Override

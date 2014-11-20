@@ -128,6 +128,7 @@ public class TupleRowDataConverter
 
     public static Row tupleToRow (Tuple2 tuple, RowType rowType) {
         int nfields = rowType.nFields();
+        assert tuple.size() == nfields : "Tuple Size: " + tuple.size() + " != RowType size: " + nfields;
         Object[] objects = new Object[nfields];
         for (int i = 0; i < nfields; i++) {
             objects[i] = tuple.get(i);

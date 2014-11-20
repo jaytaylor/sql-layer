@@ -117,6 +117,8 @@ public class FDBStoreDataHelper
     public static Row expandRow (Schema schema, FDBStoreData storeData) {
         RowData rowData = new RowData();
         rowData.reset(storeData.rawValue);
+        rowData.prepareRow(0);
+
         Table table = schema.ais().getTable(rowData.getRowDefId());
         RowDef rowDef = table.rowDef();
         ValuesHolderRow row = new ValuesHolderRow(schema.tableRowType(table));

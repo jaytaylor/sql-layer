@@ -40,8 +40,8 @@ public abstract class StoreStorageDescription<SType,SDType> extends StorageDescr
                                        SDType storeData, RowData rowData);
 
     public abstract Row expandRow (SType store, Session session, SDType storeData);
-    public abstract void expandRow (SType store, Session session,
-                                    SDType storeData, Row row);
+    //public abstract void expandRow (SType store, Session session,
+    //                                SDType storeData, Row row);
     
     /** Store the RowData in associated value. */
     public abstract void packRowData(SType store, Session session, 

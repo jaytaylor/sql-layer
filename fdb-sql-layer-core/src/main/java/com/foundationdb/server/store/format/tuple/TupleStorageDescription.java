@@ -30,6 +30,9 @@ import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.FDBProtobuf.TupleUsage;
 import com.foundationdb.ais.protobuf.FDBProtobuf;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
 import com.foundationdb.server.rowdata.RowData;
@@ -264,11 +267,19 @@ public class TupleStorageDescription extends FDBStorageDescription
             super.packRowData(store, session, storeData, rowData);
         }
     }
-
+    
     @Override
-    public void expandRow(FDBStore store, Session session, 
-                            FDBStoreData storeData, Row row) {
-        throw new UnsupportedOperationException();
+    public Row expandRow(FDBStore store, Session session, 
+                            FDBStoreData storeData) {
+        if (usage == TupleUsage.KEY_AND_ROW) {
+            Tuple2 tuple = Tuple2.fromBytes(storeData.rawValue);
+            Table table = tableFromOrdinals((Group)object, storeData);
+            Schema schema = SchemaCache.globalSchema(store.getAIS(session));
+            RowType rowType = schema.tableRowType(table);
+            return TupleRowDataConverter.tupleToRow(tuple, rowType);
+        } else {
+            return super.expandRow(store, session, storeData);
+        }
     }
     
     @Override
@@ -281,6 +292,36 @@ public class TupleStorageDescription extends FDBStorageDescription
         }
         else {
             super.expandRowData(store, session, storeData, rowData);
+        }
+    }
+    
+    public static Table tableFromOrdinals(Group group, FDBStoreData storeData) {
+        Table root = group.getRoot();
+        Table table = root;
+        Key hkey = storeData.persistitKey;
+        hkey.reset();
+        int ordinal = hkey.decodeInt();
+        assert (root.getOrdinal() == ordinal) : hkey;
+        int index = 0;
+        while (true) {
+            int[] keyDepth = table.hKey().keyDepth();
+            index = keyDepth[keyDepth.length - 1];
+            if (index >= hkey.getDepth()) {
+                return table;
+            }
+            hkey.indexTo(index);
+            ordinal = hkey.decodeInt();
+            boolean found = false;
+            for (Join join : table.getChildJoins()) {
+                table = join.getChild();
+                if (table.getOrdinal() == ordinal) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                throw new AkibanInternalException("Not a child ordinal " + hkey);
+            }
         }
     }
 

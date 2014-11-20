@@ -33,25 +33,20 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.SparseArray;
 import com.persistit.Key;
 
-public class FDBGroupRow extends ValuesHolderRow {
-    //private final FDBAdapter adapter;
+public class FDBGroupRow extends AbstractRow {
     private final KeyCreator keyCreator;
-    //private final HKeyCache<HKey> hKeyCache;
-    //private SparseArray<RowDataValueSource> valueSources;
-    //private RowData rowData;
-    //private LegacyRowWrapper row;
+    private final Row underlying;
     private HKey currentHKey;
 
 
     public FDBGroupRow(KeyCreator keyCreator, Row abstractRow, Key key) {
-        super(abstractRow.rowType(), new BindableRow.RowPCopier(abstractRow));
+        underlying = abstractRow;
         this.keyCreator = keyCreator;
         currentHKey = keyCreator.newHKey(rowType().table().hKey());
         if(key != null) {
             currentHKey.copyFrom(key);
         }
     }
-
 
     @Override
     public HKey hKey()
@@ -77,5 +72,17 @@ public class FDBGroupRow extends ValuesHolderRow {
     @Override
     public boolean isBindingsSensitive() {
         return false;
+    }
+
+
+    @Override
+    public RowType rowType() {
+        return underlying.rowType();
+    }
+
+
+    @Override
+    protected ValueSource uncheckedValue(int i) {
+        return underlying.value(i);
     }
 }
