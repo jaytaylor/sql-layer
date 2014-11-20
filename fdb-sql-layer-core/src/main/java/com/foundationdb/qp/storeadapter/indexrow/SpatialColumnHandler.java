@@ -144,7 +144,7 @@ public class SpatialColumnHandler
             try {
                 spatialObject = Spatial.deserialize(space, spatialObjectBytes);
             } catch (ParseException e) {
-                throw new InvalidSpatialObjectException(Spatial.toHexString(spatialObjectBytes));
+                throw new InvalidSpatialObjectException();
             }
         }
     }
@@ -189,7 +189,7 @@ public class SpatialColumnHandler
             try {
                 spatialObject = Spatial.deserialize(space, spatialObjectBytes);
             } catch (ParseException e) {
-                throw new InvalidSpatialObjectException(Spatial.toHexString(spatialObjectBytes));
+                throw new InvalidSpatialObjectException();
             }
         }
     }

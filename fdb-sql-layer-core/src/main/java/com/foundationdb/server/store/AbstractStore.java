@@ -819,7 +819,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
 
     @Override
     public void writeIndexRows(Session session, Table table, Row row, Collection<GroupIndex> indexes) {
-        assert (table == row.rowType().table());
+        assert (table == row.rowType().table()) : "Table: " + table.getNameForOutput() + " Vs. rowtype table: " + row.rowType().table().getNameForOutput();
         maintainGroupIndexes(session,
                 table,
                 indexes,

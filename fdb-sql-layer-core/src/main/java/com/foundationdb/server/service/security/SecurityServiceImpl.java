@@ -79,12 +79,14 @@ public class SecurityServiceImpl implements SecurityService, Service {
     public static final String DELETE_USER_USER_ROLES_SQL = "DELETE FROM user_roles WHERE user_id IN (SELECT id FROM users WHERE name = ?)";
     
     public static final String RESTRICT_USER_SCHEMA_PROPERTY = "fdbsql.restrict_user_schema";
+    public static final String HTTP_REALM_PROPERTY = "fdbsql.http.realm"; // See also HttpConductorImpl
 
     private final ConfigurationService configService;
     private final SchemaManager schemaManager;
     private final MonitorService monitor;
 
     private boolean restrictUserSchema;
+    private String httpRealm;
 
     private static final Logger logger = LoggerFactory.getLogger(SecurityServiceImpl.class);
 
@@ -399,7 +401,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             md.update(user.getBytes("UTF-8"));
-            md.update((":" + REALM + ":").getBytes("UTF-8"));
+            md.update((":" + httpRealm + ":").getBytes("UTF-8"));
             md.update(password.getBytes("UTF-8"));
             return formatMD5(md.digest(), true);
         }
@@ -522,6 +524,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
     @Override
     public void start() {
         restrictUserSchema = Boolean.parseBoolean(configService.getProperty(RESTRICT_USER_SCHEMA_PROPERTY));
+        httpRealm = configService.getProperty(HTTP_REALM_PROPERTY);
         registerSystemObjects();
         if (restrictUserSchema) {
             schemaManager.setSecurityService(this); // Injection would be circular.

@@ -1,2 +1,2 @@
-INSERT INTO `values` VALUES(1),
+INSERT INTO "values" VALUES(1),
                            (2);

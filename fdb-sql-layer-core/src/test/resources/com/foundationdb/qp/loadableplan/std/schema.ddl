@@ -1,47 +1,47 @@
 
-CREATE TABLE customers
+CREATE TABLE `customers`
 (
-  cid INT NOT NULL PRIMARY KEY, 
-  name VARCHAR(32)
+  `cid` INT NOT NULL PRIMARY KEY, 
+  `name` VARCHAR(32)
 );
 
-CREATE TABLE orders
+CREATE TABLE `orders`
 (
-  oid INT NOT NULL PRIMARY KEY,
-  cid INT NOT NULL,
-  GROUPING FOREIGN KEY (cid) REFERENCES customers(cid),
-  order_date DATE
+  `oid` INT NOT NULL PRIMARY KEY,
+  `cid` INT NOT NULL,
+  GROUPING FOREIGN KEY (`cid`) REFERENCES `customers`(`cid`),
+  `order_date` DATE
 );
 
-CREATE TABLE items
+CREATE TABLE `items`
 (
-  iid INT NOT NULL PRIMARY KEY,
-  oid INT NOT NULL,
-  GROUPING FOREIGN KEY (oid) REFERENCES orders(oid),
-  sku VARCHAR(32),
-  quan INT
+  `iid` INT NOT NULL PRIMARY KEY,
+  `oid` INT NOT NULL,
+  GROUPING FOREIGN KEY (`oid`) REFERENCES `orders`(`oid`),
+  `sku` VARCHAR(32),
+  `quan` INT
 );
 
-CREATE TABLE addresses
+CREATE TABLE `addresses`
 (
-  aid INT NOT NULL PRIMARY KEY,
-  cid int NOT NULL,
-  GROUPING FOREIGN KEY (cid) REFERENCES customers(cid),
-  state CHAR(2),
-  city VARCHAR(100)
+  `aid` INT NOT NULL PRIMARY KEY,
+  `cid` int NOT NULL,
+  GROUPING FOREIGN KEY (`cid`) REFERENCES `customers`(`cid`),
+  `state` CHAR(2),
+  `city` VARCHAR(100)
 );
 
-CREATE TABLE guid_table
+CREATE TABLE `guid_table`
 (
-  id GUID
+  `id` GUID
 );
 
 CREATE TABLE "values"
 (
-  id INT
+  `id` INT
 );
 
-CREATE TABLE strings
+CREATE TABLE `strings`
 (
-  s VARCHAR(32)
+  `s` VARCHAR(32)
 );
