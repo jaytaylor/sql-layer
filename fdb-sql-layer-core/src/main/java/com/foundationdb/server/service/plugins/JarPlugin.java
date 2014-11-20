@@ -21,26 +21,50 @@ import com.google.common.io.Closeables;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
 public final class JarPlugin extends Plugin {
+    public static final String FILENAME_SUFFIX = ".jar";
+
+    public static final FilenameFilter FILENAME_FILTER = new FilenameFilter() {
+            @Override
+            public boolean accept(File f, String name) {
+                return name.endsWith(JarPlugin.FILENAME_SUFFIX);
+            }
+        };
 
     @Override
-    public URL getClassLoaderURL() {
+    public List<URL> getClassLoaderURLs() {
+        List<URL> urls = new ArrayList<>(1);
         try {
-            return pluginJar.toURI().toURL();
+            urls.add(pluginJar.toURI().toURL());
+            File libs = new File(pluginJar.getParentFile(),
+                                 pluginJar.getName().substring(0, pluginJar.getName().length() - FILENAME_SUFFIX.length()));
+            if (libs.isDirectory()) {
+                File[] jars = libs.listFiles(FILENAME_FILTER);
+                if (jars != null) {
+                    for (File jar : jars) {
+                        urls.add(jar.toURI().toURL());
+                    }
+                }
+            }
         }
         catch (MalformedURLException e) {
             throw new PluginException(e);
         }
+        return urls;
     }
 
     @Override

@@ -25,6 +25,7 @@ import java.io.Reader;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 
 public class ITPluginsFinder implements PluginsFinder
@@ -36,8 +37,8 @@ public class ITPluginsFinder implements PluginsFinder
 
     static class ITPlugin extends Plugin {
         @Override
-        public URL getClassLoaderURL() {
-            return null;
+        public List<URL> getClassLoaderURLs() {
+            return Collections.emptyList();
         }
 
         @Override

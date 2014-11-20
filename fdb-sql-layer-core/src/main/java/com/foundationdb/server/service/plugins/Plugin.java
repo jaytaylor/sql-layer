@@ -20,12 +20,13 @@ package com.foundationdb.server.service.plugins;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
 public abstract class Plugin {
 
-    public abstract URL getClassLoaderURL();
+    public abstract List<URL> getClassLoaderURLs();
     public abstract Reader getServiceConfigsReader() throws IOException;
     protected abstract Properties readPropertiesRaw() throws Exception;
  
