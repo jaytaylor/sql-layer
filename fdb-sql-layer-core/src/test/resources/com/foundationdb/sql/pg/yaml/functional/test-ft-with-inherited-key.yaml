@@ -1,7 +1,7 @@
 # test full-text updates with inherited keys
 
 ---
-- Properties: fts 
+- Properties: all # fts
 - suppressed: true
 
 ---

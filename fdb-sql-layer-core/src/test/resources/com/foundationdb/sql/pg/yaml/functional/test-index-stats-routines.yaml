@@ -1,6 +1,6 @@
 # Index stats cache is per-node
 ---
-- Properties: random-context
+- Properties: all # random-context
 - suppressed: true
 
 ---

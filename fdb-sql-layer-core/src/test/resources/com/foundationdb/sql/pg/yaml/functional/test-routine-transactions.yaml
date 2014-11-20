@@ -1,6 +1,6 @@
 # BUG: Fails in FTS. Enable when fixed.
 ---
-- Properties: fts
+- Properties: all 
 - suppressed: true
 
 ---
