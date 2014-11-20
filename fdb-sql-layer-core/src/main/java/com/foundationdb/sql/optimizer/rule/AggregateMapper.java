@@ -68,8 +68,7 @@ public class AggregateMapper extends BaseRule
         }
         // Step 2: if possible add all aggregates to sources. throw an error otherwise.
         AddAggregates addAggregates = new AddAggregates(plan.getPlan(),
-                                                        aggregateSourceFinder.getTablesToQueries(),
-                                                        aggregateSourceFinder.getQueriesToSources());
+                                                        aggregateSourceFinder.getTablesToSources());
         addAggregates.run();
     }
 
@@ -140,8 +139,7 @@ public class AggregateMapper extends BaseRule
         Deque<AggregateFunctionExpression> functionsStack = new ArrayDeque<>();
 
         // collect this stuff to use in AddAggregates
-        Multimap<String, BaseQuery> tablesToQueries = HashMultimap.create();
-        Map<BaseQuery, AggregateSource> queriesToSources = new HashMap<BaseQuery, AggregateSource>();
+        Multimap<String, AggregateSourceState> tablesToSources = HashMultimap.create();
 
         public AggregateSourceAndFunctionFinder(PlanContext planContext) {
             super(planContext);
@@ -151,12 +149,8 @@ public class AggregateMapper extends BaseRule
             return functions;
         }
 
-        public Multimap<String, BaseQuery> getTablesToQueries() {
-            return tablesToQueries;
-        }
-
-        public Map<BaseQuery, AggregateSource> getQueriesToSources() {
-            return queriesToSources;
+        public Multimap<String, AggregateSourceState> getTablesToSources() {
+            return tablesToSources;
         }
 
         @Override
@@ -177,12 +171,9 @@ public class AggregateMapper extends BaseRule
             super.visit(n);
             if (n instanceof TableSource) {
                 String tableSourceName = ((TableSource)n).getName();
-                BaseQuery query = subqueries.isEmpty() ? rootQuery : subqueries.peek().subquery;
-                tablesToQueries.put(tableSourceName, query);
-            }
-            if (n instanceof AggregateSource) {
-                BaseQuery query = subqueries.isEmpty() ? rootQuery : subqueries.peek().subquery;
-                queriesToSources.put(query, (AggregateSource)n);
+                if (!sources.isEmpty()) {
+                    tablesToSources.put(tableSourceName, sources.get(sources.size()-1));
+                }
             }
             return true;
         }
@@ -514,15 +505,12 @@ public class AggregateMapper extends BaseRule
     static class AddAggregates implements PlanVisitor, ExpressionRewriteVisitor {
         PlanNode plan;
         Deque<BaseQuery> subqueries = new ArrayDeque<>();
-        Multimap<String, BaseQuery> tablesToQueries;
-        Map<BaseQuery, AggregateSource> queriesToSources;
+        Multimap<String, AggregateSourceState> tablesToSources;
 
         public AddAggregates(PlanNode plan,
-                                Multimap<String, BaseQuery> tablesToQueries,
-                                Map<BaseQuery, AggregateSource> queriesToSources) {
+                                Multimap<String, AggregateSourceState> tablesToSources) {
             this.plan = plan;
-            this.tablesToQueries = tablesToQueries;
-            this.queriesToSources = queriesToSources;
+            this.tablesToSources = tablesToSources;
         }
 
         public void run() {
@@ -533,12 +521,13 @@ public class AggregateMapper extends BaseRule
             AggregateSource source = expr.getSource();
             if (source == null && expr.getOperand() instanceof ColumnExpression) {
                 String tableName = ((ColumnExpression)expr.getOperand()).getTable().getName();
-                if (tablesToQueries.containsKey(tableName)) {
-                    Collection<BaseQuery> queries = tablesToQueries.get(tableName);
-                    if (queries.size() == 1) {
-                        BaseQuery query = queries.iterator().next();
-                        if (query != subqueries.peek() && subqueries.contains(query)) {
-                            source = queriesToSources.get(queries.iterator().next());
+                if (tablesToSources.containsKey(tableName)) {
+                    Collection<AggregateSourceState> sourceStates = tablesToSources.get(tableName);
+                    if (sourceStates.size() == 1) {
+                        AggregateSourceState sourceState = sourceStates.iterator().next();
+                        if (sourceState.containingQuery != subqueries.peek() && 
+                                subqueries.contains(sourceState.containingQuery)) {
+                            source = sourceState.aggregateSource;
                             expr.setSource(source);
                         }
                     }
