@@ -63,7 +63,6 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         pRowType = schema.tableRowType(table(p));
         cRowType = schema.tableRowType(table(c));
         dRowType = schema.tableRowType(table(d));

@@ -27,11 +27,13 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.error.OutOfRangeException;
 import com.foundationdb.server.spatial.Spatial;
 import com.geophile.z.Space;
 import com.geophile.z.spatialobject.d2.Box;
+
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -79,7 +81,6 @@ public class BoxTableIndexScanIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         boxRowType = schema.tableRowType(table(box));
         boxOrdinal = boxRowType.table().getOrdinal();
         latLonIndexRowType = indexType(box, "box_blob");

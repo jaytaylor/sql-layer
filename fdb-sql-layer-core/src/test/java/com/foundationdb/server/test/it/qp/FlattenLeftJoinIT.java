@@ -37,6 +37,7 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.texpressions.Comparison;
@@ -47,7 +48,6 @@ import static com.foundationdb.qp.operator.API.FlattenOption.KEEP_PARENT;
 import static com.foundationdb.qp.operator.API.JoinType.LEFT_JOIN;
 import static com.foundationdb.qp.operator.API.*;
 import static com.foundationdb.server.test.ExpressionGenerators.*;
-
 import static com.foundationdb.qp.rowtype.RowTypeChecks.checkRowTypeFields;
 
 public class FlattenLeftJoinIT extends OperatorITBase
@@ -89,7 +89,6 @@ public class FlattenLeftJoinIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         ancestorRowType = schema.tableRowType(table(ancestor));
         parentRowType = schema.tableRowType(table(parent));
         beforeChildRowType = schema.tableRowType(table(beforeChild));

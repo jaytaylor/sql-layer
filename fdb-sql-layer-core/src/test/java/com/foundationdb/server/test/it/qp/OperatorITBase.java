@@ -69,6 +69,8 @@ public class OperatorITBase extends ITBase
         if(doAutoTransaction()) {
             txnService().beginTransaction(session());
         }
+        schema = SchemaCache.globalSchema(ais());
+        assert schema != null : "no schema in ais";
         setupPostCreateSchema();
     }
 
@@ -113,8 +115,6 @@ public class OperatorITBase extends ITBase
     }
 
     protected void setupPostCreateSchema() {
-        schema = SchemaCache.globalSchema(ais());
-        assert schema != null : "no schema in ais";
         customerRowType = schema.tableRowType(table(customer));
         orderRowType = schema.tableRowType(table(order));
         itemRowType = schema.tableRowType(table(item));

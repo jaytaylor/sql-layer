@@ -52,7 +52,6 @@ public class UniqueIndexScanIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         itemRowType = schema.tableRowType(table(item));
         xIndexRowType = indexType(item, "x");
         yIndexRowType = indexType(item, "y");

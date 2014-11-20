@@ -85,7 +85,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         tRowType = schema.tableRowType(table(t));
         idxRowType = indexType(t, "a", "b", "c");
         db = new Row[] {

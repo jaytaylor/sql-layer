@@ -25,6 +25,7 @@ import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.server.test.it.PersistitITBase;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.Value;
+
 import org.junit.Test;
 
 import com.foundationdb.qp.loadableplan.DirectObjectCursor;
@@ -32,6 +33,7 @@ import com.foundationdb.qp.loadableplan.DirectObjectPlan;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
 
 public class PersistitCLILoadablePlanIT extends PersistitITBase
 {
@@ -40,7 +42,7 @@ public class PersistitCLILoadablePlanIT extends PersistitITBase
         PersistitCLILoadablePlan loadablePlan = new PersistitCLILoadablePlan();
         DirectObjectPlan plan = loadablePlan.plan();
 
-        Schema schema = new Schema(ais());
+        Schema schema = SchemaCache.globalSchema(ais());
         StoreAdapter adapter = newStoreAdapter(schema);
         QueryContext queryContext = queryContext(adapter);
         QueryBindings queryBindings = queryContext.createBindings();

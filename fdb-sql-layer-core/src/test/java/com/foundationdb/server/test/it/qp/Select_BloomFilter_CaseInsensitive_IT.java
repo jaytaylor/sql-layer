@@ -72,7 +72,6 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         dRowType = schema.tableRowType(table(d));
         fRowType = schema.tableRowType(table(f));
         dIndexRowType = indexType(d, "test_id", "a", "b");

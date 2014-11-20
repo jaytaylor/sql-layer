@@ -24,7 +24,9 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.collation.AkCollator;
+
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -51,7 +53,6 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         tRowType = schema.tableRowType(table(t));
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);

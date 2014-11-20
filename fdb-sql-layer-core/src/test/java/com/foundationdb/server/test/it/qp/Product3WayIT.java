@@ -71,7 +71,6 @@ public class Product3WayIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         rRowType = schema.tableRowType(table(r));
         aRowType = schema.tableRowType(table(a));
         bRowType = schema.tableRowType(table(b));

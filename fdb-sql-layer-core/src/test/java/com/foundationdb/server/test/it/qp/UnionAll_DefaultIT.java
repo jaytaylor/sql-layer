@@ -49,7 +49,6 @@ public class UnionAll_DefaultIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         txIndexRowType = indexType(t, "x");
         tRowType = schema.tableRowType(table(t));
         groupTable = group(t);

@@ -57,7 +57,6 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         tRowType = schema.tableRowType(table(t));
         idxRowType = indexType(t, "a", "b", "c", "id");
         db = new Row[] {

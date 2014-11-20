@@ -65,7 +65,6 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         pointRowType = schema.tableRowType(table(point));
         pointOrdinal = pointRowType.table().getOrdinal();
         latLonIndexRowType = indexType(point, "lat", "lon");

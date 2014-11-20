@@ -66,7 +66,6 @@ public class GroupIndexRowIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new com.foundationdb.qp.rowtype.Schema(ais());
         userRowType = schema.tableRowType(table(user));
         memberInfoRowType = schema.tableRowType(table(memberInfo));
         entitlementUserGroupRowType = schema.tableRowType(table(entitlementUserGroup));

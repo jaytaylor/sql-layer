@@ -27,7 +27,9 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.test.it.ITBase;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -88,7 +90,7 @@ public final class GroupIndexScanIT extends ITBase {
         TableName groupName = getTable(c).getGroup().getName();
         GroupIndex gi = createLeftGroupIndex(groupName, GI_NAME, "o.when", "i.sku");
 
-        schema = new Schema(ddl().getAIS(session()));
+        schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();

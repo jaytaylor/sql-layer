@@ -81,7 +81,6 @@ public class IndexRowAndAncestorIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new com.foundationdb.qp.rowtype.Schema(ais());
         cRowType = schema.tableRowType(table(c));
         oRowType = schema.tableRowType(table(o));
         iRowType = schema.tableRowType(table(i));

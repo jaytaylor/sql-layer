@@ -57,7 +57,6 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         parentRowType = schema.tableRowType(table(parent));
         childRowType = schema.tableRowType(table(child));
         parentPidIndexRowType = indexType(parent, "pid");
