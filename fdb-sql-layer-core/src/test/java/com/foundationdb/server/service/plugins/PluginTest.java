@@ -33,7 +33,7 @@ public final class PluginTest {
     public void oneProperty() {
         checkEqual(
                 map("plugins.name", "foo").and("hello", "world"),
-                map("plugins.foo.hello", "world")
+                map("fdbsql.foo.hello", "world")
         );
     }
 
@@ -57,7 +57,7 @@ public final class PluginTest {
 
     @Test(expected = PluginException.class)
     public void usingReservedKeys() {
-        tryGet(map("plugins.name", "broke").and("plugins.foo", "bar"));
+        tryGet(map("plugins.name", "broke").and("fdbsql.foo", "bar"));
     }
 
     @Test(expected = PluginException.class)

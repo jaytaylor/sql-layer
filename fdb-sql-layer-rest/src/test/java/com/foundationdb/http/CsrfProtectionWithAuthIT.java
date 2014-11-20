@@ -43,7 +43,7 @@ public class CsrfProtectionWithAuthIT extends CsrfProtectionITBase
     @Override
     protected Map<String,String> startupConfigProperties() {
         Map<String,String> config = new HashMap<>(super.startupConfigProperties());
-        config.put("plugins.rest.login", "basic");
+        config.put("fdbsql.rest.login", "basic");
         return config;
     }
 

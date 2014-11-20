@@ -52,7 +52,7 @@ public class HttpThreadedLoginIT extends PluginITBase
     @Override
     protected Map<String, String> startupConfigProperties() {
         Map<String, String> properties = new HashMap<>();
-        properties.put("plugins.rest.login", "basic");
+        properties.put("fdbsql.rest.login", "basic");
         return properties;
     }
 

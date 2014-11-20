@@ -78,7 +78,7 @@ public class HttpMonitorVerifyIT extends PluginITBase {
     @Override
     protected Map<String, String> startupConfigProperties() {
         Map<String, String> properties = new HashMap<>();
-        properties.put("plugins.rest.login", "basic"); // "digest"
+        properties.put("fdbsql.rest.login", "basic"); // "digest"
         properties.put("fdbsql.restrict_user_schema", "true");
         return properties;
     }

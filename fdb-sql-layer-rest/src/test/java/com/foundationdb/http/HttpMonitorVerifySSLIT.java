@@ -121,8 +121,8 @@ public class HttpMonitorVerifySSLIT extends PluginITBase {
     @Override
     protected Map<String, String> startupConfigProperties() {
         Map<String, String> properties = new HashMap<>();
-        properties.put("plugins.rest.login", "digest"); // "digest"
-        properties.put("plugins.rest.ssl", "true");
+        properties.put("fdbsql.rest.login", "digest"); // "digest"
+        properties.put("fdbsql.rest.ssl", "true");
         properties.put("fdbsql.restrict_user_schema", "true");
         
         Properties p = new Properties(System.getProperties());

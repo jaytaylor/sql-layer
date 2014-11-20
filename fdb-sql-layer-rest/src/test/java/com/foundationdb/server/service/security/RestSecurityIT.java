@@ -64,8 +64,8 @@ public class RestSecurityIT extends SecurityServiceITBase
     @Override
     protected Map<String, String> startupConfigProperties() {
         Map<String, String> properties = super.startupConfigProperties();
-        properties.put("plugins.rest.login", "basic"); // "digest"
-        properties.put("plugins.rest.csrf_protection.type", "none");
+        properties.put("fdbsql.rest.login", "basic"); // "digest"
+        properties.put("fdbsql.rest.csrf_protection.type", "none");
         return properties;
     }
 

@@ -44,11 +44,11 @@ public abstract class Plugin {
         if (pluginName.contains("."))
             throw new PluginException("plugin has invalid name: " + pluginName);
         Properties results = new Properties();
-        StringBuilder keyBuilder = new StringBuilder("plugins.").append(pluginName).append('.');
+        StringBuilder keyBuilder = new StringBuilder("fdbsql.").append(pluginName).append('.');
         final int prefixLength = keyBuilder.length();
         for (Map.Entry<Object, Object> property : properties.entrySet()) {
             String key = string(property.getKey());
-            if (key.startsWith("plugins."))
+            if (key.startsWith("plugins.") || key.startsWith("fdbsql."))
                 throw new PluginException("plugin has invalid properties file (key " + key + "): " + this);
             keyBuilder.setLength(prefixLength);
             keyBuilder.append(key);
