@@ -17,6 +17,8 @@
 
 package com.foundationdb.sql.pg;
 
+import com.foundationdb.sql.test.YamlTester;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;

@@ -17,6 +17,8 @@
 
 package com.foundationdb.sql.pg;
 
+import com.foundationdb.sql.test.YamlTester;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

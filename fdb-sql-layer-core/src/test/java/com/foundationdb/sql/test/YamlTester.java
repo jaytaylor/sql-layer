@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.sql.pg;
+package com.foundationdb.sql.test;
 
 import static com.foundationdb.util.AssertUtils.assertCollectionEquals;
 import static com.foundationdb.util.FileTestUtils.printClickableFile;
@@ -164,7 +164,7 @@ import org.yaml.snakeyaml.nodes.Tag;
    - params: [<parameter value>, ...]
    - output: [[<output value>, ...], ...]
 */
-class YamlTester
+public class YamlTester
 {
     private static final Logger LOG = LoggerFactory.getLogger(YamlTester.class);
 
@@ -249,11 +249,12 @@ class YamlTester
      * @param connection the JDBC connection
      * @param randomCost randomize cost calculations
      */
-    YamlTester(Reader in, Connection connection) {
+    public YamlTester(Reader in, Connection connection) {
         this(null, in, connection, false);
     }
 
-    YamlTester(URL sourceURL, Reader in, Connection connection, boolean randomCost) {
+    public YamlTester(URL sourceURL, Reader in, Connection connection,
+                      boolean randomCost) {
         this.sourceURL = sourceURL;
         this.in = in;
         this.connection = connection;
@@ -261,7 +262,7 @@ class YamlTester
     }
 
     /** Test the input specified in the constructor. */
-    void test() {
+    public void test() {
         try {
             test(in);
         } catch (Throwable e) {
