@@ -62,8 +62,24 @@ public class Project extends BasePlanWithInput implements ColumnSource, TypedPla
     }
 
     @Override
-    public String summaryString() {
-        return super.summaryString() + fields;
+    public String summaryString(SummaryConfiguration configuration) {
+        StringBuilder stringBuilder = new StringBuilder(super.summaryString(configuration));
+        if (configuration.includeRowTypes) {
+            stringBuilder.append('[');
+            for (ExpressionNode field : fields) {
+                stringBuilder.append(field);
+                stringBuilder.append(" (");
+                stringBuilder.append(field.getType());
+                stringBuilder.append("), ");
+            }
+            if (fields.size() > 0) {
+                stringBuilder.setLength(stringBuilder.length()-2);
+            }
+            stringBuilder.append(']');
+        } else {
+            stringBuilder.append(fields);
+        }
+        return stringBuilder.toString();
     }
 
     @Override

@@ -99,15 +99,8 @@ public class FDBAdapter extends StoreAdapter {
 
     @Override
     public void updateRow(Row oldRow, Row newRow) {
-        RowDef rowDef = oldRow.rowType().table().rowDef();
-        RowDef rowDefNewRow = newRow.rowType().table().rowDef();
-        if (rowDef.getRowDefId() != rowDefNewRow.getRowDefId()) {
-            throw new IllegalArgumentException(String.format("%s != %s", rowDef, rowDefNewRow));
-        }
-        RowData oldRowData = rowData(rowDef, oldRow, new RowDataCreator());
-        RowData newRowData = rowData(rowDefNewRow, newRow, new RowDataCreator());
         try {
-            store.updateRow(getSession(), rowDef, oldRowData, rowDefNewRow, newRowData, null);
+            store.updateRow(getSession(), oldRow, newRow);
         } catch(InvalidOperationException e) {
             rollbackIfNeeded(getSession(), e);
             throw e;
@@ -116,10 +109,8 @@ public class FDBAdapter extends StoreAdapter {
 
     @Override
     public void writeRow(Row newRow, Collection<TableIndex> indexes, Collection<GroupIndex> groupIndexes) {
-        RowDef rowDef = newRow.rowType().table().rowDef();
-        RowData newRowData = rowData(rowDef, newRow, new RowDataCreator());
         try {
-            store.writeRow(getSession(), rowDef, newRowData, indexes, groupIndexes);
+            store.writeRow(getSession(), newRow, indexes, groupIndexes);
         } catch(InvalidOperationException e) {
             rollbackIfNeeded(getSession(), e);
             throw e;
@@ -128,10 +119,8 @@ public class FDBAdapter extends StoreAdapter {
 
     @Override
     public void deleteRow(Row oldRow, boolean cascadeDelete) {
-        RowDef rowDef = oldRow.rowType().table().rowDef();
-        RowData oldRowData = rowData(rowDef, oldRow, new RowDataCreator());
         try {
-            store.deleteRow(getSession(), rowDef, oldRowData, cascadeDelete);
+            store.deleteRow(getSession(), oldRow, cascadeDelete);
         } catch(InvalidOperationException e) {
             rollbackIfNeeded(getSession(), e);
             throw e;

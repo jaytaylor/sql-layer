@@ -61,7 +61,6 @@ public class ServerValueDecoder
     public void decodeValue(byte[] encoded, ServerType type, boolean binary,
                             QueryBindings bindings, int index,
                             QueryContext queryContext, TypesRegistryService typesRegistryService) {
-       
         TInstance targetType = type != null ? type.getType() : null;
         if (targetType == null && encoded != null) {
             throw new UnknownDataTypeException(null);

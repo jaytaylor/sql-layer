@@ -48,6 +48,35 @@ public class WriteIndexRow extends AbstractRow {
         return indexRowType;
     }
 
+    public void initialize (Row row, Key hKey, SpatialColumnHandler spatialColumnHandler, long zValue) {
+        pKeyAppends = 0;
+        int indexField = 0;
+        IndexRowComposition indexRowComp = index.indexRowComposition();
+        while (indexField < indexRowComp.getLength()) {
+            // handleSpatialColumn will increment pKeyAppends once for all spatial columns
+            if (spatialColumnHandler != null && spatialColumnHandler.handleSpatialColumn(this, indexField, zValue)) {
+                if (indexField == index.firstSpatialArgument()) {
+                    pKeyAppends++;
+                }
+            } else {
+                if (indexRowComp.isInRowData(indexField)) {
+                    int position = indexRowComp.getFieldPosition(indexField);
+                    Column column = row.rowType().table().getColumnsIncludingInternal().get(position);
+                    ValueSource source = row.value(column.getPosition());
+                    pKeyTarget().append(source, column.getType());
+                } else if (indexRowComp.isInHKey(indexField)) {
+                    PersistitKey.appendFieldFromKey(pKey(), hKey, indexRowComp.getHKeyPosition(indexField), index
+                        .getIndexName());
+                } else {
+                    throw new IllegalStateException("Invalid IndexRowComposition: " + indexRowComp);
+                }
+                pKeyAppends++;
+            }
+            indexField++;
+        }
+        
+    }
+
     public void initialize(RowData rowData, Key hKey, SpatialColumnHandler spatialColumnHandler, long zValue) {
         pKeyAppends = 0;
         int indexField = 0;

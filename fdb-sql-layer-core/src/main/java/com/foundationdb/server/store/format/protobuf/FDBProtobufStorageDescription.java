@@ -17,20 +17,18 @@
 
 package com.foundationdb.server.store.format.protobuf;
 
-import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.CommonProtobuf.ProtobufRowFormat;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.error.ProtobufReadException;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
-import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
-
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -41,7 +39,8 @@ public class FDBProtobufStorageDescription extends TupleStorageDescription imple
 {
     private ProtobufRowFormat.Type formatType;
     private FileDescriptorProto fileProto;
-    private transient ProtobufRowDataConverter converter;
+    private transient ProtobufRowDataConverter rowDataConverter;
+    private transient ProtobufRowConverter rowConverter;
 
     public FDBProtobufStorageDescription(HasStorage forObject, String storageFormat) {
         super(forObject, storageFormat);
@@ -97,35 +96,56 @@ public class FDBProtobufStorageDescription extends TupleStorageDescription imple
         fileProto = validateAndGenerate(object, formatType, fileProto, output);
     }
 
-    public synchronized ProtobufRowDataConverter ensureConverter() {
-        if (converter == null) {
-            converter = buildConverter(object, fileProto);
+    public synchronized ProtobufRowDataConverter ensureRowDataConverter() {
+        if (rowDataConverter == null) {
+            rowDataConverter = buildRowDataConverter(object, fileProto);
         }
-        return converter;
+        return rowDataConverter;
+    }
+    
+    public synchronized ProtobufRowConverter ensureRowConverter() {
+        if (rowConverter == null) {
+            rowConverter = buildRowConverter(object, fileProto);
+        }
+        return rowConverter;
     }
 
     @Override
+    public void packRow(FDBStore store, Session session,
+                        FDBStoreData storeData, Row row) {
+        ensureRowConverter();
+        DynamicMessage msg = rowConverter.encode(row);
+        storeData.rawValue = msg.toByteArray();
+    }
+    
+    @Override
     public void packRowData(FDBStore store, Session session,
                             FDBStoreData storeData, RowData rowData) {
-        ensureConverter();
-        DynamicMessage msg = converter.encode(rowData);
+        ensureRowDataConverter();
+        DynamicMessage msg = rowDataConverter.encode(rowData);
         storeData.rawValue = msg.toByteArray();        
+    }
+
+    @Override 
+    public void expandRow (FDBStore store, Session session,
+                            FDBStoreData storeData, Row row) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void expandRowData(FDBStore store, Session session,
                               FDBStoreData storeData, RowData rowData) {
-        ensureConverter();
+        ensureRowDataConverter();
         DynamicMessage msg;
         try {
-            msg = DynamicMessage.parseFrom(converter.getMessageType(), storeData.rawValue);
+            msg = DynamicMessage.parseFrom(rowDataConverter.getMessageType(), storeData.rawValue);
         }
         catch (InvalidProtocolBufferException ex) {
-            ProtobufReadException nex = new ProtobufReadException(converter.getMessageType().getName(), ex.getMessage());
+            ProtobufReadException nex = new ProtobufReadException(rowDataConverter.getMessageType().getName(), ex.getMessage());
             nex.initCause(ex);
             throw nex;
         }
-        converter.decode(msg, rowData);
+        rowDataConverter.decode(msg, rowData);
     }
 
 }

@@ -55,8 +55,8 @@ public class SubquerySource extends BaseJoinable implements ColumnSource, PlanWi
     }
     
     @Override
-    public String summaryString() {
-        return super.summaryString() + "(" + name + ")";
+    public String summaryString(SummaryConfiguration configuration) {
+        return super.summaryString(configuration) + "(" + name + ")";
     }
 
     @Override

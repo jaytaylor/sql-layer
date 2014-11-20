@@ -36,43 +36,44 @@ public class ConstantExpression extends BaseExpression
     public static ConstantExpression typedNull(DataTypeDescriptor sqlType, ValueNode sqlSource, TInstance type) {
         if (sqlType == null) {
             ValueSource nullSource = ValueSources.getNullSource(null);
-            ConstantExpression result = new ConstantExpression(new TPreptimeValue(nullSource));
-            return result;
+            return new ConstantExpression(new TPreptimeValue(nullSource));
         }
-        ConstantExpression result = new ConstantExpression((Object)null, sqlType, sqlSource, null);
         if (type != null) {
             ValueSource nullSource = ValueSources.getNullSource(type);
-            result.setPreptimeValue(new TPreptimeValue(type, nullSource));
+            return new ConstantExpression((Object)null, sqlType, sqlSource, new TPreptimeValue(type, nullSource));
         } else {
-            result.setPreptimeValue(new TPreptimeValue());
+            return new ConstantExpression((Object)null, sqlType, sqlSource, new TPreptimeValue());
         }
-        return result;
     }
 
     public ConstantExpression (Object value, DataTypeDescriptor sqlType, ValueNode sqlSource, TInstance type) {
-        super (sqlType, sqlSource, null);
-        this.value = value;
-
-        // For constant strings, reset the CollationID to NULL,
-        // meaning they defer collation ordering to the other operand.
-        if (type != null && type.typeClass() instanceof TString) {
-            type = type.typeClass().instance(
-                   type.attribute(StringAttribute.MAX_LENGTH),
-                   type.attribute(StringAttribute.CHARSET),
-                   StringFactory.NULL_COLLATION_ID, 
-                   type.nullability());
-        }
-
-        setPreptimeValue(ValueSources.fromObject(value, type));
+        this (value, sqlType, sqlSource, getPreptimeValue(value, type));
     }
-   
+    public ConstantExpression (Object value, DataTypeDescriptor sqlType, ValueNode sqlSource, TPreptimeValue preptimeValue) {
+        super (sqlType, sqlSource, preptimeValue);
+        this.value = value;
+    }
+
     public ConstantExpression (Object value, TInstance type) {
         this(value, type.dataTypeDescriptor(), null, type);
     }
 
     public ConstantExpression(TPreptimeValue preptimeValue) {
-        super (preptimeValue.type() == null ? null : preptimeValue.type().dataTypeDescriptor(), null, null);
-        setPreptimeValue(preptimeValue);
+        super (preptimeValue.type() == null ? null : preptimeValue.type().dataTypeDescriptor(), null, preptimeValue);
+    }
+
+    private static TPreptimeValue getPreptimeValue(Object value, TInstance type) {
+        // For constant strings, reset the CollationID to NULL,
+        // meaning they defer collation ordering to the other operand.
+        if (type != null && type.typeClass() instanceof TString) {
+            type = type.typeClass().instance(
+                    type.attribute(StringAttribute.MAX_LENGTH),
+                    type.attribute(StringAttribute.CHARSET),
+                    StringFactory.NULL_COLLATION_ID,
+                    type.nullability());
+        }
+
+        return ValueSources.fromObject(value, type);
     }
 
     @Override

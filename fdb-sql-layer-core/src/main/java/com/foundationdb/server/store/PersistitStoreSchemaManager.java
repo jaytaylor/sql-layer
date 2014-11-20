@@ -34,7 +34,7 @@ import com.foundationdb.ais.protobuf.ProtobufWriter.WriteSelector;
 import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor;
-import com.foundationdb.qp.row.ValuesRow;
+import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.error.AkibanInternalException;
@@ -60,6 +60,7 @@ import com.persistit.Key.Direction;
 import com.persistit.KeyFilter;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1307,7 +1308,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                     return null;
                 }
                 AISAndTimestamp latest = latestAISCache;
-                return new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                                      aisCacheMissCount.get(),
                                      delayedTreeCount.get(),
                                      (latest == CACHE_SENTINEL) ? null : latest.sAIS.ais.getGeneration(),

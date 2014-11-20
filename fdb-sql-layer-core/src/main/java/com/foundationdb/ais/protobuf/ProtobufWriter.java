@@ -19,10 +19,8 @@ package com.foundationdb.ais.protobuf;
 
 import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.util.TableChange;
-import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.error.ProtobufWriteException;
 import com.google.protobuf.CodedOutputStream;
-import com.google.protobuf.InvalidProtocolBufferException;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -467,9 +465,6 @@ public class ProtobufWriter {
         }
         if(column.getTypeParameter2() != null) {
             columnBuilder.setTypeParam2(column.getTypeParameter2());
-        }
-        if(column.getInitialAutoIncrementValue() != null) {
-            columnBuilder.setInitAutoInc(column.getInitialAutoIncrementValue());
         }
         
         if (column.getDefaultIdentity() != null) {

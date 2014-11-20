@@ -340,7 +340,6 @@ public class ProtobufReader {
                     pbColumn.getColumnName(),
                     pbColumn.getPosition(),
                     type,
-                    pbColumn.hasInitAutoInc() ? pbColumn.getInitAutoInc() : null,
                     maxStorageSize,
                     prefixSize
             );

@@ -443,6 +443,7 @@ public final class TypeResolver extends BaseRule {
 
             TOverloadResult overloadResultStrategy = overload.resultStrategy();
             TInstance resultInstance;
+            // This is set to null here to indicate that no casting is required
             TInstance castTo;
 
             TPreptimeContext context;
@@ -867,6 +868,10 @@ public final class TypeResolver extends BaseRule {
                         projectType = null;
                     }
                 }
+
+                ResultField leftField = leftResult.getFields().get(i);
+                ResultField rightField = rightResult.getFields().get(i);
+
                 // no point in casting to an unknown type
                 // i.e. SELECT NULL as t1 UNION SELECT NULL as t1
                 if (projectType != null) {
@@ -874,10 +879,9 @@ public final class TypeResolver extends BaseRule {
 
                     leftProject.applyCast(i, projectType, projectInst);
                     rightProject.applyCast(i, projectType, projectInst);
+                    leftField.setType(projectInst);
+                    rightField.setType(projectInst);
                 }
-
-                ResultField leftField = leftResult.getFields().get(i);
-                ResultField rightField = rightResult.getFields().get(i);
                 String name = null;
                 if (leftField.getName() != null && rightField.getName() != null)
                     name = leftField.getName();

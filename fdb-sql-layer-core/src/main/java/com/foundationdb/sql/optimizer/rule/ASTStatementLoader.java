@@ -657,7 +657,7 @@ public class ASTStatementLoader extends BaseRule
                                     List<ExpressionNode> projects)
                 throws StandardException {
             DataTypeDescriptor conditionType = null;
-            TInstance conditionInst = null;
+            TInstance conditionInst;
             switch (condition.getNodeType()) {
             case NodeTypes.BINARY_EQUALS_OPERATOR_NODE:
                 addComparisonCondition(conditions, projects,

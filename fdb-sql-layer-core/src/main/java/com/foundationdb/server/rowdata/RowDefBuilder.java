@@ -77,7 +77,7 @@ public class RowDefBuilder
             rowDef.computeFieldAssociations(ordinalMap);
         }
 
-        LOG.debug("Built RowDefs: {}", this);
+        LOG.trace("Built RowDefs: {}", this);
     }
 
     private RowDef createRowDefCommon(Table table, MemoryTableFactory factory) {
@@ -149,12 +149,6 @@ public class RowDefBuilder
         rowDef.setGroupIndexes(groupIndexList.toArray(new GroupIndex[groupIndexList.size()]));
 
         rowDef.getTableStatus().setRowDef(rowDef);
-        Column autoIncColumn = table.getAutoIncrementColumn();
-        if(autoIncColumn != null) {
-            long initialAutoIncrementValue = autoIncColumn.getInitialAutoIncrementValue();
-            rowDef.getTableStatus().setAutoIncrement(session, initialAutoIncrementValue);
-        }
-
         return rowDef;
     }
 

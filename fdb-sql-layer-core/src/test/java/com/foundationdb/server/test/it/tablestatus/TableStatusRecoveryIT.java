@@ -43,26 +43,6 @@ public class TableStatusRecoveryIT extends ITBase {
     }
 
     @Test
-    public void autoIncrementInsertTest() throws Exception {
-        NewAISBuilder builder = AISBBasedBuilder.create("test", ddl().getTypesTranslator());
-        builder.table("A").autoIncInt("I", 1).colString("V", 255).pk("I");
-        ddl().createTable(session(), builder.ais().getTable("test", "A"));
-
-        int tableId = tableId("test", "A");
-        for (int i = 1; i <= ROW_COUNT; i++) {
-            writeRows(row(tableId, i, "This is record # " + 1));
-        }
-
-        assertEquals("row count before restart", ROW_COUNT, getRowCount(tableId));
-        assertEquals("auto inc before restart", ROW_COUNT, getAutoInc(tableId));
-
-        safeRestartTestServices();
-
-        assertEquals("row count before restart", ROW_COUNT, getRowCount(tableId));
-        assertEquals("auto inc before restart", ROW_COUNT, getAutoInc(tableId));
-    }
-
-    @Test
     public void ordinalCreationTest() throws Exception {
         final int aId = createTable("test", "A", "ID INT NOT NULL, PRIMARY KEY(ID)");
         final int aOrdinal = getOrdinal(aId);
@@ -93,16 +73,6 @@ public class TableStatusRecoveryIT extends ITBase {
             @Override
             public Long call() throws Exception {
                 return getTable(tableId).rowDef().getTableStatus().getRowCount(session());
-            }
-        });
-    }
-
-    private long  getAutoInc(final int tableId) {
-        return txnService().run(session(), new Callable<Long>()
-        {
-            @Override
-            public Long call() throws Exception {
-                return getTable(tableId).rowDef().getTableStatus().getAutoIncrement(session());
             }
         });
     }

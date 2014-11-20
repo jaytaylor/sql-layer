@@ -41,7 +41,7 @@ import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor;
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
-import com.foundationdb.qp.row.ValuesRow;
+import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.service.Service;
@@ -181,7 +181,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 while(it.hasNext()) {
                     Schema schema = it.next();
                     if(isAccessible(session, schema.getName())) {
-                        return new ValuesRow(rowType,
+                        return new ValuesHolderRow(rowType,
                                             null,        // catalog
                                              schema.getName(),
                                              null,              // owner
@@ -237,7 +237,7 @@ public class BasicInfoSchemaTablesServiceImpl
                         final Integer ordinal = table.hasMemoryTableFactory() ? null : table.getOrdinal();
                         final boolean isInsertable = !table.hasMemoryTableFactory();
                         if(isAccessible(session, table.getName())) {
-                            return new ValuesRow(rowType,
+                            return new ValuesHolderRow(rowType,
                                      null,       //catalog
                                      table.getName().getSchemaName(),
                                      table.getName().getTableName(),
@@ -265,7 +265,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 while(viewIt.hasNext()) {
                     View view = viewIt.next();
                     if(isAccessible(session, view.getName())) {
-                        return new ValuesRow(rowType,
+                        return new ValuesHolderRow(rowType,
                                 null, 
                                  view.getName().getSchemaName(),
                                  view.getName().getTableName(),
@@ -399,7 +399,7 @@ public class BasicInfoSchemaTablesServiceImpl
                     defaultString = column.getDefaultFunction() + "()";
                 }
                 
-                return new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                                     null,
                                      column.getColumnar().getName().getSchemaName(),
                                      column.getColumnar().getName().getTableName(),
@@ -481,7 +481,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 if(!it.next()) {
                     return null;
                 }
-                return new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                         null,   //constraint catalog
                          it.getTable().getName().getSchemaName(),
                          it.getName(),
@@ -541,7 +541,7 @@ public class BasicInfoSchemaTablesServiceImpl
                     }
                 } while (!it.isForeignKey());
                 ForeignKey fk = it.getTable().getReferencingForeignKey(it.getIndex().getIndexName().getName());
-                return new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                         null,   //constraint catalog
                          fk.getConstraintName().getSchemaName(),
                          fk.getConstraintName().getTableName(),
@@ -666,7 +666,7 @@ public class BasicInfoSchemaTablesServiceImpl
                     uniqueConstraint = join.getParent().getPrimaryKey().getIndex().getConstraintName().getTableName();
                 }
                 
-                return new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                                     null,                               //root table catalog
                                      rpt.root.getName().getSchemaName(),// root_table_schema
                                      rpt.root.getName().getTableName(), // root_table_name
@@ -773,7 +773,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 if(!advance()) {
                     return null;
                 }
-                return new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                         null,       // constraint catalog, 
                         it.getTable().getName().getSchemaName(),
                         constraintName,
@@ -835,7 +835,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 } else {
                     indexType = "INDEX";
                 }
-                return new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                         null, 
                         indexIt.getTable().getName().getSchemaName(),
                         indexIt.getTable().getName().getTableName(),
@@ -907,7 +907,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 if(indexColumn == null) {
                     return null;
                 }
-                return new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                         null,
                          indexIt.getTable().getName().getSchemaName(),
                          indexIt.getTable().getName().getTableName(),
@@ -955,7 +955,7 @@ public class BasicInfoSchemaTablesServiceImpl
                     Sequence sequence = it.next();
                     if(isAccessible(session, sequence.getSequenceName()) && 
                             !sequence.isInternalSequence()) {
-                        return new ValuesRow(rowType,
+                        return new ValuesHolderRow(rowType,
                                              null,      //sequence catalog
                                              sequence.getSequenceName().getSchemaName(),
                                              sequence.getSequenceName().getTableName(),
@@ -1004,7 +1004,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 while(it.hasNext()) {
                     View view = it.next();
                     if(isAccessible(session, view.getName())) {
-                        return new ValuesRow(rowType,
+                        return new ValuesHolderRow(rowType,
                                             null,       // view catalog
                                              view.getName().getSchemaName(),
                                              view.getName().getTableName(),
@@ -1068,7 +1068,7 @@ public class BasicInfoSchemaTablesServiceImpl
                     return null;
                 }
                 TableName table = tableIt.next();
-                return new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                                     null,
                                      view.getName().getSchemaName(),
                                      view.getName().getTableName(),
@@ -1134,7 +1134,7 @@ public class BasicInfoSchemaTablesServiceImpl
                     columnIt = entry.getValue().iterator();
                 }
                 String column = columnIt.next();
-                return new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                                     null,
                                      view.getName().getSchemaName(),
                                      view.getName().getTableName(),
@@ -1316,7 +1316,7 @@ public class BasicInfoSchemaTablesServiceImpl
                     if(isAccessible(session, routine.getName())) {
                         String routineType = (routine.getName().inSystemSchema() ? "SYSTEM " : "") +
                                              (routine.isProcedure() ? "PROCEDURE" : "FUNCTION");
-                        return new ValuesRow(rowType,
+                        return new ValuesHolderRow(rowType,
                                             null,
                                              routine.getName().getSchemaName(),
                                              routine.getName().getTableName(),
@@ -1423,7 +1423,7 @@ public class BasicInfoSchemaTablesServiceImpl
                     scale = (long)param.getType().attribute(DecimalAttribute.SCALE);
                     radix = 10L;
                 }
-                return new ValuesRow(rowType,
+                return new ValuesHolderRow(rowType,
                                     null, //Routine catalog
                                      param.getRoutine().getName().getSchemaName(),
                                      param.getRoutine().getName().getTableName(),
@@ -1472,7 +1472,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 while(it.hasNext()) {
                     SQLJJar jar = it.next();
                     if(isAccessible(session, jar.getName())) {
-                        return new ValuesRow(rowType,
+                        return new ValuesHolderRow(rowType,
                                             null, //jar catalog
                                              jar.getName().getSchemaName(),
                                              jar.getName().getTableName(),
@@ -1524,7 +1524,7 @@ public class BasicInfoSchemaTablesServiceImpl
                         continue;
                     SQLJJar jar = routine.getSQLJJar();
                     if (jar != null) {
-                        return new ValuesRow(rowType,
+                        return new ValuesHolderRow(rowType,
                                             null,       // routine catalog
                                              routine.getName().getSchemaName(),
                                              routine.getName().getTableName(),
@@ -1567,7 +1567,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 if (!it.hasNext())
                     return null;
                 ScriptEngineFactory factory = it.next();
-                return new ValuesRow(
+                return new ValuesHolderRow(
                         rowType,
                         it.nextIndex(), // use nextIndex so that the IDs are 1-based
                         factory.getEngineName(),
@@ -1615,7 +1615,7 @@ public class BasicInfoSchemaTablesServiceImpl
                     names = factories.next().getNames().iterator();
                 }
                 String nextName = names.next();
-                return new ValuesRow(
+                return new ValuesHolderRow(
                         rowType,
                         nextName,
                         factories.nextIndex(),      // use nextIndex so that the IDs are 1-based
@@ -1667,7 +1667,7 @@ public class BasicInfoSchemaTablesServiceImpl
                     } while (!attrs.hasNext());
                 }
                 Attribute attr = attrs.next();
-                return new ValuesRow (rowType,
+                return new ValuesHolderRow (rowType,
                         currType.name().unqualifiedName(),
                         attr.name(),
                         ++rowCounter);
@@ -1703,7 +1703,7 @@ public class BasicInfoSchemaTablesServiceImpl
                     return null;
 
                 TBundleID bundle = bundlesList.next();
-                return new ValuesRow (rowType,
+                return new ValuesHolderRow (rowType,
                                       bundle.name(),
                                       bundle.uuid().toString(),
                                       ++rowCounter);
@@ -1768,7 +1768,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 
                 Integer jdbcTypeID = tClass.jdbcType();
                 
-                return new ValuesRow (rowType,
+                return new ValuesHolderRow (rowType,
                         name,
                         category,
                         bundle,

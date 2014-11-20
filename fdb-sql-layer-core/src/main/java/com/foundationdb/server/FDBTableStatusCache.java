@@ -25,7 +25,6 @@ import com.foundationdb.Database;
 import com.foundationdb.MutationType;
 import com.foundationdb.Transaction;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.async.Function;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
@@ -55,7 +54,6 @@ import java.util.Map;
  */
 public class FDBTableStatusCache implements TableStatusCache {
     private static final List<String> TABLE_STATUS_DIR_PATH = Arrays.asList("tableStatus");
-    private static final byte[] AUTO_INC_PACKED = Tuple2.from("autoInc").pack();
     private static final byte[] UNIQUE_PACKED = Tuple2.from("unique").pack();
     private static final byte[] ROW_COUNT_PACKED = Tuple2.from("rowCount").pack();
 
@@ -129,7 +127,6 @@ public class FDBTableStatusCache implements TableStatusCache {
     private class FDBTableStatus implements TableStatus {
         private final int tableID;
         private volatile byte[] rowCountKey;
-        private volatile byte[] autoIncKey;
 
         public FDBTableStatus(int tableID) {
             this.tableID = tableID;
@@ -151,32 +148,17 @@ public class FDBTableStatusCache implements TableStatusCache {
         public void truncate(Session session) {
             TransactionState txn = txnService.getTransaction(session);
             txn.setBytes(rowCountKey, packForAtomicOp(0));
-            internalSetAutoInc(session, 0, true);
-        }
-
-        @Override
-        public void setAutoIncrement(Session session, long value) {
-            internalSetAutoInc(session, value, false);
         }
 
         @Override
         public void setRowDef(RowDef rowDef) {
             if(rowDef == null) {
-                this.autoIncKey = null;
                 this.rowCountKey = null;
             } else {
                 assert rowDef.getRowDefId() == tableID;
                 byte[] prefixBytes = FDBStoreDataHelper.prefixBytes(rowDef.getPKIndex());
-                this.autoIncKey = ByteArrayUtil.join(packedTableStatusPrefix, prefixBytes, AUTO_INC_PACKED);
                 this.rowCountKey = ByteArrayUtil.join(packedTableStatusPrefix, prefixBytes, ROW_COUNT_PACKED);
             }
-        }
-
-
-        @Override
-        public long getAutoIncrement(Session session) {
-            TransactionState txn = txnService.getTransaction(session);
-            return decodeOrZero(txn.getValue(autoIncKey));
         }
 
         @Override
@@ -204,19 +186,6 @@ public class FDBTableStatusCache implements TableStatusCache {
         private void clearState(Session session) {
             TransactionState txn = txnService.getTransaction(session);
             txn.clearKey(rowCountKey);
-            txn.clearKey(autoIncKey);
-        }
-
-        private void internalSetAutoInc(Session session, long value, boolean evenIfLess) {
-            TransactionState txn = txnService.getTransaction(session);
-            long current = decodeOrZero(txn.getValue(autoIncKey));
-            if(evenIfLess || value > current) {
-                txn.setBytes(autoIncKey, Tuple2.from(value).pack());
-            }
-        }
-
-        private long decodeOrZero(byte[] bytes) {
-            return (bytes == null) ? 0 : Tuple2.fromBytes(bytes).getLong(0);
         }
 
         private long getRowCount(TransactionState txn, boolean snapshot) {

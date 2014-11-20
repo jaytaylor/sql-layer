@@ -97,18 +97,8 @@ public class PersistitAdapter extends StoreAdapter
 
     @Override
     public void updateRow(Row oldRow, Row newRow) {
-        RowDef rowDef = oldRow.rowType().table().rowDef();
-        RowDef rowDefNewRow = newRow.rowType().table().rowDef();
-        if (rowDef.getRowDefId() != rowDefNewRow.getRowDefId()) {
-            throw new IllegalArgumentException(String.format("%s != %s", rowDef, rowDefNewRow));
-        }
-
-        RowData oldRowData = rowData(rowDef, oldRow, rowDataCreator());
         try {
-            // For Update row, the new row (value being inserted) does not
-            // need the default value (including identity set)
-            RowData newRowData = rowData(rowDefNewRow, newRow, rowDataCreator());
-            store.updateRow(getSession(), rowDef, oldRowData, rowDefNewRow, newRowData, null);
+            store.updateRow(getSession(), oldRow, newRow);
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;
@@ -116,10 +106,8 @@ public class PersistitAdapter extends StoreAdapter
     }
     @Override
     public void writeRow(Row newRow, Collection<TableIndex> indexes, Collection<GroupIndex> groupIndexes) {
-        RowDef rowDef = newRow.rowType().table().rowDef();
         try {
-            RowData newRowData = rowData (rowDef, newRow, rowDataCreator());
-            store.writeRow(getSession(), rowDef, newRowData, indexes, groupIndexes);
+            store.writeRow(getSession(), newRow, indexes, groupIndexes);
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;
@@ -128,10 +116,8 @@ public class PersistitAdapter extends StoreAdapter
 
     @Override
     public void deleteRow (Row oldRow, boolean cascadeDelete) {
-        RowDef rowDef = oldRow.rowType().table().rowDef();
-        RowData oldRowData = rowData(rowDef, oldRow, rowDataCreator());
         try {
-            store.deleteRow(getSession(), rowDef, oldRowData, cascadeDelete);
+            store.deleteRow(getSession(), oldRow, cascadeDelete);
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;

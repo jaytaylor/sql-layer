@@ -21,8 +21,6 @@ import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.PersistitProtobuf;
 
-import java.io.File;
-
 public class PersistitStorageFormat extends StorageFormat<PersistitStorageDescription>
 {
     public final static String identifier = "rowdata";

@@ -19,6 +19,7 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.StorageDescription;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.session.Session;
 
@@ -38,7 +39,15 @@ public abstract class StoreStorageDescription<SType,SDType> extends StorageDescr
     public abstract void expandRowData(SType store, Session session, 
                                        SDType storeData, RowData rowData);
 
+    public abstract void expandRow (SType store, Session session,
+                                    SDType storeData, Row row);
+    
     /** Store the RowData in associated value. */
     public abstract void packRowData(SType store, Session session, 
                                      SDType storeData, RowData rowData);
+    
+    public abstract void packRow (SType store, Session session,
+                                  SDType storeData, Row row);
+    
+    
 }

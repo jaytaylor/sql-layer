@@ -144,7 +144,7 @@ class Project_Default extends Operator
         ArgumentValidation.isTrue("RowType has Table", projectTableRowType.hasTable());
         projectType = new ProjectedTableRowType(projectTableRowType.schema(),
                                                     projectTableRowType.table(),
-                                                    pExpressions);
+                                                    pExpressions, true);
         this.pExpressions = pExpressions; // TODO defensively copy once the old expressions are gone (until then, this may NPE)
     }
 
