@@ -28,7 +28,7 @@ import java.util.Random;
 import java.util.Set;
 
 import com.foundationdb.junit.SelectedParameterizedRunner;
-import com.foundationdb.sql.pg.PostgresServerITBase;
+import com.foundationdb.sql.embedded.EmbeddedJDBCITBase;
 import com.foundationdb.util.RandomRule;
 import com.foundationdb.util.Strings;
 import com.google.common.collect.Sets;
@@ -44,7 +44,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(SelectedParameterizedRunner.class)
-public class IndexScanUnboundedMixedOrderDT extends PostgresServerITBase
+public class IndexScanUnboundedMixedOrderDT extends EmbeddedJDBCITBase
 {
     protected static final String TABLE_NAME ="t";
     protected static final String INDEX_NAME = "idx";
