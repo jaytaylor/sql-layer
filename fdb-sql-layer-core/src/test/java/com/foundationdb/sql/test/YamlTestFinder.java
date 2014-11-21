@@ -42,12 +42,6 @@ public class YamlTestFinder
 
     private static final String PROPERTY_PREFIX = "com.foundationdb.sql.test.yaml";
 
-    /**
-     * A regular expression matching the names of the YAML files in the
-     * resource directory, not including the extension, to use for tests.
-     */
-    private static final String CASE_NAME_REGEXP_PROPERTY = PROPERTY_PREFIX + ".CASE_NAME_REGEXP";
-
     /** The directory containing the YAML files. */
     private static final String RESOURCE_DIR_PROPERTY = PROPERTY_PREFIX + ".RESOURCE_DIR";
 
@@ -57,66 +51,106 @@ public class YamlTestFinder
     /** A resource known to be in the root to look for and find where the rest are. */
     private static final String RESOURCE_MARKER = "/com/foundationdb/sql/test/yaml/README";
 
-    private YamlTestFinder() {
+    /**
+     * A regular expression matching the names of the YAML files in
+     * the resource directories.
+     */
+    private static final String FILE_NAME_REGEXP = "test-.*[.]yaml";
+
+    private final Collection<Object[]> params = new ArrayList<>();
+    private final Pattern filenamePattern = Pattern.compile(FILE_NAME_REGEXP);
+    private final String baseName;
+
+    private YamlTestFinder(URL baseURL) {
+        this.baseName = baseURL.toString();
     }
     
+    private void addURL(URL url) {
+        // URI.relativize() ought to do this, but is confused about jar:file: URLs.
+        String name = url.toString();
+        int idx;
+        if (name.startsWith(baseName)) {
+            idx = baseName.length();
+        }
+        else {
+            idx = name.lastIndexOf('/');
+            if (idx < 0) {
+                idx = 0;
+            }
+            else {
+                idx++;
+            }
+        }
+        params.add(new Object[] {
+                       name.substring(idx, name.length() - 5),
+                       url
+                   });
+    }
+
     /** Return a collection of class instantiation parameters for YAML tests.
      * The parameters are: <code>String caseName, URL url</code>.
      */
-    public static Iterable<Object[]> findTests() throws Exception {
-        String caseNameRegexp = System.getProperty(CASE_NAME_REGEXP_PROPERTY, "test-.*");
-        Pattern filenamePattern = Pattern.compile(caseNameRegexp + "[.]yaml");
-        boolean recursive = Boolean.valueOf(System.getProperty(RECURSIVE_PROPERTY, "true"));
-        String resourceDir = System.getProperty(RESOURCE_DIR_PROPERTY);
-        
-        Collection<Object[]> params = new ArrayList<>();
-
-        if (resourceDir != null) {
+    public static Iterable<Object[]> findTests() {
+        YamlTestFinder finder;
+        String resourceDirName = System.getProperty(RESOURCE_DIR_PROPERTY);
+        if (resourceDirName != null) {
             // User-specified file location.
-            collectFiles(params, new File(resourceDir),
-                         recursive, filenamePattern);
+            File resourceDir = new File(resourceDirName);
+            boolean recursive = Boolean.valueOf(System.getProperty(RECURSIVE_PROPERTY,
+                                                                   "true"));
+            try {
+                finder = new YamlTestFinder(resourceDir.toURI().toURL());
+            }
+            catch (MalformedURLException ex) {
+                throw new RuntimeException(ex);
+            }
+            finder.collectFiles(resourceDir, recursive);
         }
         else {
             URL url = YamlTestFinder.class.getResource(RESOURCE_MARKER);
             if (url == null) {
                 throw new RuntimeException("Problem finding tests: " + RESOURCE_MARKER);
             }
+            try {
+                finder = new YamlTestFinder(new URL(url, "."));
+            }
+            catch (MalformedURLException ex) {
+                throw new RuntimeException(ex);
+            }
             if ("file".equals(url.getProtocol())) {
                 // Maven-specified file location.
-                collectFiles(params, new File(url.getPath()).getParentFile(),
-                             true, filenamePattern);
+                finder.collectFiles(new File(url.getPath()).getParentFile(), true);
             }
             else {
                 // Inside test.jar.
-                collectResources(params, url, filenamePattern);
+                finder.collectResources(url);
             }
         }
-        return params;
+        return finder.params;
+    }
+
+    protected boolean match(String filename) {
+        return filenamePattern.matcher(filename).matches();
     }
 
     /**
      * Add files from the directory that match the pattern to params, recursing
      * if appropriate.
      */
-    private static void collectFiles(final Collection<Object[]> params, File directory,
-                                     final boolean recursive, final Pattern pattern) {
+    private void collectFiles(File directory, final boolean recursive) {
         File[] files = directory.listFiles(
             new FileFilter() {
                 @Override
                 public boolean accept(File file) {
                     if (file.isDirectory()) {
                         if (recursive) {
-                            collectFiles(params, file, recursive, pattern);
+                            collectFiles(file, recursive);
                         }
                     }
                     else {
-                        String name = file.getName();
-                        if (pattern.matcher(name).matches()) {
+                        if (match(file.getName())) {
                             try {
-                                params.add(new Object[] {
-                                               name.substring(0, name.length() - 5),
-                                               file.toURI().toURL()
-                                           });
+                                addURL(file.toURI().toURL());
                             }
                             catch (MalformedURLException ex) {
                                 throw new RuntimeException(ex);
@@ -137,8 +171,7 @@ public class YamlTestFinder
     // sibling module, which is much nicer for iterative development.
     // This is for the case where the test-jar is actually being used,
     // such as when mvn test is run in the fdb-sql-layer-core child.
-    private static void collectResources(Collection<Object[]> params, URL url,
-                                         Pattern pattern) {
+    private void collectResources(URL url) {
         String fullURL = url.toString();
         int bang = fullURL.indexOf('!');
         if (!fullURL.startsWith("jar:file:") ||
@@ -155,12 +188,8 @@ public class YamlTestFinder
                 String filename = jarEntry.getName();
                 int idx = filename.lastIndexOf('/');
                 String name = (idx < 0) ? filename : filename.substring(idx+1);
-                if (pattern.matcher(name).matches()) {
-                    params.add(new Object[] {
-                                   name.substring(0, name.length() - 5),
-                                   new URL("jar:file:" + jarFilename +
-                                           "!/" + filename)
-                               });
+                if (match(name)) {
+                    addURL(new URL("jar:file:" + jarFilename + "!/" + filename));
                 }
             }
         }
