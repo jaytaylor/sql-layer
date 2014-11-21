@@ -46,14 +46,14 @@ public class SpatialColumnHandler
     {
         space = index.space();
         dimensions = space.dimensions();
-        assert index.dimensions() == dimensions;
+        assert dimensions == 2;
+        assert dimensions == index.dimensions();
         rowDataSource = new RowDataValueSource();
         firstSpatialField = index.firstSpatialArgument();
         lastSpatialField = index.lastSpatialArgument();
         int spatialColumns = lastSpatialField - firstSpatialField + 1;
         tinstances = new TInstance[spatialColumns];
         fieldDefs = new FieldDef[spatialColumns];
-        coords = new double[spatialColumns];
         positions = new int[spatialColumns];
         for (int c = 0; c < spatialColumns; c++) {
             IndexColumn indexColumn = index.getKeyColumns().get(firstSpatialField + c);
@@ -62,6 +62,7 @@ public class SpatialColumnHandler
             fieldDefs[c] = column.getFieldDef();
             positions[c] = column.getPosition().intValue();
         }
+        coords = new double[dimensions];
     }
 
     public boolean handleSpatialColumn(WriteIndexRow writeIndexRow, int indexField, long zValue)
