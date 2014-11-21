@@ -498,33 +498,51 @@ public abstract class DPhyp<P>
          * @param child either this.left or this.right.
          * @return the operator from which joinConditions are taken.
          */
-        public JoinOperator moveJoinConditionsUp(JoinOperator destination, JoinOperator child) {
+        public JoinOperator moveJoinConditionsUp(JoinOperator destination, JoinOperator child, ExpressionTables visitor) {
             if (child.getJoinType().isFullyLinear()) {
-                destination.moveJoinConditions(child);
+                destination.moveJoinConditions(child, visitor);
                 return child;
             } else if (child.getJoinType().isLeftLinear() && child.left != null) {
                 // We recurse here, because you may have
                 // ((((t1 inner t2 on X) left t3) left t4) inner t5)
                 // which is the same as:
                 // ((((t1 inner t2) left t3) left t4) inner t5 on X)
-                return moveJoinConditionsUp(destination, child.left);
+                return moveJoinConditionsUp(destination, child.left, visitor);
             } else if (child.getJoinType().isRightLinear() && child.right != null) {
-                return moveJoinConditionsUp(destination, child.right);
+                return moveJoinConditionsUp(destination, child.right, visitor);
             }
             // child is neither left or right linear, must be a full outer join, no condition movement
             // allowed
             return null;
         }
 
-        private void moveJoinConditions(JoinOperator other) {
+        private void moveJoinConditions(JoinOperator other, ExpressionTables visitor) {
             if (other != null && other.joinConditions != null && !other.joinConditions.isEmpty()) {
                 if (joinConditions == null) {
-                    joinConditions = new ConditionList(other.joinConditions);
-                } else {
-                    joinConditions.addAll(other.joinConditions);
+                    joinConditions = new ConditionList();
                 }
-                other.joinConditions = null;
+                boolean movedSomething = false;
+                for (Iterator<ConditionExpression> iterator = other.joinConditions.iterator(); iterator.hasNext(); ) {
+                    ConditionExpression condition = iterator.next();
+                    long conditionTes = visitor.getTables(condition);
+                    if (!JoinableBitSet.isSubset(conditionTes, other.getTables())) {
+                        movedSomething = true;
+                        joinConditions.add(condition);
+                        iterator.remove();
+                    }
+                }
+                if (movedSomething) {
+                    updateTes(visitor);
+                }
             }
+        }
+
+        private void updateTes(ExpressionTables visitor) {
+            predicateTables = visitor.getTables(joinConditions);
+            if (visitor.wasNullTolerant() && !allInnerJoins)
+                tes = getTables();
+            else
+                tes = JoinableBitSet.intersection(getTables(), predicateTables);
         }
 
         public JoinType getJoinType() {
@@ -563,11 +581,7 @@ public abstract class DPhyp<P>
                 else
                     op.allInnerJoins = false;
                 if (op.getJoinType().isRightLinear()) {
-                    JoinOperator changed = op.moveJoinConditionsUp(op, op.left);
-                    if (changed != null) {
-                        changed.predicateTables = JoinableBitSet.empty();
-                        changed.tes = JoinableBitSet.empty();
-                    }
+                    op.moveJoinConditionsUp(op, op.left, visitor);
                 }
             }
             else {
@@ -584,21 +598,13 @@ public abstract class DPhyp<P>
                 else
                     op.allInnerJoins = false;
                 if (op.getJoinType().isLeftLinear()) {
-                    JoinOperator changed = op.moveJoinConditionsUp(op, op.right);
-                    if (changed != null) {
-                        changed.predicateTables = JoinableBitSet.empty();
-                        changed.tes = JoinableBitSet.empty();
-                    }
+                    op.moveJoinConditionsUp(op, op.right, visitor);
                 }
             }
             else {
                 op.rightTables = getTableBit(right); 
             }
-            op.predicateTables = visitor.getTables(op.joinConditions);
-            if (visitor.wasNullTolerant() && !op.allInnerJoins)
-                op.tes = op.getTables();
-            else
-                op.tes = JoinableBitSet.intersection(op.getTables(), op.predicateTables);
+            op.updateTes(visitor);
             noperators++;
             if ((op.joinConditions != null) && (op.allInnerJoins || childAllInnerJoins))
                 noperators += op.joinConditions.size(); // Might move some.
