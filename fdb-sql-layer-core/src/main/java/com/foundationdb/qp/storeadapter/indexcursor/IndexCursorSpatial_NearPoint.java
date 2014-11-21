@@ -118,7 +118,7 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
     private IndexCursorSpatial_NearPoint(QueryContext context, IterationHelper iterationHelper, IndexKeyRange keyRange)
     {
         super(context, iterationHelper);
-        assert keyRange.spatial();
+        assert keyRange.spatialCoordsIndex();
         this.iterationHelper = iterationHelper;
         IndexRowType physicalIndexRowType = keyRange.indexRowType().physicalRowType();
         Index index = keyRange.indexRowType().index();
