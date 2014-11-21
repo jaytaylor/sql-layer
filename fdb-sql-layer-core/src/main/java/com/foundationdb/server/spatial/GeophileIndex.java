@@ -18,59 +18,60 @@
 package com.foundationdb.server.spatial;
 
 import com.foundationdb.qp.operator.StoreAdapter;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.geophile.z.Cursor;
 import com.geophile.z.DuplicateRecordException;
 import com.geophile.z.Index;
-import com.geophile.z.Record;
 import com.geophile.z.RecordFilter;
 
 import java.io.IOException;
 
-public class GeophileIndex<RECORD extends Record> extends Index<RECORD>
+public class GeophileIndex extends Index<Row>
 {
     // Index interface
 
     @Override
-    public void add(RECORD record) throws IOException, InterruptedException, DuplicateRecordException
+    public void add(Row record) throws IOException, InterruptedException, DuplicateRecordException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean remove(long z, RecordFilter<RECORD> recordFilter) throws IOException, InterruptedException
+    public boolean remove(long z, RecordFilter<Row> recordFilter) throws IOException, InterruptedException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Cursor<RECORD> cursor() throws IOException, InterruptedException
+    public Cursor<Row> cursor() throws IOException, InterruptedException
     {
-        return new GeophileCursor<>(this, openCursorsEarly);
+        return cursorFactory.newCursor(this);
     }
 
     @Override
-    public RECORD newRecord()
+    public Row newRecord()
     {
-        assert false;
-        return null;
-/*
-        return (RECORD) adapter.takeIndexRow(indexRowType);
-*/
+        return adapter.takeIndexRow(indexRowType);
     }
 
     // GeophileIndex interface
 
-    public GeophileIndex(StoreAdapter adapter, IndexRowType indexRowType, boolean openCursorsEarly)
+    public GeophileIndex(StoreAdapter adapter, IndexRowType indexRowType, CursorFactory cursorFactory)
     {
         this.adapter = adapter;
         this.indexRowType = indexRowType;
-        this.openCursorsEarly = openCursorsEarly;
+        this.cursorFactory = cursorFactory;
     }
 
     // Object state
 
     private final StoreAdapter adapter;
     private final IndexRowType indexRowType;
-    private final boolean openCursorsEarly;
+    private final CursorFactory cursorFactory;
+
+    public interface CursorFactory
+    {
+        public GeophileCursor newCursor(GeophileIndex geophileIndex);
+    }
 }

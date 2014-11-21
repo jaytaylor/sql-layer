@@ -17,59 +17,53 @@
 
 package com.foundationdb.server.spatial;
 
-import com.foundationdb.qp.operator.CursorBase;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.storeadapter.indexcursor.IndexCursor;
 import com.geophile.z.Cursor;
-import com.geophile.z.Record;
+import com.geophile.z.space.SpaceImpl;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GeophileCursor<RECORD extends Record> extends Cursor<RECORD>
+public class GeophileCursor extends Cursor<Row>
 {
     // Cursor interface
 
     @Override
-    public RECORD next() throws IOException, InterruptedException
+    public Row next() throws IOException, InterruptedException
     {
-        assert false;
-        return null;
-/*
         if (currentCursor == null) {
-            // A cursor should have been registered with z-value (0x0, 0).
-            currentCursor = cursors.get(0L);
+            // A cursor should have been registered with z-value corresponding to the entire space,
+            // Z_MIN = (0x0, 0).
+            currentCursor = cursors.get(SpaceImpl.Z_MIN);
             assert currentCursor != null;
         }
         return currentCursor.next();
-*/
     }
 
     @Override
-    public RECORD previous() throws IOException, InterruptedException
+    public Row previous() throws IOException, InterruptedException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void goTo(RECORD key) throws IOException, InterruptedException
+    public void goTo(Row key) throws IOException, InterruptedException
     {
-/*
         long z = key.z();
         currentCursor = cursors.get(z);
         assert currentCursor != null : z;
         if (!openEarly) {
             currentCursor.open(); // open is idempotent
         }
-        currentCursor.goTo(key);
-*/
-        assert false;
+        currentCursor.jump(key, null);
     }
 
     @Override
     public boolean deleteCurrent() throws IOException, InterruptedException
     {
+        assert false;
         return false;
     }
 
@@ -95,26 +89,14 @@ public class GeophileCursor<RECORD extends Record> extends Cursor<RECORD>
         }
     }
 
-    public GeophileCursor(GeophileIndex<RECORD> index, boolean openEarly)
+    public GeophileCursor(GeophileIndex index, boolean openEarly)
     {
         super(index);
-        this.index = index;
         this.openEarly = openEarly;
-        if (openEarly) {
-            for (Map.Entry<Long, CachingCursor> entry : cursors.entrySet()) {
-                long z = entry.getKey();
-                CachingCursor cursor = entry.getValue();
-                cursor.open();
-                if (z == 0L) {
-                    currentCursor = cursor;
-                }
-            }
-        }
     }
 
     // Object state
 
-    private final GeophileIndex<RECORD> index;
     private final boolean openEarly;
     private final Map<Long, CachingCursor> cursors = new HashMap<>(); // z -> CachingCursor
     private CachingCursor currentCursor;

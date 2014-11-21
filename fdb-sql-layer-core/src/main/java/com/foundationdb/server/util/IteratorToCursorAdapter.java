@@ -17,21 +17,82 @@
 
 package com.foundationdb.server.util;
 
-import com.foundationdb.qp.operator.RowCursorImpl;
+import com.foundationdb.qp.operator.BindingsAwareCursor;
+import com.foundationdb.qp.operator.CursorLifecycle;
+import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.api.dml.ColumnSelector;
 
 import java.util.Iterator;
 
-public class IteratorToCursorAdapter extends RowCursorImpl
+public class IteratorToCursorAdapter implements BindingsAwareCursor
 {
-    // Cursor interface
+    // CursorBase interface
+
+    @Override
+    public void open()
+    {
+        state = CursorLifecycle.CursorState.ACTIVE;
+    }
 
     @Override
     public Row next()
     {
-        return iterator.hasNext() ? (Row) iterator.next() : null;
+        Row next;
+        if (iterator.hasNext()) {
+            next = (Row) iterator.next();
+        } else {
+            next = null;
+            state = CursorLifecycle.CursorState.IDLE;
+        }
+        return next;
     }
 
+    @Override
+    public void close()
+    {
+        state = CursorLifecycle.CursorState.CLOSED;
+    }
+
+    @Override
+    public boolean isIdle()
+    {
+        return state == CursorLifecycle.CursorState.IDLE;
+    }
+
+    @Override
+    public boolean isActive()
+    {
+        return state == CursorLifecycle.CursorState.ACTIVE;
+    }
+
+    @Override
+    public boolean isClosed()
+    {
+        return state == CursorLifecycle.CursorState.CLOSED;
+    }
+
+    @Override
+    public void setIdle()
+    {
+        state = CursorLifecycle.CursorState.IDLE;
+    }
+
+    // RowOrientedCursorBase interface
+
+    @Override
+    public void jump(Row row, ColumnSelector columnSelector)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    // BindingsAwareCursor interface
+
+    @Override
+    public void rebind(QueryBindings bindings)
+    {
+        throw new UnsupportedOperationException();
+    }
 
     // IteratorToCursorAdapter interface
 
@@ -43,5 +104,5 @@ public class IteratorToCursorAdapter extends RowCursorImpl
     // Object state
 
     private final Iterator iterator;
-
+    private CursorLifecycle.CursorState state = CursorLifecycle.CursorState.CLOSED;
 }
