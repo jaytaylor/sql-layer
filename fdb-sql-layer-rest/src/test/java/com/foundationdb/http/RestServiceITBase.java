@@ -19,8 +19,8 @@ package com.foundationdb.http;
 
 import com.foundationdb.rest.RestService;
 import com.foundationdb.rest.RestServiceImpl;
-import com.foundationdb.server.service.plugins.PluginITBase;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
+import com.foundationdb.server.test.it.ITBase;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -33,7 +33,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-public abstract class RestServiceITBase extends PluginITBase {
+public abstract class RestServiceITBase extends ITBase {
     protected static final String SCHEMA = "test";
     protected static final String TABLE = "t";
     protected int port;

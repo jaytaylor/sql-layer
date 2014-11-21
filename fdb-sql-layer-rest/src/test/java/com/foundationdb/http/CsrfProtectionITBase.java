@@ -55,7 +55,7 @@ public abstract class CsrfProtectionITBase extends RestServiceITBase
     @Override
     protected Map<String,String> startupConfigProperties() {
         Map<String,String> config = new HashMap<>(super.startupConfigProperties());
-        config.put("fdbsql.rest.csrf_protection.allowed_referers", "http://somewhere.com,https://coolest.site.edu:4320");
+        config.put("fdbsql.http.csrf_protection.allowed_referers", "http://somewhere.com,https://coolest.site.edu:4320");
         return config;
     }
 

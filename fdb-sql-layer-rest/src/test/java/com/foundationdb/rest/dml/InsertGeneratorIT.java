@@ -36,13 +36,13 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.format.DefaultFormatter;
-import com.foundationdb.server.types.service.TypesRegistryService;
-import com.foundationdb.server.service.plugins.PluginITBase;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
+import com.foundationdb.server.types.service.TypesRegistryService;
 
-public class InsertGeneratorIT extends PluginITBase {
+public class InsertGeneratorIT extends ITBase {
 
     public static final String SCHEMA = "test";
     private InsertGenerator insertGenerator;

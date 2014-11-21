@@ -37,14 +37,14 @@ import org.slf4j.LoggerFactory;
 import com.foundationdb.rest.RestService;
 import com.foundationdb.rest.RestServiceImpl;
 import com.foundationdb.server.service.monitor.MonitorService;
-import com.foundationdb.server.service.plugins.PluginITBase;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.security.SecurityServiceImpl;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
+import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.sql.embedded.EmbeddedJDBCService;
 import com.foundationdb.sql.embedded.EmbeddedJDBCServiceImpl;
 
-public class HttpMonitorVerifyIT extends PluginITBase {
+public class HttpMonitorVerifyIT extends ITBase {
     
     private static final Logger LOG = LoggerFactory.getLogger(HttpMonitorVerifyIT.class);
 
@@ -78,7 +78,7 @@ public class HttpMonitorVerifyIT extends PluginITBase {
     @Override
     protected Map<String, String> startupConfigProperties() {
         Map<String, String> properties = new HashMap<>();
-        properties.put("fdbsql.rest.login", "basic"); // "digest"
+        properties.put("fdbsql.http.login", "basic"); // "digest"
         properties.put("fdbsql.restrict_user_schema", "true");
         return properties;
     }

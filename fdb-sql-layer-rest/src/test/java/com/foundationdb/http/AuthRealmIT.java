@@ -44,7 +44,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 
 @RunWith(SelectedParameterizedRunner.class)
 public class AuthRealmIT extends RestServiceITBase {
-    private static final String LOGIN_PROPERTY = "fdbsql.rest.login";
+    private static final String LOGIN_PROPERTY = "fdbsql.http.login";
     private static final String REALM_PROPERTY = "fdbsql.security.realm";
 
     private static final String ROLE = "rest-user";

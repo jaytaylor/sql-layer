@@ -53,8 +53,8 @@ import com.foundationdb.junit.NamedParameterizedRunner;
 import com.foundationdb.junit.Parameterization;
 import com.foundationdb.server.service.is.BasicInfoSchemaTablesService;
 import com.foundationdb.server.service.is.BasicInfoSchemaTablesServiceImpl;
-import com.foundationdb.server.service.plugins.PluginITBase;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
+import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.sql.RegexFilenameFilter;
 import com.foundationdb.util.Strings;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -109,7 +109,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 // Since there are no scripts and this test is ignored, when you re-enable it you may run into csrf protection issues
 // take a look at RestServiceFilesIT for an idea for how to fix them
 @RunWith(NamedParameterizedRunner.class)
-public class RestServiceScriptsIT extends PluginITBase {
+public class RestServiceScriptsIT extends ITBase {
 
     private static void debug(int lineNumber) {
         // Set a breakpoint here to debug on DEBUG statements
@@ -164,7 +164,7 @@ public class RestServiceScriptsIT extends PluginITBase {
     protected Map<String,String> startupConfigProperties() {
         Map<String,String> config = new HashMap<>(super.startupConfigProperties());
         config.put("fdbsql.rest.resource", "entity,fulltext,model,procedurecall,sql,security,version,direct,view");
-        config.put("fdbsql.rest.csrf_protection.allowed_referers", "https://somewhere.com");
+        config.put("fdbsql.http.csrf_protection.allowed_referers", "https://somewhere.com");
         return config;
     }
 

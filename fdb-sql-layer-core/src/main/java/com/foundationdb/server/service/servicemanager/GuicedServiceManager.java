@@ -26,8 +26,6 @@ import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.monitor.MonitorService;
 import com.foundationdb.server.service.jmx.JmxManageable;
 import com.foundationdb.server.service.jmx.JmxRegistryService;
-import com.foundationdb.server.service.plugins.Plugin;
-import com.foundationdb.server.service.plugins.PluginsFinder;
 import com.foundationdb.server.service.servicemanager.configuration.BindingsConfigurationLoader;
 import com.foundationdb.server.service.servicemanager.configuration.DefaultServiceConfigurationHandler;
 import com.foundationdb.server.service.servicemanager.configuration.ServiceBinding;
@@ -200,12 +198,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         // ... followed by any command-line overrides.
         new PropertyBindings(System.getProperties()).loadInto(configurationHandler);
 
-        Collection<ServiceBinding> bindings = configurationHandler.serviceBindings(false);
-        BindingsConfigurationLoader pluginsConfigLoader = getPluginsConfigurationLoader(bindings);
-        pluginsConfigLoader.loadInto(configurationHandler);
-
-        bindings = configurationHandler.serviceBindings(true);
-
+        Collection<ServiceBinding> bindings = configurationHandler.serviceBindings(true);
         try {
             guicer = Guicer.forServices(ServiceManager.class, this,
                                         bindings, configurationHandler.priorities(), configurationHandler.getModules());
@@ -216,60 +209,6 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
     // private methods
 
-    private BindingsConfigurationLoader getPluginsConfigurationLoader(Collection<ServiceBinding> bindings) {
-        ServiceBinding pluginsFinderBinding = null;
-        for (ServiceBinding binding : bindings) {
-            if (PluginsFinder.class.getCanonicalName().equals(binding.getInterfaceName())) {
-                if (pluginsFinderBinding != null)
-                    throw new ServiceStartupException("multiple bindings found for " + PluginsFinder.class);
-                pluginsFinderBinding = binding;
-            }
-        }
-        if (pluginsFinderBinding == null)
-            return emptyConfigurationLoader;
-        String pluginsFinderClassName = pluginsFinderBinding.getImplementingClassName();
-        Class<?> pluginsFinderClass;
-        try {
-            pluginsFinderClass = Class.forName(pluginsFinderClassName);
-        }
-        catch (ClassNotFoundException e) {
-            throw new ServiceStartupException("couldn't get Class object for " + pluginsFinderClassName);
-        }
-        PluginsFinder pluginsFinder;
-        try {
-            pluginsFinder = (PluginsFinder) pluginsFinderClass.newInstance();
-        }
-        catch (Exception e) {
-            logger.error("while instantiating plugins finder", e);
-            logger.error("plugins finder must have a no-arg constructor, though there may be something else wrong");
-            throw new ServiceStartupException("error while instantiating plugins finder. please check logs");
-        }
-        CompositeConfigurationLoader compositeLoader = new CompositeConfigurationLoader();
-        Collection<? extends Plugin> plugins = pluginsFinder.get();
-        List<URL> pluginUrls = new ArrayList<>(plugins.size());
-        for (Plugin plugin : plugins) {
-            pluginUrls.addAll(plugin.getClassLoaderURLs());
-        }
-        ClassLoader pluginsClassloader = null;
-        if (!pluginUrls.isEmpty()) {
-            pluginsClassloader = new URLClassLoader(pluginUrls.toArray(new URL[pluginUrls.size()]));
-        }
-        for (Plugin plugin : plugins) {
-            try {
-                YamlConfiguration pluginConfig = new YamlConfiguration(
-                        plugin.toString(),
-                        plugin.getServiceConfigsReader(),
-                        pluginsClassloader);
-                compositeLoader.add(pluginConfig);
-            }
-            catch (IOException e) {
-                logger.error("while reading services config for " + plugin, e);
-                throw new ServiceStartupException("error while reading services config for " + plugin);
-            }
-        }
-        return compositeLoader;
-    }
-
     boolean isRequired(Class<?> theClass) {
         return guicer.isRequired(theClass);
     }
@@ -278,7 +217,19 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
     public static BindingsConfigurationProvider standardUrls() {
         BindingsConfigurationProvider provider = new BindingsConfigurationProvider();
-        provider.define(GuicedServiceManager.class.getResource("default-services.yaml"));
+        String resourceName = GuicedServiceManager.class.getPackage().getName().replace(".", "/") + "/" + "default-services.yaml";
+        Enumeration<URL> e;
+        try {
+            e = GuicedServiceManager.class.getClassLoader().getResources(resourceName);
+        }
+        catch (IOException ex) {
+            logger.error("while reading services config " + ex);
+            throw new ServiceStartupException("error while reading services config");
+        }
+        while (e.hasMoreElements()) {
+            URL source = e.nextElement();
+            provider.define(source);
+        }
         return provider;
     }
 
@@ -584,21 +535,6 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         @Override
         public void loadInto(ServiceConfigurationHandler config) {}
     };
-
-    private static class CompositeConfigurationLoader implements BindingsConfigurationLoader {
-
-        public void add(BindingsConfigurationLoader loader) {
-            loaders.add(loader);
-        }
-
-        @Override
-        public void loadInto(ServiceConfigurationHandler config) {
-            for (BindingsConfigurationLoader loader : loaders)
-                loader.loadInto(config);
-        }
-
-        private final List<BindingsConfigurationLoader> loaders = new ArrayList<>();
-    }
 
     private static class ManualServiceBinding implements BindingsConfigurationLoader {
 

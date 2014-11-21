@@ -73,7 +73,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     private static final Logger logger = LoggerFactory.getLogger(HttpConductorImpl.class);
 
     private static final String CONFIG_REALM = "fdbsql.security.realm"; // See also SecurityServiceImpl
-    private static final String CONFIG_HTTP_PREFIX = "fdbsql.rest.";
+    private static final String CONFIG_HTTP_PREFIX = "fdbsql.http.";
     private static final String CONFIG_HOST_PROPERTY = CONFIG_HTTP_PREFIX + "host";
     private static final String CONFIG_PORT_PROPERTY = CONFIG_HTTP_PREFIX + "port";
     private static final String CONFIG_SSL_PROPERTY = CONFIG_HTTP_PREFIX + "ssl";

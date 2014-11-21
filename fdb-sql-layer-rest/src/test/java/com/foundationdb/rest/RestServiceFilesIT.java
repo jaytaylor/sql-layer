@@ -22,9 +22,9 @@ import com.foundationdb.server.service.text.FullTextIndexService;
 import com.foundationdb.http.HttpConductor;
 import com.foundationdb.server.service.is.BasicInfoSchemaTablesService;
 import com.foundationdb.server.service.is.BasicInfoSchemaTablesServiceImpl;
-import com.foundationdb.server.service.plugins.PluginITBase;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.text.FullTextIndexServiceImpl;
+import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.sql.RegexFilenameFilter;
 import com.foundationdb.util.JsonUtils;
 import com.foundationdb.util.Strings;
@@ -62,7 +62,7 @@ import static com.foundationdb.util.JsonUtils.readTree;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(SelectedParameterizedRunner.class)
-public class RestServiceFilesIT extends PluginITBase {
+public class RestServiceFilesIT extends ITBase {
     private static final Logger LOG = LoggerFactory.getLogger(RestServiceFilesIT.class.getName());
     private static final File RESOURCE_DIR = new File(
             "src/test/resources/" + RestServiceFilesIT.class.getPackage().getName().replace('.', '/')
@@ -125,7 +125,7 @@ public class RestServiceFilesIT extends PluginITBase {
         Map<String,String> config = new HashMap<>(super.startupConfigProperties());
         config.put("fdbsql.rest.resource", "entity,fulltext,procedurecall,sql,security,version,direct,view");
 
-        config.put("fdbsql.rest.csrf_protection.type", "none");
+        config.put("fdbsql.http.csrf_protection.type", "none");
         if ( caseParams.properties != null) {
             for (String line : caseParams.properties.split("\\r?\\n")) {
                 String[] property = line.split("\\t");

@@ -20,8 +20,6 @@ package com.foundationdb.server.service.security;
 import com.foundationdb.http.HttpConductor;
 import com.foundationdb.rest.RestService;
 import com.foundationdb.rest.RestServiceImpl;
-import com.foundationdb.server.service.plugins.ITPluginsFinder;
-import com.foundationdb.server.service.plugins.PluginsFinder;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.test.it.ITBase;
 
@@ -57,15 +55,14 @@ public class RestSecurityIT extends SecurityServiceITBase
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
-            .bindAndRequire(RestService.class, RestServiceImpl.class)
-            .bind(PluginsFinder.class, ITPluginsFinder.class);
+            .bindAndRequire(RestService.class, RestServiceImpl.class);
     }
 
     @Override
     protected Map<String, String> startupConfigProperties() {
         Map<String, String> properties = super.startupConfigProperties();
-        properties.put("fdbsql.rest.login", "basic"); // "digest"
-        properties.put("fdbsql.rest.csrf_protection.type", "none");
+        properties.put("fdbsql.http.login", "basic"); // "digest"
+        properties.put("fdbsql.http.csrf_protection.type", "none");
         return properties;
     }
 

@@ -27,10 +27,10 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.format.DefaultFormatter;
-import com.foundationdb.server.service.plugins.PluginITBase;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.test.it.ITBase;
 
-public class DeleteGeneratorIT extends PluginITBase {
+public class DeleteGeneratorIT extends ITBase {
 
     private DeleteGenerator deleteGenerator; 
     public static final String SCHEMA = "test";

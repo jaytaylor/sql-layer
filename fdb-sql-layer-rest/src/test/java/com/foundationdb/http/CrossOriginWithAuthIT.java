@@ -43,7 +43,7 @@ public class CrossOriginWithAuthIT extends CrossOriginITBase
     @Override
     protected Map<String,String> startupConfigProperties() {
         Map<String,String> config = new HashMap<>(super.startupConfigProperties());
-        config.put("fdbsql.rest.login", "basic");
+        config.put("fdbsql.http.login", "basic");
         return config;
     }
 

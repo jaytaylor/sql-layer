@@ -19,8 +19,8 @@ package com.foundationdb.http;
 
 import com.foundationdb.rest.RestService;
 import com.foundationdb.rest.RestServiceImpl;
-import com.foundationdb.server.service.plugins.PluginITBase;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
+import com.foundationdb.server.test.it.ITBase;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -39,7 +39,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class HttpThreadedLoginIT extends PluginITBase
+public class HttpThreadedLoginIT extends ITBase
 {
     private static final Logger LOG = LoggerFactory.getLogger(HttpThreadedLoginIT.class);
 
@@ -52,7 +52,7 @@ public class HttpThreadedLoginIT extends PluginITBase
     @Override
     protected Map<String, String> startupConfigProperties() {
         Map<String, String> properties = new HashMap<>();
-        properties.put("fdbsql.rest.login", "basic");
+        properties.put("fdbsql.http.login", "basic");
         return properties;
     }
 
