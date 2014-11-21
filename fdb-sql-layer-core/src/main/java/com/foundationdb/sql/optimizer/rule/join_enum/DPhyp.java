@@ -492,6 +492,41 @@ public abstract class DPhyp<P>
             return joinConditions;
         }
 
+        /**
+         * Moves conditions up from the child as appropriate based on the child's type
+         * No checks for this operators linear type are checked.
+         * @param child either this.left or this.right.
+         * @return the operator from which joinConditions are taken.
+         */
+        public JoinOperator moveJoinConditionsUp(JoinOperator destination, JoinOperator child) {
+            if (child.getJoinType().isFullyLinear()) {
+                destination.moveJoinConditions(child);
+                return child;
+            } else if (child.getJoinType().isLeftLinear() && child.left != null) {
+                // We recurse here, because you may have
+                // ((((t1 inner t2 on X) left t3) left t4) inner t5)
+                // which is the same as:
+                // ((((t1 inner t2) left t3) left t4) inner t5 on X)
+                return moveJoinConditionsUp(destination, child.left);
+            } else if (child.getJoinType().isRightLinear() && child.right != null) {
+                return moveJoinConditionsUp(destination, child.right);
+            }
+            // child is neither left or right linear, must be a full outer join, no condition movement
+            // allowed
+            return null;
+        }
+
+        private void moveJoinConditions(JoinOperator other) {
+            if (other != null && other.joinConditions != null && !other.joinConditions.isEmpty()) {
+                if (joinConditions == null) {
+                    joinConditions = new ConditionList(other.joinConditions);
+                } else {
+                    joinConditions.addAll(other.joinConditions);
+                }
+                other.joinConditions = null;
+            }
+        }
+
         public JoinType getJoinType() {
             if (join != null)
                 return join.getJoinType();
@@ -527,6 +562,13 @@ public abstract class DPhyp<P>
                     childAllInnerJoins = true;
                 else
                     op.allInnerJoins = false;
+                if (op.getJoinType().isRightLinear()) {
+                    JoinOperator changed = op.moveJoinConditionsUp(op, op.left);
+                    if (changed != null) {
+                        changed.predicateTables = JoinableBitSet.empty();
+                        changed.tes = JoinableBitSet.empty();
+                    }
+                }
             }
             else {
                 op.leftTables = getTableBit(left);
@@ -541,6 +583,13 @@ public abstract class DPhyp<P>
                     childAllInnerJoins = true;
                 else
                     op.allInnerJoins = false;
+                if (op.getJoinType().isLeftLinear()) {
+                    JoinOperator changed = op.moveJoinConditionsUp(op, op.right);
+                    if (changed != null) {
+                        changed.predicateTables = JoinableBitSet.empty();
+                        changed.tes = JoinableBitSet.empty();
+                    }
+                }
             }
             else {
                 op.rightTables = getTableBit(right); 
