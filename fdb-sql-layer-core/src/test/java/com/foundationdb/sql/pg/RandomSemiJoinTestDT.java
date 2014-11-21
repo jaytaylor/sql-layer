@@ -365,6 +365,10 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         List<List<?>> results2 = sql(query2);
         List<Integer> expected = new ArrayList<>();
         for (List<?> row : results1) {
+            // null not in t never gets returned
+            if (row.get(0) == null) {
+                continue;
+            }
             boolean rowIsInResults2 = false;
             for (List<?> row2 : results2) {
                 if (nullableEquals(row.get(0), row2.get(0))) {
