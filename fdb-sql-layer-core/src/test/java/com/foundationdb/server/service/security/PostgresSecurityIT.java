@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.service.security;
 
+import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.sql.pg.PostgresService;
 
 import org.junit.After;
@@ -34,6 +35,11 @@ import java.util.Map;
 
 public class PostgresSecurityIT extends SecurityServiceITBase
 {
+    @Override
+    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
+        return super.serviceBindingsProvider()
+            .require(PostgresService.class);
+    }
 
     @Override
     protected Map<String, String> startupConfigProperties() {
