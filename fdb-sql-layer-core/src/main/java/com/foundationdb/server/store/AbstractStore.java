@@ -819,7 +819,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
 
     @Override
     public void writeIndexRows(Session session, Table table, Row row, Collection<GroupIndex> indexes) {
-        assert (table == row.rowType().table());
+        assert (table == row.rowType().table()) : "Table: " + table.getNameForOutput() + " Vs. rowtype table: " + row.rowType().table().getNameForOutput();
         maintainGroupIndexes(session,
                 table,
                 indexes,
@@ -1156,10 +1156,12 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         }
     }
 
-    protected void deleteRowInternal(final Session session, SDType storeData,
-                                    final Row row, boolean cascadeDelete,
-                                    BitSet tablesRequiringHKeyMaintenance,
-                                    boolean propagateHKeyChanges) {
+    protected void deleteRowInternal(final Session session,
+                                     SDType storeData,
+                                     final Row row,
+                                     boolean cascadeDelete,
+                                     BitSet tablesRequiringHKeyMaintenance,
+                                     boolean propagateHKeyChanges) {
         Table rowTable= row.rowType().table();
         final Key hKey = getKey(session, storeData);
         constructHKey(session, row, hKey);
@@ -1414,7 +1416,6 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                         clear(session, storeData);
                         table.rowDef().getTableStatus().rowDeleted(session);
                         for(final TableIndex index : table.rowDef().getIndexes()) {
-                            long zValue = -1;
                             if (index.isSpatial()) {
                                 final SpatialColumnHandler spatialColumnHandler = new SpatialColumnHandler(index);
                                 spatialColumnHandler.processSpatialObject(
@@ -1461,8 +1462,12 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         }
     }
     
-    private void updateIndex(final Session session, final TableIndex index, final Row oldRow, final Row newRow,
-                            final Key hKey, final WriteIndexRow indexRowBuffer) {
+    private void updateIndex(final Session session,
+                             final TableIndex index,
+                             final Row oldRow,
+                             final Row newRow,
+                             final Key hKey,
+                             final WriteIndexRow indexRowBuffer) {
         int nkeys = index.getKeyColumns().size();
         IndexRowComposition indexRowComposition = index.indexRowComposition();
         if(!fieldsEqual(oldRow, newRow, nkeys, indexRowComposition)) {

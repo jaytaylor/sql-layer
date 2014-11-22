@@ -248,10 +248,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         Collection<? extends Plugin> plugins = pluginsFinder.get();
         List<URL> pluginUrls = new ArrayList<>(plugins.size());
         for (Plugin plugin : plugins) {
-            URL url = plugin.getClassLoaderURL();
-            if (url != null) {
-                pluginUrls.add(url);
-            }
+            pluginUrls.addAll(plugin.getClassLoaderURLs());
         }
         ClassLoader pluginsClassloader = null;
         if (!pluginUrls.isEmpty()) {

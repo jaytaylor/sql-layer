@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.sql.pg;
+package com.foundationdb.sql.test;
 
 import static org.junit.Assert.fail;
 
@@ -25,8 +25,8 @@ import java.util.TimeZone;
 import org.joda.time.DateTimeZone;
 import org.junit.Test;
 
-import com.foundationdb.sql.pg.YamlTester.DateTimeChecker;
-import com.foundationdb.sql.pg.YamlTester.TimeChecker;
+import com.foundationdb.sql.test.YamlTester.DateTimeChecker;
+import com.foundationdb.sql.test.YamlTester.TimeChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

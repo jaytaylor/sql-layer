@@ -1,11 +1,13 @@
-/* AUTOMATICALLY GENERATED ON Wed Oct 29 10:34:49 EDT 2014*/
-/* DO NOT EDIT */
+/* Policy file limiting the permissions for routines
+   Development version */
 
 grant codeBase "file:${fdbsql.home}/fdb-sql-layer-core/target/-" {
   permission java.security.AllPermission;
 };
 
-grant codeBase "file:${fdbsql.home}/fdb-sql-layer-routinefw/target/*" {
+grant codeBase "file:${fdbsql.home}/plugins/-" {
+  permission java.security.AllPermission;
 };
 
-
+grant codeBase "file:${fdbsql.home}/fdb-sql-layer-routinefw/target/*" {
+};

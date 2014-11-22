@@ -22,6 +22,7 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.WriteIndexRow;
+import com.foundationdb.server.error.InvalidSpatialObjectException;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDataSource;
@@ -45,14 +46,14 @@ public class SpatialColumnHandler
     {
         space = index.space();
         dimensions = space.dimensions();
-        assert index.dimensions() == dimensions;
+        assert dimensions == 2;
+        assert dimensions == index.dimensions();
         rowDataSource = new RowDataValueSource();
         firstSpatialField = index.firstSpatialArgument();
         lastSpatialField = index.lastSpatialArgument();
         int spatialColumns = lastSpatialField - firstSpatialField + 1;
         tinstances = new TInstance[spatialColumns];
         fieldDefs = new FieldDef[spatialColumns];
-        coords = new double[spatialColumns];
         positions = new int[spatialColumns];
         for (int c = 0; c < spatialColumns; c++) {
             IndexColumn indexColumn = index.getKeyColumns().get(firstSpatialField + c);
@@ -61,6 +62,7 @@ public class SpatialColumnHandler
             fieldDefs[c] = column.getFieldDef();
             positions[c] = column.getPosition().intValue();
         }
+        coords = new double[dimensions];
     }
 
     public boolean handleSpatialColumn(WriteIndexRow writeIndexRow, int indexField, long zValue)
@@ -139,10 +141,11 @@ public class SpatialColumnHandler
             ValueSource source = row.value(positions[0]);
             TClass tclass = source.getType().typeClass();
             assert tclass == MBinary.BLOB : tclass;
+            byte[] spatialObjectBytes = source.getBytes();
             try {
-                spatialObject = Spatial.deserialize(space, source.getBytes());
+                spatialObject = Spatial.deserialize(space, spatialObjectBytes);
             } catch (ParseException e) {
-                assert false; // There must be something better to do here.
+                throw new InvalidSpatialObjectException();
             }
         }
     }
@@ -183,10 +186,11 @@ public class SpatialColumnHandler
             RowDataValueSource rowDataValueSource = (RowDataValueSource) rowDataSource;
             TClass tclass = tinstances[0].typeClass();
             assert tclass == MBinary.BLOB : tclass;
+            byte[] spatialObjectBytes = rowDataValueSource.getBytes();
             try {
-                spatialObject = Spatial.deserialize(space, rowDataValueSource.getBytes());
+                spatialObject = Spatial.deserialize(space, spatialObjectBytes);
             } catch (ParseException e) {
-                assert false; // There must be something better to do here.
+                throw new InvalidSpatialObjectException();
             }
         }
     }

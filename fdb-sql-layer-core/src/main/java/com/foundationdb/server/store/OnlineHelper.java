@@ -627,7 +627,7 @@ public class OnlineHelper implements RowListener
     }
 
     private void concurrentDML(final Session session,
-                               TableTransform transform,
+                               final TableTransform transform,
                                final Key hKey,
                                final Row oldRow,
                                final Row newRow) {
@@ -670,9 +670,10 @@ public class OnlineHelper implements RowListener
                                          @Override
                                          public void handleZValue(long z)
                                          {
+                                             Row outputRow = new OverlayingRow(newRow, transform.rowType);
                                              store.writeIndexRow(session, 
                                                                  index, 
-                                                                 newRow,
+                                                                 outputRow,
                                                                  hKey,
                                                                  buffer,
                                                                  spatialColumnHandler,
@@ -686,17 +687,20 @@ public class OnlineHelper implements RowListener
                                 store.deleteIndexRow(session, index, oldRow, hKey, buffer, null, -1L, false);
                             }
                             if(doWrite) {
-                                store.writeIndexRow(session, index, newRow, hKey, buffer, null, -1L, false);
+                                Row outputRow = new OverlayingRow(newRow, transform.rowType);
+                                store.writeIndexRow(session, index, outputRow, hKey, buffer, null, -1L, false);
                             }
                         }
                     }
                 }
                 if(!transform.groupIndexes.isEmpty()) {
                     if(doDelete) {
-                        store.deleteIndexRows(session, transform.rowType.table(), oldRow, transform.groupIndexes);
+                        Row deleteRow = new OverlayingRow (oldRow, transform.rowType);
+                        store.deleteIndexRows(session, transform.rowType.table(), deleteRow, transform.groupIndexes);
                     }
                     if(doWrite) {
-                        store.writeIndexRows(session, transform.rowType.table(), newRow, transform.groupIndexes);
+                        Row outputRow = new OverlayingRow(newRow, transform.rowType);
+                        store.writeIndexRows(session, transform.rowType.table(), outputRow, transform.groupIndexes);
                     }
                 }
                 break;
@@ -715,7 +719,9 @@ public class OnlineHelper implements RowListener
                         }
                     }
                     if (doWrite) {
-                        bindings.setRow(OperatorAssembler.CREATE_AS_BINDING_POSITION, newRow);
+                        
+                        bindings.setRow(OperatorAssembler.CREATE_AS_BINDING_POSITION, 
+                                transformRow(context, bindings, transform, newRow));
                         try {
                             runPlan(context, transform.insertOperator, bindings);
                         } catch (NoSuchRowException e) {
@@ -744,7 +750,6 @@ public class OnlineHelper implements RowListener
                 break;
         }
         transform.hKeySaver.save(schemaManager, session, hKey);
-        
     }
     
     private void concurrentDML(final Session session,
