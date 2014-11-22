@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.sql.pg;
+package com.foundationdb.sql.test;
 
 import static com.foundationdb.util.AssertUtils.assertCollectionEquals;
 import static com.foundationdb.util.FileTestUtils.printClickableFile;
@@ -31,11 +31,12 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -47,6 +48,7 @@ import java.sql.Types;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -54,11 +56,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Stack;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import com.foundationdb.server.error.ErrorCode;
@@ -162,7 +164,7 @@ import org.yaml.snakeyaml.nodes.Tag;
    - params: [<parameter value>, ...]
    - output: [[<output value>, ...], ...]
 */
-class YamlTester
+public class YamlTester
 {
     private static final Logger LOG = LoggerFactory.getLogger(YamlTester.class);
 
@@ -226,14 +228,14 @@ class YamlTester
         }
     };
 
-    private final String filename;
+    private final URL sourceURL;
     private final Reader in;
     private final Connection connection;
-    private final Stack<String> includeStack = new Stack<>();
+    private final Deque<URL> includeStack = new ArrayDeque<>();
+    private final boolean randomCost;
     private int commandNumber = 0;
     private String commandName = null;
     private boolean suppressed = false;
-    protected boolean randomCost = false;
     private static final DateFormat DEFAULT_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
     private static final DateFormat DEFAULT_DATETIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S z");
     private static final int DEFAULT_RETRY_COUNT = 5;
@@ -242,30 +244,31 @@ class YamlTester
     /**
      * Creates an instance of this class.
      *
-     * @param filename   the file name of the YAML input
+     * @param sourceURL  the source of the YAML input
      * @param in         the YAML input
      * @param connection the JDBC connection
+     * @param randomCost randomize cost calculations
      */
-    YamlTester(String filename, Reader in, Connection connection) {
-        this.filename = filename;
-        this.in = in;
-        this.connection = connection;
+    public YamlTester(Reader in, Connection connection) {
+        this(null, in, connection, false);
     }
 
-    YamlTester(String filename, Reader in, Connection connection, Boolean randomCost) {
-        this.filename = filename;
+    public YamlTester(URL sourceURL, Reader in, Connection connection,
+                      boolean randomCost) {
+        this.sourceURL = sourceURL;
         this.in = in;
         this.connection = connection;
         this.randomCost = randomCost;
     }
 
     /** Test the input specified in the constructor. */
-    void test() {
+    public void test() {
         try {
             test(in);
         } catch (Throwable e) {
-            if (filename != null) {
+            if (sourceURL != null) {
                 System.err.println("Failed Yaml test (note: line number points to start of document)");
+                String filename = sourceFilename();
                 printClickableFile(filename.substring(0, filename.length() - 5), "yaml", lineNumber);
             }
             throw e;
@@ -308,7 +311,7 @@ class YamlTester
                     fail("Unknown command: " + commandName);
                 }
                 if(suppressed) {
-                    LOG.debug("Test suppressed: {}", filename);
+                    LOG.debug("Test suppressed: {}", sourceURL);
                     break;
                 }
             }
@@ -330,28 +333,29 @@ class YamlTester
             return;
         }
         String includeValue = string(value, "Include value");
-        File include = new File(includeValue);
         if(sequence.size() > 1) {
             throw new ContextAssertionError(
                 includeValue, "The Include command does not support attributes" + "\nFound: " + sequence.get(1)
             );
         }
-        if(!include.isAbsolute()) {
-            String parent = filename;
-            if(!includeStack.isEmpty()) {
-                parent = includeStack.peek();
-            }
-            if(parent != null) {
-                include = new File(new File(parent).getParent(), include.toString());
-            }
+        URL context = sourceURL;
+        if (!includeStack.isEmpty()) {
+            context = includeStack.peek();
         }
-        try(Reader in = new InputStreamReader(new FileInputStream(include), "UTF-8")) {
+        URL include;
+        try {
+            include = new URL(context, includeValue);
+        }
+        catch (MalformedURLException ex) {
+            throw new ContextAssertionError(includeValue, "Bad include value " + includeValue + ": " + ex, ex);
+        }
+        try(Reader in = new InputStreamReader(include.openStream(), "UTF-8")) {
             int originalCommandNumber = commandNumber;
             commandNumber = 0;
             String originalCommandName = commandName;
             commandName = null;
             try {
-                includeStack.push(includeValue);
+                includeStack.push(include);
                 test(in);
             } finally {
                 includeStack.pop();
@@ -1608,11 +1612,11 @@ class YamlTester
 
     private String context(String failedStatement) {
         StringBuilder context = new StringBuilder();
-        if(filename != null) {
-            context.append(filename);
+        if(sourceURL != null) {
+            context.append(sourceFilename());
         }
         if(!includeStack.isEmpty()) {
-            for(String include : includeStack) {
+            for(URL include : includeStack) {
                 if(context.length() != 0) {
                     context.append(", ");
                 }
@@ -1637,6 +1641,21 @@ class YamlTester
             context.append(": ");
         }
         return context.toString();
+    }
+
+    private String sourceFilename() {
+        String filename = sourceURL.toString();
+        if (filename.startsWith("jar:file:")) {
+            int idx = filename.indexOf("!/");
+            if (idx > 0) {
+                return filename.substring(idx+2);
+            }
+            return filename.substring(9);
+        }
+        if (filename.startsWith("file:")) {
+            return filename.substring(5);
+        }
+        return filename;
     }
 
     private void jmxCommand(Object value, List<?> sequence) throws SQLException {

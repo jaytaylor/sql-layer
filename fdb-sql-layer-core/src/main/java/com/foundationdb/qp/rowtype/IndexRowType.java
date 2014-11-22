@@ -145,7 +145,7 @@ public abstract class IndexRowType extends AisRowType
         @Override
         public int nFields()
         {
-            return index().getAllColumns().size() - index().dimensions() + 1;
+            return index().getAllColumns().size() - index().spatialColumns() + 1;
         }
 
         @Override
@@ -156,7 +156,7 @@ public abstract class IndexRowType extends AisRowType
             else if (i == firstSpatial)
                 return InternalIndexTypes.LONG.instance(false);
             else
-                return super.typeAt(i + index().dimensions() - 1);
+                return super.typeAt(i + index().spatialColumns() - 1);
         }
     }
 }

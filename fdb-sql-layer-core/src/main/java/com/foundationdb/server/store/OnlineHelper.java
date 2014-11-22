@@ -562,20 +562,28 @@ public class OnlineHelper implements RowListener
             );
             runPlan(session, contextIfNull(context, adapter), schemaManager, txnService, plan, new RowHandler() {
                 @Override
-                public void handleRow(Row row) {
-                    simpleCheckConstraints(session, transformCache, row);
+                public void handleRow(final Row row) {
                     TableTransform transform = transformCache.get(row.rowType().typeId());
-                    for(TableIndex index : transform.tableIndexes) {
-                        long zValue = -1;
-                        SpatialColumnHandler spatialColumnHandler = null;
-                        if (index.isSpatial()) {
-                            spatialColumnHandler = new SpatialColumnHandler(index);
-                            zValue = spatialColumnHandler.zValue(row);
-                        }
-                        Key hKey = store.createKey();
+                    simpleCheckConstraints(session, transformCache, row);
+                    for(final TableIndex index : transform.tableIndexes) {
+                        final Key hKey = store.createKey();
                         row.hKey().copyTo(hKey);
-                        store.writeIndexRow(session, index, row, hKey, buffer,
-                                            spatialColumnHandler, zValue, true);
+                        if (index.isSpatial()) {
+                            final SpatialColumnHandler spatialColumnHandler = new SpatialColumnHandler(index);
+                            spatialColumnHandler.processSpatialObject(
+                                row,
+                                new SpatialColumnHandler.Operation()
+                                {
+                                    @Override
+                                    public void handleZValue(long z)
+                                    {
+                                        store.writeIndexRow(session, index, row, hKey, buffer,
+                                                            spatialColumnHandler, z, true);
+                                    }
+                                });
+                        } else {
+                            store.writeIndexRow(session, index, row, hKey, buffer, null, -1L, true);
+                        }
                     }
                 }
             });
@@ -618,29 +626,70 @@ public class OnlineHelper implements RowListener
         constraintHandler.handleInsert(session, transform.rowType.table(), rowData);
     }
 
-    private void concurrentDML(final Session session, TableTransform transform, Key hKey, Row oldRow, Row newRow) {
+    private void concurrentDML(final Session session,
+                               final TableTransform transform,
+                               final Key hKey,
+                               final Row oldRow,
+                               final Row newRow) {
         final boolean doDelete = (oldRow != null);
         final boolean doWrite = (newRow != null);
         QueryContext context = null;
         switch(transform.changeLevel) {
             case INDEX:
                 if(!transform.tableIndexes.isEmpty()) {
-                    WriteIndexRow buffer = new WriteIndexRow (store);
-                    for(TableIndex index : transform.tableIndexes) {
+                    final WriteIndexRow buffer = new WriteIndexRow (store);
+                    for(final TableIndex index : transform.tableIndexes) {
                         long oldZValue = -1;
                         long newZValue = -1;
-                        SpatialColumnHandler spatialColumnHandler = null;
                         if (index.isSpatial()) {
-                            spatialColumnHandler = new SpatialColumnHandler(index);
-                            oldZValue = spatialColumnHandler.zValue(oldRow);
-                            newZValue = spatialColumnHandler.zValue(newRow);
-                        }
-                        if(doDelete) {
-                            store.deleteIndexRow(session, index, oldRow, hKey, buffer, spatialColumnHandler, oldZValue, false);
-                        }
-                        if(doWrite) {
-                            Row outputRow = new OverlayingRow(newRow, transform.rowType);
-                            store.writeIndexRow(session, index, outputRow, hKey, buffer, spatialColumnHandler, newZValue, false);
+                            final SpatialColumnHandler spatialColumnHandler = new SpatialColumnHandler(index);
+                            if(doDelete) {
+                                spatialColumnHandler.processSpatialObject
+                                    (oldRow,
+                                     new SpatialColumnHandler.Operation()
+                                     {
+                                         @Override
+                                         public void handleZValue(long z)
+                                         {
+                                             store.deleteIndexRow(session, 
+                                                                  index, 
+                                                                  oldRow, 
+                                                                  hKey, 
+                                                                  buffer, 
+                                                                  spatialColumnHandler, 
+                                                                  z, 
+                                                                  false);
+                                         }
+                                     });
+                            }
+                            if(doWrite) {
+                                spatialColumnHandler.processSpatialObject
+                                    (oldRow,
+                                     new SpatialColumnHandler.Operation()
+                                     {
+                                         @Override
+                                         public void handleZValue(long z)
+                                         {
+                                             Row outputRow = new OverlayingRow(newRow, transform.rowType);
+                                             store.writeIndexRow(session, 
+                                                                 index, 
+                                                                 outputRow,
+                                                                 hKey,
+                                                                 buffer,
+                                                                 spatialColumnHandler,
+                                                                 z,
+                                                                 false);
+                                         }
+                                     });
+                            }
+                        } else {
+                            if(doDelete) {
+                                store.deleteIndexRow(session, index, oldRow, hKey, buffer, null, -1L, false);
+                            }
+                            if(doWrite) {
+                                Row outputRow = new OverlayingRow(newRow, transform.rowType);
+                                store.writeIndexRow(session, index, outputRow, hKey, buffer, null, -1L, false);
+                            }
                         }
                     }
                 }
@@ -701,28 +750,63 @@ public class OnlineHelper implements RowListener
         transform.hKeySaver.save(schemaManager, session, hKey);
     }
     
-    private void concurrentDML(final Session session, TableTransform transform, Key hKey, RowData oldRowData, RowData newRowData) {
+    private void concurrentDML(final Session session,
+                               TableTransform transform,
+                               final Key hKey,
+                               final RowData oldRowData,
+                               final RowData newRowData) {
         final boolean doDelete = (oldRowData != null);
         final boolean doWrite = (newRowData != null);
         QueryContext context = null;
         switch(transform.changeLevel) {
             case INDEX:
                 if(!transform.tableIndexes.isEmpty()) {
-                    WriteIndexRow buffer = new WriteIndexRow (store);
-                    for(TableIndex index : transform.tableIndexes) {
-                        long oldZValue = -1;
-                        long newZValue = -1;
-                        SpatialColumnHandler spatialColumnHandler = null;
+                    final WriteIndexRow buffer = new WriteIndexRow (store);
+                    for(final TableIndex index : transform.tableIndexes) {
                         if (index.isSpatial()) {
-                            spatialColumnHandler = new SpatialColumnHandler(index);
-                            oldZValue = spatialColumnHandler.zValue(oldRowData);
-                            newZValue = spatialColumnHandler.zValue(newRowData);
-                        }
-                        if(doDelete) {
-                            store.deleteIndexRow(session, index, oldRowData, hKey, buffer, spatialColumnHandler, oldZValue, false);
-                        }
-                        if(doWrite) {
-                            store.writeIndexRow(session, index, newRowData, hKey, buffer, spatialColumnHandler, newZValue, false);
+                            final SpatialColumnHandler spatialColumnHandler = new SpatialColumnHandler(index);
+                            if (doDelete) {
+                                spatialColumnHandler.processSpatialObject(
+                                    oldRowData,
+                                    new SpatialColumnHandler.Operation()
+                                    {
+                                        @Override
+                                        public void handleZValue(long z)
+                                        {
+                                            store.deleteIndexRow(session,
+                                                                 index,
+                                                                 oldRowData,
+                                                                 hKey,
+                                                                 buffer,
+                                                                 spatialColumnHandler,
+                                                                 z,
+                                                                 false);
+                                        }
+                                    });
+                            }
+                            if (doWrite) {
+                                spatialColumnHandler.processSpatialObject(
+                                    newRowData,
+                                    new SpatialColumnHandler.Operation()
+                                    {
+                                        @Override
+                                        public void handleZValue(long z)
+                                        {
+                                            store.writeIndexRow(session,
+                                                                index,
+                                                                newRowData,
+                                                                hKey,
+                                                                buffer,
+                                                                spatialColumnHandler,
+                                                                z,
+                                                                false);
+                                        }
+                                    });
+                            }
+
+                        } else {
+                            store.deleteIndexRow(session, index, oldRowData, hKey, buffer, null, -1L, false);
+                            store.writeIndexRow(session, index, newRowData, hKey, buffer, null, -1L, false);
                         }
                     }
                 }

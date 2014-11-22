@@ -187,6 +187,8 @@ public enum ErrorCode {
     SECURITY                ("22", "506", Importance.ERROR, SecurityException.class),
     STORAGE_KEY_SIZE_EXCEEDED("22", "507", Importance.ERROR, StorageKeySizeExceededException.class),
     OVERLOAD_EXCEPTION("22", "508", Importance.ERROR, OverloadException.class),
+        // SubClass 6xx - Spatial objects
+    INVALID_SPATIAL_OBJECT("22", "601", Importance.DEBUG, InvalidSpatialObjectException.class),
 
     // Class 23 - integrity constraint violation
     DUPLICATE_KEY           ("23", "501", Importance.DEBUG, DuplicateKeyException.class),

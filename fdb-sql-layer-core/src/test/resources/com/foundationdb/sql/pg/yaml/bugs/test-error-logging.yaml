@@ -1,0 +1,15 @@
+# This test comes from https://trello.com/c/UmQIeycc - a trello card
+# dealing with the error logging associated with statements that fail
+- CreateTable: t (id integer primary key, name varchar(25));
+---
+- Statement: insert into t values (1, '&*@(&NDJE')
+---
+# Should produce the following in the test output But no stack trace
+#  ERROR PostgresServer_Session-1 com.foundationdb.sql.pg.PostgresOperatorStatement - Caught unexpected runtime exception during execution com.google.common.io.BaseEncoding$DecodingException: Unrecognized character: &
+- Statement: select from_base64(name) from t;
+- error: [70001]
+---
+# This is printed as a warning (not output during the tests) and handled correctly
+- Statement: select cast(name as GUID) from t;
+- error: [2202I]
+...
