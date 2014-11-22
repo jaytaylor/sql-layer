@@ -18,7 +18,6 @@
 package com.foundationdb.http;
 
 import com.foundationdb.server.service.security.SecurityService;
-import com.foundationdb.server.service.security.SecurityServiceImpl;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import org.junit.After;
 import org.junit.Before;
@@ -37,7 +36,7 @@ public class CrossOriginWithAuthIT extends CrossOriginITBase
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
-                .bindAndRequire(SecurityService.class, SecurityServiceImpl.class);
+                .require(SecurityService.class);
     }
 
     @Override

@@ -456,6 +456,18 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         }
 
         /**
+         * Adds a service requirement to the internal list. This is equivalent to a yaml segment of
+         * {@code require: {theInteface}}.
+         * @param anInterface the interface to require
+         * @param <T> the interface's type
+         * @return this instance; useful for chaining
+         */
+        public <T> BindingsConfigurationProvider require(Class<T> anInterface) {
+            elements.add(new ManualServiceBinding(anInterface.getName()));
+            return this;
+        }
+
+        /**
          * Overrides the "requires" section of the URL definitions. This replaces the old requires URL.
          * @param url the new requires URL
          * @return this instance; useful for chaining
@@ -542,7 +554,8 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
         @Override
         public void loadInto(ServiceConfigurationHandler config) {
-            config.bind(interfaceName, implementationName, null);
+            if (implementationName != null)
+                config.bind(interfaceName, implementationName, null);
             if (required)
                 config.require(interfaceName);
         }
@@ -554,6 +567,10 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
             this.interfaceName = interfaceName;
             this.implementationName = implementationName;
             this.required = required;
+        }
+
+        private ManualServiceBinding(String interfaceName) {
+            this(interfaceName, null, true);
         }
 
         // object state

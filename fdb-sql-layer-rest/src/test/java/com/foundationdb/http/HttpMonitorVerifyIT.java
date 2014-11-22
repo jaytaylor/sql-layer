@@ -35,14 +35,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.foundationdb.rest.RestService;
-import com.foundationdb.rest.RestServiceImpl;
 import com.foundationdb.server.service.monitor.MonitorService;
 import com.foundationdb.server.service.security.SecurityService;
-import com.foundationdb.server.service.security.SecurityServiceImpl;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.sql.embedded.EmbeddedJDBCService;
-import com.foundationdb.sql.embedded.EmbeddedJDBCServiceImpl;
 
 public class HttpMonitorVerifyIT extends ITBase {
     
@@ -51,9 +48,9 @@ public class HttpMonitorVerifyIT extends ITBase {
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
-            .bindAndRequire(SecurityService.class, SecurityServiceImpl.class)
-            .bindAndRequire(EmbeddedJDBCService.class, EmbeddedJDBCServiceImpl.class)
-            .bindAndRequire(RestService.class, RestServiceImpl.class);
+            .require(SecurityService.class)
+            .require(EmbeddedJDBCService.class)
+            .require(RestService.class);
     }
 
     @Before

@@ -52,7 +52,6 @@ import com.foundationdb.http.HttpConductor;
 import com.foundationdb.junit.NamedParameterizedRunner;
 import com.foundationdb.junit.Parameterization;
 import com.foundationdb.server.service.is.BasicInfoSchemaTablesService;
-import com.foundationdb.server.service.is.BasicInfoSchemaTablesServiceImpl;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.sql.RegexFilenameFilter;
@@ -156,8 +155,9 @@ public class RestServiceScriptsIT extends ITBase {
 
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
-        return super.serviceBindingsProvider().bindAndRequire(RestService.class, RestServiceImpl.class)
-                .bindAndRequire(BasicInfoSchemaTablesService.class, BasicInfoSchemaTablesServiceImpl.class);
+        return super.serviceBindingsProvider()
+            .require(RestService.class)
+            .require(BasicInfoSchemaTablesService.class);
     }
 
     @Override

@@ -21,7 +21,6 @@ import com.foundationdb.junit.SelectedParameterizedRunner;
 import com.foundationdb.server.service.text.FullTextIndexService;
 import com.foundationdb.http.HttpConductor;
 import com.foundationdb.server.service.is.BasicInfoSchemaTablesService;
-import com.foundationdb.server.service.is.BasicInfoSchemaTablesServiceImpl;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.text.FullTextIndexServiceImpl;
 import com.foundationdb.server.test.it.ITBase;
@@ -115,9 +114,9 @@ public class RestServiceFilesIT extends ITBase {
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
-                .bindAndRequire(RestService.class, RestServiceImpl.class)
+                .require(RestService.class)
                 .bindAndRequire(FullTextIndexService.class, FullTextIndexServiceImpl.class)
-                .bindAndRequire(BasicInfoSchemaTablesService.class, BasicInfoSchemaTablesServiceImpl.class);
+                .require(BasicInfoSchemaTablesService.class);
     }
 
     @Override

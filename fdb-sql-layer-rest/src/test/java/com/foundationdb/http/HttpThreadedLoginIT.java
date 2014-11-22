@@ -18,7 +18,6 @@
 package com.foundationdb.http;
 
 import com.foundationdb.rest.RestService;
-import com.foundationdb.rest.RestServiceImpl;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.test.it.ITBase;
 
@@ -46,7 +45,7 @@ public class HttpThreadedLoginIT extends ITBase
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
-            .bindAndRequire(RestService.class, RestServiceImpl.class);
+            .require(RestService.class);
     }
 
     @Override

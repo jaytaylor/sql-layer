@@ -37,7 +37,7 @@ public class CsrfProtectionWithAuthIT extends CsrfProtectionITBase
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
-                .bindAndRequire(SecurityService.class, SecurityServiceImpl.class);
+                .require(SecurityService.class);
     }
 
     @Override

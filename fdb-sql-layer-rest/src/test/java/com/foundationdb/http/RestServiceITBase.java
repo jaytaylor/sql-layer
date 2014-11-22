@@ -18,7 +18,6 @@
 package com.foundationdb.http;
 
 import com.foundationdb.rest.RestService;
-import com.foundationdb.rest.RestServiceImpl;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.test.it.ITBase;
 import org.apache.http.Header;
@@ -65,7 +64,7 @@ public abstract class RestServiceITBase extends ITBase {
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
-                .bindAndRequire(RestService.class, RestServiceImpl.class);
+                .require(RestService.class);
     }
 
     protected static String headerValue(HttpResponse response, String key) {

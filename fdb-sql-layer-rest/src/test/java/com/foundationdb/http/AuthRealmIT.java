@@ -19,7 +19,6 @@ package com.foundationdb.http;
 
 import com.foundationdb.junit.SelectedParameterizedRunner;
 import com.foundationdb.server.service.security.SecurityService;
-import com.foundationdb.server.service.security.SecurityServiceImpl;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpGet;
@@ -76,7 +75,7 @@ public class AuthRealmIT extends RestServiceITBase {
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
-                .bindAndRequire(SecurityService.class, SecurityServiceImpl.class);
+                .require(SecurityService.class);
     }
 
     @Override
