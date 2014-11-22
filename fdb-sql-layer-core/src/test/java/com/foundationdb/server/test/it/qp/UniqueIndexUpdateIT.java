@@ -50,7 +50,6 @@ public class UniqueIndexUpdateIT extends OperatorITBase
     {
         tRowType = schema.tableRowType(table(t));
         xyIndexRowType = indexType(t, "x", "y");
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }

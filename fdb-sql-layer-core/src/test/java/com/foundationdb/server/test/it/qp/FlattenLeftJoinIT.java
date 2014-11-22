@@ -115,7 +115,6 @@ public class FlattenLeftJoinIT extends OperatorITBase
             row(parent, 41L, 4L, "p41"),
             row(parent, 42L, 4L, "p42"),
         };
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         use(db);

@@ -74,7 +74,6 @@ public class IndexScanBoundedIT extends OperatorITBase
             row(t, 1006L, 5L, 55L, 551L),
             row(t, 1007L, 5L, 55L, 555L),
         };
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         use(db);

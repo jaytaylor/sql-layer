@@ -149,6 +149,9 @@ class StoreGIHandler<SType extends AbstractStore,SDType,SSDType extends StoreSto
 
     private void copyFieldToIndexRow(GroupIndex groupIndex, Row row, int flattenedIndex) {
         Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
+        
+        assert row.rowType().nFields() < flattenedIndex : "Row does not hold all fields for group index";
+        
         indexRow.append(row.value(flattenedIndex), column.getType());
     }
 

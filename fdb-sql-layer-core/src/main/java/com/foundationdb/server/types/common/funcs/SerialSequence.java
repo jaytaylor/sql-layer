@@ -108,7 +108,8 @@ public class SerialSequence extends TScalarBase
         if(parts[0].isEmpty()) {
             parts[0] = context.getCurrentSchema();
         }
-        AkibanInformationSchema ais = context.getQueryContext().getStore().schema().ais();
+        
+        AkibanInformationSchema ais = context.getQueryContext().getAIS();
         Table table = ais.getTable(parts[0], parts[1]);
         if(table == null) {
             throw new NoSuchTableException(parts[0], parts[1]);

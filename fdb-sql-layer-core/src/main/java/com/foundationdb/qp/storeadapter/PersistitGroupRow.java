@@ -22,6 +22,7 @@ import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.util.HKeyCache;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
 import com.foundationdb.server.rowdata.encoding.EncodingException;
 import com.foundationdb.server.rowdata.*;
@@ -29,6 +30,7 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.SparseArray;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +54,8 @@ public class PersistitGroupRow extends AbstractRow
             return lastRowType;
         }
         lastRowDef = rowDef();
-        lastRowType = adapter.schema().tableRowType(lastRowDef.table());
+        Table table = lastRowDef.table();
+        lastRowType = SchemaCache.globalSchema(table.getAIS()).tableRowType(table);
         return lastRowType;
     }
 
@@ -120,7 +123,7 @@ public class PersistitGroupRow extends AbstractRow
             try {
                 exception = null;
                 adapter.persistit().expandRowData(adapter.getSession(), exchange, rowData);
-                RowDef rowDef = adapter.schema().ais().getTable(rowData.getRowDefId()).rowDef();
+                RowDef rowDef = adapter.getAIS().getTable(rowData.getRowDefId()).rowDef();
                 row.setRowDef(rowDef);
                 row.setRowData(rowData);
                 HKey persistitHKey = persistitHKey();

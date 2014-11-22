@@ -233,7 +233,7 @@ public class ExternalDataServiceIT extends ITBase
         List<Column> columns = Collections.singletonList(table.getColumn("name"));
         InputStream istr = new ByteArrayInputStream(CSV.getBytes("UTF-8"));
         Schema schema = SchemaCache.globalSchema(ais);
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
         QueryContext queryContext = new SimpleQueryContext(adapter) {
                 @Override
                 public ServiceManager getServiceManager() {

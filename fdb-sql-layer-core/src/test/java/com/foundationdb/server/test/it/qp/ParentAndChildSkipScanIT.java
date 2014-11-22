@@ -62,7 +62,6 @@ public class ParentAndChildSkipScanIT extends OperatorITBase
         parentPidIndexRowType = indexType(parent, "pid");
         parentXIndexRowType = indexType(parent, "x");
         childYIndexRowType = indexType(child, "y");
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         db = new Row[]{

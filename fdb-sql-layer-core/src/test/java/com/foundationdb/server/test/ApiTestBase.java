@@ -375,12 +375,12 @@ public class ApiTestBase {
         return sharedSession;
     }
 
-    protected final StoreAdapter newStoreAdapter(Schema schema) {
-        return newStoreAdapter(session(), schema);
+    protected final StoreAdapter newStoreAdapter() {
+        return newStoreAdapter(session());
     }
-
-    protected final StoreAdapter newStoreAdapter(Session session, Schema schema) {
-        return store().createAdapter(session, schema);
+    
+    protected final StoreAdapter newStoreAdapter(Session session) {
+        return store().createAdapter(session);
     }
 
     protected final QueryContext queryContext(StoreAdapter adapter) {
@@ -983,7 +983,7 @@ public class ApiTestBase {
     }
 
     protected List<Row> runPlanInternal(Session session, Schema schema, Operator plan) {
-        StoreAdapter adapter = newStoreAdapter(session, schema);
+        StoreAdapter adapter = newStoreAdapter(session);
         QueryContext context = queryContext(adapter);
         return runPlan(context, context.createBindings(), plan);
     }
@@ -1165,7 +1165,7 @@ public class ApiTestBase {
 
     public Row row(RowType rowType, Object... fields) {
         if(fields.length < rowType.nFields()) {
-            QueryContext context = new SimpleQueryContext(newStoreAdapter(rowType.schema()));
+            QueryContext context = new SimpleQueryContext(newStoreAdapter());
             List<TPreparedExpression> expressions = new ArrayList<>();
             for(int i = 0; i < fields.length; ++i) {
                 TInstance type = rowType.typeAt(i);

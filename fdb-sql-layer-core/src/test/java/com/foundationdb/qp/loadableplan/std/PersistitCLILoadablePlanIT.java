@@ -42,8 +42,7 @@ public class PersistitCLILoadablePlanIT extends PersistitITBase
         PersistitCLILoadablePlan loadablePlan = new PersistitCLILoadablePlan();
         DirectObjectPlan plan = loadablePlan.plan();
 
-        Schema schema = SchemaCache.globalSchema(ais());
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
         QueryContext queryContext = queryContext(adapter);
         QueryBindings queryBindings = queryContext.createBindings();
 

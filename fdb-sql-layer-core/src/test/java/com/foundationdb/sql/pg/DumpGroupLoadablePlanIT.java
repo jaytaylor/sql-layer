@@ -108,8 +108,7 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
         DumpGroupLoadablePlan loadablePlan = new DumpGroupLoadablePlan();
         DirectObjectPlan plan = loadablePlan.plan();
 
-        Schema schema = new Schema(ais());
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
         QueryContext queryContext = new SimpleQueryContext(adapter) {
                 @Override
                 public String getCurrentSchema() {

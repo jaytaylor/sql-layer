@@ -17,10 +17,12 @@
 
 package com.foundationdb.qp.memoryadapter;
 
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.util.SchemaCache;
 
 import java.util.Iterator;
 
@@ -43,7 +45,8 @@ public abstract class SimpleMemoryGroupScan<T> implements MemoryGroupCursor.Grou
 
     public SimpleMemoryGroupScan(MemoryAdapter adapter, TableName tableName, Iterator<? extends T> iterator) {
         this.iterator = iterator;
-        this.rowType = adapter.schema().tableRowType(adapter.schema().ais().getTable(tableName));
+        Table table = adapter.getAIS().getTable(tableName);
+        this.rowType = SchemaCache.globalSchema(table.getAIS()).tableRowType(table);
     }
 
     private final Iterator<? extends T> iterator;

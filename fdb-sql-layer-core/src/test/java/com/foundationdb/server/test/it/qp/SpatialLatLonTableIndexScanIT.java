@@ -72,7 +72,6 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
         latLonAfterIndexRowType = indexType(point, "lat", "lon", "after");
         beforeLatLonAfterIndexRowType = indexType(point, "before", "lat", "lon", "after");
         space = Spatial.createLatLonSpace();
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }

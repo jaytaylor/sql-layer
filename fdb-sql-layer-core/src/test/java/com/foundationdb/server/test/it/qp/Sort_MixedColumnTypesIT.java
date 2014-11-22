@@ -121,7 +121,7 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
     }
 
     private Cursor cursor(Operator plan) {
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
         QueryContext context = queryContext(adapter);
         QueryBindings bindings = context.createBindings();
         return API.cursor(plan, context, bindings);

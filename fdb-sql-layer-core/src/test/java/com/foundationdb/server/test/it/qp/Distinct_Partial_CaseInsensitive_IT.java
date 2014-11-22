@@ -54,7 +54,6 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         tRowType = schema.tableRowType(table(t));
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         group = group(t);

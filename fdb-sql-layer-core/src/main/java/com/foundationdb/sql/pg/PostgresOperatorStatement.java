@@ -105,7 +105,6 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
         boolean suspended = false;
         try {
             preExecute(context, DXLFunction.UNSPECIFIED_DML_READ);
-            context.initStore(getSchema());
             cursor = context.startCursor(this, bindings);
             PostgresOutputter<Row> outputter = getRowOutputter(context);
             outputter.beforeData();

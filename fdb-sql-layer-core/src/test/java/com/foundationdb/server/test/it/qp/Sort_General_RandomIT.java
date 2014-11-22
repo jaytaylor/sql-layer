@@ -73,7 +73,6 @@ public class Sort_General_RandomIT extends OperatorITBase
         }
         db = new Row[rows.size()];
         rows.toArray(db);
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         use(db);

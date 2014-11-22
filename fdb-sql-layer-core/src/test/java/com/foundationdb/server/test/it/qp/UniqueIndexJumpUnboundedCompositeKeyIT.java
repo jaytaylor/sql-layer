@@ -104,7 +104,6 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 //            createNewRow(t, 1022L, 1L, 30L, 300L),
 //            createNewRow(t, 1023L, 1L, 40L, 401L)
         };
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         use(db);

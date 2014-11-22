@@ -93,7 +93,6 @@ public class Product3WayIT extends OperatorITBase
                           row(c, 27L, 2L, "c27"),
                           row(c, 28L, 2L, "c28"),
         };
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         use(db);

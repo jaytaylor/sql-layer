@@ -1086,7 +1086,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
 
     protected void runOperatorPlan (Plan plan, Session session, Row oldRow, Row newRow) {
         QueryContext context = 
-                new SimpleQueryContext(store.createAdapter(session, plan.schema),
+                new SimpleQueryContext(store.createAdapter(session),
                                        serviceManager);
             QueryBindings bindings = context.createBindings();
             if (plan.bindOldRow) {
@@ -1119,7 +1119,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
     protected void runOperatorPlan(Plan plan, Session session,
                                    RowData oldRow, RowData newRow) {
         QueryContext context = 
-            new SimpleQueryContext(store.createAdapter(session, plan.schema),
+            new SimpleQueryContext(store.createAdapter(session),
                                    serviceManager);
         QueryBindings bindings = context.createBindings();
         if (plan.bindOldRow) {

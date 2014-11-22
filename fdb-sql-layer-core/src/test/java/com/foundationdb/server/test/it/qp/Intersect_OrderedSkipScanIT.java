@@ -79,7 +79,6 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
         parentYIndexRowType = indexType(parent, "y");
         childZIndexRowType = indexType(child, "z");
         coi = group(parent);
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         db = new Row[]{

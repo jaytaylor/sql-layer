@@ -17,6 +17,7 @@
 
 package com.foundationdb.qp.storeadapter;
 
+import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
@@ -33,6 +34,7 @@ import com.foundationdb.qp.storeadapter.indexcursor.IterationHelper;
 import com.foundationdb.qp.storeadapter.indexcursor.MergeJoinSorter;
 import com.foundationdb.qp.storeadapter.indexrow.IndexRowPool;
 import com.foundationdb.qp.storeadapter.indexrow.FDBIndexRow;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
@@ -64,8 +66,8 @@ public class FDBAdapter extends StoreAdapter {
     private final FDBStore store;
     private final FDBTransactionService txnService;
 
-    public FDBAdapter(FDBStore store, Schema schema, Session session, FDBTransactionService txnService, ConfigurationService config) {
-        super(schema, session, config);
+    public FDBAdapter(FDBStore store, Session session, FDBTransactionService txnService, ConfigurationService config) {
+        super(session, config);
         this.store = store;
         this.txnService = txnService;
     }
@@ -87,8 +89,9 @@ public class FDBAdapter extends StoreAdapter {
                                     API.Ordering ordering,
                                     IndexScanSelector scanSelector,
                                     boolean openAllSubCursors) {
+        IndexRowType rowType = SchemaCache.globalSchema(getAIS()).indexRowType(index);
         return new PersistitIndexCursor(context,
-                                        schema.indexRowType(index),
+                                        rowType,
                                         keyRange,
                                         ordering,
                                         scanSelector,
@@ -172,6 +175,11 @@ public class FDBAdapter extends StoreAdapter {
     @Override
     public KeyCreator getKeyCreator() {
         return store;
+    }
+    
+    @Override
+    public AkibanInformationSchema getAIS() {
+        return store.getAIS(getSession());
     }
 
     @Override

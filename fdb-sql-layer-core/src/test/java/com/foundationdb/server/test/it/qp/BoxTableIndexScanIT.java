@@ -85,7 +85,6 @@ public class BoxTableIndexScanIT extends OperatorITBase
         boxOrdinal = boxRowType.table().getOrdinal();
         latLonIndexRowType = indexType(box, "box_blob");
         space = Spatial.createLatLonSpace();
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }

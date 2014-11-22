@@ -19,7 +19,6 @@ package com.foundationdb.qp.operator;
 
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
@@ -32,14 +31,14 @@ public class StoreAdapterHolder
     public StoreAdapterHolder() {
     }
 
-    public void init(Session session, ConfigurationService config, Store store, Schema schema) {
-        storeAdapter = store.createAdapter(session, schema);
-        memoryAdapter = new MemoryAdapter(schema, session, config);
+    public void init(Session session, ConfigurationService config, Store store) {
+        storeAdapter = store.createAdapter(session);
+        memoryAdapter = new MemoryAdapter(session, config, storeAdapter.getAIS());
     }
 
-    public Schema getSchema() {
-        return (storeAdapter != null) ? storeAdapter.schema() : null;
-    }
+    //public Schema getSchema() {
+    //    return (storeAdapter != null) ? storeAdapter.schema() : null;
+    //}
 
     public StoreAdapter getAdapter() {
         return storeAdapter;

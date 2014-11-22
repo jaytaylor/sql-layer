@@ -23,8 +23,10 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.test.ExpressionGenerators;
+
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -95,9 +97,9 @@ public class SortCT extends CostModelBase
             /* 7 */ "filler400 varchar(400)",
             "primary key(id)");
         group = group(t);
-        schema = new Schema(ais());
+        schema = SchemaCache.globalSchema(ais());
         tRowType = schema.tableRowType(table(t));
-        adapter = newStoreAdapter(schema);
+        adapter = newStoreAdapter();
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }

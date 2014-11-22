@@ -91,7 +91,7 @@ public final class GroupIndexScanIT extends ITBase {
         GroupIndex gi = createLeftGroupIndex(groupName, GI_NAME, "o.when", "i.sku");
 
         schema = SchemaCache.globalSchema(ddl().getAIS(session()));
-        adapter = newStoreAdapter(schema);
+        adapter = newStoreAdapter();
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         giRowType = schema.indexRowType(gi);

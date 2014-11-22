@@ -63,7 +63,6 @@ public class SkipScanPerformanceIT extends OperatorITBase
         tXIndexRowType = indexType(t, "x");
         tYIndexRowType = indexType(t, "y");
         tZIndexRowType = indexType(t, "z");
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }

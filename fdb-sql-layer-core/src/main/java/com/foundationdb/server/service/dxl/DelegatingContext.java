@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.service.dxl;
 
+import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.QueryContext;
@@ -52,6 +53,11 @@ public class DelegatingContext extends QueryContextBase
         return delegate.getSession();
     }
 
+    @Override 
+    public AkibanInformationSchema getAIS() {
+        return delegate.getAIS();
+    }
+    
     @Override
     public ServiceManager getServiceManager() {
         return delegate.getServiceManager();

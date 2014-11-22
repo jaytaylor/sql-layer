@@ -75,7 +75,6 @@ public class ConcurrentUpdateIT extends OperatorITBase
             row(b, 5L, 205L),
             row(b, 6L, 206L),
         };
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }
@@ -139,7 +138,7 @@ public class ConcurrentUpdateIT extends OperatorITBase
         public void run()
         {
             try(Session session = createNewSession()) {
-                StoreAdapter adapter = newStoreAdapter(session, schema);
+                StoreAdapter adapter = newStoreAdapter(session);
                 QueryContext queryContext = queryContext(adapter);
                 try(TransactionService.CloseableTransaction txn = txnService().beginCloseableTransaction(session)) {
                     runPlan(queryContext, queryBindings, plan);

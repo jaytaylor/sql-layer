@@ -76,7 +76,6 @@ public class IndexScanUnboundedIT extends OperatorITBase
             row(t, 2006L, null, null, 5L),
             row(t, 2007L, null, null, null),
         };
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         use(db);

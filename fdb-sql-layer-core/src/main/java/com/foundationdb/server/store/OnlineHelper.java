@@ -39,7 +39,6 @@ import com.foundationdb.qp.operator.Rebindable;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.operator.Delete_Returning;
-import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.row.ProjectedRow;
 import com.foundationdb.qp.row.Row;
@@ -155,7 +154,7 @@ public class OnlineHelper implements RowListener
                 groupMap.put(rowType.table().getGroup(), rowType);
             }
             // Scan all affected groups
-            StoreAdapter adapter = store.createAdapter(session, oldSchema);
+            StoreAdapter adapter = store.createAdapter(session);
             final TransformCache transformCache = getTransformCache(session, null);
             for(Entry<Group, Collection<RowType>> entry : groupMap.asMap().entrySet()) {
                 Operator plan = API.filter_Default(API.groupScan_Default(entry.getKey()), entry.getValue());
@@ -473,7 +472,7 @@ public class OnlineHelper implements RowListener
         }
 
         AkibanInformationSchema onlineAIS = schemaManager.getOnlineAIS(session);
-        StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(onlineAIS));
+        StoreAdapter adapter = store.createAdapter(session);
         if(!tableIndexes.isEmpty()) {
             buildTableIndexes(session, context, adapter, transformCache, tableIndexes);
         }
@@ -503,7 +502,7 @@ public class OnlineHelper implements RowListener
                 throw new SQLParserInternalException(e);//make specific runtime error unexpectedException
             }
             AkibanInformationSchema onlineAIS = schemaManager.getOnlineAIS(session);
-            StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(onlineAIS));
+            StoreAdapter adapter = store.createAdapter(session);
             CreateAsCompiler compiler = new CreateAsCompiler(server, adapter, false, onlineAIS);
             DMLStatementNode dmlStmt = (DMLStatementNode) stmt;
             PlanContext planContext = new PlanContext(compiler);
@@ -527,8 +526,7 @@ public class OnlineHelper implements RowListener
         final AkibanInformationSchema origAIS = schemaManager.getAis(session);
         final AkibanInformationSchema newAIS = schemaManager.getOnlineAIS(session);
 
-        final Schema origSchema = SchemaCache.globalSchema(origAIS);
-        final StoreAdapter origAdapter = store.createAdapter(session, origSchema);
+        final StoreAdapter origAdapter = store.createAdapter(session);
         final QueryContext origContext = new DelegatingContext(origAdapter, context);
         final QueryBindings origBindings = origContext.createBindings();
 
@@ -565,19 +563,18 @@ public class OnlineHelper implements RowListener
             runPlan(session, contextIfNull(context, adapter), schemaManager, txnService, plan, new RowHandler() {
                 @Override
                 public void handleRow(Row row) {
-                    RowData rowData = ((AbstractRow)row).rowData();
-                    TableTransform transform = transformCache.get(rowData.getRowDefId());
-                    simpleCheckConstraints(session, transform, rowData);
+                    simpleCheckConstraints(session, transformCache, row);
+                    TableTransform transform = transformCache.get(row.rowType().typeId());
                     for(TableIndex index : transform.tableIndexes) {
                         long zValue = -1;
                         SpatialColumnHandler spatialColumnHandler = null;
                         if (index.isSpatial()) {
                             spatialColumnHandler = new SpatialColumnHandler(index);
-                            zValue = spatialColumnHandler.zValue(rowData);
+                            zValue = spatialColumnHandler.zValue(row);
                         }
                         Key hKey = store.createKey();
                         row.hKey().copyTo(hKey);
-                        store.writeIndexRow(session, index, rowData, hKey, buffer,
+                        store.writeIndexRow(session, index, row, hKey, buffer,
                                             spatialColumnHandler, zValue, true);
                     }
                 }
@@ -593,8 +590,8 @@ public class OnlineHelper implements RowListener
         if(groupIndexes.isEmpty()) {
             return;
         }
+        Schema schema = SchemaCache.globalSchema(store.getAIS(session));
         for(final GroupIndex groupIndex : groupIndexes) {
-            Schema schema = adapter.schema();
             final Operator plan = StoreGIMaintenancePlans.groupIndexCreationPlan(schema, groupIndex);
             final StoreGIHandler giHandler = StoreGIHandler.forBuilding((AbstractStore)store, session, schema, groupIndex);
             runPlan(session, contextIfNull(context, adapter), schemaManager, txnService, plan, new RowHandler() {
@@ -608,7 +605,10 @@ public class OnlineHelper implements RowListener
 
     private void simpleCheckConstraints(Session session, TransformCache transformCache, Row row) {
         TableTransform transform = transformCache.get(row.rowType().typeId());
-        simpleCheckConstraints(session, transform, ((AbstractRow) row).rowData());
+        if(transform == null || !transform.checkConstraints) {
+            return;
+        }
+        constraintHandler.handleInsert(session, transform.rowType.table(), row);
     }
 
     private void simpleCheckConstraints(Session session, TableTransform transform, RowData rowData) {
@@ -657,8 +657,7 @@ public class OnlineHelper implements RowListener
                 break;
             case TABLE:
                 if(transform.deleteOperator != null && transform.insertOperator != null) {
-                    Schema schema = transform.rowType.schema();
-                    StoreAdapter adapter = store.createAdapter(session, schema);
+                    StoreAdapter adapter = store.createAdapter(session);
                     context = new SimpleQueryContext(adapter);
                     QueryBindings bindings = context.createBindings();
                     if (doDelete) {
@@ -682,8 +681,7 @@ public class OnlineHelper implements RowListener
                     break;
                 }
             case GROUP:
-                Schema schema = transform.rowType.schema();
-                StoreAdapter adapter = store.createAdapter(session, schema);
+                StoreAdapter adapter = store.createAdapter(session);
                 context = new SimpleQueryContext(adapter);
                 QueryBindings bindings = context.createBindings();
                 if(doDelete) {
@@ -739,8 +737,7 @@ public class OnlineHelper implements RowListener
                 break;
             case TABLE:
                 if(transform.deleteOperator != null && transform.insertOperator != null) {
-                    Schema schema = transform.rowType.schema();
-                    StoreAdapter adapter = store.createAdapter(session, schema);
+                    StoreAdapter adapter = store.createAdapter(session);
                     context = new SimpleQueryContext(adapter);
                     QueryBindings bindings = context.createBindings();
                     if (doDelete) {
@@ -764,8 +761,7 @@ public class OnlineHelper implements RowListener
                     break;
                 }
             case GROUP:
-                Schema schema = transform.rowType.schema();
-                StoreAdapter adapter = store.createAdapter(session, schema);
+                StoreAdapter adapter = store.createAdapter(session);
                 context = new SimpleQueryContext(adapter);
                 QueryBindings bindings = context.createBindings();
                 if(doDelete) {
@@ -850,7 +846,7 @@ public class OnlineHelper implements RowListener
                 } catch (StandardException e) {
                     throw new SQLParserInternalException(e);
                 }
-                StoreAdapter adapter = givenStore.createAdapter(session, SchemaCache.globalSchema(newAIS));
+                StoreAdapter adapter = givenStore.createAdapter(session);
                 CreateAsCompiler compiler = new CreateAsCompiler(server, adapter, true, newAIS);
                 PlanContext planContext = new PlanContext(compiler);
                 BasePlannable insertResult = compiler.compile((DMLStatementNode) insertStmt, null, planContext);

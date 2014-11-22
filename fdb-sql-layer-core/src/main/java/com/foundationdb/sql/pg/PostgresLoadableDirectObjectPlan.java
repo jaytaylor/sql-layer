@@ -18,7 +18,6 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.sql.server.ServerCallContextStack;
 import com.foundationdb.sql.server.ServerCallInvocation;
 
@@ -40,7 +39,6 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
     private ServerCallInvocation invocation;
     private DirectObjectPlan plan;
     private DirectObjectPlan.OutputMode outputMode;
-    private Schema schema;
 
     protected PostgresLoadableDirectObjectPlan(LoadableDirectObjectPlan loadablePlan,
                                                ServerCallInvocation invocation,
@@ -51,7 +49,6 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
         this.invocation = invocation;
         plan = loadablePlan.plan();
         outputMode = plan.getOutputMode();
-        schema = loadablePlan.schema();
     }
     
     @Override
@@ -123,7 +120,6 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
         boolean suspended = false, success = false;
         stack.push(context, invocation);
         try {
-            context.initStore(schema);
             cursor = context.startCursor(this, bindings);
             switch (outputMode) {
             case TABLE:

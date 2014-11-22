@@ -90,7 +90,6 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
             row(t, 1024L, 1L, null, 121L),
             row(t, 1025L, 1L, null, 123L)
         };
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         use(db);

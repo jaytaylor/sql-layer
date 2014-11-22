@@ -72,7 +72,6 @@ public class Intersect_OrderedOutputEqualIT extends OperatorITBase
         childZIndexRowType = indexType(child, "z");
         alienAidIndexRowType = indexType(alien, "aid");
         coi = group(parent);
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         db = new Row[]{

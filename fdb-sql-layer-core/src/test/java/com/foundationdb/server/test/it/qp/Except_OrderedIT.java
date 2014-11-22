@@ -70,7 +70,7 @@ public class Except_OrderedIT extends OperatorITBase
         uXIndexRowType = indexType(u, "x");
         vXIndexRowType = indexType(v, "x");
         wXIndexRowType = indexType(w, "x");
-        adapter = newStoreAdapter(schema);
+        adapter = newStoreAdapter();
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         

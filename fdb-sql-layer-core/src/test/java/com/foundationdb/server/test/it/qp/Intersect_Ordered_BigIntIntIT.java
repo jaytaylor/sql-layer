@@ -134,7 +134,7 @@ public class Intersect_Ordered_BigIntIntIT extends ITBase
                 true
         );
 
-        QueryContext context = new SimpleQueryContext(newStoreAdapter(schema));
+        QueryContext context = new SimpleQueryContext(newStoreAdapter());
         Cursor cursor = API.cursor(outerIntersect, context, context.createBindings());
         compareRows(
             new Row[] {

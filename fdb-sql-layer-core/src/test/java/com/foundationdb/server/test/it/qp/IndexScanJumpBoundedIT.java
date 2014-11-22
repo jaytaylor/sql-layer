@@ -65,7 +65,6 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
             row(t, 1014L, 1L, 13L, 131L),
             row(t, 1015L, 1L, 13L, 132L),
         };
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         use(db);

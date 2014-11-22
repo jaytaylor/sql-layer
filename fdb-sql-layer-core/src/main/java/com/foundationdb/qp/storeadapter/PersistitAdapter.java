@@ -25,11 +25,11 @@ import com.foundationdb.qp.storeadapter.indexcursor.MergeJoinSorter;
 import com.foundationdb.qp.storeadapter.indexrow.IndexRowPool;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitGroupIndexRow;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitTableIndexRow;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.*;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
@@ -58,6 +58,11 @@ public class PersistitAdapter extends StoreAdapter
     // StoreAdapter interface
 
     @Override
+    public AkibanInformationSchema getAIS() {
+        return getUnderlyingStore().getAIS(getSession());
+    }
+
+    @Override
     public GroupCursor newGroupCursor(Group group)
     {
         GroupCursor cursor;
@@ -74,8 +79,9 @@ public class PersistitAdapter extends StoreAdapter
     public RowCursor newIndexCursor(QueryContext context, Index index, IndexKeyRange keyRange, API.Ordering ordering,
                                     IndexScanSelector selector, boolean openAllSubCursors)
     {
+        IndexRowType indexRowType = SchemaCache.globalSchema(getAIS()).indexRowType(index);
         return new PersistitIndexCursor(context,
-                                        schema.indexRowType(index),
+                                        indexRowType,
                                         keyRange,
                                         ordering,
                                         selector,
@@ -141,7 +147,7 @@ public class PersistitAdapter extends StoreAdapter
 
     public RowDef rowDef(int tableId)
     {
-        return schema.ais().getTable(tableId).rowDef();
+        return getAIS().getTable(tableId).rowDef();
     }
 
     private RowDataCreator rowDataCreator() {
@@ -234,13 +240,12 @@ public class PersistitAdapter extends StoreAdapter
         return treeService.getTransaction(getSession());
     }
 
-    public PersistitAdapter(Schema schema,
-                            PersistitStore store,
+    public PersistitAdapter(PersistitStore store,
                             TreeService treeService,
                             Session session,
                             ConfigurationService config)
     {
-        super(schema, session, config);
+        super(session, config);
         this.store = store;
         this.treeService = treeService;
     }
@@ -283,4 +288,5 @@ public class PersistitAdapter extends StoreAdapter
 
     private final TreeService treeService;
     private final PersistitStore store;
+
 }

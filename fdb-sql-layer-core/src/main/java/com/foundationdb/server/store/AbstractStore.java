@@ -1480,8 +1480,8 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
             //row.hKey().copyTo(hKey);
 
             this.constructHKey(session, row, hKey);
-
-            StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(table.getAIS()));
+            com.foundationdb.qp.rowtype.Schema schema = SchemaCache.globalSchema(table.getAIS());
+            StoreAdapter adapter = createAdapter(session);
             HKey persistitHKey = adapter.getKeyCreator().newHKey(table.hKey());
             persistitHKey.copyFrom(hKey);
 
@@ -1489,7 +1489,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                 if(columnDifferences == null || groupIndex.columnsOverlap(table, columnDifferences)) {
                     StoreGIMaintenance plan = StoreGIMaintenancePlans
                             .forAis(table.getAIS())
-                            .forRowType(groupIndex, adapter.schema().tableRowType(table));
+                            .forRowType(groupIndex, schema.tableRowType(table));
                     
                    
                     plan.run(action, persistitHKey, row, adapter, handler);
@@ -1521,7 +1521,8 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
             Key hKey = getKey(session, storeData);
             constructHKey(session, table.rowDef(), rowData, hKey);
 
-            StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(table.getAIS()));
+            com.foundationdb.qp.rowtype.Schema schema = SchemaCache.globalSchema(table.getAIS());
+            StoreAdapter adapter = createAdapter(session);
             HKey persistitHKey = adapter.getKeyCreator().newHKey(table.hKey());
             persistitHKey.copyFrom(hKey);
 
@@ -1529,7 +1530,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                 if(columnDifferences == null || groupIndex.columnsOverlap(table, columnDifferences)) {
                     StoreGIMaintenance plan = StoreGIMaintenancePlans
                             .forAis(table.getAIS())
-                            .forRowType(groupIndex, adapter.schema().tableRowType(table));
+                            .forRowType(groupIndex, schema.tableRowType(table));
                     plan.run(action, persistitHKey, rowData, adapter, handler);
                 } else {
                     SKIP_GI_MAINTENANCE.hit();
@@ -1547,7 +1548,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
      */
     private void cascadeDeleteMaintainGroupIndex(Session session, Table table, Row oldRow) {
         Operator plan = PlanGenerator.generateBranchPlan(table.getAIS(), table);
-        StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(table.getAIS()));
+        StoreAdapter adapter = createAdapter(session);
         QueryContext queryContext = new SimpleQueryContext(adapter);
         QueryBindings queryBindings = queryContext.createBindings();
         Cursor cursor = API.cursor(plan, queryContext, queryBindings);
@@ -1580,7 +1581,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                                                  RowData rowData)
     {
         Operator plan = PlanGenerator.generateBranchPlan(table.getAIS(), table);
-        StoreAdapter adapter = createAdapter(session, SchemaCache.globalSchema(table.getAIS()));
+        StoreAdapter adapter = createAdapter(session);
         QueryContext queryContext = new SimpleQueryContext(adapter);
         QueryBindings queryBindings = queryContext.createBindings();
         Cursor cursor = API.cursor(plan, queryContext, queryBindings);

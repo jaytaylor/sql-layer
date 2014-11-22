@@ -475,8 +475,8 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
 
     @Override
-    public FDBAdapter createAdapter(Session session, Schema schema) {
-        return new FDBAdapter(this, schema, session, txnService, configService);
+    public FDBAdapter createAdapter(Session session) {
+        return new FDBAdapter(this, session, txnService, configService);
     }
 
     @Override

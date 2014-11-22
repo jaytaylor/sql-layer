@@ -42,7 +42,7 @@ public class ProtobufStorageFormatIT  extends ITBase
 
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         RowType t1Type = schema.tableRowType(getTable(t1));
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
 
         txnService().beginTransaction(session());
 

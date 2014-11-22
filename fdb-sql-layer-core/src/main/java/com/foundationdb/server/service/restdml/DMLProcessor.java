@@ -27,8 +27,6 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.NoSuchColumnException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.ProtectedTableDDLException;
@@ -37,7 +35,6 @@ import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.types.common.types.TypesTranslator;
-import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
 
 public abstract class DMLProcessor {
@@ -82,14 +79,12 @@ public abstract class DMLProcessor {
         public Map<Column, String> allValues;
         public boolean anyUpdates;
         private final AkibanInformationSchema ais;
-        private final Schema schema;
         public final TypesTranslator typesTranslator;
 
         public ProcessContext (AkibanInformationSchema ais, Session session, TableName tableName) {
             this.tableName = tableName;
             this.ais = ais;
             this.session = session;
-            this.schema = SchemaCache.globalSchema(ais);
             this.typesTranslator = getTypesTranslator();
             this.table = getTable();
             this.queryContext = new RestQueryContext(getAdapter());
@@ -105,7 +100,7 @@ public abstract class DMLProcessor {
             // no writing to the memory tables. 
             if (table.hasMemoryTableFactory())
                 throw new ProtectedTableDDLException (table.getName());
-            return store.createAdapter(session, schema);
+            return store.createAdapter(session);
         }
 
         private Table getTable () {

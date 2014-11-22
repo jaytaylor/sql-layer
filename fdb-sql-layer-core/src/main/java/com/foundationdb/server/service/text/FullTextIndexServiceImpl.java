@@ -36,7 +36,6 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHKey;
@@ -219,7 +218,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         final FullTextIndexInfo indexInfo = getIndex(session, index.getIndexName(), index.getIndexedTable().getAIS());
         boolean success = false;
         try {
-            StoreAdapter adapter = store.createAdapter(session, indexInfo.getSchema());
+            StoreAdapter adapter = store.createAdapter(session);
             QueryContext queryContext = new SimpleQueryContext(adapter);
             Cursor cursor = null;
             Indexer indexer = indexInfo.getIndexer();
@@ -260,7 +259,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     }
 
     private void updateIndex(Session session, FullTextIndexInfo indexInfo, Iterable<byte[]> rows) throws IOException {
-        StoreAdapter adapter = store.createAdapter(session, indexInfo.getSchema());
+        StoreAdapter adapter = store.createAdapter(session);
         QueryContext queryContext = new SimpleQueryContext(adapter);
         QueryBindings queryBindings = queryContext.createBindings();
 
@@ -478,7 +477,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             AkibanInformationSchema ais = getAIS(session);
             Table changesTable = ais.getTable(CHANGES_TABLE);
             Operator plan = API.groupScan_Default(changesTable.getGroup());
-            StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(ais));
+            StoreAdapter adapter = store.createAdapter(session);
             QueryContext context = new SimpleQueryContext(adapter);
             this.cursor = API.cursor(plan, context, context.createBindings());
             cursor.open();

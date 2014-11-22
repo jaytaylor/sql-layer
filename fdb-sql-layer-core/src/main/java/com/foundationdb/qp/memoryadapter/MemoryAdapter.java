@@ -17,6 +17,7 @@
 
 package com.foundationdb.qp.memoryadapter;
 
+import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
@@ -38,7 +39,6 @@ import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.KeyCreator;
@@ -50,10 +50,11 @@ import java.util.Collection;
 
 public class MemoryAdapter extends StoreAdapter {
 
-    public MemoryAdapter(Schema schema, 
-            Session session,
-            ConfigurationService config) {
-        super(schema, session, config);
+    public MemoryAdapter(Session session,
+                ConfigurationService config,
+                AkibanInformationSchema ais) {
+        super (session, config);
+        this.ais = ais;
     }
 
     public static MemoryTableFactory getMemoryTableFactory(Table table) {
@@ -74,6 +75,11 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
 
+    @Override
+    public AkibanInformationSchema getAIS() {
+        return ais;
+    }
+    
     @Override
     protected Store getUnderlyingStore() {
         throw new UnsupportedOperationException();
@@ -143,4 +149,5 @@ public class MemoryAdapter extends StoreAdapter {
         throw new UnsupportedOperationException();
     }
 
+    private final AkibanInformationSchema ais; 
 }

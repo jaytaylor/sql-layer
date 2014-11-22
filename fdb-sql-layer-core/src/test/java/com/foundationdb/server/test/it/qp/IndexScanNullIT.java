@@ -69,7 +69,6 @@ public class IndexScanNullIT extends OperatorITBase
             row(t, 1002L, 5L, null),
             row(t, 1003L, 5L, 8L),
         };
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         use(db);

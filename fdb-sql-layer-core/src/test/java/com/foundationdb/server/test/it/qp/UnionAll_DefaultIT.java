@@ -52,7 +52,6 @@ public class UnionAll_DefaultIT extends OperatorITBase
         txIndexRowType = indexType(t, "x");
         tRowType = schema.tableRowType(table(t));
         groupTable = group(t);
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         db = new Row[]{

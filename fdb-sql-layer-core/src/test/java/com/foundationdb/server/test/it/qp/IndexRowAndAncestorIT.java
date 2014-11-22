@@ -97,7 +97,6 @@ public class IndexRowAndAncestorIT extends OperatorITBase
         iOrdinal = ddl().getTable(session(), i).getOrdinal();
         hOrdinal = ddl().getTable(session(), h).getOrdinal();
         group = group(c);
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         loadDatabase();

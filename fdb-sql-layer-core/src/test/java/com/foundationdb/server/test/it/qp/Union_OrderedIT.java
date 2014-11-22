@@ -53,7 +53,6 @@ public class Union_OrderedIT extends OperatorITBase
         tPidIndexRowType = indexType(t, "pid");
         tXIndexRowType = indexType(t, "x");
         coi = group(t);
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         db = new Row[] {

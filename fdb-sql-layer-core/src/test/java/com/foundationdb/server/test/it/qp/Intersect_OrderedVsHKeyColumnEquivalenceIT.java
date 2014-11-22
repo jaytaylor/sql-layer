@@ -100,7 +100,6 @@ public class Intersect_OrderedVsHKeyColumnEquivalenceIT extends OperatorITBase
                            "item_value_state.revision_to",
                            "item.created_on",
                            "item.item_id");
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         db = new Row[] {

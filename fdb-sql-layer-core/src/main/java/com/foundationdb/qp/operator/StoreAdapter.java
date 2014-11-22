@@ -17,6 +17,7 @@
 
 package com.foundationdb.qp.operator;
 
+import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
@@ -31,7 +32,6 @@ import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.error.NoSuchSequenceException;
@@ -63,11 +63,6 @@ public abstract class StoreAdapter
                                              IndexScanSelector scanSelector,
                                              boolean openAllSubCursors);
 
-    public final Schema schema()
-    {
-        return schema;
-    }
-
     public abstract void updateRow(Row oldRow, Row newRow);
 
     public void writeRow(Row newRow) {
@@ -96,7 +91,7 @@ public abstract class StoreAdapter
     }
 
     public Sequence getSequence(TableName sequenceName) {
-        Sequence sequence = schema().ais().getSequence(sequenceName);
+        Sequence sequence = getAIS().getSequence(sequenceName);
         if(sequence == null) {
             throw new NoSuchSequenceException(sequenceName);
         }
@@ -145,12 +140,12 @@ public abstract class StoreAdapter
     public abstract KeyCreator getKeyCreator();
 
     protected abstract Store getUnderlyingStore();
+    
+    public abstract AkibanInformationSchema getAIS();
 
-    protected StoreAdapter(Schema schema,
-            Session session,
+    protected StoreAdapter(Session session,
             ConfigurationService config)
     {
-        this.schema = schema;
         this.session = session;
         this.config = config;
     }
@@ -161,7 +156,6 @@ public abstract class StoreAdapter
 
     // Object state
 
-    protected final Schema schema;
     private final Session session;
     private final ConfigurationService config;
     private final long id = idCounter.incrementAndGet();

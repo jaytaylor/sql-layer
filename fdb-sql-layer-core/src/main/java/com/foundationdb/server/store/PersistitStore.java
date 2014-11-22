@@ -26,7 +26,6 @@ import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.WriteIndexRow;
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.server.AccumulatorAdapter;
 import com.foundationdb.server.AccumulatorAdapter.AccumInfo;
@@ -694,8 +693,8 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     }
 
     @Override
-    public PersistitAdapter createAdapter(Session session, Schema schema) {
-        return new PersistitAdapter(schema, this, treeService, session, config);
+    public PersistitAdapter createAdapter(Session session) {
+        return new PersistitAdapter(this, treeService, session, config);
     }
 
     @Override

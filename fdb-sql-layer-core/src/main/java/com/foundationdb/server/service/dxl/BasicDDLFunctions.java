@@ -146,7 +146,7 @@ public class BasicDDLFunctions implements DDLFunctions {
         } catch (StandardException e) {
             throw new SQLParserInternalException(e);
         }
-        StoreAdapter adapter = store().createAdapter(session, SchemaCache.globalSchema(ais));
+        StoreAdapter adapter = store().createAdapter(session);
         CreateAsCompiler compiler = new CreateAsCompiler(server, adapter, false, ais);
         PlanContext plan = new PlanContext(compiler);
         ASTStatementLoader astStatementLoader = new ASTStatementLoader();

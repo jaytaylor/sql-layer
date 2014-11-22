@@ -145,7 +145,7 @@ public interface Store extends KeyCreator {
 
     void truncateIndexes(Session session, Collection<? extends Index> indexes);
 
-    StoreAdapter createAdapter(Session session, Schema schema);
+    StoreAdapter createAdapter(Session session);
 
     boolean treeExists(Session session, StorageDescription storageDescription);
 

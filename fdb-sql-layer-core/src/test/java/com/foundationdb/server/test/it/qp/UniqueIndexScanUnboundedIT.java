@@ -84,7 +84,6 @@ public class UniqueIndexScanUnboundedIT extends OperatorITBase
             row(t, 3006L, null, null, 5L),
             row(t, 3007L, null, null, null),
         };
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         use(db);

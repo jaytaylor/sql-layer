@@ -71,7 +71,6 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
         dZIndexRowType = indexType(d, "z");
         hKeyRowType = schema.newHKeyRowType(pRowType.table().hKey());
         coi = group(p);
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         db = new Row[]{

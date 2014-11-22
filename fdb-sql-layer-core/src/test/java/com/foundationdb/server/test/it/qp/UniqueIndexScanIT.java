@@ -70,7 +70,6 @@ public class UniqueIndexScanIT extends OperatorITBase
             row(item, 11L, null, null),
             row(item, 12L, null, null),
         };
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         use(db);

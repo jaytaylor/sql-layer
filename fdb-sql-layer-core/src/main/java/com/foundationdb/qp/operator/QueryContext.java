@@ -17,9 +17,8 @@
 
 package com.foundationdb.qp.operator;
 
+import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.ais.model.TableName;
-import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.error.ErrorCode;
@@ -41,6 +40,11 @@ public interface QueryContext
     public StoreAdapter getStore();
     public StoreAdapter getStore(Table table);
 
+    /**
+     * Get the AkibanInformationSchema associated with this context
+     */
+    public AkibanInformationSchema getAIS();
+    
     /**
      * Get the session associated with this context.
      */

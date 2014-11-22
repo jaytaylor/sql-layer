@@ -141,7 +141,7 @@ class BasicDMLFunctions implements DMLFunctions {
                 false
             );
 
-        StoreAdapter adapter = store.createAdapter(session, schema);
+        StoreAdapter adapter = store.createAdapter(session);
         QueryContext context = new SimpleQueryContext(adapter);
         com.foundationdb.qp.operator.Cursor cursor = API.cursor(plan, context, context.createBindings());
         cursor.openTopLevel();

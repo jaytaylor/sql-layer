@@ -71,6 +71,7 @@ public class OperatorITBase extends ITBase
         }
         schema = SchemaCache.globalSchema(ais());
         assert schema != null : "no schema in ais";
+        adapter = newStoreAdapter();
         setupPostCreateSchema();
     }
 
@@ -149,7 +150,6 @@ public class OperatorITBase extends ITBase
                         row(item, 212L, 21L),
                         row(item, 221L, 22L),
                         row(item, 222L, 22L)};
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }

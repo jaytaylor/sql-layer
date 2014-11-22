@@ -106,7 +106,8 @@ public interface ServerSession
     public SessionMonitor getSessionMonitor();
 
     /** Get adapters for the given schema. */
-    public StoreAdapterHolder getStoreHolder(Schema schema);
+    //public StoreAdapterHolder getStoreHolder(Schema schema);
+    public StoreAdapterHolder getStoreHolder();
 
     /** Return the transaction service */
     public TransactionService getTransactionService();

@@ -71,7 +71,6 @@ public class GroupIndexRowIT extends OperatorITBase
         entitlementUserGroupRowType = schema.tableRowType(table(entitlementUserGroup));
         groupIndexRowType = groupIndexType(Index.JoinType.LEFT, "entitlement_user_group.uid", "member_info.lastLogin");
         group = group(user);
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         db = new Row[] {

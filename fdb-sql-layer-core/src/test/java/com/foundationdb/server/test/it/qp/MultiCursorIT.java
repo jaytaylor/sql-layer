@@ -45,7 +45,6 @@ public class MultiCursorIT extends OperatorITBase
     protected void setupPostCreateSchema()
     {
         tRowType = schema.tableRowType(table(t));
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }

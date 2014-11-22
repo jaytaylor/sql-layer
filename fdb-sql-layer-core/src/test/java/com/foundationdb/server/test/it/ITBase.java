@@ -66,7 +66,7 @@ public abstract class ITBase extends ApiTestBase {
             rows[i] = new TestRow(rowType, expected[i]);
         }
         
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
         QueryContext queryContext = new SimpleQueryContext(adapter);
         
         List<TableRowType> keepTypes = Arrays.asList(rowType);
@@ -87,7 +87,7 @@ public abstract class ITBase extends ApiTestBase {
         for(int i = 0; i < expected.length; ++i) {
             rows[i] = new TestRow(rowType, expected[i]);
         }
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
         QueryContext queryContext = new SimpleQueryContext(adapter);
         compareRows(
             rows,
