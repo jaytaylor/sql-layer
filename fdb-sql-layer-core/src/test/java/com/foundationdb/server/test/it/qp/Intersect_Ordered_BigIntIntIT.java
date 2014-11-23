@@ -18,6 +18,7 @@
 package com.foundationdb.server.test.it.qp;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
@@ -34,6 +35,7 @@ import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.server.types.TKeyComparable;
+
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -43,39 +45,46 @@ import java.util.EnumSet;
  * Testing nested intersects across differing types (BIGINT -> INT).
  * Intersect_Ordered wasn't initially using the TComparisons list when comparing the skip row, leading to an error.
  */
-public class Intersect_Ordered_BigIntIntIT extends ITBase
+public class Intersect_Ordered_BigIntIntIT extends OperatorITBase
 {
     private static final String SCHEMA = "test";
     private static final String REPORTS = "reports";
     private static final String METADATA = "metadata";
 
-    @Test
-    public void test() {
-        int rid = createTable(SCHEMA, REPORTS,
-                              "id BIGINT NOT NULL PRIMARY KEY, name VARCHAR(255)");
+    private int rid;
+    private int mid;
+    @Override
+    protected void setupCreateSchema()
+    {
+        rid = createTable(SCHEMA, REPORTS,
+                "id BIGINT NOT NULL PRIMARY KEY, name VARCHAR(255)");
         createIndex(SCHEMA, REPORTS, "name", "name");
-        int mid = createTable(SCHEMA, METADATA,
+        mid = createTable(SCHEMA, METADATA,
                               "id BIGINT NOT NULL PRIMARY KEY, report_id INT, name VARCHAR(255), value VARCHAR(255)",
                               "GROUPING FOREIGN KEY(report_id) REFERENCES reports(id)");
         createIndex(SCHEMA, METADATA, "name_value", "name", "value");
-
+    }
+    @Override
+    protected void setupPostCreateSchema()
+    {
         writeRows(
-            row(rid, 1, "foo"),
-            row(mid, 10, 1, "x", "one"),
-            row(rid, 2, "bar"),
-            row(mid, 20, 2, "x", "one"),
-            row(rid, 3, "foo"),
-            row(mid, 30, 3, "x", "one"),
-            row(mid, 31, 3, "y", "two"),
-            row(rid, 4, "zap"),
-            row(mid, 40, 4, "x", "one"),
-            row(mid, 41, 4, "y", "two")
-        );
-
-        AkibanInformationSchema ais = ais();
-        Schema schema = SchemaCache.globalSchema(ais);
-        IndexRowType rIndex = schema.indexRowType(ais.getTable(rid).getIndex("name"));
-        IndexRowType mdIndex = schema.indexRowType(ais.getTable(mid).getIndex("name_value"));
+                row(rid, 1, "foo"),
+                row(mid, 10, 1, "x", "one"),
+                row(rid, 2, "bar"),
+                row(mid, 20, 2, "x", "one"),
+                row(rid, 3, "foo"),
+                row(mid, 30, 3, "x", "one"),
+                row(mid, 31, 3, "y", "two"),
+                row(rid, 4, "zap"),
+                row(mid, 40, 4, "x", "one"),
+                row(mid, 41, 4, "y", "two")
+            );
+    }    
+    
+    @Test
+    public void test() {
+        IndexRowType rIndex = schema.indexRowType(ais().getTable(rid).getIndex("name"));
+        IndexRowType mdIndex = schema.indexRowType(ais().getTable(mid).getIndex("name_value"));
 
         /*
         Build something like:
@@ -102,8 +111,8 @@ public class Intersect_Ordered_BigIntIntIT extends ITBase
                                                   IndexKeyRange.bounded(mdIndex, yTwoBound, true, yTwoBound, true));
 
         TKeyComparable comparableIntBigint = typesRegistryService().getKeyComparable(
-            ais.getTable(mid).getColumn("report_id").getType().typeClass(),
-            ais.getTable(rid).getColumn("id").getType().typeClass()
+            ais().getTable(mid).getColumn("report_id").getType().typeClass(),
+            ais().getTable(rid).getColumn("id").getType().typeClass()
         );
 
         Operator innerIntersect = API.intersect_Ordered(

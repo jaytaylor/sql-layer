@@ -48,6 +48,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHKey;
 import com.foundationdb.qp.row.WriteIndexRow;
 import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.storeadapter.RowDataCreator;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.qp.util.SchemaCache;
@@ -1573,18 +1574,16 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
             //row.hKey().copyTo(hKey);
 
             this.constructHKey(session, row, hKey);
-            com.foundationdb.qp.rowtype.Schema schema = SchemaCache.globalSchema(table.getAIS());
             StoreAdapter adapter = createAdapter(session);
             HKey persistitHKey = adapter.getKeyCreator().newHKey(table.hKey());
+            TableRowType tableRowType = SchemaCache.globalSchema(table.getAIS()).tableRowType(table);
             persistitHKey.copyFrom(hKey);
 
             for(GroupIndex groupIndex : groupIndexes) {
                 if(columnDifferences == null || groupIndex.columnsOverlap(table, columnDifferences)) {
                     StoreGIMaintenance plan = StoreGIMaintenancePlans
                             .forAis(table.getAIS())
-                            .forRowType(groupIndex, schema.tableRowType(table));
-                    
-                   
+                            .forRowType(groupIndex, tableRowType);
                     plan.run(action, persistitHKey, row, adapter, handler);
                 } else {
                     SKIP_GI_MAINTENANCE.hit();
