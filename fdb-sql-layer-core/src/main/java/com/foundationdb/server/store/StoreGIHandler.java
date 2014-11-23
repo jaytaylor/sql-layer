@@ -39,8 +39,12 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 class StoreGIHandler<SType extends AbstractStore,SDType,SSDType extends StoreStorageDescription<SType,SDType>> {
     private static final TInstance NON_NULL_Z_TYPE = InternalIndexTypes.LONG.instance(false);
+    private static final Logger LOG = LoggerFactory.getLogger(StoreGIHandler.class);
 
     public static enum GroupIndexPosition {
         ABOVE_SEGMENT,
@@ -149,9 +153,7 @@ class StoreGIHandler<SType extends AbstractStore,SDType,SSDType extends StoreSto
 
     private void copyFieldToIndexRow(GroupIndex groupIndex, Row row, int flattenedIndex) {
         Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
-        
-        assert row.rowType().nFields() < flattenedIndex : "Row does not hold all fields for group index";
-        
+        assert row.rowType().nFields() >= flattenedIndex : "Row: " + row.rowType().toString() + " : does not hold all fields for group index " + flattenedIndex;
         indexRow.append(row.value(flattenedIndex), column.getType());
     }
 
