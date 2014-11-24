@@ -33,7 +33,7 @@ CALL:findJarFile "%FDBSQL_HOME%\sql\lib"
 SET DEP_DIR=%FDBSQL_HOME%\sql\lib\server
 SET FDBSQL_HOME_DIR=%FDBSQL_HOME%\sql
 SET FDBSQL_RFDIR=%FDBSQL_HOME%\sql\lib\fdb-sql-layer-routinefw
-SET FDBSQL_PLUGINS=%FDBSQL_HOME%\sql\plugins
+SET FDBSQL_PLUGINS=%FDBSQL_HOME%\sql\lib\plugins
 @REM Replaced during install
 SET FDBSQL_CONF=${confdir}
 SET FDBSQL_LOGDIR=${logdir}
