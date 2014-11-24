@@ -222,7 +222,7 @@ launch_service()
 
     CLASSPATH=$JAR_FILE:$JAR_RF_FILE:$DEP_DIR/*
 
-    for pj in plugins/*.jar; do
+    for pj in ${FDBSQL_HOME}/plugins/*.jar; do
         if [ -e "$pj" ]; then
             CLASSPATH=$CLASSPATH:$pj
             pd=${pj%.jar}
