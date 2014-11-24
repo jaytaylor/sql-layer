@@ -1253,7 +1253,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             break;
         case Z_ORDER_LAT_LON:
             firstFunctionColumn = index.firstSpatialArgument();
-            lastFunctionColumn = firstFunctionColumn + index.dimensions() - 1;
+            lastFunctionColumn = firstFunctionColumn + index.spatialColumns() - 1;
             break;
         case FULL_TEXT:
         default:

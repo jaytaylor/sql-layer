@@ -18,23 +18,25 @@
 package com.foundationdb.server.spatial;
 
 import com.geophile.z.Space;
-import com.geophile.z.spatialobject.d2.Point;
+import com.geophile.z.SpatialObject;
+import com.geophile.z.spatialobject.jts.JTS;
+import com.geophile.z.spatialobject.jts.JTSSpatialObject;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.Point;
+import com.vividsolutions.jts.io.ParseException;
+import com.vividsolutions.jts.io.WKBReader;
+import com.vividsolutions.jts.io.WKBWriter;
 
 /*
 
 The lat/lon coordinate system is
 
-- latitude: -90 to +90
-- longitude: -180 to 180 with wraparound
+- latitude: -90.0 to +90.0
+- longitude: -180.0 to 180.0 with wraparound
 
-These coordinates are typically given in fixed-point columns, so the interface is in terms of BigDecimal.
-z-values have 57 bits of precision, and I'm guessing that it is preferable to bias toward longitude. This means
-that we want 29 bits of precision for longitude, 28 for latitude, and longitude should be split first. I.e.,
-the interleave pattern is [lon, lat, lon, lat, ..., lon].
-
-log2(10) = 3.32, so to get 29 bits of precision for lon, that would be 29/3.32 = 8.7 digits. Up to three digits
-are before the decimal place, leaving 6 after. For lat: 28/3.32 = 8.4 digits, and there are "nearly" three digits
-before the decimal place. So we'll scale both by 10**6.
+The interleave pattern is [lon, lat, lon, lat, ..., lon], reflecting the fact that longitude covers a numeric range
+twice that of latitude.
 
  */
 
@@ -49,19 +51,46 @@ public class Spatial
             dimension = 1 - dimension;
         }
         return Space.newSpace(new double[]{MIN_LAT, MIN_LON},
-                               new double[]{MAX_LAT, MAX_LON},
-                               new int[]{LAT_BITS, LON_BITS},
-                               interleave);
+                              new double[]{MAX_LAT, MAX_LON},
+                              new int[]{LAT_BITS, LON_BITS},
+                              interleave);
     }
 
     public static long shuffle(Space space, double x, double y)
     {
-        Point point = new Point(x, y);
+        com.geophile.z.spatialobject.d2.Point point = new com.geophile.z.spatialobject.d2.Point(x, y);
         long[] zValues = new long[1];
         space.decompose(point, zValues);
         long z = zValues[0];
         assert z != Space.Z_NULL;
         return z;
+    }
+
+    public static void shuffle(Space space, SpatialObject spatialObject, long[] zs)
+    {
+        space.decompose(spatialObject, zs);
+    }
+
+    public static Object serializeIfSpatial(Object object)
+    {
+        return
+            object instanceof JTSSpatialObject
+            ? serialize((JTSSpatialObject) object)
+            : object;
+    }
+
+    public static byte[] serialize(JTSSpatialObject spatialObject)
+    {
+        return io.get().writer().write(spatialObject.geometry());
+    }
+
+    public static SpatialObject deserialize(Space space, byte[] bytes) throws ParseException
+    {
+        Geometry geometry = io.get().reader().read(bytes);
+        return
+            geometry instanceof Point
+            ? JTS.spatialObject(space, (Point) geometry)
+            : JTS.spatialObject(space, geometry);
     }
 
     public static final int LAT_LON_DIMENSIONS = 2;
@@ -71,4 +100,38 @@ public class Spatial
     public static final double MAX_LON = 180;
     private static final int LAT_BITS = 28;
     private static final int LON_BITS = 29;
+    private static final ThreadLocal<IO> io =
+        new ThreadLocal<IO>()
+        {
+            @Override
+            protected IO initialValue()
+            {
+                return new IO();
+            }
+        };
+
+    // Inner classes
+
+    private static class IO
+    {
+        public WKBReader reader()
+        {
+            if (reader == null) {
+                reader = new WKBReader(factory);
+            }
+            return reader;
+        }
+
+        public WKBWriter writer()
+        {
+            if (writer == null) {
+                writer = new WKBWriter();
+            }
+            return writer;
+        }
+
+        private final GeometryFactory factory = new GeometryFactory();
+        private WKBReader reader;
+        private WKBWriter writer;
+    }
 }

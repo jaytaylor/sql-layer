@@ -28,22 +28,23 @@ import java.util.Random;
 import java.util.Set;
 
 import com.foundationdb.junit.SelectedParameterizedRunner;
-import com.foundationdb.sql.pg.PostgresServerITBase;
+import com.foundationdb.sql.embedded.EmbeddedJDBCITBase;
+import com.foundationdb.util.RandomRule;
 import com.foundationdb.util.Strings;
 import com.google.common.collect.Sets;
 
+import org.junit.After;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.ComparisonFailure;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(SelectedParameterizedRunner.class)
-public class IndexScanUnboundedMixedOrderDT extends PostgresServerITBase
+public class IndexScanUnboundedMixedOrderDT extends EmbeddedJDBCITBase
 {
     protected static final String TABLE_NAME ="t";
     protected static final String INDEX_NAME = "idx";
@@ -135,23 +136,10 @@ public class IndexScanUnboundedMixedOrderDT extends PostgresServerITBase
         }
     }
 
+    @ClassRule
+    public static final RandomRule classRandom = new RandomRule();
     @Rule
-    public final TestRule FAILED_WATCHER = new TestWatcher() {
-        @Override
-        public void failed(Throwable e, Description description) {
-            System.err.printf("Query failed with seed %d: %s\n", SEED, IndexScanUnboundedMixedOrderDT.this.query);
-        }
-    };
-
-
-    protected static final long SEED;
-    protected static final Random R;
-
-    static {
-        String seedStr = System.getProperty("fdbsql.test.seed");
-        SEED = (seedStr != null) ? Long.parseLong(seedStr) : System.currentTimeMillis();
-        R = new Random(SEED);
-    }
+    public final RandomRule randomRule = classRandom;
 
     protected final List<OrderByOptions> orderings;
     protected final List<List<Integer>> DB;
@@ -159,11 +147,9 @@ public class IndexScanUnboundedMixedOrderDT extends PostgresServerITBase
     protected String query;
 
     public IndexScanUnboundedMixedOrderDT(String name, List<OrderByOptions> orderings) {
-        // Reset to ensure DB is consistent
-        R.setSeed(SEED);
         this.orderings = orderings;
         this.rowComparator = buildListComparator(orderings);
-        this.DB = buildDB(R);
+        this.DB = buildDB(randomRule.getRandom());
     }
 
     private static ListComparator<Integer> buildListComparator(List<OrderByOptions> orderings) {
@@ -269,7 +255,6 @@ public class IndexScanUnboundedMixedOrderDT extends PostgresServerITBase
 
     @Parameters(name="{0}")
     public static List<Object[]> params() throws Exception {
-        R.setSeed(SEED);
         List<Object[]> params = new ArrayList<>();
         for(List<OrderByOptions> p : orderByPermutations()) {
             String name = makeTestName(p);

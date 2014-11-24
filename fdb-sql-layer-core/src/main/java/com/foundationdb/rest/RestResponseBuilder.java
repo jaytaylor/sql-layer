@@ -20,6 +20,7 @@ package com.foundationdb.rest;
 import com.foundationdb.rest.resources.ResourceHelper;
 import com.foundationdb.server.Quote;
 import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchRoutineException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.sql.embedded.JDBCException;
@@ -147,9 +148,12 @@ public class RestResponseBuilder {
     }
 
     public WebApplicationException wrapException(Throwable e) {
+        Throwable cause = e instanceof JDBCException ? e.getCause() : null;
+        if (cause instanceof InvalidOperationException) {
+            e = cause;
+        }
         final ErrorCode code = ErrorCode.getCodeForRESTException(e);
         Response.Status status = EXCEPTION_STATUS_MAP.get(e.getClass());
-        Throwable cause = e instanceof JDBCException ? e.getCause() : null;
         if(status == null) {
             status = Response.Status.CONFLICT;
         }
@@ -158,7 +162,7 @@ public class RestResponseBuilder {
                 LOG.isDebugEnabled() ? "Exception from request(method: {}, url: {}, params: {})"
                                      : "Exception from request(method: {}, url: {}, params: {}): {}",
                 request.getMethod(), request.getRequestURL(), request.getQueryString(),
-                cause == null ? e : cause
+                e
         );
         String exMsg = (e.getMessage() != null) ? e.getMessage() : e.getClass().getName();
         return new WebApplicationException(

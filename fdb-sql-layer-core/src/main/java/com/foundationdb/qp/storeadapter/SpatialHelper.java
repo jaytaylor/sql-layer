@@ -31,7 +31,7 @@ public final class SpatialHelper {
     public static boolean isNullable(Index index) {
         List<IndexColumn> declaredKeys = index.getKeyColumns();
         int offset = index.firstSpatialArgument();
-        for (int i = 0; i < index.dimensions(); i++) {
+        for (int i = 0; i < index.spatialColumns(); i++) {
             if (declaredKeys.get(offset + i).getColumn().getNullable())
                 return true;
         }

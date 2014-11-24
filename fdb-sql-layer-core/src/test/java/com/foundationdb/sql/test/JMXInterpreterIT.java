@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.sql.pg;
+package com.foundationdb.sql.test;
 
 import javax.management.MBeanInfo;
 import javax.management.MBeanServerConnection;

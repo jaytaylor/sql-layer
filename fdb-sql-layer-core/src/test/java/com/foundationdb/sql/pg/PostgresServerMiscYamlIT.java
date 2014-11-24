@@ -23,16 +23,11 @@ import com.foundationdb.server.service.text.FullTextIndexService;
 import com.foundationdb.server.service.text.FullTextIndexServiceImpl;
 import com.foundationdb.sql.embedded.EmbeddedJDBCService;
 import com.foundationdb.sql.embedded.EmbeddedJDBCServiceImpl;
+import com.foundationdb.sql.test.YamlTestFinder;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.net.URL;
 import java.util.Map;
-import java.util.TimeZone;
-import java.util.regex.Pattern;
 
-import org.joda.time.DateTimeZone;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameters;
@@ -45,29 +40,10 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(SelectedParameterizedRunner.class)
 public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase
 {
-    private static final String CLASSNAME = PostgresServerMiscYamlIT.class.getName();
+    private final URL url;
 
-    /**
-     * A regular expression matching the names of the YAML files in the
-     * resource directory, not including the extension, to use for tests.
-     */
-    private static final String CASE_NAME_REGEXP = System.getProperty(CLASSNAME + ".CASE_NAME_REGEXP", "test-.*");
-
-    /** The directory containing the YAML files. */
-    private static final File RESOURCE_DIR;
-
-    static {
-        String s = System.getProperty(CLASSNAME + ".RESOURCE_DIR");
-        RESOURCE_DIR = (s != null) ? new File(s) : new File(PostgresServerITBase.RESOURCE_DIR, "yaml");
-    }
-
-    /** Whether to search the resource directory recursively for test files. */
-    private static final boolean RECURSIVE = Boolean.valueOf(System.getProperty(CLASSNAME + ".RECURSIVE", "true"));
-
-    private final File file;
-
-    public PostgresServerMiscYamlIT(String caseName, File file) {
-        this.file = file;
+    public PostgresServerMiscYamlIT(String caseName, URL url) {
+        this.url = url;
     }
 
     @Override
@@ -84,45 +60,12 @@ public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase
 
     @Test
     public void testYaml() throws Exception {
-        testYaml(file);
+        testYaml(url);
     }
 
     @Parameters(name="{0}")
     public static Iterable<Object[]> queries() throws Exception {
-        Collection<Object[]> params = new ArrayList<>();
-        collectParams(RESOURCE_DIR, Pattern.compile(CASE_NAME_REGEXP + "[.]yaml"), params);
-        return params;
+        return YamlTestFinder.findTests();
     }
 
-    static {
-        String timezone = "UTC";
-        DateTimeZone.setDefault(DateTimeZone.forID(timezone));
-        TimeZone.setDefault(TimeZone.getTimeZone(timezone));
-    }
-
-    /**
-     * Add files from the directory that match the pattern to params, recursing
-     * if appropriate.
-     */
-    private static void collectParams(File directory, final Pattern pattern, final Collection<Object[]> params) {
-        File[] files = directory.listFiles(
-            new FileFilter()
-            {
-                public boolean accept(File file) {
-                    if(RECURSIVE && file.isDirectory()) {
-                        collectParams(file, pattern, params);
-                    } else {
-                        String name = file.getName();
-                        if(pattern.matcher(name).matches()) {
-                            params.add(new Object[]{ name.substring(0, name.length() - 5), file });
-                        }
-                    }
-                    return false;
-                }
-            }
-        );
-        if(files == null) {
-            throw new RuntimeException("Problem accessing directory: " + directory);
-        }
-    }
 }

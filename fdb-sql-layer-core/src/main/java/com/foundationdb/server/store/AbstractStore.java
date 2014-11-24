@@ -819,7 +819,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
 
     @Override
     public void writeIndexRows(Session session, Table table, Row row, Collection<GroupIndex> indexes) {
-        assert (table == row.rowType().table());
+        assert (table == row.rowType().table()) : "Table: " + table.getNameForOutput() + " Vs. rowtype table: " + row.rowType().table().getNameForOutput();
         maintainGroupIndexes(session,
                 table,
                 indexes,
@@ -1003,31 +1003,39 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     // Internal
     //
 
-    private void writeRowInternal(Session session,
+    private void writeRowInternal(final Session session,
                                 SDType storeData,
-                                Row row,
+                                final Row row,
                                 Collection<TableIndex> indexes,
                                 BitSet tablesRequiringHKeyMaintenance,
                                 boolean propagateHKeyChanges) {
         //TODO: It may be useful to move the constructHKey to higher in the
         // stack, and store the result in the row to avoid building it 
         // multiple times for GroupIndex maintenance. 
-        Key hKey = getKey(session, storeData);
+        final Key hKey = getKey(session, storeData);
         this.constructHKey(session, row, hKey);
 
         packRow(session, storeData, row);
         store(session, storeData);
         
         boolean bumpCount = false;
-        WriteIndexRow indexRow = new WriteIndexRow(this);
-        for(TableIndex index : indexes) {
-            long zValue = -1;
-            SpatialColumnHandler spatialColumnHandler = null;
+        final WriteIndexRow indexRow = new WriteIndexRow(this);
+        for(final TableIndex index : indexes) {
             if (index.isSpatial()) {
-                spatialColumnHandler = new SpatialColumnHandler(index);
-                zValue = spatialColumnHandler.zValue(row);
+                final SpatialColumnHandler spatialColumnHandler = new SpatialColumnHandler(index);
+                spatialColumnHandler.processSpatialObject(
+                    row,
+                    new SpatialColumnHandler.Operation()
+                    {
+                        @Override
+                        public void handleZValue(long z)
+                        {
+                            writeIndexRow(session, index, row, hKey, indexRow, spatialColumnHandler, z, false);
+                        }
+                    });
+            } else {
+                writeIndexRow(session, index, row, hKey, indexRow, null, -1L, false);
             }
-            writeIndexRow(session, index, row, hKey, indexRow, spatialColumnHandler, zValue, false);
             // Only bump row count if PK row is written (may not be written during an ALTER)
             // Bump row count *after* uniqueness checks. Avoids drift of TableStatus#getApproximateRowCount. See bug1112940.
             bumpCount |= index.isPrimaryKey();
@@ -1066,14 +1074,14 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
 
     }
     
-    private void writeRowInternal(Session session,
+    private void writeRowInternal(final Session session,
                                   SDType storeData,
                                   RowDef rowDef,
-                                  RowData rowData,
-                                  Collection<TableIndex> indexes,
+                                  final RowData rowData,
+                                  final Collection<TableIndex> indexes,
                                   BitSet tablesRequiringHKeyMaintenance,
                                   boolean propagateHKeyChanges) {
-        Key hKey = getKey(session, storeData);
+        final Key hKey = getKey(session, storeData);
         /*
          * About propagateHKeyChanges as second to last argument to constructHKey (i.e. insertingRow):
          * - If true, we're inserting a row and may need to generate a PK (for no-pk tables)
@@ -1091,15 +1099,23 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         store(session, storeData);
 
         boolean bumpCount = false;
-        WriteIndexRow indexRow = new WriteIndexRow(this);
-        for(TableIndex index : indexes) {
-            long zValue = -1;
-            SpatialColumnHandler spatialColumnHandler = null;
+        final WriteIndexRow indexRow = new WriteIndexRow(this);
+        for(final TableIndex index : indexes) {
             if (index.isSpatial()) {
-                spatialColumnHandler = new SpatialColumnHandler(index);
-                zValue = spatialColumnHandler.zValue(rowData);
+                final SpatialColumnHandler spatialColumnHandler = new SpatialColumnHandler(index);
+                spatialColumnHandler.processSpatialObject(
+                    rowData,
+                    new SpatialColumnHandler.Operation()
+                    {
+                        @Override
+                        public void handleZValue(long z)
+                        {
+                            writeIndexRow(session, index, rowData, hKey, indexRow, spatialColumnHandler, z, false);
+                        }
+                    });
+            } else {
+                writeIndexRow(session, index, rowData, hKey, indexRow, null, -1L, false);
             }
-            writeIndexRow(session, index, rowData, hKey, indexRow, spatialColumnHandler, zValue, false);
             // Only bump row count if PK row is written (may not be written during an ALTER)
             // Bump row count *after* uniqueness checks. Avoids drift of TableStatus#getApproximateRowCount. See bug1112940.
             bumpCount |= index.isPrimaryKey();
@@ -1140,12 +1156,14 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         }
     }
 
-    protected void deleteRowInternal(Session session, SDType storeData, 
-                                    Row row, boolean cascadeDelete,
-                                    BitSet tablesRequiringHKeyMaintenance,
-                                    boolean propagateHKeyChanges) {
+    protected void deleteRowInternal(final Session session,
+                                     SDType storeData,
+                                     final Row row,
+                                     boolean cascadeDelete,
+                                     BitSet tablesRequiringHKeyMaintenance,
+                                     boolean propagateHKeyChanges) {
         Table rowTable= row.rowType().table();
-        Key hKey = getKey(session, storeData);
+        final Key hKey = getKey(session, storeData);
         constructHKey(session, row, hKey);
 
         boolean existed = fetch(session, storeData);
@@ -1158,15 +1176,23 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         }
 
         // Remove all indexes (before the group row is gone in-case listener needs it)
-        WriteIndexRow indexRow = new WriteIndexRow(this);
-        for(TableIndex index : rowTable.getIndexesIncludingInternal()) {
-            long zValue = -1;
-            SpatialColumnHandler spatialColumnHandler = null;
+        final WriteIndexRow indexRow = new WriteIndexRow(this);
+        for(final TableIndex index : rowTable.getIndexesIncludingInternal()) {
             if (index.isSpatial()) {
-                spatialColumnHandler = new SpatialColumnHandler(index);
-                zValue = spatialColumnHandler.zValue(row);
+                final SpatialColumnHandler spatialColumnHandler = new SpatialColumnHandler(index);
+                spatialColumnHandler.processSpatialObject(
+                    row,
+                    new SpatialColumnHandler.Operation()
+                    {
+                        @Override
+                        public void handleZValue(long z)
+                        {
+                            deleteIndexRow(session, index, row, hKey, indexRow, spatialColumnHandler, z, false);
+                        }
+                    });
+            } else {
+                deleteIndexRow(session, index, row, hKey, indexRow, null, -1L, false);
             }
-            deleteIndexRow(session, index, row, hKey, indexRow, spatialColumnHandler, zValue, false);
         }
 
         // Remove the group row
@@ -1181,15 +1207,15 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         
     }
     
-    protected void deleteRowInternal(Session session,
+    protected void deleteRowInternal(final Session session,
                                      SDType storeData,
                                      RowDef rowDef,
-                                     RowData rowData,
+                                     final RowData rowData,
                                      boolean cascadeDelete,
                                      BitSet tablesRequiringHKeyMaintenance,
                                      boolean propagateHKeyChanges)
     {
-        Key hKey = getKey(session, storeData);
+        final Key hKey = getKey(session, storeData);
         constructHKey(session, rowDef, rowData, hKey);
 
         boolean existed = fetch(session, storeData);
@@ -1202,15 +1228,23 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         }
 
         // Remove all indexes (before the group row is gone in-case listener needs it)
-        WriteIndexRow indexRow = new WriteIndexRow(this);
-        for(TableIndex index : rowDef.getIndexes()) {
-            long zValue = -1;
-            SpatialColumnHandler spatialColumnHandler = null;
+        final WriteIndexRow indexRow = new WriteIndexRow(this);
+        for(final TableIndex index : rowDef.getIndexes()) {
             if (index.isSpatial()) {
-                spatialColumnHandler = new SpatialColumnHandler(index);
-                zValue = spatialColumnHandler.zValue(rowData);
+                final SpatialColumnHandler spatialColumnHandler = new SpatialColumnHandler(index);
+                spatialColumnHandler.processSpatialObject(
+                    rowData,
+                    new SpatialColumnHandler.Operation()
+                    {
+                        @Override
+                        public void handleZValue(long z)
+                        {
+                            deleteIndexRow(session, index, rowData, hKey, indexRow, spatialColumnHandler, z, false);
+                        }
+                    });
+            } else {
+                deleteIndexRow(session, index, rowData, hKey, indexRow, null, -1L, false);
             }
-            deleteIndexRow(session, index, rowData, hKey, indexRow, spatialColumnHandler, zValue, false);
         }
 
         // Remove the group row
@@ -1354,18 +1388,18 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
      * @param indexRowBuffer Buffer for performing index deletions. <i>State is modified.</i>
      * @param cascadeDelete <code>true</code> if rows should <i>not</i> be re-inserted.
      */
-    protected void propagateDownGroup(Session session,
+    protected void propagateDownGroup(final Session session,
                                       AkibanInformationSchema ais,
                                       SDType storeData,
                                       BitSet tablesRequiringHKeyMaintenance,
-                                      WriteIndexRow indexRowBuffer,
+                                      final WriteIndexRow indexRowBuffer,
                                       boolean cascadeDelete)
     {
         Iterator<Void> it = createDescendantIterator(session, storeData);
         PROPAGATE_CHANGE_TAP.in();
         try {
-            Key hKey = getKey(session, storeData);
-            RowData rowData = new RowData();
+            final Key hKey = getKey(session, storeData);
+            final RowData rowData = new RowData();
             while(it.hasNext()) {
                 it.next();
                 expandRowData(session, storeData, rowData);
@@ -1381,14 +1415,37 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                         // Don't call deleteRow as the hKey does not need recomputed.
                         clear(session, storeData);
                         table.rowDef().getTableStatus().rowDeleted(session);
-                        for(TableIndex index : table.rowDef().getIndexes()) {
-                            long zValue = -1;
-                            SpatialColumnHandler spatialColumnHandler = null;
+                        for(final TableIndex index : table.rowDef().getIndexes()) {
                             if (index.isSpatial()) {
-                                spatialColumnHandler = new SpatialColumnHandler(index);
-                                zValue = spatialColumnHandler.zValue(rowData);
+                                final SpatialColumnHandler spatialColumnHandler = new SpatialColumnHandler(index);
+                                spatialColumnHandler.processSpatialObject(
+                                    rowData,
+                                    new SpatialColumnHandler.Operation()
+                                    {
+                                        @Override
+                                        public void handleZValue(long z)
+                                        {
+                                            deleteIndexRow(session,
+                                                           index,
+                                                           rowData,
+                                                           hKey,
+                                                           indexRowBuffer,
+                                                           spatialColumnHandler,
+                                                           z,
+                                                           false);
+                                        }
+                                    }
+                                                                         );
+                            } else {
+                                deleteIndexRow(session,
+                                               index,
+                                               rowData,
+                                               hKey,
+                                               indexRowBuffer,
+                                               null,
+                                               -1L,
+                                               false);
                             }
-                            deleteIndexRow(session, index, rowData, hKey, indexRowBuffer, spatialColumnHandler, zValue, false);
                         }
                         if(!cascadeDelete) {
                             // Reinsert it, recomputing the hKey and maintaining indexes
@@ -1405,52 +1462,88 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         }
     }
     
-    private void updateIndex(Session session, TableIndex index, Row oldRow, Row newRow,
-                            Key hKey, WriteIndexRow indexRowBuffer) {
+    private void updateIndex(final Session session,
+                             final TableIndex index,
+                             final Row oldRow,
+                             final Row newRow,
+                             final Key hKey,
+                             final WriteIndexRow indexRowBuffer) {
         int nkeys = index.getKeyColumns().size();
         IndexRowComposition indexRowComposition = index.indexRowComposition();
         if(!fieldsEqual(oldRow, newRow, nkeys, indexRowComposition)) {
             UPDATE_INDEX_TAP.in();
             try {
-                long oldZValue = -1;
-                long newZValue = -1;
-                SpatialColumnHandler spatialColumnHandler = null;
                 if (index.isSpatial()) {
-                    spatialColumnHandler = new SpatialColumnHandler(index);
-                    oldZValue = spatialColumnHandler.zValue(oldRow);
-                    newZValue = spatialColumnHandler.zValue(newRow);
+                    final SpatialColumnHandler spatialColumnHandler = new SpatialColumnHandler(index);
+                    spatialColumnHandler.processSpatialObject(
+                        oldRow,
+                        new SpatialColumnHandler.Operation()
+                        {
+                            @Override
+                            public void handleZValue(long z)
+                            {
+                                deleteIndexRow(session, index, oldRow, hKey, indexRowBuffer, spatialColumnHandler, z, false);
+                            }
+                        });
+                    spatialColumnHandler.processSpatialObject(
+                        newRow,
+                        new SpatialColumnHandler.Operation()
+                        {
+                            @Override
+                            public void handleZValue(long z)
+                            {
+                                writeIndexRow(session, index, newRow, hKey, indexRowBuffer, spatialColumnHandler, z, false);
+                            }
+                        });
+                } else {
+                    deleteIndexRow(session, index, oldRow, hKey, indexRowBuffer, null, -1L, false);
+                    writeIndexRow(session, index, newRow, hKey, indexRowBuffer, null, -1L, false);
                 }
-                deleteIndexRow(session, index, oldRow, hKey, indexRowBuffer, spatialColumnHandler, oldZValue, false);
-                writeIndexRow(session, index, newRow, hKey, indexRowBuffer, spatialColumnHandler, newZValue, false);
             } finally {
                 UPDATE_INDEX_TAP.out();
             }
         }
     }
 
-    private void updateIndex(Session session,
-                             TableIndex index,
+    private void updateIndex(final Session session,
+                             final TableIndex index,
                              RowDef oldRowDef,
-                             RowData oldRow,
+                             final RowData oldRow,
                              RowDef newRowDef,
-                             RowData newRow,
-                             Key hKey,
-                             WriteIndexRow indexRowBuffer) {
+                             final RowData newRow,
+                             final Key hKey,
+                             final WriteIndexRow indexRowBuffer) {
         int nkeys = index.getKeyColumns().size();
         IndexRowComposition indexRowComposition = index.indexRowComposition();
         if(!fieldsEqual(oldRowDef, oldRow, newRowDef, newRow, nkeys, indexRowComposition)) {
             UPDATE_INDEX_TAP.in();
             try {
-                long oldZValue = -1;
-                long newZValue = -1;
-                SpatialColumnHandler spatialColumnHandler = null;
                 if (index.isSpatial()) {
-                    spatialColumnHandler = new SpatialColumnHandler(index);
-                    oldZValue = spatialColumnHandler.zValue(oldRow);
-                    newZValue = spatialColumnHandler.zValue(newRow);
+                    final SpatialColumnHandler spatialColumnHandler = new SpatialColumnHandler(index);
+                    spatialColumnHandler.processSpatialObject(
+                        oldRow,
+                        new SpatialColumnHandler.Operation()
+                        {
+                            @Override
+                            public void handleZValue(long z)
+                            {
+                                deleteIndexRow(session, index, oldRow, hKey, indexRowBuffer, spatialColumnHandler, z, false);
+                            }
+                        });
+                    spatialColumnHandler.processSpatialObject(
+                        newRow,
+                        new SpatialColumnHandler.Operation()
+                        {
+                            @Override
+                            public void handleZValue(long z)
+                            {
+                                writeIndexRow(session, index, newRow, hKey, indexRowBuffer, spatialColumnHandler, z, false);
+                            }
+                        });
+                } else {
+                    deleteIndexRow(session, index, oldRow, hKey, indexRowBuffer, null, -1L, false);
+                    writeIndexRow(session, index, newRow, hKey, indexRowBuffer, null, -1L, false);
                 }
-                deleteIndexRow(session, index, oldRow, hKey, indexRowBuffer, spatialColumnHandler, oldZValue, false);
-                writeIndexRow(session, index, newRow, hKey, indexRowBuffer, spatialColumnHandler, newZValue, false);
             } finally {
                 UPDATE_INDEX_TAP.out();
             }

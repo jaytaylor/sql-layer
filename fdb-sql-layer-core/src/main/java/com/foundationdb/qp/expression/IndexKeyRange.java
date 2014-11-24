@@ -113,8 +113,9 @@ public class IndexKeyRange
     }
 
     /**
-     * Describes a range of keys between lo and hi. lo and hi must both be non-null. The ColumnSelectors for
-     * lo and hi must select for the same columns.
+     * Describes a range of keys between lo and hi. lo and hi must both be non-null.
+     * They describe the lower-left and upper-right corners of a query box.
+     * The ColumnSelectors for lo and hi must select for the same columns.
      *
      * @param indexRowType The row type of index keys.
      * @param lo           Lower bound of the range.
@@ -128,7 +129,25 @@ public class IndexKeyRange
         if (lo == null) {
             throw new IllegalArgumentException("lo must not be null");
         }
-        return new IndexKeyRange(indexRowType, lo, true, hi, true, IndexKind.SPATIAL);
+        return new IndexKeyRange(indexRowType, lo, true, hi, true, IndexKind.SPATIAL_COORDS);
+    }
+
+    /**
+     * Describes a range of keys between lo and hi. lo and hi must both be non-null.
+     * They describe the lower-left and upper-right corners of a query box.
+     * The ColumnSelectors for lo and hi must select for the same columns.
+     *
+     * @param indexRowType The row type of index keys.
+     * @param spatialObject           Upper bound of the range.
+     * @return IndexKeyRange covering the keys lying between lo and hi.
+     */
+    public static IndexKeyRange spatial(IndexRowType indexRowType,
+                                        IndexBound spatialObject)
+    {
+        if (spatialObject == null) {
+            throw new IllegalArgumentException("spatialObjectIndex must not be null");
+        }
+        return new IndexKeyRange(indexRowType, spatialObject, true, null, true, IndexKind.SPATIAL_OBJECT);
     }
 
     /**
@@ -144,12 +163,17 @@ public class IndexKeyRange
         if (lo == null) {
             throw new IllegalArgumentException("IndexBound argument must not be null");
         }
-        return new IndexKeyRange(indexRowType, lo, true, null, false, IndexKind.SPATIAL);
+        return new IndexKeyRange(indexRowType, lo, true, null, false, IndexKind.SPATIAL_COORDS);
     }
 
-    public boolean spatial()
+    public boolean spatialCoordsIndex()
     {
-        return indexKind == IndexKind.SPATIAL;
+        return indexKind == IndexKind.SPATIAL_COORDS;
+    }
+
+    public boolean spatialObjectIndex()
+    {
+        return indexKind == IndexKind.SPATIAL_OBJECT;
     }
 
     public IndexKeyRange resetLo(IndexBound newLo)
@@ -269,11 +293,16 @@ public class IndexKeyRange
     // (1, 10, 800) - (1, 10, 888) is legal, but (1, 10, 800) - (1, 20, 888) is not, because there are two ranges,
     // 10-20 and 800-888.
     //
-    // A SPATIAL index requires has no requirements other than specifying a match or range on any restricted column.
+    // A SPATIAL_COORDS index is for (lat, lon) points, and requires has no requirements other than specifying a match
+    // or range on any restricted column.
+    //
+    // A SPATIAL_OBJECT index is similar to SPATIAL_COORDS, but the index is on a column storing an encoded
+    // spatial object.
 
     public enum IndexKind
     {
         CONVENTIONAL,
-        SPATIAL
+        SPATIAL_COORDS,
+        SPATIAL_OBJECT
     }
 }
