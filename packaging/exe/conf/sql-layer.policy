@@ -9,7 +9,7 @@ grant codeBase "file:${fdbsql.home}/lib/server/-" {
   permission java.security.AllPermission;
 };
 
-grant codeBase "file:${fdbsql.home}/plugins/-" {
+grant codeBase "file:${fdbsql.home}/lib/plugins/-" {
   permission java.security.AllPermission;
 };
 
