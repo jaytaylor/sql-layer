@@ -56,10 +56,10 @@
                     <!-- apparently this is backwards, false here means use incremental compilation
                          Maven issue for this: https://jira.codehaus.org/browse/MCOMPILER-209 -->
                     <useIncrementalCompilation>false</useIncrementalCompilation>
-                    <compilerArguments>
-                        <Xlint:all />
-                        <Werror />
-                    </compilerArguments>
+                    <compilerArgs>
+                        <arg>-Xlint:all</arg>
+                        <arg>-Werror</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
             <plugin>
