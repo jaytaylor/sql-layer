@@ -20,7 +20,6 @@ package com.foundationdb.server.service.routines;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.sql.JDBCProxy.ProxyDriverImpl;
-import com.foundationdb.sql.JDBCProxy.DeregisterProxyDriverHelper;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,9 +58,9 @@ public final class ScriptEngineManagerProviderImpl implements ScriptEngineManage
         URLClassLoader scriptEngineClassLoader = new URLClassLoader(urls, parentClassLoader);
         manager = new ScriptEngineManager(scriptEngineClassLoader);
 
-        URL[] urlsSC = new URL[2];
+        URL[] urlsSC = new URL[1];
+        // registers both ProxyDriverImpl + DeregisterProxyDriverHelper
         urlsSC[0] = ProxyDriverImpl.class.getProtectionDomain().getCodeSource().getLocation();
-        urlsSC[1] = DeregisterProxyDriverHelper.class.getProtectionDomain().getCodeSource().getLocation();
         safeClassLoader = new URLClassLoader(urlsSC, parentClassLoader);
     }
 

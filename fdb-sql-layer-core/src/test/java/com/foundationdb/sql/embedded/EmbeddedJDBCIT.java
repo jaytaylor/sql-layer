@@ -162,7 +162,7 @@ public class EmbeddedJDBCIT extends ITBase
         conn.close();
     }
 
-    @Test
+    //@Test suppress until sys.SQLJ_install jar can be used for registering routine classes.
     public void testJavaProcedure() throws Exception {
         Connection conn = DriverManager.getConnection(CONNECTION_URL, SCHEMA_NAME, "");
         Statement stmt = conn.createStatement();
