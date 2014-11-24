@@ -30,6 +30,7 @@
 
     <modules>
       <module>fdb-sql-layer-routinefw</module>
+      <module>fdb-sql-layer-jdbc-proxy</module>
       <module>fdb-sql-layer-core</module>
     </modules>
 

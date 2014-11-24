@@ -18,14 +18,15 @@
 package com.foundationdb.sql.embedded;
 
 import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.service.monitor.MonitorService;
+import com.foundationdb.server.service.routines.RoutineLoader;
+import com.foundationdb.server.service.routines.ScriptEngineManagerProvider;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.metrics.MetricsService;
-import com.foundationdb.server.service.monitor.MonitorService;
-import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.security.User;
 import com.foundationdb.server.service.session.SessionService;
@@ -35,12 +36,13 @@ import com.foundationdb.server.store.statistics.IndexStatisticsService;
 import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.sql.optimizer.rule.cost.CostModelFactory;
 import com.foundationdb.sql.server.ServerServiceRequirements;
+import com.foundationdb.sql.JDBCProxy.ProxyDriverImpl;
 
+import java.lang.reflect.*;
 import java.security.Principal;
-import java.sql.Connection;
-import java.sql.Driver;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Properties;
+import java.net.URL;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +51,9 @@ import com.google.inject.Inject;
 
 public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
     private final ServerServiceRequirements reqs;
+    private ScriptEngineManagerProvider scriptEngineManagerProvider;
     private JDBCDriver driver;
+    private Driver proxyDriver;
 
     private static final Logger logger = LoggerFactory.getLogger(EmbeddedJDBCService.class);
 
@@ -67,13 +71,15 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
                                    SecurityService securityService,
                                    CostModelFactory costModel,
                                    MetricsService metricsService,
-                                   ServiceManager serviceManager) {
+                                   ServiceManager serviceManager,
+                                   ScriptEngineManagerProvider scriptEngineManagerProvider) {
         reqs = new ServerServiceRequirements(layerInfo, dxlService, monitor,
                 sessionService, store,
                 config, indexStatisticsService, overloadResolutionService, 
                 routineLoader, txnService, securityService, costModel,
                 metricsService,
                 serviceManager);
+        this.scriptEngineManagerProvider = scriptEngineManagerProvider;
     }
 
     @Override
@@ -109,12 +115,34 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
 
     @Override
     public void start() {
+        Class<?> proxyDriverClazz;
+        Constructor<?> proxyConstructor;
         driver = new JDBCDriver(reqs);
         try {
+            proxyDriverClazz = Class.forName(ProxyDriverImpl.class.getName(), true, this.scriptEngineManagerProvider.getSafeClassLoader());
+            proxyConstructor = proxyDriverClazz.getConstructor(Driver.class);
+            Object proxyDriverInstanceObject = proxyConstructor.newInstance(driver);
+            proxyDriver = (Driver) proxyDriverInstanceObject;
             driver.register();
+            registerProxy(proxyDriver);
+        }
+        catch (ClassNotFoundException cnfe) {
+            throw new AkibanInternalException("Cannot find proxy driver class", cnfe);
+        }
+        catch (NoSuchMethodException nsme) {
+            throw new AkibanInternalException("Cannot find constructor method driver", nsme);
+        }
+        catch (IllegalAccessException iae) {
+            throw new AkibanInternalException("Cannot access proxy driver constructor", iae);
+        }
+        catch (InstantiationException ie) {
+            throw new AkibanInternalException("Cannot instantiate proxy driver", ie);
+        }
+        catch (InvocationTargetException ite){
+            throw new AkibanInternalException("Cannot instantiate proxy driver", ite);
         }
         catch (SQLException ex) {
-            throw new AkibanInternalException("Cannot register with JDBC", ex);
+            throw new AkibanInternalException("Cannot register driver with JDBC", ex);
         }
     }
 
@@ -123,9 +151,10 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
         if (driver != null) {
             try {
                 driver.deregister();
+                deregisterProxy(proxyDriver);
             }
             catch (SQLException ex) {
-                logger.warn("Cannot deregister with JDBC", ex);
+                logger.warn("Cannot deregister embedded driver with JDBC", ex);
             }
             driver = null;
         }
@@ -134,5 +163,13 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
     @Override
     public void crash() {
         stop();
+    }
+
+    private void registerProxy(Driver driver) throws SQLException {
+        DriverManager.registerDriver(driver);
+    }
+
+    private void deregisterProxy(Driver driver) throws SQLException {
+        DriverManager.deregisterDriver(driver);
     }
 }

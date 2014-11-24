@@ -17,9 +17,9 @@
 
 package com.foundationdb.server.service.routines;
 
-import com.foundationdb.server.error.ServiceStartupException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.sql.JDBCProxy.ProxyDriverImpl;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,21 +43,16 @@ public final class ScriptEngineManagerProviderImpl implements ScriptEngineManage
     
     @Override
     public void start() {
-        // TODO: The idea should be to restrict scripts to standard Java
-        // classes without the rest of the sql layer. But note
-        // java.sql.DriverManager.isDriverAllowed(), which requires that a
-        // registered driver's class by accessible to its caller by name.
-        // May need a JDBCDriver proxy just to register without putting all
-        // of com.foundationdb.sql.embedded into the parent.
         ClassLoader parentClassLoader = getClass().getClassLoader().getParent();
-
         String classPath = configService.getProperty(CLASS_PATH);
         String[] paths = classPath.split(File.pathSeparator);
-        URL[] urls = new URL[paths.length];
+        URL[] urls = new URL[paths.length+1];
         try {
             for (int i = 0; i < paths.length; i++) {
                 urls[i] = new File(paths[i]).toURI().toURL();
             }
+            // add ProxyDriverImpl source to the class loader
+            urls[paths.length] = ProxyDriverImpl.class.getProtectionDomain().getCodeSource().getLocation();
         } catch (MalformedURLException ex) {
             logger.warn("Error setting script class loader", ex);
             urls = new URL[0];
