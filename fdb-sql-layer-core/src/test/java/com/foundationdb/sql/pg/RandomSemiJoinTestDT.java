@@ -48,7 +48,7 @@ import static org.junit.Assert.assertEquals;
  * Also handles NOT IN and EXISTS and NOT EXISTS, could handle more
  *
  */
-@Ignore("Waiting until this passes most of the time")
+//@Ignore("Waiting until this passes most of the time")
 @RunWith(SelectedParameterizedRunner.class)
 public class RandomSemiJoinTestDT extends PostgresServerITBase {
 

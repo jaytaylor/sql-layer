@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule.join_enum;
 
+import com.foundationdb.ais.model.Join;
 import com.foundationdb.server.error.FailedJoinGraphCreationException;
 import com.foundationdb.sql.optimizer.plan.*;
 import static com.foundationdb.sql.optimizer.plan.JoinNode.JoinType;
@@ -51,6 +52,7 @@ public abstract class DPhyp<P>
     // The hypergraph: since these are unordered, traversal pattern is
     // to go through in order pairing with adjacent (complement bit 1).
     private long[] edges;
+    private List<Long> requiredSubgraphs;
     private int noperators, nedges;
     
     // Indexes for leaves and their constituent tables.
@@ -103,6 +105,14 @@ public abstract class DPhyp<P>
                 long ts = JoinableBitSet.of(i);
                 emitCsg(ts);
                 enumerateCsgRec(ts, JoinableBitSet.through(i));
+                for (Iterator<Long> iterator = requiredSubgraphs.iterator(); iterator.hasNext(); ) {
+                    Long requiredSubgraph = iterator.next();
+                    if (JoinableBitSet.equals(ts, JoinableBitSet.min(requiredSubgraph))) {
+                        if (getPlan(requiredSubgraph) == null) {
+                            throw new RuntimeException("Check successfully happend");
+                        }
+                    }
+                }
             }
             P plan = getPlan(plans.length-1); // One that does all the joins together.
             if (plan != null)
@@ -384,6 +394,16 @@ public abstract class DPhyp<P>
         if (whereConditions != null)
             addWhereConditions(whereConditions, visitor, JoinableBitSet.empty());
         int iop = 0;
+        requiredSubgraphs = new ArrayList<>(noperators);
+        for (JoinOperator joinOperator : operators) {
+            if (joinOperator.getJoinType().isLeftLinear()) {
+                requiredSubgraphs.add(joinOperator.rightTables);
+            // TODO this probably won't work, we'll probably need to remove all right joins before doing dphyp
+            // dphyper doesn't have any support for right linear anyways.
+            } else if (joinOperator.getJoinType().isRightLinear()) {
+                requiredSubgraphs.add(joinOperator.leftTables);
+            }
+        }
         while (iop < noperators) {
             JoinOperator op = operators.get(iop);
             if (op.allInnerJoins) {
