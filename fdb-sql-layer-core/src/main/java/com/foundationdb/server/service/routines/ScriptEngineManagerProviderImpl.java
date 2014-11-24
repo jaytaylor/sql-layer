@@ -47,20 +47,22 @@ public final class ScriptEngineManagerProviderImpl implements ScriptEngineManage
         ClassLoader parentClassLoader = getClass().getClassLoader().getParent();
         String classPath = configService.getProperty(CLASS_PATH);
         String[] paths = classPath.split(File.pathSeparator);
-        URL[] urls = new URL[paths.length + 2];
+        URL[] urls = new URL[paths.length];
         try {
             for (int i = 0; i < paths.length; i++) {
                 urls[i] = new File(paths[i]).toURI().toURL();
             }
-            // add ProxyDriverImpl source to the class loader
-            urls[paths.length ] = ProxyDriverImpl.class.getProtectionDomain().getCodeSource().getLocation();
-            urls[paths.length + 1 ] = DeregisterProxyDriverHelper.class.getProtectionDomain().getCodeSource().getLocation();
         } catch (MalformedURLException ex) {
             logger.warn("Error setting script class loader", ex);
             urls = new URL[0];
         }
-        safeClassLoader = new URLClassLoader(urls, parentClassLoader);
-        manager = new ScriptEngineManager(safeClassLoader);
+        URLClassLoader scriptEngineClassLoader = new URLClassLoader(urls, parentClassLoader);
+        manager = new ScriptEngineManager(scriptEngineClassLoader);
+
+        URL[] urlsSC = new URL[2];
+        urlsSC[0] = ProxyDriverImpl.class.getProtectionDomain().getCodeSource().getLocation();
+        urlsSC[1] = DeregisterProxyDriverHelper.class.getProtectionDomain().getCodeSource().getLocation();
+        safeClassLoader = new URLClassLoader(urlsSC, parentClassLoader);
     }
 
     @Override
