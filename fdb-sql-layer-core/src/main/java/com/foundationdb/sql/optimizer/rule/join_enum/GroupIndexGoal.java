@@ -402,18 +402,18 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     private static void setColumnsAndOrdering(SingleIndexScan index) {
         List<IndexColumn> indexColumns = index.getAllColumns();
         int ncols = indexColumns.size();
-        int firstSpatialColumn, dimensions;
+        int firstSpatialColumn, spatialColumns;
         SpecialIndexExpression.Function spatialFunction;
         if (index.getIndex().isSpatial()) {
             Index spatialIndex = index.getIndex();
             firstSpatialColumn = spatialIndex.firstSpatialArgument();
-            dimensions = spatialIndex.dimensions();
-            assert (dimensions == Spatial.LAT_LON_DIMENSIONS);
+            spatialColumns = spatialIndex.spatialColumns();
+            assert (spatialColumns == Spatial.LAT_LON_DIMENSIONS);
             spatialFunction = SpecialIndexExpression.Function.Z_ORDER_LAT_LON;
         }
         else {
             firstSpatialColumn = Integer.MAX_VALUE;
-            dimensions = 0;
+            spatialColumns = 0;
             spatialFunction = null;
         }
         List<OrderByExpression> orderBy = new ArrayList<>(ncols);
@@ -423,8 +423,8 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             ExpressionNode indexExpression;
             boolean ascending;
             if (i == firstSpatialColumn) {
-                List<ExpressionNode> operands = new ArrayList<>(dimensions);
-                for (int j = 0; j < dimensions; j++) {
+                List<ExpressionNode> operands = new ArrayList<>(spatialColumns);
+                for (int j = 0; j < spatialColumns; j++) {
                     operands.add(getIndexExpression(index, indexColumns.get(i++)));
                 }
                 indexExpression = new SpecialIndexExpression(spatialFunction, operands);

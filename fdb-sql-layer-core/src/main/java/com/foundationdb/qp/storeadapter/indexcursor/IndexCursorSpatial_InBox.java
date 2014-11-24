@@ -84,7 +84,7 @@ class IndexCursorSpatial_InBox extends IndexCursor
                                                   IndexKeyRange keyRange,
                                                   boolean openAll)
     {
-        return  new IndexCursorSpatial_InBox(context, iterationHelper, keyRange, openAll);
+        return new IndexCursorSpatial_InBox(context, iterationHelper, keyRange, openAll);
     }
 
     // For use by this class
@@ -92,21 +92,30 @@ class IndexCursorSpatial_InBox extends IndexCursor
     private IndexCursorSpatial_InBox(QueryContext context, IterationHelper iterationHelper, IndexKeyRange keyRange, boolean openAll)
     {
         super(context, iterationHelper);
-        assert keyRange.spatial();
-        this.multiCursor = new MultiCursor(openAll);
-        this.iterationHelper = iterationHelper;
         Index spatialIndex = keyRange.indexRowType().index();
+        assert spatialIndex != null : keyRange.indexRowType().index();
         assert spatialIndex.isSpatial() : spatialIndex;
         this.space = spatialIndex.space();
-        this.latColumn = spatialIndex.firstSpatialArgument();
-        this.lonColumn = latColumn + 1;
+        if (keyRange.spatialCoordsIndex()) {
+            this.firstSpatialColumn = spatialIndex.firstSpatialArgument();
+            this.lastSpatialColumn = this.firstSpatialColumn + 1;
+        } else if (keyRange.spatialObjectIndex()) {
+            this.firstSpatialColumn = spatialIndex.firstSpatialArgument();
+            this.lastSpatialColumn = this.firstSpatialColumn;
+        } else {
+            this.firstSpatialColumn = -1;
+            this.lastSpatialColumn = -1;
+            assert false;
+        }
+        this.multiCursor = new MultiCursor(openAll);
+        this.iterationHelper = iterationHelper;
         API.Ordering zOrdering = new API.Ordering();
         IndexRowType rowType = keyRange.indexRowType().physicalRowType();
         for (int f = 0; f < rowType.nFields(); f++) {
             zOrdering.append(new TPreparedField(rowType.typeAt(f), f), true);
         }
         // The index column selector needs to select all the columns before the z column, and the z column itself.
-        this.indexColumnSelector = new IndexRowPrefixSelector(this.latColumn + 1);
+        this.indexColumnSelector = new IndexRowPrefixSelector(firstSpatialColumn + 1);
         for (IndexKeyRange zKeyRange : zKeyRanges(context, keyRange)) {
             IterationHelper rowState = adapter.createIterationHelper(keyRange.indexRowType());
 
@@ -123,22 +132,20 @@ class IndexCursorSpatial_InBox extends IndexCursor
     private List<IndexKeyRange> zKeyRanges(QueryContext context, IndexKeyRange keyRange)
     {
         List<IndexKeyRange> zKeyRanges = new ArrayList<>();
-        Index index = keyRange.indexRowType().index();
         IndexBound loBound = keyRange.lo();
         IndexBound hiBound = keyRange.hi();
         ValueRecord loExpressions = loBound.boundExpressions(context, bindings);
-        ValueRecord hiExpressions = hiBound.boundExpressions(context, bindings);
-        // Only 2d, lat/lon supported for now
-        double xLo, xHi, yLo, yHi;
-        TInstance xinst = index.getAllColumns().get(latColumn).getColumn().getType();
-        TInstance yinst = index.getAllColumns().get(lonColumn).getColumn().getType();
-        xLo = TBigDecimal.getWrapper(loExpressions.value(latColumn), xinst).asBigDecimal().doubleValue();
-        xHi = TBigDecimal.getWrapper(hiExpressions.value(latColumn), xinst).asBigDecimal().doubleValue();
-        yLo = TBigDecimal.getWrapper(loExpressions.value(lonColumn), yinst).asBigDecimal().doubleValue();
-        yHi = TBigDecimal.getWrapper(hiExpressions.value(lonColumn), yinst).asBigDecimal().doubleValue();
-        SpatialObject box = BoxLatLon.newBox(xLo, xHi, yLo, yHi);
-        long[] zValues = new long[box.maxZ()];
-        space.decompose(box, zValues);
+        ValueRecord hiExpressions = hiBound == null ? null : hiBound.boundExpressions(context, bindings);
+        SpatialObject spatialObject = null;
+        if (keyRange.spatialCoordsIndex()) {
+            spatialObject = spatialObjectFromCoords(loExpressions, hiExpressions, keyRange);
+        } else if (keyRange.spatialObjectIndex()) {
+            spatialObject = spatialObject(loExpressions, keyRange);
+        } else {
+            assert false;
+        }
+        long[] zValues = new long[spatialObject.maxZ()];
+        space.decompose(spatialObject, zValues);
         for (int i = 0; i < zValues.length; i++) {
             long z = zValues[i];
             if (z != -1L) {
@@ -149,7 +156,7 @@ class IndexCursorSpatial_InBox extends IndexCursor
                 IndexBound zLo = new IndexBound(zLoRow, indexColumnSelector);
                 IndexBound zHi = new IndexBound(zHiRow, indexColumnSelector);
                 // Take care of any equality restrictions before the spatial fields
-                for (int f = 0; f < latColumn; f++) {
+                for (int f = 0; f < firstSpatialColumn; f++) {
                     ValueSource eqValueSource = loExpressions.value(f);
                     zLoRow.value(f, eqValueSource);
                     zHiRow.value(f, eqValueSource);
@@ -159,8 +166,8 @@ class IndexCursorSpatial_InBox extends IndexCursor
                 Value hiValue = new Value(InternalIndexTypes.LONG.instance(false));
                 loValue.putInt64(Space.zLo(z));
                 hiValue.putInt64(Space.zHi(z));
-                zLoRow.value(latColumn, loValue);
-                zHiRow.value(latColumn, hiValue);
+                zLoRow.value(firstSpatialColumn, loValue);
+                zHiRow.value(firstSpatialColumn, hiValue);
                 IndexKeyRange zKeyRange = IndexKeyRange.bounded(physicalRowType, zLo, true, zHi, true);
                 zKeyRanges.add(zKeyRange);
             }
@@ -168,14 +175,33 @@ class IndexCursorSpatial_InBox extends IndexCursor
         return zKeyRanges;
     }
 
-    // Class state
+    private SpatialObject spatialObjectFromCoords(ValueRecord loExpressions,
+                                                  ValueRecord hiExpressions,
+                                                  IndexKeyRange keyRange)
+    {
+        Index index = keyRange.indexRowType().index();
+        // Only 2d, lat/lon supported for now
+        double xLo, xHi, yLo, yHi;
+        TInstance xinst = index.getAllColumns().get(firstSpatialColumn).getColumn().getType();
+        TInstance yinst = index.getAllColumns().get(lastSpatialColumn).getColumn().getType();
+        xLo = TBigDecimal.getWrapper(loExpressions.value(firstSpatialColumn), xinst).asBigDecimal().doubleValue();
+        xHi = TBigDecimal.getWrapper(hiExpressions.value(firstSpatialColumn), xinst).asBigDecimal().doubleValue();
+        yLo = TBigDecimal.getWrapper(loExpressions.value(lastSpatialColumn), yinst).asBigDecimal().doubleValue();
+        yHi = TBigDecimal.getWrapper(hiExpressions.value(lastSpatialColumn), yinst).asBigDecimal().doubleValue();
+        return BoxLatLon.newBox(xLo, xHi, yLo, yHi);
+    }
+
+    private SpatialObject spatialObject(ValueRecord expressions, IndexKeyRange keyRange)
+    {
+        return (SpatialObject) expressions.value(firstSpatialColumn).getObject();
+    }
 
     // Object state
 
     private final Space space;
     private final ColumnSelector indexColumnSelector;
-    private final int latColumn;
-    private final int lonColumn;
+    private final int firstSpatialColumn;
+    private final int lastSpatialColumn;
     private final MultiCursor multiCursor;
     private final IterationHelper iterationHelper;
 }

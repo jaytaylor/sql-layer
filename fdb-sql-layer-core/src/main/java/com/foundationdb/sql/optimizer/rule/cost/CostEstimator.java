@@ -545,7 +545,7 @@ public abstract class CostEstimator implements TableRowCounts
                     break determine_type;
                 }
                 else if (column > firstSpatialColumn) {
-                    column += index.dimensions() - 1;
+                    column += index.spatialColumns() - 1;
                 }
             }
             type = index.getAllColumns().get(column).getColumn().getType();

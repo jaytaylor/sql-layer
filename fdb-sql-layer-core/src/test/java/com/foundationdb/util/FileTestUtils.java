@@ -19,10 +19,23 @@ package com.foundationdb.util;
 
 public class FileTestUtils {
 
+    private static final String SOURCE_PREFIX = "src/test/resources/";
+    private static final String TARGET_PREFIX = "target/test-classes/";
+
     public static void printClickableFile(String filename, String suffix, int lineNumber) {
         if (filename != null) {
-            System.err.println("  at " + filename.replace("src/test/resources/", "").
-                    replaceFirst("/([^/]+.)$", "($1." + suffix + ":" + lineNumber + ")").replaceAll("/", "."));
+            String relative = filename;
+            int idx = relative.indexOf(SOURCE_PREFIX);
+            if (idx >= 0) {
+                relative = relative.substring(idx + SOURCE_PREFIX.length());
+            }
+            else {
+                idx = relative.indexOf(TARGET_PREFIX);
+                if (idx >= 0) {
+                    relative = relative.substring(idx + TARGET_PREFIX.length());
+                }
+            }
+            System.err.println("  at " + relative.replaceFirst("/([^/]+.)$", "($1." + suffix + ":" + lineNumber + ")").replaceAll("/", "."));
             // for those running from maven or elsewhere
             System.err.println("  aka: " + filename + "." + suffix + ":" + lineNumber);
         } else {

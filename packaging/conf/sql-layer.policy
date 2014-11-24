@@ -1,6 +1,6 @@
-/* Policy file granting limiting the permissions for routines */
+/* Policy file limiting the permissions for routines
+   Installed version */
 
-// installation
 grant codeBase "file:${fdbsql.home}/*" {
   permission java.security.AllPermission;
 };
