@@ -21,8 +21,11 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
+import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.util.SchemaCache;
+import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
 
 public class SchemaTablesService {
@@ -55,7 +58,7 @@ public class SchemaTablesService {
         assert table != null;
         schemaManager.registerMemoryInformationSchemaTable(table, factory);
     }
-    
+
     protected void attach (Table table, BasicFactoryBase factory) {
         schemaManager.registerMemoryInformationSchemaTable(table, factory);
     }

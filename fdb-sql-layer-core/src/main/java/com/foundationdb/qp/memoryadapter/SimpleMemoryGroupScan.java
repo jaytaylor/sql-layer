@@ -17,6 +17,7 @@
 
 package com.foundationdb.qp.memoryadapter;
 
+import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.row.ValuesHolderRow;
@@ -43,12 +44,11 @@ public abstract class SimpleMemoryGroupScan<T> implements MemoryGroupCursor.Grou
         // nothing
     }
 
-    public SimpleMemoryGroupScan(MemoryAdapter adapter, TableName tableName, Iterator<? extends T> iterator) {
+    public SimpleMemoryGroupScan(AkibanInformationSchema ais, TableName tableName, Iterator<? extends T> iterator) {
         this.iterator = iterator;
-        Table table = adapter.getAIS().getTable(tableName);
-        this.rowType = SchemaCache.globalSchema(table.getAIS()).tableRowType(table);
+        Table table = ais.getTable(tableName);
+        this.rowType = SchemaCache.globalSchema(ais).tableRowType(table);
     }
-
     private final Iterator<? extends T> iterator;
     private final RowType rowType;
     private int hiddenPk = 0;

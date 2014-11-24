@@ -1328,7 +1328,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
         @Override
         public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan(getRowType(adapter));
+            return new Scan(getRowType(getSessionAIS(adapter.getSession())));
         }
 
         @Override

@@ -51,10 +51,8 @@ import java.util.Collection;
 public class MemoryAdapter extends StoreAdapter {
 
     public MemoryAdapter(Session session,
-                ConfigurationService config,
-                AkibanInformationSchema ais) {
+                ConfigurationService config) {
         super (session, config);
-        this.ais = ais;
     }
 
     public static MemoryTableFactory getMemoryTableFactory(Table table) {
@@ -77,7 +75,7 @@ public class MemoryAdapter extends StoreAdapter {
 
     @Override
     public AkibanInformationSchema getAIS() {
-        return ais;
+        throw new UnsupportedOperationException();
     }
     
     @Override
@@ -148,6 +146,4 @@ public class MemoryAdapter extends StoreAdapter {
     public KeyCreator getKeyCreator() {
         throw new UnsupportedOperationException();
     }
-
-    private final AkibanInformationSchema ais; 
 }

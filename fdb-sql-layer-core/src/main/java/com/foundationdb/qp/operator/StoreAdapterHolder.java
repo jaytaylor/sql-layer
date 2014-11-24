@@ -33,12 +33,8 @@ public class StoreAdapterHolder
 
     public void init(Session session, ConfigurationService config, Store store) {
         storeAdapter = store.createAdapter(session);
-        memoryAdapter = new MemoryAdapter(session, config, storeAdapter.getAIS());
+        memoryAdapter = new MemoryAdapter(session, config);
     }
-
-    //public Schema getSchema() {
-    //    return (storeAdapter != null) ? storeAdapter.schema() : null;
-    //}
 
     public StoreAdapter getAdapter() {
         return storeAdapter;

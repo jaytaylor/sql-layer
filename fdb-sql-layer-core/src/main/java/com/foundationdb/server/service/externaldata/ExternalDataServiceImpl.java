@@ -100,7 +100,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
 
     private StoreAdapter getAdapter(Session session, Table table) {
         if (table.hasMemoryTableFactory())
-            return new MemoryAdapter(session, configService, table.getAIS());
+            return new MemoryAdapter(session, configService);
         return store.createAdapter(session);
     }
 
