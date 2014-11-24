@@ -313,12 +313,11 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
             boolean useExists  = random.nextBoolean();
             int limitOutside = random.nextInt(MAX_OUTER_LIMIT * 10);
             TableAliasGenerator tag = new TableAliasGenerator(random);
-            TableAliasGenerator tag2 = new TableAliasGenerator(random);
             if (useExists) {
-                testOneQueryExists(buildQuery(random, useExists, true, tag), buildQuery(random, useExists, false, tag2),
+                testOneQueryExists(buildQuery(random, useExists, true, tag), buildQuery(random, useExists, false, tag),
                         limitOutside);
             } else {
-                testOneQueryIn(buildQuery(random, useExists, true, tag), buildQuery(random, useExists, false, tag2),
+                testOneQueryIn(buildQuery(random, useExists, true, tag), buildQuery(random, useExists, false, tag),
                         limitOutside);
             }
         }
