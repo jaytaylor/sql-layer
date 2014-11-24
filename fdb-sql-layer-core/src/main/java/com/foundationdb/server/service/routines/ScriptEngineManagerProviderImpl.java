@@ -20,6 +20,7 @@ package com.foundationdb.server.service.routines;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.sql.JDBCProxy.ProxyDriverImpl;
+import com.foundationdb.sql.JDBCProxy.DeregisterProxyDriverHelper;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,19 +47,19 @@ public final class ScriptEngineManagerProviderImpl implements ScriptEngineManage
         ClassLoader parentClassLoader = getClass().getClassLoader().getParent();
         String classPath = configService.getProperty(CLASS_PATH);
         String[] paths = classPath.split(File.pathSeparator);
-        URL[] urls = new URL[paths.length+1];
+        URL[] urls = new URL[paths.length + 2];
         try {
             for (int i = 0; i < paths.length; i++) {
                 urls[i] = new File(paths[i]).toURI().toURL();
             }
             // add ProxyDriverImpl source to the class loader
-            urls[paths.length] = ProxyDriverImpl.class.getProtectionDomain().getCodeSource().getLocation();
+            urls[paths.length ] = ProxyDriverImpl.class.getProtectionDomain().getCodeSource().getLocation();
+            urls[paths.length + 1 ] = DeregisterProxyDriverHelper.class.getProtectionDomain().getCodeSource().getLocation();
         } catch (MalformedURLException ex) {
             logger.warn("Error setting script class loader", ex);
             urls = new URL[0];
         }
         safeClassLoader = new URLClassLoader(urls, parentClassLoader);
-        
         manager = new ScriptEngineManager(safeClassLoader);
     }
 
