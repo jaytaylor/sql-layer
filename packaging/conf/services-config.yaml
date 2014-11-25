@@ -10,6 +10,7 @@
     - com.foundationdb.server.service.is.BasicInfoSchemaTablesService
     - com.foundationdb.server.service.is.ServerSchemaTablesService
     - com.foundationdb.server.types.service.TypesRegistrySchemaTablesService
+# Plugins
     - com.foundationdb.rest.RestService
 # Uncomment for a simple UI
 #    - com.foundationdb.sql.ui.SwingConsoleService

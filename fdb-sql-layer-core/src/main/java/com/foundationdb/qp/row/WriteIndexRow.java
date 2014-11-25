@@ -145,7 +145,7 @@ public class WriteIndexRow extends AbstractRow {
         this.iValue = value;
         this.index = index;
         if (index.isSpatial()) {
-            this.pKeyFields = index.getAllColumns().size() - index.dimensions() + 1;
+            this.pKeyFields = index.getAllColumns().size() - index.spatialColumns() + 1;
         } else {
             this.pKeyFields = index.getAllColumns().size();
         }

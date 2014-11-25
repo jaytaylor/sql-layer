@@ -36,7 +36,7 @@ public class DummySecurityService implements SecurityService {
     }
 
     @Override
-    public boolean isAccessible(javax.servlet.http.HttpServletRequest request, String schema) {
+    public boolean isAccessible(java.security.Principal user, boolean inAdminRole, String schema) {
         return true;
     }
 

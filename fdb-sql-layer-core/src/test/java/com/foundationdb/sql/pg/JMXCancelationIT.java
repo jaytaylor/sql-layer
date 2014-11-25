@@ -18,6 +18,7 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.sql.test.JMXInterpreter;
 
 import org.junit.After;
 import org.junit.Before;

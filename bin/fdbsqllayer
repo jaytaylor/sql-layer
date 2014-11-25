@@ -221,6 +221,17 @@ launch_service()
     fdbsql_parms="$fdbsql_parms $SEC_MAN $POLICY_FILE"
 
     CLASSPATH=$JAR_FILE:$JAR_RF_FILE:$DEP_DIR/*
+
+    for pj in ${FDBSQL_HOME}/plugins/*.jar; do
+        if [ -e "$pj" ]; then
+            CLASSPATH=$CLASSPATH:$pj
+            pd=${pj%.jar}
+            if [ -d "${pd}" ]; then
+                CLASSPATH=$CLASSPATH:${pd}/*
+            fi
+        fi
+    done
+
     main_class="com.foundationdb.sql.Main"
     if [ -n "$mode" ]; then
         if [ "$mode" == "window" ]; then

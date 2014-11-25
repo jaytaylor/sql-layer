@@ -19,6 +19,7 @@ package com.foundationdb.server.types.value;
 
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.collation.AkCollator;
+import com.foundationdb.server.spatial.Spatial;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
@@ -34,6 +35,8 @@ import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.util.ByteSource;
 import com.foundationdb.util.WrappingByteSource;
+import com.geophile.z.SpatialObject;
+import com.geophile.z.spatialobject.jts.JTSSpatialObject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -271,6 +274,10 @@ public final class ValueSources {
         else if (object instanceof Byte) {
             type = MNumeric.TINYINT.instance(false);
             value = new Value(type, (Byte)object);
+        }
+        else if (object instanceof SpatialObject) {
+            type = MBinary.BLOB.instance(false);
+            value = new Value(type, Spatial.serialize((JTSSpatialObject) object));
         }
         else {
             throw new UnsupportedOperationException("can't convert " + object + " of type " + object.getClass());

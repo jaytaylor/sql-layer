@@ -18,6 +18,7 @@
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.ais.model.Table;
+import com.foundationdb.util.Debug;
 
 public abstract class ExecutionBase
 {
@@ -45,5 +46,5 @@ public abstract class ExecutionBase
 
     protected static final boolean LOG_EXECUTION = false;
     protected static final boolean TAP_NEXT_ENABLED = false;
-    public static final boolean CURSOR_LIFECYCLE_ENABLED = false;
+    public static final boolean CURSOR_LIFECYCLE_ENABLED = Debug.isOn("cursor_lifecycle");
 }

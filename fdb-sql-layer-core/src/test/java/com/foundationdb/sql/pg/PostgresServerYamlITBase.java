@@ -17,13 +17,15 @@
 
 package com.foundationdb.sql.pg;
 
+import com.foundationdb.sql.test.YamlTester;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.URL;
 
 /**
  * A base class for integration tests that use data from YAML files to specify the input and output expected from calls
@@ -39,12 +41,14 @@ public class PostgresServerYamlITBase extends PostgresServerITBase
     protected boolean isRandomCost(){
         return false;
     }
-    /** Run a test with YAML input from the specified file. */
-    protected void testYaml(File file) throws Exception {
-        LOG.debug("File: {}", file);
+
+    /** Run a test with YAML input from the specified URL. */
+    protected void testYaml(URL url) throws Exception {
+        LOG.debug("URL: {}", url);
         Throwable thrown = null;
-        try(Reader in = new InputStreamReader(new FileInputStream(file), "UTF-8")) {
-            new YamlTester(file.toString(), in, getConnection(), isRandomCost()).test();
+        try(Reader in = new InputStreamReader(url.openStream(), "UTF-8")) {
+            new YamlTester(url, in, getConnection(), isRandomCost())
+                .test();
             LOG.debug("Test passed");
         } catch(Exception | AssertionError e) {
             thrown = e;
@@ -60,4 +64,5 @@ public class PostgresServerYamlITBase extends PostgresServerITBase
             }
         }
     }
+
 }

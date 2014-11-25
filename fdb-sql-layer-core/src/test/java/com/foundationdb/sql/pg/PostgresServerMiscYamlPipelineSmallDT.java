@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.pg;
 
-import java.io.File;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,8 +30,8 @@ public class PostgresServerMiscYamlPipelineSmallDT extends PostgresServerMiscYam
                                                         "fdbsql.pipeline.unionAll.openBoth=true",
                                                         "fdbsql.pipeline.selectBloomFilter.enabled=true"};
 
-    public PostgresServerMiscYamlPipelineSmallDT(String caseName, File file) {
-        super(caseName, file);
+    public PostgresServerMiscYamlPipelineSmallDT(String caseName, URL url) {
+        super(caseName, url);
     }
     
     @Override

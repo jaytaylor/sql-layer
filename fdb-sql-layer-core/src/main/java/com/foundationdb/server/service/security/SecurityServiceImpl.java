@@ -38,8 +38,6 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.http.HttpServletRequest;
-
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -79,14 +77,14 @@ public class SecurityServiceImpl implements SecurityService, Service {
     public static final String DELETE_USER_USER_ROLES_SQL = "DELETE FROM user_roles WHERE user_id IN (SELECT id FROM users WHERE name = ?)";
     
     public static final String RESTRICT_USER_SCHEMA_PROPERTY = "fdbsql.restrict_user_schema";
-    public static final String HTTP_REALM_PROPERTY = "fdbsql.http.realm"; // See also HttpConductorImpl
+    public static final String SECURITY_REALM_PROPERTY = "fdbsql.security.realm"; // See also HttpConductorImpl
 
     private final ConfigurationService configService;
     private final SchemaManager schemaManager;
     private final MonitorService monitor;
 
     private boolean restrictUserSchema;
-    private String httpRealm;
+    private String securityRealm;
 
     private static final Logger logger = LoggerFactory.getLogger(SecurityServiceImpl.class);
 
@@ -401,7 +399,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             md.update(user.getBytes("UTF-8"));
-            md.update((":" + httpRealm + ":").getBytes("UTF-8"));
+            md.update((":" + securityRealm + ":").getBytes("UTF-8"));
             md.update(password.getBytes("UTF-8"));
             return formatMD5(md.digest(), true);
         }
@@ -488,7 +486,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
     }
 
     @Override
-    /** If this request is authenticated, does it have access to the given schema?
+    /** If this request user is authenticated, does it have access to the given schema?
      *
      * NOTE: If authentication is enabled, caller must not call this (that is, allow
      * any queries) without authentication, since that is indistinguishable from
@@ -496,10 +494,10 @@ public class SecurityServiceImpl implements SecurityService, Service {
      *
      * @see com.foundationdb.http.HttpConductorImpl.AuthenticationType
      */
-    public boolean isAccessible(HttpServletRequest request, String schema) {
-        Principal user = request.getUserPrincipal();
+    public boolean isAccessible(Principal user, boolean inAdminRole, String schema) {
         if (user == null) return true; // Authentication disabled.
-        return isAccessible(user.getName(), schema) || request.isUserInRole(ADMIN_ROLE);
+        if (inAdminRole) return true;
+        return isAccessible(user.getName(), schema);
     }
 
     protected boolean isAccessible(String user, String schema) {
@@ -524,7 +522,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
     @Override
     public void start() {
         restrictUserSchema = Boolean.parseBoolean(configService.getProperty(RESTRICT_USER_SCHEMA_PROPERTY));
-        httpRealm = configService.getProperty(HTTP_REALM_PROPERTY);
+        securityRealm = configService.getProperty(SECURITY_REALM_PROPERTY);
         registerSystemObjects();
         if (restrictUserSchema) {
             schemaManager.setSecurityService(this); // Injection would be circular.
