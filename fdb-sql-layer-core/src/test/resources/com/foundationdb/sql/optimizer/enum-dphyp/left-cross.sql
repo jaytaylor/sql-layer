@@ -6,6 +6,6 @@
 SELECT ta0.c1
 FROM t2 AS ta0
 LEFT OUTER JOIN
-(t1 JOIN t2 ON ta0.c1 = t1.c3)
+(t1 JOIN t3 ON ta0.c1 = t1.c3)
 ON ta0.c2 = t1.c1
 

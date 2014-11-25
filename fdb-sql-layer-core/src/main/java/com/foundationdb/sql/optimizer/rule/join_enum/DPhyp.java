@@ -102,15 +102,13 @@ public abstract class DPhyp<P>
                 setPlan(bitset, evaluateTable(bitset, tables.get(i)));
             }
             for (int i = ntables - 1; i >= 0; i--) {
-                long ts = JoinableBitSet.of(i);
-                emitCsg(ts);
-                enumerateCsgRec(ts, JoinableBitSet.through(i));
-                for (Iterator<Long> iterator = requiredSubgraphs.iterator(); iterator.hasNext(); ) {
-                    Long requiredSubgraph = iterator.next();
-                    if (JoinableBitSet.equals(ts, JoinableBitSet.min(requiredSubgraph))) {
-                        if (getPlan(requiredSubgraph) == null) {
-                            throw new RuntimeException("Check successfully happend");
-                        }
+                // Like the outer loop, two passes here, should work.
+                for (int j=0; j < 2; j++) {
+                    if (emitAndEnumerateCsg(i)) {
+                        break;
+                    }
+                    if (j > 0) {
+                        throw new FailedJoinGraphCreationException();
                     }
                 }
             }
@@ -136,6 +134,23 @@ public abstract class DPhyp<P>
             Arrays.fill(plans, null);
         }
         return null;
+    }
+
+    public boolean emitAndEnumerateCsg(int i) {
+        boolean retVal = true;
+        long ts = JoinableBitSet.of(i);
+        emitCsg(ts);
+        enumerateCsgRec(ts, JoinableBitSet.through(i));
+        for (Iterator<Long> iterator = requiredSubgraphs.iterator(); iterator.hasNext(); ) {
+            Long requiredSubgraph = iterator.next();
+            if (JoinableBitSet.equals(ts, JoinableBitSet.minSubset(requiredSubgraph))) {
+                if (getPlan(requiredSubgraph) == null) {
+                    addExtraEdges(requiredSubgraph);
+                    retVal = false;
+                }
+            }
+        }
+        return retVal;
     }
 
     /** Recursively extend the given connected subgraph. */
@@ -396,6 +411,7 @@ public abstract class DPhyp<P>
         int iop = 0;
         requiredSubgraphs = new ArrayList<>(noperators);
         for (JoinOperator joinOperator : operators) {
+            // TODO don't add rightTables if  rightTables is only one table
             if (joinOperator.getJoinType().isLeftLinear()) {
                 requiredSubgraphs.add(joinOperator.rightTables);
             // TODO this probably won't work, we'll probably need to remove all right joins before doing dphyp
@@ -948,12 +964,15 @@ public abstract class DPhyp<P>
         }
     }
     
-    /** Add edges to make the hypergraph connected, using the stuck state. */
-    protected void addExtraEdges() {
+    /**
+     * Add edges to make the hypergraph connected, using the stuck state.
+     * @param maxGraph Will only add extra edges to connect up the maxGraph
+     */
+    protected void addExtraEdges(long maxGraph) {
         // Get all the hypernodes that are not subsets of some filled hypernode.
         BitSet maximal = new BitSet(plans.length);
         for (int i = 0; i < plans.length; i++) {
-            if (plans[i] != null) {
+            if (plans[i] != null && JoinableBitSet.isSubset(i,maxGraph)) {
                 maximal.set(i);
             }
         }
@@ -994,6 +1013,11 @@ public abstract class DPhyp<P>
             }
         }
         assert (noperators == operators.size());
+    }
+
+
+    private void addExtraEdges() {
+        addExtraEdges(plans.length-1);
     }
 
     protected void addExtraEdge(long left, long right) {
