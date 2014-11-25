@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.sql.pg;
+package com.foundationdb.qp.loadableplan.std;
 
 import com.foundationdb.qp.loadableplan.DirectObjectCursor;
 import com.foundationdb.qp.loadableplan.DirectObjectPlan;
@@ -30,6 +30,7 @@ import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.sql.TestBase;
+import com.foundationdb.sql.embedded.EmbeddedJDBCITBase;
 
 import com.foundationdb.junit.NamedParameterizedRunner;
 import com.foundationdb.junit.Parameterization;
@@ -45,7 +46,7 @@ import java.util.Collection;
 import java.util.List;
 
 @RunWith(NamedParameterizedRunner.class)
-public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
+public class DumpGroupLoadablePlanIT extends EmbeddedJDBCITBase
 {
     public static final File RESOURCE_DIR = 
         new File("src/test/resources/"

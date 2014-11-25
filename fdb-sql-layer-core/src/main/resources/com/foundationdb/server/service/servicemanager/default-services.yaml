@@ -6,7 +6,6 @@
     com.foundationdb.server.service.log4jconfig.Log4JConfigurationService : com.foundationdb.server.service.log4jconfig.Log4JConfigurationServiceImpl
     com.foundationdb.server.service.session.SessionService : com.foundationdb.server.service.session.SessionServiceImpl
     com.foundationdb.server.service.stats.StatisticsService : com.foundationdb.server.service.stats.StatisticsServiceImpl
-    com.foundationdb.sql.pg.PostgresService : com.foundationdb.sql.pg.PostgresServerManager
     com.foundationdb.server.service.monitor.MonitorService : com.foundationdb.server.service.monitor.MonitorServiceImpl
     com.foundationdb.server.service.is.BasicInfoSchemaTablesService : com.foundationdb.server.service.is.BasicInfoSchemaTablesServiceImpl
     com.foundationdb.sql.ui.SwingConsoleService : com.foundationdb.sql.ui.SwingConsoleServiceImpl

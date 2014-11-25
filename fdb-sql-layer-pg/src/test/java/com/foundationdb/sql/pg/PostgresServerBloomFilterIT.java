@@ -39,10 +39,11 @@ import java.util.concurrent.Callable;
  * on the perceived row counts on each side of the join
  */
 
-public class PostgresServerBloomFilterIT extends PostgresServerITBase{
+public class PostgresServerBloomFilterIT extends PostgresServerFilesITBase
+{
 
-    private static final String DIRECTORY_LOCATION = "src/test/resources/com/foundationdb/sql/optimizer/operator/coi-index/";
-    private static final String STATS_FILE = DIRECTORY_LOCATION + "stats.yaml";
+    private static final String RESOURCE_LOCATION = "com/foundationdb/sql/optimizer/operator/coi-index/";
+    private static final String STATS_FILE = RESOURCE_LOCATION + "stats.yaml";
     private static final String SQL = "SELECT items.sku FROM items, categories WHERE items.sku = categories.sku AND categories.cat = 1 ORDER BY items.sku";
     Connection connection;
 
@@ -69,19 +70,17 @@ public class PostgresServerBloomFilterIT extends PostgresServerITBase{
     }
 
     @Before
-    public void setup() throws Exception{
+    public void setup() throws Exception {
         connection = getConnection();
         for(String sqlStatement : SCHEMA_SETUP) {
             connection.createStatement().execute(sqlStatement);
         }
+        final File file = copyResourceToTempFile("/" + STATS_FILE);
         txnService().run(session(), new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                File file = new File(STATS_FILE);
-                if (file.exists()) {
-                    IndexStatisticsService service = serviceManager().getServiceByClass(IndexStatisticsService.class);
-                    service.loadIndexStatistics(session(), SCHEMA_NAME, file);
-                }
+                IndexStatisticsService service = serviceManager().getServiceByClass(IndexStatisticsService.class);
+                service.loadIndexStatistics(session(), SCHEMA_NAME, file);
                 return null;
             }
         });
