@@ -30,11 +30,11 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.File;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Connection;
@@ -56,14 +56,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Map;
 import java.util.regex.Pattern;
 
 import com.foundationdb.server.error.ErrorCode;
-import com.foundationdb.sql.jdbc.jdbc4.Jdbc4Connection;
 import com.foundationdb.util.Strings;
 import org.junit.ComparisonFailure;
 import org.slf4j.Logger;
@@ -756,9 +754,6 @@ public class YamlTester
             }
             assertNull("The output_types attribute must not appear more than once", outputTypes);
             outputTypes = nonEmptyStringSequence(value, "output_types value");
-            for(String typeName : outputTypes) {
-                assertNotNull("Unknown type name in output_types: " + typeName, getTypeNumber(typeName));
-            }
         }
 
         private void parseExplain(Object value) {
@@ -1545,14 +1540,12 @@ public class YamlTester
     }
   
     private Integer getTypeNumber(String typeName) {
-        if (connection instanceof Jdbc4Connection)
-            try {
-                return ((Jdbc4Connection) connection).getTypeInfo().getSQLType(typeName);
-            } catch (SQLException e) {
-                throw new AssertionError("Unable to retrieve type number");
-            }
-        else
-            throw new AssertionError("connection is no JDBC4Connection");
+        try {
+            Field f = java.sql.Types.class.getDeclaredField(typeName.toUpperCase());
+            return f.getInt(null);
+        } catch(NoSuchFieldException | IllegalAccessException e) {
+            throw new AssertionError("Unable to get java.sql.Types named: " + typeName, e);
+        }
     }
 
     /** An assertion error that includes context information. */
