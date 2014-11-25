@@ -37,7 +37,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.JoinColumn;

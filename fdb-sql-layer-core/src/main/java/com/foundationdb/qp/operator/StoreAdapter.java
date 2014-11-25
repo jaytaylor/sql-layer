@@ -57,11 +57,18 @@ public abstract class StoreAdapter
     }
 
     public abstract RowCursor newIndexCursor(QueryContext context,
-                                             Index index,
-                                             IndexKeyRange keyRange,
+                                             IndexRowType rowType,
+                                             IndexKeyRange keyRange, 
                                              API.Ordering ordering,
                                              IndexScanSelector scanSelector,
                                              boolean openAllSubCursors);
+    
+    //public abstract RowCursor newIndexCursor(QueryContext context,
+    //                                         Index index,
+    //                                         IndexKeyRange keyRange,
+    //                                         API.Ordering ordering,
+    //                                         IndexScanSelector scanSelector,
+    //                                        boolean openAllSubCursors);
 
     public abstract void updateRow(Row oldRow, Row newRow);
 

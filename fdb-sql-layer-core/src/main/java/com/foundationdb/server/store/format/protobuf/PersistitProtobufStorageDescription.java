@@ -23,6 +23,7 @@ import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.CommonProtobuf.ProtobufRowFormat;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.PersistitStore;
@@ -117,7 +118,7 @@ public class PersistitProtobufStorageDescription extends PersistitStorageDescrip
 
     @Override 
     public Row expandRow (PersistitStore store, Session session, 
-                            Exchange exchange) {
+                            Exchange exchange, Schema schema) {
         throw new UnsupportedOperationException();
     }
     

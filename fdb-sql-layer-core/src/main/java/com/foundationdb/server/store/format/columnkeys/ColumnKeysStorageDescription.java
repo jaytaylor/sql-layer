@@ -174,11 +174,10 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
     @Override 
     @SuppressWarnings("unchecked")
     public Row expandRow(FDBStore store, Session session, 
-                            FDBStoreData storeData) {
+                            FDBStoreData storeData, Schema schema) {
         Map<String,Object> value = (Map<String,Object>)storeData.otherValue;
         
         Table table = TupleStorageDescription.tableFromOrdinals((Group)object, storeData);
-        Schema schema = SchemaCache.globalSchema(store.getAIS(session));
         RowType rowType = schema.tableRowType(table);
         int nfields = rowType.nFields();
         Object[] objects = new Object[nfields];

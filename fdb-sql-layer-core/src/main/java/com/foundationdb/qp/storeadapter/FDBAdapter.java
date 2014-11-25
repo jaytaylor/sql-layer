@@ -20,7 +20,6 @@ package com.foundationdb.qp.storeadapter;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
-import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.qp.expression.IndexKeyRange;
@@ -34,12 +33,10 @@ import com.foundationdb.qp.storeadapter.indexcursor.IterationHelper;
 import com.foundationdb.qp.storeadapter.indexcursor.MergeJoinSorter;
 import com.foundationdb.qp.storeadapter.indexrow.IndexRowPool;
 import com.foundationdb.qp.storeadapter.indexrow.FDBIndexRow;
-import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.FDBAdapterException;
@@ -84,20 +81,19 @@ public class FDBAdapter extends StoreAdapter {
 
     @Override
     public RowCursor newIndexCursor(QueryContext context,
-                                    Index index,
-                                    IndexKeyRange keyRange,
+                                    IndexRowType rowType,
+                                    IndexKeyRange keyRange, 
                                     API.Ordering ordering,
                                     IndexScanSelector scanSelector,
                                     boolean openAllSubCursors) {
-        IndexRowType rowType = SchemaCache.globalSchema(getAIS()).indexRowType(index);
         return new PersistitIndexCursor(context,
-                                        rowType,
-                                        keyRange,
-                                        ordering,
-                                        scanSelector,
-                                        openAllSubCursors);
+                rowType,
+                keyRange,
+                ordering,
+                scanSelector,
+                openAllSubCursors);
     }
-
+    
     @Override
     public void updateRow(Row oldRow, Row newRow) {
         try {

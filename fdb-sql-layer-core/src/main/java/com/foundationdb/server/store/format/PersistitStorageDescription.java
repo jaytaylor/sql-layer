@@ -24,6 +24,7 @@ import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.PersistitProtobuf;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.storeadapter.RowDataCreator;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.NiceRow;
@@ -153,7 +154,7 @@ public class PersistitStorageDescription extends StoreStorageDescription<Persist
     
     @Override
     public Row expandRow (PersistitStore store, Session session,
-                            Exchange exchange) {
+                            Exchange exchange, Schema schema) {
 
         try {
             throw new UnsupportedOperationException ();

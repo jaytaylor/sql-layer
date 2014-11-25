@@ -982,8 +982,8 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
 
     /** Expand row data according to storage format. */
     @SuppressWarnings("unchecked")
-    public Row expandRow (Session session, SDType storeData) {
-        return getStorageDescription(storeData).expandRow((SType)this, session, storeData);
+    public Row expandRow (Session session, SDType storeData, com.foundationdb.qp.rowtype.Schema schema) {
+        return getStorageDescription(storeData).expandRow((SType)this, session, storeData, schema);
     }
     @SuppressWarnings("unchecked")
     public void expandRowData(Session session, SDType storeData, RowData rowData) {
@@ -997,7 +997,6 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     public TypesRegistryService getTypesRegistry() {
         return typesRegistryService;
     }
-    
     
 
     //

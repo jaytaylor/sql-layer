@@ -105,7 +105,6 @@ public class AlterTableBasicIT extends AlterTableITBase {
     }
 
     private void scanAndCheckIndex(IndexRowType type, Row... expectedRows) {
-        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         StoreAdapter adapter = newStoreAdapter();
         QueryContext queryContext = new SimpleQueryContext(adapter);
         QueryBindings queryBindings = queryContext.createBindings();

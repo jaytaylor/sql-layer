@@ -598,8 +598,8 @@ public class OnlineHelper implements RowListener
         if(groupIndexes.isEmpty()) {
             return;
         }
-        Schema schema = SchemaCache.globalSchema(store.getAIS(session));
         for(final GroupIndex groupIndex : groupIndexes) {
+            Schema schema = SchemaCache.globalSchema(groupIndex.getAIS());
             final Operator plan = StoreGIMaintenancePlans.groupIndexCreationPlan(schema, groupIndex);
             final StoreGIHandler giHandler = StoreGIHandler.forBuilding((AbstractStore)store, session, schema, groupIndex);
             runPlan(session, contextIfNull(context, adapter), schemaManager, txnService, plan, new RowHandler() {

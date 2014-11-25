@@ -23,6 +23,8 @@ import com.foundationdb.qp.operator.RowCursorImpl;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
@@ -30,6 +32,7 @@ import com.foundationdb.util.tap.Tap;
 public class FDBGroupCursor extends RowCursorImpl implements GroupCursor {
     private final FDBAdapter adapter;
     private final FDBStoreData storeData;
+    private final Schema schema;
     private HKey hKey;
     private boolean hKeyDeep;
     private GroupScan groupScan;
@@ -42,6 +45,7 @@ public class FDBGroupCursor extends RowCursorImpl implements GroupCursor {
         this.adapter = adapter;
         this.storeData = adapter.getUnderlyingStore()
             .createStoreData(adapter.getSession(), group);
+        this.schema = SchemaCache.globalSchema(group.getAIS());
     }
 
     public FDBGroupCursor(FDBAdapter adapter, Group group, int commitFrequency) {
@@ -79,8 +83,10 @@ public class FDBGroupCursor extends RowCursorImpl implements GroupCursor {
             groupScan.advance();
             next = isActive();
             if (next) {
-                Row tempRow = adapter.getUnderlyingStore().expandGroupData(adapter.getSession(), storeData);
-                row = new FDBGroupRow(adapter.getKeyCreator(), tempRow, storeData.persistitKey);
+                Row tempRow = adapter.getUnderlyingStore().expandGroupData(adapter.getSession(), storeData, schema);
+                if (tempRow != null) {
+                    row = new FDBGroupRow(adapter.getKeyCreator(), tempRow, storeData.persistitKey);
+                }
             }
         }
         return row;

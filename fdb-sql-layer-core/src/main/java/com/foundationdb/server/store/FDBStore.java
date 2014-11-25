@@ -22,7 +22,6 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.Table;
@@ -35,8 +34,8 @@ import com.foundationdb.directory.PathUtil;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.WriteIndexRow;
-import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.qp.storeadapter.indexrow.FDBIndexRow;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.server.error.DuplicateKeyException;
@@ -612,9 +611,9 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         }
     }
 
-    public Row expandGroupData(Session session, FDBStoreData storeData) {
+    public Row expandGroupData(Session session, FDBStoreData storeData, Schema schema) {
         unpackKey(storeData);
-        return expandRow(session, storeData);
+        return expandRow(session, storeData, schema);
     }
     
     public void expandGroupData(Session session, FDBStoreData storeData, RowData rowData) {

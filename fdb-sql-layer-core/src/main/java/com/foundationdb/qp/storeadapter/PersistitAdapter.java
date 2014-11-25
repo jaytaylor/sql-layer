@@ -25,7 +25,6 @@ import com.foundationdb.qp.storeadapter.indexcursor.MergeJoinSorter;
 import com.foundationdb.qp.storeadapter.indexrow.IndexRowPool;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitGroupIndexRow;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitTableIndexRow;
-import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
@@ -76,16 +75,18 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public RowCursor newIndexCursor(QueryContext context, Index index, IndexKeyRange keyRange, API.Ordering ordering,
-                                    IndexScanSelector selector, boolean openAllSubCursors)
-    {
-        IndexRowType indexRowType = SchemaCache.globalSchema(getAIS()).indexRowType(index);
+    public RowCursor newIndexCursor(QueryContext context,
+                                    IndexRowType rowType,
+                                    IndexKeyRange keyRange, 
+                                    API.Ordering ordering,
+                                    IndexScanSelector scanSelector,
+                                    boolean openAllSubCursors) {
         return new PersistitIndexCursor(context,
-                                        indexRowType,
-                                        keyRange,
-                                        ordering,
-                                        selector,
-                                        openAllSubCursors);
+                rowType,
+                keyRange,
+                ordering,
+                scanSelector,
+                openAllSubCursors);
     }
 
     @Override

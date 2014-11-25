@@ -160,7 +160,7 @@ public final class OperatorTestHelper {
 
         @Override
         public Cursor newIndexCursor(QueryContext context,
-                                     Index index,
+                                     IndexRowType indexType,
                                      IndexKeyRange keyRange,
                                      API.Ordering ordering,
                                      IndexScanSelector selector,

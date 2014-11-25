@@ -32,7 +32,6 @@ import com.foundationdb.ais.protobuf.FDBProtobuf;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
 import com.foundationdb.server.rowdata.RowData;
@@ -49,8 +48,13 @@ import com.persistit.KeyShim;
 import java.util.Collections;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class TupleStorageDescription extends FDBStorageDescription
 {
+    private static final Logger LOG = LoggerFactory.getLogger(TupleStorageDescription.class);
+
     private TupleUsage usage;
 
     public TupleStorageDescription(HasStorage forObject, String storageFormat) {
@@ -270,15 +274,16 @@ public class TupleStorageDescription extends FDBStorageDescription
     
     @Override
     public Row expandRow(FDBStore store, Session session, 
-                            FDBStoreData storeData) {
+                            FDBStoreData storeData, Schema schema) {
         if (usage == TupleUsage.KEY_AND_ROW) {
             Tuple2 tuple = Tuple2.fromBytes(storeData.rawValue);
             Table table = tableFromOrdinals((Group)object, storeData);
-            Schema schema = SchemaCache.globalSchema(store.getAIS(session));
             RowType rowType = schema.tableRowType(table);
-            return TupleRowDataConverter.tupleToRow(tuple, rowType);
+            
+            Row row = TupleRowDataConverter.tupleToRow(tuple, rowType);
+            return row; 
         } else {
-            return super.expandRow(store, session, storeData);
+            return super.expandRow(store, session, storeData, schema);
         }
     }
     

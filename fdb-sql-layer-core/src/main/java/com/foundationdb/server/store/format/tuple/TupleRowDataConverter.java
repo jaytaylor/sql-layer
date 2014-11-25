@@ -49,8 +49,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class TupleRowDataConverter
 {
+    private static final Logger LOG = LoggerFactory.getLogger(TupleRowDataConverter.class);
+
     static final Set<TClass> ALLOWED_CLASSES = new HashSet<>(Arrays.asList(
         MNumeric.BIGINT, MNumeric.BIGINT_UNSIGNED, MNumeric.INT, MNumeric.INT_UNSIGNED,
         MNumeric.MEDIUMINT, MNumeric.MEDIUMINT_UNSIGNED, MNumeric.SMALLINT,
@@ -128,8 +133,8 @@ public class TupleRowDataConverter
 
     public static Row tupleToRow (Tuple2 tuple, RowType rowType) {
         int nfields = rowType.nFields();
-        assert tuple.size() == nfields : "Tuple Size: " + tuple.size() + " != RowType size: " + nfields;
         Object[] objects = new Object[nfields];
+        assert tuple.size() == nfields : "Row Type " + rowType + " does not match tuple size: " + tuple.size();
         for (int i = 0; i < nfields; i++) {
             objects[i] = tuple.get(i);
         }

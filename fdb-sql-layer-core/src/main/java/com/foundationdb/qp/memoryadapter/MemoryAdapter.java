@@ -20,7 +20,6 @@ package com.foundationdb.qp.memoryadapter;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
-import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
@@ -84,7 +83,7 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
-    public RowCursor newIndexCursor(QueryContext context, Index index,
+    public RowCursor newIndexCursor(QueryContext context, IndexRowType indexType,
             IndexKeyRange keyRange, Ordering ordering,
             IndexScanSelector scanSelector, boolean openAllSubCursors) {
         throw new UnsupportedOperationException();
