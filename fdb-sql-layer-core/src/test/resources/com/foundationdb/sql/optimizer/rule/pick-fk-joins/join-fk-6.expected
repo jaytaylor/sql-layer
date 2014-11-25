@@ -2,11 +2,11 @@ SelectQuery@6c69bdbf
   ResultSet@12287e34[name, name, serial_number]
     Project@2075913c[zoo.name, mother.name, animal.serial_number]
       Select@6920aca[]
-        JoinNode@26fc1552(INNER/NESTED_LOOPS[zoo.id == animal.zoo_id])
-          TableGroupJoinTree@4d74683e(TableGroup@5d78424c(zoo), zoo - GroupScan@6fdbce7c(Group(test.zoo), rows = 1, cost = 1.00000))
-            TableSource@13b2c0db(zoo - TableGroup@5d78424c(zoo))
-          JoinNode@15cefb77(INNER/NESTED_LOOPS[animal.description == Lizard, mother.id == animal.mother_id])
-            TableGroupJoinTree@57e41c04(TableGroup@248bb85(animal), animal - GroupScan@47df4cd0(Group(test.animal), rows = 1, cost = 1.82000))
-              TableSource@37ae4ad4(animal - TableGroup@a3b0e2c(animal))
-            TableGroupJoinTree@7be07643(TableGroup@750f19ee(parent), mother - SingleIndexScan@7ff2a3d6(Index(test.parent.name[IndexColumn(name)]), covering/NONE, rows = 1, cost = 8.81100))
-              TableSource@74a27c32(mother - TableGroup@750f19ee(parent))
+        JoinNode@26fc1552(INNER/NESTED_LOOPS[animal.description == Lizard, mother.id == animal.mother_id, zoo.id == animal.zoo_id])
+          TableGroupJoinTree@4d74683e(TableGroup@5d78424c(animal), animal - GroupScan@6fdbce7c(Group(test.animal), rows = 1, cost = 1.82000))
+            TableSource@13b2c0db(animal - TableGroup@5d78424c(animal))
+          JoinNode@15cefb77(INNER/NESTED_LOOPS)
+            TableGroupJoinTree@57e41c04(TableGroup@248bb85(parent), mother - SingleIndexScan@47df4cd0(Index(test.parent.name[IndexColumn(name)]), covering/NONE, rows = 1, cost = 7.17100))
+              TableSource@37ae4ad4(mother - TableGroup@a3b0e2c(parent))
+            TableGroupJoinTree@7be07643(TableGroup@750f19ee(zoo), zoo - GroupScan@7ff2a3d6(Group(test.zoo), rows = 1, cost = 1.00000))
+              TableSource@74a27c32(zoo - TableGroup@750f19ee(zoo))
