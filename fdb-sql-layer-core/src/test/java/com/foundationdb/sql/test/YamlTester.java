@@ -212,14 +212,6 @@ public class YamlTester
     private static final int DEFAULT_RETRY_COUNT = 5;
     private int lineNumber = 1;
 
-    /**
-     * Creates an instance of this class.
-     *
-     * @param sourceURL  the source of the YAML input
-     * @param in         the YAML input
-     * @param connection the JDBC connection
-     * @param randomCost randomize cost calculations
-     */
     public YamlTester(Reader in, Connection connection) {
         this(null, in, connection, false);
     }
@@ -289,9 +281,7 @@ public class YamlTester
             if(commandNumber == 0) {
                 fail("Test file must not be empty");
             }
-        } catch(ContextAssertionError e) {
-            throw e;
-        } catch (FullOutputAssertionError e) {
+        } catch(ContextAssertionError | FullOutputAssertionError e) {
             throw e;
         } catch(Throwable e) {
             // Add context
@@ -1315,7 +1305,7 @@ public class YamlTester
         @Override
         public boolean compareExpected(Object actual) {
             boolean result = pattern.matcher(String.valueOf(actual)).matches();
-            LOG.debug("Regexp.compareExpected pattern='{}', actual='{}' => '{}'", new Object[]{pattern, actual, result});
+            LOG.debug("Regexp.compareExpected pattern='{}', actual='{}' => '{}'", pattern, actual, result);
             return result;
         }
 
@@ -1483,7 +1473,7 @@ public class YamlTester
                     fail("The value of the UTF8Bytes tag must be a scalar");
                 }
                 try {
-                    return ((ScalarNode)node).getValue().toString().getBytes("UTF-8");
+                    return ((ScalarNode)node).getValue().getBytes("UTF-8");
                 }
                 catch (UnsupportedEncodingException ex) {
                     throw new RuntimeException(ex);
