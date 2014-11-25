@@ -37,11 +37,13 @@ public interface PlanNode extends PlanElement
 
     class SummaryConfiguration {
         public final boolean includeRowTypes;
+        public final boolean includeIndexTableNames;
 
-        public SummaryConfiguration(boolean includeRowTypes) {
+        public SummaryConfiguration(boolean includeRowTypes, boolean includeIndexTableNames) {
             this.includeRowTypes = includeRowTypes;
+            this.includeIndexTableNames = includeIndexTableNames;
         }
 
-        public static final SummaryConfiguration DEFAULT = new SummaryConfiguration(false);
+        public static final SummaryConfiguration DEFAULT = new SummaryConfiguration(false, false);
     }
 }
