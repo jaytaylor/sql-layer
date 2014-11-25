@@ -60,7 +60,6 @@ import com.foundationdb.server.types.common.types.TBinary;
 import com.foundationdb.server.types.common.types.TypeValidator;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistry;
-import com.foundationdb.sql.pg.PostgresType;
 import com.google.common.collect.Iterators;
 import com.google.inject.Inject;
 
@@ -104,6 +103,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
     private final SecurityService securityService;
     private final ScriptEngineManagerProvider scriptEngineManagerProvider;
+    private PostgresTypeMapper postgresTypeMapper = null;
 
     @Inject
     public BasicInfoSchemaTablesServiceImpl(SchemaManager schemaManager,
@@ -128,6 +128,11 @@ public class BasicInfoSchemaTablesServiceImpl
     @Override
     public void crash() {
         // Nothing
+    }
+
+    @Override
+    public void setPostgresTypeMapper(PostgresTypeMapper postgresTypeMapper) {
+        this.postgresTypeMapper = postgresTypeMapper;
     }
 
     protected boolean isAccessible(Session session, String schemaName) {
@@ -1744,8 +1749,11 @@ public class BasicInfoSchemaTablesServiceImpl
                 } while (!TypeValidator.isSupportedForColumn(tClass));
                 
                 boolean indexable = TypeValidator.isSupportedForIndex(tClass);
-                TInstance type = tClass.instance(true);
-                PostgresType pgType = PostgresType.fromTInstance(type);
+                Long pgType = null;
+                if (postgresTypeMapper != null) {
+                    TInstance type = tClass.instance(true);
+                    pgType = postgresTypeMapper.getOid(type);
+                }
                 
                 String bundle = tClass.name().bundleId().name();
                 String category = tClass.name().categoryName();
@@ -1776,7 +1784,7 @@ public class BasicInfoSchemaTablesServiceImpl
                         attribute2,
                         attribute3,
                         size,
-                        (long)pgType.getOid(),
+                        pgType,
                         (long)jdbcTypeID,
                         boolResult(indexable),
                         ++rowCounter);

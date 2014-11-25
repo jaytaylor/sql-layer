@@ -89,10 +89,11 @@ build_sql_layer() {
     pushd .
     cd "${TOP_DIR}"
     mvn_package
-    mkdir -p "${1}" "${2}"/{server,plugins,fdb-sql-layer-routinefw}
-    cp "${TOP_DIR}/bin/fdbsqllayer" "${1}/"
+    mkdir -p "${1}" "${2}"/{server,fdb-sql-layer-routinefw}
+    cp "bin/fdbsqllayer" "${1}/"
     cp "fdb-sql-layer-core/target/${LAYER_JAR_NAME}" "${2}/"
     cp fdb-sql-layer-core/target/dependency/* "${2}/server/"
+    cp -R plugins "${2}/"
     cp "fdb-sql-layer-routinefw/target/${RF_JAR_NAME}" "${2}/fdb-sql-layer-routinefw/"
     popd
 }

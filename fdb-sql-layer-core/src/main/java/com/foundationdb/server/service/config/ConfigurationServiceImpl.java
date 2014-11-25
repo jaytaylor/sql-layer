@@ -21,7 +21,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -34,8 +36,6 @@ import com.foundationdb.server.error.ConfigurationPropertiesLoadException;
 import com.foundationdb.server.error.ServiceNotStartedException;
 import com.foundationdb.server.error.ServiceStartupException;
 import com.foundationdb.server.service.Service;
-import com.foundationdb.server.service.plugins.Plugin;
-import com.foundationdb.server.service.plugins.PluginsFinder;
 import com.foundationdb.util.tap.Tap;
 import com.google.inject.Inject;
 
@@ -48,14 +48,12 @@ public class ConfigurationServiceImpl implements ConfigurationService, Service {
     public static final String SERVER_PROPERTIES_FILE_NAME = "server.properties";
 
     private volatile Map<String,String> properties = null;
-    private final PluginsFinder pluginsFinder;
     private final Set<String> requiredKeys = new HashSet<>();
 
     private volatile long queryTimeoutMilli = -1L; // No timeout
 
     @Inject
-    public ConfigurationServiceImpl(PluginsFinder pluginsFinder) {
-        this.pluginsFinder = pluginsFinder;
+    public ConfigurationServiceImpl() {
     }
 
     @Override
@@ -174,19 +172,10 @@ public class ConfigurationServiceImpl implements ConfigurationService, Service {
         Properties props = null;
 
         props = loadResourceProperties(props);
-        for (Plugin plugin : pluginsFinder.get()) {
-            props = loadPluginProperties(props, plugin);
-        }
         props = loadSystemProperties(props);
         props = loadConfigDirProperties(props);
 
         return propertiesToMap(props);
-    }
-
-    private Properties loadPluginProperties(Properties mergeInto, Plugin plugin) {
-        Properties pluginProperties = plugin.readProperties();
-        mergeInto.putAll(pluginProperties);
-        return mergeInto;
     }
 
     /**
@@ -217,10 +206,22 @@ public class ConfigurationServiceImpl implements ConfigurationService, Service {
 
     private Properties loadResourceProperties(Properties defaults) {
         Properties resourceProps = chainProperties(defaults);
-        try (InputStream resourceIs = ConfigurationServiceImpl.class.getResourceAsStream(CONFIG_DEFAULTS_RESOURCE)) {
-            resourceProps.load(resourceIs);
-        } catch (IOException e) {
-            throw new ConfigurationPropertiesLoadException(CONFIG_DEFAULTS_RESOURCE, e.getMessage());
+
+        String resourceName = ConfigurationServiceImpl.class.getPackage().getName().replace(".", "/") + "/" + CONFIG_DEFAULTS_RESOURCE;
+        Enumeration<URL> e;
+        try {
+            e = ConfigurationServiceImpl.class.getClassLoader().getResources(resourceName);
+        }
+        catch (IOException ex) {
+            throw new ConfigurationPropertiesLoadException(CONFIG_DEFAULTS_RESOURCE, ex.getMessage());
+        }
+        while (e.hasMoreElements()) {
+            URL source = e.nextElement();
+            try (InputStream resourceIs = source.openStream()) {
+                resourceProps.load(resourceIs);
+            } catch (IOException ex) {
+                throw new ConfigurationPropertiesLoadException(source.toString(), ex.getMessage());
+            }
         }
         stripRequiredProperties(resourceProps, requiredKeys);
         return resourceProps;

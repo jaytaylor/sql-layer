@@ -33,6 +33,7 @@ CALL:findJarFile "%FDBSQL_HOME%\sql\lib"
 SET DEP_DIR=%FDBSQL_HOME%\sql\lib\server
 SET FDBSQL_HOME_DIR=%FDBSQL_HOME%\sql
 SET FDBSQL_RFDIR=%FDBSQL_HOME%\sql\lib\fdb-sql-layer-routinefw
+SET FDBSQL_PLUGINS=%FDBSQL_HOME%\sql\lib\plugins
 @REM Replaced during install
 SET FDBSQL_CONF=${confdir}
 SET FDBSQL_LOGDIR=${logdir}
@@ -65,6 +66,7 @@ SET FDBSQL_CONF=%BUILD_HOME%\conf
 SET FDBSQL_LOGDIR=\tmp\fdbsqllayer
 SET FDBSQL_HOME_DIR=%BUILD_HOME%\fdb-sql-layer-core\target
 SET FDBSQL_RFDIR=%BUILD_HOME%\fdb-sql-layer-routinefw\target
+SET FDBSQL_PLUGINS=%BUILD_HOME%\plugins
 SET FDBSQL_POLICY_LOC=%FDBSQL_CONF%\sql-layer.policy
 SET PRUNSRV=prunsrv
 SET PRUNMGR=prunmgr
@@ -129,6 +131,11 @@ IF NOT EXIST "%DEP_DIR%" (
 )
 
 SET CLASSPATH=%JAR_FILE%;%DEP_DIR%\*;%FDBSQL_RFDIR%\*
+
+FOR %%J IN ("%FDBSQL_PLUGINS%\*.jar") DO (
+  SET CLASSPATH=!CLASSPATH!;%%J
+  IF EXIST %%~dpnJ\ SET CLASSPATH=!CLASSPATH!;%%~dpnJ\*
+)
 
 IF "%VERB%"=="version" GOTO VERSION
 
