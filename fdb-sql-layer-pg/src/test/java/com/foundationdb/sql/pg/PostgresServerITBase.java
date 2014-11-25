@@ -56,8 +56,7 @@ public class PostgresServerITBase extends ITBase
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
-                .bindAndRequire(BasicInfoSchemaTablesService.class, BasicInfoSchemaTablesServiceImpl.class)
-                .bindAndRequire(PostgresService.class, PostgresServerManager.class);
+            .require(PostgresService.class);
     }
 
     @Override

@@ -22,7 +22,6 @@ import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.text.FullTextIndexService;
 import com.foundationdb.server.service.text.FullTextIndexServiceImpl;
 import com.foundationdb.sql.embedded.EmbeddedJDBCService;
-import com.foundationdb.sql.embedded.EmbeddedJDBCServiceImpl;
 import com.foundationdb.sql.test.YamlTestFinder;
 
 import java.net.URL;
@@ -48,8 +47,9 @@ public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase
 
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
+        // Get embedded JDBC and substitute working full text.
         return super.serviceBindingsProvider()
-                .bindAndRequire(EmbeddedJDBCService.class, EmbeddedJDBCServiceImpl.class)
+                .require(EmbeddedJDBCService.class)
                 .bindAndRequire(FullTextIndexService.class, FullTextIndexServiceImpl.class);
     }
 

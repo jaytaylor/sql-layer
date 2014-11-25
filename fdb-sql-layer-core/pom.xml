@@ -106,12 +106,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.foundationdb</groupId>
-            <artifactId>fdb-sql-layer-jdbc</artifactId>
-            <version>2.1-0-jdbc41-SNAPSHOT</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
             <version>2.3</version>
@@ -169,13 +163,6 @@
             <groupId>com.foundationdb</groupId>
             <artifactId>fdb-java</artifactId>
             <version>2.0.8</version>
-        </dependency>
-        <dependency>
-            <groupId>com.foundationdb</groupId>
-            <artifactId>fdb-sql-layer-test-yaml</artifactId>
-            <version>2.1.0-SNAPSHOT</version>
-            <type>test-jar</type>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 

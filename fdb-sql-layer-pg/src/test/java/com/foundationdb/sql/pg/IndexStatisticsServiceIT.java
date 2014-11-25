@@ -32,7 +32,7 @@ import java.util.concurrent.Callable;
 public class IndexStatisticsServiceIT extends PostgresServerFilesITBase
 {
     public static final File DB_DIR = IndexStatisticsLifecycleIT.RESOURCE_DIR;
-    public static final File YAML_FILE = new File(IndexStatisticsYamlTest.RESOURCE_DIR, "stats.yaml");
+    public static final String YAML_FILE = IndexStatisticsYamlTest.class.getPackage().getName().replace('.', '/') + "/" + "stats.yaml";
     
     private IndexStatisticsService service;
 
@@ -48,14 +48,15 @@ public class IndexStatisticsServiceIT extends PostgresServerFilesITBase
     
     @Test
     public void testLoadDump() throws Exception {
-        
+        final File yamlFile = copyResourceToTempFile("/" + YAML_FILE);
+
         // The index statistics are now snapshot reads, meaning
         // you can no longer do an insert and read in the same
         // transaction. 
         transactionallyUnchecked(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                Load();
+                Load(yamlFile);
                 return null;
             }
         });
@@ -64,24 +65,24 @@ public class IndexStatisticsServiceIT extends PostgresServerFilesITBase
         transactionallyUnchecked(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                Dump();
+                Dump(yamlFile);
                 return null;
             }
         });
     }
 
-    public void Load() throws Exception {
-        service.loadIndexStatistics(session(), SCHEMA_NAME, YAML_FILE);
+    public void Load(File yamlFile) throws Exception {
+        service.loadIndexStatistics(session(), SCHEMA_NAME, yamlFile);
         service.clearCache();
     }
 
-    public void Dump() throws Exception {
+    public void Dump(File yamlFile) throws Exception {
         File tempFile = File.createTempFile("stats", ".yaml");
         tempFile.deleteOnExit();
         StringWriter tempWriter = new StringWriter();
         service.dumpIndexStatistics(session(), SCHEMA_NAME, tempWriter);
         assertEquals("dump matches load", 
-                     fileContents(YAML_FILE).replace("\r", ""),
+                     fileContents(yamlFile).replace("\r", ""),
                 tempWriter.toString().replace("\r", ""));
     }
 

@@ -128,7 +128,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
 
     @Override
     public void start() {
-        options.set(FormatOptions.JsonBinaryFormatOption.fromProperty(this.configurationService.getProperty("fdbsql.postgres.jsonbinary_output")));
+        options.set(FormatOptions.JsonBinaryFormatOption.fromProperty(this.configurationService.getProperty("fdbsql.sql.jsonbinary_output")));
     }
 
     @Override

@@ -55,6 +55,7 @@ import javax.security.auth.login.LoginException;
  * Also keeps global state for shutdown and inter-connection communication like cancel.
 */
 public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
+    public static final String COMMON_PROPERTIES_PREFIX = "fdbsql.sql.";
     public static final String SERVER_PROPERTIES_PREFIX = "fdbsql.postgres.";
     protected static final String SERVER_TYPE = "Postgres";
     private static final String THREAD_NAME_PREFIX = "PostgresServer_Accept-"; // Port is appended
@@ -93,7 +94,8 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
 
     public PostgresServer(ServerServiceRequirements reqs) {
         this.reqs = reqs;
-        properties = reqs.config().deriveProperties(SERVER_PROPERTIES_PREFIX);
+        properties = reqs.config().deriveProperties(COMMON_PROPERTIES_PREFIX);
+        properties.putAll(reqs.config().deriveProperties(SERVER_PROPERTIES_PREFIX));
 
         String portString = properties.getProperty("port");
         port = Integer.parseInt(portString);
