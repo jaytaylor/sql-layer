@@ -270,7 +270,6 @@ public abstract class DPhyp<P>
         if (join12 != null)
             plan = evaluateJoin(s1, p1, s2, p2, s, plan, 
                                 join12, evaluateOperators, outsideOperators);
-        // TODO why don't we try a right join here, that should be the opposite of left join
         if (join21 != null)
             plan = evaluateJoin(s2, p2, s1, p1, s, plan, 
                                 join21, evaluateOperators, outsideOperators);
