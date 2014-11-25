@@ -32,11 +32,13 @@
       <module>fdb-sql-layer-routinefw</module>
       <module>fdb-sql-layer-test-yaml</module>
       <module>fdb-sql-layer-core</module>
+      <module>fdb-sql-layer-rest</module>
     </modules>
 
     <properties>
          <main.basedir>${project.basedir}</main.basedir>
          <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
 
     <build>
