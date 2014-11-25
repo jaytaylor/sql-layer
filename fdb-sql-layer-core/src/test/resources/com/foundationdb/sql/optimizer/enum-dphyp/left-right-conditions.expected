@@ -1,1 +1,0 @@
-(t1 LEFT JOIN t2 ON t1.c2 == t2.c2) RIGHT JOIN t3 ON t1.c1 == t2.c1 AND t2.c2 == t3.c2

@@ -18,6 +18,7 @@
 package com.foundationdb.sql.optimizer.rule.join_enum;
 
 import com.foundationdb.ais.model.Join;
+import com.foundationdb.server.error.CorruptedPlanException;
 import com.foundationdb.server.error.FailedJoinGraphCreationException;
 import com.foundationdb.sql.optimizer.plan.*;
 import static com.foundationdb.sql.optimizer.plan.JoinNode.JoinType;
@@ -607,6 +608,9 @@ public abstract class DPhyp<P>
         if (n instanceof JoinNode) {
             JoinNode join = (JoinNode)n;
             JoinOperator op = new JoinOperator(join);
+            if (op.getJoinType() == JoinType.RIGHT) {
+                throw new CorruptedPlanException("RIGHT OUTER JOIN was not converted to LEFT OUTER JOIN before dphyp");
+            }
             Joinable left = join.getLeft();
             JoinOperator leftOp = initSES(left, visitor);
             boolean childAllInnerJoins = false;
@@ -701,8 +705,6 @@ public abstract class DPhyp<P>
         case FULL_OUTER:
             return (o2 == JoinType.INNER);
         case RIGHT:
-            // TODO is this true that there should be no right joins. Perhaps the contract
-            // needs more clarification
             assert false;       // Should not see right join at this point.
         default:
             return true;
