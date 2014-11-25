@@ -264,6 +264,18 @@ public class CachingCursorTest
             return null;
         }
 
+        @Override
+        public boolean blindUpdates()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean stableRecords()
+        {
+            return true;
+        }
+
         List<TestRecord> records = new ArrayList<>();
     }
 

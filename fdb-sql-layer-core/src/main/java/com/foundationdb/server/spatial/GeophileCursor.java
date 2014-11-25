@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.spatial;
 
+import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.storeadapter.indexcursor.IndexCursor;
 import com.geophile.z.Cursor;
@@ -43,17 +44,11 @@ public class GeophileCursor extends Cursor<Row>
     }
 
     @Override
-    public Row previous() throws IOException, InterruptedException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void goTo(Row key) throws IOException, InterruptedException
     {
         long z = key.z();
         currentCursor = cursors.get(z);
-        assert currentCursor != null : z;
+        assert currentCursor != null : SpaceImpl.formatZ(z);
         if (!openEarly) {
             currentCursor.open(); // open is idempotent
         }
@@ -80,6 +75,13 @@ public class GeophileCursor extends Cursor<Row>
             cachingCursor.open();
         }
         cursors.put(z, cachingCursor);
+    }
+
+    public void rebind(QueryBindings bindings)
+    {
+        for (CachingCursor cursor : cursors.values()) {
+            cursor.rebind(bindings);
+        }
     }
 
     public void close()

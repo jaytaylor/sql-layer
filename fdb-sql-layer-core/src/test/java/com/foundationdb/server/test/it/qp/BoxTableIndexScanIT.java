@@ -120,22 +120,6 @@ public class BoxTableIndexScanIT extends OperatorITBase
     public void testLoadAndRemove()
     {
         loadDB();
-/*
-        {
-            System.out.println("Index dump");
-            Operator plan = indexScan_Default(boxBlobIndexRowType);
-            Cursor cursor = cursor(plan, queryContext, queryBindings);
-            try {
-                cursor.openTopLevel();
-                Row row;
-                while ((row = cursor.next()) != null) {
-                    System.out.format("    %s\n", row);
-                }
-            } finally {
-                cursor.closeTopLevel();
-            }
-        }
-*/
         {
             // Delete rows with odd ids
             for (int id = 1; id < nIds; id += 2) {
@@ -202,40 +186,26 @@ public class BoxTableIndexScanIT extends OperatorITBase
         }
     }
 
-    @Ignore
     @Test
     public void testSpatialQueryLatLon()
     {
         loadDB();
+        // dumpIndex();
         final int QUERIES = 100;
-        double latLo;
-        double latHi;
-        double lonLo;
-        double lonHi;
         for (int q = 0; q < QUERIES; q++) {
-            latLo = randomLat();
-            latHi = randomLat();
-            if (latLo > latHi) {
-                double swap = latLo;
-                latLo = latHi;
-                latHi = swap;
-            }
-            lonLo = randomLon();
-            lonHi = randomLon();
-            if (lonLo > lonHi) {
-                double swap = lonLo;
-                lonLo = lonHi;
-                lonHi = swap;
-            }
+            JTSSpatialObject queryBox = randomBox();
             // Get the right answer
             Set<Integer> expected = new HashSet<>();
-            JTSSpatialObject queryBox = box(latLo, latHi, lonLo, lonHi);
             System.out.format("Query %d: %s\n", q, queryBox);
+/*
             System.out.println("    Expected:");
+*/
             for (int id = 0; id < boxes.size(); id++) {
                 if (boxes.get(id).geometry().overlaps(queryBox.geometry())) {
                     expected.add(id);
+/*
                     System.out.format("        %d: %s\n", id, boxes.get(id));
+*/
                 }
             }
             // Get the query result using the box_blob index
@@ -247,11 +217,15 @@ public class BoxTableIndexScanIT extends OperatorITBase
             Cursor cursor = API.cursor(plan, queryContext, queryBindings);
             cursor.openTopLevel();
             Row row;
+/*
             System.out.println("    Actual:");
+*/
             while ((row = cursor.next()) != null) {
                 int id = getLong(row, 1).intValue();
                 actual.add(id);
+/*
                 System.out.format("        %d: %s\n", id, boxes.get(id));
+*/
             }
             // There should be no false negatives
             assertTrue(actual.containsAll(expected));
@@ -356,14 +330,20 @@ public class BoxTableIndexScanIT extends OperatorITBase
         return a;
     }
 
-    private double randomLat()
+    private void dumpIndex()
     {
-        return random.nextDouble() * LAT_RANGE + LAT_LO;
-    }
-
-    private double randomLon()
-    {
-        return random.nextDouble() * LON_RANGE + LON_LO;
+        System.out.println("Index dump");
+        Operator plan = indexScan_Default(boxBlobIndexRowType);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
+        try {
+            cursor.openTopLevel();
+            Row row;
+            while ((row = cursor.next()) != null) {
+                System.out.format("    %s\n", row);
+            }
+        } finally {
+            cursor.closeTopLevel();
+        }
     }
 
     private static final int LAT_LO = -90;
@@ -374,8 +354,8 @@ public class BoxTableIndexScanIT extends OperatorITBase
     private static final int LON_RANGE = LON_HI - LON_LO;
     private static final int DLAT = 10;
     private static final int DLON = 10;
-    private static final int BOX_WIDTH = 15; // Overlapping boxes, because it exceends DLAT, DLON.
-    private static final int QUERY_WIDTH = 30; // Overlapping boxes, because it exceends DLAT, DLON.
+    private static final int BOX_WIDTH = 15; // Overlapping boxes, because it exceeds DLAT, DLON.
+    private static final int QUERY_WIDTH = 30;
     private static final GeometryFactory FACTORY = new GeometryFactory();
 
     private int boxTable;
@@ -389,5 +369,5 @@ public class BoxTableIndexScanIT extends OperatorITBase
     private ZToIdMapping zToId = new ZToIdMapping();
     List<JTSSpatialObject> boxes = new ArrayList<>();
     private int nIds;
-    Random random = new Random(123456);
+    Random random = new Random(1234567);
 }

@@ -55,6 +55,18 @@ public class GeophileIndex extends Index<Row>
         return adapter.takeIndexRow(indexRowType);
     }
 
+    @Override
+    public boolean blindUpdates()
+    {
+        return false;
+    }
+
+    @Override
+    public boolean stableRecords()
+    {
+        return true;
+    }
+
     // GeophileIndex interface
 
     public GeophileIndex(StoreAdapter adapter, IndexRowType indexRowType, CursorFactory cursorFactory)

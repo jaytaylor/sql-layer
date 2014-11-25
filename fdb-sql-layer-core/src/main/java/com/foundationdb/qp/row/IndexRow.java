@@ -21,6 +21,7 @@ import com.foundationdb.ais.model.Index;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.server.types.TInstance;
 import com.geophile.z.Record;
+import com.geophile.z.Space;
 import com.persistit.Key;
 import com.persistit.Value;
 
@@ -71,6 +72,19 @@ public abstract class IndexRow extends AbstractRow implements com.geophile.z.Rec
     @Override
     public final long z()
     {
+        long z;
+        // this.z is set only for a query object. If it hasn't been set, then we have an index row
+        // that really does have a z-value.
+        if (this.z == Space.Z_NULL) {
+            if (zPosition == -1) {
+                Index index = rowType().index();
+                assert index.isSpatial() : index;
+                zPosition = index.firstSpatialArgument();
+            }
+            z = this.uncheckedValue(zPosition).getInt64();
+        } else {
+            z = this.z;
+        }
         return z;
     }
 
@@ -83,9 +97,8 @@ public abstract class IndexRow extends AbstractRow implements com.geophile.z.Rec
     @Override
     public final void copyTo(Record record)
     {
-        assert false;
+        throw new UnsupportedOperationException();
     }
-
 
     // TODO: Remove these as we get rid of the Key use in the upper layers
     
@@ -96,7 +109,8 @@ public abstract class IndexRow extends AbstractRow implements com.geophile.z.Rec
     // This is a z-value written to an IndexRow created by Geophile for doing a random access during
     // a spatial join. It is NOT reflected in the actual row state. This obviously won't work if
     // spatial index maintenance is done via Geophile's Index.add/remove API.
-    private long z;
+    private long z = Space.Z_NULL;
+    private int zPosition;
 
     public static enum EdgeValue {
         BEFORE,

@@ -17,8 +17,9 @@
 
 package com.foundationdb.server.spatial;
 
+import com.foundationdb.qp.operator.BindingsAwareCursor;
 import com.foundationdb.qp.operator.CursorBase;
-import com.foundationdb.qp.operator.RowOrientedCursorBase;
+import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.geophile.z.space.SpaceImpl;
@@ -28,7 +29,7 @@ import com.geophile.z.space.SpaceImpl;
 // CACHE_SIZE = 1. Geophile may do a random access, then probe the same key as an ancestor
 // (retrieving one record), and then probe it again to prepare for sequential accesses.
 
-public class CachingCursor implements RowOrientedCursorBase<Row>
+public class CachingCursor implements BindingsAwareCursor
 {
     // CursorBase interface
 
@@ -84,6 +85,16 @@ public class CachingCursor implements RowOrientedCursorBase<Row>
     {
         input.setIdle();
     }
+
+    // BindingsAwareCursor interface
+
+    @Override
+    public void rebind(QueryBindings bindings)
+    {
+        assert input instanceof BindingsAwareCursor;
+        ((BindingsAwareCursor) input).rebind(bindings);
+    }
+
 
     // RowOrientedCursorBase interface
 
