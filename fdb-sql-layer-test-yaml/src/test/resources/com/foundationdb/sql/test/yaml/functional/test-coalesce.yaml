@@ -220,7 +220,7 @@
 
 ---
 - Statement: SELECT COALESCE(bigint_field, integer_field, decimal_field) FROM all_types;
-- output_types: [NUMERIC]
+- output_types: [DECIMAL]
 
 ---
 - Statement: SELECT COALESCE(bigint_field, double_field, decimal_field) FROM all_types;

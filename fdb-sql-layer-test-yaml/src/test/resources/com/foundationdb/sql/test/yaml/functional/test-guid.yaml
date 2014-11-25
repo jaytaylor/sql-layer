@@ -46,10 +46,10 @@
 # enable use as function
 
 - Statement: SELECT CREATE_RANDOM_GUID()
-- output_types: [OTHER]
+- output_types: [GUID]
 ---
 - Statement: INSERT INTO t VALUES ( CREATE_RANDOM_GUID() )
 ---
 - Statement: SELECT * FROM t
-- output_types: [OTHER]
+- output_types: [GUID]
 ...

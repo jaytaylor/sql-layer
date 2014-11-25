@@ -8,6 +8,6 @@
 - Statement: INSERT INTO t VALUES(X'010203')
 ---
 - Statement: SELECT * FROM t
-- output_types: !select-engine { it: [VARBINARY], all: [BLOB] }
+- output_types: !select-engine { it: [VARCHAR FOR BIT DATA], all: [BLOB] }
 - output: [[!!binary 'AQID']]
 ...
