@@ -414,13 +414,13 @@ public abstract class DPhyp<P>
         int iop = 0;
         requiredSubgraphs = new ArrayList<>(noperators);
         for (JoinOperator joinOperator : operators) {
-            // TODO don't add rightTables if  rightTables is only one table
-            if (joinOperator.getJoinType().isLeftLinear()) {
-                requiredSubgraphs.add(joinOperator.rightTables);
-            // TODO this probably won't work, we'll probably need to remove all right joins before doing dphyp
-            // dphyper doesn't have any support for right linear anyways.
-            } else if (joinOperator.getJoinType().isRightLinear()) {
-                requiredSubgraphs.add(joinOperator.leftTables);
+            if (!joinOperator.getJoinType().isRightLinear()) {
+                if (JoinableBitSet.count(joinOperator.rightTables) > 1) {
+                    requiredSubgraphs.add(joinOperator.rightTables);
+                }
+            } else if (!joinOperator.getJoinType().isLeftLinear()) {
+                // must be a right join
+                throw new CorruptedPlanException("RIGHT OUTER JOIN was not converted to LEFT OUTER JOIN before dphyp");
             }
         }
         while (iop < noperators) {
