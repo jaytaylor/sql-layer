@@ -21,6 +21,7 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.qp.rowtype.RowType;
 import com.geophile.z.Record;
+import com.foundationdb.util.Debug;
 
 public interface Row extends ValueRecord
 {
@@ -30,7 +31,7 @@ public interface Row extends ValueRecord
      * value examined. Generally speaking the rest of the code does a good enough job that
      * this is rare at best, but it can act as a canary for bigger problems.
      */
-    final boolean DEBUG_ROWTYPE = Boolean.getBoolean("fdbsql.test.debug_rowtype");
+    final boolean DEBUG_ROWTYPE = Debug.isOn("row_type");
 
     RowType rowType();
     HKey hKey();

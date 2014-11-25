@@ -17,5 +17,12 @@
 
 package com.foundationdb.server.service.is;
 
+import com.foundationdb.server.types.TInstance;
+
 public interface BasicInfoSchemaTablesService {
+    public interface PostgresTypeMapper {
+        public long getOid(TInstance type);
+    }
+
+    public void setPostgresTypeMapper(PostgresTypeMapper postgresTypeMapper);
 }
