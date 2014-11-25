@@ -52,6 +52,7 @@ public abstract class DPhyp<P>
     // The hypergraph: since these are unordered, traversal pattern is
     // to go through in order pairing with adjacent (complement bit 1).
     private long[] edges;
+    // TODO change this to long[] like edges
     private List<Long> requiredSubgraphs;
     private int noperators, nedges;
     
@@ -268,6 +269,7 @@ public abstract class DPhyp<P>
         if (join12 != null)
             plan = evaluateJoin(s1, p1, s2, p2, s, plan, 
                                 join12, evaluateOperators, outsideOperators);
+        // TODO why don't we try a right join here, that should be the opposite of left join
         if (join21 != null)
             plan = evaluateJoin(s2, p2, s1, p1, s, plan, 
                                 join21, evaluateOperators, outsideOperators);
@@ -656,7 +658,7 @@ public abstract class DPhyp<P>
             calcTES(op.right);
             addConflicts(op, op.left, true);
             addConflicts(op, op.right, false);
-            long r = JoinableBitSet.intersection(op.tes, op.rightTables);
+            long r = op.rightTables;
             long l = JoinableBitSet.difference(op.tes, r);
             int o = operators.size();
             operators.add(op);
@@ -699,6 +701,8 @@ public abstract class DPhyp<P>
         case FULL_OUTER:
             return (o2 == JoinType.INNER);
         case RIGHT:
+            // TODO is this true that there should be no right joins. Perhaps the contract
+            // needs more clarification
             assert false;       // Should not see right join at this point.
         default:
             return true;
