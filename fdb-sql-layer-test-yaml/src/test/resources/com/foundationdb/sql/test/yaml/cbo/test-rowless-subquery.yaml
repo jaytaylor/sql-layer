@@ -4,9 +4,6 @@
 - suppressed: true
 
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - Include: all-schema.yaml
 ---
 - Statement: SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY; 

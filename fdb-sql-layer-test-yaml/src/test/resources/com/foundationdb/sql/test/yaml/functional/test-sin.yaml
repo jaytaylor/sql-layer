@@ -5,7 +5,7 @@
 # No args
 ---
 - Statement: SELECT SIN() FROM all_types
-- error: !select-engine { all: [4250C], sys-mysql: [1582] }
+- error: [4250C]
 
 # Null and standard numeric values
 ---

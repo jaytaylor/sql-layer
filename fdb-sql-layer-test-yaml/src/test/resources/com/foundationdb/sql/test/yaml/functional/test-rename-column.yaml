@@ -1,8 +1,5 @@
 # test simple rename (on non-index columns)
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - CreateTable: t (a int NOT NULL PRIMARY KEY, c double, b double)
 ---
 - Statement: INSERT INTO t VALUES (1, 5, 2.0), (3, 9, 4.0), (0, 13, 6.0);

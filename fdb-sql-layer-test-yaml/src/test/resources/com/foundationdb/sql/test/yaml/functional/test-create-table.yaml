@@ -1,8 +1,5 @@
 # Test creating tables
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 # Test supported types
 
 - Include: all-types-schema.yaml

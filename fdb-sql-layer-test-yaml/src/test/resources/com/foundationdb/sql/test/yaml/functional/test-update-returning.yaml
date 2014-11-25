@@ -1,8 +1,5 @@
 # Test inserting into tables
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (bigint_field) VALUES (0), (1), (-1),

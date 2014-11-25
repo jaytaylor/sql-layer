@@ -22,10 +22,10 @@
 - output: [['abcabc']]
 ---
 - Statement: SELECT CONCAT_WS();
-- error: !select-engine {all: [4250C], sys-mysql: [1582] }
+- error: [4250C]
 ---
 - Statement: SELECT CONCAT_WS('a');
-- error: !select-engine { all: [4250C], sys-mysql: [1582] }
+- error: [4250C]
 ---
 - Statement: explain VERBOSE select CONCAT_WS( CAST(? AS CHAR(1)), 'abc%' )
 - output: [['Project_Default(CONCAT_WS(CAST($1 AS VARCHAR(4)), ''abc%''))'],

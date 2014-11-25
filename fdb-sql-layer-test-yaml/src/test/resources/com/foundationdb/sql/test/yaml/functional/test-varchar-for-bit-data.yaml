@@ -1,8 +1,5 @@
 # Test varchar for bit data, alias for varbinary
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - CreateTable: t (varchar_for_bit_data_field varchar(32) for bit data)
 ---
 - Statement: INSERT INTO t VALUES(X'010203')

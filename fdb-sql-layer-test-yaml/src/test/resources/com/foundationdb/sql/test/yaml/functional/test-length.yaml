@@ -28,8 +28,8 @@
 - output: [[1], [1], [1], [1], [1]]
 --- # test wrong arity: empty llist
 - Statement: SELECT LENGTH() from all_types;
-- error: !select-engine { all: [42000], sys-mysql: [1582] }
+- error: [42000]
 --- # test wrong arity: extraneous arg
 - Statement: SELECT LENGTH('abc', 'def') from all_types;
-- error: !select-engine { all: [42000], sys-mysql: [1582] }
+- error: [42000]
 ...

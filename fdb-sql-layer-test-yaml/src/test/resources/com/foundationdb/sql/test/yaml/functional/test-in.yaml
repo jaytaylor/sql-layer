@@ -13,7 +13,7 @@
     (-9223372036854775808, 3.0)
 ---
 - Statement: SELECT bigint_field FROM all_types WHERE bigint_field IN ()
-- error: !select-engine { all: [42000], sys-mysql: [1064] } 
+- error: [42000]
 ---
 - Statement: SELECT bigint_field FROM all_types WHERE bigint_field IN (0)
 - output: [[0]]
@@ -53,7 +53,7 @@
 ---
 - Statement: SELECT bigint_unsigned_field FROM all_types
     WHERE bigint_unsigned_field IN ()
-- error: !select-engine { all: [42000], sys-mysql: [1064] } 
+- error: [42000]
 ---
 - Statement: SELECT bigint_unsigned_field FROM all_types
     WHERE bigint_unsigned_field IN (0)

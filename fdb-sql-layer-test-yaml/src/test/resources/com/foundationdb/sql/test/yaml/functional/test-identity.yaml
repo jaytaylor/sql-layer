@@ -1,7 +1,3 @@
----
-- Properties: sys-mysql
-- suppressed: true
-
 # Test is for single node behavior only
 ---
 - Properties: random-context

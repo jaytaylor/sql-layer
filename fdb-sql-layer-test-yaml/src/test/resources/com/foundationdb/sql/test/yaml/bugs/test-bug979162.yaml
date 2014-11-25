@@ -1,7 +1,4 @@
 # Test to prove bug 979162 has been fixed
----
-- Properties: sys-mysql
-- suppressed: true
 --- 
 - CreateTable: region (rid INT NOT NULL PRIMARY KEY);
 ---

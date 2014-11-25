@@ -1,8 +1,5 @@
 # Test the shiftleft or << function
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')

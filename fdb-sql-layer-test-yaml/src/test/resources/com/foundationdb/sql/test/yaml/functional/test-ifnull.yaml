@@ -58,10 +58,10 @@
 ## Test wrong arity:
 --- # test empty list
 - Statement: SELECT IFNULL () FROM all_types;
-- error: !select-engine { sys-mysql: [1582], all: [4250C] }
+- error: [4250C]
 --- # test extraneous arg
 - Statement: SELECT IFNULL (1, 2, 3) FROM all_types;
-- error: !select-engine { sys-mysql: [1582], all: [4250C] }
+- error: [4250C]
 ## Test output types
 ---
 - Statement: SELECT IFNULL(bigint_field, varchar_field) from all_types

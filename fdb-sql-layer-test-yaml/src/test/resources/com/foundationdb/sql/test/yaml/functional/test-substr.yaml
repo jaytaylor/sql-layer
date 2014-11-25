@@ -52,7 +52,7 @@
 - output: [[''], ['']]
 --- # test wrong arity: excessive arguments
 - Statement: SELECT SUBSTR('ABC', 1, 2, 3) from all_types;
-- error: !select-engine { all: [42000], sys-mysql: [1064] }
+- error: [42000]
 --- # test SUBSTR called with 2 args
 - Statement: SELECT SUBSTR('abcd', 1);
 - output: [['abcd']]

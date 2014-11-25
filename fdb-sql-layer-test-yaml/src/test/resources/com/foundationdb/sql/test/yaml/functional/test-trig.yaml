@@ -1,9 +1,6 @@
 ## Test alll the trig functions
 ## SIN, COS, TAN, COT, ASIN, ACOS, ACOT, ATAN, ATAN2, COSH, SINH, TANH, COTH
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types(double_field, varchar_field, bigint_field, date_field) 

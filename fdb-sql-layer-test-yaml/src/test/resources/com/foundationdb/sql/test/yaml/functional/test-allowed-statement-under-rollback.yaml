@@ -1,7 +1,4 @@
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - CreateTable: t (id INT NOT NULL PRIMARY KEY, x INT, UNIQUE(x));
 ---
 - Statement: BEGIN

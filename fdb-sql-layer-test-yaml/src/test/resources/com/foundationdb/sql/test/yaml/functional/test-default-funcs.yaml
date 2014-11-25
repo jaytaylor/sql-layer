@@ -1,8 +1,5 @@
 # Test defaults that call functions
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - CreateTable: test_defaults (id SERIAL PRIMARY KEY, s VARCHAR(16), u VARCHAR(128) DEFAULT CURRENT_USER, t TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
 ---
 - Statement: INSERT INTO test_defaults(s) VALUES('hello')
