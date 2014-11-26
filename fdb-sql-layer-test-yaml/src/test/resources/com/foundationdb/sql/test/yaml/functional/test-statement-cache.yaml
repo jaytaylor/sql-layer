@@ -7,9 +7,6 @@
 - suppressed: true
 # Test statement cache
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 # A setting that affects cache selection.
 - Statement: SET optimizerDummySetting TO 'true'
 ---

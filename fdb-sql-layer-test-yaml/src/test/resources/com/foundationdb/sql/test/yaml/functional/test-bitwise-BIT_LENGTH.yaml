@@ -1,8 +1,5 @@
 # Test the bitwise BIT_LENGTH() function
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - Include: all-types-schema.yaml
 ---
 - Include: all-classes-schema.yaml

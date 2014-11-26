@@ -1,13 +1,10 @@
 # Test defaults that call functions
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - CreateTable: test_defaults (id SERIAL PRIMARY KEY, s VARCHAR(16), u VARCHAR(128) DEFAULT CURRENT_USER, t TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
 ---
 - Statement: INSERT INTO test_defaults(s) VALUES('hello')
 ---
 - Statement: SELECT * FROM test_defaults
 - output: [[1, 'hello', !select-engine { it: 'auser', all: 'test' }, !datetime ]]
-- output_types: [INTEGER, VARCHAR, VARCHAR, TIMESTAMP]
+- output_types: [INTEGER, VARCHAR, VARCHAR, DATETIME]
 ...

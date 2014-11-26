@@ -1,7 +1,3 @@
----
-- Properties: sys-mysql
-- suppressed: true
-
 # To be safe
 ---
 - Statement: SET queryTimeoutSec TO '5'

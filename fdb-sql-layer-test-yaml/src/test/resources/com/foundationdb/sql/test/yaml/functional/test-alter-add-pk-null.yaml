@@ -2,9 +2,6 @@
 # CREATE and ALTER table to create PK on NULL columns are altered to NOT NULL
 # 
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - CreateTable: t1 (id int NULL)
 ---
 - Statement: ALTER TABLE t1 ADD PRIMARY KEY (id)

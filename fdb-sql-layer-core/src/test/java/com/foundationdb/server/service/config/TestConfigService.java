@@ -18,9 +18,6 @@
 package com.foundationdb.server.service.config;
 
 import com.foundationdb.server.error.ConfigurationPropertiesLoadException;
-import com.foundationdb.server.service.plugins.Plugin;
-import com.foundationdb.server.service.plugins.PluginsFinder;
-import com.foundationdb.server.service.plugins.NoPluginsFinder;
 
 import com.foundationdb.server.service.text.FullTextIndexServiceImpl;
 import java.io.File;
@@ -40,13 +37,8 @@ public class TestConfigService extends ConfigurationServiceImpl {
     private static volatile boolean doCleanOnUnload = false;
     private final Map<String, String> extraProperties;
 
-    public TestConfigService() {
-        this(new NoPluginsFinder());
-    }
-
     @Inject
-    public TestConfigService(PluginsFinder pluginsFinder) {
-        super(pluginsFinder);
+    public TestConfigService() {
         this.extraProperties = getAndClearOverrides();
     }
 

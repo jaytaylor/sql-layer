@@ -5,9 +5,6 @@
 
 # Test inserting with DEFAULT
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - CreateTable: t (id SERIAL PRIMARY KEY, n1 INT, n2 INT DEFAULT 1, t TIMESTAMP DEFAULT CURRENT TIMESTAMP)
 ---
 - Statement: INSERT INTO t VALUES(NULL)

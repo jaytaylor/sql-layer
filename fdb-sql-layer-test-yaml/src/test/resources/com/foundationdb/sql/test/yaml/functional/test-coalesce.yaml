@@ -5,7 +5,7 @@
 # Test empty list
 ---
 - Statement: SELECT COALESCE() FROM all_types
-- error: !select-engine { all: [42000], sys-mysql: [1064] }
+- error: [42000]
 
 # Test mixed types
 ---
@@ -152,7 +152,7 @@
 
 # clob
 ---
-- CreateTable: !select-engine { all: "clobs (x clob, y clob)", sys-mysql: "clobs (x text, y text)" } 
+- CreateTable: clobs (x clob, y clob)
 ---
 - Statement: INSERT INTO clobs VALUES (null, null)
 ---
@@ -204,15 +204,15 @@
 
 ---
 - Statement: SELECT COALESCE(bigint_field, varchar_field, varchar_field) FROM all_types;
-- output_types: !select-engine { all: [BIGINT], sys-mysql: [VARCHAR] }
+- output_types: [BIGINT]
 
 ---
 - Statement: SELECT COALESCE(bigint_field, date_field, date_field) FROM all_types;
-- output_types: !select-engine { all: [DATE], sys-mysql: [VARCHAR] }
+- output_types: [DATE]
 
 ---
 - Statement: SELECT COALESCE(bigint_field, integer_field, date_field) FROM all_types;
-- output_types: !select-engine { all: [DATE], sys-mysql: [VARCHAR] }
+- output_types: [DATE]
 
 ---
 - Statement: SELECT COALESCE(bigint_field, double_field, integer_field) FROM all_types;
@@ -220,7 +220,7 @@
 
 ---
 - Statement: SELECT COALESCE(bigint_field, integer_field, decimal_field) FROM all_types;
-- output_types: [NUMERIC]
+- output_types: [DECIMAL]
 
 ---
 - Statement: SELECT COALESCE(bigint_field, double_field, decimal_field) FROM all_types;
@@ -228,7 +228,7 @@
 
 ---
 - Statement: SELECT COALESCE(bigint_field, double_field, varchar_field) FROM all_types;
-- output_types: !select-engine { all: [DOUBLE], sys-mysql: [VARCHAR] }
+- output_types: [DOUBLE]
 
 ---
 - Statement: SELECT COALESCE(bigint_field, integer_field, smallint_field) FROM all_types;

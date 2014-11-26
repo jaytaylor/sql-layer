@@ -37,10 +37,10 @@
 - output: [[5.5]]
 ---
 - Statement: SELECT NULLIF(2, 3.5) FROM all_types;
-- output_types: !select-engine { sys-mysql: [BIGINT], all: [INTEGER] }
+- output_types: [INTEGER]
 ---
 - Statement: SELECT NULLIF(2, '3') FROM all_types;
-- output_types:  !select-engine { sys-mysql: [BIGINT], all: [INTEGER] }
+- output_types: [INTEGER]
 
 ## Test with fields
 --- 
@@ -69,4 +69,4 @@
 - Statement: SELECT NULLIF(?, 2.3) FROM all_types;
 - params: [[3]]
 - output: [[3]]
-- output_types : [NUMERIC]
+- output_types : [DECIMAL]

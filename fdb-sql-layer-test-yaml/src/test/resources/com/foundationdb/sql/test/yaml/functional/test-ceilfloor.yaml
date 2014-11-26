@@ -4,16 +4,16 @@
 ---
 # Test arity
 - Statement: SELECT CEIL() FROM all_types
-- error: !select-engine { sys-mysql: [1582], all: [4250C] }
+- error: [4250C]
 ---
 - Statement: SELECT FLOOR() FROM all_types
-- error: !select-engine { sys-mysql: [1582], all: [4250C] }
+- error: [4250C]
 ---
 - Statement: SELECT CEIL(2.5, 3.5) FROM all_types
-- error: !select-engine { sys-mysql: [1582], all: [4250C] }
+- error: [4250C]
 ---
 - Statement: SELECT FLOOR(3.5, 2.5) FROM all_types
-- error: !select-engine { sys-mysql: [1582], all: [4250C] }
+- error: [4250C]
 ---
 # Test NULL
 - Statement: INSERT INTO all_types (float_field, double_field, smallint_field,

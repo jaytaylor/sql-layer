@@ -1,0 +1,3 @@
+---
+- bind:
+    com.foundationdb.sql.pg.PostgresService : com.foundationdb.sql.pg.PostgresServerManager

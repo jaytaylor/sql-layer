@@ -13,7 +13,7 @@
 - output: [[10], [20], [50], [100]]
 ---
 - Statement: INSERT INTO t1 VALUES (50,50); # dup of x
-- error: !select-engine { all: [23501], sys-mysql: [1062] }
+- error: [23501]
 ---
 - Statement: SELECT id FROM t1
 - output: [[1], [2], [5], [10]]
@@ -44,7 +44,7 @@
 - Statement: BEGIN
 ---
 - Statement: INSERT INTO t2 VALUES (50,50); # dup of x
-- error: !select-engine {all: [23501], sys-mysql: [1062] } 
+- error: [23501]
 ---
 - Statement: ROLLBACK
 ---
@@ -81,7 +81,7 @@
 - Statement: BEGIN
 ---
 - Statement: INSERT INTO t3 VALUES (50,50); # dup of x
-- error: !select-engine { all: [23501], sys-mysql: [1062] }
+- error: [23501]
 ---
 - Statement: COMMIT
 - error: [25P02]
@@ -121,7 +121,7 @@
 - Statement: BEGIN
 ---
 - Statement: INSERT INTO t4 VALUES (50,50); # dup of x
-- error: !select-engine { all: [23501], sys-mysql: [1062] } 
+- error: [23501]
 ---
 - Statement: SELECT id FROM t4
 - error: [25P02]
@@ -139,5 +139,4 @@
 - Statement: COMMIT
 ---
 - DropTable: t4
-
 ...

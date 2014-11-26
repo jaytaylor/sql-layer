@@ -1,8 +1,5 @@
 # Test inserting into tables
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (bigint_field) VALUES (0), (1), (-1),
@@ -43,7 +40,7 @@
 ---
 - Statement: Update all_types set char_field = 'A' returning timestamp_field    
 - output: [[!re '2000-01-02 04:00:00([.]0)?']]
-- output_types: [TIMESTAMP]
+- output_types: [DATETIME]
 ---
 - CreateTable: t3 (c1 integer not null primary key, c2 varchar(20))
 ---
