@@ -134,6 +134,7 @@ public class FDBIndexRow extends IndexRow {
             value.getByteArray(iValue.getEncodedBytes(), 0, 0, value.getArrayLength());
             iValue.setEncodedSize(value.getArrayLength());
         }
+        zPosition = index.isSpatial() ? index.firstSpatialArgument() : -1;
     }
 
     @Override
@@ -146,7 +147,7 @@ public class FDBIndexRow extends IndexRow {
             this.pKeyTarget = SORT_KEY_ADAPTER.createTarget(index.getIndexName());
         }
         this.pKeyTarget.attach(key);
-        
+        zPosition = index.isSpatial() ? index.firstSpatialArgument() : -1;
     }
     
     @Override 
@@ -277,7 +278,13 @@ public class FDBIndexRow extends IndexRow {
     public long tableBitmap() {
         return tableBitmap;
     }
-    
+
+    @Override
+    protected int zPosition()
+    {
+        return zPosition;
+    }
+
     public FDBIndexRow (KeyCreator keyCreator)
     {
         ArgumentValidation.notNull("keyCreator", keyCreator);
@@ -311,4 +318,5 @@ public class FDBIndexRow extends IndexRow {
     private final TInstance[] types;
     private final KeyCreator keyCreator;
     private HKey leafTableHKey;
+    private int zPosition;
 }

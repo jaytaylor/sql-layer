@@ -72,18 +72,10 @@ public abstract class IndexRow extends AbstractRow implements com.geophile.z.Rec
     @Override
     public final long z()
     {
-        long z;
-        // this.z is set only for a query object. If it hasn't been set, then we have an index row
-        // that really does have a z-value.
-        if (this.z == Space.Z_NULL) {
-            if (zPosition == -1) {
-                Index index = rowType().index();
-                assert index.isSpatial() : index;
-                zPosition = index.firstSpatialArgument();
-            }
-            z = this.uncheckedValue(zPosition).getInt64();
-        } else {
-            z = this.z;
+        // z is set only for a query object. If it hasn't been set, then we have an index row
+        // with a field containing a z-value.
+        if (z == Space.Z_NULL) {
+            z = this.uncheckedValue(zPosition()).getInt64();
         }
         return z;
     }
@@ -106,11 +98,12 @@ public abstract class IndexRow extends AbstractRow implements com.geophile.z.Rec
     public abstract void appendFieldTo(int position, Key target);
     public abstract void copyFrom(Key key, Value value);
 
+    protected abstract int zPosition();
+
     // This is a z-value written to an IndexRow created by Geophile for doing a random access during
     // a spatial join. It is NOT reflected in the actual row state. This obviously won't work if
     // spatial index maintenance is done via Geophile's Index.add/remove API.
     private long z = Space.Z_NULL;
-    private int zPosition;
 
     public static enum EdgeValue {
         BEFORE,

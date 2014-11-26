@@ -196,16 +196,9 @@ public class BoxTableIndexScanIT extends OperatorITBase
             JTSSpatialObject queryBox = randomBox();
             // Get the right answer
             Set<Integer> expected = new HashSet<>();
-            System.out.format("Query %d: %s\n", q, queryBox);
-/*
-            System.out.println("    Expected:");
-*/
             for (int id = 0; id < boxes.size(); id++) {
                 if (boxes.get(id).geometry().overlaps(queryBox.geometry())) {
                     expected.add(id);
-/*
-                    System.out.format("        %d: %s\n", id, boxes.get(id));
-*/
                 }
             }
             // Get the query result using the box_blob index
@@ -217,15 +210,9 @@ public class BoxTableIndexScanIT extends OperatorITBase
             Cursor cursor = API.cursor(plan, queryContext, queryBindings);
             cursor.openTopLevel();
             Row row;
-/*
-            System.out.println("    Actual:");
-*/
             while ((row = cursor.next()) != null) {
                 int id = getLong(row, 1).intValue();
                 actual.add(id);
-/*
-                System.out.format("        %d: %s\n", id, boxes.get(id));
-*/
             }
             // There should be no false negatives
             assertTrue(actual.containsAll(expected));

@@ -35,12 +35,6 @@ class FDBIndexToGeophileCursorAdapter extends Cursor<Row>
     }
 
     @Override
-    public Row previous() throws IOException, InterruptedException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void goTo(Row key) throws IOException, InterruptedException
     {
         throw new UnsupportedOperationException();
