@@ -1,9 +1,6 @@
 #
 # Test basic functionality of ALTER TABLE x ADD GROUPING FOREIGN KEY
 #
----
-- Properties: sys-mysql
-- suppressed: true
 #
 # Simple table and join with some data
 #

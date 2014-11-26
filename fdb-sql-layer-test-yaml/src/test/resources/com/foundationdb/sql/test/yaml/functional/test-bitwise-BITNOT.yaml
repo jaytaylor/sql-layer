@@ -1,8 +1,5 @@
 # Test the bitwise BITNOT() function
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (1, 'Level 1');

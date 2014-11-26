@@ -106,12 +106,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.foundationdb</groupId>
-            <artifactId>fdb-sql-layer-jdbc</artifactId>
-            <version>2.1-0-jdbc41-SNAPSHOT</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
             <version>2.3</version>

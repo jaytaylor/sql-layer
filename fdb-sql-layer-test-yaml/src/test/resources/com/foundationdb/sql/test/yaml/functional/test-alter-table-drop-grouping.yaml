@@ -1,9 +1,6 @@
 #
 # Test basic functionality of ALTER TABLE x DROP GROUPING FOREIGN KEY
 #
----
-- Properties: sys-mysql
-- suppressed: true
 #
 # Simple two table group, with some data
 #

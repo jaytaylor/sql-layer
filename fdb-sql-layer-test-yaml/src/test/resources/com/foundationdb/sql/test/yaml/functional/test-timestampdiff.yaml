@@ -28,7 +28,7 @@
 - output: [[59]]
 ---
 - Statement: SELECT TIMESTAMPDIFF(QUARTER, '1990-8-1', '1991-9-29');
-- output: !select-engine { all: [[3]], sys-mysql: [[4]] }
+- output: [[3]]
 ---
 - Statement: SELECT TIMESTAMPDIFF(HOUR, '1991-05-10 19:30:00', '1991-05-10 20:30:00');
 - output: [[1]]

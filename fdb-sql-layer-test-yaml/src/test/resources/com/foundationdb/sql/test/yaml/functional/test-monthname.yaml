@@ -41,11 +41,11 @@
 ## Test wrong arity
 ---
 - Statement: SELECT MONTHNAME() from all_types;
-- error: !select-engine { all: [4250C], sys-mysql: [1582] } 
+- error: [4250C]
 ---
 - Statement: SELECT MONTHNAME('2009-03-13', 1) FROM all_types;
-- error: !select-engine {all: [4250C], sys-mysql: [1582] } 
+- error: [4250C]
 ---
 - Statement: SELECT MONTHNAME('2009-03-12', 1, 2) FROM all_types;
-- error: !select-engine { all: [4250C], sys-mysql: [1582] }
+- error: [4250C]
 ...

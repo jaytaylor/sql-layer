@@ -1,8 +1,5 @@
 # Test the DISTANCE_LAT_LON function
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - Include: all-types-schema.yaml
 ---
 # Test arity 

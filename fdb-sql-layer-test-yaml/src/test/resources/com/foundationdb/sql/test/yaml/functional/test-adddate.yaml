@@ -23,20 +23,20 @@
 # <DATE-like VARCHAR expr> + integral-value ==> result in DATE
 - Statement: SELECT ADDDATE('2008-02-29', 2) from all_types;
 - output: [['2008-03-02']]
-- output_types: !select-engine { all: [VARCHAR], sys-mysql: [CHAR] }
+- output_types: [VARCHAR]
 ---
 # <DATE-like VARCHAR expr> + floating point ===> result in DATETIME
 - Statement: SELECT ADDDATE('2007-02-28', 2.5) from all_types;
 - output: [['2007-03-03']]
-- output_types: !select-engine { all: [VARCHAR], sys-mysql: [CHAR] }
+- output_types: [VARCHAR]
 ---
 # <DATETIME-like VARCHAR expr>
 - Statement: SELECT ADDDATE('2008-02-29 12:30:00', 2) from all_types;
 - output: [[!re '2008-03-02 12:30:00([.]0)?']]
-- output_types: !select-engine { all: [VARCHAR], sys-mysql: [CHAR] }
+- output_types: [VARCHAR]
 ---
 # Even 30 minutes make it a new day!
 - Statement: SELECT ADDDATE('2008-02-29 12:30:00', 2.5) from all_types;
 - output: [['2008-03-03 12:30:00']]
-- output_types: !select-engine { all: [VARCHAR], sys-mysql: [CHAR] }
+- output_types: [VARCHAR]
 ...

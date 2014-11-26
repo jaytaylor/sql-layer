@@ -1,8 +1,5 @@
 # Test creating spatial index
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - CreateTable: t (
      id INT NOT NULL PRIMARY KEY,
      a decimal(11, 7),
