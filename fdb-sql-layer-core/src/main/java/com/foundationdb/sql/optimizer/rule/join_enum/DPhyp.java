@@ -53,8 +53,7 @@ public abstract class DPhyp<P>
     // The hypergraph: since these are unordered, traversal pattern is
     // to go through in order pairing with adjacent (complement bit 1).
     private long[] edges;
-    // TODO change this to long[] like edges
-    private List<Long> requiredSubgraphs;
+    private long[] requiredSubgraphs;
     private int noperators, nedges;
     
     // Indexes for leaves and their constituent tables.
@@ -143,8 +142,8 @@ public abstract class DPhyp<P>
         long ts = JoinableBitSet.of(i);
         emitCsg(ts);
         enumerateCsgRec(ts, JoinableBitSet.through(i));
-        for (Iterator<Long> iterator = requiredSubgraphs.iterator(); iterator.hasNext(); ) {
-            Long requiredSubgraph = iterator.next();
+        for (int j=0; j<requiredSubgraphs.length; j++) {
+            long requiredSubgraph = requiredSubgraphs[j];
             if (JoinableBitSet.equals(ts, JoinableBitSet.minSubset(requiredSubgraph))) {
                 if (getPlan(requiredSubgraph) == null) {
                     addExtraEdges(requiredSubgraph);
@@ -411,17 +410,20 @@ public abstract class DPhyp<P>
         if (whereConditions != null)
             addWhereConditions(whereConditions, visitor, JoinableBitSet.empty());
         int iop = 0;
-        requiredSubgraphs = new ArrayList<>(noperators);
+        requiredSubgraphs = new long[operators.size()];
+        int irs = 0;
         for (JoinOperator joinOperator : operators) {
             if (!joinOperator.getJoinType().isRightLinear()) {
                 if (JoinableBitSet.count(joinOperator.rightTables) > 1) {
-                    requiredSubgraphs.add(joinOperator.rightTables);
+                    requiredSubgraphs[irs] = joinOperator.rightTables;
+                    irs++;
                 }
             } else if (!joinOperator.getJoinType().isLeftLinear()) {
                 // must be a right join
                 throw new CorruptedPlanException("RIGHT OUTER JOIN was not converted to LEFT OUTER JOIN before dphyp");
             }
         }
+        requiredSubgraphs = Arrays.copyOf(requiredSubgraphs, irs);
         while (iop < noperators) {
             JoinOperator op = operators.get(iop);
             if (op.allInnerJoins) {
