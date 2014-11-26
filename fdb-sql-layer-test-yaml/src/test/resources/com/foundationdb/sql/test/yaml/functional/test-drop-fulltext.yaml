@@ -1,7 +1,7 @@
 # test drop full_text index
 
 ---
-- Properties: all # fts 
+- Properties: fts 
 - suppressed: true
 
 ---

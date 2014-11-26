@@ -1,7 +1,7 @@
 # test that full text indices are updated (and populated) properly
 
 ---
-- Properties: all # fts 
+- Properties: fts 
 - suppressed: true
 
 ---

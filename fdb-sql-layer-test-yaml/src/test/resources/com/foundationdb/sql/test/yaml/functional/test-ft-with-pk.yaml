@@ -1,7 +1,7 @@
 # Tests with changed primary key
 
 ---
-- Properties: all 
+- Properties: fts 
 - suppressed: true
 
 ---
