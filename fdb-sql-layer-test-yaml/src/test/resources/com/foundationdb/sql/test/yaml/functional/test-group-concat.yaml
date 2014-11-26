@@ -1,0 +1,39 @@
+## YAML Template.
+---
+- Include: all-types-schema.yaml
+--- # test with literals
+- Statement: select group_concat('a', 'b', 'c');
+- output: [['abc']]
+---
+- Statement: INSERT INTO all_types(varchar_field) values ('a'), ('b'), ('c'), ('d'), ('d');
+---
+- Statement: SELECT GROUP_CONCAT(varchar_field SEPARATOR '0') from all_types;
+- output: [['a0b0c0d0d']]
+---
+- Statement: SELECT GROUP_CONCAT(varchar_field) from all_types;
+- output: [['a,b,c,d,d']]
+---
+- Statement: SELECT GROUP_CONCAT(varchar_field, varchar_field, varchar_field) from all_types;
+- output: [['aaa,bbb,ccc,ddd,ddd']]
+---
+- Statement: SELECT GROUP_CONCAT(distinct varchar_field, varchar_field) from all_types;
+- output: [['aa,bb,cc,dd']]
+---
+- Statement: SELECT group_concat() from all_types;
+- error: [42000]
+---
+- Statement: SELECT GROUP_CONCAT(varchar_field, varchar_field separator '1'), group_concat(varchar_field, varchar_field separator '2') from all_types;
+- output: [['aa1bb1cc1dd1dd', 'aa2bb2cc2dd2dd']]
+--- # test DISTINCT
+- Statement: SELECT group_concat(distinct varchar_field, varchar_field separator '*') from all_types;
+- output: [['aa*bb*cc*dd']]
+--- # test ORDER BY
+- Statement: SELECT GROUP_CONCAT(varchar_field, varchar_field order by varchar_field desc) from all_types;
+- output_already_ordered: [['dd,dd,cc,bb,aa']]
+#--- not supported yet (use of both DISTINCT and ORDER-BY)
+#- Statement: SELECT GROUP_CONCAT(distinct varchar_field, varchar_field order by varchar_field desc) from all_types;
+#- output_already_ordered: [['dd, cc, bb, aa']]
+#--- ditto
+#- Statement: SELECT GROUP_CONCAT(distinct varchar_field, varchar_field order by varchar_field desc SEPARATOR '+') from all_types;
+#- output_already_ordered: [['dd+cc+bb+aa']]
+...

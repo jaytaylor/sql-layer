@@ -1,0 +1,36 @@
+---
+- Properties: random-context
+- suppressed: true
+
+---
+- CreateTable: t (id INT NOT NULL PRIMARY KEY, x INT, UNIQUE(x));
+---
+- Statement: INSERT INTO t VALUES(1, 1),(2, 2),(3, 3)
+---
+- Statement: BEGIN
+---
+- Statement: INSERT INTO t VALUES(4, 2)
+- error: [23501]
+---
+- Statement: ROLLBACK
+---
+- Statement: SET constraintCheckTime = 'DELAYED_ALWAYS_UNTIL_COMMIT'
+---
+- Statement: BEGIN
+---
+- Statement: INSERT INTO t VALUES(4, 2)
+---
+- Statement: COMMIT
+- error: [23501]
+---
+- Statement: SET constraintCheckTime = 'DELAYED_WITH_RANGE_CACHE_ALWAYS_UNTIL_COMMIT'
+---
+- Statement: BEGIN
+---
+- Statement: INSERT INTO t VALUES(4, 2)
+---
+- Statement: COMMIT
+- error: [23501]
+---
+- Statement: SET constraintCheckTime = DEFAULT
+...

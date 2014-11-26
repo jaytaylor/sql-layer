@@ -1,0 +1,59 @@
+# Test the SUBDATE(...) function
+# Related bug(s): 889300 fractional seconds not supported yet
+# Status confirmed
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (bigint_field, date_field, time_field, datetime_field) VALUES (1, '1900-03-01', '01:05:06', '2000-02-29 12:30:10')
+## Test with literals
+---
+- Statement: SELECT SUBDATE('2008-01-02 12:00:00', 31) from all_types;
+- output: [[!re '2007-12-02 12:00:00([.]0)?']] 
+---
+- Statement: SELECT SUBDATE('2010-01-01 23:59:59', INTERVAL 1 DAY) from all_types;
+- output: [[!re '2009-12-31 23:59:59([.]0)?']] 
+---
+- Statement: SELECT SUBDATE('2100-12-31 23:59:59', INTERVAL '1:1' MINUTE_SECOND) from all_types;
+- output: [[!re '2100-12-31 23:58:58([.]0)?']] 
+---
+- Statement: SELECT SUBDATE('2005-01-01 00:00:00', INTERVAL '1 1:1:1' DAY_SECOND) from all_types;
+- output: [[!re '2004-12-30 22:58:59([.]0)?']] 
+---
+- Statement: SELECT SUBDATE('1900-01-01 00:00:00', INTERVAL '-1 10' DAY_HOUR) from all_types;
+- output: [[!re '1900-01-02 10:00:00([.]0)?']] 
+---
+- Statement: SELECT SUBDATE('1900-01-01 00:00:00', INTERVAL '1 10' DAY_HOUR) from all_types;
+- output: [[!re '1899-12-30 14:00:00([.]0)?']]
+---
+- Statement: SELECT SUBDATE(DATE('2000-03-01'), 1) from all_types;
+- output: [['2000-02-29']]
+---
+- Statement: SELECT bigint_field from all_types WHERE  SUBDATE(date_field, 1) = DATE('1900-02-28');
+- output: [[1]]
+## Test with fields
+---
+- Statement: SELECT SUBDATE(date_field, bigint_field) from all_types;
+- output: [['1900-02-28']]
+---
+- Statement: SELECT bigint_field from all_types WHERE SUBDATE(datetime_field, bigint_field) = '2000-02-28 12:30:10';
+- output: [[1]]
+## Test with params
+### This doesn't work in types3 due to ambiguous resolution
+#---
+#- Statement: SELECT SUBDATE(?, 1) from all_types;
+#- params: [['1994-01-01']]
+#- output: [['1993-12-31']]
+#---
+#- Statement: SELECT SUBDATE('2012-02-29', ? ) from all_types;
+#- params: [[3]]
+#- output: [['2012-03-02']]
+#---
+#- Newtypes: null
+## Test wrong arity
+---
+- Statement: SELECT SUBDATE() from all_types;
+- error: [4250C]
+---
+- Statement: SELECT SUBDATE('2009-12-12', 2, 3) from all_types;
+- error: [4250C]
+...

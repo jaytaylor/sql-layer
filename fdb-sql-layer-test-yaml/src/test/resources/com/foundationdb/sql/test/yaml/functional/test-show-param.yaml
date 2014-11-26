@@ -1,0 +1,8 @@
+# Test SHOW command
+---
+- Statement: SHOW transaction_isolation
+- output: [['serializable']]
+---
+- Statement: SHOW no_such_var
+- error: [42513]
+...

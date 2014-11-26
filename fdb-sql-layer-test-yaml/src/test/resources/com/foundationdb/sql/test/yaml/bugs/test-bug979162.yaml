@@ -1,0 +1,24 @@
+# Test to prove bug 979162 has been fixed
+--- 
+- CreateTable: region (rid INT NOT NULL PRIMARY KEY);
+---
+- Statement: INSERT INTO region VALUES(1),(2)
+---
+- CreateTable: rc (
+    rid INT NOT NULL,
+    locid INT NOT NULL,
+    GROUPING FOREIGN KEY (rid) REFERENCES region)
+---
+- Statement: CREATE INDEX locid ON rc(locid)
+---
+- Statement: INSERT INTO rc VALUES(10, 100),(10, 110),(10, 120),(20, 200),(20, 210),(20, 220)
+---
+- Statement: SELECT * FROM rc WHERE locid = 110 AND rid = 10
+- output: [[10, 110]]
+---
+- Statement: SELECT * FROM rc WHERE locid = 110 AND rid = 9
+- row_count: 0
+---
+- Statement: SELECT * FROM rc WHERE locid = 110 AND rid = 11
+- row_count: 0
+...

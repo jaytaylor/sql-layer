@@ -1,0 +1,241 @@
+# Test the COALESCE function
+---
+- Include: all-types-schema.yaml
+
+# Test empty list
+---
+- Statement: SELECT COALESCE() FROM all_types
+- error: [42000]
+
+# Test mixed types
+---
+- Statement: INSERT INTO all_types (varchar_field, integer_field)
+    VALUES ('abc', 123)
+#--- #tempoary commented out, will fix when CompareExpression goes in
+#- Statement: SELECT COALESCE(varchar_field, integer_field) FROM all_types
+#- output: [['abc']]
+---
+- Statement: DELETE FROM all_types
+
+# Test single element lists with an empty table
+---
+- Statement: SELECT COALESCE(bigint_field) FROM all_types
+- row_count: 0
+---
+- Statement: SELECT COALESCE(bigint_unsigned_field) FROM all_types
+- row_count: 0
+---
+- Statement: SELECT COALESCE(blob_field) FROM all_types
+- row_count: 0
+---
+- Statement: SELECT COALESCE(boolean_field) FROM all_types
+- row_count: 0
+---
+- Statement: SELECT COALESCE(char_field) FROM all_types
+- row_count: 0
+---
+- Statement: SELECT COALESCE(char_multi_field) FROM all_types
+- row_count: 0
+---
+- Statement: SELECT COALESCE(clob_field) FROM all_types
+- row_count: 0
+---
+- Statement: SELECT COALESCE(date_field) FROM all_types
+- row_count: 0
+---
+- Statement: SELECT COALESCE(decimal_field) FROM all_types
+- row_count: 0
+---
+- Statement: SELECT COALESCE(double_field) FROM all_types
+- row_count: 0
+---
+- Statement: SELECT COALESCE(float_field) FROM all_types
+- row_count: 0
+---
+- Statement: SELECT COALESCE(integer_field) FROM all_types
+- row_count: 0
+---
+- Statement: SELECT COALESCE(numeric_field) FROM all_types
+- row_count: 0
+---
+- Statement: SELECT COALESCE(real_field) FROM all_types
+- row_count: 0
+---
+- Statement: SELECT COALESCE(smallint_field) FROM all_types
+- row_count: 0
+---
+- Statement: SELECT COALESCE(time_field) FROM all_types
+- row_count: 0
+---
+- Statement: SELECT COALESCE(timestamp_field) FROM all_types
+- row_count: 0
+---
+- Statement: SELECT COALESCE(varchar_field) FROM all_types
+- row_count: 0
+
+# Insert values on the diagonal
+---
+- Statement: INSERT INTO all_types (bigint_field) VALUES (1)
+---
+- Statement: INSERT INTO all_types (bigint_unsigned_field) VALUES (1)
+---
+- Statement: INSERT INTO all_types (blob_field) VALUES ('deadbeef')
+---
+- Statement: INSERT INTO all_types (char_field) VALUES ('c')
+---
+- Statement: INSERT INTO all_types (char_multi_field) VALUES ('abc')
+---
+- Statement: INSERT INTO all_types (clob_field) VALUES ('1234abcd')
+---
+- Statement: INSERT INTO all_types (double_field) VALUES (0.0)
+---
+- Statement: INSERT INTO all_types (float_field) VALUES (1.0)
+---
+- Statement: INSERT INTO all_types (integer_field) VALUES (2)
+---
+- Statement: INSERT INTO all_types (numeric_field) VALUES (3.0)
+---
+- Statement: INSERT INTO all_types (real_field) VALUES (4.0)
+---
+- Statement: INSERT INTO all_types (smallint_field) VALUES (5)
+---
+- Statement: INSERT INTO all_types (time_field) VALUES ('08:30:00')
+---
+- Statement: INSERT INTO all_types (timestamp_field) VALUES
+    ('2001-01-01 12:01:00')
+---
+- Statement: INSERT INTO all_types (varchar_field) VALUES ('yup')
+
+# Now retreive
+---
+- Statement: SELECT COALESCE(bigint_field, bigint_unsigned_field,
+        double_field, float_field, integer_field, numeric_field,
+        real_field, smallint_field) FROM all_types
+- output: [[1.0], [1.0], [null], [null], [null], [null], [0.0], [1.0],
+          [2.0], [3.0], [4.0], [5.0], [null], [null], [null]]
+---
+- Statement: SELECT COALESCE(char_field, char_multi_field, varchar_field)
+    FROM all_types
+- output: [[null], [null], [null], ['c'], ['abc'], [null], [null],
+           [null], [null], [null], [null], [null], [null], [null],
+           ['yup']]
+
+# Use literal
+---
+- Statement: SELECT COALESCE(char_field, 'x') FROM all_types
+- output: [[x], [x], [x], [c], [x], [x], [x], [x], [x], [x], [x], [x],
+    [x], [x], [x]]
+
+# Use parameter -- not working
+---
+- Statement: SELECT COALESCE(char_field, ?) FROM all_types
+- params: [[x]]
+- output: [[x], [x], [x], [c], [x], [x], [x], [x], [x], [x], [x], [x], [x],
+           [x], [x]]
+
+# Define separate tables for types that don't support conversion:
+
+# blob
+---
+- CreateTable: blobs (x blob, y blob)
+---
+- Statement: INSERT INTO blobs VALUES (null, null)
+---
+- Statement: INSERT INTO blobs (y) VALUES ('abcd')
+---
+- Statement: INSERT INTO blobs (x) VALUES ('1234')
+---
+- Statement: INSERT INTO blobs VALUES ('5678', 'ef00')
+---
+- Statement: SELECT COALESCE(x, y) FROM blobs
+- output: [[null], [abcd], [1234], [5678]]
+
+# clob
+---
+- CreateTable: clobs (x clob, y clob)
+---
+- Statement: INSERT INTO clobs VALUES (null, null)
+---
+- Statement: INSERT INTO clobs (y) VALUES ('abcd')
+---
+- Statement: INSERT INTO clobs (x) VALUES ('1234')
+---
+- Statement: INSERT INTO clobs VALUES ('5678', 'ef00')
+---
+- Statement: SELECT COALESCE(x, y) FROM clobs
+- output: [[null], [abcd], [1234], [5678]]
+
+# time
+---
+- CreateTable: times (x time, y time)
+---
+- Statement: INSERT INTO times VALUES (null, null)
+---
+- Statement: INSERT INTO times (y) VALUES ('08:30:00')
+---
+- Statement: INSERT INTO times (x) VALUES ('14:20:22')
+---
+- Statement: INSERT INTO times VALUES ('17:18:19', '11:55:00')
+---
+- Statement: SELECT COALESCE(x, y) FROM times
+- output: [[null], ['08:30:00'], ['14:20:22'], ['17:18:19']]
+
+# timestamp
+---
+- CreateTable: timestamps (x timestamp, y timestamp)
+---
+- Statement: INSERT INTO timestamps VALUES (null, null)
+---
+- Statement: INSERT INTO timestamps (y) VALUES ('1961-01-01 08:30:00')
+---
+- Statement: INSERT INTO timestamps (x) VALUES ('2002-02-02 14:20:22')
+---
+- Statement: INSERT INTO timestamps VALUES
+     ('2003-03-03 17:18:19', '1962-02-02 11:55:00')
+---
+- Statement: SELECT COALESCE(x, y) FROM timestamps ORDER BY x
+- output_already_ordered: [[null], [!re '1961-01-01 08:30:00([.]0)?'],
+    [!re '2002-02-02 14:20:22([.]0)?'],
+    [!re '2003-03-03 17:18:19([.]0)?']]
+
+---
+- Statement: SELECT COALESCE(bigint_field, double_field, double_field) FROM all_types;
+- output_types: [DOUBLE]
+
+---
+- Statement: SELECT COALESCE(bigint_field, varchar_field, varchar_field) FROM all_types;
+- output_types: [BIGINT]
+
+---
+- Statement: SELECT COALESCE(bigint_field, date_field, date_field) FROM all_types;
+- output_types: [DATE]
+
+---
+- Statement: SELECT COALESCE(bigint_field, integer_field, date_field) FROM all_types;
+- output_types: [DATE]
+
+---
+- Statement: SELECT COALESCE(bigint_field, double_field, integer_field) FROM all_types;
+- output_types: [DOUBLE]
+
+---
+- Statement: SELECT COALESCE(bigint_field, integer_field, decimal_field) FROM all_types;
+- output_types: [DECIMAL]
+
+---
+- Statement: SELECT COALESCE(bigint_field, double_field, decimal_field) FROM all_types;
+- output_types: [DOUBLE]
+
+---
+- Statement: SELECT COALESCE(bigint_field, double_field, varchar_field) FROM all_types;
+- output_types: [DOUBLE]
+
+---
+- Statement: SELECT COALESCE(bigint_field, integer_field, smallint_field) FROM all_types;
+- output_types: [BIGINT]
+
+---
+- Statement: explain VERBOSE select COALESCE( CAST(? AS CHAR(1)), 'abc', '123' )
+- output: [['Project_Default(COALESCE(CAST($1 AS VARCHAR(3)), ''abc'', ''123''))'],
+          ['  ValuesScan_Default([])']]
+...

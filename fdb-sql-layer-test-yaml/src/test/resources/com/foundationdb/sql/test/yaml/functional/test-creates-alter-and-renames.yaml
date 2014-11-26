@@ -1,0 +1,25 @@
+# Smallest test case reproducing bug1053073: Duplicate table ID from create, alter, and renames
+---
+- Statement: CREATE TABLE "customers" (cid INT NOT NULL PRIMARY KEY);
+---
+- Statement: CREATE TABLE "addresses" (aid INT NOT NULL PRIMARY KEY, cid INT NOT NULL, GROUPING FOREIGN KEY(cid) REFERENCES customers(cid));
+---
+- Statement: CREATE TABLE "_customers_new" (cid INT NOT NULL PRIMARY KEY);
+---
+- Statement: ALTER TABLE addresses DROP GROUPING FOREIGN KEY;
+---
+- Statement: CREATE TABLE "_addresses_new" (aid INT NOT NULL PRIMARY KEY, cid INT NOT NULL);
+---
+- Statement: RENAME TABLE "addresses" TO "_addresses_old";
+---
+- Statement: RENAME TABLE "_addresses_new" TO "addresses";
+
+---
+- Statement: DROP TABLE "_addresses_old";
+---
+- Statement: DROP TABLE "addresses";
+---
+- Statement: DROP TABLE "_customers_new";
+---
+- Statement: DROP TABLE "customers";
+

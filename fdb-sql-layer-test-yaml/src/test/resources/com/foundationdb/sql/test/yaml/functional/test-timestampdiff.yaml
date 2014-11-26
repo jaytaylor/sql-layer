@@ -1,0 +1,38 @@
+## Test TIMESTAMPDIFF
+---
+- Statement: SELECT TIMESTAMPDIFF(DAY, '2009-12-12', '2009-12-11');
+- output: [[-1]]
+---
+- Statement: SELECT TIMESTAMPDIFF(DAY, '2009-12-11', '2009-12-12');
+- output: [[1]]
+---
+- Statement: SELECT TIMESTAMPDIFF(WEEK, '2009-12-12', '2009-12-11');
+- output: [[0]]
+---
+- Statement: SELECT TIMESTAMPDIFF(MONTH, '2009-12-12', '2009-12-11');
+- output: [[0]]
+---
+- Statement: select timestampdiff(MONTH, '1991-9-29', '1990-8-1');
+- output: [[-13]]
+---
+- Statement: select timestampdiff(MONTH, '1990-8-1', '1991-9-29');
+- output: [[13]]
+---
+- Statement: SELECT TIMESTAMPDIFF(MONTH, '2011-01-01 23:59:59', '2010-12-31 00:00:00');
+- output: [[0]]
+---
+- Statement: SELECT TIMESTAMPDIFF(DAY, DATE('2011-02-03'), DATE('2011-02-13'))
+- output: [[10]]
+---
+- Statement: SELECT TIMESTAMPDIFF(SECOND, DATETIME('2011-02-03 04:05:06'), DATETIME('2011-02-03 04:06:05'))
+- output: [[59]]
+---
+- Statement: SELECT TIMESTAMPDIFF(QUARTER, '1990-8-1', '1991-9-29');
+- output: [[3]]
+---
+- Statement: SELECT TIMESTAMPDIFF(HOUR, '1991-05-10 19:30:00', '1991-05-10 20:30:00');
+- output: [[1]]
+---
+- Statement: SELECT TIMESTAMPDIFF(MINUTE, null, '2009-12-12');
+- output: [[null]]
+...

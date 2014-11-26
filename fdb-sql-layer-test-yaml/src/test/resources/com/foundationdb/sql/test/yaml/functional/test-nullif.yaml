@@ -1,0 +1,72 @@
+## test the NULLIF function
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types(double_field, bigint_field, varchar_field, date_field)
+            VALUES (2.5, 3, '3', '2009-12-12');
+## Test with literals
+---
+- Statement: SELECT NULLIF(2,2.0) FROM all_types;
+- output: [[null]]
+
+# bug943370
+---
+- Statement: SELECT NULLIF(2, 2.5) FROM all_types;
+- output: [[2]]
+
+---
+- Statement: SELECT NULLIF (2.5, 2) FROM all_types;
+- output: [[2.5]]
+---
+- Statement: SELECT NULLIF('2.0', 2) FROM all_types;
+- output: [[null]]
+
+# bug943357
+---
+- Statement: SELECT NULLIF(null, null) FROM all_types;
+- output: [[null]]
+
+---
+- Statement: SELECT NULLIF(null, 3) FROM all_types;
+- output: [[null]]
+---
+- Statement: SELECT NULLIF(5.6, null) FROM all_types;
+- output: [[5.6]]
+---
+- Statement: SELECT NULLIF(5.5, 5.6) FROM all_types;
+- output: [[5.5]]
+---
+- Statement: SELECT NULLIF(2, 3.5) FROM all_types;
+- output_types: [INTEGER]
+---
+- Statement: SELECT NULLIF(2, '3') FROM all_types;
+- output_types: [INTEGER]
+
+## Test with fields
+--- 
+- Statement: SELECT NULLIF(double_field, varchar_field) FROM all_types;
+- output: [[2.5]]
+---
+- Statement: SELECT NULLIF(varchar_field, bigint_field) FROM all_types;
+- output: [[null]]
+--- # Test DATE  and date string
+- Statement: SELECT NULLIF('2006-11-06', DATE('2006-11-06')) FROM all_types;
+- output: [[null]]
+--- # Test TIME and time string
+- Statement: SELECT NULLIF('12:30:10', TIME('12:30:10')) FROM all_types;
+- output: [[null]]
+--- # test time string and TIME
+- Statement: SELECT NULLIF(TIME('12:30:10'), '12:10:10') FROM all_types;
+- output: [['12:30:10']]
+
+# BUG: Fails in FTS. Enable when fixed.
+---
+- Properties: fdb-sql
+- suppressed: true
+
+## Test with parameters
+---
+- Statement: SELECT NULLIF(?, 2.3) FROM all_types;
+- params: [[3]]
+- output: [[3]]
+- output_types : [DECIMAL]

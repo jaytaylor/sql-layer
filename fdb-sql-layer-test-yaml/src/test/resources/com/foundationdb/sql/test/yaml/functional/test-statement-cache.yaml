@@ -1,0 +1,150 @@
+# Cache stats are node specific
+---
+- Properties: random-context
+- suppressed: true
+---
+- Properties: nojmx
+- suppressed: true
+# Test statement cache
+---
+# A setting that affects cache selection.
+- Statement: SET optimizerDummySetting TO 'true'
+---
+- JMX: com.foundationdb:type=PostgresServer
+- set: StatementCacheCapacity
+- params: ['100']
+---
+- JMX: com.foundationdb:type=PostgresServer
+- get: StatementCacheCapacity
+- output: [['100']]
+---
+- CreateTable: t (id int not null, s varchar(10))
+---
+- JMX: com.foundationdb:type=PostgresServer
+- method: resetStatementCache
+---
+- JMX: com.foundationdb:type=PostgresServer
+- get: StatementCacheMisses
+- output: [['0']]
+---
+- JMX: com.foundationdb:type=PostgresServer
+- get: StatementCacheHits
+- output: [['0']]
+---
+- Statement: INSERT INTO t VALUES(1, 'fred'), (2, 'barney')
+---
+- Statement: EXPLAIN SELECT id FROM t WHERE s = ?
+- output: [['Project_Default(t.id)'],
+           ['  Filter_Default(t)'],
+           ['    Select_HKeyOrdered(t.s == $1)'],
+           ['      GroupScan_Default(t)']]
+---
+- Statement: SELECT id FROM t WHERE s = 1
+---
+- Statement: SELECT id FROM t WHERE s = 1
+---
+- JMX: com.foundationdb:type=PostgresServer
+- get: StatementCacheMisses
+# INSERT, EXPLAIN, SELECT
+- output: [['3']]
+---
+- JMX: com.foundationdb:type=PostgresServer
+- get: StatementCacheHits
+# SELECT
+- output: [['1']]
+---
+- Statement: INSERT INTO t VALUES(1, CURRENT_DATE)
+---
+- Statement: INSERT INTO t VALUES(1, CURRENT_DATE)
+---
+- JMX: com.foundationdb:type=PostgresServer
+- get: StatementCacheMisses
+# INSERT
+- output: [['4']]
+---
+- JMX: com.foundationdb:type=PostgresServer
+- get: StatementCacheHits
+# INSERT
+- output: [['2']]
+---
+# AIS change
+- Statement: CREATE INDEX t_s ON t(s)
+---
+- Statement: EXPLAIN SELECT id FROM t WHERE s = ?
+- output: [['Project_Default(t.id)'],
+           ['  GroupLookup_Default(Index(t.t_s) -> t)'],
+           ['    IndexScan_Default(Index(t.t_s), s = $1)']]
+---
+- JMX: com.foundationdb:type=PostgresServer
+- get: StatementCacheMisses
+# CREATE, EXPLAIN
+- output: [['6']]
+---
+- JMX: com.foundationdb:type=PostgresServer
+- get: StatementCacheHits
+- output: [['2']]
+---
+# Different compiler mode
+- Statement: SET optimizerDummySetting TO 'false'
+---
+- Statement: EXPLAIN SELECT id FROM t WHERE s = ?
+- output: [['Project_Default(t.id)'],
+           ['  GroupLookup_Default(Index(t.t_s) -> t)'],
+           ['    IndexScan_Default(Index(t.t_s), s = $1)']]
+---
+- Statement: SELECT id FROM t WHERE s = 1
+---
+- Statement: SELECT id FROM t WHERE s = 1
+---
+- JMX: com.foundationdb:type=PostgresServer
+- get: StatementCacheMisses
+# SET, EXPLAIN, SELECT
+- output: [['9']]
+---
+- JMX: com.foundationdb:type=PostgresServer
+- get: StatementCacheHits
+# SELECT
+- output: [['3']]
+---
+- Statement: DROP INDEX t_s
+---
+- Statement: EXPLAIN SELECT id FROM t WHERE s = ?
+- output: [['Project_Default(t.id)'],
+           ['  Filter_Default(t)'],
+           ['    Select_HKeyOrdered(t.s == $1)'],
+           ['      GroupScan_Default(t)']]
+---
+- Statement: SET optimizerDummySetting TO 'true'
+---
+- Statement: EXPLAIN SELECT id FROM t WHERE s = ?
+- output: [['Project_Default(t.id)'],
+           ['  Filter_Default(t)'],
+           ['    Select_HKeyOrdered(t.s == $1)'],
+           ['      GroupScan_Default(t)']]
+---
+- CreateTable: test1.t (n INT)
+---
+- Statement: INSERT INTO test1.t VALUES(1)
+---
+- CreateTable: test2.t (n INT)
+---
+- Statement: INSERT INTO test2.t VALUES(0)
+---
+- Statement: SET SCHEMA test1
+---
+- Statement: SELECT * FROM t
+- output: [[1]]
+---
+- Statement: SET SCHEMA test2
+---
+- Statement: SELECT * FROM t
+- output: [[0]]
+---
+# Turn it back off
+- JMX: com.foundationdb:type=PostgresServer
+- set: StatementCacheCapacity
+- params: ['0']
+---
+# Return the setting to the server standard
+- Statement: SET optimizerDummySetting TO DEFAULT
+...

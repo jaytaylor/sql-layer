@@ -1,0 +1,71 @@
+# Test creating tables
+---
+# Test supported types
+
+- Include: all-types-schema.yaml
+---
+
+# Test with missing field type as the second field
+- CreateTable: t (i int, j)
+- error: [42000]
+---
+
+# Test recently supported types
+- CreateTable: table_datetime (datetime_field datetime)
+---
+- CreateTable: table_year (year_field year)
+---
+
+# Test unsupported types
+
+# mediumint is now supported
+- CreateTable: table_mediumint (mediumint_field mediumint)
+---
+# text is now supported
+- CreateTable: table_text (text_field text)
+---
+
+# Test not yet supported types
+
+# xml is not supported
+- CreateTable: table_xml (xml_field xml)
+- error: [50008]
+---
+# Bug 941657 -- number of fk columns != number of pk columns
+- CreateTable: parent (pid int not null, primary key(pid))
+---
+- CreateTable: child1 (cid int not null, cx int, pid int, primary key(cid), grouping foreign key(pid, cx) references parent(pid))
+- error: [50016]
+---
+
+# Bug 941657 -- fk refers to columns that don't exist
+- CreateTable: child2 (cid int not null, pid int, primary key(cid), grouping foreign key(pid) references parent(this_is_not_a_column))
+- error: [50005]
+---
+
+# Bug 941657 -- fk column doesn't exist
+- CreateTable: child3 (cid int not null, pid int, primary key(cid), grouping foreign key(no_such_column) references parent(pid))
+- error: [50018]
+---
+
+- CreateTable: pk_is_int(pid int not null primary key)
+---
+- CreateTable: fk_is_bigint(cid int not null primary key, pid bigint not null, grouping foreign key(pid) references pk_is_int(pid))
+---
+- CreateTable: fk_is_bigint_u(cid int not null primary key, pid bigint unsigned not null, grouping foreign key(pid) references pk_is_int(pid))
+- error: [50011]
+---
+
+- CreateTable: pk_is_bigint_u(pid bigint unsigned not null primary key)
+---
+- CreateTable: fk_is_bigint_u(cid int not null primary key, pid bigint unsigned not null, grouping foreign key(pid) references pk_is_bigint_u(pid))
+---
+- Statement: create table foo(x int, index(x) STORAGE_FORMAT rowdata )
+---
+- Statement: select storage_format from information_schema.indexes where table_name = 'foo' and index_name = 'x';
+- output: [['rowdata']]
+
+...
+
+# Notes
+# clob is marked as not supported, but is

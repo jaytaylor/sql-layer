@@ -1,0 +1,106 @@
+# test the LTRIM, RTRIM and TRIM functions
+# bug 940687: trim, rtrim, ltrim not syntactically supported (fix committed)
+# bug 942142: LENGTH should not trim: fix released
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types(varchar_field) VALUES ('     ltrim') , ('rtrim     '), ('     trim   ');
+---
+- Statement: SELECT TRIM(varchar_field) from all_types WHERE varchar_field = '     trim   ';
+- output: [['trim']]
+---
+- Statement: SELECT LTRIM(varchar_field) from all_types WHERE varchar_field = '     ltrim';
+- output: [['ltrim']]
+---
+- Statement: SELECT RTRIM(varchar_field) from all_types WHERE varchar_field = 'rtrim     ';
+- output: [['rtrim']]
+---
+- Statement: SELECT TRIM( both 'x' from 'xxabcx') from all_types;
+- output: [['abc'], ['abc'], ['abc']]
+---
+- Statement: SELECT TRIM(LEADING ' ' from '   abc  ') from all_types;
+- output: [['abc  '], ['abc  '], ['abc  ']]
+---
+- Statement: SELECT TRIM (LEADING '1' from '111abc111') from all_types;
+- output: [['abc111'], ['abc111'], ['abc111']]
+---
+- Statement: SELECT LTRIM('   abc  ') from all_types;
+- output: [['abc  '], ['abc  '], ['abc  ']]
+---
+- Statement: SELECT TRIM(TRAILING '1' from '111abc11') from all_types;
+- output: [['111abc'], ['111abc'], ['111abc']]
+###### BUG 942142: LENGTH SHOULD NOT TRIM
+--- # test LTRIM and TRIM in SELECT and WHERE clause
+- Statement: SELECT LTRIM(varchar_field) from all_types WHERE LENGTH(LTRIM(varchar_field)) = LENGTH(TRIM(varchar_field));
+- output: [['ltrim']]
+--- # test RTRIM and TRIM in SELECT and WHERE clause
+- Statement: SELECT RTRIM(varchar_field) from all_types WHERE LENGTH(RTRIM(varchar_field)) = LENGTH(TRIM(varchar_field));
+- output: [['rtrim']]
+--- # test TRIM, LTRIM, and RTRIM in SELECT and WHERE clause
+- Statement: SELECT TRIM(varchar_field) from all_types WHERE LENGTH(TRIM(varchar_field)) < LENGTH(LTRIM(varchar_field)) and LENGTH(TRIM(varchar_field)) < LENGTH(RTRIM(varchar_field));
+- output: [['trim']]
+---
+- Statement: SELECT varchar_field from all_types WHERE LENGTH(TRIM(varchar_field)) = LENGTH(LTRIM(RTRIM(varchar_field)));
+- row_count: 3
+--- # test wrong arity: empty list
+- Statement: SELECT LTRIM() from all_types;
+- error: [42000]
+--- # test wrong arity: extraneous argument
+- Statement: SELECT LTRIM('abc', 'def');
+- error: [42000]
+--- # test null
+- Statement: SELECT LTRIM(null) from all_types;
+- output: [[null], [null], [null]]
+--- # test empty string
+- Statement: SELECT LTRIM('') from all_types;
+- output: [[''], [''], ['']]
+--- # test with params
+- Statement: SELECT LTRIM(?) from all_types;
+- params: [['     trailing']]
+- output: [['trailing'], ['trailing'], ['trailing']]
+--- # test with params in WHERE
+- Statement: SELECT varchar_field from all_types WHERE LTRIM(?) = TRIM(varchar_field);
+- params: [['    ltrim']]
+- output: [['     ltrim']]
+--- # test wrong arity: empty list
+- Statement: SELECT TRIM() from all_types;
+- error: [42000]
+--- # test wrong arity: extraneous argument
+- Statement: SELECT TRIM('abc', 'def');
+- error: [42000]
+--- # test null
+- Statement: SELECT TRIM(null) from all_types;
+- output: [[null], [null], [null]]
+--- # test empty string
+- Statement: SELECT TRIM('') from all_types;
+- output: [[''], [''], ['']]
+--- # test wrong arity: empty list
+- Statement: SELECT RTRIM() from all_types;
+- error: [42000]
+--- # test wrong arity: extraneous argument
+- Statement: SELECT RTRIM('abc', 'def');
+- error: [42000]
+--- # test null
+- Statement: SELECT RTRIM(null) from all_types;
+- output: [[null], [null], [null]]
+--- # test empty string
+- Statement: SELECT RTRIM('') from all_types;
+- output: [[''], [''], ['']]
+---
+- CreateTable: T1 (c1 varchar(1))
+---
+- Statement:  explain verbose select trim (LEADING cast(c1 as char(1)) from 'aaa') from T1
+- output: [
+      ['Project_Default(LTRIM(''aaa'', CAST(CAST(t1.c1 AS CHAR(1)) AS VARCHAR(1)))) (rows = 1, cost = 0.00000)'],
+      ['  Filter_Default(t1)'],
+      ['    GroupScan_Default(t1)']
+    ]
+---
+- CreateTable: t2 (c2 varchar(350))
+---
+- Statement: Insert into t2 (c2) values ('  this is the test string')
+---
+# The returned collation should be standardized
+- Statement: select describe_expression(trim(LEADING ' ' from cast(t2.c2 as varchar(350) collate en_us_ci))) from t2
+- output: [['variable MCOMPAT_ VARCHAR(350, UTF8, en_us_ci_co) NULL']]
+...

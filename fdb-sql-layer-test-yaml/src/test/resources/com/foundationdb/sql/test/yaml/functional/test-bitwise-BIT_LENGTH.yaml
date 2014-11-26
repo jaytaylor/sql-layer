@@ -1,0 +1,49 @@
+# Test the bitwise BIT_LENGTH() function
+---
+- Include: all-types-schema.yaml
+---
+- Include: all-classes-schema.yaml
+---
+- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (1, 'Level 1');
+---
+- Statement: SELECT BIT_LENGTH('text') from all_types;
+- output: [[32]]
+---
+- Statement: SELECT BIT_LENGTH(Dept) from classes;
+- output: [[32],[32],[32],[32],[32],[32],[32],[32],[32],[32],[32],[32],[32],[32],[32],[32]]
+---
+- Statement: SELECT BIT_LENGTH('') from all_types;
+- output: [[0]]
+---
+- Statement: SELECT BIT_LENGTH('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA') from all_types;
+- output: [[416]]
+---
+- Statement: SELECT BIT_LENGTH(7) from all_types;
+- output: [[8]]
+---
+- Statement: SELECT BIT_LENGTH(-74) from all_types;
+- output: [[24]]
+---
+- Statement: SELECT BIT_LENGTH('2001-12-31 02:45:33') from all_types;
+- output: [[152]]
+---
+- Message: "bug 947554"
+#---
+#- Statement: SELECT BIT_LENGTH(0x234) from all_types;
+#- output: [[16]]
+---
+- Statement: SELECT BIT_LENGTH(00000005) from all_types;
+- output: [[8]]
+---
+- Statement: SELECT BIT_LENGTH(NULL) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT BIT_LENGTH(?) from all_types;
+- params: [[7]]
+- output: [[8]]
+---
+- Statement: SELECT 1  from all_types WHERE BIT_LENGTH(?) = ?;
+- params: [[7, 8]]
+- output: [[1]]
+
+...

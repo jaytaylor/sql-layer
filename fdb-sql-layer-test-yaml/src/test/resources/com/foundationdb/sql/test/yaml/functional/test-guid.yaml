@@ -1,0 +1,55 @@
+# Test GUID data type
+# Part 1
+#
+---
+- Statement: SELECT CAST('3F2504E0-4F89-41D3-9A0C-0305E82C3301' as guid)
+- output:  [[ "3f2504e0-4f89-41d3-9a0c-0305e82c3301" ]]
+---
+- Statement: SELECT CAST('{3f2504e0-4f89-41d3-9A0c-0305e82c3399}' as GUID)
+- output:  [[ "3f2504e0-4f89-41d3-9a0c-0305e82c3399" ]]
+---
+- CreateTable: t(id GUID)
+---
+- Statement: INSERT INTO t(id) VALUES ('3f2504e0-4f89-41d3-9a0c-0305e82c3388')
+---
+- Statement: SELECT * FROM t
+- output:  [[ "3f2504e0-4f89-41d3-9a0c-0305e82c3388" ]]
+---
+- Statement: SELECT * FROM t WHERE id='3f2504e0-4f89-41d3-9a0c-0305e82c3388'
+- output: [[ "3f2504e0-4f89-41d3-9a0c-0305e82c3388" ]]
+---
+- Statement: UPDATE t SET id='3f2504e0-4f89-41d3-9a0c-0305e82c3300' WHERE id='3f2504e0-4f89-41d3-9a0c-0305e82c3388'
+---
+- Statement: SELECT * FROM t
+- output:  [[ "3f2504e0-4f89-41d3-9a0c-0305e82c3300" ]]
+---
+- Statement: DELETE FROM t WHERE id='3f2504e0-4f89-41d3-9a0c-0305e82c3300' 
+---
+- Statement: SELECT * FROM t
+- row_count:  0
+---
+- DropTable: t
+---
+- CreateTable: t(id GUID NOT NULL PRIMARY KEY)
+---
+- Statement: INSERT INTO t(id) VALUES ('3f2504e0-4f89-41d3-9a0c-0305e82c3377')
+---
+- Statement: SELECT * FROM t WHERE id='3f2504e0-4f89-41d3-9a0c-0305e82c3377'
+- output: [[ "3f2504e0-4f89-41d3-9a0c-0305e82c3377" ]]
+---
+- DropTable: t
+---
+- CreateTable: t(id GUID NOT NULL PRIMARY KEY)
+---
+#
+# Part 2 - Functions
+# enable use as function
+
+- Statement: SELECT CREATE_RANDOM_GUID()
+- output_types: [GUID]
+---
+- Statement: INSERT INTO t VALUES ( CREATE_RANDOM_GUID() )
+---
+- Statement: SELECT * FROM t
+- output_types: [GUID]
+...

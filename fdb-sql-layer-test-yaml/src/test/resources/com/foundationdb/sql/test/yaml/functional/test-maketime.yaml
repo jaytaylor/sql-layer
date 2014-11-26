@@ -1,0 +1,61 @@
+# Test the MAKETIME function
+---
+- Include: all-types-schema.yaml
+---
+# Test arity
+- Statement: SELECT MAKETIME() FROM all_types
+- error: [4250C]
+---
+- Statement: SELECT MAKETIME(1, 2, 3, 4) FROM all_types
+- error: [4250C]
+# Test null
+---
+- Statement: SELECT MAKETIME(null,null,null)
+- output: [[null]]
+#Test float and bigint fields
+---
+- Statement: INSERT INTO all_types (float_field, bigint_field) VALUES (90, 90)
+---
+- Message:  BUG 1007163
+#---
+#- Statement: SELECT MAKETIME(float_field, 2, 2) from all_types
+#- output: [['90:02:02']]
+#---
+#- Statement: SELECT MAKETIME(bigint_field, 2, 2) from all_types
+#- output: [['90:02:02']]
+#---
+- Statement: SELECT MAKETIME(2, float_field, 2) from all_types
+- output: [[null]]
+---
+- Statement: SELECT MAKETIME(2, bigint_field, 2) from all_types
+- output: [[null]]
+# Literals
+---
+- Statement: SELECT MAKETIME(12,30,12)
+- output: [['12:30:12']]
+---
+#- Statement: SELECT MAKETIME(-1,3,2)
+#- output: [['-01:03:02']]
+#---
+- Statement: SELECT MAKETIME(2,60,1)
+- output: [[null]]
+---
+- Statement: SELECT MAKETIME(2,1,60)
+- output: [[null]]
+---
+- Statement: SELECT MAKETIME(2,-1,10) 
+- output: [[null]]
+---
+- Statement: SELECT MAKETIME(2,10,-1)
+- output: [[null]]
+---
+- Statement: SELECT MAKETIME(null, 1, 2)
+- output: [[null]]
+#Parameters
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: SELECT MAKETIME(?,?,?)
+- params: [[12,30,12]]
+- output: [['12:30:12']]
+...

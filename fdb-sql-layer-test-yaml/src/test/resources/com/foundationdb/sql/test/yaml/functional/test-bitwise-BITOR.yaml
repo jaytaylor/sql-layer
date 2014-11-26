@@ -1,0 +1,45 @@
+# Test the bitwise OR function
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types VALUES (null);
+---  
+- Statement: SELECT BITOR(?, ?) from all_types;
+- params: [[29,15]]
+- output: [[31]]  
+---
+- Statement: SELECT 2 from all_types where BITOR(?, ?) = 31;
+- params: [[29,15]]
+- output: [[2]]  
+---
+- Statement: SELECT BITOR(null, 15) from all_types;
+- output: [[null]]  
+---
+- Statement: SELECT BITOR(29, null) from all_types;
+- output: [[null]]  
+---
+- Statement: SELECT BITOR(29, 15) from all_types;
+- output: [[31]]  
+---
+- Statement: SELECT BITOR(0, 5) from all_types;
+- output: [[5]]  
+---
+- Statement: SELECT BITOR(1, 5) from all_types;
+- output: [[5]]  
+---
+- Statement: SELECT BITOR(2, 5) from all_types;
+- output: [[7]]  
+---
+- Statement: SELECT BITOR(4, 5) from all_types;
+- output: [[5]]  
+---
+- Statement: SELECT BITOR(8, 5) from all_types;
+- output: [[13]]  
+--- 
+- Statement: SELECT BITOR(4, -5) from all_types;
+- output: [['18446744073709551615']]  
+---
+- Statement: SELECT BITOR(-8, 5) from all_types;
+- output: [['18446744073709551613']]  
+...
+

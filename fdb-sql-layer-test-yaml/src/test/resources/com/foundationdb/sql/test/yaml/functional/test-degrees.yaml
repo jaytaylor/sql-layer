@@ -1,0 +1,62 @@
+# Test the DEGREES function
+---
+- Include: all-types-schema.yaml
+---
+# Test arity
+- Statement: SELECT DEGREES() FROM all_types
+- error: [4250C]
+---
+- Statement: SELECT DEGREES(1, 2) from all_types;
+- error: [4250C]
+---
+# Test NULL
+- Statement: INSERT INTO all_types (float_field, double_field, smallint_field,
+            integer_field, bigint_field, bigint_unsigned_field, decimal_field,
+            numeric_field, real_field)
+            VALUES (null, null, null, null, null, null, null, null, null)
+---
+- Statement: SELECT DEGREES(float_field), DEGREES(double_field),
+    DEGREES(smallint_field), DEGREES(integer_field), DEGREES(bigint_field),
+    DEGREES(bigint_unsigned_field), DEGREES(decimal_field), DEGREES(numeric_field),
+    DEGREES(real_field) FROM all_types
+- output: [[null, null, null, null, null, null, null, null, null]]
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (float_field, double_field)
+    VALUES (PI(), PI()),
+    (-PI(), -PI())
+---
+- Statement: SELECT DEGREES(float_field), DEGREES(double_field),
+    DEGREES(PI()), DEGREES(-PI()) FROM all_types
+- output: [[180.0, 180.0, 180.0, -180.0],
+           [-180.0, -180.0, 180.0, -180.0]]
+# Infinity and NaN
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (float_field, double_field, real_field)
+    VALUES ('Infinity', 'Infinity', 'Infinity'),
+    ('-Infinity', '-Infinity', '-Infinity'),
+    ('NaN', 'NaN', 'NaN')
+---
+- Statement: SELECT DEGREES(double_field), DEGREES(float_field), DEGREES(real_field)
+    FROM all_types
+- output: [[0.0, 0.0, 0.0],
+           [0.0, 0.0, 0.0],
+           [0.0, 0.0, 0.0]]
+# Literals
+---
+- Statement: SELECT DEGREES(0) from all_types
+- output: [[0.0], [0.0], [0.0]]
+---
+- Statement: SELECT DEGREES(PI()) from all_types
+- output: [[180.0], [180.0], [180.0]]
+#Parameters
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: SELECT DEGREES(?)
+- params: [[0.0]]
+- output: [[0.0]]
+...

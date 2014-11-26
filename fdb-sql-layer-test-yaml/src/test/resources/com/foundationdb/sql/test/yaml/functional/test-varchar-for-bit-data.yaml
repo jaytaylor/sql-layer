@@ -1,0 +1,10 @@
+# Test varchar for bit data, alias for varbinary
+---
+- CreateTable: t (varchar_for_bit_data_field varchar(32) for bit data)
+---
+- Statement: INSERT INTO t VALUES(X'010203')
+---
+- Statement: SELECT * FROM t
+- output_types: !select-engine { it: [VARCHAR FOR BIT DATA], all: [BLOB] }
+- output: [[!!binary 'AQID']]
+...

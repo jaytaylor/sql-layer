@@ -1,0 +1,97 @@
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (bigint_field) VALUES (201105)
+--- # Wrong arity
+- Statement: SELECT PERIOD_DIFF() FROM all_types
+- error: [4250C]
+---
+- Statement: SELECT PERIOD_DIFF(201105) FROM all_types
+- error: [4250C]
+---
+- Statement: SELECT PERIOD_DIFF(201105, 5, 15) FROM all_types
+- error: [4250C]
+--- # Literal values with YYYYMM arguments
+- Statement: SELECT PERIOD_DIFF(200312, 200104) FROM all_types
+- output: [[32]]
+---
+- Statement: SELECT PERIOD_DIFF(200104, 200312) FROM all_types
+- output: [[-32]]
+---
+- Statement: SELECT PERIOD_DIFF(199901, 199801) FROM all_types
+- output: [[12]]
+---
+- Statement: SELECT PERIOD_DIFF(199801, 199901) FROM all_types
+- output: [[-12]]
+---
+- Statement: SELECT PERIOD_DIFF(200502, 190501) FROM all_types
+- output: [[1201]]
+--- # Literals, repeated as YYMM arguments
+- Statement: SELECT PERIOD_DIFF(0312, 0104) FROM all_types
+- output: [[32]]
+---
+- Statement: SELECT PERIOD_DIFF(0104, 0312) FROM all_types
+- output: [[-32]]
+---
+- Statement: SELECT PERIOD_DIFF(9901, 9801) FROM all_types
+- output: [[12]]
+---
+- Statement: SELECT PERIOD_DIFF(9801, 9901) FROM all_types
+- output: [[-12]]
+---
+- Statement: SELECT PERIOD_DIFF(0502, 0501) FROM all_types
+- output: [[1]]
+--- # Test varying lengths
+- Statement: SELECT PERIOD_DIFF(123, 456) FROM all_types
+- output: [[-69]]
+---
+- Statement: SELECT PERIOD_DIFF(200505, 1) FROM all_types
+- output: [[64]]
+---
+- Statement: SELECT PERIOD_DIFF(521, 5553) FROM all_types
+- output: [[-632]]
+--- # Test negative periods
+- Statement: SELECT PERIOD_DIFF(-123456, -123456) FROM all_types
+- output: [[0]]
+---
+- Statement: SELECT PERIOD_DIFF(-200912, -201010) FROM all_types
+- output: [[10]]
+---
+- Statement: SELECT PERIOD_DIFF(-206, -309) FROM all_types
+- output: [[15]]
+---
+- Statement: SELECT PERIOD_DIFF(-200901, 200901) FROM all_types
+- output: [[-48216]]
+--- # Params
+- Statement: SELECT PERIOD_DIFF(?, 199409) FROM all_types
+- params: [[199309]]
+- output: [[-12]]
+---
+- Statement: SELECT PERIOD_DIFF(6712, ?) FROM all_types
+- params: [[6606]]
+- output: [[18]]
+---
+- Statement: SELECT PERIOD_DIFF(?, ?) FROM all_types
+- params: [[199002, 198912]]
+- output: [[2]]
+--- # Using table
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (bigint_field, integer_field) VALUES (200912, 201103), (201103, 200912)
+---
+- Statement: SELECT PERIOD_DIFF (bigint_field, integer_field) FROM all_types
+- output: [[-15], [15]]
+---
+- Statement: DELETE FROM all_types
+--- # Null tests
+- Statement: INSERT INTO all_types (integer_field) VALUES (5)
+---
+- Statement: SELECT integer_field FROM all_types WHERE PERIOD_DIFF(null, 1234) IS NULL
+- output: [[5]]
+---
+- Statement: SELECT integer_field FROM all_types WHERE PERIOD_DIFF(1115, null) IS NULL
+- output: [[5]]
+---
+- Statement: SELECT integer_field FROM all_types WHERE PERIOD_DIFF(null, null) IS NULL
+- output: [[5]]
+...

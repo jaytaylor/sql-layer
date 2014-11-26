@@ -1,0 +1,69 @@
+#
+# Test basic functionality of ALTER TABLE x ADD GROUPING FOREIGN KEY
+#
+#
+# Simple table and join with some data
+#
+---
+- CreateTable: t1 (id INT NOT NULL PRIMARY KEY)
+---
+- CreateTable: t2 (id INT NOT NULL PRIMARY KEY, t1id INT)
+---
+- Statement: INSERT INTO t1 VALUES (1), (10), (100)
+---
+- Statement: INSERT INTO t2 VALUES (2, 1), (20, 10), (200, 100)
+---
+- Statement: ALTER TABLE t2 ADD GROUPING FOREIGN KEY(t1id) REFERENCES t1(id)
+---
+- Statement: SELECT t1.id,t2.id FROM t1,t2 WHERE t1.id=t2.t1id;
+- output: [[1,2], [10,20], [100,200]]
+---
+- Statement: INSERT INTO t1 VALUES (1000)
+---
+- Statement: INSERT INTO t2 VALUES (2000, 1000)
+---
+- Statement: SELECT t1.id,t2.id FROM t1,t2 WHERE t1.id=t2.t1id;
+- output: [[1,2], [10,20], [100,200], [1000,2000]]
+---
+- DropTable: t2
+---
+- DropTable: t1
+
+#
+# Wider tables, no-pk, multi column joins, and data
+#
+---
+- CreateTable: c (id INT NOT NULL, di BIGINT NOT NULL, v VARCHAR(20), d DECIMAL(5,2), PRIMARY KEY(di,id))
+---
+- CreateTable: o (cdi BIGINT, cid INT, c CHAR(10), dt DATETIME)
+---
+- Statement: INSERT INTO c VALUES (1,1,'abcdef',123.45), (2,2,'qwertyuiop', 0.00), (5,5,NULL,999.99)
+---
+- Statement: INSERT INTO o VALUES (1,1,'hello','2012-07-12 11:12:10'), (5,5,NULL,'2010-06-07 09:30:00'), (10,10,'world',NULL)
+---
+- Statement: ALTER TABLE o ADD GROUPING FOREIGN KEY(cid,cdi) REFERENCES c(di,id)
+---
+- Statement: SELECT id,di,v,d,c,dt FROM c LEFT JOIN o ON cdi=di and cid=id
+- output: [
+        [1, 1, 'abcdef', '123.45', 'hello', !re '2012-07-12 11:12:10([.]0)?'],
+        [2, 2, 'qwertyuiop', '0.00', null, null],
+        [5, 5, null, '999.99', null, !re '2010-06-07 09:30:00([.]0)?']
+    ]
+---
+- DropTable: o
+---
+- DropTable: c
+
+#
+# Not a great way to confirm grouped, attempt to drop parent is simple
+#
+---
+- CreateTable: c (id INT NOT NULL PRIMARY KEY)
+---
+- CreateTable: o (id INT NOT NULL PRIMARY KEY, cid INT)
+---
+- Statement: ALTER TABLE o ADD GROUPING FOREIGN KEY(cid) REFERENCES c(id)
+---
+- Statement: DROP TABLE c
+- error: [50007] # cannot drop non-leaf table
+...

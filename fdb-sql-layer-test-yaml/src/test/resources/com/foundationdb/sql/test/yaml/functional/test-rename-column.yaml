@@ -1,0 +1,45 @@
+# test simple rename (on non-index columns)
+---
+- CreateTable: t (a int NOT NULL PRIMARY KEY, c double, b double)
+---
+- Statement: INSERT INTO t VALUES (1, 5, 2.0), (3, 9, 4.0), (0, 13, 6.0);
+--- # no such column (yet)
+- Statement: SELECT d from t;
+- error: [50018]
+---
+- Statement: SELECT a, c, b from  t;
+- output: [[0, 13.0, 6.0], [1, 5.0, 2.0], [3, 9.0, 4.0]]
+---
+- Statement: RENAME COLUMN t.c TO d;
+---
+- Statement: SELECT a, d, b from  t;
+- output: [[0, 13.0, 6.0], [1, 5.0, 2.0], [3, 9.0, 4.0]]
+--- # no such column (anymore)
+- Statement: SELECT c from  t;
+- error: [50018]
+---
+- Statement: CREATE INDEX idx_d ON t(d)
+---
+- Statement: ALTER TABLE t RENAME COLUMN d TO e;
+---
+- Statement: DROP INDEX idx_d
+---
+- Statement: CREATE INDEX idx_d3 ON t(a, e, b)
+---
+- Statement: RENAME COLUMN t.e TO f;
+---
+- Statement: SELECT a, f, b from  t;
+- output: [[0, 13.0, 6.0], [1, 5.0, 2.0], [3, 9.0, 4.0]]
+---
+- DropTable: t
+---
+- CreateTable: t(c int NOT NULL PRIMARY KEY, e int);
+---
+- Statement: INSERT INTO t VALUES (1, 2), (3, 4)
+---
+- Statement: ALTER TABLE  t RENAME COLUMN c to a
+#--- # take a look at the table's structure just to be sure?
+#- Statement: \d t
+---
+- DropTable: t
+...

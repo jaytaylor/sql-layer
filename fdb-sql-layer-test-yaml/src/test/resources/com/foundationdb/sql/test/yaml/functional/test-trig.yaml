@@ -1,0 +1,279 @@
+## Test alll the trig functions
+## SIN, COS, TAN, COT, ASIN, ACOS, ACOT, ATAN, ATAN2, COSH, SINH, TANH, COTH
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types(double_field, varchar_field, bigint_field, date_field) 
+             VALUES (0.5, '0.7', 1, '2002-09-02');
+## Test with literals
+---
+- Statement: SELECT COS(0) from all_types;
+- output_types: [DOUBLE]
+- output: [[1.0]]
+---
+- Statement: SELECT COS(null) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT COT(ASIN(1)/2) from all_types;
+- output: [[1.0000000000000002]]
+---
+- Statement: SELECT COT(null) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT SIN(0) from all_types;
+- output: [[0.0]]
+---
+- Statement: SELECT SIN(null) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT TAN(0) from all_types;
+- output: [[0.0]]
+---
+- Statement: SELECT TAN(null) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT ACOS(1) from all_types;
+- output: [[0.0]]
+---
+- Statement: SELECT ACOS(null) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT SIN(ACOT(0))  from all_types;
+- output: [[1.0]]
+---
+- Statement: SELECT SIN(null) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT ACOT(1) - ATAN(1) from all_types;
+- output: [[0.0]]
+---
+- Statement: SELECT ACOT(null) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT ASIN(0) from all_types;
+- output: [[0.0]]
+---
+- Statement: SELECT ASIN(null) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT ATAN(0) from all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT ATAN(null) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT SIN(ATAN(1, 0)) from all_types;
+- output: [[1.0]]
+---
+- Statement: SELECT SIN(ATAN2(1, 0)) from all_types;
+- output: [[1.0]]
+---
+- Statement: SELECT ATAN2(null, 0) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT ATAN2(1, null) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT ATAN2(null, null) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT COSH(0) from all_types;
+- output: [[1.0]]
+---
+- Statement: SELECT COSH(null) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT SINH(0) from all_types;
+- output: [[0.0]]
+---
+- Statement: SELECT SINH(null) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT TANH(0) from all_types;
+- output: [[0.0]]
+---
+- Statement: SELECT TANH(null) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT COTH(2) from all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT COTH(null) from all_types;
+- output: [[null]]
+## Tests with params
+---
+- Statement: SELECT COS(?) from all_types;
+- params: [[0.0]]
+- output_types: [DOUBLE]
+- output: [[1.0]]
+---
+- Statement: SELECT COT(ASIN(?) / 2) from all_types;
+- params: [[1.0]]
+- output: [[1.0000000000000002]]
+---
+- Statement: SELECT SIN(ACOS(?)) from all_types;
+- params: [[1]]
+- output: [[0.0]]
+--- # command 20
+- Statement: SELECT TAN(?) from all_types;
+- params: [[0]]
+- output: [[0.0]]
+---
+- Statement: SELECT ACOS(?) from all_types;
+- params: [[1]]
+- output: [[0.0]]
+---
+- Statement: SELECT SIN(ACOT(?))  from all_types;
+- params: [[0]]
+- output: [[1.0]]
+---
+- Statement: SELECT ASIN(?) from all_types;
+- params: [[0.0]]
+- output: [[0.0]]
+---
+- Statement: SELECT ATAN(?) from all_types;
+- params: [[0]]
+- output_types: [DOUBLE]
+---
+- Statement: SELECT SIN(ATAN2(?, 0)) from all_types;
+- params: [[1]]
+- output: [[1.0]]
+--- # command 26
+- Statement: SELECT COSH(?) from all_types;
+- params: [[0]]
+- output: [[1.0]]
+---
+- Statement: SELECT SINH(?) from all_types;
+- params: [[0]]
+- output: [[0.0]]
+---
+- Statement: SELECT TANH(?) from all_types;
+- params: [[0.0]]
+- output: [[0.0]]
+---
+- Statement: SELECT COTH(?) from all_types;
+- params: [[2]]
+- output_types: [DOUBLE]
+## Test with fields
+---
+- Statement: SELECT SIN(varchar_field) from all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT COS(varchar_field) from all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT TAN(double_field) from all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT COT(double_field) from all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT ASIN(bigint_field) from all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT ACOS(varchar_field) from all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT ATAN(double_field) from all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT ATAN2(double_field, varchar_field) from all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT COSH(varchar_field) from all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT SINH(bigint_field) from all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT TANH(double_field) from all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT COTH(varchar_field) from all_types;
+- output_types: [DOUBLE]
+## Test wrong arity
+---
+- Statement: SELECT SIN() from all_types;
+- error: [4250C]
+--- # command 44
+- Statement: SELECT COS(0.1, 0.9) from all_types;
+- error: [4250C]
+---
+- Statement: SELECT COT(0.1, 0.9) from all_types;
+- error: [4250C]
+---
+- Statement: SELECT TAN(0.1, 0.9) from all_types;
+- error: [4250C]
+---
+- Statement: SELECT ACOS(0.1, 0.9) from all_types;
+- error: [4250C]
+---
+- Statement: SELECT ATAN(0.1, 0.2, 0.3) from all_types;
+- error: [4250C]
+---
+- Statement: SELECT ASIN(0.1, 0.9) from all_types;
+- error: [4250C]
+---
+- Statement: SELECT ACOT(0.1, 0.9) from all_types;
+- error: [4250C]
+---
+- Statement: SELECT ATAN2(0.1, 5.9, 2.4, 0.4) from all_types;
+- error: [4250C]
+---
+- Statement: SELECT COSH(0.1, 0.9) from all_types;
+- error: [4250C]
+---
+- Statement: SELECT SINH(0.1, 0.9) from all_types;
+- error: [4250C]
+---
+- Statement: SELECT TANH(0.1, 0.9) from all_types;
+- error: [4250C]
+---
+- Statement: SELECT COTH(0.1, 0.9) from all_types;
+- error: [4250C]
+## Test inappropriate input
+---
+- Statement: SELECT ASIN(1.1) from all_types;
+- output: [[NaN]]
+---
+- Statement: SELECT ACOS(6.4) from all_types;
+- output: [[NaN]]
+## Test bad numeric string: inconvertible char(s) to num
+## Should result in the argument being '0.0' + warnings
+--- # command 73
+- Statement: SELECT SIN('abc') from all_types;
+- output: [[0.0]]
+---
+- Statement: SELECT COS('abc') from all_types;
+- output: [[1.0]]
+---
+- Statement: SELECT TAN('abc') from all_types;
+- output: [[0.0]]
+--- # expect overflow
+- Statement: SELECT COT('abc') from all_types;
+- error: [55004]
+--- # 'abc' => '0'. => sin(acos(0)) = 1
+- Statement: SELECT SIN(ACOS('abc')) from all_types;
+- output: [[1.0]]
+---
+- Statement: SELECT ASIN('abc') from all_types;
+- output: [[0.0]]
+---
+- Statement: SELECT ATAN('abc') from all_types;
+- output: [[0.0]]
+--- # acot(0) is pi/2 = > sin(pi/2) = 1
+- Statement: SELECT SIN(ACOT('abc')) from all_types;
+- output: [[1.0]]
+--- #COTH(0) is infinity => expect overflow
+- Statement: SELECT COTH('abc') from all_types;
+- error: [55004]
+---
+- Statement: SELECT COSH('abc') from all_types;
+- output: [[1.0]]
+---
+- Statement: SELECT SINH('abc') from all_types;
+- output: [[0.0]]
+---
+- Statement: SELECT TANH('abc') from all_types;
+- output: [[0.0]]
+...

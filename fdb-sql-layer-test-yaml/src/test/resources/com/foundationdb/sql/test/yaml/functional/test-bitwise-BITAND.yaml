@@ -1,0 +1,137 @@
+# Test the bitwise BITAND() function
+# Bug 906606: bug released
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (1, 'Level 1');
+---
+- Statement: SELECT 1 from all_types where BITAND(?,?) = 0;
+- params: [[4,3]]
+- output: [[1]]
+---
+- Statement: SELECT BITAND(?,?) from all_types;
+- params: [[4,3]]
+- output: [[0]]
+---  
+  
+- Statement: SELECT 1 from all_types where BITAND(1,null) = null;
+- row_count: 0
+---
+- Statement: SELECT 1 from all_types where BITAND(1,null) IS null;
+- row_count: 1
+- output: [[1]]
+---
+- Statement: SELECT 5 from all_types where BITAND(null,3) = null;
+- row_count: 0
+---
+- Statement: SELECT 5 from all_types where BITAND(null,3) IS null;
+- row_count: 1
+- output: [[5]]
+---
+# formerly bug 906606  
+- Statement: SELECT BITAND(-1,-1) from all_types;
+- output: [['18446744073709551615']]
+---  #overflow test
+- Statement: SELECT BITAND(18446744073709551615,18446744073709551615) from all_types;
+- output: [[18446744073709551615]]
+---
+- Statement: SELECT BITAND(4,3) from all_types;
+- output: [[0]]
+---
+- Statement: SELECT BITAND(4,7) from all_types;
+- output: [[4]]
+---
+- Statement: SELECT BITAND(null,7) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT BITAND(4,null) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT BITAND(99999,99999) from all_types;
+- output: [[99999]]
+---
+- Statement: SELECT BITAND(9223372036854775807,9223372036854775807) from all_types;
+- output: [[9223372036854775807]]
+---
+- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (2, 'Level 2');
+---
+- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (3, 'Level 1;Level 2');
+---
+- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (4, 'Level 3');
+---
+- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (5, 'Level 3;Level 1');
+---
+- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (6, 'Level 3;Level 2');
+---
+- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (7, 'Level 3;Level 2;Level 1');
+---
+- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (8, 'Level 4');
+---
+- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (9, 'Level 4;Level 1');
+---
+- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (10, 'Level 4;Level 2');
+---
+- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (11, 'Level 4;Level 2;Level 1');
+---
+- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (12, 'Level 4;Level 3');
+---
+- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (13, 'Level 4;Level 3;Level 1');
+---
+- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (14, 'Level 4;Level 3;Level 2');
+---
+- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (15, 'Level 4;Level 3;Level 2;Level 1');
+---
+- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (16, 'Level 5');
+---
+- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (32, 'Level 6');
+---
+- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (64, 'Level 7');
+---
+- Statement: SELECT 1 from all_types where BITAND(29,15) = 13 limit 1;
+- output: [[1]]  
+---
+- Statement: SELECT 1 from all_types where BITAND(0,5) = 0 limit 1;
+- output: [[1]]  
+---
+- Statement: SELECT 1 from all_types where BITAND(1,5) = 1 limit 1;
+- output: [[1]]  
+---
+- Statement: SELECT 1 from all_types where BITAND(2,5) = 0 limit 1;
+- output: [[1]]  
+---
+- Statement: SELECT 1 from all_types where BITAND(4,5) = 4 limit 1;
+- output: [[1]]  
+---
+- Statement: SELECT 1 from all_types where BITAND(8,5) = 0 limit 1;
+- output: [[1]]
+---
+- Statement: SELECT varchar_field from all_types where BITAND(bigint_field,1)=1 and varchar_field not like '%Level 1%';    
+- row_count: 0
+---
+- Statement: SELECT varchar_field from all_types where BITAND(bigint_field,2)=2 and varchar_field not like '%Level 2%';
+- row_count: 0
+---
+- Statement: SELECT varchar_field from all_types where BITAND(bigint_field,4)=4 and varchar_field not like '%Level 3%';
+- row_count: 0
+---
+- Statement: SELECT varchar_field from all_types where BITAND(bigint_field,8) = 8 and varchar_field not like '%Level 4%';
+- row_count: 0
+---
+- Statement: SELECT varchar_field from all_types where BITAND(bigint_field,16)=16 and varchar_field not like '%Level 5%';
+- row_count: 0
+---
+- Statement: SELECT varchar_field from all_types where BITAND(bigint_field,32)=32 and varchar_field not like '%Level 6%';
+- row_count: 0
+---
+- Statement: SELECT varchar_field from all_types where BITAND(bigint_field,64)=64 and varchar_field not like '%Level 7%';
+- row_count: 0
+---
+- Statement: SELECT varchar_field from all_types where BITAND(bigint_field,64)=64;
+- row_count: 1  
+- output: [['Level 7']]  
+---
+- Statement: SELECT varchar_field from all_types where BITAND(bigint_field,1)=1;
+- output: [['Level 1'],['Level 1;Level 2'],['Level 3;Level 1'],['Level 3;Level 2;Level 1'],['Level 4;Level 1'],['Level 4;Level 2;Level 1'],['Level 4;Level 3;Level 1'],['Level 4;Level 3;Level 2;Level 1']]
+
+...
+

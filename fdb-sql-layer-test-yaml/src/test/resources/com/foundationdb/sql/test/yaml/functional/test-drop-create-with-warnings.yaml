@@ -1,0 +1,22 @@
+# test conditonal create
+# Bug:1028014 
+---
+- Statement: CREATE TABLE IF NOT EXISTS t1 (ff double);
+- warnings_count: 0
+---
+- Statement:  CREATE TABLE t1 (ff double);
+- error: [50006]
+---
+- Statement: CREATE TABLE IF NOT EXISTS t1 (ff double)
+- warnings_count: 1
+- warnings: [['50006', 'WARN:  Table `test`.`t1` already exists']]
+---
+- Statement: DROP TABLE t1;
+--- # so such table to drop
+- Statement: Drop Table t1;
+- error: [42501]
+---
+- Statement: DROP TABLE if exists t1;
+- warnings_count: 1
+- warnings: [['42501', 'WARN:  Cannot find the table `test`.`t1`']]
+...

@@ -68,7 +68,7 @@ public class TableIndex extends Index
                                   index.isUnique(),
                                   index.isPrimaryKey(), index.getConstraintName());
         if (index.getIndexMethod() == IndexMethod.Z_ORDER_LAT_LON) {
-            copy.markSpatial(index.firstSpatialArgument(), index.dimensions());
+            copy.markSpatial(index.firstSpatialArgument(), index.spatialColumns());
         }
         return copy;
     }
