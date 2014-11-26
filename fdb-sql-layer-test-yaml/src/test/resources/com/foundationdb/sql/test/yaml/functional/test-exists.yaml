@@ -19,7 +19,7 @@
 ---
 - Statement: SELECT nodes.id AS nodes_id, nodes.data AS nodes_data FROM nodes WHERE NOT (EXISTS (
                SELECT 1 FROM node_to_nodes AS node_to_nodes_1, nodes AS nodes_1
-                 WHERE nodes.id = node_to_nodes_1.left_node_id AND nodes_1.id = node_to_nodes_1.right_node_id AND nodes_1.id = 8))
+                 WHERE nodes.id = node_to_nodes_1.left_node_id AND nodes_1.id = node_to_nodes_1.right_node_id AND nodes_1.id = 7))
              ORDER BY nodes.data;
 - output: [[2, 'n2'], [3, 'n6'], [4, 'n7'], [6, 'n5'], [7, 'n4']]
 ...

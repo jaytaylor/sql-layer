@@ -32,8 +32,6 @@ left-incomplete: left join with no condition
 
 left-left-weird-conditons: two left joins with inner left join having conditons only involving outer left join
 
-left-right-conditions: like left-left-weird-conditions, but the second join is a right join
-
 left-single-table-condition: a left join with a condition just touching on the outer table
 
 right: dphyp does not support right joins, they're supposed to be converted to left joins earlier on
