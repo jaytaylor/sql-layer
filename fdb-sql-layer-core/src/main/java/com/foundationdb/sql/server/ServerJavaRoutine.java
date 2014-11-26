@@ -64,12 +64,16 @@ public abstract class ServerJavaRoutine implements Explainable, ShieldedInvokabl
     }
 
     public void invoke() {
-        ScriptEngineManagerProvider semp = this.context.getServiceManager().getServiceByClass(ScriptEngineManagerProvider.class);
-        ClassLoader origCl = Thread.currentThread().getContextClassLoader();
-        Thread.currentThread().setContextClassLoader(semp.getSafeClassLoader());
-        RoutineFirewall.callInvoke(this);
-        Thread.currentThread().setContextClassLoader(origCl);
-        
+        if (invocation.getRoutine().isSystemRoutine()) {
+            invokeShielded();
+        }
+        else {
+            ScriptEngineManagerProvider semp = context.getServiceManager().getServiceByClass(ScriptEngineManagerProvider.class);
+            ClassLoader origCl = Thread.currentThread().getContextClassLoader();
+            Thread.currentThread().setContextClassLoader(semp.getSafeClassLoader());
+            RoutineFirewall.callInvoke(this);
+            Thread.currentThread().setContextClassLoader(origCl);
+        }
     }
     
     public void setInputs() {

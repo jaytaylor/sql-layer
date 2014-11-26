@@ -91,9 +91,12 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
     /* RoutineLoader */
 
     @Override
-    public ClassLoader loadSQLJJar(Session session, TableName jarName) {
-        if (jarName == null)
+    public ClassLoader loadSQLJJar(Session session, TableName jarName, boolean isSystemRoutine) {
+        if (isSystemRoutine)
+            return getClass().getClassLoader();
+        if (jarName == null) 
             return engineProvider.getSafeClassLoader();
+        
         SQLJJar sqljJar = ais(session).getSQLJJar(jarName);
         if (sqljJar == null)
             throw new NoSuchSQLJJarException(jarName);
@@ -173,7 +176,7 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
                 TableName jarName = null;
                 if (routine.getSQLJJar() != null)
                     jarName = routine.getSQLJJar().getName();
-                ClassLoader classLoader = loadSQLJJar(session, jarName);
+                ClassLoader classLoader = loadSQLJJar(session, jarName, routine.isSystemRoutine());
                 try {
                     loadablePlan = (LoadablePlan<?>)
                         Class.forName(routine.getClassName(), true, classLoader).newInstance();
@@ -212,7 +215,7 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
             TableName jarName = null;
             if (routine.getSQLJJar() != null)
                 jarName = routine.getSQLJJar().getName();
-            ClassLoader classLoader = loadSQLJJar(session, jarName);
+            ClassLoader classLoader = loadSQLJJar(session, jarName, routine.isSystemRoutine());
             Class<?> clazz;
             try {
                 clazz = Class.forName(routine.getClassName(), true, classLoader);

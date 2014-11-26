@@ -131,6 +131,15 @@ public class Routine
     protected void checkMutability() {
         ais.checkMutability();
     }
+    
+    public boolean isSystemRoutine() {
+        if (name.getSchemaName().equalsIgnoreCase("sys") ||
+                name.getSchemaName().equalsIgnoreCase("security_schema") ||
+                name.getSchemaName().equalsIgnoreCase("sqlj")) {
+            return true;
+        }
+        return false;
+    }
 
     protected void addParameter(Parameter parameter)
     {
