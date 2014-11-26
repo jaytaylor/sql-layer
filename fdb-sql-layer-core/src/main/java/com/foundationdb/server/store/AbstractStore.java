@@ -570,11 +570,10 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
 
     /** Delicate: Added to support GroupIndex building which only deals with FlattenedRows containing AbstractRows. */
     protected void lock(Session session, Row row) {
-        RowData rowData = ((AbstractRow)row).rowData();
         Table table = row.rowType().table();
         SDType storeData = createStoreData(session, table.getGroup());
         try {
-            lock(session, storeData, table.rowDef(), rowData);
+            lock(session, storeData, row);
         } finally {
             releaseStoreData(session, storeData);
         }
@@ -1399,18 +1398,16 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         PROPAGATE_CHANGE_TAP.in();
         try {
             final Key hKey = getKey(session, storeData);
-            final RowData rowData = new RowData();
             while(it.hasNext()) {
                 it.next();
-                expandRowData(session, storeData, rowData);
-                Table table = ais.getTable(rowData.getRowDefId());
-                assert (table != null) : rowData.getRowDefId();
+                final Row row = expandRow(session, storeData, SchemaCache.globalSchema(ais));
+                Table table = row.rowType().table();
                 int ordinal = table.getOrdinal();
                 if(tablesRequiringHKeyMaintenance == null || tablesRequiringHKeyMaintenance.get(ordinal)) {
                     PROPAGATE_REPLACE_TAP.in();
                     try {
                         for(RowListener listener : listenerService.getRowListeners()) {
-                            listener.onDeletePre(session, table, hKey, rowData);
+                            listener.onDeletePre(session, table, hKey, row);
                         }
                         // Don't call deleteRow as the hKey does not need recomputed.
                         clear(session, storeData);
@@ -1419,7 +1416,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                             if (index.isSpatial()) {
                                 final SpatialColumnHandler spatialColumnHandler = new SpatialColumnHandler(index);
                                 spatialColumnHandler.processSpatialObject(
-                                    rowData,
+                                    row,
                                     new SpatialColumnHandler.Operation()
                                     {
                                         @Override
@@ -1427,7 +1424,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                                         {
                                             deleteIndexRow(session,
                                                            index,
-                                                           rowData,
+                                                           row,
                                                            hKey,
                                                            indexRowBuffer,
                                                            spatialColumnHandler,
@@ -1439,7 +1436,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                             } else {
                                 deleteIndexRow(session,
                                                index,
-                                               rowData,
+                                               row,
                                                hKey,
                                                indexRowBuffer,
                                                null,
@@ -1449,8 +1446,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                         }
                         if(!cascadeDelete) {
                             // Reinsert it, recomputing the hKey and maintaining indexes
-                            RowDef rowDef = getRowDef(ais, rowData.getRowDefId());
-                            writeRow(session, rowDef, rowData, null, tablesRequiringHKeyMaintenance, false);
+                            writeRow(session, row, null, tablesRequiringHKeyMaintenance, false);
                         }
                     } finally {
                         PROPAGATE_REPLACE_TAP.out();

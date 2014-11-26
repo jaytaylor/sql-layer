@@ -132,6 +132,7 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
+    @Deprecated
     public RowData rowData(RowDef rowDef, Row row, RowDataCreator creator) {
         if(row instanceof PersistitGroupRow) {
             return ((PersistitGroupRow)row).rowData();
@@ -144,20 +145,6 @@ public class PersistitAdapter extends StoreAdapter
     public PersistitStore persistit()
     {
         return store;
-    }
-
-    public RowDef rowDef(int tableId)
-    {
-        return getAIS().getTable(tableId).rowDef();
-    }
-
-    private RowDataCreator rowDataCreator() {
-        return new RowDataCreator();
-    }
-
-    public PersistitGroupRow newGroupRow()
-    {
-        return PersistitGroupRow.newPersistitGroupRow(this);
     }
 
     @Override

@@ -177,7 +177,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
                             FDBStoreData storeData, Schema schema) {
         Map<String,Object> value = (Map<String,Object>)storeData.otherValue;
         
-        Table table = TupleStorageDescription.tableFromOrdinals((Group)object, storeData);
+        Table table = TupleStorageDescription.tableFromOrdinals((Group)object, storeData.persistitKey);
         RowType rowType = schema.tableRowType(table);
         int nfields = rowType.nFields();
         Object[] objects = new Object[nfields];

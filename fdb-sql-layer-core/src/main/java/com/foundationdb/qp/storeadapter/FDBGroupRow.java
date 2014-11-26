@@ -18,19 +18,11 @@ package com.foundationdb.qp.storeadapter;
 
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.AbstractRow;
-import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
-import com.foundationdb.server.rowdata.FieldDef;
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDataValueSource;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.types.value.ValueSource;
-import com.foundationdb.util.SparseArray;
 import com.persistit.Key;
 
 public class FDBGroupRow extends AbstractRow {

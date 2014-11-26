@@ -277,7 +277,7 @@ public class TupleStorageDescription extends FDBStorageDescription
                             FDBStoreData storeData, Schema schema) {
         if (usage == TupleUsage.KEY_AND_ROW) {
             Tuple2 tuple = Tuple2.fromBytes(storeData.rawValue);
-            Table table = tableFromOrdinals((Group)object, storeData);
+            Table table = tableFromOrdinals((Group)object, storeData.persistitKey);
             RowType rowType = schema.tableRowType(table);
             
             Row row = TupleRowDataConverter.tupleToRow(tuple, rowType);
@@ -300,10 +300,9 @@ public class TupleStorageDescription extends FDBStorageDescription
         }
     }
     
-    public static Table tableFromOrdinals(Group group, FDBStoreData storeData) {
+    public static Table tableFromOrdinals(Group group, Key hkey) {
         Table root = group.getRoot();
         Table table = root;
-        Key hkey = storeData.persistitKey;
         hkey.reset();
         int ordinal = hkey.decodeInt();
         assert (root.getOrdinal() == ordinal) : hkey;

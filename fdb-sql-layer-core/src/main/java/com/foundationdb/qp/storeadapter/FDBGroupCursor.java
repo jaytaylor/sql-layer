@@ -84,9 +84,7 @@ public class FDBGroupCursor extends RowCursorImpl implements GroupCursor {
             next = isActive();
             if (next) {
                 Row tempRow = adapter.getUnderlyingStore().expandGroupData(adapter.getSession(), storeData, schema);
-                if (tempRow != null) {
-                    row = new FDBGroupRow(adapter.getKeyCreator(), tempRow, storeData.persistitKey);
-                }
+                row = new FDBGroupRow(adapter.getKeyCreator(), tempRow, storeData.persistitKey);
             }
         }
         return row;

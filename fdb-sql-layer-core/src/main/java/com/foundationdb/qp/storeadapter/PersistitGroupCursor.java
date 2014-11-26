@@ -23,6 +23,8 @@ import com.foundationdb.qp.operator.GroupCursor;
 import com.foundationdb.qp.operator.RowCursorImpl;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.PersistitAdapterException;
 import com.foundationdb.util.tap.PointTap;
@@ -83,8 +85,11 @@ class PersistitGroupCursor extends RowCursorImpl implements GroupCursor
                 groupScan.advance();
                 next = isActive();
                 if (next) {
-                    row = adapter.newGroupRow();
-                    row.copyFromExchange(exchange);
+                    Row tmpRow = adapter.persistit().expandRow(adapter.getSession(), exchange, schema);
+                    row = new PersistitGroupRow(adapter.getKeyCreator(), tmpRow, exchange.getKey());
+                            
+                    //row = adapter.newGroupRow();
+                    //row.copyFromExchange(exchange);
                 }
             }
             if (LOG.isDebugEnabled()) {
@@ -118,6 +123,8 @@ class PersistitGroupCursor extends RowCursorImpl implements GroupCursor
         this.adapter = adapter;
         this.group = group;
         this.controllingHKey = adapter.getKeyCreator().createKey();
+        this.schema = SchemaCache.globalSchema(group.getAIS());
+
     }
 
     // Class state
@@ -146,6 +153,7 @@ class PersistitGroupCursor extends RowCursorImpl implements GroupCursor
     private HKey hKey;
     private boolean hKeyDeep;
     private GroupScan groupScan;
+    private final Schema schema;
 
     // static state
     private static final PointTap TRAVERSE_COUNT = Tap.createCount("traverse: persistit group cursor");

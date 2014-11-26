@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.store.format;
 
+import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.validation.AISValidationFailure;
@@ -24,18 +25,16 @@ import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.PersistitProtobuf;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.qp.storeadapter.RowDataCreator;
-import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
 import com.foundationdb.server.error.RowDataCorruptionException;
 import com.foundationdb.server.rowdata.CorruptRowDataException;
 import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.TreeLink;
 import com.foundationdb.server.store.PersistitStore;
+import com.foundationdb.server.store.RowValueCoder.SchemaCoderContext;
 import com.foundationdb.server.store.StoreStorageDescription;
 import com.persistit.Exchange;
 import com.persistit.Tree;
@@ -129,15 +128,7 @@ public class PersistitStorageDescription extends StoreStorageDescription<Persist
     @Override 
     public void packRow(PersistitStore store, Session session,
                         Exchange exchange, Row row) {
-        RowDef rowDef = row.rowType().table().rowDef();
-        RowDataCreator creator = new RowDataCreator();
-        NewRow niceRow = new NiceRow(rowDef.getRowDefId(), rowDef);
-        int fields = rowDef.getFieldCount();
-        for(int i = 0; i < fields; ++i) {
-            creator.put(row.value(i), niceRow, i);
-        }
-        RowData rowData = niceRow.toRowData();
-        exchange.getValue().directPut(store.getRowDataValueCoder(), rowData, null);
+        exchange.getValue().directPut(store.getRowValueCoder(), row, null);
     }
     
     @Override
@@ -157,11 +148,14 @@ public class PersistitStorageDescription extends StoreStorageDescription<Persist
                             Exchange exchange, Schema schema) {
 
         try {
-            throw new UnsupportedOperationException ();
-            //exchange.getValue().directGet(store.getRowDataValueCoder(), row, Row.class, null);
+            Group group = (Group)this.getObject();
+            Row row = (ValuesHolderRow)exchange.getValue().directGet(store.getRowValueCoder(), 
+                    ValuesHolderRow.class, 
+                    new SchemaCoderContext(schema, group, exchange.getKey()));
+            return row;
         }
         catch (CorruptRowDataException ex) {
-            LOG.error("Corrupt RowData at key {}: {}", exchange.getKey(), ex.getMessage());
+            LOG.error("Corrupt Row at key {}: {}", exchange.getKey(), ex.getMessage());
             throw new RowDataCorruptionException(exchange.getKey());
         }
     }

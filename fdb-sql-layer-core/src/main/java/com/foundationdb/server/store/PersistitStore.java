@@ -25,6 +25,7 @@ import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.row.WriteIndexRow;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.server.AccumulatorAdapter;
@@ -70,6 +71,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
 
     private boolean writeLockEnabled;
     private RowDataValueCoder rowDataValueCoder;
+    private RowValueCoder     rowValueCoder;
     private PersistitProtobufValueCoder protobufValueCoder;
 
     @Inject
@@ -95,6 +97,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         CoderManager cm = getDb().getCoderManager();
         cm.registerValueCoder(RowData.class, rowDataValueCoder = new RowDataValueCoder());
         cm.registerValueCoder(PersistitProtobufRow.class, protobufValueCoder = new PersistitProtobufValueCoder(this));
+        cm.registerValueCoder(ValuesHolderRow.class, rowValueCoder = new RowValueCoder());
         boolean withConcurrentDML = false;
         if (config != null) {
             writeLockEnabled = Boolean.parseBoolean(config.getProperty(WRITE_LOCK_ENABLED_CONFIG));
@@ -182,6 +185,10 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
 
     public RowDataValueCoder getRowDataValueCoder() {
         return rowDataValueCoder;
+    }
+    
+    public RowValueCoder getRowValueCoder() {
+        return  rowValueCoder;
     }
     public PersistitProtobufValueCoder getProtobufValueCoder() {
         return protobufValueCoder;
