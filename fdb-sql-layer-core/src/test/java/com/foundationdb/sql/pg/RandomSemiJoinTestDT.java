@@ -463,6 +463,8 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
             return random.nextInt(count-min) + min;
         }
 
+        // TODO make sure this is correct, I had a test that had all one table for the conditions
+        // which means that given two tables it randomly chose the same one 6 times. Seems unlikely.
         int randomAbove(int min, int excluded) {
             int secondTable = randomAbove(min);
             if (secondTable == excluded) {
