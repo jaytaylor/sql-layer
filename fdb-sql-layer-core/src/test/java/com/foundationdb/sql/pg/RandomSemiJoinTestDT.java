@@ -173,7 +173,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
     private static void addCondition(StringBuilder sb, Random random, TableAliasGenerator tag,
                                      int firstAvailable, int constantBias, boolean forceMainEqualsClause) {
         int firstTable = tag.randomAbove(firstAvailable);
-        int secondTable = tag.randomAbove(firstTable, firstTable);
+        int secondTable = tag.randomAbove(firstAvailable, firstTable);
         boolean mainIsFirst = false;
         // 0 => first is constant, 1 => second is constant, else neither
         int oneIsConstant = random.nextInt(constantBias);
