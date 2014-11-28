@@ -22,6 +22,7 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
+import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.storeadapter.RowDataCreator;
 import com.foundationdb.qp.util.SchemaCache;
@@ -32,12 +33,15 @@ import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDataExtractor;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.store.format.FDBStorageDescription;
+import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueTargets;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple2;
 import com.persistit.Key;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class FDBStoreDataHelper
 {
@@ -121,15 +125,19 @@ public class FDBStoreDataHelper
 
         Table table = schema.ais().getTable(rowData.getRowDefId());
         RowDef rowDef = table.rowDef();
-        ValuesHolderRow row = new ValuesHolderRow(schema.tableRowType(table));
-        
         RowDataExtractor extractor = new RowDataExtractor(rowData, rowDef);
+        List<Value> values = new ArrayList<>(rowDef.getFieldCount());
         
-        for (int i = 0 ; i < rowDef.getFieldCount(); i++) {
+        RowType rowType = schema.tableRowType(table);
+        assert rowDef.getFieldCount() == rowType.nFields() : rowData;
+        
+        for (int i = 0; i < rowDef.getFieldCount(); i++) {
             FieldDef fieldDef = rowDef.getFieldDef(i);
-            ValueTargets.copyFrom(extractor.getValueSource(fieldDef), row.valueAt(i));
+            Value value = new Value (rowType.typeAt(i));
+            ValueTargets.copyFrom(extractor.getValueSource(fieldDef), value);
+            values.add(value);
         }
-        
+        ValuesHolderRow row = new ValuesHolderRow(rowType, values);
         return row;
     }
     

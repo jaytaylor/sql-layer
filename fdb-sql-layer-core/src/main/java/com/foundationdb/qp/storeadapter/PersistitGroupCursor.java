@@ -87,9 +87,6 @@ class PersistitGroupCursor extends RowCursorImpl implements GroupCursor
                 if (next) {
                     Row tmpRow = adapter.persistit().expandRow(adapter.getSession(), exchange, schema);
                     row = new PersistitGroupRow(adapter.getKeyCreator(), tmpRow, exchange.getKey());
-                            
-                    //row = adapter.newGroupRow();
-                    //row.copyFromExchange(exchange);
                 }
             }
             if (LOG.isDebugEnabled()) {

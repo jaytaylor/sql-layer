@@ -16,6 +16,9 @@
  */
 package com.foundationdb.server.store;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.Row;
@@ -33,6 +36,21 @@ import com.persistit.encoding.ValueDisplayer;
 import com.persistit.encoding.ValueRenderer;
 import com.persistit.exception.ConversionException;
 
+/**
+ * This was a two hour attempt to get the PersistitStorageDescription to perform
+ * a Row -> Persistit.Value conversion without going through a RowData. 
+ * 
+ * I encountered at least one Persistit bug (noted below and in 
+ * https://github.com/pbeaman/persistit/issues/2
+ * 
+ * This file (and its references) are unused. If we (the FDB team) determine
+ * that we want to invest more time in the Persistit layer, fixing this should
+ * be a priority. If not, this (and references) can be deleted. 
+ * 
+ * @author tjoneslo
+ *
+ */
+
 public class RowValueCoder implements ValueDisplayer, ValueRenderer,
         HandleCache {
 
@@ -42,9 +60,8 @@ public class RowValueCoder implements ValueDisplayer, ValueRenderer,
         SchemaCoderContext schema = (SchemaCoderContext)context;
         RowType rowType = schema.getRowType();
         Object[] objects = new Object[rowType.nFields()];
-        
         for (int i = 0; i < rowType.nFields(); i++) {
-            objects[i] = value.get();
+            objects[i] = value.get(null, context);
         }
         ValuesHolderRow row = new ValuesHolderRow(rowType, objects);
         return row;
@@ -54,9 +71,24 @@ public class RowValueCoder implements ValueDisplayer, ValueRenderer,
     public void put(Value value, Object source, CoderContext context)
             throws ConversionException {
         Row row = (Row)source;
-        
+        /**
+         * TODO: This is a hack to get around a problem with 
+         * persistit.Value#directPut() and an object which calls back into 
+         * here which in turn uses Value#put() to insert several values. 
+         * directPut() encodes an "Serialized Object" code, but doesn't update
+         * an internal _serializedItemCount. When you call put(), it uses this
+         * _serialisedItemCount to determine if there are duplicate value, 
+         * and encode them (for conciseness). If _serializedItemCount is off,
+         * the indexing back for the duplicates is wrong and the decoding fails
+         * 
+         * The value.toString() correctly updates the _serializedItemCount
+         * See: https://github.com/pbeaman/persistit/issues/2
+         */
+        value.toString();
+        // Encode the values as needed. 
         for (int i = 0; i < row.rowType().nFields(); i++) {
-            value.put(ValueSources.toObject(row.value(i)));
+            Object obj = ValueSources.toObject(row.value(i));
+            value.put(obj, context);
         }
     }
 
@@ -76,6 +108,8 @@ public class RowValueCoder implements ValueDisplayer, ValueRenderer,
     @Override
     public void render(Value value, Object target, Class<?> clazz, CoderContext context)
             throws ConversionException {
+        
+        LOG.error("rendering object??");
         ValuesHolderRow row = (ValuesHolderRow)target;
         
         for (int i = 0; i < row.rowType().nFields(); i++) {
@@ -86,7 +120,7 @@ public class RowValueCoder implements ValueDisplayer, ValueRenderer,
 
     @Override
     public void display(Value value, StringBuilder target, Class<?> clazz,
-            CoderContext context) throws ConversionException {
+            CoderContext context) throws ConversionException {        
         final Object object = get(value, clazz, context);
         if (object instanceof Row) {
             final Row row = (Row) object;
@@ -96,6 +130,7 @@ public class RowValueCoder implements ValueDisplayer, ValueRenderer,
         }
     }
     private volatile int handle;
+    private static final Logger LOG = LoggerFactory.getLogger(RowValueCoder.class);
     
     public static class SchemaCoderContext implements CoderContext {
         private static final long serialVersionUID = 1L;

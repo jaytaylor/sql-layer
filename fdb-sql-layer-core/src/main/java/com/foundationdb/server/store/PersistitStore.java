@@ -23,6 +23,8 @@ import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.qp.loadableplan.std.PersistitCLILoadablePlan;
 import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.qp.storeadapter.indexrow.PersistitIndexRowBuffer;
+import com.foundationdb.qp.row.AbstractRow;
+import com.foundationdb.qp.row.ImmutableRow;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
@@ -97,7 +99,8 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         CoderManager cm = getDb().getCoderManager();
         cm.registerValueCoder(RowData.class, rowDataValueCoder = new RowDataValueCoder());
         cm.registerValueCoder(PersistitProtobufRow.class, protobufValueCoder = new PersistitProtobufValueCoder(this));
-        cm.registerValueCoder(ValuesHolderRow.class, rowValueCoder = new RowValueCoder());
+        cm.registerValueCoder(AbstractRow.class, rowValueCoder = new RowValueCoder());
+        cm.registerValueCoder(ImmutableRow.class, rowValueCoder);
         boolean withConcurrentDML = false;
         if (config != null) {
             writeLockEnabled = Boolean.parseBoolean(config.getProperty(WRITE_LOCK_ENABLED_CONFIG));
