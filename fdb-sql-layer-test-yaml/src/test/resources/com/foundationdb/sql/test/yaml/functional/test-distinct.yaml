@@ -14,4 +14,7 @@
 ---
 - Statement: SELECT value FROM (SELECT DISTINCT value FROM table1 INTERSECT SELECT DISTINCT value FROM table2) AS X
 - output: [[1], [2], [4], [6]]
+---
+- Statement: SELECT DISTINCT value FROM (SELECT value FROM table1 INTERSECT SELECT value FROM table2) AS X
+- output: [[1], [2], [4], [6]]
 ...

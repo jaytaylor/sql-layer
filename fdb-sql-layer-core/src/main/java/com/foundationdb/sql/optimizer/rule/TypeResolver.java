@@ -22,6 +22,7 @@ import com.foundationdb.ais.model.ColumnContainer;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.CorruptedPlanException;
 import com.foundationdb.server.error.SQLParserInternalException;
 import com.foundationdb.server.types.service.OverloadResolver;
 import com.foundationdb.server.types.service.OverloadResolver.OverloadResult;
@@ -842,6 +843,11 @@ public final class TypeResolver extends BaseRule {
         private void updateSetNode(SetPlanNode setPlan) {
             ProjectHolder leftProject = getProject(setPlan.getLeft());
             ProjectHolder rightProject= getProject(setPlan.getRight());
+            if (leftProject == null) {
+                throw new CorruptedPlanException("Could not find left project for set plan node");
+            } else if (rightProject == null) {
+                throw new CorruptedPlanException("Could not find right project for set plan node");
+            }
             Project topProject = (Project)setPlan.getOutput();
             ResultSet leftResult = leftProject.getResultSet();
             ResultSet rightResult = rightProject.getResultSet();
