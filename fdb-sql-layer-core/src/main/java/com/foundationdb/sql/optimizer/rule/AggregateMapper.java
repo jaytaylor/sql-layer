@@ -139,7 +139,7 @@ public class AggregateMapper extends BaseRule
         Deque<AggregateFunctionExpression> functionsStack = new ArrayDeque<>();
 
         // collect this stuff to use in AddAggregates
-        Multimap<ColumnSource, AggregateSourceState> tablesToSources = HashMultimap.create();
+        Multimap<TableSource, AggregateSourceState> tablesToSources = HashMultimap.create();
 
         public AggregateSourceAndFunctionFinder(PlanContext planContext) {
             super(planContext);
@@ -149,7 +149,7 @@ public class AggregateMapper extends BaseRule
             return functions;
         }
 
-        public Multimap<ColumnSource, AggregateSourceState> getTablesToSources() {
+        public Multimap<TableSource, AggregateSourceState> getTablesToSources() {
             return tablesToSources;
         }
 
@@ -169,9 +169,9 @@ public class AggregateMapper extends BaseRule
         @Override
         public boolean visit(PlanNode n) {
             super.visit(n);
-            if (n instanceof ColumnSource) {
+            if (n instanceof TableSource) {
                 if (!sources.isEmpty()) {
-                    tablesToSources.put((ColumnSource)n, sources.get(sources.size()-1));
+                    tablesToSources.put((TableSource)n, sources.get(sources.size()-1));
                 }
             }
             return true;
@@ -504,10 +504,10 @@ public class AggregateMapper extends BaseRule
     static class AddAggregates implements PlanVisitor, ExpressionRewriteVisitor {
         PlanNode plan;
         Deque<BaseQuery> subqueries = new ArrayDeque<>();
-        Multimap<ColumnSource, AggregateSourceState> tablesToSources;
+        Multimap<TableSource, AggregateSourceState> tablesToSources;
 
         public AddAggregates(PlanNode plan,
-                             Multimap<ColumnSource, AggregateSourceState> tablesToSources) {
+                             Multimap<TableSource, AggregateSourceState> tablesToSources) {
             this.plan = plan;
             this.tablesToSources = tablesToSources;
         }
@@ -520,9 +520,9 @@ public class AggregateMapper extends BaseRule
             AggregateSource source = expr.getSource();
             if (source == null && expr.getOperand() instanceof ColumnExpression) {
                 ColumnSource columnSource = ((ColumnExpression)expr.getOperand()).getTable();
-                if (tablesToSources.containsKey(columnSource)) {
+                if (columnSource instanceof TableSource && tablesToSources.containsKey((TableSource)columnSource)) {
                     Collection<AggregateSourceState> sourceStates = 
-                            tablesToSources.get(columnSource);
+                            tablesToSources.get((TableSource)columnSource);
                     if (sourceStates.size() == 1) {
                         AggregateSourceState sourceState = sourceStates.iterator().next();
                         if (sourceState.containingQuery != subqueries.peek() && 
