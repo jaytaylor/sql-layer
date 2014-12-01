@@ -85,11 +85,7 @@ public final class Cast_From_Binary {
             if (in.length > maxLen) {
                 out = new byte[maxLen];
                 System.arraycopy(in, 0, out, 0, maxLen);
-                try {
-                    context.reportTruncate(new String(in, "UTF-8"), new String(out, "UTF-8"));
-                } catch (UnsupportedEncodingException e) {
-                   throw new AkibanInternalException("reporting VBINARY Truncation", e);
-                }
+                context.reportTruncate("bytes of length " + in.length,  "bytes of length " + maxLen);
             }
             TBinary.putBytes(context, target, out);
         }
