@@ -136,7 +136,7 @@ public class AggregateMapper extends BaseRule
         List<AggregateFunctionExpression> functions = new ArrayList<>();
         Deque<AggregateFunctionExpression> functionsStack = new ArrayDeque<>();
 
-        // collect this stuff to use in AddAggregates
+        // collect this to use in AddAggregates
         Map<TableSource, AggregateSourceState> tablesToSources = new HashMap<>();
 
         public AggregateSourceAndFunctionFinder(PlanContext planContext) {
