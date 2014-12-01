@@ -67,8 +67,8 @@
 ## Test arity
 ---
 - Statement: SELECT right();
-- error: !select-engine { all: [42000], sys-mysql: [1064] }
+- error: [42000]
 ---
 - Statement: SELECT right('abc', 1, 2);
-- error: !select-engine { all: [42000], sys-mysql: [1064] }
+- error: [42000]
 ...

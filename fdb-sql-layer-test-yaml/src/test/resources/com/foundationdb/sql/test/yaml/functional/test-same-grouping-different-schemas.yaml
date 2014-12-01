@@ -1,9 +1,6 @@
 # Same grouping, with GIs, in two different schemas
 # Inspired by bug 1034971
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - Statement: CREATE SCHEMA s1
 ---
 - CreateTable: schema_s1.table_p (pid INT NOT NULL PRIMARY KEY, pcol VARCHAR(32));

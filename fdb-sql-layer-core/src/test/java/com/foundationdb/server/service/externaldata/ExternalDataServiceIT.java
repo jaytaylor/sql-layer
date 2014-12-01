@@ -99,7 +99,7 @@ public class ExternalDataServiceIT extends ITBase
         
         options = new FormatOptions();
         ConfigurationService configService = configService();
-        options.set(FormatOptions.JsonBinaryFormatOption.fromProperty(configService.getProperty("fdbsql.postgres.jsonbinary_output")));
+        options.set(FormatOptions.JsonBinaryFormatOption.fromProperty(configService.getProperty("fdbsql.sql.jsonbinary_output")));
 
     }
 

@@ -1,9 +1,6 @@
 #
 # Positive and negative tests for changing a columns NULL flag with ALTER
 #
----
-- Properties: sys-mysql
-- suppressed: true
 # NOT NULL -> NULL, plain column
 ---
 - CreateTable: t1 (id INT NOT NULL PRIMARY KEY, c1 CHAR(5) NOT NULL) 

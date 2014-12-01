@@ -3,10 +3,10 @@
 - Include: all-types-schema.yaml
 ---
 - Statement: SELECT SIGN() FROM all_types
-- error: !select-engine {all: [4250C], sys-mysql: [1582] }
+- error: [4250C]
 ---
 - Statement: SELECT SIGN(1.0, -2.0) FROM all_types
-- error: !select-engine { all: [4250C], sys-mysql: [1582] } 
+- error: [4250C]
 ---
 # Test NULL
 - Statement: INSERT INTO all_types (float_field, double_field, smallint_field,

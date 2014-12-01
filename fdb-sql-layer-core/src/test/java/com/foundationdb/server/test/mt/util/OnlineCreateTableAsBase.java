@@ -136,7 +136,7 @@ public class OnlineCreateTableAsBase extends OnlineMTBase {
             defaultSchemaName = SCHEMA;
             properties = new Properties();
             properties.put("database", defaultSchemaName);
-            properties.put(CONFIG_PARSER_FEATURES, configService().getProperty("fdbsql.postgres." + CONFIG_PARSER_FEATURES));
+            properties.put(CONFIG_PARSER_FEATURES, configService().getProperty("fdbsql.sql." + CONFIG_PARSER_FEATURES));
             initParser();
             TestOperatorCompiler compiler = new TestOperatorCompiler(this);
             initAdapters(compiler);

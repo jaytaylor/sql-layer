@@ -8,7 +8,7 @@
 
 # Test insert with null
 - Statement: insert into t values(2, null, 2);
-- error: !select-engine {all: [23502], sys-mysql: [1048] }
+- error: [23502]
 ---
 
 # Test insert with null via select

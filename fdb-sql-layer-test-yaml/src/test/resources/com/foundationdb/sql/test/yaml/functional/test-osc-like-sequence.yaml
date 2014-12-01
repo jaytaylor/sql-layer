@@ -1,9 +1,6 @@
 # Run sequence similar to pt-online-schema-change.
 # Inspired by bug1053073 but did not trigger it.
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - Statement: CREATE TABLE "customers" (cid INT NOT NULL PRIMARY KEY);
 ---
 - Statement: CREATE TABLE "addresses" (aid INT NOT NULL PRIMARY KEY, cid INT NOT NULL, GROUPING FOREIGN KEY(cid) REFERENCES customers(cid));

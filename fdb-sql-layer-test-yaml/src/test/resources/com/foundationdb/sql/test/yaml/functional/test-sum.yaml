@@ -8,8 +8,8 @@
 - Statement: INSERT INTO t VALUES (1.7976931348623157E308), (1.0E0)
 ---
 - Statement: SELECT SUM(real_field) FROM t
-- output: !select-engine {      all: [[!re '3.402823[0-9]*[eE][+]?38']],# We see REAL as a float field,
-                          sys-mysql: [[1.7976931348623157e308]] }       # MySQL sees it as a DOUBLE field.
+- output: [[!re '3.402823[0-9]*[eE][+]?38']]
+
 # Test sum with no rows => null
 ---
 - Statement: SELECT sum(bigint_field), sum(bigint_unsigned_field),

@@ -44,10 +44,10 @@
 - row_count: 3
 --- # test wrong arity: empty list
 - Statement: SELECT LTRIM() from all_types;
-- error: !select-engine {all: [42000], sys-mysql: [1582] }
+- error: [42000]
 --- # test wrong arity: extraneous argument
 - Statement: SELECT LTRIM('abc', 'def');
-- error: !select-engine { all: [42000], sys-mysql: [1582] }
+- error: [42000]
 --- # test null
 - Statement: SELECT LTRIM(null) from all_types;
 - output: [[null], [null], [null]]
@@ -64,10 +64,10 @@
 - output: [['     ltrim']]
 --- # test wrong arity: empty list
 - Statement: SELECT TRIM() from all_types;
-- error: !select-engine { all: [42000], sys-mysql: [1064] }
+- error: [42000]
 --- # test wrong arity: extraneous argument
 - Statement: SELECT TRIM('abc', 'def');
-- error: !select-engine { all: [42000], sys-mysql: [1064] }
+- error: [42000]
 --- # test null
 - Statement: SELECT TRIM(null) from all_types;
 - output: [[null], [null], [null]]
@@ -76,10 +76,10 @@
 - output: [[''], [''], ['']]
 --- # test wrong arity: empty list
 - Statement: SELECT RTRIM() from all_types;
-- error: !select-engine { all: [42000], sys-mysql: [1582] }
+- error: [42000]
 --- # test wrong arity: extraneous argument
 - Statement: SELECT RTRIM('abc', 'def');
-- error: !select-engine { all: [42000], sys-mysql: [1582] }
+- error: [42000]
 --- # test null
 - Statement: SELECT RTRIM(null) from all_types;
 - output: [[null], [null], [null]]

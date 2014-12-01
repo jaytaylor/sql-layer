@@ -30,10 +30,10 @@
 - output: [[''], [''], ['']]
 --- # test wrong arity: empty list
 - Statement: SELECT LCASE() from all_types;
-- error: !select-engine { all: [42000], sys-mysql: [1582] } 
+- error: [42000]
 --- # test wrong arity: extraneous arguments
 - Statement: SELECT LOWER ('abc', 'def') from all_types;
-- error: !select-engine { all: [42000], sys-mysql: [1582] }
+- error: [42000]
 --- # test with date_field in WHERE clause
 - Statement: SELECT varchar_field from all_types WHERE LCASE(date_field) = LOWER(date_field);
 - row_count: 3

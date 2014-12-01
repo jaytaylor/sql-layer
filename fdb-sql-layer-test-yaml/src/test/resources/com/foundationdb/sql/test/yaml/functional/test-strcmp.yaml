@@ -5,10 +5,10 @@
 - Statement: INSERT INTO all_types (varchar_field) VALUES ('Test')
 ---
 - Statement: SELECT STRCMP() FROM all_types
-- error: !select-engine { all: [4250C], sys-mysql: [1582] }
+- error: [4250C]
 ---
 - Statement: SELECT STRCMP('foo') FROM all_types
-- error: !select-engine { all: [4250C], sys-mysql: [1582] }
+- error: [4250C]
 --- # Literals
 - Statement: SELECT STRCMP('foo', 'foo') FROM all_types
 - output: [[0]]

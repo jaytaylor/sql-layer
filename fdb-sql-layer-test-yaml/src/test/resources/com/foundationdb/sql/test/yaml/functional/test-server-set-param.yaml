@@ -5,9 +5,6 @@
 
 # Test SERVER (GLOBAL) SET command
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - Statement: ALTER SERVER SET no_such_var TO 'yes'
 - error: [42513]
 

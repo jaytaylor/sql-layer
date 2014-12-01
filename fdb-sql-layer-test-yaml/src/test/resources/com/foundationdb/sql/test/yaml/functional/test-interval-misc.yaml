@@ -11,21 +11,21 @@
 # Bad syntax
 ---
 - Statement: SELECT time_field + INTERVAL FROM t
-- error: !select-engine { all: [42000], sys-mysql: [1064] }
+- error: [42000]
 ---
 - Statement: SELECT time_field + INTERVAL '1-2' MINUTE TO t FROM t
-- error: !select-engine { all: [42000], sys-mysql: [1064] }
+- error: [42000]
 ---
 - Statement: SELECT datetime_field + INTERVAL '1-2 3' MONTH TO HOUR FROM t
-- error: !select-engine { all: [42515], sys-mysql: [1064] }
+- error: [42515]
 ---
 - Message: Removed tests for failures
 #---
 #- Statement: SELECT time_field + INTERVAL 'abc' SECOND FROM t
-#- error: !select-engine { all: [22006], sys-mysql: [1064] }
+#- error: [22006]
 #---
 #- Statement: SELECT time_field + INTERVAL '1' MINUTE TO SECOND FROM t
-#- error: !select-engine { all: [22006], sys-mysql: [1064] }
+#- error: [22006]
 
 # Support for non-MySQL interval units
 ---

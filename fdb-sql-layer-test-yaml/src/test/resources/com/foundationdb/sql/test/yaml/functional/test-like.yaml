@@ -3,10 +3,10 @@
 - Include: all-types-schema.yaml
 ---
 - Statement: SELECT varchar_field LIKE FROM all_types
-- error: !select-engine { all: [42000], sys-mysql: [1064] }
+- error: [42000]
 ---
 - Statement: SELECT LIKE varchar_field FROM all_types
-- error: !select-engine {all: [42000], sys-mysql: [1064] }
+- error: [42000]
 ---
 - Statement: INSERT INTO all_types (varchar_field) VALUES (null)
 ---

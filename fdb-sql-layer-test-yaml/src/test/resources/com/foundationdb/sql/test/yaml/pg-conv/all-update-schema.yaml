@@ -1,7 +1,4 @@
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - CreateTable: customers (cid int NOT NULL, name varchar(32) NOT NULL, PRIMARY KEY(cid));
 ---
 - Statement: CREATE INDEX customer_name ON customers (name);
