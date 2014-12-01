@@ -27,7 +27,6 @@ import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.ImmutableRow;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.row.WriteIndexRow;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.server.AccumulatorAdapter;

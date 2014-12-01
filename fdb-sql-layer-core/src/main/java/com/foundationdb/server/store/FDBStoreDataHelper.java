@@ -19,13 +19,11 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.storeadapter.RowDataCreator;
-import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.rowdata.FieldDef;
@@ -42,6 +40,9 @@ import com.persistit.Key;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FDBStoreDataHelper
 {
@@ -176,5 +177,6 @@ public class FDBStoreDataHelper
         RowData rowData = niceRow.toRowData();
         storeData.rawValue = Arrays.copyOfRange(rowData.getBytes(), rowData.getRowStart(), rowData.getRowEnd());
     }
+    private static final Logger logger = LoggerFactory.getLogger(FDBStoreDataHelper.class);
 
 }

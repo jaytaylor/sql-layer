@@ -20,19 +20,19 @@ package com.foundationdb.server.types.common.types;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.rowdata.ConversionHelperBigDecimal;
 import com.foundationdb.server.types.*;
-import com.foundationdb.server.types.ValueIO;
 import com.foundationdb.server.types.aksql.AkCategory;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
 import com.foundationdb.server.types.common.NumericFormatter;
 import com.foundationdb.server.types.mcompat.MParsers;
 import com.foundationdb.server.types.value.*;
-import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.util.AkibanAppender;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.sql.Types;
 
 public class TBigDecimal extends TClassBase {
@@ -70,8 +70,13 @@ public class TBigDecimal extends TClassBase {
         int inputScale = inputInstance.attribute(DecimalAttribute.SCALE);
         int targetScale = targetInstance.attribute(DecimalAttribute.SCALE);
         if ( (inputPrecision != targetPrecision) || (inputScale != targetScale) ) {
-            BigDecimalWrapper bdw = new BigDecimalWrapperImpl().set(getWrapper(source, inputInstance));
-            bdw.round(targetScale);
+            //BigDecimal number = getWrapper (source, inputInstance).asBigDecimal();
+            
+            //MathContext mc = new MathContext (targetPrecision, RoundingMode.HALF_DOWN);
+            //BigDecimal output = number.round(mc);
+            //target.putObject(new BigDecimalWrapperImpl(output));
+            
+            BigDecimalWrapper bdw = getCastWrapper(source, targetInstance);
             target.putObject(bdw);
         }
         else if (source.hasCacheValue()) {
@@ -83,6 +88,27 @@ public class TBigDecimal extends TClassBase {
         else {
             throw new IllegalStateException("no value set");
         }
+    }
+    
+    private static BigDecimalWrapper getCastWrapper(ValueSource source, TInstance type) {
+        String normalizedValue;
+        if (source.hasCacheValue()) {
+            BigDecimal sourceValue = ((BigDecimalWrapper)source.getObject()).asBigDecimal();
+            int precision = type.attribute(DecimalAttribute.PRECISION);
+            int scale = type.attribute(DecimalAttribute.SCALE);
+            normalizedValue = ConversionHelperBigDecimal.normalizeToString(sourceValue, precision, scale);
+        } else if (source.hasRawValue()) {
+            int precision = source.getType().attribute(DecimalAttribute.PRECISION);
+            int scale = source.getType().attribute(DecimalAttribute.SCALE);
+            StringBuilder sb = new StringBuilder();
+            ConversionHelperBigDecimal.decodeToString(source.getBytes(), 0, precision, scale, AkibanAppender.of(sb));
+            normalizedValue = sb.toString();
+        } else {
+            assert false : "Invalid ValueSource: " + source;
+            normalizedValue = null;
+        }
+        return new BigDecimalWrapperImpl(normalizedValue);
+        
     }
 
     @Override
