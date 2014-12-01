@@ -27,8 +27,6 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.TableIndex;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -139,7 +137,7 @@ public class AggregateMapper extends BaseRule
         Deque<AggregateFunctionExpression> functionsStack = new ArrayDeque<>();
 
         // collect this stuff to use in AddAggregates
-        Multimap<TableSource, AggregateSourceState> tablesToSources = HashMultimap.create();
+        Map<TableSource, AggregateSourceState> tablesToSources = new HashMap<>();
 
         public AggregateSourceAndFunctionFinder(PlanContext planContext) {
             super(planContext);
@@ -149,7 +147,7 @@ public class AggregateMapper extends BaseRule
             return functions;
         }
 
-        public Multimap<TableSource, AggregateSourceState> getTablesToSources() {
+        public Map<TableSource, AggregateSourceState> getTablesToSources() {
             return tablesToSources;
         }
 
@@ -504,10 +502,10 @@ public class AggregateMapper extends BaseRule
     static class AddAggregates implements PlanVisitor, ExpressionRewriteVisitor {
         PlanNode plan;
         Deque<BaseQuery> subqueries = new ArrayDeque<>();
-        Multimap<TableSource, AggregateSourceState> tablesToSources;
+        Map<TableSource, AggregateSourceState> tablesToSources;
 
         public AddAggregates(PlanNode plan,
-                             Multimap<TableSource, AggregateSourceState> tablesToSources) {
+                             Map<TableSource, AggregateSourceState> tablesToSources) {
             this.plan = plan;
             this.tablesToSources = tablesToSources;
         }
@@ -521,15 +519,12 @@ public class AggregateMapper extends BaseRule
             if (source == null && expr.getOperand() instanceof ColumnExpression) {
                 ColumnSource columnSource = ((ColumnExpression)expr.getOperand()).getTable();
                 if (columnSource instanceof TableSource && tablesToSources.containsKey((TableSource)columnSource)) {
-                    Collection<AggregateSourceState> sourceStates = 
+                    AggregateSourceState sourceState = 
                             tablesToSources.get((TableSource)columnSource);
-                    if (sourceStates.size() == 1) {
-                        AggregateSourceState sourceState = sourceStates.iterator().next();
-                        if (sourceState.containingQuery != subqueries.peek() && 
-                                subqueries.contains(sourceState.containingQuery)) {
-                            source = sourceState.aggregateSource;
-                            expr.setSource(source);
-                        }
+                    if (sourceState.containingQuery != subqueries.peek() && 
+                            subqueries.contains(sourceState.containingQuery)) {
+                        source = sourceState.aggregateSource;
+                        expr.setSource(source);
                     }
                 }
             }
