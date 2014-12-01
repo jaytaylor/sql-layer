@@ -275,26 +275,6 @@ public abstract class DPhyp<P>
         setPlan(s, plan);
     }
 
-    private boolean isValidDirectionalJoin(long s1, long s2, JoinType joinType, JoinOperator operator) {
-        System.out.println("Checking " + operator + "(" + joinType + ") " + s1 + " -> " + s2);
-        switch (joinType) {
-            case INNER:
-            case FULL_OUTER:
-                return true;
-            case SEMI_INNER_ALREADY_DISTINCT:
-            case SEMI_INNER_IF_DISTINCT:
-            case SEMI:
-            case ANTI:
-            case LEFT:
-                return JoinableBitSet.equals(operator.rightTables, s2);
-            case RIGHT:
-                return JoinableBitSet.equals(operator.leftTables, s1);
-            default:
-                assert false : "Invalid JoinType";
-        }
-        return false;
-    }
-
     /**
      * This checks if all tables necessary for an edge are available and that
      * it is the edge's first time appearing
