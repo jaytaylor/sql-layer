@@ -34,6 +34,7 @@ import java.util.TreeMap;
 import com.foundationdb.server.error.BadConfigDirectoryException;
 import com.foundationdb.server.error.ConfigurationPropertiesLoadException;
 import com.foundationdb.server.error.InvalidTimeZoneException;
+import com.foundationdb.server.error.MissingRequiredPropertiesException;
 import com.foundationdb.server.error.ServiceNotStartedException;
 import com.foundationdb.server.error.ServiceStartupException;
 import com.foundationdb.server.service.Service;
@@ -167,11 +168,7 @@ public class ConfigurationServiceImpl implements ConfigurationService, Service {
             }
         }
         if (!missingKeys.isEmpty()) {
-            // TODO give this its own error
-            throw new ServiceStartupException(String.format(
-                    "Required %s not set: %s",
-                    missingKeys.size() == 1 ? "property" : "properties",
-                    missingKeys));
+            throw new MissingRequiredPropertiesException(missingKeys);
         }
 
         return ret;
