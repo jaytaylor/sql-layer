@@ -94,11 +94,16 @@ public class SubqueryFlattener
 
         // Flatten subqueries in the FROM list.
         Iterator<FromTable> iter = selectNode.getFromList().iterator();
+        int fromCount = selectNode.getFromList().size();
+        // Go through outer result set and check for aggregates that would prevent flattening
         Collection<FromSubquery> flattenSubqueries = new HashSet<>();
         while (iter.hasNext()) {
             FromTable fromTable = iter.next();
+            // if there's more than one source in the FromList, and one of them is a subquery with a count of any
+            // sort, that subquery cannot be flattened. We could optimize it a bit, since it can be flattened if that
+            // result column is never referenced in the outside, but lets assume it is.
             if ((fromTable instanceof FromSubquery) &&
-                flattenableFromSubquery((FromSubquery)fromTable)) {
+                flattenableFromSubquery((FromSubquery)fromTable, fromCount > 1)) {
                 flattenSubqueries.add((FromSubquery)fromTable);
                 iter.remove();                  // Can be flattened out.
             }
@@ -298,7 +303,7 @@ public class SubqueryFlattener
         return newNode;
     }
 
-    protected boolean flattenableFromSubquery(FromSubquery fromSubquery)
+    protected boolean flattenableFromSubquery(FromSubquery fromSubquery, boolean hasOtherFromTables)
             throws StandardException {
         if (fromSubquery.getSubquery() instanceof SelectNode) {
             SelectNode selectNode = (SelectNode)fromSubquery.getSubquery();
@@ -315,6 +320,14 @@ public class SubqueryFlattener
             (fromSubquery.getOffset() != null) ||
             (fromSubquery.getFetchFirst() != null))
             return false;
+        if (hasOtherFromTables) {
+            AggregateCheckVisitor visitor =
+                    new AggregateCheckVisitor();
+            fromSubquery.accept(visitor);
+            if (visitor.hasAggregateNode) {
+                return false;
+            }
+        }
         // TODO: Need more filtering?
         return true;
     }
@@ -686,6 +699,30 @@ public class SubqueryFlattener
         }
         public boolean skipChildren(Visitable node) {
             return false;
+        }
+        public boolean visitChildrenFirst(Visitable node) {
+            return false;
+        }
+    }
+
+    static class AggregateCheckVisitor implements Visitor {
+        private Collection<FromSubquery> subqueries;
+        private boolean hasAggregateNode = false;
+
+        public AggregateCheckVisitor() {
+        }
+
+        public Visitable visit(Visitable node) throws StandardException {
+            if (node instanceof AggregateNode) {
+                hasAggregateNode = true;
+            }
+            return node;
+        }
+        public boolean stopTraversal() {
+            return hasAggregateNode;
+        }
+        public boolean skipChildren(Visitable node) {
+            return hasAggregateNode;
         }
         public boolean visitChildrenFirst(Visitable node) {
             return false;
