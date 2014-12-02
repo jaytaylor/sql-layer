@@ -260,19 +260,6 @@ public class TupleStorageDescription extends FDBStorageDescription
     }
     
     @Override
-    public void packRowData(FDBStore store, Session session,
-                            FDBStoreData storeData, RowData rowData) {
-        if (usage == TupleUsage.KEY_AND_ROW) {
-            RowDef rowDef = object.getAIS().getTable(rowData.getRowDefId()).rowDef();
-            Tuple2 t = TupleRowDataConverter.tupleFromRowData(rowDef, rowData);
-            storeData.rawValue = t.pack();
-        }
-        else {
-            super.packRowData(store, session, storeData, rowData);
-        }
-    }
-    
-    @Override
     public Row expandRow(FDBStore store, Session session, 
                             FDBStoreData storeData, Schema schema) {
         if (usage == TupleUsage.KEY_AND_ROW) {
@@ -284,19 +271,6 @@ public class TupleStorageDescription extends FDBStorageDescription
             return row; 
         } else {
             return super.expandRow(store, session, storeData, schema);
-        }
-    }
-    
-    @Override
-    public void expandRowData(FDBStore store, Session session,
-                              FDBStoreData storeData, RowData rowData) {
-        if (usage == TupleUsage.KEY_AND_ROW) {
-            Tuple2 t = Tuple2.fromBytes(storeData.rawValue);
-            RowDef rowDef = rowDefFromOrdinals((Group) object, storeData);
-            TupleRowDataConverter.tupleToRowData(t, rowDef, rowData);
-        }
-        else {
-            super.expandRowData(store, session, storeData, rowData);
         }
     }
     

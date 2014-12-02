@@ -28,8 +28,9 @@ import java.util.TreeMap;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.rowdata.SchemaFactory;
-import org.junit.Test;
 
+import org.junit.Test;
+@Deprecated
 public final class NiceRowTest {
     @Test
     public void toRowDataBasic() throws Exception

@@ -18,10 +18,8 @@
 package com.foundationdb.server.store.format;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.Table;
@@ -34,7 +32,6 @@ import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.storeadapter.RowDataCreator;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
 import com.foundationdb.server.error.RowDataCorruptionException;
@@ -46,7 +43,6 @@ import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.TreeLink;
 import com.foundationdb.server.store.PersistitStore;
-import com.foundationdb.server.store.RowValueCoder.SchemaCoderContext;
 import com.foundationdb.server.store.StoreStorageDescription;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueTargets;
@@ -133,37 +129,19 @@ public class PersistitStorageDescription extends StoreStorageDescription<Persist
         }
     }
 
-    @Override
-    public void packRowData(PersistitStore store, Session session,
-                            Exchange exchange, RowData rowData) {
-        exchange.getValue().directPut(store.getRowDataValueCoder(), rowData, null);
-    }
-
     @Override 
     public void packRow(PersistitStore store, Session session,
                         Exchange exchange, Row row) {
         
         RowDef rowDef = row.rowType().table().rowDef();
         RowDataCreator creator = new RowDataCreator();
-        NewRow niceRow = new NiceRow(rowDef.getRowDefId(), rowDef);
+        NiceRow niceRow = new NiceRow(rowDef.getRowDefId(), rowDef);
         int fields = rowDef.getFieldCount();
         for(int i = 0; i < fields; ++i) {
             creator.put(row.value(i), niceRow, i);
         }
         RowData rowData = niceRow.toRowData();
         exchange.getValue().directPut(store.getRowDataValueCoder(), rowData, null);
-    }
-    
-    @Override
-    public void expandRowData(PersistitStore store, Session session,
-                              Exchange exchange, RowData rowData) {
-        try {
-            exchange.getValue().directGet(store.getRowDataValueCoder(), rowData, RowData.class, null);
-        }
-        catch (CorruptRowDataException ex) {
-            LOG.error("Corrupt RowData at key {}: {}", exchange.getKey(), ex.getMessage());
-            throw new RowDataCorruptionException(exchange.getKey());
-        }
     }
     
     @Override

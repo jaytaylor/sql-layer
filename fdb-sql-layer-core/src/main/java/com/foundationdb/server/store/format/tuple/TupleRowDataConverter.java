@@ -28,9 +28,6 @@ import com.foundationdb.ais.protobuf.FDBProtobuf.TupleUsage;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDef;
-import com.foundationdb.server.rowdata.RowDataValueSource;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
@@ -120,17 +117,6 @@ public class TupleRowDataConverter
         return Tuple2.from(objects);
     }
     
-    public static Tuple2 tupleFromRowData(RowDef rowDef, RowData rowData) {
-        RowDataValueSource valueSource = new RowDataValueSource();
-        int nfields = rowDef.getFieldCount();
-        Object[] objects = new Object[nfields];
-        for (int i = 0; i < nfields; i++) {
-            valueSource.bind(rowDef.getFieldDef(i), rowData);
-            objects[i] = ValueSources.toObject(valueSource);
-        }
-        return Tuple2.from(objects);
-    }
-
     public static Row tupleToRow (Tuple2 tuple, RowType rowType) {
         int nfields = rowType.nFields();
         Object[] objects = new Object[nfields];
@@ -140,17 +126,5 @@ public class TupleRowDataConverter
         }
         ValuesHolderRow newRow = new ValuesHolderRow (rowType, objects);
         return newRow;
-    }
-    public static void tupleToRowData(Tuple2 tuple, RowDef rowDef, RowData rowData) {
-        int nfields = rowDef.getFieldCount();
-        Object[] objects = new Object[nfields];
-        assert tuple.size() == nfields : "Tuple Size: " + tuple.size() + " != RowDef size: " + nfields;
-        for (int i = 0; i < nfields; i++) {
-            objects[i] = tuple.get(i);
-        }
-        if (rowData.getBytes() == null) {
-            rowData.reset(new byte[RowData.CREATE_ROW_INITIAL_SIZE]);
-        }
-        rowData.createRow(rowDef, objects, true);
     }
 }
