@@ -350,17 +350,18 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
     public static boolean isSpatialCompatible(Index index)
     {
         boolean isSpatialCompatible = false;
-        List<IndexColumn> indexColumns = index.getKeyColumns();
-        if (indexColumns.size() == 1) {
-            // Serialized spatial object
-            isSpatialCompatible = isTextOrBinary(indexColumns.get(index.firstSpatialArgument()).getColumn());
-        } else if (indexColumns.size() >= Spatial.LAT_LON_DIMENSIONS) {
-            // Lat/Lon
-            isSpatialCompatible = true;
-            for (int d = 0; d < index.spatialColumns(); d++) {
-                isSpatialCompatible =
-                    isSpatialCompatible &&
-                    isFixedDecimal(indexColumns.get(index.firstSpatialArgument() + d).getColumn());
+        if (index.isSpatial()) {
+            if (index.firstSpatialArgument() == index.lastSpatialArgument()) {
+                // Serialized spatial object
+                isSpatialCompatible = isTextOrBinary(index.getKeyColumns().get(index.firstSpatialArgument()).getColumn());
+            } else {
+                // Lat/Lon
+                isSpatialCompatible = true;
+                for (int d = index.firstSpatialArgument(); d <= index.lastSpatialArgument(); d++) {
+                    isSpatialCompatible =
+                        isSpatialCompatible &&
+                        isFixedDecimal(index.getKeyColumns().get(d).getColumn());
+                }
             }
         }
         return isSpatialCompatible;
@@ -443,9 +444,9 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
     public String getSchemaName() {
         return indexName.getSchemaName();
     }
-    
+
     // constraint
-    
+
     public TableName getConstraintName() {
         return constraintName;
     }

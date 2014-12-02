@@ -40,7 +40,9 @@ import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.util.IteratorToCursorAdapter;
+import com.geophile.z.Cursor;
 import com.geophile.z.Pair;
+import com.geophile.z.Record;
 import com.geophile.z.Space;
 import com.geophile.z.SpatialIndex;
 import com.geophile.z.SpatialJoin;
@@ -129,6 +131,20 @@ class IndexCursorSpatial_InBox extends IndexCursor
             record.spatialObject(spatialObject);
             querySpatialIndex.add(spatialObject, record, MAX_Z);
             spatialJoinIterator = spatialJoin.iterator(querySpatialIndex, dataSpatialIndex);
+/*
+            {
+                // Dump query index
+                System.out.println("Query index:");
+                Cursor<RecordWithSpatialObject> queryCursor = queryIndex.cursor();
+                RecordWithSpatialObject zMinRecord = queryIndex.newRecord();
+                zMinRecord.z(SpaceImpl.Z_MIN);
+                queryCursor.goTo(zMinRecord);
+                RecordWithSpatialObject queryRecord;
+                while ((queryRecord = queryCursor.next()) != null) {
+                    System.out.format("    %s\n", SpaceImpl.formatZ(queryRecord.z()));
+                }
+            }
+*/
         } catch (IOException | InterruptedException e) {
             // These exceptions are declared by Geophile, but Geophile sits on top of FDB which should be
             // doing the right thing.
@@ -260,14 +276,16 @@ class IndexCursorSpatial_InBox extends IndexCursor
             @Override
             public void randomAccess(Cursor cursor, long z)
             {
-                System.out.format("%s: %s\n", cursor, SpaceImpl.formatZ(z));
+                System.out.format("%s\n", SpaceImpl.formatZ(z));
             }
 
             @Override
-            public void sequentialAccess(Cursor cursor, long zRandomAccess, long zSequentialAccess)
+            public void sequentialAccess(Cursor cursor, long zRandomAccess, Record record)
             {
-                System.out.format("    %s: %s -> %s\n",
-                                  cursor, SpaceImpl.formatZ(zRandomAccess), SpaceImpl.formatZ(zSequentialAccess));
+                System.out.format("    %s -> %s: %s\n",
+                                  SpaceImpl.formatZ(zRandomAccess),
+                                  record == null ? SpaceImpl.Z_NULL : SpaceImpl.formatZ(record.z()),
+                                  record);
             }
         };
 */
