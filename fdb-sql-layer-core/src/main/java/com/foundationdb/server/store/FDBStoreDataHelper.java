@@ -24,7 +24,6 @@ import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.storeadapter.RowDataCreator;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
@@ -142,34 +141,11 @@ public class FDBStoreDataHelper
         return row;
     }
     
-    public static void expandRowData(RowData rowData, FDBStoreData storeData, boolean copyBytes) {
-        expandRowData(rowData, storeData.rawValue, copyBytes);
-    }
 
-    public static void expandRowData(RowData rowData, byte[] value, boolean copyBytes) {
-        if(copyBytes) {
-            byte[] rowBytes = rowData.getBytes();
-            if((rowBytes == null) || (rowBytes.length < value.length)) {
-                rowBytes = Arrays.copyOf(value, value.length);
-                rowData.reset(rowBytes);
-            } else {
-                System.arraycopy(value, 0, rowBytes, 0, value.length);
-                rowData.reset(0, value.length);
-            }
-        } else {
-            rowData.reset(value);
-        }
-        rowData.prepareRow(0);
-    }
-
-    public static void packRowData(RowData rowData, FDBStoreData storeData) {
-        storeData.rawValue = Arrays.copyOfRange(rowData.getBytes(), rowData.getRowStart(), rowData.getRowEnd());
-    }
-    
     public static void packRow(Row row, FDBStoreData storeData) {
         RowDef rowDef = row.rowType().table().rowDef();
         RowDataCreator creator = new RowDataCreator();
-        NewRow niceRow = new NiceRow(rowDef.getRowDefId(), rowDef);
+        NiceRow niceRow = new NiceRow(rowDef.getRowDefId(), rowDef);
         int fields = rowDef.getFieldCount();
         for(int i = 0; i < fields; ++i) {
             creator.put(row.value(i), niceRow, i);

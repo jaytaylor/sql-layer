@@ -126,11 +126,6 @@ public abstract class AbstractRow implements Row
         return builder.toString();
     }
 
-    public RowData rowData() {
-        throw new UnsupportedOperationException();
-    }
-
-
     private ValueSource checkValueType(int i, ValueSource nextValue) {
         if (DEBUG_ROWTYPE) {
             TInstance nextValueType = nextValue.getType();

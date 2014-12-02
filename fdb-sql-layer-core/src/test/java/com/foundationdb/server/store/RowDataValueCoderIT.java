@@ -32,7 +32,6 @@ import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.SchemaFactory;
 import com.foundationdb.server.store.RowValueCoder.SchemaCoderContext;
 import com.foundationdb.server.test.it.PersistitITBase;

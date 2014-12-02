@@ -27,6 +27,7 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.SparseArray;
 
 /** Simple RowData wrapper. Does not provide {@link #hKey()}. */
+@Deprecated
 public class RowDataRow extends AbstractRow
 {
     private final TableRowType rowType;
@@ -60,11 +61,6 @@ public class RowDataRow extends AbstractRow
         RowDataValueSource valueSource = valueSource(i);
         valueSource.bind(fieldDef, rowData);
         return valueSource;
-    }
-
-    @Override
-    public RowData rowData() {
-        return rowData;
     }
 
     private RowDataValueSource valueSource(int i) {

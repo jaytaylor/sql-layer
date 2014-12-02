@@ -34,8 +34,6 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
@@ -286,36 +284,6 @@ public class TupleStorageDescription extends FDBStorageDescription
             index = keyDepth[keyDepth.length - 1];
             if (index >= hkey.getDepth()) {
                 return table;
-            }
-            hkey.indexTo(index);
-            ordinal = hkey.decodeInt();
-            boolean found = false;
-            for (Join join : table.getChildJoins()) {
-                table = join.getChild();
-                if (table.getOrdinal() == ordinal) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                throw new AkibanInternalException("Not a child ordinal " + hkey);
-            }
-        }
-    }
-
-    public static RowDef rowDefFromOrdinals(Group group, FDBStoreData storeData) {
-        Table root = group.getRoot();
-        Key hkey = storeData.persistitKey;
-        hkey.reset();
-        int ordinal = hkey.decodeInt();
-        assert (root.getOrdinal() == ordinal) : hkey;
-        Table table = root;
-        int index = 0;
-        while (true) {
-            int[] keyDepth = table.hKey().keyDepth();
-            index = keyDepth[keyDepth.length - 1];
-            if (index >= hkey.getDepth()) {
-                return table.rowDef();
             }
             hkey.indexTo(index);
             ordinal = hkey.decodeInt();
