@@ -18,9 +18,11 @@ package com.foundationdb.server.store.statistics;
 
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.QueryCanceledException;
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
@@ -33,6 +35,7 @@ import com.persistit.Key;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.foundationdb.server.store.statistics.IndexStatisticsService.INDEX_STATISTICS_TABLE_NAME;
 import static com.foundationdb.server.store.statistics.IndexStatisticsVisitor.VisitorCreator;
 
 public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBStore> implements VisitorCreator<Key,byte[]> {
@@ -57,22 +60,21 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
 
     @Override
     public IndexStatistics loadIndexStatistics(Session session, Index index) {
-        RowDef indexRowDef = index.leafMostTable().rowDef();
-        RowDef indexStatisticsRowDef = getIndexStatsRowDef(session);
-        RowDef indexStatisticsEntryRowDef = getIndexStatsEntryRowDef(session);
-
-        FDBStoreData storeData = getStore().createStoreData(session, indexStatisticsRowDef.getGroup());
-        storeData.persistitKey.append(indexStatisticsRowDef.table().getOrdinal())
-        .append((long) indexRowDef.getRowDefId())
+        Table indexStatisticsTable = getStore().getAIS(session).getTable(INDEX_STATISTICS_TABLE_NAME);
+        Table indexTable = index.leafMostTable();
+        Schema schema = SchemaCache.globalSchema(getStore().getAIS(session));
+        FDBStoreData storeData = getStore().createStoreData(session, indexStatisticsTable.getGroup());
+        storeData.persistitKey.append(indexStatisticsTable.getOrdinal())
+        .append((long) indexTable.getTableId())
         .append((long) index.getIndexId());
 
         IndexStatistics result = null;
         getStore().groupKeyAndDescendantsIterator(session, storeData, true);
         while(storeData.next()) {
             if(result == null) {
-                result = decodeHeader(storeData, indexStatisticsRowDef, index);
+                result = decodeHeader(storeData, index, schema);
             } else {
-                decodeEntry(storeData, indexStatisticsEntryRowDef, result);
+                decodeEntry(storeData, result, schema);
             }
         }
         if ((result != null) && logger.isDebugEnabled()) {
@@ -83,19 +85,18 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
 
     @Override
     public void removeStatistics(Session session, Index index) {
-        RowDef indexRowDef = index.leafMostTable().rowDef();
-        RowDef indexStatisticsRowDef = getIndexStatsRowDef(session);
-
-        FDBStoreData storeData = getStore().createStoreData(session, indexStatisticsRowDef.getGroup());
+        Table table = getStore().getAIS(session).getTable(INDEX_STATISTICS_TABLE_NAME);
+        Table indexTable = index.leafMostTable();
+        FDBStoreData storeData = getStore().createStoreData(session, table.getGroup());
         storeData.persistitKey.clear();
-        storeData.persistitKey.append(indexStatisticsRowDef.table().getOrdinal())
-            .append((long) indexRowDef.getRowDefId())
+
+        storeData.persistitKey.append(table.getOrdinal())
+            .append((long) indexTable.getTableId())
             .append((long) index.getIndexId());
         getStore().groupKeyAndDescendantsIterator(session, storeData, false);
         while(storeData.next()) {
-            RowData rowData = new RowData();
-            FDBStoreDataHelper.expandRowData(rowData, storeData, false);
-            getStore().deleteRow(session, rowData, false); // TODO: Use cascade?
+            Row row = FDBStoreDataHelper.expandRow(SchemaCache.globalSchema(index.getAIS()), storeData);
+            getStore().deleteRow(session, row, false);
         }
     }
 
@@ -182,18 +183,14 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
     //
 
     protected IndexStatistics decodeHeader(FDBStoreData storeData,
-                                           RowDef indexStatisticsRowDef,
-                                           Index index) {
-        RowData rowData = new RowData();
-        FDBStoreDataHelper.expandRowData(rowData, storeData, false);
-        return decodeIndexStatisticsRow(rowData, indexStatisticsRowDef, index);
+                                           Index index, 
+                                           Schema schema) {
+        return decodeIndexStatisticsRow(FDBStoreDataHelper.expandRow(schema, storeData), index);
     }
 
     protected void decodeEntry(FDBStoreData storeData,
-                               RowDef indexStatisticsEntryRowDef,
-                               IndexStatistics indexStatistics) {
-        RowData rowData = new RowData();
-        FDBStoreDataHelper.expandRowData(rowData, storeData, false);
-        decodeIndexStatisticsEntryRow(rowData, indexStatisticsEntryRowDef, indexStatistics);
+                               IndexStatistics indexStatistics,
+                               Schema schema) {
+        decodeIndexStatisticsEntryRow(FDBStoreDataHelper.expandRow(schema, storeData), indexStatistics);
     }
 }

@@ -52,6 +52,12 @@ public class IndexStatistics
         this.singleColumnHistograms = new Histogram[index.getKeyColumns().size()];
     }
     
+    protected IndexStatistics (Index index, long analysisTimeStamp, long rowCount, long sampledCount) {
+        this(index);
+        this.analysisTimestamp = analysisTimeStamp;
+        this.rowCount = rowCount;
+        this.sampledCount = sampledCount;
+    }
     /** The system time at which the statistics were gathered. */
     public long getAnalysisTimestamp() {
         return analysisTimestamp;
