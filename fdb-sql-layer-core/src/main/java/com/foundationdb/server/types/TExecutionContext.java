@@ -26,12 +26,12 @@ import com.foundationdb.server.error.OverflowException;
 import com.foundationdb.server.error.StringTruncationException;
 import com.foundationdb.util.SparseArray;
 import com.google.common.base.Objects;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Locale;
-import java.util.TimeZone;
 
 public final class TExecutionContext {
 
@@ -117,7 +117,7 @@ public final class TExecutionContext {
     public String getCurrentTimezone()
     {
         // TODO need to get this from the session
-        return TimeZone.getDefault().getID();
+        return DateTimeZone.getDefault().getID();
     }
 
     /**

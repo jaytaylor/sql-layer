@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 public class YamlTesterDateTimeTest {
     private static final Logger LOG = LoggerFactory.getLogger(YamlTesterDateTimeTest.class);
 
-    private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
+    private static final DateTimeZone UTC = DateTimeZone.getProvider().getZone("UTC");
 
     static
     {
@@ -65,7 +65,7 @@ public class YamlTesterDateTimeTest {
     }
 
     private static Calendar getCalendar() {
-        Calendar cal = Calendar.getInstance(UTC);
+        Calendar cal = Calendar.getInstance(UTC.toTimeZone());
         cal.setTimeInMillis(System.currentTimeMillis());
         return cal;
     }
