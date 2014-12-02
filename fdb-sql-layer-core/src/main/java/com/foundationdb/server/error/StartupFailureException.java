@@ -16,7 +16,7 @@
  */
 package com.foundationdb.server.error;
 
-public class StartupFailureException extends FDBAdapterException {
+public class StartupFailureException extends InvalidOperationException {
 
     protected StartupFailureException(ErrorCode code, Long i, Long j, Long k,
             Long l) {
@@ -25,5 +25,9 @@ public class StartupFailureException extends FDBAdapterException {
 
     protected StartupFailureException(ErrorCode code, String desc) {
         super(code, desc);
+    }
+
+    protected StartupFailureException(ErrorCode code, Object... args) {
+        super(code, args);
     }
 }

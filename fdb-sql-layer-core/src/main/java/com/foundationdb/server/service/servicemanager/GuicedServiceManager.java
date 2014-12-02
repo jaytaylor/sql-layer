@@ -17,6 +17,8 @@
 
 package com.foundationdb.server.service.servicemanager;
 
+import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.error.StartupFailureException;
 import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.server.error.ServiceAlreadyStartedException;
 import com.foundationdb.server.service.Service;
@@ -223,7 +225,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         }
         catch (IOException ex) {
             logger.error("while reading services config " + ex);
-            throw new ServiceAlreadyStartedException("error while reading services config");
+            throw new InvalidDefaultServicesConfig();
         }
         while (e.hasMoreElements()) {
             URL source = e.nextElement();
@@ -656,5 +658,11 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
         // object state
         private final AtomicInteger counter = new AtomicInteger();
+    }
+
+    private static final class InvalidDefaultServicesConfig extends StartupFailureException {
+        public InvalidDefaultServicesConfig() {
+            super(ErrorCode.INTERNAL_ERROR, "error while reading services config");
+        }
     }
 }

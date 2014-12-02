@@ -19,7 +19,7 @@ package com.foundationdb.server.error;
 
 import java.util.Collection;
 
-public class MissingRequiredPropertiesException extends InvalidOperationException
+public class MissingRequiredPropertiesException extends StartupFailureException
 {
     public MissingRequiredPropertiesException(Collection<String> missingKeys)
     {
