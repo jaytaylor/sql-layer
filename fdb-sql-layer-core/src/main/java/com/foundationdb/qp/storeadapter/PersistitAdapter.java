@@ -30,8 +30,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.error.*;
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.KeyCreator;
@@ -129,15 +127,6 @@ public class PersistitAdapter extends StoreAdapter
             rollbackIfNeeded(e);
             throw e;
         }
-    }
-
-    @Override
-    @Deprecated
-    public RowData rowData(RowDef rowDef, Row row, RowDataCreator creator) {
-        if(row instanceof PersistitGroupRow) {
-            return ((PersistitGroupRow)row).rowData();
-        }
-        return super.rowData(rowDef, row, creator);
     }
 
     // PersistitAdapter interface
