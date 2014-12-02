@@ -36,7 +36,7 @@ import com.foundationdb.server.error.ConfigurationPropertiesLoadException;
 import com.foundationdb.server.error.InvalidTimeZoneException;
 import com.foundationdb.server.error.MissingRequiredPropertiesException;
 import com.foundationdb.server.error.ServiceNotStartedException;
-import com.foundationdb.server.error.ServiceStartupException;
+import com.foundationdb.server.error.ServiceAlreadyStartedException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.util.tap.Tap;
 import com.google.inject.Inject;
@@ -122,7 +122,7 @@ public class ConfigurationServiceImpl implements ConfigurationService, Service {
     }
 
     @Override
-    public final void start() throws ServiceStartupException {
+    public final void start() throws ServiceAlreadyStartedException {
         if (properties == null) {
             properties = internalLoadProperties();
             validateTimeZone();
@@ -158,7 +158,7 @@ public class ConfigurationServiceImpl implements ConfigurationService, Service {
     }
 
     private Map<String, String> internalLoadProperties()
-            throws ServiceStartupException {
+            throws ServiceAlreadyStartedException {
         Map<String, String> ret = loadProperties();
 
         Set<String> missingKeys = new HashSet<>();

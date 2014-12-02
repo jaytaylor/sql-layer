@@ -18,7 +18,7 @@
 package com.foundationdb.server.service.servicemanager;
 
 import com.foundationdb.sql.LayerInfoInterface;
-import com.foundationdb.server.error.ServiceStartupException;
+import com.foundationdb.server.error.ServiceAlreadyStartedException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -43,7 +43,6 @@ import javax.management.ObjectName;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -224,7 +223,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         }
         catch (IOException ex) {
             logger.error("while reading services config " + ex);
-            throw new ServiceStartupException("error while reading services config");
+            throw new ServiceAlreadyStartedException("error while reading services config");
         }
         while (e.hasMoreElements()) {
             URL source = e.nextElement();

@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.service.routines;
 
-import com.foundationdb.server.error.ServiceStartupException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.google.inject.Inject;

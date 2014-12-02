@@ -425,7 +425,7 @@ public enum ErrorCode {
 
     // Class 52 - Configuration & startup errors
     SERVICE_NOT_STARTED     ("52", "001", Importance.ERROR, ServiceNotStartedException.class),
-    SERVICE_ALREADY_STARTED ("52", "002", Importance.ERROR, ServiceStartupException.class),
+    SERVICE_ALREADY_STARTED ("52", "002", Importance.ERROR, ServiceAlreadyStartedException.class),
     SERVICE_CIRC_DEPEND     ("52", "003", Importance.ERROR, CircularDependencyException.class),
     BAD_CONFIG_DIRECTORY    ("52", "004", Importance.ERROR, BadConfigDirectoryException.class),
     //52005

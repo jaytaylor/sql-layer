@@ -17,8 +17,8 @@
 
 package com.foundationdb.server.error;
 
-public final class ServiceStartupException extends InvalidOperationException {
-    public ServiceStartupException (String serviceName) {
+public final class ServiceAlreadyStartedException extends InvalidOperationException {
+    public ServiceAlreadyStartedException(String serviceName) {
         super (ErrorCode.SERVICE_ALREADY_STARTED, serviceName);
     }
 }
