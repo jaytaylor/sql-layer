@@ -59,18 +59,22 @@ public class AggregateMapper extends BaseRule
                                               functions.get(0).getSQLsource());
         }
 
+        // Step 1: look for outer aggregate references, and convert AggregateFunctionExpressions
+        //         to AnnotatedAggregateFunctionExpressions
         Annotator annotator = new Annotator(plan.getPlan(),
                                             aggregateSourceFinder.getTablesToSources());
         annotator.run();
 
-        // Step 1: do a first pass to find sources for Having aggregates, check columnexpressions
+        // Step 2: Each run of FindHavingSources makes two passes. 
+        //     Pass 1) Map AggregateFunctions that aren't references to outer aggregates
+        //     Pass 2) Check that all the ColumnExpressions are okay 
         for (AggregateSourceState source : sources) {
             FindHavingSources findHavingSources = new FindHavingSources((SchemaRulesContext)plan.getRulesContext(),
                                                                         source.aggregateSource,
                                                                         source.containingQuery);
             findHavingSources.run(source.aggregateSource);
         }
-        // Step 2: if possible add all aggregates to sources. throw an error otherwise.
+        // Step 3: Add all aggregates to sources, or throw an error.
         AddAggregates addAggregates = new AddAggregates(plan.getPlan(),
                                                         aggregateSourceFinder.getTablesToSources());
         addAggregates.run();
@@ -95,7 +99,14 @@ public class AggregateMapper extends BaseRule
                 DataTypeDescriptor sqlType, ValueNode sqlSource,
                 TInstance type,
                 Object option, List<OrderByExpression> orderBy, AggregateSource source) {
-                    super(function, operand, distinct, sqlType, sqlSource, type, option, orderBy);
+                    super(function, 
+                          operand, 
+                          distinct, 
+                          sqlType, 
+                          sqlSource, 
+                          type, 
+                          option, 
+                          orderBy);
                     this.source = source;
         }
 
@@ -235,6 +246,7 @@ public class AggregateMapper extends BaseRule
         }
 
         public ExpressionNode annotateAggregate(AggregateFunctionExpression expr) {
+            // look for a reference to an outer aggregate, and save that source in the annotated function if found
             AggregateSource source = null;
             if (expr.getOperand() instanceof ColumnExpression) {
                 ColumnSource columnSource = ((ColumnExpression)expr.getOperand()).getTable();
@@ -351,10 +363,10 @@ public class AggregateMapper extends BaseRule
         private Set<ColumnSource> aggregated = new HashSet<>();
         private Map<ExpressionNode,ExpressionNode> map = 
             new HashMap<>();
-        private enum Stage {
+        private enum State {
             FINDING_SOURCES, CHECKING_ERRORS
         };
-        private Stage stage;
+        private State state;
         boolean hasAggregates;
         private enum ImplicitAggregateSetting {
             ERROR, FIRST, FIRST_IF_UNIQUE
@@ -394,10 +406,10 @@ public class AggregateMapper extends BaseRule
         }
 
         public void run(PlanNode n) {
-            stage = Stage.FINDING_SOURCES;
+            state = State.FINDING_SOURCES;
             hasAggregates = false;
             remap(n);
-            stage = Stage.CHECKING_ERRORS;
+            state = State.CHECKING_ERRORS;
             remap(n);
         }
 
@@ -430,7 +442,7 @@ public class AggregateMapper extends BaseRule
             ExpressionNode nexpr = map.get(expr);
             if (nexpr != null)
                 return nexpr;
-            switch (stage) {
+            switch (state) {
             case FINDING_SOURCES:
                 if (expr instanceof AnnotatedAggregateFunctionExpression) {
                     AnnotatedAggregateFunctionExpression a = (AnnotatedAggregateFunctionExpression)expr;
