@@ -29,6 +29,7 @@ import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.WriteIndexRow;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.AccumulatorAdapter;
 import com.foundationdb.server.AccumulatorAdapter.AccumInfo;
 import com.foundationdb.server.error.DuplicateKeyException;
@@ -143,6 +144,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         return createStoreData(session, group);
     }
 
+    @Deprecated
     public Exchange getExchange(final Session session, final RowDef rowDef) {
         return createStoreData(session, rowDef.getGroup());
     }
@@ -170,21 +172,6 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         indexRow.close(session, this, forInsert);
     }
     
-    private void constructIndexRow(Session session,
-                                   Exchange exchange,
-                                   RowData rowData,
-                                   Index index,
-                                   Key hKey,
-                                   WriteIndexRow indexRow,
-                                   SpatialColumnHandler spatialColumnHander,
-                                   long zValue,
-                                   boolean forInsert) throws PersistitException
-    {
-        indexRow.resetForWrite(index, exchange.getKey(), exchange.getValue());
-        indexRow.initialize(rowData, hKey, spatialColumnHander, zValue);
-        indexRow.close(session, this, forInsert);
-    }
-
     public RowDataValueCoder getRowDataValueCoder() {
         return rowDataValueCoder;
     }
@@ -238,35 +225,6 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         }
     }
                                 
-    @Override
-    public IndexRow readIndexRow(Session session,
-                                                Index parentPKIndex,
-                                                Exchange exchange,
-                                                RowDef childRowDef,
-                                                RowData childRowData)
-    {
-        PersistitKeyAppender keyAppender = PersistitKeyAppender.create(exchange.getKey(), parentPKIndex.getIndexName());
-        int[] fields = childRowDef.getParentJoinFields();
-        for (int fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
-            FieldDef fieldDef = childRowDef.getFieldDef(fields[fieldIndex]);
-            keyAppender.append(fieldDef, childRowData);
-        }
-        try {
-            
-            PersistitIndexRowBuffer indexRow = null;
-            // Method only called if looking up a pk for which there is at least one
-            // column missing from child row. Key contains the logical parent of it.
-            if(exchange.hasChildren()) {
-                exchange.next(true);
-                indexRow = new PersistitIndexRowBuffer(this);
-                indexRow.resetForRead(parentPKIndex, exchange.getKey(), null);
-            }
-            return indexRow;
-        } catch(PersistitException | RollbackException e) {
-            throw PersistitAdapter.wrapPersistitException(session, e);
-        }
-    }
-
     // --------------------- Implement Store interface --------------------
 
     @Override
@@ -295,30 +253,6 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         }
     }
     
-    @Override
-    public void writeIndexRow(Session session,
-                              TableIndex index,
-                              RowData rowData,
-                              Key hKey,
-                              WriteIndexRow indexRow,
-                              SpatialColumnHandler spatialColumnHandler,
-                              long zValue,
-                              boolean doLock) {
-        Exchange iEx = getExchange(session, index);
-        try {
-            if(doLock) {
-                lockKeysForIndex(session, index, rowData);
-            }
-            constructIndexRow(session, iEx, rowData, index, hKey, indexRow, spatialColumnHandler, zValue, true);
-            checkUniqueness(session, rowData, index, iEx);
-            iEx.store();
-        } catch(PersistitException | RollbackException e) {
-            throw PersistitAdapter.wrapPersistitException(session, e);
-        } finally {
-            releaseExchange(session, iEx);
-        }
-    }
-
     private void checkUniqueness(Session session, Row row, Index index, Exchange iEx) throws PersistitException
     {
         if (index.isUnique() && !hasNullIndexSegments(row, index)) {
@@ -343,51 +277,11 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         }
     }
     
-    private void checkUniqueness(Session session, RowData rowData, Index index, Exchange iEx) throws PersistitException
-    {
-        if (index.isUnique() && !hasNullIndexSegments(rowData, index)) {
-            Key key = iEx.getKey();
-            int nColumns = index.getKeyColumns().size();
-            final boolean existed;
-            if (nColumns < key.getDepth()) {
-                KeyState orig = new KeyState(key);
-                key.setDepth(nColumns);
-                existed = iEx.hasChildren();
-                // prevent write skew for concurrent checks
-                iEx.lock();
-                orig.copyTo(key);
-            } else {
-                existed = iEx.traverse(Key.Direction.EQ, true, -1);
-            }
-            if (existed) {
-                LOG.debug("Duplicate key for index {}, raw: {}", index.getIndexName(), key);
-                String msg = formatIndexRowString(session, rowData, index);
-                throw new DuplicateKeyException(index.getIndexName(), msg);
-            }
-        }
-    }
-
     private void deleteIndexRow (Session session, TableIndex index, Exchange exchange, Row row,
                                 Key hKey, WriteIndexRow indexRowBuffer, SpatialColumnHandler spatialColumnHandler,
                                 long zValue) throws PersistitException {
         
         constructIndexRow(session, exchange, row, index, hKey, indexRowBuffer, spatialColumnHandler, zValue, false);
-        if(!exchange.remove()) {
-            LOG.debug("Index {} had no entry for hkey {}", index, hKey);
-        }
-    }
-    
-    private void deleteIndexRow(Session session,
-                                TableIndex index,
-                                Exchange exchange,
-                                RowData rowData,
-                                Key hKey,
-                                WriteIndexRow indexRowBuffer,
-                                SpatialColumnHandler spatialColumnHandler,
-                                long zValue)
-        throws PersistitException
-    {
-        constructIndexRow(session, exchange, rowData, index, hKey, indexRowBuffer, spatialColumnHandler, zValue, false);
         if(!exchange.remove()) {
             LOG.debug("Index {} had no entry for hkey {}", index, hKey);
         }
@@ -409,27 +303,6 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         }
     }
     
-    @Override
-    public void deleteIndexRow(Session session,
-                               TableIndex index,
-                               RowData rowData,
-                               Key hKey,
-                               WriteIndexRow buffer,
-                               SpatialColumnHandler spatialColumnHandler,
-                               long zValue,
-                               boolean doLock) {
-        Exchange iEx = getExchange(session, index);
-        try {
-            if(doLock) {
-                lockKeysForIndex(session, index, rowData);
-            }
-            deleteIndexRow(session, index, iEx, rowData, hKey, buffer, spatialColumnHandler, zValue);
-        } catch(PersistitException | RollbackException e) {
-            throw PersistitAdapter.wrapPersistitException(session, e);
-        } finally {
-            releaseExchange(session, iEx);
-        }
-    }
 
     @Override
     public void store(Session session, Exchange ex) {
@@ -501,14 +374,6 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         };
     }
 
-    @Override
-    protected void lock(Session session, Exchange storeData, RowDef rowDef, RowData rowData) {
-        try {
-            lockKeysForTable(rowDef, rowData, storeData);
-        } catch(PersistitException | RollbackException e) {
-            throw PersistitAdapter.wrapPersistitException(session, e);
-        }
-    }
     
     @Override 
     protected void lock (Session session, Exchange storeData, Row row) {
@@ -552,9 +417,8 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
             exchange.clear().append(Key.BEFORE);
             visitor.initialize(session, this);
             while(exchange.next(true)) {
-                RowData rowData = new RowData();
-                expandRowData(session, exchange, rowData);
-                visitor.visit(exchange.getKey(), rowData);
+                Row row = expandRow(session, exchange, SchemaCache.globalSchema(group.getAIS()));
+                visitor.visit(exchange.getKey(), row);
             }
         } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(session, e);
@@ -615,16 +479,6 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
             releaseExchange(session, ex);
         }
     }
-    
-    private void lockKeysForIndex(Session session, TableIndex index, RowData rowData) throws PersistitException {
-        Table table = index.getTable();
-        Exchange ex = getExchange(session, table.getGroup());
-        try {
-            lockKeysForTable(table.rowDef(), rowData, ex);
-        } finally {
-            releaseExchange(session, ex);
-        }
-    }
 
     private void lockKeysForTable (Row row, Exchange exchange) throws PersistitException 
     {
@@ -641,33 +495,6 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         }
     }
     
-    private void lockKeysForTable(RowDef rowDef, RowData rowData, Exchange exchange) throws PersistitException
-    {
-        // Temporary fix for #1118871 and #1078331 
-        // disable the  lock used to prevent write skew for some cases of data loading
-        if (!writeLockEnabled) return;
-        Table table = rowDef.table();
-        // Make fieldDefs big enough to accommodate PK field defs and FK field defs
-        FieldDef[] fieldDefs = new FieldDef[table.getColumnsIncludingInternal().size()];
-        Key lockKey = createKey();
-        PersistitKeyAppender lockKeyAppender = PersistitKeyAppender.create(lockKey, table.getName());
-        // Primary key
-        List<Column> pkColumns = table.getPrimaryKeyIncludingInternal().getColumns();
-        for(int i = 0; i < pkColumns.size(); ++i) {
-            fieldDefs[i] = pkColumns.get(i).getFieldDef();
-        }
-        lockKey(rowData, table, fieldDefs, pkColumns.size(), lockKeyAppender, exchange);
-        // Grouping foreign key
-        Join parentJoin = table.getParentJoin();
-        if (parentJoin != null) {
-            List<JoinColumn> joinColumns = parentJoin.getJoinColumns();
-            for(int i = 0; i < joinColumns.size(); ++i) {
-                fieldDefs[i] = joinColumns.get(i).getChild().getFieldDef();
-            }
-            lockKey(rowData, parentJoin.getParent(), fieldDefs, joinColumns.size(), lockKeyAppender, exchange);
-        }
-    }
-
     private void lockKey(Row row, 
                         Table lockTable,
                         List<Column> columns,
@@ -683,24 +510,6 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         lockKeyAppender.clear();
     }
                         
-    private void lockKey(RowData rowData,
-                         Table lockTable,
-                         FieldDef[] fieldDefs,
-                         int nFields,
-                         PersistitKeyAppender lockKeyAppender,
-                         Exchange exchange)
-        throws PersistitException
-    {
-        // Write ordinal id to the lock key
-        lockKeyAppender.key().append(lockTable.getOrdinal());
-        // Write column values to the lock key
-        for (int f = 0; f < nFields; f++) {
-            lockKeyAppender.append(fieldDefs[f], rowData);
-        }
-        exchange.lock(lockKeyAppender.key());
-        lockKeyAppender.clear();
-    }
-
     @Override
     public PersistitAdapter createAdapter(Session session) {
         return new PersistitAdapter(this, treeService, session, config);

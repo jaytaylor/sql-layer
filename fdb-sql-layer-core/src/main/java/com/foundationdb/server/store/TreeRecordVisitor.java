@@ -21,6 +21,7 @@ import com.foundationdb.ais.model.HKey;
 import com.foundationdb.ais.model.HKeySegment;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
@@ -49,6 +50,13 @@ public abstract class TreeRecordVisitor
         }
     }
 
+
+    public void visit(Key key, Row row)  {
+        Object[] keyObjs = key(key, row);
+        visit(keyObjs, row);
+    }
+    
+    @Deprecated
     public void visit(Key key, RowData rowData) {
         RowDef rowDef = store.getAIS(session).getTable(rowData.getRowDefId()).rowDef();
         Object[] keyObjs = key(key, rowDef);
@@ -56,8 +64,38 @@ public abstract class TreeRecordVisitor
         visit(keyObjs, newRow);
     }
 
+    public abstract void visit(Object[] key, Row row);
+    
+    @Deprecated
     public abstract void visit(Object[] key, NewRow row);
 
+    
+    private Object[] key(Key key, Row row) {
+        // Key traversal
+        int keySize = key.getDepth();
+        // HKey traversal
+        HKey hKey = row.rowType().table().hKey();
+        List<HKeySegment> hKeySegments = hKey.segments();
+        int k = 0;
+        // Traverse key, guided by hKey, populating result
+        Object[] keyArray = new Object[keySize];
+        int h = 0;
+        key.indexTo(0);
+        while (k < hKeySegments.size()) {
+            HKeySegment hKeySegment = hKeySegments.get(k++);
+            Table table = hKeySegment.table();
+            int ordinal = (Integer) key.decode();
+            assert ordinalToTable.get(ordinal) == table : ordinalToTable.get(ordinal);
+            keyArray[h++] = table;
+            for (int i = 0; i < hKeySegment.columns().size(); i++) {
+                keyArray[h++] = key.decode();
+            }
+        }
+        return keyArray;
+        
+    }
+    
+    @Deprecated
     private Object[] key(Key key, RowDef rowDef)
     {
         // Key traversal

@@ -44,7 +44,6 @@ import com.foundationdb.qp.rowtype.HKeyRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.AkibanInternalException;
-import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
@@ -77,7 +76,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements FullTextIndexService, Service, TableListener, RowListener
+public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl 
+        implements FullTextIndexService, Service, TableListener, RowListener
 {
     private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceImpl.class);
 
@@ -340,18 +340,9 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     public void onInsertPost(Session session, Table table, Key hKey, Row row) {
         trackChange(session, table, hKey);
     }
-    
-    @Override
-    public void onInsertPost(Session session, Table table, Key hKey, RowData row) {
-        trackChange(session, table, hKey);
-    }
 
     @Override 
     public void onUpdatePre(Session session, Table table, Key hKey, Row oldRow, Row newRow) {
-        // None
-    }
-    @Override
-    public void onUpdatePre(Session session, Table table, Key hKey, RowData oldRow, RowData newRow) {
         // None
     }
 
@@ -360,22 +351,12 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         trackChange(session, table, hKey);
     }
     
-    @Override
-    public void onUpdatePost(Session session, Table table, Key hKey, RowData oldRow, RowData newRow) {
-        trackChange(session, table, hKey);
-    }
 
     @Override
     public void onDeletePre(Session session, Table table, Key hKey, Row row) {
         trackChange(session, table, hKey);
     }
     
-    @Override
-    public void onDeletePre(Session session, Table table, Key hKey, RowData row) {
-        trackChange(session, table, hKey);
-    }
-
-
     // ---------- mostly for testing ---------------
 
     public void disableUpdateWorker() {

@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.test.it.keyupdate;
 
-import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.qp.row.Row;
 
 public class TreeRecord
 {
@@ -49,29 +49,29 @@ public class TreeRecord
         return hKey;
     }
 
-    public NewRow row()
+    public Row row()
     {
         return row;
     }
 
-    public TreeRecord(HKey hKey, NewRow row)
+    public TreeRecord(HKey hKey, Row row)
     {
         this.hKey = hKey;
         this.row = row;
     }
 
-    public TreeRecord(Object[] hKey, NewRow row)
+    public TreeRecord(Object[] hKey, Row row)
     {
         this(new HKey(hKey), row);
     }
 
-    private boolean equals(NewRow x, NewRow y)
+    private boolean equals(Row x, Row y)
     {
         return
             x == y ||
-            x != null && y != null && x.getRowDef() == y.getRowDef() && x.getFields().equals(y.getFields());
+            x.equals(y);
     }
 
     private final HKey hKey;
-    private final NewRow row;
+    private final Row row;
 }
