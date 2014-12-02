@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.error;
 
-public class InvalidTimeZoneException extends InvalidOperationException
+public class InvalidTimeZoneException extends StartupFailureException
 {
     // you might expect this to take the invalid value, but, truth is we can't really know that what we have is what
     // was set. If you set the timezone to something invalid, and a Date() is created or TimeZone.getDefault() is called
