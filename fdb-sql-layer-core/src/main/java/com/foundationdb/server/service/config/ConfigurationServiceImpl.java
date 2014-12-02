@@ -33,13 +33,19 @@ import java.util.TreeMap;
 
 import com.foundationdb.server.error.BadConfigDirectoryException;
 import com.foundationdb.server.error.ConfigurationPropertiesLoadException;
+import com.foundationdb.server.error.InvalidTimeZoneException;
 import com.foundationdb.server.error.ServiceNotStartedException;
 import com.foundationdb.server.error.ServiceStartupException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.util.tap.Tap;
 import com.google.inject.Inject;
+import org.joda.time.DateTimeZone;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ConfigurationServiceImpl implements ConfigurationService, Service {
+    private static final Logger LOG = LoggerFactory.getLogger(ConfigurationServiceImpl.class);
+
     private final static String CONFIG_DEFAULTS_RESOURCE = "configuration-defaults.properties";
     private static final String INITIALLY_ENABLED_TAPS = "taps.initiallyenabled";
 
@@ -118,11 +124,20 @@ public class ConfigurationServiceImpl implements ConfigurationService, Service {
     public final void start() throws ServiceStartupException {
         if (properties == null) {
             properties = internalLoadProperties();
+            validateTimeZone();
             String initiallyEnabledTaps = properties.get(INITIALLY_ENABLED_TAPS);
             if (initiallyEnabledTaps != null) {
                 Tap.setInitiallyEnabled(initiallyEnabledTaps);
             }
         }
+    }
+
+    private void validateTimeZone() {
+        String timezone = System.getProperty("user.timezone");
+        if (timezone != null && timezone.length() != 0 && DateTimeZone.getProvider().getZone(timezone) == null) {
+            throw new InvalidTimeZoneException();
+        }
+        LOG.info("Using timezone: " + DateTimeZone.getDefault());
     }
 
     @Override
@@ -152,6 +167,7 @@ public class ConfigurationServiceImpl implements ConfigurationService, Service {
             }
         }
         if (!missingKeys.isEmpty()) {
+            // TODO give this its own error
             throw new ServiceStartupException(String.format(
                     "Required %s not set: %s",
                     missingKeys.size() == 1 ? "property" : "properties",

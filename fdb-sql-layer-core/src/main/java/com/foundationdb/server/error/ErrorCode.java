@@ -445,6 +445,7 @@ public enum ErrorCode {
     NO_CLUSTER_FILE         ("52", "013", Importance.ERROR, NoClusterFileException.class),
     CLUSTER_FILE_NOT_READABLE ("52", "014", Importance.ERROR, ClusterFileNotReadableException.class),
     CLUSTER_FILE_TOO_LARGE  ("52", "015", Importance.ERROR, ClusterFileTooLargeException.class),
+    INVALID_TIME_ZONE        ("52", "016", Importance.ERROR, InvalidTimeZoneException.class),
 
     // Class 53 - Internal error 
     INTERNAL_ERROR          ("53", "000", Importance.ERROR, null),
