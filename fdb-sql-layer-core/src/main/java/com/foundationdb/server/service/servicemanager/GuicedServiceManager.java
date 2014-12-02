@@ -659,9 +659,9 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         private final AtomicInteger counter = new AtomicInteger();
     }
 
-    private static final class InvalidDefaultServicesConfigException extends StartupFailureException {
+    private static final class InvalidDefaultServicesConfigException extends RuntimeException {
         public InvalidDefaultServicesConfigException() {
-            super(ErrorCode.INTERNAL_ERROR, "error while reading services config");
+            super("error while reading default services config");
         }
     }
 }
