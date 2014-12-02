@@ -23,10 +23,6 @@ public class StartupFailureException extends InvalidOperationException {
         super(code, i, j, k, l);
     }
 
-    protected StartupFailureException(ErrorCode code, String desc) {
-        super(code, desc);
-    }
-
     protected StartupFailureException(ErrorCode code, Object... args) {
         super(code, args);
     }
