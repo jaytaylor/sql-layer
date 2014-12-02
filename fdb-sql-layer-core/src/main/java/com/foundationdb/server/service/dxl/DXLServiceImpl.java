@@ -59,7 +59,7 @@ public class DXLServiceImpl implements DXLService, Service {
         DMLFunctions localDmlFunctions = new HookableDMLFunctions(createDMLFunctions(), hooks);
         synchronized (MONITOR) {
             if (ddlFunctions != null) {
-                throw new ServiceAlreadyStartedException("service already started");
+                throw new ServiceAlreadyStartedException("DXLService");
             }
             ddlFunctions = localDdlFunctions;
             dmlFunctions = localDmlFunctions;
