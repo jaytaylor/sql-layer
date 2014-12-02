@@ -1,3 +1,5 @@
+count-count: count of a subquery that is a count
+
 select-1: subquery with unique column
 
 select-2: ANY instead of IN
