@@ -96,6 +96,11 @@ public class AggregateToDistinctMapper extends BaseRule
         }
 
         public void remap() {
+            if (source.getGroupBy().isEmpty()) {
+                // if an AggregateSource is empty, get rid of it and return.
+                source.getOutput().replaceInput(source, source.getInput());
+                return;
+            }
             project = new Project(source.getInput(), source.getGroupBy());
             Distinct distinct = new Distinct(project);
             source.getOutput().replaceInput(source, distinct);
