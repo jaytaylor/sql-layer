@@ -34,11 +34,16 @@ import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.handler.ErrorHandler;
 
 public class JsonErrorHandler extends ErrorHandler {
+
+    public static final String PATCH_METHOD = "PATCH";
+
     @Override
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
         baseRequest.setHandled(true);
         String method = request.getMethod();
-        if(!method.equals(HttpMethods.GET) && !method.equals(HttpMethods.POST) && !method.equals(HttpMethods.HEAD)) {
+        if(!method.equals(HttpMethods.HEAD) && !method.equals(HttpMethods.GET) &&
+                !method.equals(HttpMethods.POST) && !method.equals(PATCH_METHOD) && !method.equals(HttpMethods.PUT) &&
+                 !method.equals(HttpMethods.DELETE)) {
             return;
         }
 
