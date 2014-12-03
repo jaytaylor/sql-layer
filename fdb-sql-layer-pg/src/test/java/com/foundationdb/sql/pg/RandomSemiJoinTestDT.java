@@ -19,7 +19,6 @@ package com.foundationdb.sql.pg;
 
 import com.foundationdb.junit.SelectedParameterizedRunner;
 import com.foundationdb.util.RandomRule;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Ignore;
@@ -93,38 +92,36 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         this.testSeed = testSeed;
     }
 
-    private static String buildQuery(Random random, boolean useExists, boolean firstQuery) {
+    private static String buildQuery(Random random, boolean useExists, boolean firstQuery, TableAliasGenerator tag) {
         if (firstQuery && random.nextInt(20) == 0) {
             return randomTable(random);
         }
         StringBuilder stringBuilder = new StringBuilder();
-        String returningSource = "ta0." + (firstQuery ? "main" : randomColumn(random));
+        int firstTable = tag.createNew();
+        String returningSource = "ta" + firstTable + "." + (firstQuery ? "main" : randomColumn(random));
         stringBuilder.append("SELECT ");
         stringBuilder.append(returningSource);
         stringBuilder.append(" FROM ");
         stringBuilder.append(randomTable(random));
-        stringBuilder.append(" AS ta0");
-        int tableAliasCount = 1;
+        stringBuilder.append(" AS ta");
+        stringBuilder.append(firstTable);
         switch (random.nextInt(4)) {
             case 0:
                 // Just the FROM
                 break;
             case 1:
-                tableAliasCount++;
-                addJoinClause("INNER", stringBuilder, random, tableAliasCount);
+                addJoinClause("INNER", stringBuilder, random, tag, firstTable);
                 break;
             case 2:
-                tableAliasCount++;
-                addJoinClause("LEFT OUTER", stringBuilder, random, tableAliasCount);
+                addJoinClause("LEFT OUTER", stringBuilder, random, tag, firstTable);
                 break;
             case 3:
-                tableAliasCount++;
-                addJoinClause("RIGHT OUTER", stringBuilder, random, tableAliasCount);
+                addJoinClause("RIGHT OUTER", stringBuilder, random, tag, firstTable);
                 break;
             default:
                 throw new IllegalStateException("not enough cases for random values");
         }
-        addWhereClause(stringBuilder, random, tableAliasCount, !firstQuery && useExists);
+        addWhereClause(stringBuilder, random, tag, !firstQuery && useExists, firstTable);
         addLimitClause(stringBuilder, random, returningSource);
         return stringBuilder.toString();
     }
@@ -139,28 +136,29 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
     }
 
     private static void addWhereClause(StringBuilder stringBuilder, Random random,
-                                       int tableAliasCount, boolean forceMainEqualsClause) {
+                                       TableAliasGenerator tag, boolean forceMainEqualsClause, int firstTable) {
         if (!forceMainEqualsClause && random.nextInt(5) == 0) {
             return;
         }
         stringBuilder.append(" WHERE ");
-        addCondition(stringBuilder, random, tableAliasCount, WHERE_CONSTANT_LIKELYHOOD, forceMainEqualsClause);
+        addCondition(stringBuilder, random, tag, firstTable, WHERE_CONSTANT_LIKELYHOOD, forceMainEqualsClause);
         for (int i=0; i<MAX_CONDITION_COUNT; i++) {
             if (random.nextInt(5) == 0) {
                 break;
             }
             stringBuilder.append(random.nextBoolean() ? " AND " : " OR ");
-            addCondition(stringBuilder, random, tableAliasCount, WHERE_CONSTANT_LIKELYHOOD, false);
+            addCondition(stringBuilder, random, tag, firstTable, WHERE_CONSTANT_LIKELYHOOD, false);
         }
     }
 
-    private static void addJoinClause(String type, StringBuilder sb, Random random, int tableAliasCount) {
+    private static void addJoinClause(String type, StringBuilder sb, Random random,
+                                      TableAliasGenerator tag, int firstTable) {
         sb.append(" ");
         sb.append(type);
         sb.append(" JOIN ");
         sb.append(randomTable(random));
         sb.append(" AS ta");
-        sb.append(tableAliasCount-1);
+        sb.append(tag.createNew());
         sb.append(" ON ");
         // no cross joins right now
         int conditionCount = random.nextInt(3);
@@ -168,17 +166,14 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
             if (i > 0) {
                 sb.append(" AND ");
             }
-            addCondition(sb, random, tableAliasCount, JOIN_CONSTANT_LIKELYHOOD, false);
+            addCondition(sb, random, tag, firstTable, WHERE_CONSTANT_LIKELYHOOD, false);
         }
     }
 
-    private static void addCondition(StringBuilder sb, Random random, int tableAliasCount, int constantBias,
-                                     boolean forceMainEqualsClause) {
-        int firstTable = random.nextInt(tableAliasCount);
-        int secondTable = random.nextInt(tableAliasCount);
-        if (secondTable == firstTable) {
-            secondTable = (firstTable + 1) % tableAliasCount;
-        }
+    private static void addCondition(StringBuilder sb, Random random, TableAliasGenerator tag,
+                                     int firstAvailable, int constantBias, boolean forceMainEqualsClause) {
+        int firstTable = tag.randomAbove(firstAvailable);
+        int secondTable = tag.randomAbove(firstAvailable, firstTable);
         boolean mainIsFirst = false;
         // 0 => first is constant, 1 => second is constant, else neither
         int oneIsConstant = random.nextInt(constantBias);
@@ -317,10 +312,13 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         for (int i=0; i<QUERY_COUNT; i++) {
             boolean useExists  = random.nextBoolean();
             int limitOutside = random.nextInt(MAX_OUTER_LIMIT * 10);
+            TableAliasGenerator tag = new TableAliasGenerator(random);
             if (useExists) {
-                testOneQueryExists(buildQuery(random, useExists, true), buildQuery(random, useExists, false), limitOutside);
+                testOneQueryExists(buildQuery(random, useExists, true, tag), buildQuery(random, useExists, false, tag),
+                        limitOutside);
             } else {
-                testOneQueryIn(buildQuery(random, useExists, true), buildQuery(random, useExists, false), limitOutside);
+                testOneQueryIn(buildQuery(random, useExists, true, tag), buildQuery(random, useExists, false, tag),
+                        limitOutside);
             }
         }
     }
@@ -365,6 +363,10 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         List<List<?>> results2 = sql(query2);
         List<Integer> expected = new ArrayList<>();
         for (List<?> row : results1) {
+            // null not in t never gets returned
+            if (row.get(0) == null) {
+                continue;
+            }
             boolean rowIsInResults2 = false;
             for (List<?> row2 : results2) {
                 if (nullableEquals(row.get(0), row2.get(0))) {
@@ -436,6 +438,40 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         @Override
         public boolean equals(Object obj) {
             return obj instanceof NullableIntegerComparator;
+        }
+    }
+
+
+    private class TableAliasGenerator {
+
+        private Random random;
+        private int count = 0;
+
+        public TableAliasGenerator(Random random) {
+            this.random = random;
+        }
+
+        int createNew() {
+            return count++;
+        }
+
+        String toString(int index) {
+            return "ta" + index;
+        }
+
+        int randomAbove(int min) {
+            return random.nextInt(count-min) + min;
+        }
+
+        int randomAbove(int min, int excluded) {
+            int secondTable = randomAbove(min);
+            if (secondTable == excluded) {
+                secondTable++;
+                if (secondTable == count) {
+                    secondTable = min;
+                }
+            }
+            return secondTable;
         }
     }
 }

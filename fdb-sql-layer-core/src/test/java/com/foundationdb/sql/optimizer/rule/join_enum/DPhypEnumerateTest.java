@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.optimizer.rule.join_enum;
 
+import com.foundationdb.junit.SelectedParameterizedRunner;
 import com.foundationdb.sql.NamedParamsTestBase;
 import com.foundationdb.sql.TestBase;
 
@@ -44,6 +45,7 @@ import com.foundationdb.junit.Parameterization;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import static com.foundationdb.util.FileTestUtils.printClickableFile;
 import static org.junit.Assert.*;
@@ -56,7 +58,7 @@ import java.util.Properties;
 import java.io.File;
 import java.io.IOException;
 
-@RunWith(NamedParameterizedRunner.class)
+@RunWith(SelectedParameterizedRunner.class)
 public class DPhypEnumerateTest extends OptimizerTestBase 
                                 implements TestBase.GenerateAndCheckResult
 {
@@ -65,8 +67,8 @@ public class DPhypEnumerateTest extends OptimizerTestBase
 
     protected File schemaFile, rulesFile;
 
-    @TestParameters
-    public static Collection<Parameterization> statements() throws Exception {
+    @Parameterized.Parameters(name="{0}")
+    public static Iterable<Object[]> statements() throws Exception {
         Collection<Object[]> result = new ArrayList<>();
         File schemaFile = new File(RESOURCE_DIR, "schema.ddl");
         File rulesFile = new File(RESOURCE_DIR, "rules.yml");
@@ -78,7 +80,7 @@ public class DPhypEnumerateTest extends OptimizerTestBase
             System.arraycopy(args, 1, nargs, 3, args.length-1);
             result.add(nargs);
         }
-        return NamedParamsTestBase.namedCases(result);
+        return result;
     }
 
     public DPhypEnumerateTest(String caseName, File schemaFile, File rulesFile,
