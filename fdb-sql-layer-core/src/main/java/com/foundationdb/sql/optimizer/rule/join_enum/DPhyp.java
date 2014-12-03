@@ -17,6 +17,8 @@
 
 package com.foundationdb.sql.optimizer.rule.join_enum;
 
+import com.foundationdb.ais.model.Join;
+import com.foundationdb.server.error.CorruptedPlanException;
 import com.foundationdb.server.error.FailedJoinGraphCreationException;
 import com.foundationdb.sql.optimizer.plan.*;
 import static com.foundationdb.sql.optimizer.plan.JoinNode.JoinType;
@@ -51,6 +53,7 @@ public abstract class DPhyp<P>
     // The hypergraph: since these are unordered, traversal pattern is
     // to go through in order pairing with adjacent (complement bit 1).
     private long[] edges;
+    private long[] requiredSubgraphs;
     private int noperators, nedges;
     
     // Indexes for leaves and their constituent tables.
@@ -100,9 +103,15 @@ public abstract class DPhyp<P>
                 setPlan(bitset, evaluateTable(bitset, tables.get(i)));
             }
             for (int i = ntables - 1; i >= 0; i--) {
-                long ts = JoinableBitSet.of(i);
-                emitCsg(ts);
-                enumerateCsgRec(ts, JoinableBitSet.through(i));
+                // Like the outer loop, two passes here, should work.
+                for (int j=0; j < 2; j++) {
+                    if (emitAndEnumerateCsg(i)) {
+                        break;
+                    }
+                    if (j > 0) {
+                        throw new FailedJoinGraphCreationException();
+                    }
+                }
             }
             P plan = getPlan(plans.length-1); // One that does all the joins together.
             if (plan != null)
@@ -126,6 +135,23 @@ public abstract class DPhyp<P>
             Arrays.fill(plans, null);
         }
         return null;
+    }
+
+    public boolean emitAndEnumerateCsg(int i) {
+        boolean retVal = true;
+        long ts = JoinableBitSet.of(i);
+        emitCsg(ts);
+        enumerateCsgRec(ts, JoinableBitSet.through(i));
+        for (int j=0; j<requiredSubgraphs.length; j++) {
+            long requiredSubgraph = requiredSubgraphs[j];
+            if (JoinableBitSet.equals(ts, JoinableBitSet.minSubset(requiredSubgraph))) {
+                if (getPlan(requiredSubgraph) == null) {
+                    addExtraEdges(requiredSubgraph);
+                    retVal = false;
+                }
+            }
+        }
+        return retVal;
     }
 
     /** Recursively extend the given connected subgraph. */
@@ -364,6 +390,20 @@ public abstract class DPhyp<P>
         if (whereConditions != null)
             addWhereConditions(whereConditions, visitor, JoinableBitSet.empty());
         int iop = 0;
+        requiredSubgraphs = new long[operators.size()];
+        int irs = 0;
+        for (JoinOperator joinOperator : operators) {
+            if (!joinOperator.getJoinType().isRightLinear()) {
+                if (JoinableBitSet.count(joinOperator.rightTables) > 1) {
+                    requiredSubgraphs[irs] = joinOperator.rightTables;
+                    irs++;
+                }
+            } else if (!joinOperator.getJoinType().isLeftLinear()) {
+                // must be a right join
+                throw new CorruptedPlanException("RIGHT OUTER JOIN was not converted to LEFT OUTER JOIN before dphyp");
+            }
+        }
+        requiredSubgraphs = Arrays.copyOf(requiredSubgraphs, irs);
         while (iop < noperators) {
             JoinOperator op = operators.get(iop);
             if (op.allInnerJoins) {
@@ -472,6 +512,59 @@ public abstract class DPhyp<P>
             return joinConditions;
         }
 
+        /**
+         * Moves conditions up from the child as appropriate based on the child's type
+         * No checks for this operators linear type are checked.
+         * @param child either this.left or this.right.
+         * @return the operator from which joinConditions are taken.
+         */
+        public JoinOperator moveJoinConditionsUp(JoinOperator destination, JoinOperator child, ExpressionTables visitor) {
+            if (child.getJoinType().isFullyLinear()) {
+                destination.moveJoinConditions(child, visitor);
+                return child;
+            } else if (child.getJoinType().isLeftLinear() && child.left != null) {
+                // We recurse here, because you may have
+                // ((((t1 inner t2 on X) left t3) left t4) inner t5)
+                // which is the same as:
+                // ((((t1 inner t2) left t3) left t4) inner t5 on X)
+                return moveJoinConditionsUp(destination, child.left, visitor);
+            } else if (child.getJoinType().isRightLinear() && child.right != null) {
+                return moveJoinConditionsUp(destination, child.right, visitor);
+            }
+            // child is neither left or right linear, must be a full outer join, no condition movement
+            // allowed
+            return null;
+        }
+
+        private void moveJoinConditions(JoinOperator other, ExpressionTables visitor) {
+            if (other != null && other.joinConditions != null && !other.joinConditions.isEmpty()) {
+                if (joinConditions == null) {
+                    joinConditions = new ConditionList();
+                }
+                boolean movedSomething = false;
+                for (Iterator<ConditionExpression> iterator = other.joinConditions.iterator(); iterator.hasNext(); ) {
+                    ConditionExpression condition = iterator.next();
+                    long conditionTes = visitor.getTables(condition);
+                    if (!JoinableBitSet.isSubset(conditionTes, other.getTables())) {
+                        movedSomething = true;
+                        joinConditions.add(condition);
+                        iterator.remove();
+                    }
+                }
+                if (movedSomething) {
+                    updateTes(visitor);
+                }
+            }
+        }
+
+        private void updateTes(ExpressionTables visitor) {
+            predicateTables = visitor.getTables(joinConditions);
+            if (visitor.wasNullTolerant() && !allInnerJoins)
+                tes = getTables();
+            else
+                tes = JoinableBitSet.intersection(getTables(), predicateTables);
+        }
+
         public JoinType getJoinType() {
             if (join != null)
                 return join.getJoinType();
@@ -496,6 +589,9 @@ public abstract class DPhyp<P>
         if (n instanceof JoinNode) {
             JoinNode join = (JoinNode)n;
             JoinOperator op = new JoinOperator(join);
+            if (op.getJoinType() == JoinType.RIGHT) {
+                throw new CorruptedPlanException("RIGHT OUTER JOIN was not converted to LEFT OUTER JOIN before dphyp");
+            }
             Joinable left = join.getLeft();
             JoinOperator leftOp = initSES(left, visitor);
             boolean childAllInnerJoins = false;
@@ -507,6 +603,9 @@ public abstract class DPhyp<P>
                     childAllInnerJoins = true;
                 else
                     op.allInnerJoins = false;
+                if (op.getJoinType().isRightLinear()) {
+                    op.moveJoinConditionsUp(op, op.left, visitor);
+                }
             }
             else {
                 op.leftTables = getTableBit(left);
@@ -521,15 +620,14 @@ public abstract class DPhyp<P>
                     childAllInnerJoins = true;
                 else
                     op.allInnerJoins = false;
+                if (op.getJoinType().isLeftLinear()) {
+                    op.moveJoinConditionsUp(op, op.right, visitor);
+                }
             }
             else {
                 op.rightTables = getTableBit(right); 
             }
-            op.predicateTables = visitor.getTables(op.joinConditions);
-            if (visitor.wasNullTolerant() && !op.allInnerJoins)
-                op.tes = op.getTables();
-            else
-                op.tes = JoinableBitSet.intersection(op.getTables(), op.predicateTables);
+            op.updateTes(visitor);
             noperators++;
             if ((op.joinConditions != null) && (op.allInnerJoins || childAllInnerJoins))
                 noperators += op.joinConditions.size(); // Might move some.
@@ -545,7 +643,7 @@ public abstract class DPhyp<P>
             calcTES(op.right);
             addConflicts(op, op.left, true);
             addConflicts(op, op.right, false);
-            long r = JoinableBitSet.intersection(op.tes, op.rightTables);
+            long r = op.rightTables;
             long l = JoinableBitSet.difference(op.tes, r);
             int o = operators.size();
             operators.add(op);
@@ -853,12 +951,15 @@ public abstract class DPhyp<P>
         }
     }
     
-    /** Add edges to make the hypergraph connected, using the stuck state. */
-    protected void addExtraEdges() {
+    /**
+     * Add edges to make the hypergraph connected, using the stuck state.
+     * @param maxGraph Will only add extra edges to connect up the maxGraph
+     */
+    protected void addExtraEdges(long maxGraph) {
         // Get all the hypernodes that are not subsets of some filled hypernode.
         BitSet maximal = new BitSet(plans.length);
         for (int i = 0; i < plans.length; i++) {
-            if (plans[i] != null) {
+            if (plans[i] != null && JoinableBitSet.isSubset(i,maxGraph)) {
                 maximal.set(i);
             }
         }
@@ -899,6 +1000,11 @@ public abstract class DPhyp<P>
             }
         }
         assert (noperators == operators.size());
+    }
+
+
+    private void addExtraEdges() {
+        addExtraEdges(plans.length-1);
     }
 
     protected void addExtraEdge(long left, long right) {

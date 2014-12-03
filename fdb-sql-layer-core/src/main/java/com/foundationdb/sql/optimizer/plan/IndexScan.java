@@ -175,7 +175,15 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
     protected void buildSummaryString(StringBuilder str, int indentation, boolean full,
                                       SummaryConfiguration configuration) {
         str.append(super.summaryString(configuration));
-        str.append('(');
+        str.append("(");
+        if (configuration.includeIndexTableNames) {
+            str.append(" on [");
+            for (TableSource table : getTables()) {
+                str.append(table.getName());
+                str.append(", ");
+            }
+            str.replace(str.length() - 2, str.length(), "] ");
+        }
         str.append(summarizeIndex(indentation, configuration));
         if (indentation < 0) {
             str.append(", ");

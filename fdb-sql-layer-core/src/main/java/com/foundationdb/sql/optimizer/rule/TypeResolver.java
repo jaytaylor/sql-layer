@@ -22,6 +22,7 @@ import com.foundationdb.ais.model.ColumnContainer;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.CorruptedPlanException;
 import com.foundationdb.server.error.SQLParserInternalException;
 import com.foundationdb.server.types.service.OverloadResolver;
 import com.foundationdb.server.types.service.OverloadResolver.OverloadResult;
@@ -842,6 +843,11 @@ public final class TypeResolver extends BaseRule {
         private void updateSetNode(SetPlanNode setPlan) {
             ProjectHolder leftProject = getProject(setPlan.getLeft());
             ProjectHolder rightProject= getProject(setPlan.getRight());
+            if (leftProject == null) {
+                throw new CorruptedPlanException("Could not find left project for set plan node");
+            } else if (rightProject == null) {
+                throw new CorruptedPlanException("Could not find right project for set plan node");
+            }
             Project topProject = (Project)setPlan.getOutput();
             ResultSet leftResult = leftProject.getResultSet();
             ResultSet rightResult = rightProject.getResultSet();
@@ -919,20 +925,22 @@ public final class TypeResolver extends BaseRule {
         }
 
         private ProjectHolder getProject(PlanNode node) {
-            PlanNode project = ((BasePlanWithInput)node).getInput();
-            if (project instanceof Project)
-                return new SingleProjectHolder((Project)project);
-
-
-            else if (project instanceof SetPlanNode) {
-                return new SetProjectHolder((SetPlanNode)project);
-
-            }
-            else if (!(project instanceof BasePlanWithInput))
+            PlanNode nodeInput = ((BasePlanWithInput)node).getInput();
+            if (nodeInput instanceof Project && node instanceof ResultSet) {
+                return new SingleProjectHolder((ResultSet) node, (Project) nodeInput);
+            } else if (nodeInput instanceof SetPlanNode) {
+                return new SetProjectHolder((SetPlanNode)nodeInput);
+            } else if (!(nodeInput instanceof BasePlanWithInput)) {
                 return null;
-            project = ((BasePlanWithInput)project).getInput();
-            if (project instanceof Project)
-                return new SingleProjectHolder((Project)project);
+            }
+            PlanNode inputInput = ((BasePlanWithInput)nodeInput).getInput();
+            if (inputInput instanceof Project) {
+                if (node instanceof ResultSet) {
+                    return new SingleProjectHolder((ResultSet) node, (Project) inputInput);
+                } else if (nodeInput instanceof ResultSet) {
+                    return new SingleProjectHolder((ResultSet) nodeInput, (Project) inputInput);
+                }
+            }
             return null;
         }
 
@@ -972,15 +980,17 @@ public final class TypeResolver extends BaseRule {
 
         private class SingleProjectHolder implements ProjectHolder {
 
+            private ResultSet resultSet;
             private Project project;
 
-            private SingleProjectHolder(Project project) {
+            private SingleProjectHolder(ResultSet resultSet, Project project) {
+                this.resultSet = resultSet;
                 this.project = project;
             }
 
             @Override
             public ResultSet getResultSet() {
-                return (ResultSet)project.getOutput();
+                return resultSet;
             }
 
             @Override

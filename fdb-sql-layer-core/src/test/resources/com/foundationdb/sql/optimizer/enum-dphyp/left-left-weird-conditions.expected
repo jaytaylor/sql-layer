@@ -1,0 +1,1 @@
+(t1 LEFT JOIN t2 ON true) LEFT JOIN t3 ON t1.c1 == t2.c1 AND t1.c2 == t3.c2
