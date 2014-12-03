@@ -344,11 +344,7 @@ public final class ValueSources {
             logger.error("GUID with underlying object of : {}", source.getObject().getClass());
         }
         
-        if (source.getType().typeClass() == MBinary.LONGBLOB ||
-             source.getType().typeClass() == MBinary.BLOB ||
-             source.getType().typeClass() == MBinary.MEDIUMBLOB ||
-             source.getType().typeClass() == MBinary.TINYBLOB ||
-             source.getType().typeClass() == MBinary.VARBINARY) {
+        if (source.getType().typeClass() == MBinary.VARBINARY) {
             return new WrappingByteSource(source.getBytes());
         }
         

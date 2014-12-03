@@ -55,7 +55,7 @@ public class MTypesFormattingTest extends TypeFormattingTestBase
         for(TClass tClass : Arrays.asList(CHAR, VARCHAR, TINYTEXT, TEXT, MEDIUMTEXT, LONGTEXT)) {
             params.add(tCase(tClass, "hello", "hello", "\"hello\"", "'hello'"));
         }
-        for(TClass tClass : Arrays.asList(BINARY, VARBINARY, TINYBLOB, BLOB, MEDIUMBLOB, LONGBLOB)) {
+        for(TClass tClass : Arrays.asList(BINARY, VARBINARY)) {
             params.add(tCase(tClass, new byte[]{ 0x41, 0x42 }, "AB", "\"\\x4142\"", "X'4142'"));
         }
         params.add(tCase(DATE, 1031372, "2014-06-12", "\"2014-06-12\"", "DATE '2014-06-12'"));

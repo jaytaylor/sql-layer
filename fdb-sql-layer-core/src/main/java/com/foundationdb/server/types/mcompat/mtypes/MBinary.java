@@ -25,10 +25,6 @@ public final class MBinary extends TBinary {
 
     public static final MBinary VARBINARY = new MBinary(TypeId.VARBIT_ID, "varbinary", -1);
     public static final MBinary BINARY = new MBinary(TypeId.BIT_ID, "binary", -1);
-    public static final MBinary TINYBLOB = new MBinary(TypeId.TINYBLOB_ID, "tinyblob", 255);
-    public static final MBinary BLOB = new MBinary(TypeId.BLOB_ID, "blob", 65535);
-    public static final MBinary MEDIUMBLOB = new MBinary(TypeId.MEDIUMBLOB_ID, "mediumblob", 16777215);
-    public static final MBinary LONGBLOB = new MBinary(TypeId.LONGBLOB_ID, "longblob", Integer.MAX_VALUE); // TODO not big enough!
 
     private MBinary(TypeId typeId, String name, int defaultLength) {
         super(typeId, MBundle.INSTANCE, name, defaultLength);

@@ -54,7 +54,6 @@ public class TypeValidator
         switch (type.jdbcType()) {
         case Types.BLOB:
         case Types.CLOB:
-        case Types.LONGVARBINARY:
         case Types.LONGVARCHAR:
         case Types.LONGNVARCHAR:
             return false;

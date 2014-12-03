@@ -142,20 +142,12 @@ public abstract class ProtobufRowConversion
                          new CompatibleConversion(Type.TYPE_STRING, UnderlyingType.STRING));
         TYPE_MAPPING.put(MString.CHAR,
                          TYPE_MAPPING.get(MString.VARCHAR));
-        TYPE_MAPPING.put(MBinary.TINYBLOB,
-                         TYPE_MAPPING.get(MBinary.VARBINARY));
         TYPE_MAPPING.put(MString.TINYTEXT,
                          TYPE_MAPPING.get(MString.VARCHAR));
-        TYPE_MAPPING.put(MBinary.BLOB,
-                         TYPE_MAPPING.get(MBinary.VARBINARY));
         TYPE_MAPPING.put(MString.TEXT,
                          TYPE_MAPPING.get(MString.VARCHAR));
-        TYPE_MAPPING.put(MBinary.MEDIUMBLOB,
-                         TYPE_MAPPING.get(MBinary.VARBINARY));
         TYPE_MAPPING.put(MString.MEDIUMTEXT,
                          TYPE_MAPPING.get(MString.VARCHAR));
-        TYPE_MAPPING.put(MBinary.LONGBLOB,
-                         TYPE_MAPPING.get(MBinary.VARBINARY));
         TYPE_MAPPING.put(MString.LONGTEXT,
                          TYPE_MAPPING.get(MString.VARCHAR));
     }
