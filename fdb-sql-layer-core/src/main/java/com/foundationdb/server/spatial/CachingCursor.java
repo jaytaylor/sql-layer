@@ -122,7 +122,7 @@ public class CachingCursor implements BindingsAwareCursor
 
     // For use by this class
 
-    Row cachedRecord(int i)
+    private Row cachedRecord(int i)
     {
         return (Row) recordCache[i];
     }
