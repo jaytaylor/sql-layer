@@ -138,7 +138,7 @@ public class ConfigurationServiceImpl implements ConfigurationService, Service {
         if (timezone != null && timezone.length() != 0 && DateTimeZone.getProvider().getZone(timezone) == null) {
             throw new InvalidTimeZoneException();
         }
-        LOG.info("Using timezone: " + DateTimeZone.getDefault());
+        LOG.debug("Using timezone: {}", DateTimeZone.getDefault());
     }
 
     @Override
