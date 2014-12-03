@@ -94,7 +94,8 @@ public enum ErrorCode {
     UNSUPPORTED_FULL_OUTER_JOIN("0A", "50B", Importance.DEBUG, UnsupportedFullOuterJoinException.class),
     UNSUPPORTED_GROUP_BY_ROLLUP("0A", "50C", Importance.DEBUG, UnsupportedGroupByRollupException.class),
     UNSUPPORTED_TRIGGER("0A", "50D", Importance.DEBUG, UnsupportedTriggerException.class),
-    
+    UNSUPPORTED_FK_MATCH    ("0A", "50E", Importance.DEBUG, UnsupportedFKMatchException.class),
+
     // Class 0D - invalid target type specification
     // Class 0E - invalid schema name list specification
     // Class 0F - locator exception
