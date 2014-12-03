@@ -678,7 +678,7 @@ public class TableDDL
             }
         }
         if (fkdn.getMatchType() != FKConstraintDefinitionNode.MatchType.SIMPLE) {
-            throw new UnsupportedSQLException("MATCH " + fkdn.getMatchType(), fkdn);
+            throw new UnsupportedFKMatchException(fkdn);
         }
         String constraintName = fkdn.getName();
         if (constraintName == null) {
