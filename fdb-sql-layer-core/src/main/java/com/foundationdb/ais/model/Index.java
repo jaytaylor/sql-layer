@@ -171,11 +171,13 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
 
     public int firstSpatialArgument()
     {
+        assert isSpatial();
         return firstSpatialArgument;
     }
 
     public int lastSpatialArgument()
     {
+        assert isSpatial();
         return lastSpatialArgument;
     }
 
