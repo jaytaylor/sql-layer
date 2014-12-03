@@ -276,7 +276,7 @@ public final class ValueSources {
             value = new Value(type, (Byte)object);
         }
         else if (object instanceof SpatialObject) {
-            type = MBinary.BLOB.instance(false);
+            type = MBinary.VARBINARY.instance(65535, false);
             value = new Value(type, Spatial.serialize((JTSSpatialObject) object));
         }
         else {

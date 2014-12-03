@@ -140,7 +140,7 @@ public class SpatialColumnHandler
         } else {
             ValueSource source = row.value(positions[0]);
             TClass tclass = source.getType().typeClass();
-            assert tclass == MBinary.BLOB : tclass;
+            assert tclass == MBinary.VARBINARY : tclass;
             byte[] spatialObjectBytes = source.getBytes();
             try {
                 spatialObject = Spatial.deserialize(space, spatialObjectBytes);
@@ -185,7 +185,7 @@ public class SpatialColumnHandler
             rowDataSource.bind(fieldDefs[0], rowData);
             RowDataValueSource rowDataValueSource = (RowDataValueSource) rowDataSource;
             TClass tclass = tinstances[0].typeClass();
-            assert tclass == MBinary.BLOB : tclass;
+            assert tclass == MBinary.VARBINARY : tclass;
             byte[] spatialObjectBytes = rowDataValueSource.getBytes();
             try {
                 spatialObject = Spatial.deserialize(space, spatialObjectBytes);
