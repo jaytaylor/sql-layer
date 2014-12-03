@@ -23,12 +23,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.TreeMap;
 
 import com.foundationdb.server.error.BadConfigDirectoryException;
@@ -40,6 +42,7 @@ import com.foundationdb.server.error.ServiceAlreadyStartedException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.util.tap.Tap;
 import com.google.inject.Inject;
+import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -135,6 +138,18 @@ public class ConfigurationServiceImpl implements ConfigurationService, Service {
 
     private void validateTimeZone() {
         String timezone = System.getProperty("user.timezone");
+        // The goal here is to make sure that if the user sets user.timezone we will parse it correctly and not end up
+        // in a situation where DateTimeZone is inconsistent with TimeZone, or where it just defaulted to UTC because
+        // the user did "-Duser.timezone=America/Los_angeles" (note the lower case a).
+        // There are other cases where it would work, such as "-Duser.timezone=PST", but PST isn't a valid timezone
+        // according to DateTimeZone, so we will stop, even though it would technically work. That's ok though, because
+        // PST is just there for java 1.1.x compatibility.
+
+        // Note also that in the open jdk for 1.7u and 1.8 (at least) there's a bug on Mac OS X where if you specify
+        // an invalid user.timezone, it will end up being GMT}05:00 where the 05:00 is your system time, and the } is
+        // an unprintable character. I filed a bug though, so that might get fixed.
+
+        // Also note, that, as of this writing, there are usages of both java.util date functionality and Joda
         if (timezone != null && timezone.length() != 0 && DateTimeZone.getProvider().getZone(timezone) == null) {
             throw new InvalidTimeZoneException();
         }
