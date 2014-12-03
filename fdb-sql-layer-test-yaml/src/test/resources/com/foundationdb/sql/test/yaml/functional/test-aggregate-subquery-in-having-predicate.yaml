@@ -112,6 +112,7 @@
 - output: [['c002', '1026', 'c002'], ['c004', '1021', 'c001'], ['c001', '1025', 'c001'], ['c006', '1024', 'c006'], ['c003', '1015', 'c003']]
 ---
 - Statement: SELECT cid, MAX(o1.ordno), (SELECT MAX(o1.ordno)-o2.ordno FROM orders o2 WHERE o2.cid = o1.cid ORDER BY 1 DESC LIMIT 1) FROM orders o1 GROUP BY cid
+- output: [['c002', '1026', 13], ['c004', '1021', 0], ['c001', '1025', 14], ['c006', '1024', 8], ['c003', '1015', 1]]
 ---
 - Statement: SELECT cid, MAX(o1.ordno), (SELECT MAX(o1.ordno)-NOW() FROM orders o2 WHERE o2.cid = o1.cid ORDER BY 1 LIMIT 1) FROM orders o1 GROUP BY cid
 ...
