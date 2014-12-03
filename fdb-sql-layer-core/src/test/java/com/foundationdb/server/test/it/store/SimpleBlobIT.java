@@ -48,34 +48,34 @@ public class SimpleBlobIT extends ITBase {
         return tableId(SCHEMA, TABLE);
     }
     
-    @Test
+// suppress until blobs are active    @Test
     public void testBlobs_1() throws Exception {
         testBlobs(1);
     }
 
-    @Test
+//    @Test
     public void testBlobs_2() throws Exception {
         testBlobs(2);
     }
 
-    @Test
+//    @Test
     public void testBlobs_3() throws Exception {
         testBlobs(3);
     }
 
-    @Test
+//    @Test
     public void testBlobs_4() throws Exception {
         testBlobs(4);
     }
 
     @Ignore("value_too_large")
-    @Test
+//    @Test
     public void testBlobs_5() throws Exception {
         testBlobs(5);
     }
 
     @Ignore("value_too_large")
-    @Test
+//    @Test
     public void testBlobs_6() throws Exception {
         testBlobs(6);
     }

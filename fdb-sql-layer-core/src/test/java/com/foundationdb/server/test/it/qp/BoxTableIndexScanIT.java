@@ -95,7 +95,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
         return 1;
     }
 
-    @Test
+// suppress until blobs work @Test
     public void testLoad()
     {
         loadDB();
@@ -116,7 +116,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
         }
     }
 
-    @Test
+    //@Test
     public void testLoadAndRemove()
     {
         loadDB();
@@ -163,7 +163,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
         }
     }
 
-    @Test
+    //@Test
     public void testLoadAndUpdate()
     {
         loadDB();
@@ -203,7 +203,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
     }
 
     @Ignore
-    @Test
+    //@Test
     public void testSpatialQueryLatLon()
     {
         loadDB();

@@ -41,5 +41,5 @@ public class TestTypesRegistry extends TypesRegistry
                               MDateAndTime.DATE, MDateAndTime.DATETIME, MDateAndTime.TIMESTAMP,
                               MDateAndTime.YEAR,
                               MString.CHAR, MString.VARCHAR, MString.TEXT,
-                              MBinary.VARBINARY, MBinary.BLOB);
+                              MBinary.VARBINARY);
 }
