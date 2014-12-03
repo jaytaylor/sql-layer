@@ -110,29 +110,38 @@ public class FDBTransactionService implements TransactionService {
 
     public class TransactionState {
         final Transaction transaction;
+        final Session session;
         FDBPendingIndexChecks indexChecks;
         long startTime;
         long bytesSet;
         public long uniquenessTime;
         Map<ForeignKey,Boolean> deferredForeignKeys;
         boolean forceImmediateForeignKeyCheck;
-        final Session session;
+        int resetCount;
 
         public TransactionState(FDBPendingIndexChecks.CheckTime checkTime, Session session) {
             this.transaction = createTransaction();
+            this.session = session;
             if ((checkTime != null) && checkTime.isDelayed())
                 this.indexChecks = new FDBPendingIndexChecks(checkTime,
                                                              uniquenessChecksMetric);
             reset();
-            this.session = session;
         }
 
         public Transaction getTransaction() {
             return transaction;
         }
 
+        public Session getSession() {
+            return session;
+        }
+
         public long getStartTime() {
             return startTime;
+        }
+
+        public int getResetCount() {
+            return resetCount;
         }
 
         public Future<byte[]> getFuture(byte[] key) {
@@ -251,6 +260,7 @@ public class FDBTransactionService implements TransactionService {
             this.forceImmediateForeignKeyCheck = false;
             if (indexChecks != null)
                 indexChecks.clear();
+            resetCount++;
         }
 
         public boolean timeToCommit() {
