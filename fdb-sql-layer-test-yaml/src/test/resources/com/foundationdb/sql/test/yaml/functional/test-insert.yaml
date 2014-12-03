@@ -5,7 +5,7 @@
 # Test insert with wrong number of values
 ---
 - Statement: INSERT INTO all_types (bigint_field) VALUES (1, 2)
-- error: !select-engine { all: [42512], sys-mysql: [1136] }  
+- error: [42512]
 
 # bug889280
 ---
@@ -28,7 +28,7 @@
 ---
 - Statement: SELECT (bigint_unsigned_field) from all_types
 - output: [[0], [1], [9223372036854775807]]
-- output_types: [NUMERIC]
+- output_types: [DECIMAL]
 ---
 - Statement: DELETE from all_types
 
@@ -89,7 +89,7 @@
 ---
 - Statement: SELECT (decimal_field) from all_types
 - output: [[1], [123456], [-123456], [1234567], [-1234567], [9999999999], [-9999999999]]
-- output_types: !select-engine { all: [NUMERIC], sys-mysql: [DECIMAL] } 
+- output_types: [DECIMAL]
 ---
 - Statement: DELETE from all_types
 
@@ -129,7 +129,7 @@
 ---
 - Statement: SELECT (float_field) from all_types
 - output: [[0.0], [1.0], [-1.0], [3.4028234663852886E38], [1.401298464324817E-45], [0.0], [0.0], [0.0]]
-- output_types: !select-engine { all: [DOUBLE], sys-mysql: [FLOAT] }
+- output_types: [DOUBLE]
 ---
 - Statement: DELETE from all_types
 
@@ -148,7 +148,7 @@
 ---
 - Statement: SELECT (numeric_field) from all_types
 - output: [[1]]
-- output_types: !select-engine { all: [NUMERIC], sys-mysql: [DECIMAL] } 
+- output_types: [DECIMAL]
 ---
 - Statement: DELETE from all_types
 
@@ -157,7 +157,7 @@
 ---
 - Statement: SELECT (real_field) from all_types
 - output: [[1.0]]
-- output_types: !select-engine {it: [REAL], all: [FLOAT] }
+- output_types: [FLOAT] 
 ---
 - Statement: DELETE from all_types
 
@@ -185,7 +185,7 @@
 ---
 - Statement: SELECT (timestamp_field) from all_types
 - output: [[!re '2000-01-02 04:00:00([.]0)?']]
-- output_types: [TIMESTAMP]
+- output_types: [DATETIME]
 ---
 - Statement: DELETE from all_types
 
@@ -210,5 +210,5 @@
 - CreateTable: t1 (c1 char(2))
 ---
 - Statement: INSERT INTO t1 VALUES ('m', 'f')
-- error: !select-engine { sys-mysql: [1136], all: [42512] } 
+- error: [42512]
 ...

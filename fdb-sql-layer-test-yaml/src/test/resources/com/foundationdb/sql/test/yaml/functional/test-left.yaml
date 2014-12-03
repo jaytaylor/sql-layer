@@ -79,8 +79,8 @@
 ## test arity
 ---
 - Statement: SELECT left() from all_types;
-- error: !select-engine { all: [42000], sys-mysql: [1064] } 
+- error: [42000]
 ---
 - Statement: SELECT left('abc', 1, 2) from all_types;
-- error: !select-engine { all: [42000], sys-mysql: [1064] }
+- error: [42000]
 ...

@@ -30,11 +30,11 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.File;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Connection;
@@ -44,7 +44,6 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
-import java.sql.Types;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -57,7 +56,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Map;
@@ -77,6 +75,7 @@ import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.nodes.NodeTuple;
 import org.yaml.snakeyaml.nodes.ScalarNode;
 import org.yaml.snakeyaml.nodes.Tag;
+
 
 /** A utility for testing SQL access over a Postgres server connection based on the contents of a YAML file. */
 /* Here's an overview of the syntax of the YAML file.
@@ -167,35 +166,7 @@ import org.yaml.snakeyaml.nodes.Tag;
 public class YamlTester
 {
     private static final Logger LOG = LoggerFactory.getLogger(YamlTester.class);
-
-    private static final Map<String, Integer> typeNameToNumber = new HashMap<>();
-    private static final Map<Integer, String> typeNumberToName = new HashMap<>();
-
-    static {
-        addTypeNameAndNumber("VARBINARY", Types.BINARY); // name to number overwritten below
-        addTypeNameAndNumber("BIGINT", Types.BIGINT);
-        addTypeNameAndNumber("BLOB", Types.BLOB);
-        addTypeNameAndNumber("BOOLEAN", Types.BIT); // TODO: Postgres JDBC claims it is Types.BIT (-7) instead of Types.BOOLEAN (16)
-        addTypeNameAndNumber("CHAR", Types.CHAR);
-        addTypeNameAndNumber("CLOB", Types.CLOB);
-        addTypeNameAndNumber("DATE", Types.DATE);
-        addTypeNameAndNumber("DECIMAL", Types.DECIMAL);
-        addTypeNameAndNumber("DOUBLE", Types.DOUBLE);
-        addTypeNameAndNumber("FLOAT", Types.FLOAT);
-        addTypeNameAndNumber("INTEGER", Types.INTEGER);
-        addTypeNameAndNumber("LONGVARBINARY", Types.LONGVARBINARY);
-        addTypeNameAndNumber("LONGVARCHAR", Types.LONGVARCHAR);
-        addTypeNameAndNumber("NUMERIC", Types.NUMERIC);
-        addTypeNameAndNumber("REAL", Types.REAL);
-        addTypeNameAndNumber("SMALLINT", Types.SMALLINT);
-        addTypeNameAndNumber("TIME", Types.TIME);
-        addTypeNameAndNumber("TIMESTAMP", Types.TIMESTAMP);
-        addTypeNameAndNumber("TINYINT", Types.TINYINT);
-        addTypeNameAndNumber("VARBINARY", Types.VARBINARY);
-        addTypeNameAndNumber("VARCHAR", Types.VARCHAR);
-        addTypeNameAndNumber("OTHER", Types.OTHER);
-    }
-
+    
     /** Matches all engines. */
     private static final String ALL_ENGINE = "all";
     /** Matches the IT engine. */
@@ -241,14 +212,6 @@ public class YamlTester
     private static final int DEFAULT_RETRY_COUNT = 5;
     private int lineNumber = 1;
 
-    /**
-     * Creates an instance of this class.
-     *
-     * @param sourceURL  the source of the YAML input
-     * @param in         the YAML input
-     * @param connection the JDBC connection
-     * @param randomCost randomize cost calculations
-     */
     public YamlTester(Reader in, Connection connection) {
         this(null, in, connection, false);
     }
@@ -318,9 +281,7 @@ public class YamlTester
             if(commandNumber == 0) {
                 fail("Test file must not be empty");
             }
-        } catch(ContextAssertionError e) {
-            throw e;
-        } catch (FullOutputAssertionError e) {
+        } catch(ContextAssertionError | FullOutputAssertionError e) {
             throw e;
         } catch(Throwable e) {
             // Add context
@@ -783,9 +744,6 @@ public class YamlTester
             }
             assertNull("The output_types attribute must not appear more than once", outputTypes);
             outputTypes = nonEmptyStringSequence(value, "output_types value");
-            for(String typeName : outputTypes) {
-                assertNotNull("Unknown type name in output_types: " + typeName, getTypeNumber(typeName));
-            }
         }
 
         private void parseExplain(Object value) {
@@ -1025,7 +983,7 @@ public class YamlTester
             assertEquals("Wrong number of output types:", outputTypes.size(), numColumns);
             for(int i = 1; i <= numColumns; i++) {
                 int columnType = metaData.getColumnType(i);
-                String columnTypeName = getTypeName(columnType);
+                String columnTypeName = metaData.getColumnTypeName(i);
                 if(columnTypeName == null) {
                     columnTypeName = "<unknown " + metaData.getColumnTypeName(i) + " (" + columnType + ")>";
                 }
@@ -1347,7 +1305,7 @@ public class YamlTester
         @Override
         public boolean compareExpected(Object actual) {
             boolean result = pattern.matcher(String.valueOf(actual)).matches();
-            LOG.debug("Regexp.compareExpected pattern='{}', actual='{}' => '{}'", new Object[]{pattern, actual, result});
+            LOG.debug("Regexp.compareExpected pattern='{}', actual='{}' => '{}'", pattern, actual, result);
             return result;
         }
 
@@ -1515,7 +1473,7 @@ public class YamlTester
                     fail("The value of the UTF8Bytes tag must be a scalar");
                 }
                 try {
-                    return ((ScalarNode)node).getValue().toString().getBytes("UTF-8");
+                    return ((ScalarNode)node).getValue().getBytes("UTF-8");
                 }
                 catch (UnsupportedEncodingException ex) {
                     throw new RuntimeException(ex);
@@ -1569,20 +1527,15 @@ public class YamlTester
             long testResult = date.getTime() - now.getTime();
             return Math.abs(testResult) < (1 * MINUTES_IN_SECONDS * SECONDS_IN_MILLISECONDS);
         }
-
     }
-
-    private static void addTypeNameAndNumber(String name, int number) {
-        typeNameToNumber.put(name, number);
-        typeNumberToName.put(number, name);
-    }
-
-    private static String getTypeName(int typeNumber) {
-        return typeNumberToName.get(typeNumber);
-    }
-
-    private static Integer getTypeNumber(String typeName) {
-        return typeNameToNumber.get(typeName);
+  
+    private Integer getTypeNumber(String typeName) {
+        try {
+            Field f = java.sql.Types.class.getDeclaredField(typeName.toUpperCase());
+            return f.getInt(null);
+        } catch(NoSuchFieldException | IllegalAccessException e) {
+            throw new AssertionError("Unable to get java.sql.Types named: " + typeName, e);
+        }
     }
 
     /** An assertion error that includes context information. */

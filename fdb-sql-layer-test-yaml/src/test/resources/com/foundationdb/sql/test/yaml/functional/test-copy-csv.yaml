@@ -1,8 +1,5 @@
 # Test COPY statement
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - Properties: random-context
 - suppressed: true
 

@@ -1,8 +1,4 @@
 ---
-- Properties: sys-mysql
-- suppressed: true
-
----
 - CreateTable: p (id INT PRIMARY KEY NOT NULL)
 ---
 - CreateTable: cx (id INT PRIMARY KEY NOT NULL, pid INT, CONSTRAINT cx_p FOREIGN KEY(pid) REFERENCES p(id))

@@ -4,13 +4,13 @@
 - Statement: INSERT INTO all_types (bigint_field) VALUES (201105)
 --- # Wrong arity
 - Statement: SELECT PERIOD_DIFF() FROM all_types
-- error: !select-engine { all: [4250C], sys-mysql: [1582] }
+- error: [4250C]
 ---
 - Statement: SELECT PERIOD_DIFF(201105) FROM all_types
-- error: !select-engine { all: [4250C], sys-mysql: [1582] }
+- error: [4250C]
 ---
 - Statement: SELECT PERIOD_DIFF(201105, 5, 15) FROM all_types
-- error: !select-engine {all: [4250C], sys-mysql: [1582] }
+- error: [4250C]
 --- # Literal values with YYYYMM arguments
 - Statement: SELECT PERIOD_DIFF(200312, 200104) FROM all_types
 - output: [[32]]

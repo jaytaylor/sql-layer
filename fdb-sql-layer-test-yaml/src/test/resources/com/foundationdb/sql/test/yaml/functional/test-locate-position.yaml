@@ -2,9 +2,6 @@
 ## Related bug 943475
 ## Status: fix committed
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (varchar_field, double_field, bigint_field, date_field) 

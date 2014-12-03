@@ -1,9 +1,6 @@
 # Test dropping group functionality from the SQL perspecitive
 # The internals of the Drop Group are well covered. 
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - Statement: Create Table customers (cid int NOT NULL, name varchar(32) NOT NULL, PRIMARY KEY(cid));
 ---
 - Statement: Create Table orders (oid int NOT NULL, PRIMARY KEY(oid), cid int NOT NULL, order_date date NOT NULL, GROUPING FOREIGN KEY (cid) REFERENCES customers);

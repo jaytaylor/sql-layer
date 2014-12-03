@@ -20,7 +20,7 @@
 - output: [['aa,bb,cc,dd']]
 ---
 - Statement: SELECT group_concat() from all_types;
-- error: !select-engine { all: [42000], sys-mysql: [1064] }
+- error: [42000]
 ---
 - Statement: SELECT GROUP_CONCAT(varchar_field, varchar_field separator '1'), group_concat(varchar_field, varchar_field separator '2') from all_types;
 - output: [['aa1bb1cc1dd1dd', 'aa2bb2cc2dd2dd']]

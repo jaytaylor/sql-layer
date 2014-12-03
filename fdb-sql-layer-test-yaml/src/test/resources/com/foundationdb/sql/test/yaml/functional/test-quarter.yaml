@@ -71,8 +71,8 @@
 ## test arity
 ---
 - Statement: SELECT QUARTER() from all_types;
-- error: !select-engine { all: [4250C], sys-mysql: [1064] } 
+- error: [4250C]
 ---
 - Statement: SELECT QUARTER(null, null) from all_types;
-- error: !select-engine { all: [4250C], sys-mysql: [1064] }
+- error: [4250C]
 ...

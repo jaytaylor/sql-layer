@@ -1,8 +1,5 @@
 # Test SHOW command
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - Statement: SHOW transaction_isolation
 - output: [['serializable']]
 ---

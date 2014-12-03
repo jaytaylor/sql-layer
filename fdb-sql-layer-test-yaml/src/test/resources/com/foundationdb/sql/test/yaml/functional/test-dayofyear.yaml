@@ -7,7 +7,7 @@
 ## Test with literals
 ---
 - Statement: SELECT DAYOFYEAR(20081231) from all_types;
-- output_types: !select-engine  {sys-mysql: [BIGINT], all: [INTEGER] }
+- output_types: [INTEGER]
 - output: [[366]]
 --- 
 - Statement: SELECT DAYOFYEAR(20081231.5) from all_types;
@@ -32,10 +32,10 @@
 - output: [[60]]
 ---
 - Statement: SELECT DAYOFYEAR() from all_types;
-- error: !select-engine { sys-mysql: [1582], all: [4250C] }
+- error: [4250C]
 ---
 - Statement: SELECT DAYOFYEAR('2009-12-12', 23) FROM all_types;
-- error: !select-engine { sys-mysql: [1582], all: [4250C] }
+- error: [4250C]
 ---
 - Statement: SELECT bigint_field from all_types WHERE DAYOFYEAR(19960228.5) = 60;
 - row_count: 0
