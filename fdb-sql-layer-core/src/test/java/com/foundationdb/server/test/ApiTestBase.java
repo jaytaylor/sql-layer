@@ -1267,6 +1267,10 @@ public class ApiTestBase {
         return getTable(rowDefId).rowDef();
     }
 
+    protected final RowType getRowType (int tableId) {
+        return SchemaCache.globalSchema(getTable(tableId).getAIS()).tableRowType(tableId);
+    }
+    
     protected final RowDef getRowDef(String schema, String table) {
         return getTable(schema, table).rowDef();
     }

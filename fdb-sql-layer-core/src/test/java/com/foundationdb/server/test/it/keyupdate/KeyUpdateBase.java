@@ -17,13 +17,20 @@
 
 package com.foundationdb.server.test.it.keyupdate;
 
+import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesHolderRow;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.test.it.ITBase;
+import com.foundationdb.server.types.value.Value;
 import com.foundationdb.util.tap.Tap;
 import com.foundationdb.util.tap.TapReport;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -46,6 +53,14 @@ public abstract class KeyUpdateBase extends ITBase {
 
     protected abstract void confirmColumns();
 
+    protected void confirmColumn(RowType type, Integer expectedId, String columnName) {
+        assert columnName != null;
+        assertNotNull("column ID for " + columnName, expectedId);
+        Column column  = type.fieldColumn(expectedId);
+        assertNotNull ("no Column with id = "+expectedId + ", name="+columnName, column);
+        assertEquals("Column name", columnName, column.getName());
+    }
+    
     protected void confirmColumn(RowDef rowDef, Integer expectedId, String columnName) {
         assert columnName != null;
         assert rowDef != null;
@@ -65,14 +80,7 @@ public abstract class KeyUpdateBase extends ITBase {
     }
 
     protected void assertSameFields(KeyUpdateRow expected, KeyUpdateRow actual) {
-        Map<Integer,Object> expectedFields = expected.getFields();
-        Map<Integer,Object> actualFields = actual.getFields();
-        if (!expectedFields.equals(actualFields)) {
-            TreeMap<Integer,Object> expectedSorted = new TreeMap<>(expectedFields);
-            TreeMap<Integer,Object> actualSorted = new TreeMap<>(actualFields);
-            assertEquals(expectedSorted, actualSorted);
-            fail("if they're not equal, we shouldn't have gotten here!");
-        }
+        assertEquals(expected.rowType().table(), actual.rowType().table());
     }
 
     protected final void dbInsert(final KeyUpdateRow row) throws Exception
@@ -80,9 +88,9 @@ public abstract class KeyUpdateBase extends ITBase {
         transactionally(new Callable<Void>() {
             public Void call() throws Exception {
                 testStore.writeRow(session(), row);
-                Integer oldCount = rowDefsToCounts.get(row.getTableId());
+                Integer oldCount = rowDefsToCounts.get(row.rowType().table().getTableId());
                 oldCount = (oldCount == null) ? 1 : oldCount+1;
-                rowDefsToCounts.put(row.getTableId(), oldCount);
+                rowDefsToCounts.put(row.rowType().table().getTableId(), oldCount);
                 return null;
             }
         });
@@ -103,9 +111,9 @@ public abstract class KeyUpdateBase extends ITBase {
         transactionally(new Callable<Void>() {
             public Void call() throws Exception {
                 testStore.deleteRow(session(), row);
-                Integer oldCount = rowDefsToCounts.get(row.getTableId());
+                Integer oldCount = rowDefsToCounts.get(row.rowType().table().getTableId());
                 assertNotNull(oldCount);
-                rowDefsToCounts.put(row.getTableId(), oldCount - 1);
+                rowDefsToCounts.put(row.rowType().table().getTableId(), oldCount - 1);
                 return null;
             }
         });
@@ -127,6 +135,12 @@ public abstract class KeyUpdateBase extends ITBase {
                 RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
                 RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
                 testStore.traverse(session(), group, testVisitor, realVisitor);
+                
+                assertEquals(testVisitor.records().size(), realVisitor.records().size());
+                for (int i = 0; i < testVisitor.records().size(); i++) {
+                    assertEquals(testVisitor.records().get(i), realVisitor.records().get(i));
+                }
+                
                 assertEquals(testVisitor.records(), realVisitor.records());
                 assertEquals("records count", countAllRows(), testVisitor.records().size());
                 // Check indexes
@@ -134,51 +148,50 @@ public abstract class KeyUpdateBase extends ITBase {
                 if (checkChildPKs()) {
                     // Vendor PK index
                     indexVisitor = new CollectingIndexKeyVisitor();
-                    testStore.traverse(session(), vendorRD.getPKIndex(), indexVisitor, -1, 0);
+                    testStore.traverse(session(), vendorRT.table().getPrimaryKey().getIndex(), indexVisitor, -1, 0);
                     assertEquals(vendorPKIndex(testVisitor.records()), indexVisitor.records());
-                    assertEquals("vendor PKs", countRows(vendorRD), indexVisitor.records().size());
+                    assertEquals("vendor PKs", countRows(vendorRT), indexVisitor.records().size());
                     // Customer PK index
                     indexVisitor = new CollectingIndexKeyVisitor();
-                    testStore.traverse(session(), customerRD.getPKIndex(), indexVisitor, -1, 0);
+                    testStore.traverse(session(), customerRT.table().getPrimaryKey().getIndex(), indexVisitor, -1, 0);
                     assertEquals(customerPKIndex(testVisitor.records()), indexVisitor.records());
-                    assertEquals("customer PKs", countRows(customerRD), indexVisitor.records().size());
+                    assertEquals("customer PKs", countRows(customerRT), indexVisitor.records().size());
                     // Order PK index
                     indexVisitor = new CollectingIndexKeyVisitor();
-                    testStore.traverse(session(), orderRD.getPKIndex(), indexVisitor, -1, 0);
+                    testStore.traverse(session(), orderRT.table().getPrimaryKey().getIndex(), indexVisitor, -1, 0);
                     assertEquals(orderPKIndex(testVisitor.records()), indexVisitor.records());
-                    assertEquals("order PKs", countRows(orderRD), indexVisitor.records().size());
+                    assertEquals("order PKs", countRows(orderRT), indexVisitor.records().size());
                     // Item PK index
                     indexVisitor = new CollectingIndexKeyVisitor();
-                    testStore.traverse(session(), itemRD.getPKIndex(), indexVisitor, -1, 0);
+                    testStore.traverse(session(), itemRT.table().getPrimaryKey().getIndex(), indexVisitor, -1, 0);
                     assertEquals(itemPKIndex(testVisitor.records()), indexVisitor.records());
-                    assertEquals("order PKs", countRows(itemRD), indexVisitor.records().size());
+                    assertEquals("order PKs", countRows(itemRT), indexVisitor.records().size());
                 }
                 // Order priority index
                 indexVisitor = new CollectingIndexKeyVisitor();
-                testStore.traverse(session(), index(orderRD, "priority"), indexVisitor, -1, 0);
+                testStore.traverse(session(), index(orderRT, "priority"), indexVisitor, -1, 0);
                 assertEquals(orderPriorityIndex(testVisitor.records()), indexVisitor.records());
-                assertEquals("order PKs", countRows(orderRD), indexVisitor.records().size());
+                assertEquals("order PKs", countRows(orderRT), indexVisitor.records().size());
                 // Order timestamp index
                 indexVisitor = new CollectingIndexKeyVisitor();
-                testStore.traverse(session(), index(orderRD, "when"), indexVisitor, -1, 0);
+                testStore.traverse(session(), index(orderRT, "when"), indexVisitor, -1, 0);
                 assertEquals(orderWhenIndex(testVisitor.records()), indexVisitor.records());
-                assertEquals("order PKs", countRows(orderRD), indexVisitor.records().size());
+                assertEquals("order PKs", countRows(orderRT), indexVisitor.records().size());
                 return null;
             }
         });
     }
 
-    private int countRows(RowDef rowDef) {
-        return rowDefsToCounts.get(rowDef.getRowDefId());
+    private int countRows(RowType rowType) {
+        return rowDefsToCounts.get(rowType.table().getTableId());
     }
 
-    private Index index(RowDef rowDef, String indexName) {
-        for (Index index : rowDef.getIndexes()) {
-            if (indexName.equals(index.getIndexName().getName())) {
-                return index;
-            }
+    private Index index(RowType rowType, String indexName) {
+        Index index = rowType.table().getIndex(indexName);
+        if (index == null) {
+            throw new NoSuchElementException(indexName);
         }
-        throw new NoSuchElementException(indexName);
+        return index;
     }
 
     protected final void checkInitialState() throws Exception
@@ -191,51 +204,53 @@ public abstract class KeyUpdateBase extends ITBase {
                 Iterator<TreeRecord> expectedIterator = testVisitor.records().iterator();
                 Iterator<TreeRecord> actualIterator = realVisitor.records().iterator();
                 Map<Integer, Integer> expectedCounts = new HashMap<>();
-                expectedCounts.put(vendorRD.getRowDefId(), 0);
-                expectedCounts.put(customerRD.getRowDefId(), 0);
-                expectedCounts.put(orderRD.getRowDefId(), 0);
-                expectedCounts.put(itemRD.getRowDefId(), 0);
+                expectedCounts.put(vendorRT.table().getTableId(), 0);
+                expectedCounts.put(customerRT.table().getTableId(), 0);
+                expectedCounts.put(orderRT.table().getTableId(), 0);
+                expectedCounts.put(itemRT.table().getTableId(), 0);
                 Map<Integer, Integer> actualCounts = new HashMap<>();
-                actualCounts.put(customerRD.getRowDefId(), 0);
-                actualCounts.put(vendorRD.getRowDefId(), 0);
-                actualCounts.put(orderRD.getRowDefId(), 0);
-                actualCounts.put(itemRD.getRowDefId(), 0);
+                actualCounts.put(customerRT.table().getTableId(), 0);
+                actualCounts.put(vendorRT.table().getTableId(), 0);
+                actualCounts.put(orderRT.table().getTableId(), 0);
+                actualCounts.put(itemRT.table().getTableId(), 0);
                 while (expectedIterator.hasNext() && actualIterator.hasNext()) {
                     TreeRecord expected = expectedIterator.next();
                     TreeRecord actual = actualIterator.next();
                     assertEquals(expected, actual);
                     assertEquals(hKey((KeyUpdateRow) expected.row()), actual.hKey());
                     checkInitialState(actual.row());
-                    expectedCounts.put(expected.row().getTableId(), expectedCounts.get(expected.row().getTableId()) + 1);
-                    actualCounts.put(actual.row().getTableId(), actualCounts.get(actual.row().getTableId()) + 1);
+                    expectedCounts.put(expected.row().rowType().table().getTableId(), 
+                            expectedCounts.get(expected.row().rowType().table().getTableId()) + 1);
+                    actualCounts.put(actual.row().rowType().table().getTableId(), 
+                            actualCounts.get(actual.row().rowType().table().getTableId()) + 1);
                 }
-                assertEquals(2, expectedCounts.get(vendorRD.getRowDefId()).intValue());
-                assertEquals(6, expectedCounts.get(customerRD.getRowDefId()).intValue());
-                assertEquals(18, expectedCounts.get(orderRD.getRowDefId()).intValue());
-                assertEquals(54, expectedCounts.get(itemRD.getRowDefId()).intValue());
-                assertEquals(2, actualCounts.get(vendorRD.getRowDefId()).intValue());
-                assertEquals(6, actualCounts.get(customerRD.getRowDefId()).intValue());
-                assertEquals(18, actualCounts.get(orderRD.getRowDefId()).intValue());
-                assertEquals(54, actualCounts.get(itemRD.getRowDefId()).intValue());
+                assertEquals(2, expectedCounts.get(vendorRT.table().getTableId()).intValue());
+                assertEquals(6, expectedCounts.get(customerRT.table().getTableId()).intValue());
+                assertEquals(18, expectedCounts.get(orderRT.table().getTableId()).intValue());
+                assertEquals(54, expectedCounts.get(itemRT.table().getTableId()).intValue());
+                assertEquals(2, actualCounts.get(vendorRT.table().getTableId()).intValue());
+                assertEquals(6, actualCounts.get(customerRT.table().getTableId()).intValue());
+                assertEquals(18, actualCounts.get(orderRT.table().getTableId()).intValue());
+                assertEquals(54, actualCounts.get(itemRT.table().getTableId()).intValue());
                 assertTrue(!expectedIterator.hasNext() && !actualIterator.hasNext());
                 return null;
             }
         });
     }
 
-    protected void checkInitialState(NewRow row)
+    protected void checkInitialState(Row row)
     {
-        RowDef rowDef = row.getRowDef();
-        if (rowDef == vendorRD) {
-            assertEquals(row.get(v_vx), ((Long)row.get(v_vid)) * 100);
-        } else if (rowDef == customerRD) {
-            assertEquals(row.get(c_cx), ((Long)row.get(c_cid)) * 100);
-        } else if (rowDef == orderRD) {
-            assertEquals(row.get(o_cid), ((Long)row.get(o_oid)) / 10);
-            assertEquals(row.get(o_ox), ((Long)row.get(o_oid)) * 100);
-        } else if (rowDef == itemRD) {
-            assertEquals(row.get(i_oid), ((Long)row.get(i_iid)) / 10);
-            assertEquals(row.get(i_ix), ((Long)row.get(i_iid)) * 100);
+        RowType rowType = row.rowType();
+        if (rowType == vendorRT) {
+            assertEquals(row.value(v_vx).getInt64(), row.value(v_vid).getInt64() * 100);
+        } else if (rowType == customerRT) {
+            assertEquals(row.value(c_cx).getInt64(), row.value(c_cid).getInt64() * 100);
+        } else if (rowType == orderRT) {
+            assertEquals(row.value(o_cid).getInt64(), row.value(o_oid).getInt64() / 10);
+            assertEquals(row.value(o_ox).getInt64(), row.value(o_oid).getInt64() * 100);
+        } else if (rowType == itemRT) {
+            assertEquals(row.value(i_oid).getInt64(), row.value(i_iid).getInt64() / 10);
+            assertEquals(row.value(i_ix).getInt64(), row.value(i_iid).getInt64() * 100);
         } else {
             fail();
         }
@@ -249,15 +264,15 @@ public abstract class KeyUpdateBase extends ITBase {
      * Any other types will throw a RuntimeException
      * @return a list representing indexes of these records
      */
-    protected final List<List<Object>> indexFromRecords(List<TreeRecord> records, RowDef rowDef, Object... columns) {
+    protected final List<List<Object>> indexFromRecords(List<TreeRecord> records, RowType rowType, Object... columns) {
         List<List<Object>> indexEntries = new ArrayList<>();
         for (TreeRecord record : records) {
-            if (record.row().getRowDef() == rowDef) {
+            if (record.row().rowType() == rowType) {
                 List<Object> indexEntry = new ArrayList<>(columns.length);
                 for (Object column : columns) {
                     final Object indexEntryElement;
                     if (column instanceof Integer) {
-                        indexEntryElement = record.row().get( (Integer)column );
+                        indexEntryElement = record.row().value( (Integer)column ).getInt64();
                     }
                     else if (column instanceof HKeyElement) {
                         indexEntryElement = record.hKey().objectArray()[ ((HKeyElement) column).getIndex() ];
@@ -292,77 +307,96 @@ public abstract class KeyUpdateBase extends ITBase {
         return indexEntries;
     }
 
-    protected KeyUpdateRow createTestRow(int tableId) {
-        return new KeyUpdateRow(tableId, getRowDef(tableId), store());
+    protected KeyUpdateRow createTestRow (RowType rowType, Object... values) {
+        return new KeyUpdateRow (rowType, store(), values);
     }
 
-    protected KeyUpdateRow createTestRow(RowDef rowDef) {
-        return new KeyUpdateRow(rowDef.getRowDefId(), rowDef, store());
+    protected KeyUpdateRow updateRow (KeyUpdateRow oldRow, int column, Long newValue, KeyUpdateRow newParent) {
+        KeyUpdateRow row = updateRow (oldRow, column, newValue);
+        row.parent(newParent);
+        KeyUpdateRow newGrandparent = newParent == null ? null : newParent.parent();
+        row.hKey(hKey(row, newParent, newGrandparent));
+        return row;
     }
 
+    protected KeyUpdateRow updateRow (KeyUpdateRow row, int column, Long newValue) {
+        List<Value> values = row.values();
+        List<Value> newValues = new ArrayList<Value>(row.rowType().nFields());
+        
+        for (Value value : values) {
+            newValues.add(new Value(value.getType(), value.getInt64()));
+        }
+        
+        if (newValue == null) {
+            newValues.get(column).putNull();
+        } else {
+            newValues.get(column).putInt64(newValue);
+        }
+        KeyUpdateRow copy = new KeyUpdateRow (row.rowType(), row.getStore(), newValues);
+        copy.parent(row.parent());
+        copy.hKey(hKey(copy, row.parent()));
+        return copy;
+    }
+       
+    protected KeyUpdateRow updateRow (KeyUpdateRow row, int column1, Long newValue1, int column2, Long newValue2) {
+        List<Value> values = row.values();
+        List<Value> newValues = new ArrayList<Value>(row.rowType().nFields());
+        for (Value value : values) {
+            newValues.add(new Value(value.getType(), value.getInt64()));
+        }
+        
+        if (newValue1 == null) {
+            newValues.get(column1).putNull();
+        } else {
+            newValues.get(column1).putInt64(newValue1);
+        }
+        if (newValue2 == null) {
+             newValues.get(column2).putNull();
+        } else {
+            newValues.get(column2).putInt64(newValue2);
+        }
+        
+        KeyUpdateRow copy = new KeyUpdateRow (row.rowType(), row.getStore(), newValues);
+        copy.parent(row.parent());
+        copy.hKey(hKey(copy, row.parent()));
+        return copy;
+    }
+    
+    protected KeyUpdateRow updateRow (KeyUpdateRow row, 
+            int column1, Long newValue1, 
+            int column2, Long newValue2, 
+            KeyUpdateRow newParent) {
+        KeyUpdateRow newRow = updateRow(row, column1, newValue1, column2, newValue2);
+        newRow.parent(newParent);
+        KeyUpdateRow newGrandparent = newParent == null ? null : newParent.parent();
+        newRow.hKey(hKey(newRow, newParent, newGrandparent));
+        return newRow;
+    }
+
+    
     protected KeyUpdateRow copyRow(KeyUpdateRow row)
     {
-        KeyUpdateRow copy = createTestRow(row.getTableId());
-        for (Map.Entry<Integer, Object> entry : row.getFields().entrySet()) {
-            copy.put(entry.getKey(), entry.getValue());
-        }
+        KeyUpdateRow copy = new KeyUpdateRow (row.rowType(), row.getStore(), row.values());
         copy.parent(row.parent());
         copy.hKey(hKey(row, row.parent()));
         return copy;
     }
 
-    protected void updateRow(KeyUpdateRow row, int column, Object newValue)
-    {
-        row.put(column, newValue);
-        row.hKey(hKey(row));
-    }
-
-    protected void updateRow(KeyUpdateRow row, int column, Object newValue, KeyUpdateRow newParent)
-    {
-        row.put(column, newValue);
-        row.parent(newParent);
-        KeyUpdateRow newGrandparent = newParent == null ? null : newParent.parent();
-        row.hKey(hKey(row, newParent, newGrandparent));
-    }
-
-    protected final KeyUpdateRow kurow(RowDef table, Object... values)
-    {
-        KeyUpdateRow row = createTestRow(table);
-        int column = 0;
-        for (Object value : values) {
-            if (value instanceof Integer) {
-                value = ((Integer) value).longValue();
-            }
-            row.put(column++, value);
-        }
+    protected final KeyUpdateRow kurow(RowType type, Object... values) {
+        KeyUpdateRow row = new KeyUpdateRow(type, store(), values);
         row.hKey(hKey(row));
         return row;
     }
+    
 
-    protected KeyUpdateRow row(KeyUpdateRow parent, RowDef table, Object... values)
-    {
-        KeyUpdateRow row = createTestRow(table);
-        int column = 0;
-        for (Object value : values) {
-            if (value instanceof Integer) {
-               value = ((Integer) value).longValue();
-            }
-            row.put(column++, value);
-        }
+    protected final KeyUpdateRow row (KeyUpdateRow parent, RowType type, Object... values) {
+        KeyUpdateRow row = new KeyUpdateRow(type, store(), values);
         row.hKey(hKey(row, parent, null));
         return row;
     }
-
-    protected KeyUpdateRow row(KeyUpdateRow parent, KeyUpdateRow grandparent, RowDef table, Object... values)
-    {
-        KeyUpdateRow row = createTestRow(table);
-        int column = 0;
-        for (Object value : values) {
-            if (value instanceof Integer) {
-                value = ((Integer) value).longValue();
-            }
-            row.put(column++, value);
-        }
+    
+    protected final KeyUpdateRow row (KeyUpdateRow parent, KeyUpdateRow grandparent, RowType type, Object... values) {
+        KeyUpdateRow row = new KeyUpdateRow (type, store(), values);
         row.hKey(hKey(row, parent, grandparent));
         return row;
     }

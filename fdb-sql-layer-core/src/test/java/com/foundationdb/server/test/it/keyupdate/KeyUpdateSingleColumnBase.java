@@ -73,7 +73,9 @@ public abstract class KeyUpdateSingleColumnBase extends KeyUpdateBase
         // Set customer.when = 9001 for order 133
         KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, 133L));
         KeyUpdateRow newOrderRow = copyRow(oldOrderRow);
-        Long oldWhen = (Long) newOrderRow.put(o_when, 9001L);
+        
+        Long oldWhen = newOrderRow.value(o_when).getInt64();
+        newOrderRow.valueAt(o_when).putInt64(9001L);
         assertEquals("old order.when", Long.valueOf(9009L), oldWhen);
         try {
             dbUpdate(oldOrderRow, newOrderRow);
@@ -81,7 +83,7 @@ public abstract class KeyUpdateSingleColumnBase extends KeyUpdateBase
             // Make sure such a row actually exists!
             KeyUpdateRow shouldHaveConflicted = testStore.find(new HKey(vendorRD, 1L, customerRD, 11L, orderRD, 111L));
             assertNotNull("shouldHaveConflicted not found", shouldHaveConflicted);
-            assertEquals(9001L, shouldHaveConflicted.getFields().get(o_when));
+            assertEquals(9001L, shouldHaveConflicted.value(o_when).getInt64());
 
             fail("update should have failed with duplicate key");
         } catch (InvalidOperationException e) {

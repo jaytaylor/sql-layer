@@ -60,7 +60,7 @@ public final class BasicKeyUpdateIT extends ITBase {
     }
 
     @Test
-    @Ignore
+    //@Ignore
     public void oldKeysAreRemoved_2Rows_Partial_IndexChanged() throws InvalidOperationException {
         int tableId = table();
         Index index = nameIndex();
@@ -75,7 +75,7 @@ public final class BasicKeyUpdateIT extends ITBase {
                         row(index, "c", 2)
                 ),
 
-                row(tableId, 2, null),
+                row(tableId, 2, "c"),
                 row(tableId, 2, "a"),
 
                 Arrays.asList(

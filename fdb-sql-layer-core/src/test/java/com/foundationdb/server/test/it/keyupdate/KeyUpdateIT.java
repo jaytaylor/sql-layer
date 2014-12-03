@@ -17,9 +17,11 @@
 
 package com.foundationdb.server.test.it.keyupdate;
 
+import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.rowdata.RowDef;
+
 import org.junit.Test;
 
 import java.util.List;
@@ -37,9 +39,8 @@ public class KeyUpdateIT extends KeyUpdateBase
     public void testItemFKUpdate() throws Exception
     {
         // Set item.oid = 0 for item 1222
-        KeyUpdateRow originalItem = testStore.find(new HKey(vendorRD, 1L, customerRD, 12L, orderRD, 122L, itemRD, 1222L));
-        KeyUpdateRow updatedItem = copyRow(originalItem);
-        updateRow(updatedItem, i_oid, 0L, null);
+        KeyUpdateRow originalItem = testStore.find(new HKey(vendorRT, 1L, customerRT, 12L, orderRT, 122L, itemRT, 1222L));
+        KeyUpdateRow updatedItem = updateRow(originalItem, i_oid, 0L, null);
         startMonitoringHKeyPropagation();
         dbUpdate(originalItem, updatedItem);
         checkHKeyPropagation(0, 0);
@@ -56,11 +57,10 @@ public class KeyUpdateIT extends KeyUpdateBase
     public void testItemPKUpdate() throws Exception
     {
         // Set item.iid = 0 for item 1222
-        KeyUpdateRow order = testStore.find(new HKey(vendorRD, 1L, customerRD, 12L, orderRD, 122L));
-        KeyUpdateRow originalItem = testStore.find(new HKey(vendorRD, 1L, customerRD, 12L, orderRD, 122L, itemRD, 1222L));
-        KeyUpdateRow updatedItem = copyRow(originalItem);
+        KeyUpdateRow order = testStore.find(new HKey(vendorRT, 1L, customerRT, 12L, orderRT, 122L));
         assertNotNull(order);
-        updateRow(updatedItem, i_iid, 0L, order);
+        KeyUpdateRow originalItem = testStore.find(new HKey(vendorRT, 1L, customerRT, 12L, orderRT, 122L, itemRT, 1222L));
+        KeyUpdateRow updatedItem = updateRow(originalItem, i_iid, 0L, order);
         startMonitoringHKeyPropagation();
         dbUpdate(originalItem, updatedItem);
         checkHKeyPropagation(0, 0);
@@ -77,11 +77,10 @@ public class KeyUpdateIT extends KeyUpdateBase
     public void testItemPKUpdateCreatingDuplicate() throws Exception
     {
         // Set item.iid = 1223 for item 1222
-        KeyUpdateRow order = testStore.find(new HKey(vendorRD, 1L, customerRD, 12L, orderRD, 122L));
-        KeyUpdateRow originalItem = testStore.find(new HKey(vendorRD, 1L, customerRD, 12L, orderRD, 122L, itemRD, 1222L));
-        KeyUpdateRow updatedItem = copyRow(originalItem);
+        KeyUpdateRow order = testStore.find(new HKey(vendorRT, 1L, customerRT, 12L, orderRT, 122L));
         assertNotNull(order);
-        updateRow(updatedItem, i_iid, 1223L, order);
+        KeyUpdateRow originalItem = testStore.find(new HKey(vendorRT, 1L, customerRT, 12L, orderRT, 122L, itemRT, 1222L));
+        KeyUpdateRow updatedItem = updateRow(originalItem, i_iid, 1223L, order);
         try {
             dbUpdate(originalItem, updatedItem);
             fail();
@@ -96,13 +95,12 @@ public class KeyUpdateIT extends KeyUpdateBase
     public void testOrderFKUpdate() throws Exception
     {
         // Set order.cid = 0 for order 222
-        KeyUpdateRow customer = testStore.find(new HKey(vendorRD, 2L, customerRD, 22L));
-        KeyUpdateRow originalOrder = testStore.find(new HKey(vendorRD, 2L, customerRD, 22L, orderRD, 222L));
-        KeyUpdateRow updatedOrder = copyRow(originalOrder);
-        updateRow(updatedOrder, o_cid, 0L, null);
+        KeyUpdateRow customer = testStore.find(new HKey(vendorRT, 2L, customerRT, 22L));
+        KeyUpdateRow originalOrder = testStore.find(new HKey(vendorRT, 2L, customerRT, 22L, orderRT, 222L));
+        KeyUpdateRow updatedOrder = updateRow(originalOrder, o_cid, 0L, null);
         // Propagate change to order 222's items to reflect db state
         for (long iid = 2221; iid <= 2223; iid++) {
-            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 2L, customerRD, 22L, orderRD, 222L, itemRD, iid));
+            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRT, 2L, customerRT, 22L, orderRT, 222L, itemRT, iid));
             KeyUpdateRow newItemRow = copyRow(oldItemRow);
             newItemRow.hKey(hKey(newItemRow, updatedOrder));
             testStore.deleteTestRow(oldItemRow);
@@ -114,7 +112,7 @@ public class KeyUpdateIT extends KeyUpdateBase
         checkDB();
         // Revert change
         for (long iid = 2221; iid <= 2223; iid++) {
-            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, null, customerRD, 0L, orderRD, 222L, itemRD, iid));
+            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRT, null, customerRT, 0L, orderRT, 222L, itemRT, iid));
             KeyUpdateRow newItemRow = copyRow(oldItemRow);
             newItemRow.hKey(hKey(newItemRow, originalOrder, customer));
             testStore.deleteTestRow(oldItemRow);
@@ -131,32 +129,31 @@ public class KeyUpdateIT extends KeyUpdateBase
     public void testOrderPKUpdate() throws Exception
     {
         // Set order.oid = 0 for order 222
-        KeyUpdateRow customer = testStore.find(new HKey(vendorRD, 2L, customerRD, 22L));
-        KeyUpdateRow originalOrder = testStore.find(new HKey(vendorRD, 2L, customerRD, 22L, orderRD, 222L));
-        KeyUpdateRow udpatedOrder = copyRow(originalOrder);
-        updateRow(udpatedOrder, o_oid, 0L, customer);
+        KeyUpdateRow customer = testStore.find(new HKey(vendorRT, 2L, customerRT, 22L));
+        KeyUpdateRow originalOrder = testStore.find(new HKey(vendorRT, 2L, customerRT, 22L, orderRT, 222L));
+        KeyUpdateRow updatedOrder = updateRow(originalOrder, o_oid, 0L, customer);
         // Propagate change to order 222's items to reflect db state
         for (long iid = 2221; iid <= 2223; iid++) {
-            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 2L, customerRD, 22L, orderRD, 222L, itemRD, iid));
+            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRT, 2L, customerRT, 22L, orderRT, 222L, itemRT, iid));
             KeyUpdateRow newItemRow = copyRow(oldItemRow);
             newItemRow.hKey(hKey(newItemRow, null));
             testStore.deleteTestRow(oldItemRow);
             testStore.writeTestRow(newItemRow);
         }
         startMonitoringHKeyPropagation();
-        dbUpdate(originalOrder, udpatedOrder);
+        dbUpdate(originalOrder, updatedOrder);
         checkHKeyPropagation(2, 3); // 3: 3 items become orphans, no items are adopted orphans.
         checkDB();
         // Revert change
         for (long iid = 2221; iid <= 2223; iid++) {
-            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, null, customerRD, null, orderRD, 222L, itemRD, iid));
+            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRT, null, customerRT, null, orderRT, 222L, itemRT, iid));
             KeyUpdateRow newItemRow = copyRow(oldItemRow);
             newItemRow.hKey(hKey(newItemRow, originalOrder, customer));
             testStore.deleteTestRow(oldItemRow);
             testStore.writeTestRow(newItemRow);
         }
         startMonitoringHKeyPropagation();
-        dbUpdate(udpatedOrder, originalOrder);
+        dbUpdate(updatedOrder, originalOrder);
         checkHKeyPropagation(2, 3);
         checkDB();
         checkInitialState();
@@ -166,11 +163,10 @@ public class KeyUpdateIT extends KeyUpdateBase
     public void testOrderPKUpdateCreatingDuplicate() throws Exception
     {
         // Set order.oid = 221 for order 222
-        KeyUpdateRow customer = testStore.find(new HKey(vendorRD, 2L, customerRD, 22L));
-        KeyUpdateRow originalOrder = testStore.find(new HKey(vendorRD, 2L, customerRD, 22L, orderRD, 222L));
-        KeyUpdateRow updatedOrder = copyRow(originalOrder);
+        KeyUpdateRow customer = testStore.find(new HKey(vendorRT, 2L, customerRT, 22L));
         assertNotNull(customer);
-        updateRow(updatedOrder, o_oid, 221L, customer);
+        KeyUpdateRow originalOrder = testStore.find(new HKey(vendorRT, 2L, customerRT, 22L, orderRT, 222L));
+        KeyUpdateRow updatedOrder = updateRow(originalOrder, o_oid, 221L, customer);
         try {
             dbUpdate(originalOrder, updatedOrder);
             fail();
@@ -184,37 +180,36 @@ public class KeyUpdateIT extends KeyUpdateBase
     public void testCustomerFKUpdate() throws Exception
     {
         // Set customer.vid = 0 for customer 13
-        KeyUpdateRow originalCustomer = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L));
-        KeyUpdateRow udpatedCustomer = copyRow(originalCustomer);
-        updateRow(udpatedCustomer, c_vid, 0L, null);
+        KeyUpdateRow originalCustomer = testStore.find(new HKey(vendorRT, 1L, customerRT, 13L));
+        KeyUpdateRow updatedCustomer = updateRow(originalCustomer, c_vid, 0L, null);
         // Propagate change to customer 13s descendents to reflect db state
         for (long oid = 131; oid <= 133; oid++) {
-            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, oid));
+            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRT, 1L, customerRT, 13L, orderRT, oid));
             KeyUpdateRow newOrderRow = copyRow(oldOrderRow);
-            newOrderRow.hKey(hKey(newOrderRow, udpatedCustomer));
+            newOrderRow.hKey(hKey(newOrderRow, updatedCustomer));
             testStore.deleteTestRow(oldOrderRow);
             testStore.writeTestRow(newOrderRow);
             for (long iid = oid * 10 + 1; iid <= oid * 10 + 3; iid++) {
-                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, oid, itemRD, iid));
+                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRT, 1L, customerRT, 13L, orderRT, oid, itemRT, iid));
                 KeyUpdateRow newItemRow = copyRow(oldItemRow);
-                newItemRow.hKey(hKey(newItemRow, newOrderRow, udpatedCustomer));
+                newItemRow.hKey(hKey(newItemRow, newOrderRow, updatedCustomer));
                 testStore.deleteTestRow(oldItemRow);
                 testStore.writeTestRow(newItemRow);
             }
         }
         startMonitoringHKeyPropagation();
-        dbUpdate(originalCustomer, udpatedCustomer);
+        dbUpdate(originalCustomer, updatedCustomer);
         checkHKeyPropagation(2, 24); // 3 orders, 3 items per order, delete/reinsert each
         checkDB();
         // Revert change
         for (long oid = 131; oid <= 133; oid++) {
-            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRD, 0L, customerRD, 13L, orderRD, oid));
+            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRT, 0L, customerRT, 13L, orderRT, oid));
             KeyUpdateRow newOrderRow = copyRow(oldOrderRow);
             newOrderRow.hKey(hKey(newOrderRow, originalCustomer));
             testStore.deleteTestRow(oldOrderRow);
             testStore.writeTestRow(newOrderRow);
             for (long iid = oid * 10 + 1; iid <= oid * 10 + 3; iid++) {
-                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 0L, customerRD, 13L, orderRD, oid, itemRD, iid));
+                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRT, 0L, customerRT, 13L, orderRT, oid, itemRT, iid));
                 KeyUpdateRow newItemRow = copyRow(oldItemRow);
                 newItemRow.hKey(hKey(newItemRow, newOrderRow, originalCustomer));
                 testStore.deleteTestRow(oldItemRow);
@@ -222,7 +217,7 @@ public class KeyUpdateIT extends KeyUpdateBase
             }
         }
         startMonitoringHKeyPropagation();
-        dbUpdate(udpatedCustomer, originalCustomer);
+        dbUpdate(updatedCustomer, originalCustomer);
         checkHKeyPropagation(2, 24);
         checkDB();
         checkInitialState();
@@ -232,18 +227,17 @@ public class KeyUpdateIT extends KeyUpdateBase
     public void testCustomerPKUpdate() throws Exception
     {
         // Set customer.cid = 0 for customer 22
-        KeyUpdateRow originalCustomer = testStore.find(new HKey(vendorRD, 2L, customerRD, 22L));
-        KeyUpdateRow updatedCustomer = copyRow(originalCustomer);
-        updateRow(updatedCustomer, c_cid, 0L, null);
+        KeyUpdateRow originalCustomer = testStore.find(new HKey(vendorRT, 2L, customerRT, 22L));
+        KeyUpdateRow updatedCustomer = updateRow(originalCustomer, c_cid, 0L, null);
         // Propagate change to customer 22's orders and items to reflect db state
         for (long oid = 221; oid <= 223; oid++) {
-            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRD, 2L, customerRD, 22L, orderRD, oid));
+            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRT, 2L, customerRT, 22L, orderRT, oid));
             KeyUpdateRow newOrderRow = copyRow(oldOrderRow);
             newOrderRow.hKey(hKey(newOrderRow, null));
             testStore.deleteTestRow(oldOrderRow);
             testStore.writeTestRow(newOrderRow);
             for (long iid = oid * 10 + 1; iid <= oid * 10 + 3; iid++) {
-                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 2L, customerRD, 22L, orderRD, oid, itemRD, iid));
+                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRT, 2L, customerRT, 22L, orderRT, oid, itemRT, iid));
                 KeyUpdateRow newItemRow = copyRow(oldItemRow);
                 newItemRow.hKey(hKey(newItemRow, newOrderRow));
                 testStore.deleteTestRow(oldItemRow);
@@ -256,13 +250,13 @@ public class KeyUpdateIT extends KeyUpdateBase
         checkDB();
         // Revert change
         for (long oid = 221; oid <= 223; oid++) {
-            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRD, null, customerRD, 22L, orderRD, oid));
+            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRT, null, customerRT, 22L, orderRT, oid));
             KeyUpdateRow newOrderRow = copyRow(oldOrderRow);
             newOrderRow.hKey(hKey(newOrderRow, originalCustomer));
             testStore.deleteTestRow(oldOrderRow);
             testStore.writeTestRow(newOrderRow);
             for (long iid = oid * 10 + 1; iid <= oid * 10 + 3; iid++) {
-                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, null, customerRD, 22L, orderRD, oid, itemRD, iid));
+                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRT, null, customerRT, 22L, orderRT, oid, itemRT, iid));
                 KeyUpdateRow newItemRow = copyRow(oldItemRow);
                 newItemRow.hKey(hKey(newItemRow, newOrderRow, originalCustomer));
                 testStore.deleteTestRow(oldItemRow);
@@ -280,9 +274,8 @@ public class KeyUpdateIT extends KeyUpdateBase
     public void testCustomerPKUpdateCreatingDuplicate() throws Exception
     {
         // Set customer.cid = 11 for customer 23
-        KeyUpdateRow originalCustomer = testStore.find(new HKey(vendorRD, 2L, customerRD, 23L));
-        KeyUpdateRow updatedCustomer = copyRow(originalCustomer);
-        updateRow(updatedCustomer, c_cid, 11L, null);
+        KeyUpdateRow originalCustomer = testStore.find(new HKey(vendorRT, 2L, customerRT, 23L));
+        KeyUpdateRow updatedCustomer = updateRow(originalCustomer, c_cid, 11L, null);
         try {
             dbUpdate(originalCustomer, updatedCustomer);
             fail();
@@ -296,9 +289,8 @@ public class KeyUpdateIT extends KeyUpdateBase
     public void testVendorPKUpdate() throws Exception
     {
         // Set vendor.vid = 0 for vendor 1
-        KeyUpdateRow originalVendor = testStore.find(new HKey(vendorRD, 1L));
-        KeyUpdateRow updatedVendor = copyRow(originalVendor);
-        updateRow(updatedVendor, v_vid, 0L, null);
+        KeyUpdateRow originalVendor = testStore.find(new HKey(vendorRT, 1L));
+        KeyUpdateRow updatedVendor = updateRow(originalVendor, v_vid, 0L, null);
         startMonitoringHKeyPropagation();
         dbUpdate(originalVendor, updatedVendor);
         checkHKeyPropagation(2, 0); // customer has vid, isn't affected by vendor update
@@ -315,9 +307,8 @@ public class KeyUpdateIT extends KeyUpdateBase
     public void testVendorPKUpdateCreatingDuplicate() throws Exception
     {
         // Set vendor.vid = 2 for vendor 1
-        KeyUpdateRow originalVendorRow = testStore.find(new HKey(vendorRD, 1L));
-        KeyUpdateRow updatedVendorRow = copyRow(originalVendorRow);
-        updateRow(updatedVendorRow, v_vid, 2L, null);
+        KeyUpdateRow originalVendorRow = testStore.find(new HKey(vendorRT, 1L));
+        KeyUpdateRow updatedVendorRow = updateRow(originalVendorRow, v_vid, 2L, null);
         try {
             dbUpdate(originalVendorRow, updatedVendorRow);
             fail();
@@ -330,7 +321,7 @@ public class KeyUpdateIT extends KeyUpdateBase
     @Test
     public void testItemDelete() throws Exception
     {
-        KeyUpdateRow itemRow = testStore.find(new HKey(vendorRD, 2L, customerRD, 22L, orderRD, 222L, itemRD, 2222L));
+        KeyUpdateRow itemRow = testStore.find(new HKey(vendorRT, 2L, customerRT, 22L, orderRT, 222L, itemRT, 2222L));
         startMonitoringHKeyPropagation();
         dbDelete(itemRow);
         checkHKeyPropagation(0, 0);
@@ -346,11 +337,11 @@ public class KeyUpdateIT extends KeyUpdateBase
     @Test
     public void testOrderDelete() throws Exception
     {
-        KeyUpdateRow customerRow = testStore.find(new HKey(vendorRD, 2L, customerRD, 22L));
-        KeyUpdateRow orderRow = testStore.find(new HKey(vendorRD, 2L, customerRD, 22L, orderRD, 222L));
+        KeyUpdateRow customerRow = testStore.find(new HKey(vendorRT, 2L, customerRT, 22L));
+        KeyUpdateRow orderRow = testStore.find(new HKey(vendorRT, 2L, customerRT, 22L, orderRT, 222L));
         // Propagate change to order 222's items to reflect db state
         for (long iid = 2221; iid <= 2223; iid++) {
-            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 2L, customerRD, 22L, orderRD, 222L, itemRD, iid));
+            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRT, 2L, customerRT, 22L, orderRT, 222L, itemRT, iid));
             KeyUpdateRow newItemRow = copyRow(oldItemRow);
             newItemRow.hKey(hKey(newItemRow, null));
             testStore.deleteTestRow(oldItemRow);
@@ -362,7 +353,7 @@ public class KeyUpdateIT extends KeyUpdateBase
         checkDB();
         // Revert change
         for (long iid = 2221; iid <= 2223; iid++) {
-            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, null, customerRD, null, orderRD, 222L, itemRD, iid));
+            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRT, null, customerRT, null, orderRT, 222L, itemRT, iid));
             KeyUpdateRow newItemRow = copyRow(oldItemRow);
             newItemRow.hKey(hKey(newItemRow, orderRow, customerRow));
             testStore.deleteTestRow(oldItemRow);
@@ -378,16 +369,16 @@ public class KeyUpdateIT extends KeyUpdateBase
     @Test
     public void testCustomerDelete() throws Exception
     {
-        KeyUpdateRow customerRow = testStore.find(new HKey(vendorRD, 2L, customerRD, 22L));
+        KeyUpdateRow customerRow = testStore.find(new HKey(vendorRT, 2L, customerRT, 22L));
         // Propagate change to customer's descendents to reflect db state
         for (long oid = 221; oid <= 223; oid++) {
-            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRD, 2L, customerRD, 22L, orderRD, oid));
+            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRT, 2L, customerRT, 22L, orderRT, oid));
             KeyUpdateRow newOrderRow = copyRow(oldOrderRow);
             newOrderRow.hKey(hKey(newOrderRow, null));
             testStore.deleteTestRow(oldOrderRow);
             testStore.writeTestRow(newOrderRow);
             for (long iid = oid * 10 + 1; iid <= oid * 10 + 3; iid++) {
-                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 2L, customerRD, 22L, orderRD, oid, itemRD, iid));
+                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRT, 2L, customerRT, 22L, orderRT, oid, itemRT, iid));
                 KeyUpdateRow newItemRow = copyRow(oldItemRow);
                 newItemRow.hKey(hKey(newItemRow, newOrderRow));
                 testStore.deleteTestRow(oldItemRow);
@@ -401,13 +392,13 @@ public class KeyUpdateIT extends KeyUpdateBase
         checkDB();
         // Revert change
         for (long oid = 221; oid <= 223; oid++) {
-            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRD, null, customerRD, 22L, orderRD, oid));
+            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRT, null, customerRT, 22L, orderRT, oid));
             KeyUpdateRow newOrderRow = copyRow(oldOrderRow);
             newOrderRow.hKey(hKey(newOrderRow, customerRow));
             testStore.deleteTestRow(oldOrderRow);
             testStore.writeTestRow(newOrderRow);
             for (long iid = oid * 10 + 1; iid <= oid * 10 + 3; iid++) {
-                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, null, customerRD, 22L, orderRD, oid, itemRD, iid));
+                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRT, null, customerRT, 22L, orderRT, oid, itemRT, iid));
                 KeyUpdateRow newItemRow = copyRow(oldItemRow);
                 newItemRow.hKey(hKey(newItemRow, newOrderRow, customerRow));
                 testStore.deleteTestRow(oldItemRow);
@@ -424,7 +415,7 @@ public class KeyUpdateIT extends KeyUpdateBase
     @Test
     public void testVendorDelete() throws Exception
     {
-        KeyUpdateRow vendorRow = testStore.find(new HKey(vendorRD, 1L));
+        KeyUpdateRow vendorRow = testStore.find(new HKey(vendorRT, 1L));
         startMonitoringHKeyPropagation();
         dbDelete(vendorRow);
         // TODO: Why not apply the PDG optimization on inserts and deletes?
@@ -481,47 +472,47 @@ public class KeyUpdateIT extends KeyUpdateBase
         i_oid = 1;
         i_ix = 2;
         // group
-        vendorRD = getRowDef(vendorId);
-        customerRD = getRowDef(customerId);
-        orderRD = getRowDef(orderId);
-        itemRD = getRowDef(itemId);
-        group = customerRD.getGroup();
+        vendorRT = getRowType(vendorId);
+        customerRT = getRowType(customerId);
+        orderRT = getRowType(orderId);
+        itemRT = getRowType(itemId);
+        group = customerRT.table().getGroup();
     }
 
     @Override
     protected List<List<Object>> vendorPKIndex(List<TreeRecord> records)
     {
-        return indexFromRecords(records, vendorRD, v_vid);
+        return indexFromRecords(records, vendorRT, v_vid);
     }
 
     @Override
     protected List<List<Object>> customerPKIndex(List<TreeRecord> records)
     {
-        return indexFromRecords(records, customerRD, c_cid, c_vid);
+        return indexFromRecords(records, customerRT, c_cid, c_vid);
     }
 
     @Override
     protected List<List<Object>> orderPKIndex(List<TreeRecord> records)
     {
-        return indexFromRecords(records, orderRD, o_oid, HKeyElement.from(1), o_cid);
+        return indexFromRecords(records, orderRT, o_oid, HKeyElement.from(1), o_cid);
     }
 
     @Override
     protected List<List<Object>> itemPKIndex(List<TreeRecord> records)
     {
-        return indexFromRecords(records, itemRD, i_iid, HKeyElement.from(1), HKeyElement.from(3), i_oid);
+        return indexFromRecords(records, itemRT, i_iid, HKeyElement.from(1), HKeyElement.from(3), i_oid);
     }
 
     @Override
     protected List<List<Object>> orderPriorityIndex(List<TreeRecord> records)
     {
-        return indexFromRecords(records, orderRD, o_priority, HKeyElement.from(1), o_cid, o_oid);
+        return indexFromRecords(records, orderRT, o_priority, HKeyElement.from(1), o_cid, o_oid);
     }
 
     @Override
     protected List<List<Object>> orderWhenIndex(List<TreeRecord> records)
     {
-        return indexFromRecords(records, orderRD, o_when, HKeyElement.from(1), o_cid, o_oid);
+        return indexFromRecords(records, orderRT, o_when, HKeyElement.from(1), o_cid, o_oid);
     }
 
     @Override
@@ -541,118 +532,118 @@ public class KeyUpdateIT extends KeyUpdateBase
         KeyUpdateRow order;
         //                               HKey reversed, value
         // Vendor 1
-        dbInsert(             kurow(vendorRD, 1, 100));
+        dbInsert(             kurow(vendorRT, 1L, 100L));
         //
-        dbInsert(customer =   kurow(customerRD, 11, 1, 1100));
-        dbInsert(order =      row(customer, orderRD,                111, 11,       11100,   81, 9001));
-        dbInsert(             row(order, customer, itemRD,    1111, 111,           111100));
-        dbInsert(             row(order, customer, itemRD,    1112, 111,           111200));
-        dbInsert(             row(order, customer, itemRD,    1113, 111,           111300));
-        dbInsert(order =      row(customer, orderRD,                112, 11,       11200,   83, 9002));
-        dbInsert(             row(order, customer, itemRD,    1121, 112,           112100));
-        dbInsert(             row(order, customer, itemRD,    1122, 112,           112200));
-        dbInsert(             row(order, customer, itemRD,    1123, 112,           112300));
-        dbInsert(order =      row(customer, orderRD,                113, 11,       11300,   81, 9003));
-        dbInsert(             row(order, customer, itemRD,    1131, 113,           113100));
-        dbInsert(             row(order, customer, itemRD,    1132, 113,           113200));
-        dbInsert(             row(order, customer, itemRD,    1133, 113,           113300));
+        dbInsert(customer =   kurow(customerRT, 11L, 1L, 1100L));
+        dbInsert(order =      row(customer, orderRT,                111L, 11L,       11100L,   81L, 9001L));
+        dbInsert(             row(order, customer, itemRT,    1111L, 111L,           111100L));
+        dbInsert(             row(order, customer, itemRT,    1112L, 111L,           111200L));
+        dbInsert(             row(order, customer, itemRT,    1113L, 111L,           111300L));
+        dbInsert(order =      row(customer, orderRT,                112L, 11L,       11200L,   83L, 9002L));
+        dbInsert(             row(order, customer, itemRT,    1121L, 112L,           112100L));
+        dbInsert(             row(order, customer, itemRT,    1122L, 112L,           112200L));
+        dbInsert(             row(order, customer, itemRT,    1123L, 112L,           112300L));
+        dbInsert(order =      row(customer, orderRT,                113L, 11L,       11300L,   81L, 9003L));
+        dbInsert(             row(order, customer, itemRT,    1131L, 113L,           113100L));
+        dbInsert(             row(order, customer, itemRT,    1132L, 113L,           113200L));
+        dbInsert(             row(order, customer, itemRT,    1133L, 113L,           113300L));
 
-        dbInsert(customer =   kurow(customerRD, 12, 1, 1200));
-        dbInsert(order =      row(customer, orderRD,                121, 12,       12100,   83, 9004));
-        dbInsert(             row(order, customer, itemRD,    1211, 121,           121100));
-        dbInsert(             row(order, customer, itemRD,    1212, 121,           121200));
-        dbInsert(             row(order, customer, itemRD,    1213, 121,           121300));
-        dbInsert(order =      row(customer, orderRD,                122, 12,       12200,   81, 9005));
-        dbInsert(             row(order, customer, itemRD,    1221, 122,           122100));
-        dbInsert(             row(order, customer, itemRD,    1222, 122,           122200));
-        dbInsert(             row(order, customer, itemRD,    1223, 122,           122300));
-        dbInsert(order =      row(customer, orderRD,                123, 12,       12300,   82, 9006));
-        dbInsert(             row(order, customer, itemRD,    1231, 123,           123100));
-        dbInsert(             row(order, customer, itemRD,    1232, 123,           123200));
-        dbInsert(             row(order, customer, itemRD,    1233, 123,           123300));
+        dbInsert(customer =   kurow(customerRT, 12L, 1L, 1200L));
+        dbInsert(order =      row(customer, orderRT,                121L, 12L,       12100L,   83L, 9004L));
+        dbInsert(             row(order, customer, itemRT,    1211L, 121L,           121100L));
+        dbInsert(             row(order, customer, itemRT,    1212L, 121L,           121200L));
+        dbInsert(             row(order, customer, itemRT,    1213L, 121L,           121300L));
+        dbInsert(order =      row(customer, orderRT,                122L, 12L,       12200L,   81L, 9005L));
+        dbInsert(             row(order, customer, itemRT,    1221L, 122L,           122100L));
+        dbInsert(             row(order, customer, itemRT,    1222L, 122L,           122200L));
+        dbInsert(             row(order, customer, itemRT,    1223L, 122L,           122300L));
+        dbInsert(order =      row(customer, orderRT,                123L, 12L,       12300L,   82L, 9006L));
+        dbInsert(             row(order, customer, itemRT,    1231L, 123L,           123100L));
+        dbInsert(             row(order, customer, itemRT,    1232L, 123L,           123200L));
+        dbInsert(             row(order, customer, itemRT,    1233L, 123L,           123300L));
 
-        dbInsert(customer =   kurow(customerRD, 13, 1, 1300));
-        dbInsert(order =      row(customer, orderRD,                131, 13,       13100,   82, 9007));
-        dbInsert(             row(order, customer, itemRD,    1311, 131,           131100));
-        dbInsert(             row(order, customer, itemRD,    1312, 131,           131200));
-        dbInsert(             row(order, customer, itemRD,    1313, 131,           131300));
-        dbInsert(order =      row(customer, orderRD,                132, 13,       13200,   83, 9008));
-        dbInsert(             row(order, customer, itemRD,    1321, 132,           132100));
-        dbInsert(             row(order, customer, itemRD,    1322, 132,           132200));
-        dbInsert(             row(order, customer, itemRD,    1323, 132,           132300));
-        dbInsert(order =      row(customer, orderRD,                133, 13,       13300,   81, 9009));
-        dbInsert(             row(order, customer, itemRD,    1331, 133,           133100));
-        dbInsert(             row(order, customer, itemRD,    1332, 133,           133200));
-        dbInsert(             row(order, customer, itemRD,    1333, 133,           133300));
+        dbInsert(customer =   kurow(customerRT, 13L, 1L, 1300L));
+        dbInsert(order =      row(customer, orderRT,                131L, 13L,       13100L,   82L, 9007L));
+        dbInsert(             row(order, customer, itemRT,    1311L, 131L,           131100L));
+        dbInsert(             row(order, customer, itemRT,    1312L, 131L,           131200L));
+        dbInsert(             row(order, customer, itemRT,    1313L, 131L,           131300L));
+        dbInsert(order =      row(customer, orderRT,                132L, 13L,       13200L,   83L, 9008L));
+        dbInsert(             row(order, customer, itemRT,    1321L, 132L,           132100L));
+        dbInsert(             row(order, customer, itemRT,    1322L, 132L,           132200L));
+        dbInsert(             row(order, customer, itemRT,    1323L, 132L,           132300L));
+        dbInsert(order =      row(customer, orderRT,                133L, 13L,       13300L,   81L, 9009L));
+        dbInsert(             row(order, customer, itemRT,    1331L, 133L,           133100L));
+        dbInsert(             row(order, customer, itemRT,    1332L, 133L,           133200L));
+        dbInsert(             row(order, customer, itemRT,    1333L, 133L,           133300L));
         //
         // Vendor 2
-        dbInsert(             kurow(vendorRD, 2, 200));
+        dbInsert(             kurow(vendorRT, 2L, 200L));
         //
-        dbInsert(customer =   kurow(customerRD, 21, 2, 2100));
-        dbInsert(order =      row(customer, orderRD,                211, 21,       21100,   81, 9010));
-        dbInsert(             row(order, customer, itemRD,    2111, 211,           211100));
-        dbInsert(             row(order, customer, itemRD,    2112, 211,           211200));
-        dbInsert(             row(order, customer, itemRD,    2113, 211,           211300));
-        dbInsert(order =      row(customer, orderRD,                212, 21,       21200,   83, 9011));
-        dbInsert(             row(order, customer, itemRD,    2121, 212,           212100));
-        dbInsert(             row(order, customer, itemRD,    2122, 212,           212200));
-        dbInsert(             row(order, customer, itemRD,    2123, 212,           212300));
-        dbInsert(order =      row(customer, orderRD,                213, 21,       21300,   82, 9012));
-        dbInsert(             row(order, customer, itemRD,    2131, 213,           213100));
-        dbInsert(             row(order, customer, itemRD,    2132, 213,           213200));
-        dbInsert(             row(order, customer, itemRD,    2133, 213,           213300));
+        dbInsert(customer =   kurow(customerRT, 21L, 2L, 2100L));
+        dbInsert(order =      row(customer, orderRT,                211L, 21L,       21100L,   81L, 9010L));
+        dbInsert(             row(order, customer, itemRT,    2111L, 211L,           211100L));
+        dbInsert(             row(order, customer, itemRT,    2112L, 211L,           211200L));
+        dbInsert(             row(order, customer, itemRT,    2113L, 211L,           211300L));
+        dbInsert(order =      row(customer, orderRT,                212L, 21L,       21200L,   83L, 9011L));
+        dbInsert(             row(order, customer, itemRT,    2121L, 212L,           212100L));
+        dbInsert(             row(order, customer, itemRT,    2122L, 212L,           212200L));
+        dbInsert(             row(order, customer, itemRT,    2123L, 212L,           212300L));
+        dbInsert(order =      row(customer, orderRT,                213L, 21L,       21300L,   82L, 9012L));
+        dbInsert(             row(order, customer, itemRT,    2131L, 213L,           213100L));
+        dbInsert(             row(order, customer, itemRT,    2132L, 213L,           213200L));
+        dbInsert(             row(order, customer, itemRT,    2133L, 213L,           213300L));
 
-        dbInsert(customer =   kurow(customerRD, 22, 2, 2200));
-        dbInsert(order =      row(customer, orderRD,                221, 22,       22100,   82, 9013));
-        dbInsert(             row(order, customer, itemRD,    2211, 221,           221100));
-        dbInsert(             row(order, customer, itemRD,    2212, 221,           221200));
-        dbInsert(             row(order, customer, itemRD,    2213, 221,           221300));
-        dbInsert(order =      row(customer, orderRD,                222, 22,       22200,   82, 9014));
-        dbInsert(             row(order, customer, itemRD,    2221, 222,           222100));
-        dbInsert(             row(order, customer, itemRD,    2222, 222,           222200));
-        dbInsert(             row(order, customer, itemRD,    2223, 222,           222300));
-        dbInsert(order =      row(customer, orderRD,                223, 22,       22300,   81, 9015));
-        dbInsert(             row(order, customer, itemRD,    2231, 223,           223100));
-        dbInsert(             row(order, customer, itemRD,    2232, 223,           223200));
-        dbInsert(             row(order, customer, itemRD,    2233, 223,           223300));
+        dbInsert(customer =   kurow(customerRT, 22L, 2L, 2200L));
+        dbInsert(order =      row(customer, orderRT,                221L, 22L,       22100L,   82L, 9013L));
+        dbInsert(             row(order, customer, itemRT,    2211L, 221L,           221100L));
+        dbInsert(             row(order, customer, itemRT,    2212L, 221L,           221200L));
+        dbInsert(             row(order, customer, itemRT,    2213L, 221L,           221300L));
+        dbInsert(order =      row(customer, orderRT,                222L, 22L,       22200L,   82L, 9014L));
+        dbInsert(             row(order, customer, itemRT,    2221L, 222L,           222100L));
+        dbInsert(             row(order, customer, itemRT,    2222L, 222L,           222200L));
+        dbInsert(             row(order, customer, itemRT,    2223L, 222L,           222300L));
+        dbInsert(order =      row(customer, orderRT,                223L, 22L,       22300L,   81L, 9015L));
+        dbInsert(             row(order, customer, itemRT,    2231L, 223L,           223100L));
+        dbInsert(             row(order, customer, itemRT,    2232L, 223L,           223200L));
+        dbInsert(             row(order, customer, itemRT,    2233L, 223L,           223300L));
 
-        dbInsert(customer =   kurow(customerRD, 23, 2, 2300));
-        dbInsert(order =      row(customer, orderRD,                231, 23,       23100,   82, 9016));
-        dbInsert(             row(order, customer, itemRD,    2311, 231,           231100));
-        dbInsert(             row(order, customer, itemRD,    2312, 231,           231200));
-        dbInsert(             row(order, customer, itemRD,    2313, 231,           231300));
-        dbInsert(order =      row(customer, orderRD,                232, 23,       23200,   83, 9017));
-        dbInsert(             row(order, customer, itemRD,    2321, 232,           232100));
-        dbInsert(             row(order, customer, itemRD,    2322, 232,           232200));
-        dbInsert(             row(order, customer, itemRD,    2323, 232,           232300));
-        dbInsert(order =      row(customer, orderRD,                233, 23,       23300,   81, 9018));
-        dbInsert(             row(order, customer, itemRD,    2331, 233,           233100));
-        dbInsert(             row(order, customer, itemRD,    2332, 233,           233200));
-        dbInsert(             row(order, customer, itemRD,    2333, 233,           233300));
+        dbInsert(customer =   kurow(customerRT, 23L, 2L, 2300L));
+        dbInsert(order =      row(customer, orderRT,                231L, 23L,       23100L,   82L, 9016L));
+        dbInsert(             row(order, customer, itemRT,    2311L, 231L,           231100L));
+        dbInsert(             row(order, customer, itemRT,    2312L, 231L,           231200L));
+        dbInsert(             row(order, customer, itemRT,    2313L, 231L,           231300L));
+        dbInsert(order =      row(customer, orderRT,                232L, 23L,       23200L,   83L, 9017L));
+        dbInsert(             row(order, customer, itemRT,    2321L, 232L,           232100L));
+        dbInsert(             row(order, customer, itemRT,    2322L, 232L,           232200L));
+        dbInsert(             row(order, customer, itemRT,    2323L, 232L,           232300L));
+        dbInsert(order =      row(customer, orderRT,                233L, 23L,       23300L,   81L, 9018L));
+        dbInsert(             row(order, customer, itemRT,    2331L, 233L,           233100L));
+        dbInsert(             row(order, customer, itemRT,    2332L, 233L,           233200L));
+        dbInsert(             row(order, customer, itemRT,    2333L, 233L,           233300L));
     }
 
     @Override
     protected HKey hKey(KeyUpdateRow row)
     {
         HKey hKey = null;
-        RowDef rowDef = row.getRowDef();
-        if (rowDef == vendorRD) {
-            hKey = new HKey(vendorRD, row.get(v_vid));
-        } else if (rowDef == customerRD) {
-            hKey = new HKey(vendorRD, row.get(c_vid), 
-                            customerRD, row.get(c_cid));
-        } else if (rowDef == orderRD) {
+        RowType rowType = row.rowType();
+        if (rowType == vendorRT) {
+            hKey = new HKey(vendorRT, row.value(v_vid).getInt64());
+        } else if (rowType == customerRT) {
+            hKey = new HKey(vendorRT, row.value(c_vid).getInt64(), 
+                            customerRT, row.value(c_cid).getInt64());
+        } else if (rowType == orderRT) {
             assertNotNull(row.parent());
-            hKey = new HKey(vendorRD, row.parent().get(c_vid),
-                            customerRD, row.get(o_cid),
-                            orderRD, row.get(o_oid));
-        } else if (rowDef == itemRD) {
+            hKey = new HKey(vendorRT, row.parent().value(c_vid).getInt64(),
+                            customerRT, row.value(o_cid).getInt64(),
+                            orderRT, row.value(o_oid).getInt64());
+        } else if (rowType == itemRT) {
             assertNotNull(row.parent());
             assertNotNull(row.parent().parent());
-            hKey = new HKey(vendorRD, row.parent().parent().get(c_vid),
-                            customerRD, row.parent().get(o_cid),
-                            orderRD, row.get(i_oid),
-                            itemRD, row.get(i_iid));
+            hKey = new HKey(vendorRT, row.parent().parent().value(c_vid).getInt64(),
+                            customerRT, row.parent().value(o_cid).getInt64(),
+                            orderRT, row.value(i_oid).getInt64(),
+                            itemRT, row.value(i_iid).getInt64());
         } else {
             fail();
         }
@@ -668,21 +659,21 @@ public class KeyUpdateIT extends KeyUpdateBase
     protected HKey hKey(KeyUpdateRow row, KeyUpdateRow parent, KeyUpdateRow grandparent)
     {
         HKey hKey = null;
-        RowDef rowDef = row.getRowDef();
-        if (rowDef == vendorRD) {
-            hKey = new HKey(vendorRD, row.get(v_vid));
-        } else if (rowDef == customerRD) {
-            hKey = new HKey(vendorRD, row.get(c_vid),
-                            customerRD, row.get(c_cid));
-        } else if (rowDef == orderRD) {
-            hKey = new HKey(vendorRD, parent == null ? null : parent.get(c_vid),
-                            customerRD, row.get(o_cid),
-                            orderRD, row.get(o_oid));
-        } else if (rowDef == itemRD) {
-            hKey = new HKey(vendorRD, grandparent == null ? null : grandparent.get(c_vid),
-                            customerRD, parent == null ? null : parent.get(o_cid),
-                            orderRD, row.get(i_oid),
-                            itemRD, row.get(i_iid));
+        RowType rowType = row.rowType();
+        if (rowType == vendorRT) {
+            hKey = new HKey(vendorRT, row.value(v_vid).getInt64());
+        } else if (rowType == customerRT) {
+            hKey = new HKey(vendorRT, row.value(c_vid).getInt64(),
+                            customerRT, row.value(c_cid).getInt64());
+        } else if (rowType == orderRT) {
+            hKey = new HKey(vendorRT, parent == null ? null : parent.value(c_vid).getInt64(),
+                            customerRT, row.value(o_cid).getInt64(),
+                            orderRT, row.value(o_oid).getInt64());
+        } else if (rowType == itemRT) {
+            hKey = new HKey(vendorRT, grandparent == null ? null : grandparent.value(c_vid).getInt64(),
+                            customerRT, parent == null ? null : parent.value(o_cid).getInt64(),
+                            orderRT, row.value(i_oid).getInt64(),
+                            itemRT, row.value(i_iid).getInt64());
         } else {
             fail();
         }
@@ -692,21 +683,21 @@ public class KeyUpdateIT extends KeyUpdateBase
 
     protected void confirmColumns()
     {
-        confirmColumn(vendorRD, v_vid, "vid");
-        confirmColumn(vendorRD, v_vx, "vx");
+        confirmColumn(vendorRT, v_vid, "vid");
+        confirmColumn(vendorRT, v_vx, "vx");
 
-        confirmColumn(customerRD, c_cid, "cid");
-        confirmColumn(customerRD, c_vid, "vid");
-        confirmColumn(customerRD, c_cx, "cx");
+        confirmColumn(customerRT, c_cid, "cid");
+        confirmColumn(customerRT, c_vid, "vid");
+        confirmColumn(customerRT, c_cx, "cx");
 
-        confirmColumn(orderRD, o_oid, "oid");
-        confirmColumn(orderRD, o_cid, "cid");
-        confirmColumn(orderRD, o_ox, "ox");
-        confirmColumn(orderRD, o_priority, "priority");
-        confirmColumn(orderRD, o_when, "when");
+        confirmColumn(orderRT, o_oid, "oid");
+        confirmColumn(orderRT, o_cid, "cid");
+        confirmColumn(orderRT, o_ox, "ox");
+        confirmColumn(orderRT, o_priority, "priority");
+        confirmColumn(orderRT, o_when, "when");
 
-        confirmColumn(itemRD, i_iid, "iid");
-        confirmColumn(itemRD, i_oid, "oid");
-        confirmColumn(itemRD, i_ix, "ix");
+        confirmColumn(itemRT, i_iid, "iid");
+        confirmColumn(itemRT, i_oid, "oid");
+        confirmColumn(itemRT, i_ix, "ix");
     }
 }
