@@ -55,6 +55,13 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(RandomSemiJoinTestDT.class);
 
+    /**
+     * Setting this property will cause this tester to run against postgresql instead of fdbsql, useful for verifying
+     * that the test is correct.
+     * You will need to add credentials, for easy reference, run psql and call:
+     * CREATE USER auser WITH PASSWORD 'apassword';
+     * GRANT ALL PRIVILEGES ON DATABASE test to auser;
+     */
     private static final boolean hitPostgresql = Boolean.parseBoolean(System.getProperty("fdbsql.test.hit-postgresql"));
     private static final int DDL_COUNT = 10;
     private static final int QUERY_COUNT = 30;
