@@ -41,7 +41,6 @@
 package com.foundationdb.sql.optimizer;
 
 import com.foundationdb.server.error.UnsupportedSQLException;
-import com.foundationdb.sql.optimizer.plan.ColumnExpression;
 import com.foundationdb.sql.parser.*;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
@@ -94,24 +93,11 @@ public class SubqueryFlattener
         currentSelectNode = selectNode;
 
         // Flatten subqueries in the FROM list.
-        Iterator<FromTable> iter = selectNode.getFromList().iterator();
-        int fromCount = selectNode.getFromList().size();
-        // Go through outer result set and check for aggregates that would prevent flattening
-        Set<FromSubquery> fromSubqueries = new HashSet<>();
-        while (iter.hasNext()){
-            FromTable table = iter.next();
-            if (table instanceof FromSubquery) {
-                fromSubqueries.add((FromSubquery) table);
-            }
-        }
-        OuterAggregateCheckVisitor aggregateVisitor =
-                new OuterAggregateCheckVisitor(fromSubqueries);
-
-        selectNode.getResultColumns().accept(aggregateVisitor);
-        if (!aggregateVisitor.flattenable) {
+        if (outerAggregatesPreventFlattening(selectNode)) {
             return;
         }
-        iter = selectNode.getFromList().iterator();
+        Iterator<FromTable> iter = selectNode.getFromList().iterator();
+        int fromCount = selectNode.getFromList().size();
         Collection<FromSubquery> flattenSubqueries = new HashSet<>();
         while (iter.hasNext()) {
             FromTable fromTable = iter.next();
@@ -147,6 +133,23 @@ public class SubqueryFlattener
             andNode(andNode);
         }
         currentSelectNode = selectStack.pop();
+    }
+
+    private boolean outerAggregatesPreventFlattening(SelectNode selectNode) throws StandardException {
+        Iterator<FromTable> iter = selectNode.getFromList().iterator();
+        // Go through outer result set and check for aggregates that would prevent flattening
+        Set<FromSubquery> fromSubqueries = new HashSet<>();
+        while (iter.hasNext()){
+            FromTable table = iter.next();
+            if (table instanceof FromSubquery) {
+                fromSubqueries.add((FromSubquery) table);
+            }
+        }
+        OuterAggregateCheckVisitor aggregateVisitor =
+                new OuterAggregateCheckVisitor(fromSubqueries);
+
+        selectNode.getResultColumns().accept(aggregateVisitor);
+        return !aggregateVisitor.flattenable;
     }
 
     // Top-level (within some WHERE clause) AND expression.
