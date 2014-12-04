@@ -355,7 +355,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
                         limitOutside);
             } else {
                 testOneQueryIn(buildQuery(random, useExists, true, tag), buildQuery(random, useExists, false, tag),
-                        limitOutside);
+                        limitOutside, i);
             }
         }
     }
@@ -390,7 +390,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         assertEqualLists("Results different for " + finalQuery, expected, actual);
     }
 
-    private void testOneQueryIn(String query1, String query2, int limitOutside) {
+    private void testOneQueryIn(String query1, String query2, int limitOutside, int i) {
         boolean useIn = randomRule.getRandom().nextBoolean();
         String inClause = useIn ? "IN" : "NOT IN";
         LOG.debug("Outer: {}", query1);
