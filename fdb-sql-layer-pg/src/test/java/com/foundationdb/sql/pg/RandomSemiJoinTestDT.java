@@ -352,7 +352,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
             TableAliasGenerator tag = new TableAliasGenerator(random);
             if (useExists) {
                 testOneQueryExists(buildQuery(random, useExists, true, tag), buildQuery(random, useExists, false, tag),
-                        limitOutside);
+                        limitOutside, i);
             } else {
                 testOneQueryIn(buildQuery(random, useExists, true, tag), buildQuery(random, useExists, false, tag),
                         limitOutside, i);
@@ -360,7 +360,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         }
     }
 
-    private void testOneQueryExists(String query1, String query2, int limitOutside) {
+    private void testOneQueryExists(String query1, String query2, int limitOutside, int queryIndex) {
         boolean negative = randomRule.getRandom().nextBoolean();
         String existsClause = negative ? "NOT EXISTS" : "EXISTS";
         boolean query1IsJustATable = query1.startsWith("table");
@@ -377,10 +377,10 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         String q1 = query1IsJustATable ? query1 : "(" + query1 + ")";
         String finalQuery = "SELECT main FROM " + q1 + " AS T1 WHERE " + existsClause +
                 " (" + String.format(query2, "T1.main") + ")" + finalQueryLimit(limitOutside);
-        compareToFinalQuery(limitOutside, expected, finalQuery);
+        compareToFinalQuery(limitOutside, expected, finalQuery, queryIndex);
     }
 
-    private void testOneQueryIn(String query1, String query2, int limitOutside, int i) {
+    private void testOneQueryIn(String query1, String query2, int limitOutside, int queryIndex) {
         boolean useIn = randomRule.getRandom().nextBoolean();
         String inClause = useIn ? "IN" : "NOT IN";
         LOG.debug("Outer: {}", query1);
@@ -392,7 +392,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         String q1 = query1IsJustATable ? query1 : "(" + query1 + ")";
         String finalQuery = "SELECT main FROM " + q1 + " AS T1 WHERE main " + inClause + " (" + query2 + ")" +
                 finalQueryLimit(limitOutside);
-        compareToFinalQuery(limitOutside, expected, finalQuery);
+        compareToFinalQuery(limitOutside, expected, finalQuery, queryIndex);
     }
 
     private List<Integer> calculateInExpectedResults(boolean useIn, List<List<?>> results1, List<List<?>> results2) {
@@ -437,7 +437,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         return expected;
     }
 
-    private void compareToFinalQuery(int limitOutside, List<Integer> expected, String finalQuery) {
+    private void compareToFinalQuery(int limitOutside, List<Integer> expected, String finalQuery, int queryIndex) {
         LOG.debug("Final: {}", finalQuery);
         List<List<?>> sqlResults = sql(finalQuery);
         List<Integer> actual = new ArrayList<>();
