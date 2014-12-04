@@ -43,4 +43,9 @@ select-9x: VALUES multiple rows (no change)
 
 select-10: outer comparison instead of ANY
 
+select-triple-nested: SELECT FROM (SELECT FROM (SELECT FROM table)) flattens into one select
+select-triple-nested-inner-ordered:
+    triple select where inner most has order by and can't be flattened
+select-triple-outer-count: triple select where outer most has count and can't be flattened
+
 star-count-join: outer query is just *, one subquery has a COUNT, the other does not
