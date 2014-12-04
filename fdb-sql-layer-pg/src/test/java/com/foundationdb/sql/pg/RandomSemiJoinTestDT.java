@@ -461,7 +461,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
     }
 
     private String finalQueryLimit(int limitOutside) {
-        if (limitOutside < 10) {
+        if (limitOutside < MAX_OUTER_LIMIT) {
             return " ORDER BY T1.main LIMIT " + (limitOutside + 1);
         } else {
             return "";
