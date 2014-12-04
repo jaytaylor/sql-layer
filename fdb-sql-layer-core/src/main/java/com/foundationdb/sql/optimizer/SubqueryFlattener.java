@@ -137,7 +137,7 @@ public class SubqueryFlattener
 
     private boolean outerAggregatesPreventFlattening(SelectNode selectNode) throws StandardException {
         if (selectNode.getResultColumns() == null) {
-            return true;
+            return false;
         }
         Iterator<FromTable> iter = selectNode.getFromList().iterator();
         // Go through outer result set and check for aggregates that would prevent flattening

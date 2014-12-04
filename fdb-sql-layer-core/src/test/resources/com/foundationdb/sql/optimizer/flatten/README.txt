@@ -9,6 +9,8 @@ count-join-expression: count(*) on outside, two subqueries, one of which has an 
 count-star-expression: count(*) with an expression in the subquery
 
 delete-1: just delete everything from a child -> causes a SelectNode with almost everything null
+delete-in: a delete with an IN clause in the WHERE clause
+
 expression-count: an expression on the outside, and a count on the only subquery
 
 select-1: subquery with unique column
