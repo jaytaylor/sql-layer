@@ -115,15 +115,7 @@ public class OperatorCompiler extends SchemaRulesContext
         try {
             binder.bind(stmt);
             stmt = (DMLStatementNode)booleanNormalizer.normalize(stmt);
-            try
-            {
-                typeComputer.compute(stmt);
-                
-            }
-            catch (IncomparableException e) // catch this and let the resolvers decide
-            {
-            }
-                    
+            typeComputer.compute(stmt);
             stmt = subqueryFlattener.flatten(stmt);
             // TODO: Temporary for safety.
             if (Boolean.parseBoolean(getProperty("eliminate-distincts", "true")))

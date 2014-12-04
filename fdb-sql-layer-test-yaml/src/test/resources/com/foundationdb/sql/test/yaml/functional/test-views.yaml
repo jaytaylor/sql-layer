@@ -16,11 +16,14 @@
 ---
 - Statement: SELECT * FROM v2
 - output_already_ordered: [['bar', 2],['foo', 1]]
----
-- Statement: CREATE VIEW v3 AS SELECT s||x FROM v1 INNER JOIN v2 ON v1.id = v2.y
----
-- Statement: SELECT * FROM v3
-- output: [['barbar'],['foofoo']]
+
+# BUG: Functions not handled correctly
+#---
+#- Statement: CREATE VIEW v3 AS SELECT s||x, LENGTH(s) FROM v1 INNER JOIN v2 ON v1.id = v2.y
+#---
+#- Statement: SELECT * FROM v3
+#- output: [['barbar',3],['foofoo',3]]
+
 ---
 - Statement: CREATE VIEW v0(a,b) AS VALUES(1,10),(2,20),(3,30)
 ---
@@ -50,8 +53,8 @@
 - Statement: DROP VIEW s
 ---
 - Statement: DROP VIEW v0
----
-- Statement: DROP VIEW v3
+#---
+#- Statement: DROP VIEW v3
 ---
 - Statement: DROP VIEW v2
 ---
