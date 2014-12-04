@@ -399,35 +399,40 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         List<List<?>> results1 = sql(query1IsJustATable ? "SELECT main FROM " + query1 : query1);
         List<List<?>> results2 = sql(query2);
         boolean insideHasNull = false;
-        for (List<?> row : results2) {
-            if (row.get(0) == null) {
-                insideHasNull = true;
-                break;
-            }
-        }
-        // if everything in the right hand side is null, it doesn't matter what's on the left hand side
-        // nothing will be expected, even for NOT IN
-        List<Integer> expected = new ArrayList<>();
-        for (List<?> row : results1) {
-            // null from the left hand side is never in or not in the right hand side.
-            // unless the right side has nothing in it, then it's not in the right hand side.
-            if (row.get(0) == null && results2.size() != 0) {
-                continue;
-            }
-            boolean rowIsInResults2 = false;
-            for (List<?> row2 : results2) {
-                if (nullableEquals(row.get(0), row2.get(0))) {
-                    rowIsInResults2 = true;
+        // setting of insideHasNull only matters if it's NOT IN, if it is NOT IN, expected is always the empty list
+        if (!useIn) {
+            for (List<?> row : results2) {
+                if (row.get(0) == null) {
+                    insideHasNull = true;
                     break;
                 }
             }
-            if (useIn) {
-                if (rowIsInResults2) {
-                    expected.add((Integer) row.get(0));
+        }
+        List<Integer> expected = new ArrayList<>();
+        // if the inside has null NOT IN will always return the empty list
+        if (useIn || !insideHasNull) {
+            for (List<?> row : results1) {
+                // null from the left hand side is never in or not in the right hand side.
+                // unless the right side has nothing in it, then it's not in the right hand side.
+                if (row.get(0) == null && results2.size() != 0) {
+                    continue;
                 }
-            } else {
-                if (!rowIsInResults2 && !insideHasNull) {
-                    expected.add((Integer) row.get(0));
+                boolean rowIsInResults2 = false;
+                for (List<?> row2 : results2) {
+                    if (nullableEquals(row.get(0), row2.get(0))) {
+                        rowIsInResults2 = true;
+                        break;
+                    }
+                }
+                if (useIn) {
+                    if (rowIsInResults2) {
+                        expected.add((Integer) row.get(0));
+                    }
+                } else {
+                    // if the inside has a null, then NOT IN always returns the empty list
+                    if (!rowIsInResults2) {
+                        expected.add((Integer) row.get(0));
+                    }
                 }
             }
         }
