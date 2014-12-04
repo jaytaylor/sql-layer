@@ -335,6 +335,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
     public void Test() {
         Random random = new Random(testSeed);
         for (int i=0; i<QUERY_COUNT; i++) {
+            LOG.debug("Query #{}", i);
             boolean useExists  = random.nextBoolean();
             int limitOutside = random.nextInt(MAX_OUTER_LIMIT * 10);
             TableAliasGenerator tag = new TableAliasGenerator(random);
