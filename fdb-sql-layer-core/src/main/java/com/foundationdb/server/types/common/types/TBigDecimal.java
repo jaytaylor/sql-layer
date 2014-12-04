@@ -70,12 +70,6 @@ public class TBigDecimal extends TClassBase {
         int inputScale = inputInstance.attribute(DecimalAttribute.SCALE);
         int targetScale = targetInstance.attribute(DecimalAttribute.SCALE);
         if ( (inputPrecision != targetPrecision) || (inputScale != targetScale) ) {
-            //BigDecimal number = getWrapper (source, inputInstance).asBigDecimal();
-            
-            //MathContext mc = new MathContext (targetPrecision, RoundingMode.HALF_DOWN);
-            //BigDecimal output = number.round(mc);
-            //target.putObject(new BigDecimalWrapperImpl(output));
-            
             BigDecimalWrapper bdw = getCastWrapper(source, targetInstance);
             target.putObject(bdw);
         }
