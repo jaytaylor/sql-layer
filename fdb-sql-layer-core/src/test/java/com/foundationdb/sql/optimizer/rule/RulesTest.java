@@ -140,9 +140,6 @@ public class RulesTest extends OptimizerTestBase
             binder.setAllowSubqueryMultipleColumns(true);
             typeComputer = new NestedResultSetTypeComputer(TypesRegistryServiceImpl.createRegistryService());
         }
-        if (!Boolean.parseBoolean(properties.getProperty("useComposers", "true"))) {
-            ((FunctionsTypeComputer)typeComputer).setUseComposers(false);
-        }
         if (Boolean.parseBoolean(properties.getProperty("resultColumnsAvailableBroadly", "false"))) {
             binder.setResultColumnsAvailableBroadly(true);
         }

@@ -73,7 +73,6 @@ public class OperatorCompiler extends SchemaRulesContext
     protected void initTypesRegistry(TypesRegistryService typesRegistry) {
         super.initTypesRegistry(typesRegistry);
         typeComputer = new FunctionsTypeComputer(typesRegistry);
-        typeComputer.setUseComposers(false);
         binder.setFunctionDefined(new AISBinder.FunctionDefined() {
                 @Override
                 public boolean isDefined(String name) {

@@ -31,19 +31,9 @@ import com.foundationdb.sql.optimizer.plan.AggregateFunctionExpression;
 public class FunctionsTypeComputer extends AISTypeComputer
 {
     private TypesRegistryService functionsRegistry;
-    private boolean useComposers;
 
     public FunctionsTypeComputer(TypesRegistryService functionsRegistry) {
         this.functionsRegistry = functionsRegistry;
-        useComposers = false;
-    }
-    
-    public boolean isUseComposers() {
-        return useComposers;
-    }
-
-    public void setUseComposers(boolean useComposers) {
-        this.useComposers = useComposers;
     }
 
     @Override
