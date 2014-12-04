@@ -4,13 +4,13 @@
 - Statement: INSERT INTO all_types (integer_field) VALUES (201105)
 --- # Wrong arity
 - Statement: SELECT PERIOD_ADD() FROM all_types
-- error: !select-engine {all: [4250C], sys-mysql: [1582] }
+- error: [4250C]
 ---
 - Statement: SELECT PERIOD_ADD(201105) FROM all_types
-- error: !select-engine {all: [4250C], sys-mysql: [1582] }
+- error: [4250C]
 ---
 - Statement: SELECT PERIOD_ADD(201105, 5, 15) FROM all_types
-- error: !select-engine {all: [4250C], sys-mysql: [1582] }
+- error: [4250C]
 --- # Month is not 1-12
 - Statement: SELECT PERIOD_ADD(199300, 0) FROM all_types
 - output: [[199212]]

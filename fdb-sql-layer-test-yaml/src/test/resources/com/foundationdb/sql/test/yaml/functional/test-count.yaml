@@ -4,10 +4,10 @@
 
 ---
 - Statement: SELECT COUNT() FROM all_types
-- error:  !select-engine {all: [42000], sys-mysql: [1064] } 
+- error: [42000]
 ---
 - Statement: SELECT COUNT(unknown_field) FROM all_types
-- error: !select-engine {all: [50018], sys-mysql: [1054] }
+- error: [50018]
 
 # Test empty
 ---

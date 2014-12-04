@@ -1,3 +1,9 @@
+anti-with-onesided-condition1: anti join where the anti join has a condition that only touches the left hand side.
+
+anti-with-onesided-condition2: similar to #1, but with a join on the right hand side (#1 creates a hash join)
+
+anti-with-onesided-condition3: similar to #1, but the condition only references the inside
+
 bloom-filter-1: Use a Bloom filter to help with selective semi-join
 
 bloom-filter-1l: LIMIT adjusted when costing
@@ -41,6 +47,8 @@ equals-sorted: Same with = for comparison.
 equivalence-1: Equivalence column used in index.
 
 equivalence-2: Equivalence column used in GROUP BY.
+
+exists-inner: semi join with inner join on right hand side
 
 in-subquery: IN SELECT to semi-join (not indexable).
 

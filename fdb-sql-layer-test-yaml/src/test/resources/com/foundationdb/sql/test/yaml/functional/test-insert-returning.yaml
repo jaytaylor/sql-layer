@@ -1,8 +1,5 @@
 # Test inserting into tables
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (bigint_field) VALUES (0), (1), (-1),
@@ -45,11 +42,11 @@
     (-123456.0), (1234567.0), (-1234567.0)
     returning decimal_field
 - output: [[1], [123456], [-123456], [1234567], [-1234567]]
-- output_types: [NUMERIC]     
+- output_types: [DECIMAL]     
 ---
 - Statement: SELECT (decimal_field) from all_types
 - output: [[1], [123456], [-123456], [1234567], [-1234567]]
-- output_types: [NUMERIC]
+- output_types: [DECIMAL]
 ---
 - Statement: DELETE from all_types
 ---
@@ -69,7 +66,7 @@
 - Statement: INSERT INTO all_types (timestamp_field)
     VALUES ('2000-01-02 04:00:00') returning timestamp_field
 - output: [[!re '2000-01-02 04:00:00([.]0)?']]
-- output_types: [TIMESTAMP]
+- output_types: [DATETIME]
 ---
 - Statement: DELETE from all_types
 

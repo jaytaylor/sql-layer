@@ -33,7 +33,7 @@ public class PostgresServerStatementCachePreparedStatementIT extends
 
     @Before
     public void createAndInsert() {
-        createTable(TABLE_NAME, "te text");
+        createTable(TABLE_NAME, "te varchar(100)");
     }
 
     @Test
@@ -55,7 +55,7 @@ public class PostgresServerStatementCachePreparedStatementIT extends
 
         // valid: setObject() with partial type info and a typed "null object instance"
         com.foundationdb.sql.jdbc.util.PGobject dummy = new com.foundationdb.sql.jdbc.util.PGobject();
-        dummy.setType("text");
+        dummy.setType("VARCHAR");
         dummy.setValue(null);
         pstmt.setObject(1, dummy, Types.OTHER);
         pstmt.executeUpdate();

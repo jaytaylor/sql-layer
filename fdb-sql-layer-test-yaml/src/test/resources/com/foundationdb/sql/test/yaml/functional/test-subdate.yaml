@@ -52,8 +52,8 @@
 ## Test wrong arity
 ---
 - Statement: SELECT SUBDATE() from all_types;
-- error: !select-engine {all: [4250C], sys-mysql: [1064] }
+- error: [4250C]
 ---
 - Statement: SELECT SUBDATE('2009-12-12', 2, 3) from all_types;
-- error: !select-engine {all: [4250C], sys-mysql: [1064] } 
+- error: [4250C]
 ...

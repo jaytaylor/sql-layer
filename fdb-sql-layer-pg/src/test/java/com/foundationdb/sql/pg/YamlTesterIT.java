@@ -409,7 +409,7 @@ public class YamlTesterIT extends PostgresServerITBase {
     @Test
     public void testCreateTableSelectEngine1() throws Exception {
         testYaml("- CreateTable: !select-engine { all: 't (int_field int)', it: 't (int_field int)' } ");
-        testYaml("- CreateTable: !select-engine {it: 't2 (int_field int)', sys-mysql: 't2 (int_field int)', all: 't2 (int_field int)' } ");
+        testYaml("- CreateTable: !select-engine {it: 't2 (int_field int)', fts: 't2 (int_field int)', all: 't2 (int_field int)' } ");
     }
 
     /* Test CreateTable error */

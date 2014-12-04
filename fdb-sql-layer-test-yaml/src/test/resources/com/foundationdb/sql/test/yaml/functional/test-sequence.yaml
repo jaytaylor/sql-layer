@@ -5,9 +5,6 @@
 
 # Testing sequences for basic functionality
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - CreateTable: t (c1 integer not null primary key, c2 varchar(20))
 ---
 - Statement: Create Sequence sequence1 start with 1 increment by 1 

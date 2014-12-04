@@ -28,7 +28,13 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         RIGHT,
         FULL_OUTER,
         // These are beyond what flatten supports, used to represent EXISTS or IN (sometimes).
+        /**
+         * Select all rows in the left/outer source for which at least one row in the right/inner source matches.
+         */
         SEMI,
+        /**
+         * Select all rows in the left/outer source for which no row in the right/inner source matches.
+         */
         ANTI,
         // These are intermediate to represent when a semi-join can be
         // turned into a regular join.
@@ -52,6 +58,54 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
                     (this == SEMI_INNER_ALREADY_DISTINCT) ||
                     (this == SEMI_INNER_IF_DISTINCT));
         }
+
+        /**
+         * From dphyper.pdf
+         *   Definition 5 (linear). Let ◦ be a binary operator on relations.
+         *   If for all relations S and T the following two conditions hold,
+         *   then ◦ is called left linear:
+         *   1. ∅ ◦ T = ∅ and
+         *   2. (S1 ∪S2)◦T =(S1 ◦T)∪(S2 ◦T) for all relations S1 and S2.
+         *
+         *   Similarly, ◦ is called right linear if
+         *   1. S ◦ ∅ = ∅ and
+         *   2. S ◦ (T1 ∪ T2) = (S ◦ T1) ∪ (S ◦ T2) for all relations T1 and T2.
+         *
+         * Practically, what this means is that, if this join type is left linear,
+         * conditions on the left hand side are equivalent to being on the outside,
+         * and conditions on the right hand side are equivalent to being on the join itself.
+         *
+         * Corrollary:
+         *   If you have only joins that are both left & right linear,
+         *   the conditions can be placed on any join.
+         *
+         * @return true if this join type is left linear, false otherwise.
+         */
+        public final boolean isLeftLinear() {
+            return this != RIGHT && this != FULL_OUTER;
+        }
+
+        /**
+         * @see #isLeftLinear
+         *
+         * Practically, what this means is that, if this join type is right linear,
+         * conditions on the right hand side are equivalent to being on the outside,
+         * and conditions on the left hand side are equivalent to being on the join itself.
+         * @return true if this join type is right linear, false otherwise
+         */
+        public final boolean isRightLinear() {
+            return this == RIGHT || this == INNER;
+        }
+
+        /**
+         * @see #isLeftLinear
+         * @see #isRightLinear
+         * @return isLeftLinear() && isRightLinear()
+         */
+        public final boolean isFullyLinear() {
+            return isRightLinear() && isLeftLinear();
+        }
+
     }
     public static enum Implementation {
         GROUP,

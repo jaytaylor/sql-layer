@@ -2,9 +2,6 @@
 # Single table group
 #
 ---
-- Properties: sys-mysql
-- suppressed: true
----
 - Statement: CREATE TABLE t1 (id INT NOT NULL PRIMARY KEY)
 ---
 - Statement: INSERT INTO t1 VALUES (1), (10), (100)

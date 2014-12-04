@@ -553,7 +553,7 @@ public class BasicInfoSchemaTablesServiceImpl
                          null,          //unique_constraint catalog
                          fk.getReferencedIndex().getConstraintName().getSchemaName(),
                          fk.getReferencedIndex().getConstraintName().getTableName(),
-                         "NONE",
+                         "SIMPLE",
                          fk.getUpdateAction().toSQL(),
                          fk.getDeleteAction().toSQL(),
                          ++rowCounter /*hidden pk*/);

@@ -67,6 +67,11 @@ public class JoinableBitSet
         return s1 & ~s2;
     }
 
+    /** Set complement: elements not in <code>s</code>. */
+    public static long complement(long s) {
+        return ~s;
+    }
+
     /** Do the two sets overlap? */
     public static boolean overlaps(long s1, long s2) {
         return ((s1 & s2) != 0);

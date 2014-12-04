@@ -5,7 +5,7 @@
 - warnings_count: 0
 ---
 - Statement:  CREATE TABLE t1 (ff double);
-- error: !select-engine { all: [50006], sys-mysql: [1050] }
+- error: [50006]
 ---
 - Statement: CREATE TABLE IF NOT EXISTS t1 (ff double)
 - warnings_count: 1
@@ -14,7 +14,7 @@
 - Statement: DROP TABLE t1;
 --- # so such table to drop
 - Statement: Drop Table t1;
-- error: !select-engine { all: [42501], sys-mysql: [1051] } 
+- error: [42501]
 ---
 - Statement: DROP TABLE if exists t1;
 - warnings_count: 1

@@ -41,5 +41,5 @@
 - output: [[null]]
 ---
 - Statement: SELECT CONV();
-- error: !select-engine {all: [4250C], sys-mysql: [1582] } 
+- error: [4250C]
 ...
