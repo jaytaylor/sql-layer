@@ -96,6 +96,14 @@ public class SubqueryFlattener
         Iterator<FromTable> iter = selectNode.getFromList().iterator();
         int fromCount = selectNode.getFromList().size();
         // Go through outer result set and check for aggregates that would prevent flattening
+        // TODO make less restrictive & write a bunch more tests
+        OuterAggregateCheckVisitor aggregateVisitor =
+                new OuterAggregateCheckVisitor();
+
+        selectNode.getResultColumns().accept(aggregateVisitor);
+        if (!aggregateVisitor.flattenable) {
+            return;
+        }
         Collection<FromSubquery> flattenSubqueries = new HashSet<>();
         while (iter.hasNext()) {
             FromTable fromTable = iter.next();
@@ -706,7 +714,6 @@ public class SubqueryFlattener
     }
 
     static class AggregateCheckVisitor implements Visitor {
-        private Collection<FromSubquery> subqueries;
         private boolean hasAggregateNode = false;
 
         public AggregateCheckVisitor() {
@@ -723,6 +730,31 @@ public class SubqueryFlattener
         }
         public boolean skipChildren(Visitable node) {
             return hasAggregateNode;
+        }
+        public boolean visitChildrenFirst(Visitable node) {
+            return false;
+        }
+    }
+    static class OuterAggregateCheckVisitor implements Visitor {
+        private Collection<FromSubquery> subqueries;
+        private boolean flattenable = true;
+
+        public Visitable visit(Visitable node) throws StandardException {
+            if (node instanceof AggregateNode) {
+                AggregateNode aggregate = (AggregateNode)node;
+                if (aggregate.getOperand() == null) {
+                    // COUNT(*)
+                    // TODO check that source is not an aggregate function
+                    flattenable = false;
+                }
+            }
+            return node;
+        }
+        public boolean stopTraversal() {
+            return !flattenable;
+        }
+        public boolean skipChildren(Visitable node) {
+            return !flattenable;
         }
         public boolean visitChildrenFirst(Visitable node) {
             return false;
