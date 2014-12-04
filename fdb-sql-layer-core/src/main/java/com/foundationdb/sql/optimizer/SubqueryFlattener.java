@@ -41,6 +41,7 @@
 package com.foundationdb.sql.optimizer;
 
 import com.foundationdb.server.error.UnsupportedSQLException;
+import com.foundationdb.sql.optimizer.plan.ColumnExpression;
 import com.foundationdb.sql.parser.*;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
@@ -97,13 +98,21 @@ public class SubqueryFlattener
         int fromCount = selectNode.getFromList().size();
         // Go through outer result set and check for aggregates that would prevent flattening
         // TODO make less restrictive & write a bunch more tests
+        Set<FromSubquery> fromSubqueries = new HashSet<>();
+        while (iter.hasNext()){
+            FromTable table = iter.next();
+            if (table instanceof FromSubquery) {
+                fromSubqueries.add((FromSubquery) table);
+            }
+        }
         OuterAggregateCheckVisitor aggregateVisitor =
-                new OuterAggregateCheckVisitor();
+                new OuterAggregateCheckVisitor(fromSubqueries);
 
         selectNode.getResultColumns().accept(aggregateVisitor);
         if (!aggregateVisitor.flattenable) {
             return;
         }
+        iter = selectNode.getFromList().iterator();
         Collection<FromSubquery> flattenSubqueries = new HashSet<>();
         while (iter.hasNext()) {
             FromTable fromTable = iter.next();
@@ -111,9 +120,10 @@ public class SubqueryFlattener
             // sort, that subquery cannot be flattened. We could optimize it a bit, since it can be flattened if that
             // result column is never referenced in the outside, but lets assume it is.
             if ((fromTable instanceof FromSubquery) &&
-                flattenableFromSubquery((FromSubquery)fromTable, fromCount > 1)) {
-                flattenSubqueries.add((FromSubquery)fromTable);
-                iter.remove();                  // Can be flattened out.
+                    flattenableFromSubquery((FromSubquery) fromTable, fromCount > 1)) {
+                // Can be flattened out.
+                flattenSubqueries.add((FromSubquery) fromTable);
+                iter.remove();
             }
         }
         if (!flattenSubqueries.isEmpty()) {
@@ -739,12 +749,43 @@ public class SubqueryFlattener
         private Collection<FromSubquery> subqueries;
         private boolean flattenable = true;
 
+        public OuterAggregateCheckVisitor(Collection<FromSubquery> subqueries) {
+            this.subqueries = subqueries;
+        }
+
         public Visitable visit(Visitable node) throws StandardException {
             if (node instanceof AggregateNode) {
                 AggregateNode aggregate = (AggregateNode)node;
                 if (aggregate.getOperand() == null) {
                     // COUNT(*)
-                    // TODO check that source is not an aggregate function
+                    // TODO so long as the source table result set does not contain aggregates, this is fine.
+                    // and aggregateCheckVisitor prevents anything
+                    flattenable = false;
+                }
+                else if (aggregate.getOperand() instanceof ColumnReference) {
+                    // COUNT(v)
+                    ColumnBinding binding = (ColumnBinding)((ColumnReference)aggregate.getOperand()).getUserData();
+                    if (binding != null) {
+                        FromTable bft = binding.getFromTable();
+                        if (subqueries.contains(bft)) {
+                            ResultColumn rc = binding.getResultColumn();
+                            if ((rc.getExpression() instanceof ColumnReference)) {
+                                // ok to flatten
+                            } else if (rc.getExpression() instanceof VirtualColumnNode) {
+                                VirtualColumnNode virtualColumnNode = (VirtualColumnNode)rc.getExpression();
+                                if (virtualColumnNode.getSourceColumn().getExpression() instanceof ColumnReference) {
+                                    // ok to flatten
+                                } else {
+                                    flattenable = false;
+                                }
+                            }else {
+                                flattenable = false;
+                            }
+                        }
+                    }
+                } else {
+                    // There shouldn't be anything else for the operand, but this wouldn't be the place to crash,
+                    // just mark it as not flattenable
                     flattenable = false;
                 }
             }
