@@ -1,1 +1,1 @@
-SELECT COUNT(anon2.val) AS "_SQL_COL_1" FROM (SELECT (test.t1.id + 3) AS val FROM test.t1) AS anon2(val)
+SELECT COUNT(midselect.mid) AS "_SQL_COL_1" FROM (SELECT ((test.parent.id - 10) * 5) AS mid FROM test.parent WHERE ((test.parent.id - 10) < 5) AND ((test.parent.id > 3) AND TRUE)) AS midselect(mid) WHERE ((midselect.mid MOD 2) = 0) AND TRUE
