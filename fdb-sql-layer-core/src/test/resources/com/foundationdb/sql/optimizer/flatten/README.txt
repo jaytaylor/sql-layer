@@ -6,6 +6,8 @@ count-column: count on outside that just references column returned in subquery
 count-count: count of a subquery that is a count
 count-expression: count of a column where the subquery has an expression on that column
 count-join-expression: count(*) on outside, two subqueries, one of which has an expression
+count-star-expression: count(*) with an expression in the subquery
+expression-count: an expression on the outside, and a count on the only subquery
 
 select-1: subquery with unique column
 
@@ -34,3 +36,5 @@ select-9: VALUES single row
 select-9x: VALUES multiple rows (no change)
 
 select-10: outer comparison instead of ANY
+
+star-count-join: outer query is just *, one subquery has a COUNT, the other does not

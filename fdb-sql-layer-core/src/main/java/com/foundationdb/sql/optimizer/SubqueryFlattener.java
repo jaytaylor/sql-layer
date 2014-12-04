@@ -97,7 +97,6 @@ public class SubqueryFlattener
         Iterator<FromTable> iter = selectNode.getFromList().iterator();
         int fromCount = selectNode.getFromList().size();
         // Go through outer result set and check for aggregates that would prevent flattening
-        // TODO make less restrictive & write a bunch more tests
         Set<FromSubquery> fromSubqueries = new HashSet<>();
         while (iter.hasNext()){
             FromTable table = iter.next();
@@ -758,9 +757,14 @@ public class SubqueryFlattener
                 AggregateNode aggregate = (AggregateNode)node;
                 if (aggregate.getOperand() == null) {
                     // COUNT(*)
-                    // TODO so long as the source table result set does not contain aggregates, this is fine.
-                    // and aggregateCheckVisitor prevents anything
-                    flattenable = false;
+                    for (FromSubquery subquery : subqueries) {
+                        AggregateCheckVisitor visitor = new AggregateCheckVisitor();
+                        subquery.accept(visitor);
+                        if (visitor.hasAggregateNode) {
+                            flattenable = false;
+                            break;
+                        }
+                    }
                 }
                 else if (aggregate.getOperand() instanceof ColumnReference) {
                     // COUNT(v)

@@ -1,1 +1,1 @@
-SELECT COUNT(*) AS "_SQL_COL_1" FROM (SELECT (concat(test.t1.c1, 'ice')) AS val1 FROM test.t1) AS anon1(val1), (SELECT test.t1.c1 AS val2 FROM test.t1) AS anon2(val2) WHERE (anon1.val1 = anon2.val2) AND TRUE
+SELECT COUNT(*) AS "_SQL_COL_1" FROM test.t1, test.t1 WHERE ((concat(test.t1.c1, 'ice')) = test.t1.c1) AND TRUE

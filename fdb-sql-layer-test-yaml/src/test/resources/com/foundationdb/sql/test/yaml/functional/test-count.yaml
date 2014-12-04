@@ -229,4 +229,12 @@
 ---
 - Statement: SELECT COUNT(*) FROM (SELECT COUNT(DISTINCT name) AS c2 FROM users) AS anon1
 - output: [[1]]
+---
+- Statement: INSERT INTO users VALUES ('al');
+---
+- Statement: SELECT COUNT(*) FROM
+                 (SELECT concat(name,'ice') AS val1 FROM users) AS anon1,
+                 (SELECT name AS val2 FROM users) AS anon2
+             WHERE val1 = val2
+- output: [[2]]
 ...
