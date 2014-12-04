@@ -436,18 +436,19 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
                 finalQueryLimit(limitOutside);
         LOG.debug("Final: {}", finalQuery);
         List<List<?>> sqlResults = sql(finalQuery);
-        List<Object> actual = new ArrayList<>();
+        List<Integer> actual = new ArrayList<>();
         for (List<?> actualRow : sqlResults) {
             assertEquals("Expected 1 column" + actualRow, 1, actualRow.size());
-            actual.add(actualRow.get(0));
+            actual.add((Integer) actualRow.get(0));
         }
+        Collections.sort(expected, new NullableIntegerComparator());
+        Collections.sort(actual, new NullableIntegerComparator());
         expected = applyLimit(expected, limitOutside);
         assertEqualLists("Results different for " + finalQuery, expected, actual);
     }
 
     private List<Integer> applyLimit(List<Integer> expected, int limitOutside) {
         if (limitOutside < MAX_OUTER_LIMIT) {
-            Collections.sort(expected, new NullableIntegerComparator());
             if (limitOutside+1 < expected.size()) {
                 return expected.subList(0, limitOutside + 1);
             }
