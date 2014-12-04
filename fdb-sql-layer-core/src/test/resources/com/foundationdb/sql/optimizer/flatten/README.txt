@@ -1,4 +1,11 @@
+combine-expressions: an expression on the outside and an expression on the subquery
+
+count-aliased-column: count on outside of column that is aliased in the subquery
+count-column-to-star: count on outside of a column, where subquery is SELECT *
+count-column: count on outside that just references column returned in subquery
 count-count: count of a subquery that is a count
+count-expression: count of a column where the subquery has an expression on that column
+count-join-expression: count(*) on outside, two subqueries, one of which has an expression
 
 select-1: subquery with unique column
 
