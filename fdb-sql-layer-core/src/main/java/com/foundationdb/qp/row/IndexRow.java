@@ -100,9 +100,6 @@ public abstract class IndexRow extends AbstractRow implements com.geophile.z.Rec
 
     protected abstract int zPosition();
 
-    // This is a z-value written to an IndexRow created by Geophile for doing a random access during
-    // a spatial join. It is NOT reflected in the actual row state. This obviously won't work if
-    // spatial index maintenance is done via Geophile's Index.add/remove API.
     private long z = Space.Z_NULL;
 
     public static enum EdgeValue {
