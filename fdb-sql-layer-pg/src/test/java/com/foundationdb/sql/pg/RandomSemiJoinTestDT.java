@@ -19,6 +19,7 @@ package com.foundationdb.sql.pg;
 
 import com.foundationdb.junit.SelectedParameterizedRunner;
 import com.foundationdb.util.RandomRule;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Ignore;
@@ -54,6 +55,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(RandomSemiJoinTestDT.class);
 
+    private static final boolean hitPostgres = Boolean.parseBoolean(System.getProperty("fdbsql.test.hit-postgres"));
     private static final int DDL_COUNT = 10;
     private static final int QUERY_COUNT = 30;
     private static final int TABLE_COUNT = 3;
@@ -76,6 +78,15 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
      * The seed used for individual parameterized tests, so that they can have different DDL & DML
      */
     private Long testSeed;
+
+    @Override
+    protected String getConnectionURL() {
+        if (hitPostgres) {
+            return "jdbc:postgresql:" + SCHEMA_NAME;
+        } else {
+            return super.getConnectionURL();
+        }
+    }
 
     @Parameterized.Parameters(name="Test Seed: {0}")
     public static List<Object[]> params() throws Exception {
@@ -304,6 +315,20 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
             sql(createIndexSql(random, "index" + k));
         }
         // TODO create random groups & group indexes
+    }
+
+    @After
+    public void teardown() {
+        if (hitPostgres) {
+            // our teardown method won't work against postgres because it uses drop schema magic,
+            // just drop the tables individually.
+            for (int i = 0; i < TABLE_COUNT; i++) {
+                StringBuilder stringBuilder = new StringBuilder();
+                stringBuilder.append("DROP TABLE ");
+                stringBuilder.append(table(i));
+                sql(stringBuilder.toString());
+            }
+        }
     }
 
     @Test
