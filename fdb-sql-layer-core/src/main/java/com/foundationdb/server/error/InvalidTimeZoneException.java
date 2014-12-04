@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 FoundationDB, LLC
+ * Copyright (C) 2009-2014 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -14,16 +14,17 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package com.foundationdb.server.error;
 
-public class StartupFailureException extends InvalidOperationException {
-
-    protected StartupFailureException(ErrorCode code, Long i, Long j, Long k,
-            Long l) {
-        super(code, i, j, k, l);
-    }
-
-    protected StartupFailureException(ErrorCode code, Object... args) {
-        super(code, args);
+public class InvalidTimeZoneException extends StartupFailureException
+{
+    // you might expect this to take the invalid value, but, truth is we can't really know that what we have is what
+    // was set. If you set the timezone to something invalid, and a Date() is created or TimeZone.getDefault() is called
+    // the user.timezone will be set to something of the form: GMT-05:00
+    // Note: on a mac that - (or +) will be replaced by an unprintable character, I filed a bug with openjdk.
+    public InvalidTimeZoneException()
+    {
+        super(ErrorCode.INVALID_TIME_ZONE);
     }
 }

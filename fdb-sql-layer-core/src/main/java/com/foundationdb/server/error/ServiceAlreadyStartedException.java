@@ -14,16 +14,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package com.foundationdb.server.error;
 
-public class StartupFailureException extends InvalidOperationException {
-
-    protected StartupFailureException(ErrorCode code, Long i, Long j, Long k,
-            Long l) {
-        super(code, i, j, k, l);
-    }
-
-    protected StartupFailureException(ErrorCode code, Object... args) {
-        super(code, args);
+public final class ServiceAlreadyStartedException extends InvalidOperationException {
+    public ServiceAlreadyStartedException(String serviceName) {
+        super (ErrorCode.SERVICE_ALREADY_STARTED, serviceName);
     }
 }
