@@ -19,6 +19,7 @@ package com.foundationdb.server.types.mcompat.mcasts;
 
 import com.foundationdb.server.types.TStrongCasts;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
+import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
@@ -36,6 +37,7 @@ public final class Strongs {
                 MDateAndTime.TIME,
                 MDateAndTime.TIMESTAMP,
                 MDateAndTime.YEAR,
+                AkGUID.INSTANCE,
                 MApproximateNumber.DOUBLE);
 
     public static final TStrongCasts textsToVarchar = TStrongCasts
