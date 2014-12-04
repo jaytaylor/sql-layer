@@ -448,7 +448,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         Collections.sort(expected, new NullableIntegerComparator());
         Collections.sort(actual, new NullableIntegerComparator());
         expected = applyLimit(expected, limitOutside);
-        assertEqualLists("Results different for " + finalQuery, expected, actual);
+        assertEqualLists("Results different for Query #" + queryIndex + ": " + finalQuery, expected, actual);
     }
 
     private List<Integer> applyLimit(List<Integer> expected, int limitOutside) {
