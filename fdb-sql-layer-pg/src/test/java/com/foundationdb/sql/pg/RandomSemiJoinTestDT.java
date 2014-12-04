@@ -485,10 +485,18 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
                 return 0;
             }
             if (o1 == null) {
-                return Integer.MIN_VALUE;
+                if (hitPostgres) {
+                    return Integer.MAX_VALUE;
+                } else {
+                    return Integer.MIN_VALUE;
+                }
             }
             if (o2 == null) {
-                return Integer.MAX_VALUE;
+                if (hitPostgres) {
+                    return Integer.MIN_VALUE;
+                } else {
+                    return Integer.MAX_VALUE;
+                }
             }
             return o1-o2;
         }
