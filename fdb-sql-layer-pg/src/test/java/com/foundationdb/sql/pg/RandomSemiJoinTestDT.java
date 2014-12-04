@@ -293,6 +293,16 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
 
     @Before
     public void setup() {
+        if (hitPostgres) {
+            // It kept whining about tables already existing if I ever stopped the tests mid run,
+            // so drop them before every test.
+            for (int i = 0; i < TABLE_COUNT; i++) {
+                StringBuilder stringBuilder = new StringBuilder();
+                stringBuilder.append("DROP TABLE IF EXISTS ");
+                stringBuilder.append(table(i));
+                sql(stringBuilder.toString());
+            }
+        }
         // RandomRule is used to generate parameters, so that we have different DDL sets of tests
         Random random = new Random(testSeed);
         for (int i=0; i<TABLE_COUNT; i++) {
@@ -322,9 +332,10 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         if (hitPostgres) {
             // our teardown method won't work against postgres because it uses drop schema magic,
             // just drop the tables individually.
+            // Also drop them at startup
             for (int i = 0; i < TABLE_COUNT; i++) {
                 StringBuilder stringBuilder = new StringBuilder();
-                stringBuilder.append("DROP TABLE ");
+                stringBuilder.append("DROP TABLE IF EXISTS ");
                 stringBuilder.append(table(i));
                 sql(stringBuilder.toString());
             }
