@@ -725,6 +725,10 @@ public class SubqueryFlattener
         }
     }
 
+    /**
+     * To be applied to a FromSubquery, hasAggregateNode will be set to true if there is an aggregate function in the
+     * subquery.
+     */
     static class AggregateCheckVisitor implements Visitor {
         private boolean hasAggregateNode = false;
 
@@ -747,6 +751,10 @@ public class SubqueryFlattener
             return false;
         }
     }
+
+    /**
+     * Determines whether an aggregate node in the outer query prevents flattening subqueries.
+     */
     static class OuterAggregateCheckVisitor implements Visitor {
         private Collection<FromSubquery> subqueries;
         private boolean flattenable = true;
