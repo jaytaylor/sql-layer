@@ -78,7 +78,7 @@ class BasicDMLFunctions implements DMLFunctions {
         while(!tableList.isEmpty()) {
             Table aTable = tableList.remove(tableList.size() - 1);
             if(aTable != table) {
-                if(aTable.rowDef().getTableStatus().getRowCount(session) > 0) {
+                if(aTable.tableStatus().getRowCount(session) > 0) {
                     return false;
                 }
             }

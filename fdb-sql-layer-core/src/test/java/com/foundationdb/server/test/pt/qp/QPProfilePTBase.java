@@ -57,12 +57,12 @@ public class QPProfilePTBase extends PTBase
 
     protected Group group(int tableId)
     {
-        return getRowDef(tableId).table().getGroup();
+        return getRowType(tableId).table().getGroup();
     }
 
     protected Table table(int tableId)
     {
-        return getRowDef(tableId).table();
+        return getRowType(tableId).table();
     }
 
     protected IndexRowType indexType(int tableId, String... searchIndexColumnNamesArray)

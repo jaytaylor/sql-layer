@@ -23,10 +23,6 @@ import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.WriteIndexRow;
 import com.foundationdb.server.error.InvalidSpatialObjectException;
-import com.foundationdb.server.rowdata.FieldDef;
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDataSource;
-import com.foundationdb.server.rowdata.RowDataValueSource;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
@@ -48,18 +44,15 @@ public class SpatialColumnHandler
         dimensions = space.dimensions();
         assert dimensions == 2;
         assert dimensions == index.dimensions();
-        rowDataSource = new RowDataValueSource();
         firstSpatialField = index.firstSpatialArgument();
         lastSpatialField = index.lastSpatialArgument();
         int spatialColumns = lastSpatialField - firstSpatialField + 1;
         tinstances = new TInstance[spatialColumns];
-        fieldDefs = new FieldDef[spatialColumns];
         positions = new int[spatialColumns];
         for (int c = 0; c < spatialColumns; c++) {
             IndexColumn indexColumn = index.getKeyColumns().get(firstSpatialField + c);
             Column column = indexColumn.getColumn();
             tinstances[c] = column.getType();
-            fieldDefs[c] = column.getFieldDef();
             positions[c] = column.getPosition().intValue();
         }
         coords = new double[dimensions];
@@ -80,21 +73,6 @@ public class SpatialColumnHandler
         return Spatial.shuffle(space, coords[0], coords[1]);
     }
     
-    public long zValue(RowData rowData)
-    {
-        bind(rowData);
-        return Spatial.shuffle(space, coords[0], coords[1]);
-    }
-
-    public void processSpatialObject(RowData rowData, Operation operation)
-    {
-        bind(rowData);
-        long[] zs = zArray();
-        Spatial.shuffle(space, spatialObject, zs);
-        for (int i = 0; i < zs.length && zs[i] != Space.Z_NULL; i++) {
-            operation.handleZValue(zs[i]);
-        }
-    }
 
     public void processSpatialObject(Row rowData, Operation operation)
     {
@@ -150,51 +128,6 @@ public class SpatialColumnHandler
         }
     }
 
-    private void bind(RowData rowData)
-    {
-        if (lastSpatialField > firstSpatialField) {
-            // Point coordinates stored in two columns
-            assert dimensions == 2 : dimensions;
-            double coord = Double.NaN;
-            double x = Double.NaN;
-            double y = Double.NaN;
-            for (int d = 0; d < dimensions; d++) {
-                rowDataSource.bind(fieldDefs[d], rowData);
-                RowDataValueSource rowDataValueSource = (RowDataValueSource) rowDataSource;
-                TClass tclass = tinstances[d].typeClass();
-                if (tclass == MNumeric.DECIMAL) {
-                    BigDecimalWrapper wrapper = TBigDecimal.getWrapper(rowDataValueSource, tinstances[d]);
-                    coord = wrapper.asBigDecimal().doubleValue();
-                } else if (tclass == MNumeric.BIGINT) {
-                    coord = rowDataValueSource.getInt64();
-                } else if (tclass == MNumeric.INT) {
-                    coord = rowDataValueSource.getInt32();
-                } else {
-                    assert false : fieldDefs[d].column();
-                }
-                if (d == 0) {
-                    x = coord;
-                } else {
-                    y = coord;
-                }
-                coords[d] = coord;
-            }
-            spatialObject = new Point(x, y);
-        } else {
-            // Spatial object encoded in blob
-            rowDataSource.bind(fieldDefs[0], rowData);
-            RowDataValueSource rowDataValueSource = (RowDataValueSource) rowDataSource;
-            TClass tclass = tinstances[0].typeClass();
-            assert tclass == MBinary.BLOB : tclass;
-            byte[] spatialObjectBytes = rowDataValueSource.getBytes();
-            try {
-                spatialObject = Spatial.deserialize(space, spatialObjectBytes);
-            } catch (ParseException e) {
-                throw new InvalidSpatialObjectException();
-            }
-        }
-    }
-
     private long[] zArray()
     {
         assert spatialObject != null;
@@ -209,8 +142,6 @@ public class SpatialColumnHandler
     private final int dimensions;
     private final int[] positions;    
     private final TInstance[] tinstances;
-    private final FieldDef[] fieldDefs;
-    private final RowDataSource rowDataSource;
     private final int firstSpatialField;
     private final int lastSpatialField;
     private SpatialObject spatialObject;

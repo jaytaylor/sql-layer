@@ -57,7 +57,6 @@ import com.foundationdb.ais.util.TableChangeValidatorState;
 import com.foundationdb.ais.util.TableChangeValidator;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.DMLFunctions;
 import com.foundationdb.server.error.AlterMadeNoChangeException;
@@ -73,12 +72,10 @@ import com.foundationdb.server.error.NoSuchTableIdException;
 import com.foundationdb.server.error.NotAllowedByConfigException;
 import com.foundationdb.server.error.ProtectedIndexException;
 import com.foundationdb.server.error.ReferencedSQLJJarException;
-import com.foundationdb.server.error.RowDefNotFoundException;
 import com.foundationdb.server.error.UnsupportedDropException;
 import com.foundationdb.server.error.ViewReferencesExist;
 import com.foundationdb.server.error.SQLParserInternalException;
 import com.foundationdb.server.error.UnsupportedCreateSelectException;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.TableListener;
@@ -613,12 +610,6 @@ public class BasicDDLFunctions implements DDLFunctions {
     public TableName getTableName(Session session, int tableId) throws NoSuchTableException {
         logger.trace("getting table name for {}", tableId);
         return getTable(session, tableId).getName();
-    }
-
-    @Override
-    public RowDef getRowDef(Session session, int tableId) throws RowDefNotFoundException {
-        logger.trace("getting RowDef for {}", tableId);
-        return getAIS(session).getTable(tableId).rowDef();
     }
 
     @Override
