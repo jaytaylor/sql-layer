@@ -96,6 +96,17 @@ public class SubqueryFlattener
         if (outerAggregatesPreventFlattening(selectNode)) {
             return;
         }
+        flattenFromList(selectNode, parentNode);
+
+        // After CFN, only possibilities are AND and nothing.
+        if (selectNode.getWhereClause() != null) {
+            AndNode andNode = (AndNode)selectNode.getWhereClause();
+            andNode(andNode);
+        }
+        currentSelectNode = selectStack.pop();
+    }
+
+    private void flattenFromList(SelectNode selectNode, QueryTreeNode parentNode) throws StandardException {
         Iterator<FromTable> iter = selectNode.getFromList().iterator();
         int fromCount = selectNode.getFromList().size();
         Collection<FromSubquery> flattenSubqueries = new HashSet<>();
@@ -126,13 +137,6 @@ public class SubqueryFlattener
                 new FromSubqueryBindingVisitor(flattenSubqueries);
             parentNode.accept(visitor);
         }
-
-        // After CFN, only possibilities are AND and nothing.
-        if (selectNode.getWhereClause() != null) {
-            AndNode andNode = (AndNode)selectNode.getWhereClause();
-            andNode(andNode);
-        }
-        currentSelectNode = selectStack.pop();
     }
 
     private boolean outerAggregatesPreventFlattening(SelectNode selectNode) throws StandardException {
