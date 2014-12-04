@@ -25,6 +25,7 @@ import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
+import com.foundationdb.server.store.FDBScanTransactionOptions;
 import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
@@ -141,38 +142,15 @@ public class FDBGroupCursor extends RowCursorImpl implements GroupCursor {
     }
 
     private class CommittingFullScan extends GroupScan {
-        boolean first = true;
-        boolean auto;
-        int limit, remaining;
-
         public CommittingFullScan() {
-            auto = (commitFrequency == StoreAdapter.COMMIT_FREQUENCY_PERIODICALLY);
-            if (auto)
-                limit = adapter.getTransaction().periodicallyCommitScanLimit();
-            else
-                limit = commitFrequency;
-        }
-
-        @Override
-        public void advance() {
-            if (storeData.iterator == null) {
-                adapter.getUnderlyingStore().groupIterator(adapter.getSession(), storeData,
-                                                           !first, limit);
-                first = false;
-                remaining = limit;
-            }
-            TRAVERSE_COUNT.hit();
-            if (storeData.next()) {
-                remaining--;
-                if ((remaining <= 0) || 
-                    (auto && adapter.getTransaction().timeToCommit())) {
-                    storeData.closeIterator();
-                    adapter.getTransaction().commitAndReset(adapter.getSession());
-                }
+            FDBScanTransactionOptions transactionOptions;
+            if (commitFrequency == StoreAdapter.COMMIT_FREQUENCY_PERIODICALLY) {
+                transactionOptions = adapter.getTransaction().periodicallyCommitScanOptions();
             }
             else {
-                setIdle();
+                transactionOptions = new FDBScanTransactionOptions(commitFrequency, -1);
             }
+            adapter.getUnderlyingStore().groupIterator(adapter.getSession(), storeData, transactionOptions);
         }
     }
 

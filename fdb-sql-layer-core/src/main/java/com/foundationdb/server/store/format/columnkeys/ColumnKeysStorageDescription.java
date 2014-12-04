@@ -33,6 +33,7 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.FDBScanTransactionOptions;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.FDBTransactionService.TransactionState;
@@ -168,7 +169,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
             groupIterator(store, session, storeData,
                           FDBStore.GroupIteratorBoundary.KEY,
                           FDBStore.GroupIteratorBoundary.FIRST_DESCENDANT,
-                          1, false);
+                          1, FDBScanTransactionOptions.NORMAL);
             return storeData.next();
         }
         finally {
@@ -187,7 +188,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
     @Override
     public void groupIterator(FDBStore store, Session session, FDBStoreData storeData,
                               FDBStore.GroupIteratorBoundary left, FDBStore.GroupIteratorBoundary right,
-                              int limit, boolean snapshot) {
+                              int limit, FDBScanTransactionOptions transactionOptions) {
         byte[] begin, end;
         switch (left) {
         case START:
@@ -221,7 +222,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
         storeData.iterator = 
             new ColumnKeysStorageIterator(storeData,
                                           store.getTransaction(session, storeData)
-                                          .getRangeIterator(begin, end),
+                                          .getRangeIterator(begin, end, transactionOptions),
                                           limit);
     }
 

@@ -60,7 +60,7 @@ public class FDBScanTransactionOptions
     }
 
     /** Should we ever commit in the middle of a scan? */
-    public boolean isCommit() {
+    public boolean isCommitting() {
         return ((commitAfterRows > 0) ||
                 (commitAfterMillis > 0));
     }

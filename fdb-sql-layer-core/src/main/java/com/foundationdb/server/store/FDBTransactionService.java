@@ -196,6 +196,25 @@ public class FDBTransactionService implements TransactionService {
             return transaction.getRange(range, limit);
         }
 
+        public AsyncIterator<KeyValue> getRangeIterator(byte[] start, byte[] end,
+                                                        FDBScanTransactionOptions transactionOptions) {
+            return getRangeIterator(KeySelector.firstGreaterOrEqual(start), KeySelector.firstGreaterOrEqual(end), Transaction.ROW_LIMIT_UNLIMITED, false);
+        }
+
+        public AsyncIterator<KeyValue> getRangeIterator(KeySelector start, KeySelector end, int limit, boolean reverse,
+                                                        FDBScanTransactionOptions transactionOptions) {
+            if (transactionOptions.isCommitting()) {
+                return new FDBScanCommittingIterator(this, start, end, limit, reverse,
+                                                     transactionOptions);
+            }
+            else if (transactionOptions.isSnapshot()) {
+                return getSnapshotRangeIterator(start, end, limit, reverse);
+            }
+            else {
+                return getRangeIterator(start, end, limit, reverse);
+            }
+        }
+
         public boolean getRangeExists (Range range, int limit) {
             try {
                 return transaction.getRange(range, limit).iterator().hasNext();
@@ -279,14 +298,14 @@ public class FDBTransactionService implements TransactionService {
          *
          * <i>All</i> exceptions are propagated immediately and leave the state unchanged.
          */
-        public void commitAndReset(Session session) {
+        public void commitAndReset() {
             commitInternal(session, false, false);
             transaction.reset();
             reset();
         }
 
-        public int periodicallyCommitScanLimit() {
-            return commitScanLimit;
+        public FDBScanTransactionOptions periodicallyCommitScanOptions() {
+            return new FDBScanTransactionOptions(commitScanLimit, commitAfterMillis);
         }
 
         public boolean isDeferred(ForeignKey foreignKey) {
@@ -486,7 +505,7 @@ public class FDBTransactionService implements TransactionService {
         TransactionState txn = getTransactionInternal(session);
         requireActive(txn);
         if (txn.timeToCommit()) {
-            txn.commitAndReset(session);
+            txn.commitAndReset();
             return true;
         } else {
             return false;

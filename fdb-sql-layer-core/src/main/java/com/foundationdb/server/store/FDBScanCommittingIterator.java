@@ -102,7 +102,7 @@ public class FDBScanCommittingIterator implements AsyncIterator<KeyValue>
             else if (options.shouldCommitAfterRows(count) ||
                      options.shouldCommitAfterMillis(transaction.getStartTime())) {
                 dispose();
-                transaction.commitAndReset(transaction.getSession()); // TODO: remove
+                transaction.commitAndReset();
                 try {
                     options.maybeSleepAfterCommit();
                 }
