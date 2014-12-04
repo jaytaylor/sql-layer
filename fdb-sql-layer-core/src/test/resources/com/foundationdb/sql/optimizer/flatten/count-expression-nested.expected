@@ -1,0 +1,1 @@
+SELECT COUNT(val) FROM (SELECT test.t1.id + 3 AS val FROM test.t1 AS anon2

@@ -93,7 +93,13 @@ public class SubqueryFlattener
         currentSelectNode = selectNode;
 
         // Flatten subqueries in the FROM list.
-        if (outerAggregatesPreventFlattening(selectNode)) {
+        Set<FromSubquery> fromSubqueries = getFromSubqueries(selectNode);
+        for (FromSubquery subquery : fromSubqueries) {
+            if (subquery.getSubquery() instanceof SelectNode) {
+                selectNode((SelectNode)subquery.getSubquery(), subquery);
+            }
+        }
+        if (outerAggregatesPreventFlattening(selectNode, fromSubqueries)) {
             return;
         }
         flattenFromList(selectNode, parentNode);
@@ -139,10 +145,17 @@ public class SubqueryFlattener
         }
     }
 
-    private boolean outerAggregatesPreventFlattening(SelectNode selectNode) throws StandardException {
+    private boolean outerAggregatesPreventFlattening(SelectNode selectNode, Set<FromSubquery> fromSubqueries) throws StandardException {
         if (selectNode.getResultColumns() == null) {
             return false;
         }
+        OuterAggregateCheckVisitor aggregateVisitor =
+                new OuterAggregateCheckVisitor(fromSubqueries);
+        selectNode.getResultColumns().accept(aggregateVisitor);
+        return !aggregateVisitor.flattenable;
+    }
+
+    private Set<FromSubquery> getFromSubqueries(SelectNode selectNode) {
         Iterator<FromTable> iter = selectNode.getFromList().iterator();
         // Go through outer result set and check for aggregates that would prevent flattening
         Set<FromSubquery> fromSubqueries = new HashSet<>();
@@ -152,10 +165,7 @@ public class SubqueryFlattener
                 fromSubqueries.add((FromSubquery) table);
             }
         }
-        OuterAggregateCheckVisitor aggregateVisitor =
-                new OuterAggregateCheckVisitor(fromSubqueries);
-        selectNode.getResultColumns().accept(aggregateVisitor);
-        return !aggregateVisitor.flattenable;
+        return fromSubqueries;
     }
 
     // Top-level (within some WHERE clause) AND expression.
