@@ -1,3 +1,5 @@
+decimal-cast: cast decimal to decimal (smaller)
+
 union-1 : simple union with cast
 
 union-2 : function results to cast
