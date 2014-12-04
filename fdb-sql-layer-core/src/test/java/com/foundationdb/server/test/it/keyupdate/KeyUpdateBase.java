@@ -23,9 +23,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.rowdata.FieldDef;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.util.tap.Tap;
@@ -61,16 +58,6 @@ public abstract class KeyUpdateBase extends ITBase {
         assertEquals("Column name", columnName, column.getName());
     }
     
-    protected void confirmColumn(RowDef rowDef, Integer expectedId, String columnName) {
-        assert columnName != null;
-        assert rowDef != null;
-        assertNotNull("column ID for " + columnName, expectedId);
-        FieldDef fieldDef = rowDef.getFieldDef(expectedId);
-        assertNotNull("no fieldDef with id="+expectedId + ", name="+columnName, fieldDef);
-        assertEquals("fieldDef name", columnName, fieldDef.getName());
-    }
-
-
     @Test
     @SuppressWarnings("unused") // JUnit will invoke this
     public void testInitialState() throws Exception
