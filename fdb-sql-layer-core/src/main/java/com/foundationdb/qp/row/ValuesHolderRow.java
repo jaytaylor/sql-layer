@@ -21,10 +21,9 @@ package com.foundationdb.qp.row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.types.value.Value;
 
-import java.io.Serializable;
 import java.util.List;
 
-public class ValuesHolderRow extends AbstractValuesHolderRow implements Serializable {
+public class ValuesHolderRow extends AbstractValuesHolderRow {
 
     // ValuesHolderRow interface -- mostly just promoting visiblity
 
@@ -58,9 +57,4 @@ public class ValuesHolderRow extends AbstractValuesHolderRow implements Serializ
     public ValuesHolderRow(RowType rowType, Object... objects) {
         super(rowType, objects);
     }
-    /**
-     * 
-     */
-    private static final long serialVersionUID = 1L;
-
 }
