@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
@@ -36,6 +37,9 @@ public class YamlTestFinder
     static {
         String timezone = "UTC";
         DateTimeZone.setDefault(DateTimeZone.forID(timezone));
+        // We still have usages of java.util.Date, but thanks to the ConfigurationServiceImpl.validateTimezone
+        // These should always be the same in production, so leaving this here until we cleanup remaining usages
+        TimeZone.setDefault(TimeZone.getTimeZone(timezone));
     }
 
     private static final String PROPERTY_PREFIX = "com.foundationdb.sql.test.yaml";
