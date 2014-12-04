@@ -377,17 +377,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         String q1 = query1IsJustATable ? query1 : "(" + query1 + ")";
         String finalQuery = "SELECT main FROM " + q1 + " AS T1 WHERE " + existsClause +
                 " (" + String.format(query2, "T1.main") + ")" + finalQueryLimit(limitOutside);
-        LOG.debug("Final: {}", finalQuery);
-        List<List<?>> sqlResults = sql(finalQuery);
-        List<Integer> actual = new ArrayList<>();
-        for (List<?> actualRow : sqlResults) {
-            assertEquals("Expected 1 column" + actualRow, 1, actualRow.size());
-            actual.add((Integer) actualRow.get(0));
-        }
-        Collections.sort(expected, new NullableIntegerComparator());
-        Collections.sort(actual, new NullableIntegerComparator());
-        expected = applyLimit(expected, limitOutside);
-        assertEqualLists("Results different for " + finalQuery, expected, actual);
+        compareToFinalQuery(limitOutside, expected, finalQuery);
     }
 
     private void testOneQueryIn(String query1, String query2, int limitOutside, int i) {
@@ -398,6 +388,14 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         boolean query1IsJustATable = query1.startsWith("table");
         List<List<?>> results1 = sql(query1IsJustATable ? "SELECT main FROM " + query1 : query1);
         List<List<?>> results2 = sql(query2);
+        List<Integer> expected = calculateInExpectedResults(useIn, results1, results2);
+        String q1 = query1IsJustATable ? query1 : "(" + query1 + ")";
+        String finalQuery = "SELECT main FROM " + q1 + " AS T1 WHERE main " + inClause + " (" + query2 + ")" +
+                finalQueryLimit(limitOutside);
+        compareToFinalQuery(limitOutside, expected, finalQuery);
+    }
+
+    private List<Integer> calculateInExpectedResults(boolean useIn, List<List<?>> results1, List<List<?>> results2) {
         boolean insideHasNull = false;
         // setting of insideHasNull only matters if it's NOT IN, if it is NOT IN, expected is always the empty list
         if (!useIn) {
@@ -436,9 +434,10 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
                 }
             }
         }
-        String q1 = query1IsJustATable ? query1 : "(" + query1 + ")";
-        String finalQuery = "SELECT main FROM " + q1 + " AS T1 WHERE main " + inClause + " (" + query2 + ")" +
-                finalQueryLimit(limitOutside);
+        return expected;
+    }
+
+    private void compareToFinalQuery(int limitOutside, List<Integer> expected, String finalQuery) {
         LOG.debug("Final: {}", finalQuery);
         List<List<?>> sqlResults = sql(finalQuery);
         List<Integer> actual = new ArrayList<>();
