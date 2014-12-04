@@ -7,6 +7,8 @@ count-count: count of a subquery that is a count
 count-expression: count of a column where the subquery has an expression on that column
 count-join-expression: count(*) on outside, two subqueries, one of which has an expression
 count-star-expression: count(*) with an expression in the subquery
+
+delete-1: just delete everything from a child -> causes a SelectNode with almost everything null
 expression-count: an expression on the outside, and a count on the only subquery
 
 select-1: subquery with unique column
