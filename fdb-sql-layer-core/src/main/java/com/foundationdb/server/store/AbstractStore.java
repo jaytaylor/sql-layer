@@ -658,9 +658,6 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
             PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKey, table.getName());
             List<Column> pkColumns = table.getPrimaryKeyIncludingInternal().getColumns();
             for(HKeySegment segment : table.hKey().segments()) {
-                
-                //RowDef segmentRowDef = segment.table().rowDef();
-                //hKey.append(segmentRowDef.table().getOrdinal());
                 hKey.append(segment.table().getOrdinal());
                 for(HKeyColumn hKeyColumn : segment.columns()) {
                     Column column = hKeyColumn.column();

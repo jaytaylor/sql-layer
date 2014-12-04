@@ -84,19 +84,9 @@ public class PersistitGroupRow extends AbstractRow
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(PersistitGroupRow.class);
-    //private static final int INITIAL_ROW_SIZE = 500;
-    //private static final int MAX_ROWDATA_SIZE_BYTES = 5000000;
 
     // Object state
 
-    //private SparseArray<RowDataValueSource> valueSources;
-    //private final PersistitAdapter adapter;
-    //private RowData rowData;
-    //private LegacyRowWrapper row;
-    //private HKeyCache<HKey> hKeyCache;
-    //private RowDef lastRowDef;
-    //private RowType lastRowType;
-    
     private final KeyCreator keyCreator;
     private final Row underlying;
     private HKey currentHKey;
