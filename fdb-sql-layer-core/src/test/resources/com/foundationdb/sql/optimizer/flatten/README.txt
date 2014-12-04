@@ -5,6 +5,8 @@ count-column-to-star: count on outside of a column, where subquery is SELECT *
 count-column: count on outside that just references column returned in subquery
 count-count: count of a subquery that is a count
 count-expression: count of a column where the subquery has an expression on that column
+count-in: counting a field, flatten IN clause
+count-in-expression: counting a field, flatten IN clause
 count-join-expression: count(*) on outside, two subqueries, one of which has an expression
 count-star-expression: count(*) with an expression in the subquery
 
