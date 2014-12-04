@@ -55,7 +55,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(RandomSemiJoinTestDT.class);
 
-    private static final boolean hitPostgres = Boolean.parseBoolean(System.getProperty("fdbsql.test.hit-postgres"));
+    private static final boolean hitPostgresql = Boolean.parseBoolean(System.getProperty("fdbsql.test.hit-postgresql"));
     private static final int DDL_COUNT = 10;
     private static final int QUERY_COUNT = 30;
     private static final int TABLE_COUNT = 3;
@@ -81,7 +81,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
 
     @Override
     protected String getConnectionURL() {
-        if (hitPostgres) {
+        if (hitPostgresql) {
             return "jdbc:postgresql:" + SCHEMA_NAME;
         } else {
             return super.getConnectionURL();
@@ -293,7 +293,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
 
     @Before
     public void setup() {
-        if (hitPostgres) {
+        if (hitPostgresql) {
             // It kept whining about tables already existing if I ever stopped the tests mid run,
             // so drop them before every test.
             for (int i = 0; i < TABLE_COUNT; i++) {
@@ -329,7 +329,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
 
     @After
     public void teardown() {
-        if (hitPostgres) {
+        if (hitPostgresql) {
             // our teardown method won't work against postgres because it uses drop schema magic,
             // just drop the tables individually.
             // Also drop them at startup
@@ -484,15 +484,16 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
             if (Objects.equals(o1, o2)) {
                 return 0;
             }
+            // Postgresql puts null first
             if (o1 == null) {
-                if (hitPostgres) {
+                if (hitPostgresql) {
                     return Integer.MAX_VALUE;
                 } else {
                     return Integer.MIN_VALUE;
                 }
             }
             if (o2 == null) {
-                if (hitPostgres) {
+                if (hitPostgresql) {
                     return Integer.MIN_VALUE;
                 } else {
                     return Integer.MAX_VALUE;
