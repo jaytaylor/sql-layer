@@ -1,0 +1,1 @@
+SELECT ((innerselect.iid * 5) + 6) AS "_SQL_COL_1" FROM (SELECT (test.parent.id - 10) AS iid FROM test.parent WHERE (test.parent.id > 3) AND TRUE ORDER BY test.parent.name) AS innerselect(iid) WHERE (((innerselect.iid * 5) MOD 2) = 0) AND ((innerselect.iid < 5) AND TRUE)
