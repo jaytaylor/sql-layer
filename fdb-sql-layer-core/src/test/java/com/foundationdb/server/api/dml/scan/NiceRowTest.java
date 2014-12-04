@@ -30,7 +30,7 @@ import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.rowdata.SchemaFactory;
 
 import org.junit.Test;
-@Deprecated
+
 public final class NiceRowTest {
     @Test
     public void toRowDataBasic() throws Exception

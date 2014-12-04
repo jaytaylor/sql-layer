@@ -144,11 +144,6 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         return createStoreData(session, group);
     }
 
-    @Deprecated
-    public Exchange getExchange(final Session session, final RowDef rowDef) {
-        return createStoreData(session, rowDef.getGroup());
-    }
-
     public Exchange getExchange(final Session session, final Index index) {
         return createStoreData(session, index);
     }
