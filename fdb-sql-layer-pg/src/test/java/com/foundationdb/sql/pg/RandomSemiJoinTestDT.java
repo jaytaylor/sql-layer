@@ -387,21 +387,32 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         boolean query1IsJustATable = query1.startsWith("table");
         List<List<?>> results1 = sql(query1IsJustATable ? "SELECT main FROM " + query1 : query1);
         List<List<?>> results2 = sql(query2);
+        boolean insideIsAllNull = results2.size() > 0;
+        for (List<?> row : results2) {
+            if (row.get(0) != null) {
+                insideIsAllNull = false;
+                break;
+            }
+        }
+        // if everything in the right hand side is null, it doesn't matter what's on the left hand side
+        // nothing will be expected, even for NOT IN
         List<Integer> expected = new ArrayList<>();
-        for (List<?> row : results1) {
-            // null not in t never gets returned
-            if (row.get(0) == null) {
-                continue;
-            }
-            boolean rowIsInResults2 = false;
-            for (List<?> row2 : results2) {
-                if (nullableEquals(row.get(0), row2.get(0))) {
-                    rowIsInResults2 = true;
-                    break;
+        if (!insideIsAllNull) {
+            for (List<?> row : results1) {
+                // null not in t never gets returned
+                if (row.get(0) == null) {
+                    continue;
                 }
-            }
-            if (useIn == rowIsInResults2) {
-                expected.add((Integer) row.get(0));
+                boolean rowIsInResults2 = false;
+                for (List<?> row2 : results2) {
+                    if (nullableEquals(row.get(0), row2.get(0))) {
+                        rowIsInResults2 = true;
+                        break;
+                    }
+                }
+                if (useIn == rowIsInResults2) {
+                    expected.add((Integer) row.get(0));
+                }
             }
         }
         String q1 = query1IsJustATable ? query1 : "(" + query1 + ")";
