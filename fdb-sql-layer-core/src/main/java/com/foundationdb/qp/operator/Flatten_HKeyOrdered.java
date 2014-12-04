@@ -236,8 +236,7 @@ class Flatten_HKeyOrdered extends Operator
         
         List<HKeySegment> childHKeySegments = childType.hKey().segments();
         HKeySegment lastChildHKeySegment = childHKeySegments.get(childHKeySegments.size() - 1);
-        RowDef childRowDef = lastChildHKeySegment.table().rowDef();
-        this.childOrdinal = childRowDef.table().getOrdinal();
+        this.childOrdinal = lastChildHKeySegment.table().getOrdinal();
     }
 
     // Class state

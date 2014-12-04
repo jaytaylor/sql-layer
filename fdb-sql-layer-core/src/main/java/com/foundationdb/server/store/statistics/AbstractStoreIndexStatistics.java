@@ -67,7 +67,7 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
         switch(index.getIndexType()) {
             case TABLE:
             case GROUP:
-                return index.leafMostTable().rowDef().getTableStatus().getApproximateRowCount(session);
+                return index.leafMostTable().tableStatus().getApproximateRowCount(session);
             case FULL_TEXT:
                 throw new UnsupportedOperationException("FullTextIndex row count");
             default:
@@ -135,7 +135,7 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
     
     /** Store statistics into database. */
     public final void storeIndexStatistics(Session session, Index index, IndexStatistics indexStatistics) {
-        int tableId = index.leafMostTable().rowDef().getRowDefId();
+        int tableId = index.leafMostTable().getTableId();
         RowType indexStatisticsRowType = SchemaCache.globalSchema(index.getAIS()).tableRowType(store.getAIS(session).getTable(INDEX_STATISTICS_TABLE_NAME));
         RowType indexStatisticsEntryRowType = SchemaCache.globalSchema(index.getAIS()).tableRowType(store.getAIS(session).getTable(INDEX_STATISTICS_ENTRY_TABLE_NAME));
 

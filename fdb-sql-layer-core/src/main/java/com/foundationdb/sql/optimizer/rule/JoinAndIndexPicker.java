@@ -1370,7 +1370,8 @@ public class JoinAndIndexPicker extends BaseRule
                     ColumnSource columnSource = ((ColumnExpression)expression).getTable();
                     if (columnSource instanceof TableSource) {
                         TableNode table = ((TableSource)columnSource).getTable();
-                        outerColumnCount = table.getTable().rowDef().getFieldCount();
+                        outerColumnCount = table.getTable().getColumnsIncludingInternal().size();
+                        
                         break;
                     }
                 }
@@ -1380,7 +1381,7 @@ public class JoinAndIndexPicker extends BaseRule
                     ColumnSource columnSource = ((ColumnExpression)expression).getTable();
                     if (columnSource instanceof TableSource) {
                         TableNode table = ((TableSource)columnSource).getTable();
-                        innerColumnCount = table.getTable().rowDef().getFieldCount();
+                        innerColumnCount = table.getTable().getColumnsIncludingInternal().size();
                         break;
                     }
                 }

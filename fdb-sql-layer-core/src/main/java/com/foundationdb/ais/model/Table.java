@@ -18,6 +18,7 @@
 package com.foundationdb.ais.model;
 
 import com.foundationdb.qp.rowtype.InternalIndexTypes;
+import com.foundationdb.server.TableStatus;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.util.ArgumentValidation;
 
@@ -169,6 +170,14 @@ public class Table extends Columnar implements HasGroup, Visitable
         indexMap.values().removeAll(indexesToDrop);
     }
 
+    public void tableStatus(TableStatus tableStatus) {
+        this.tableStatus = tableStatus;
+    }
+    
+    public TableStatus tableStatus() {
+        return this.tableStatus;
+    }
+    
     public void rowDef(RowDef rowDef)
     {
         this.rowDef = rowDef;
@@ -747,6 +756,7 @@ public class Table extends Columnar implements HasGroup, Visitable
     private Group group;
     private Integer tableId;
     private RowDef rowDef;
+    private TableStatus tableStatus;
     private Integer ordinal;
     private UUID uuid;
     private PrimaryKey primaryKey;

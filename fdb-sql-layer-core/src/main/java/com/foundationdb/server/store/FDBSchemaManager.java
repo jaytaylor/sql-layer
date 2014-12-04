@@ -822,6 +822,8 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     }
 
     private void buildRowDefs(Session session, AkibanInformationSchema newAIS) {
+        Table table;
+        
         tableStatusCache.detachAIS();
         RowDefBuilder rowDefBuilder = new RowDefBuilder(session, newAIS, tableStatusCache);
         rowDefBuilder.build();

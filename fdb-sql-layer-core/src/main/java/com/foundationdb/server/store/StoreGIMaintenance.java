@@ -36,8 +36,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.FlattenedRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDataValueSource;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
@@ -84,95 +82,6 @@ class StoreGIMaintenance {
             while ((row = cursor.next()) != null) {
                 boolean actioned = false;
                 if (row.rowType().equals(planOperator.rowType())) {
-                    doAction(action, handler, row);
-                    actioned = true;
-                }
-                else if (storePlan.incomingRowIsWithinGI) {
-                    // "Natural" index cleanup. Look for the left half, but only if we need to
-                    Index.JoinType giJoin = groupIndex.getJoinType();
-                    switch (giJoin) {
-                    case LEFT:
-                        if (row.rowType().equals(storePlan.leftHalf) && useInvertType(action, context, bindings) &&
-                                !skipCascadeRow(action, row, handler)) {
-                            Row outerRow = new FlattenedRow(storePlan.topLevelFlattenType, row, null, row.hKey());
-                            doAction(invert(action), handler, outerRow);
-                            actioned = true;
-                        }
-                        break;
-                    case RIGHT:
-                        if (row.rowType().equals(storePlan.rightHalf) && useInvertType(action, context, bindings) &&
-                                !skipCascadeRow(action, row, handler)) {
-                            Row outerRow = new FlattenedRow(storePlan.topLevelFlattenType, null, row, row.hKey());
-                            doAction(invert(action), handler, outerRow);
-                            actioned = true;
-                        }
-                        break;
-                    default: throw new AssertionError(giJoin.name());
-                    }
-                }
-                else {
-                    // Hkey cleanup. Look for the right half.
-                    if (row.rowType().equals(storePlan.rightHalf) && !skipCascadeRow(action, row, handler)) {
-                        Row outerRow = new FlattenedRow(storePlan.topLevelFlattenType, null, row, row.hKey());
-                        doAction(invert(action), handler, outerRow);
-                        actioned = true;
-                    }
-                }
-                if (!actioned) {
-                    extraTap(action).hit();
-                }
-            }
-        } finally {
-            if (cursor != null) {
-                cursor.closeTopLevel();
-            }
-            if (runTapEntered) {
-                RUN_TAP.out();
-            }
-            ALL_TAP.out();
-        }
-        
-    }
-    
-    
-    
-    public void run(StoreGIHandler.Action action,
-                    HKey hKey,
-                    RowData forRow,
-                    StoreAdapter adapter,
-                    StoreGIHandler handler)
-    {
-        if (storePlan.noMaintenanceRequired())
-            return;
-        Cursor cursor = null;
-        boolean runTapEntered = false;
-        ALL_TAP.in();
-        try {
-            Operator planOperator = rootOperator();
-            if (planOperator == null)
-                return;
-            QueryContext context = new SimpleQueryContext(adapter);
-            QueryBindings bindings = context.createBindings();
-            List<Column> lookupCols = rowType.table().getPrimaryKeyIncludingInternal().getColumns();
-
-            bindings.setHKey(StoreGIMaintenance.HKEY_BINDING_POSITION, hKey);
-
-            // Copy the values into the array bindings
-            RowDataValueSource pSource = new RowDataValueSource();
-            for (int i=0; i < lookupCols.size(); ++i) {
-                int bindingsIndex = i+1;
-                Column col = lookupCols.get(i);
-                pSource.bind(col.getFieldDef(), forRow);
-                bindings.setValue(bindingsIndex, pSource);
-            }
-            cursor = API.cursor(planOperator, context, bindings);
-            RUN_TAP.in();
-            runTapEntered = true;
-            cursor.openTopLevel();
-            Row row;
-            while ((row = cursor.next()) != null) {
-                boolean actioned = false;
-                if (row.rowType() == planOperator.rowType()) {
                     doAction(action, handler, row);
                     actioned = true;
                 }

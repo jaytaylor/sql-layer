@@ -786,7 +786,7 @@ public class ApiTestBase {
             @Override
             public void run() {
                 Table table = getTable(tableId);
-                assertEquals("rows by TableStatistics", rowsExpected, table.rowDef().getTableStatus().getRowCount(session()));
+                assertEquals("rows by TableStatistics", rowsExpected, table.tableStatus().getRowCount(session()));
             }
         };
         if(txnService().isTransactionActive(session())) {
@@ -1269,14 +1269,6 @@ public class ApiTestBase {
 
     protected final RowType getRowType (int tableId) {
         return SchemaCache.globalSchema(getTable(tableId).getAIS()).tableRowType(tableId);
-    }
-    
-    protected final RowDef getRowDef(String schema, String table) {
-        return getTable(schema, table).rowDef();
-    }
-
-    protected final RowDef getRowDef(TableName tableName) {
-        return getTable(tableName).rowDef();
     }
 
     protected final Table getTable(int tableId) {

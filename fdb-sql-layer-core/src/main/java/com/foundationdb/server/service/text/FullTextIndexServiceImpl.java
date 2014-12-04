@@ -580,7 +580,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl
     }
 
     private long changesRowCount(Session session) {
-        return store.getAIS(session).getTable(CHANGES_TABLE).rowDef().getTableStatus().getRowCount(session);
+        return store.getAIS(session).getTable(CHANGES_TABLE).tableStatus().getRowCount(session);
     }
 
     private void registerSystemTables() {

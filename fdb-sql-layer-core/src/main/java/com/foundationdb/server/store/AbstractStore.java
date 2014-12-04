@@ -511,7 +511,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                 // Table indexes
                 truncateIndexes(session, table.getIndexesIncludingInternal());
                 // Table statuses
-                table.rowDef().getTableStatus().truncate(session);
+                table.tableStatus().truncate(session);
             }
         });
         // Group indexes
@@ -523,7 +523,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     @Override
     public void truncateTableStatus(final Session session, final int rowDefId) {
         Table table = getAIS(session).getTable(rowDefId);
-        table.rowDef().getTableStatus().truncate(session);
+        table.tableStatus().truncate(session);
     }
 
     @Override
@@ -641,7 +641,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
             bumpCount |= index.isPrimaryKey();
         }
         if(bumpCount) {
-            row.rowType().table().rowDef().getTableStatus().rowsWritten(session, 1);
+            row.rowType().table().tableStatus().rowsWritten(session, 1);
         }
 
         for(RowListener listener : listenerService.getRowListeners()) {
@@ -717,7 +717,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
 
         // Remove the group row
         clear(session, storeData);
-        rowTable.rowDef().getTableStatus().rowDeleted(session);
+        rowTable.tableStatus().rowDeleted(session);
 
 
         // Maintain hKeys of any existing descendants (i.e. create orphans)
@@ -826,8 +826,8 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                         }
                         // Don't call deleteRow as the hKey does not need recomputed.
                         clear(session, storeData);
-                        table.rowDef().getTableStatus().rowDeleted(session);
-                        for(final TableIndex index : table.rowDef().getIndexes()) {
+                        table.tableStatus().rowDeleted(session);
+                        for(final TableIndex index : table.getIndexesIncludingInternal()) {
                             if (index.isSpatial()) {
                                 final SpatialColumnHandler spatialColumnHandler = new SpatialColumnHandler(index);
                                 spatialColumnHandler.processSpatialObject(

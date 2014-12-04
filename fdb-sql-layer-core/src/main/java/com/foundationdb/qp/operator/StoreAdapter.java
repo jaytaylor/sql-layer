@@ -81,7 +81,7 @@ public abstract class StoreAdapter
 
     public long rowCount(Session session, RowType tableType) {
         assert tableType.hasTable() : tableType;
-        return tableType.table().rowDef().getTableStatus().getRowCount(session);
+        return tableType.table().tableStatus().getRowCount(session);
     }
 
     public Sequence getSequence(TableName sequenceName) {

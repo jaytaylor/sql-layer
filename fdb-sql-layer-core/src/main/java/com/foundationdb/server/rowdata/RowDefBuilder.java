@@ -86,6 +86,7 @@ public class RowDefBuilder
         } else {
             status = tableStatusCache.getOrCreateMemoryTableStatus(table.getTableId(), factory);
         }
+        table.tableStatus(status);
         return new RowDef(table, status); // Hooks up table's rowDef too
     }
 
