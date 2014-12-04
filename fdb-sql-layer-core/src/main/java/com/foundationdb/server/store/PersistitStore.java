@@ -169,7 +169,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     {
         indexRow.resetForWrite(index, exchange.getKey(), exchange.getValue());
         indexRow.initialize(row, hKey, spatialColumnHander, zValue);
-        indexRow.close(session, this, forInsert);
+        indexRow.close(session, forInsert);
     }
     
     public RowDataValueCoder getRowDataValueCoder() {

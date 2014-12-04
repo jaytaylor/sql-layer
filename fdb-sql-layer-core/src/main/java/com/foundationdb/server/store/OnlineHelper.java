@@ -426,7 +426,7 @@ public class OnlineHelper implements RowListener
                                    StoreAdapter adapter,
                                    final TransformCache transformCache,
                                    Multimap<Group,RowType> tableIndexes) {
-        final WriteIndexRow buffer = new WriteIndexRow(adapter.getKeyCreator());
+        final WriteIndexRow buffer = new WriteIndexRow();
         for(Entry<Group, Collection<RowType>> entry : tableIndexes.asMap().entrySet()) {
             if(entry.getValue().isEmpty()) {
                 continue;
@@ -505,7 +505,7 @@ public class OnlineHelper implements RowListener
         switch(transform.changeLevel) {
             case INDEX:
                 if(!transform.tableIndexes.isEmpty()) {
-                    final WriteIndexRow buffer = new WriteIndexRow (store);
+                    final WriteIndexRow buffer = new WriteIndexRow ();
                     for(final TableIndex index : transform.tableIndexes) {
                         long oldZValue = -1;
                         long newZValue = -1;

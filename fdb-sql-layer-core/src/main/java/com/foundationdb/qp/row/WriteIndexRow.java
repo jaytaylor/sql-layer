@@ -28,12 +28,9 @@ import com.foundationdb.qp.storeadapter.indexcursor.ValueSortKeyAdapter;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.qp.util.PersistitKey;
 import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.service.tree.KeyCreator;
-import com.foundationdb.server.store.Store;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.value.ValueSource;
-import com.foundationdb.util.ArgumentValidation;
 import com.persistit.Key;
 import com.persistit.Value;
 
@@ -73,7 +70,7 @@ public class WriteIndexRow extends AbstractRow {
         
     }
 
-    public void close(Session session, Store store, boolean forInsert) {
+    public void close(Session session, boolean forInsert) {
         //If we've written too many fields to the key (iKey), make sure to put the extra fields
         // into the value (iValue) for writing. 
         if (pValueTarget != null) {
@@ -133,8 +130,7 @@ public class WriteIndexRow extends AbstractRow {
         pKeyTarget.append(source, type);
     }
 
-    public WriteIndexRow (KeyCreator keyCreator) {
-        ArgumentValidation.notNull("keyCreator", keyCreator);
+    public WriteIndexRow () {
     }
     
     private Index index;

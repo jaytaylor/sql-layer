@@ -619,7 +619,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         store(session, storeData);
         
         boolean bumpCount = false;
-        final WriteIndexRow indexRow = new WriteIndexRow(this);
+        final WriteIndexRow indexRow = new WriteIndexRow();
         for(final TableIndex index : indexes) {
             if (index.isSpatial()) {
                 final SpatialColumnHandler spatialColumnHandler = new SpatialColumnHandler(index);
@@ -693,7 +693,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         }
 
         // Remove all indexes (before the group row is gone in-case listener needs it)
-        final WriteIndexRow indexRow = new WriteIndexRow(this);
+        final WriteIndexRow indexRow = new WriteIndexRow();
         for(final TableIndex index : rowTable.getIndexesIncludingInternal()) {
             if (index.isSpatial()) {
                 final SpatialColumnHandler spatialColumnHandler = new SpatialColumnHandler(index);
@@ -760,7 +760,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                 listener.onUpdatePost(session, oldRow.rowType().table(), hKey, oldRow, newRow);
             }
 
-            WriteIndexRow indexRowBuffer = new WriteIndexRow(this);
+            WriteIndexRow indexRowBuffer = new WriteIndexRow();
             for(TableIndex index : oldRow.rowType().table().getIndexesIncludingInternal()) {
                 updateIndex(session, index, oldRow, newRow, hKey, indexRowBuffer);
             }

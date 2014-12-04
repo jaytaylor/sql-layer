@@ -69,7 +69,7 @@ class StoreGIHandler<SType extends AbstractStore,SDType,SSDType extends StoreSto
     private StoreGIHandler(AbstractStore<SType,SDType,SSDType> store, Session session, Schema schema, Table sourceTable, Table lockLeaf) {
         this.store = store;
         this.session = session;
-        this.indexRow = new WriteIndexRow(store);
+        this.indexRow = new WriteIndexRow();
         this.sourceTable = sourceTable;
         if(lockLeaf == null) {
             this.lockTypes = null;
@@ -128,7 +128,7 @@ class StoreGIHandler<SType extends AbstractStore,SDType,SSDType extends StoreSto
             }
             // Non-null values only required for UNIQUE indexes, which GIs cannot be
             assert !groupIndex.isUnique() : "Unexpected unique index: " + groupIndex;
-            indexRow.close(null, null, false);
+            indexRow.close(null, false);
             indexRow.tableBitmap(tableBitmap(groupIndex, row));
             switch (action) {
                 case CASCADE_STORE:

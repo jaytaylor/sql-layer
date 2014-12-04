@@ -720,7 +720,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         indexKey.clear();
         indexRow.resetForWrite(index, indexKey);
         indexRow.initialize(row, hKey, spatialColumnHandler, zValue);
-        indexRow.close(session, this, forInsert);
+        indexRow.close(session, forInsert);
     }
     
     private void checkUniqueness(Session session, TransactionState txn, Index index, Row row, Key key) {
