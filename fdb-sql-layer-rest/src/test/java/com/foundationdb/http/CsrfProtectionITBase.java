@@ -27,6 +27,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpOptions;
+import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -108,6 +109,7 @@ public abstract class CsrfProtectionITBase extends RestServiceITBase
         assertEquals("status", HttpStatus.SC_FORBIDDEN, response.getStatusLine().getStatusCode());
         assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("Referer"));
     }
+
     @Test
     public void putBlockedWithBlankReferer() throws Exception{
         HttpUriRequest request = new HttpPut(defaultURI());
@@ -116,6 +118,57 @@ public abstract class CsrfProtectionITBase extends RestServiceITBase
         response = client.execute(request);
         assertEquals("status", HttpStatus.SC_FORBIDDEN, response.getStatusLine().getStatusCode());
         assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("Referer"));
+    }
+
+    @Test
+    public void getBlockedHasJsonResponse() throws Exception{
+        HttpUriRequest request = new HttpGet(defaultURI());
+        request.setHeader("Referer", "https://coolest.site.edu.fake.com:4320");
+
+        response = client.execute(request);
+        assertEquals("status", HttpStatus.SC_FORBIDDEN, response.getStatusLine().getStatusCode());
+        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("Referer"));
+        assertThat("body", EntityUtils.toString(response.getEntity()), containsString("Referer"));
+    }
+
+    @Test
+    public void putBlockedHasJsonResponse() throws Exception{
+        HttpUriRequest request = new HttpPut(defaultURI());
+
+        response = client.execute(request);
+        assertEquals("status", HttpStatus.SC_FORBIDDEN, response.getStatusLine().getStatusCode());
+        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("Referer"));
+        assertThat("body", EntityUtils.toString(response.getEntity()), containsString("Referer"));
+    }
+
+    @Test
+    public void patchBlockedHasJsonResponse() throws Exception{
+        HttpUriRequest request = new HttpPatch(defaultURI());
+
+        response = client.execute(request);
+        assertEquals("status", HttpStatus.SC_FORBIDDEN, response.getStatusLine().getStatusCode());
+        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("Referer"));
+        assertThat("body", EntityUtils.toString(response.getEntity()), containsString("Referer"));
+    }
+
+    @Test
+    public void postBlockedHasJsonResponse() throws Exception{
+        HttpUriRequest request = new HttpPost(defaultURI());
+
+        response = client.execute(request);
+        assertEquals("status", HttpStatus.SC_FORBIDDEN, response.getStatusLine().getStatusCode());
+        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("Referer"));
+        assertThat("body", EntityUtils.toString(response.getEntity()), containsString("Referer"));
+    }
+
+    @Test
+    public void deleteBlockedHasJsonResponse() throws Exception{
+        HttpUriRequest request = new HttpDelete(defaultURI());
+
+        response = client.execute(request);
+        assertEquals("status", HttpStatus.SC_FORBIDDEN, response.getStatusLine().getStatusCode());
+        assertThat("reason", response.getStatusLine().getReasonPhrase(), containsString("Referer"));
+        assertThat("body", EntityUtils.toString(response.getEntity()), containsString("Referer"));
     }
 
     @Test

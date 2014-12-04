@@ -172,7 +172,9 @@ public class RulesTest extends OptimizerTestBase
         AST ast = new AST((DMLStatementNode)stmt, parser.getParameterList());
         PlanContext plan = new PlanContext(rules, ast);
         rules.applyRules(plan);
-        PlanNode.SummaryConfiguration configuration = new PlanNode.SummaryConfiguration(Boolean.parseBoolean(properties.getProperty("showRowTypes", "false")));
+        PlanNode.SummaryConfiguration configuration = new PlanNode.SummaryConfiguration(
+                Boolean.parseBoolean(properties.getProperty("showRowTypes", "false")),
+                Boolean.parseBoolean(properties.getProperty("includeIndexTableNames", "false")));
         String result = plan.planString(configuration);
         if (Boolean.parseBoolean(properties.getProperty("showParameterTypes", "false")))
             result = ast.formatParameterTypes() + result;

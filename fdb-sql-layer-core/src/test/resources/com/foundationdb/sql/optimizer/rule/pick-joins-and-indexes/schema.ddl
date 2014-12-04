@@ -64,6 +64,8 @@ CREATE INDEX state_and_name ON customers(addresses.state, customers.name) USING 
 
 CREATE INDEX cust_ft ON customers(FULL_TEXT(name, items.sku, addresses.state));
 
+CREATE TABLE primary1(c1 INT PRIMARY KEY, c2 INT, c3 INT);
+
 -- NO Indexes or groups or anything
 CREATE TABLE t1(c1 INT, c2 INT, c3 INT);
 CREATE TABLE t2(c1 INT, c2 INT, c3 INT);
