@@ -152,4 +152,35 @@
 ---
 - CreateTable: keywordsWithShortcuts(c char(5) COLLATE "zh_badkeyword=stroke_Hant_TW")
 - error: [2H001]
-...
+
+# Sort, distinct, aggregation with and without index
+---
+- CreateTable: t10(id INT PRIMARY KEY, s VARCHAR(32) COLLATE en_us_ci)
+---
+- Statement: INSERT INTO t10 VALUES (1, 'a'), (2, 'A'), (3, 'b'), (4, 'B'), (5, null)
+---
+- Statement: SELECT s FROM t10 ORDER BY s
+- output_already_ordered: [[null], ['a'], ['A'], ['b'], ['B']]
+---
+- Statement: SELECT s FROM t10 ORDER BY s LIMIT 10
+- output_already_ordered: [[null], ['a'], ['A'], ['b'], ['B']]
+---
+- Statement: SELECT DISTINCT s FROM t10
+- output: [[null], ['a'], ['b']]
+---
+- Statement: SELECT s,COUNT(*) FROM t10 GROUP BY s
+- output: [[null, 1], ['a',2], ['b',2]]
+---
+- Statement: CREATE INDEX s ON t10(s)
+---
+- Statement: SELECT s FROM t10 ORDER BY s
+- output_already_ordered: [[null], ['a'], ['A'], ['b'], ['B']]
+---
+- Statement: SELECT s FROM t10 ORDER BY s LIMIT 10
+- output_already_ordered: [[null], ['a'], ['A'], ['b'], ['B']]
+---
+- Statement: SELECT DISTINCT s FROM t10
+- output: [[null], ['a'], ['b']]
+---
+- Statement: SELECT s,COUNT(*) FROM t10 GROUP BY s
+- output: [[null, 1], ['a',2], ['b',2]]
