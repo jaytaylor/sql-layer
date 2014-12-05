@@ -36,7 +36,6 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.RowCursor;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHKey;
@@ -45,7 +44,6 @@ import com.foundationdb.qp.rowtype.HKeyRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.AkibanInternalException;
-import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
@@ -78,7 +76,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements FullTextIndexService, Service, TableListener, RowListener
+public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl 
+        implements FullTextIndexService, Service, TableListener, RowListener
 {
     private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceImpl.class);
 
@@ -219,7 +218,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         final FullTextIndexInfo indexInfo = getIndex(session, index.getIndexName(), index.getIndexedTable().getAIS());
         boolean success = false;
         try {
-            StoreAdapter adapter = store.createAdapter(session, indexInfo.getSchema());
+            StoreAdapter adapter = store.createAdapter(session);
             QueryContext queryContext = new SimpleQueryContext(adapter);
             Cursor cursor = null;
             Indexer indexer = indexInfo.getIndexer();
@@ -260,7 +259,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     }
 
     private void updateIndex(Session session, FullTextIndexInfo indexInfo, Iterable<byte[]> rows) throws IOException {
-        StoreAdapter adapter = store.createAdapter(session, indexInfo.getSchema());
+        StoreAdapter adapter = store.createAdapter(session);
         QueryContext queryContext = new SimpleQueryContext(adapter);
         QueryBindings queryBindings = queryContext.createBindings();
 
@@ -341,18 +340,9 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     public void onInsertPost(Session session, Table table, Key hKey, Row row) {
         trackChange(session, table, hKey);
     }
-    
-    @Override
-    public void onInsertPost(Session session, Table table, Key hKey, RowData row) {
-        trackChange(session, table, hKey);
-    }
 
     @Override 
     public void onUpdatePre(Session session, Table table, Key hKey, Row oldRow, Row newRow) {
-        // None
-    }
-    @Override
-    public void onUpdatePre(Session session, Table table, Key hKey, RowData oldRow, RowData newRow) {
         // None
     }
 
@@ -361,22 +351,12 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         trackChange(session, table, hKey);
     }
     
-    @Override
-    public void onUpdatePost(Session session, Table table, Key hKey, RowData oldRow, RowData newRow) {
-        trackChange(session, table, hKey);
-    }
 
     @Override
     public void onDeletePre(Session session, Table table, Key hKey, Row row) {
         trackChange(session, table, hKey);
     }
     
-    @Override
-    public void onDeletePre(Session session, Table table, Key hKey, RowData row) {
-        trackChange(session, table, hKey);
-    }
-
-
     // ---------- mostly for testing ---------------
 
     public void disableUpdateWorker() {
@@ -478,7 +458,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             AkibanInformationSchema ais = getAIS(session);
             Table changesTable = ais.getTable(CHANGES_TABLE);
             Operator plan = API.groupScan_Default(changesTable.getGroup());
-            StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(ais));
+            StoreAdapter adapter = store.createAdapter(session);
             QueryContext context = new SimpleQueryContext(adapter);
             this.cursor = API.cursor(plan, context, context.createBindings());
             cursor.open();
@@ -600,7 +580,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     }
 
     private long changesRowCount(Session session) {
-        return store.getAIS(session).getTable(CHANGES_TABLE).rowDef().getTableStatus().getRowCount(session);
+        return store.getAIS(session).getTable(CHANGES_TABLE).tableStatus().getRowCount(session);
     }
 
     private void registerSystemTables() {

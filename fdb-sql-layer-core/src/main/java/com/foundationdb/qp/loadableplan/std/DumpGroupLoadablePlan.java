@@ -96,8 +96,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             else
                 schemaName = value.getString();
             tableName = bindings.getValue(1).getString();
-            rootTable = context.getStore().schema().ais()
-                .getTable(schemaName, tableName);
+            rootTable = context.getAIS().getTable(schemaName, tableName);
             if (rootTable == null)
                 throw new NoSuchTableException(schemaName, tableName);
             int commitFrequency;

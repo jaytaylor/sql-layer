@@ -71,8 +71,6 @@ public class BranchLookup_NestedIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = SchemaCache.globalSchema(ais());
-        assert schema != null : "no schema in ais";
         rRowType = schema.tableRowType(table(r));
         aRowType = schema.tableRowType(table(a));
         bRowType = schema.tableRowType(table(b));
@@ -97,7 +95,6 @@ public class BranchLookup_NestedIT extends OperatorITBase
                           row(c, 27L, 2L, "c27"),
                           row(c, 28L, 2L, "c28"),
         };
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         use(db);

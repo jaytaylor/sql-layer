@@ -20,7 +20,6 @@ package com.foundationdb.sql.server;
 import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.StoreAdapterHolder;
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.ImplicitlyCommittedException;
 import com.foundationdb.server.error.InvalidOperationException;
@@ -209,13 +208,8 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
      }
 
     @Override
-    public StoreAdapterHolder getStoreHolder(Schema schema) {
-        if(adapters.getSchema() == schema) {
-            return adapters;
-        }
-        StoreAdapterHolder holder = new StoreAdapterHolder();
-        holder.init(session, reqs.config(), reqs.store(), schema);
-        return holder;
+    public StoreAdapterHolder getStoreHolder() {
+        return adapters;
     }
 
     @Override
@@ -349,7 +343,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     protected void initAdapters(ServerOperatorCompiler compiler) {
-        adapters.init(session, reqs.config(), reqs.store(), compiler.getSchema());
+        adapters.init(session, reqs.config(), reqs.store());
     }
 
     /** Prepare to execute given statement.

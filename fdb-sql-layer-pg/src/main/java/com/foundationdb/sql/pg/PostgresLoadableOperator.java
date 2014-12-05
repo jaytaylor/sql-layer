@@ -59,7 +59,6 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
         boolean success = false;
         stack.push(context, invocation);
         try {
-            context.initStore(getSchema());
             int result = super.execute(context, bindings, maxrows);
             success = true;
             return result;

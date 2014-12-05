@@ -78,7 +78,7 @@ public class MemoryAdapterIT extends ServerSessionITBase {
         
         TestSession sqlSession = new TestSession();
 
-        StoreAdapter adapter = sqlSession.getStoreHolder(SchemaCache.globalSchema(ais())).getAdapter(newtable);
+        StoreAdapter adapter = sqlSession.getStoreHolder().getAdapter(newtable);
         assertNotNull (adapter);
         assertTrue (adapter instanceof MemoryAdapter);
     }

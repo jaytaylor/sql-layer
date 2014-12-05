@@ -37,7 +37,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.JoinColumn;
@@ -87,6 +86,7 @@ public class RowDefBuilder
         } else {
             status = tableStatusCache.getOrCreateMemoryTableStatus(table.getTableId(), factory);
         }
+        table.tableStatus(status);
         return new RowDef(table, status); // Hooks up table's rowDef too
     }
 

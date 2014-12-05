@@ -60,14 +60,12 @@ public class GroupSkipScanIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         pRowType = schema.tableRowType(table(p));
         pNIndexRowType = indexType(p, "pn");
         c1RowType = schema.tableRowType(table(c1));
         c1NIndexRowType = indexType(c1, "cn");
         c2RowType = schema.tableRowType(table(c2));
         c2NIndexRowType = indexType(c2, "cn");
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         db = new Row[] {

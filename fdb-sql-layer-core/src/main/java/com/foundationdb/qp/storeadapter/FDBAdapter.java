@@ -17,9 +17,9 @@
 
 package com.foundationdb.qp.storeadapter;
 
+import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
-import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.qp.expression.IndexKeyRange;
@@ -37,7 +37,6 @@ import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.FDBAdapterException;
@@ -47,8 +46,6 @@ import com.foundationdb.server.error.FDBNotCommittedException;
 import com.foundationdb.server.error.FDBPastVersionException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.QueryCanceledException;
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.KeyCreator;
@@ -66,8 +63,8 @@ public class FDBAdapter extends StoreAdapter {
     private final FDBStore store;
     private final FDBTransactionService txnService;
 
-    public FDBAdapter(FDBStore store, Schema schema, Session session, FDBTransactionService txnService, ConfigurationService config) {
-        super(schema, session, config);
+    public FDBAdapter(FDBStore store, Session session, FDBTransactionService txnService, ConfigurationService config) {
+        super(session, config);
         this.store = store;
         this.txnService = txnService;
     }
@@ -84,19 +81,19 @@ public class FDBAdapter extends StoreAdapter {
 
     @Override
     public RowCursor newIndexCursor(QueryContext context,
-                                    Index index,
-                                    IndexKeyRange keyRange,
+                                    IndexRowType rowType,
+                                    IndexKeyRange keyRange, 
                                     API.Ordering ordering,
                                     IndexScanSelector scanSelector,
                                     boolean openAllSubCursors) {
         return new PersistitIndexCursor(context,
-                                        schema.indexRowType(index),
-                                        keyRange,
-                                        ordering,
-                                        scanSelector,
-                                        openAllSubCursors);
+                rowType,
+                keyRange,
+                ordering,
+                scanSelector,
+                openAllSubCursors);
     }
-
+    
     @Override
     public void updateRow(Row oldRow, Row newRow) {
         try {
@@ -174,6 +171,11 @@ public class FDBAdapter extends StoreAdapter {
     @Override
     public KeyCreator getKeyCreator() {
         return store;
+    }
+    
+    @Override
+    public AkibanInformationSchema getAIS() {
+        return store.getAIS(getSession());
     }
 
     @Override

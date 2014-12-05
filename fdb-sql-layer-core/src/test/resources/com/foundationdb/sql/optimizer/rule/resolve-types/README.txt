@@ -1,3 +1,5 @@
+decimal-cast: cast decimal to decimal (smaller)
+
 union-1 : simple union with cast
 
 union-2 : function results to cast
@@ -35,3 +37,7 @@ params-3: parameter with explicit CAST
 params-4: parameter cast to varchar (larger)
 
 params-5: parameter cast to varchar (smaller) -> Shows problem with TLike.buildInputSets overlapping the input sets 
+
+params-6: parameter cast to varbinary (large)
+
+params-7: parameter cast to varbinary (larger)

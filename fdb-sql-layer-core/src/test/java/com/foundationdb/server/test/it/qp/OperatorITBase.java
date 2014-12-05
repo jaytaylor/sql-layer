@@ -69,6 +69,9 @@ public class OperatorITBase extends ITBase
         if(doAutoTransaction()) {
             txnService().beginTransaction(session());
         }
+        schema = SchemaCache.globalSchema(ais());
+        assert schema != null : "no schema in ais";
+        adapter = newStoreAdapter();
         setupPostCreateSchema();
     }
 
@@ -113,8 +116,6 @@ public class OperatorITBase extends ITBase
     }
 
     protected void setupPostCreateSchema() {
-        schema = SchemaCache.globalSchema(ais());
-        assert schema != null : "no schema in ais";
         customerRowType = schema.tableRowType(table(customer));
         orderRowType = schema.tableRowType(table(order));
         itemRowType = schema.tableRowType(table(item));
@@ -149,7 +150,6 @@ public class OperatorITBase extends ITBase
                         row(item, 212L, 21L),
                         row(item, 221L, 22L),
                         row(item, 222L, 22L)};
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }
@@ -212,12 +212,12 @@ public class OperatorITBase extends ITBase
 
     protected Group group(int tableId)
     {
-        return getRowDef(tableId).table().getGroup();
+        return ais().getTable(tableId).getGroup();
     }
 
     protected Table table(int tableId)
     {
-        return getRowDef(tableId).table();
+        return ais().getTable(tableId);
     }
 
     protected IndexRowType indexType(int tableId, String... columnNamesArray)

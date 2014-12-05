@@ -66,13 +66,11 @@ public class GroupIndexRowIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new com.foundationdb.qp.rowtype.Schema(ais());
         userRowType = schema.tableRowType(table(user));
         memberInfoRowType = schema.tableRowType(table(memberInfo));
         entitlementUserGroupRowType = schema.tableRowType(table(entitlementUserGroup));
         groupIndexRowType = groupIndexType(Index.JoinType.LEFT, "entitlement_user_group.uid", "member_info.lastLogin");
         group = group(user);
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         db = new Row[] {

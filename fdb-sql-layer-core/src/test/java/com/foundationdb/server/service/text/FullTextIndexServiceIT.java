@@ -74,7 +74,7 @@ public class FullTextIndexServiceIT extends FullTextIndexServiceITBase
         writeRow(a, 302, 3, "ME");
 
         schema = SchemaCache.globalSchema(ais());
-        adapter = newStoreAdapter(schema);
+        adapter = newStoreAdapter();
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }

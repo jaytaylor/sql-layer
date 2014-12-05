@@ -19,9 +19,6 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.server.PersistitKeyValueTarget;
-import com.foundationdb.server.rowdata.FieldDef;
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDataValueSource;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
 import com.persistit.Key;
@@ -34,10 +31,6 @@ public abstract class PersistitKeyAppender {
 
     public final void append(long value) {
         key.append(value);
-    }
-
-    public final void append(Object object, FieldDef fieldDef) {
-        append(object, fieldDef.column());
     }
 
     public final void appendNull() {
@@ -57,8 +50,6 @@ public abstract class PersistitKeyAppender {
 
     public abstract void append(ValueSource source, Column column);
 
-    public abstract void append(FieldDef fieldDef, RowData rowData);
-
     public static PersistitKeyAppender create(Key key, Object descForError) {
         return new New(key, descForError);
     }
@@ -75,7 +66,6 @@ public abstract class PersistitKeyAppender {
     {
         public New(Key key, Object descForError) {
             super(key);
-            fromRowDataSource = new RowDataValueSource();
             target = new PersistitKeyValueTarget(descForError);
             target.attach(this.key);
         }
@@ -88,13 +78,6 @@ public abstract class PersistitKeyAppender {
             column.getType().writeCollating(source, target);
         }
 
-        public void append(FieldDef fieldDef, RowData rowData) {
-            fromRowDataSource.bind(fieldDef, rowData);
-            Column column = fieldDef.column();
-            column.getType().writeCollating(fromRowDataSource, target);
-        }
-
-        private final RowDataValueSource fromRowDataSource;
         private final PersistitKeyValueTarget target;
     }
 }

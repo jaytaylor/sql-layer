@@ -78,7 +78,7 @@ class BasicDMLFunctions implements DMLFunctions {
         while(!tableList.isEmpty()) {
             Table aTable = tableList.remove(tableList.size() - 1);
             if(aTable != table) {
-                if(aTable.rowDef().getTableStatus().getRowCount(session) > 0) {
+                if(aTable.tableStatus().getRowCount(session) > 0) {
                     return false;
                 }
             }
@@ -141,7 +141,7 @@ class BasicDMLFunctions implements DMLFunctions {
                 false
             );
 
-        StoreAdapter adapter = store.createAdapter(session, schema);
+        StoreAdapter adapter = store.createAdapter(session);
         QueryContext context = new SimpleQueryContext(adapter);
         com.foundationdb.qp.operator.Cursor cursor = API.cursor(plan, context, context.createBindings());
         cursor.openTopLevel();

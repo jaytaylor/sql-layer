@@ -95,7 +95,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         createTables();
         bist = new BasicInfoSchemaTablesServiceImpl(schemaManager, null, null);
         bist.attachFactories(ais);
-        adapter = new MemoryAdapter(new Schema(ais), null, null);
+        adapter = new MemoryAdapter(null, null);
     }
 
     private static void simpleTable(TestAISBuilder builder, String group, String schema, String table, String parentName, boolean withPk) {

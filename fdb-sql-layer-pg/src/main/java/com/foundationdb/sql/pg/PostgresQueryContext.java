@@ -31,7 +31,6 @@ public class PostgresQueryContext extends ServerQueryContext<PostgresServerSessi
 
     public PostgresQueryContext(PostgresServerSession server, Schema schema) {
         super(server);
-        initStore(schema);
     }
 
     public boolean isColumnBinary(int i) {

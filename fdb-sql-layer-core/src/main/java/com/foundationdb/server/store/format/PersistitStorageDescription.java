@@ -17,27 +17,35 @@
 
 package com.foundationdb.server.store.format;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.StorageDescription;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.validation.AISValidationFailure;
 import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.PersistitProtobuf;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesHolderRow;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.storeadapter.RowDataCreator;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
 import com.foundationdb.server.error.RowDataCorruptionException;
 import com.foundationdb.server.rowdata.CorruptRowDataException;
+import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.server.rowdata.RowDataExtractor;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.TreeLink;
 import com.foundationdb.server.store.PersistitStore;
 import com.foundationdb.server.store.StoreStorageDescription;
+import com.foundationdb.server.types.value.Value;
+import com.foundationdb.server.types.value.ValueTargets;
 import com.persistit.Exchange;
 import com.persistit.Tree;
 
@@ -121,18 +129,13 @@ public class PersistitStorageDescription extends StoreStorageDescription<Persist
         }
     }
 
-    @Override
-    public void packRowData(PersistitStore store, Session session,
-                            Exchange exchange, RowData rowData) {
-        exchange.getValue().directPut(store.getRowDataValueCoder(), rowData, null);
-    }
-
     @Override 
     public void packRow(PersistitStore store, Session session,
                         Exchange exchange, Row row) {
+        
         RowDef rowDef = row.rowType().table().rowDef();
         RowDataCreator creator = new RowDataCreator();
-        NewRow niceRow = new NiceRow(rowDef.getRowDefId(), rowDef);
+        NiceRow niceRow = new NiceRow(rowDef.getRowDefId(), rowDef);
         int fields = rowDef.getFieldCount();
         for(int i = 0; i < fields; ++i) {
             creator.put(row.value(i), niceRow, i);
@@ -142,8 +145,10 @@ public class PersistitStorageDescription extends StoreStorageDescription<Persist
     }
     
     @Override
-    public void expandRowData(PersistitStore store, Session session,
-                              Exchange exchange, RowData rowData) {
+    public Row expandRow (PersistitStore store, Session session,
+                            Exchange exchange, Schema schema) {
+
+        RowData rowData = new RowData();
         try {
             exchange.getValue().directGet(store.getRowDataValueCoder(), rowData, RowData.class, null);
         }
@@ -151,20 +156,23 @@ public class PersistitStorageDescription extends StoreStorageDescription<Persist
             LOG.error("Corrupt RowData at key {}: {}", exchange.getKey(), ex.getMessage());
             throw new RowDataCorruptionException(exchange.getKey());
         }
-    }
-    
-    @Override
-    public void expandRow (PersistitStore store, Session session,
-                            Exchange exchange, Row row) {
+        rowData.prepareRow(0);
 
-        try {
-            throw new UnsupportedOperationException ();
-            //exchange.getValue().directGet(store.getRowDataValueCoder(), row, Row.class, null);
+        Table table = schema.ais().getTable(rowData.getRowDefId());
+        RowDef rowDef = table.rowDef();
+        RowDataExtractor extractor = new RowDataExtractor(rowData, rowDef);
+        List<Value> values = new ArrayList<>(rowDef.getFieldCount());
+        
+        RowType rowType = schema.tableRowType(table);
+        assert rowDef.getFieldCount() == rowType.nFields() : rowData;
+        
+        for (int i = 0; i < rowDef.getFieldCount(); i++) {
+            FieldDef fieldDef = rowDef.getFieldDef(i);
+            Value value = new Value (rowType.typeAt(i));
+            ValueTargets.copyFrom(extractor.getValueSource(fieldDef), value);
+            values.add(value);
         }
-        catch (CorruptRowDataException ex) {
-            LOG.error("Corrupt RowData at key {}: {}", exchange.getKey(), ex.getMessage());
-            throw new RowDataCorruptionException(exchange.getKey());
-        }
+        ValuesHolderRow row = new ValuesHolderRow(rowType, values);
+        return row;
     }
-
 }

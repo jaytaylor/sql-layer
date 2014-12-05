@@ -57,7 +57,6 @@ public class NonRootPKIndexScanIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         parentRowType = schema.tableRowType(table(parent));
         childRowType = schema.tableRowType(table(child));
         childPKRowType = indexType(child, "cid");
@@ -69,7 +68,6 @@ public class NonRootPKIndexScanIT extends OperatorITBase
             row(child, 21L, 2L, 2L),
             row(child, 22L, 2L, 2L),
         };
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         use(db);

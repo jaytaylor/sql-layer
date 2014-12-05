@@ -86,7 +86,7 @@ public abstract class MTBase extends ITBase implements ServiceHolder
             public List<Row> call() throws Exception {
                 Schema schema = SchemaCache.globalSchema(ais());
                 Operator plan = creator.create(schema);
-                StoreAdapter adapter = store().createAdapter(session(), schema);
+                StoreAdapter adapter = store().createAdapter(session());
                 QueryContext context = new SimpleQueryContext(adapter, serviceManager());
                 QueryBindings bindings = context.createBindings();
                 List<Row> rows = new ArrayList<>();

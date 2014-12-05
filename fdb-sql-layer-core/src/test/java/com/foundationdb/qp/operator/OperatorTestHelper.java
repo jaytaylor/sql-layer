@@ -17,6 +17,7 @@
 
 package com.foundationdb.qp.operator;
 
+import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.Index;
@@ -159,7 +160,7 @@ public final class OperatorTestHelper {
 
         @Override
         public Cursor newIndexCursor(QueryContext context,
-                                     Index index,
+                                     IndexRowType indexType,
                                      IndexKeyRange keyRange,
                                      API.Ordering ordering,
                                      IndexScanSelector selector,
@@ -242,7 +243,7 @@ public final class OperatorTestHelper {
 
         public TestAdapter()
         {
-            super(null, null, null);
+            super(null, null);
         }
 
         @Override
@@ -252,6 +253,11 @@ public final class OperatorTestHelper {
 
         @Override
         public KeyCreator getKeyCreator() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public AkibanInformationSchema getAIS() {
             throw new UnsupportedOperationException();
         }
     }

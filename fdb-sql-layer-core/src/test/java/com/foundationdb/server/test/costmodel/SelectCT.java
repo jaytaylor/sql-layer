@@ -23,8 +23,10 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.TimeOperator;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.test.ExpressionGenerators;
+
 import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.*;
@@ -47,10 +49,10 @@ public class SelectCT extends CostModelBase
         t = createTable(schemaName, tableName,
                         "id int not null",
                         "primary key(id)");
-        schema = new Schema(ais());
+        schema = SchemaCache.globalSchema(ais());
         tRowType = schema.tableRowType(table(t));
         group = group(t);
-        adapter = newStoreAdapter(schema);
+        adapter = newStoreAdapter();
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }

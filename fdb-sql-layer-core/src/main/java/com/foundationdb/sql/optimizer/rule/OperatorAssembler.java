@@ -271,7 +271,7 @@ public class OperatorAssembler extends BaseRule
                 TInstance type = column.getType();
                 int pos = column.getPosition();
                 row[pos] = insertsP.get(i);
-                
+
                 if (!type.equals(row[pos].resultType())) {
                     TypesRegistryService registry = rulesContext.getTypesRegistry();
                     TCast tcast = registry.getCastsResolver().cast(type.typeClass(), row[pos].resultType().typeClass());

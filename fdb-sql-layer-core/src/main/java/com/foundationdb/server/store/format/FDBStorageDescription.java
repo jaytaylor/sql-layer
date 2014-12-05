@@ -24,8 +24,8 @@ import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.FDBProtobuf;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
-import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
@@ -134,23 +134,10 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
             output.reportFailure(new AISValidationFailure(new StorageDescriptionInvalidException(object, "is missing prefix bytes")));
         }
     }
-
-    @Override
-    public void expandRowData(FDBStore store, Session session,
-                              FDBStoreData storeData, RowData rowData) {
-        FDBStoreDataHelper.expandRowData(rowData, storeData, true);
-    }
     
-    @Override 
-    public void expandRow (FDBStore store, Session session, 
-                            FDBStoreData storeData, Row row) {
-        FDBStoreDataHelper.expandRow(row, storeData);
-    }
-
     @Override
-    public void packRowData(FDBStore store, Session session,
-                            FDBStoreData storeData, RowData rowData) {
-        FDBStoreDataHelper.packRowData(rowData, storeData);
+    public Row expandRow (FDBStore store, Session session, FDBStoreData storeData, Schema schema) {
+        return FDBStoreDataHelper.expandRow(schema, storeData);
     }
     
     @Override

@@ -183,7 +183,7 @@ public class ServerSchemaTablesServiceIT extends ITBase
         Table table = ais().getTable(tableName);
         Schema schema = SchemaCache.globalSchema(ais());
         TableRowType rowType = schema.tableRowType(table);
-        MemoryAdapter adapter = new MemoryAdapter(schema, session(), configService());
+        MemoryAdapter adapter = new MemoryAdapter(session(), configService());
 
         QueryContext queryContext = new SimpleQueryContext(adapter);
         Row[] rows = objectToRows(expected, rowType);
@@ -200,7 +200,7 @@ public class ServerSchemaTablesServiceIT extends ITBase
         Table table = ais().getTable(tableName);
         Schema schema = SchemaCache.globalSchema(ais());
         TableRowType rowType = schema.tableRowType(table);
-        MemoryAdapter adapter = new MemoryAdapter(schema, session(), configService());
+        MemoryAdapter adapter = new MemoryAdapter(session(), configService());
 
         QueryContext queryContext = new SimpleQueryContext(adapter);
         
@@ -229,7 +229,7 @@ public class ServerSchemaTablesServiceIT extends ITBase
         Table serverTable = ais().getTable(table);
         Schema schema = SchemaCache.globalSchema(ais());
         TableRowType rowType = schema.tableRowType(serverTable);
-        MemoryAdapter adapter = new MemoryAdapter(schema, session(), null);
+        MemoryAdapter adapter = new MemoryAdapter(session(), configService());
 
         Row[] rows = objectToRows(expected, rowType);
 

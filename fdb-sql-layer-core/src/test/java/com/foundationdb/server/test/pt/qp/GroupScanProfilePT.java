@@ -23,7 +23,9 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.InvalidOperationException;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -59,7 +61,7 @@ public class GroupScanProfilePT extends QPProfilePTBase
             "address varchar(100)",
             "constraint __akiban_ac foreign key __akiban_ac(cid) references customer(cid)",
             "index(address)");
-        schema = new Schema(ais());
+        schema = SchemaCache.globalSchema(ais());
         customerRowType = schema.tableRowType(table(customer));
         orderRowType = schema.tableRowType(table(order));
         itemRowType = schema.tableRowType(table(item));
@@ -71,7 +73,7 @@ public class GroupScanProfilePT extends QPProfilePTBase
         customerCidIndexRowType = indexType(customer, "cid");
         addressAddressIndexRowType = indexType(address, "address");
         coi = group(customer);
-        adapter = persistitAdapter(schema);
+        adapter = persistitAdapter();
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }

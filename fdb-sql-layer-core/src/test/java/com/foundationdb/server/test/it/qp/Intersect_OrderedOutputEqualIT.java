@@ -64,7 +64,6 @@ public class Intersect_OrderedOutputEqualIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         parentRowType = schema.tableRowType(table(parent));
         childRowType = schema.tableRowType(table(child));
         parentPidIndexRowType = indexType(parent, "pid");
@@ -73,7 +72,6 @@ public class Intersect_OrderedOutputEqualIT extends OperatorITBase
         childZIndexRowType = indexType(child, "z");
         alienAidIndexRowType = indexType(alien, "aid");
         coi = group(parent);
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         db = new Row[]{
