@@ -22,7 +22,6 @@ import com.foundationdb.util.RandomRule;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -49,7 +48,7 @@ import static org.junit.Assert.assertEquals;
  * Also handles NOT IN and EXISTS and NOT EXISTS, could handle more
  *
  */
-@Ignore("Waiting until this passes most of the time")
+//@Ignore("Waiting until this passes most of the time")
 @RunWith(SelectedParameterizedRunner.class)
 public class RandomSemiJoinTestDT extends PostgresServerITBase {
 
@@ -469,7 +468,8 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
 
     private String finalQueryLimit(int limitOutside) {
         if (limitOutside < MAX_OUTER_LIMIT) {
-            return " ORDER BY T1.main LIMIT " + (limitOutside + 1);
+            // Postgresql puts null last by default
+            return " ORDER BY T1.main NULLS FIRST LIMIT " + (limitOutside + 1);
         } else {
             return "";
         }
@@ -491,20 +491,11 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
             if (Objects.equals(o1, o2)) {
                 return 0;
             }
-            // Postgresql puts null first
             if (o1 == null) {
-                if (hitPostgresql) {
-                    return Integer.MAX_VALUE;
-                } else {
-                    return Integer.MIN_VALUE;
-                }
+                return Integer.MIN_VALUE;
             }
             if (o2 == null) {
-                if (hitPostgresql) {
-                    return Integer.MIN_VALUE;
-                } else {
-                    return Integer.MAX_VALUE;
-                }
+                return Integer.MAX_VALUE;
             }
             return o1-o2;
         }
