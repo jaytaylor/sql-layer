@@ -547,11 +547,15 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         FDBStoreData storeData = createStoreData(session, index);
         storeData.persistitValue = new Value((Persistit)null);
         TransactionState txn = txnService.getTransaction(session);
-        long nextCommitTime = 0;
-        if (scanTimeLimit >= 0) {
-            nextCommitTime = txn.getStartTime() + scanTimeLimit;
+        FDBScanTransactionOptions transactionOptions;
+        if (scanTimeLimit > 0) {
+            transactionOptions = new FDBScanTransactionOptions(true, -1,
+                                                               scanTimeLimit, sleepTime);
         }
-        indexIterator(session, storeData, false);
+        else {
+            transactionOptions = FDBScanTransactionOptions.SNAPSHOT;
+        }
+        indexIterator(session, storeData, false, false, false, transactionOptions);
         while(storeData.next()) {
             // Key
             unpackKey(storeData);
@@ -561,22 +565,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
             // Visit
             visitor.visit(storeData.persistitKey, storeData.persistitValue);
-
-            if ((scanTimeLimit >= 0) &&
-                (System.currentTimeMillis() >= nextCommitTime)) {
-                storeData.closeIterator();
-                txn.commitAndReset(session);
-                if (sleepTime > 0) {
-                    try {
-                        Thread.sleep(sleepTime);
-                    }
-                    catch (InterruptedException ex) {
-                        throw new QueryCanceledException(session);
-                    }
-                }
-                nextCommitTime = txn.getStartTime() + scanTimeLimit;
-                indexIterator(session, storeData, false, false);
-            }            
         }
         return visitor;
     }
@@ -644,7 +632,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     public void groupIterator(Session session, FDBStoreData storeData) {
         groupIterator(session, storeData, 
                       GroupIteratorBoundary.START, GroupIteratorBoundary.END, 
-                      Transaction.ROW_LIMIT_UNLIMITED, false);
+                      Transaction.ROW_LIMIT_UNLIMITED, FDBScanTransactionOptions.NORMAL);
     }
 
     /** Resume iteration after <code>storeData.persistitKey</code>. */
@@ -652,7 +640,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                               boolean restart, int limit) {
         groupIterator(session, storeData, 
                  restart ? GroupIteratorBoundary.NEXT_KEY : GroupIteratorBoundary.START, GroupIteratorBoundary.END, 
-                 limit, false);
+                 limit, FDBScanTransactionOptions.NORMAL);
     }
     
     /** Iterate over just <code>storeData.persistitKey</code>, if present. */
@@ -660,48 +648,57 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         // NOTE: Caller checks whether key returned matches.
         groupIterator(session, storeData, 
                       GroupIteratorBoundary.KEY, GroupIteratorBoundary.NEXT_KEY,
-                      1, false);
+                      1, FDBScanTransactionOptions.NORMAL);
     }
 
     /** Iterate over <code>storeData.persistitKey</code>'s descendants. */
     public void groupDescendantsIterator(Session session, FDBStoreData storeData) {
         groupIterator(session, storeData, 
                       GroupIteratorBoundary.FIRST_DESCENDANT, GroupIteratorBoundary.LAST_DESCENDANT,
-                      Transaction.ROW_LIMIT_UNLIMITED, false);
+                      Transaction.ROW_LIMIT_UNLIMITED, FDBScanTransactionOptions.NORMAL);
     }
 
     /** Iterate over <code>storeData.persistitKey</code>'s descendants. */
     public void groupKeyAndDescendantsIterator(Session session, FDBStoreData storeData, boolean snapshot) {
         groupIterator(session, storeData, 
                       GroupIteratorBoundary.KEY, GroupIteratorBoundary.LAST_DESCENDANT,
-                      Transaction.ROW_LIMIT_UNLIMITED, snapshot);
+                      Transaction.ROW_LIMIT_UNLIMITED, snapshot ? FDBScanTransactionOptions.SNAPSHOT : FDBScanTransactionOptions.NORMAL);
+    }
+
+    public void groupIterator(Session session, FDBStoreData storeData, FDBScanTransactionOptions transactionOptions) {
+        groupIterator(session, storeData, 
+                      GroupIteratorBoundary.START, GroupIteratorBoundary.END, 
+                      Transaction.ROW_LIMIT_UNLIMITED, transactionOptions);
     }
 
     public void groupIterator(Session session, FDBStoreData storeData,
                               GroupIteratorBoundary left, GroupIteratorBoundary right,
-                              int limit, boolean snapshot) {
+                              int limit, FDBScanTransactionOptions transactionOptions) {
         storeData.storageDescription.groupIterator(this, session, storeData,
-                                                   left, right, limit, snapshot);
+                                                   left, right, limit,
+                                                   transactionOptions);
     }
 
     /** Iterate over the whole index. */
     public void indexIterator(Session session, FDBStoreData storeData, 
                               boolean reverse) {
         indexIterator(session, storeData, 
-                      false, false, reverse, false);
+                      false, false, reverse, FDBScanTransactionOptions.NORMAL);
     }
 
     /** Iterate starting at current key. */
     public void indexIterator(Session session, FDBStoreData storeData,
                               boolean inclusive, boolean reverse) {
         indexIterator(session, storeData, 
-                      true, inclusive, reverse, false);
+                      true, inclusive, reverse, FDBScanTransactionOptions.NORMAL);
     }
 
     public void indexIterator(Session session, FDBStoreData storeData,
-                              boolean key, boolean inclusive, boolean reverse, boolean snapshot) {
+                              boolean key, boolean inclusive, boolean reverse,
+                              FDBScanTransactionOptions transactionOptions) {
         storeData.storageDescription.indexIterator(this, session, storeData,
-                                                   key, inclusive, reverse, snapshot);
+                                                   key, inclusive, reverse,
+                                                   transactionOptions);
     }
 
     //

@@ -26,6 +26,7 @@ import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.store.FDBScanTransactionOptions;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.FDBStoreDataHelper;
@@ -102,11 +103,13 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
 
     @Override
     public IndexStatistics computeIndexStatistics(Session session, Index index, long scanTimeLimit, long sleepTime) {
-        FDBTransactionService.TransactionState txn = null;
-        long nextCommitTime = 0;
-        if (scanTimeLimit >= 0) {
-            txn = txnService.getTransaction(session);
-            nextCommitTime = txn.getStartTime() + scanTimeLimit;
+        FDBScanTransactionOptions transactionOptions;
+        if (scanTimeLimit > 0) {
+            transactionOptions = new FDBScanTransactionOptions(true, -1,
+                                                               scanTimeLimit, sleepTime);
+        }
+        else {
+            transactionOptions = FDBScanTransactionOptions.SNAPSHOT;
         }
         long indexRowCount = estimateIndexRowCount(session, index);
         long expectedSampleCount = indexRowCount;
@@ -128,8 +131,9 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
         int bucketCount = indexStatisticsService.bucketCount();
         visitor.init(bucketCount);
         FDBStoreData storeData = getStore().createStoreData(session, index);
-        // Whole index, snapshot
-        getStore().indexIterator(session, storeData, false, false, false, true);
+        // Whole index, forward.
+        getStore().indexIterator(session, storeData, false, false, false,
+                                 transactionOptions);
         while(storeData.next()) {
             if (++skippedSamples < sampleRate)
                 continue;       // This value not sampled.
@@ -137,22 +141,6 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
             FDBStoreDataHelper.unpackKey(storeData);
             // TODO: Does anything look at rawValue?
             visitor.visit(storeData.persistitKey, storeData.rawValue);
-            if ((scanTimeLimit >= 0) &&
-                (System.currentTimeMillis() >= nextCommitTime)) {
-                storeData.closeIterator();
-                txn.commitAndReset(session);
-                if (sleepTime > 0) {
-                    try {
-                        Thread.sleep(sleepTime);
-                    }
-                    catch (InterruptedException ex) {
-                        throw new QueryCanceledException(session);
-                    }
-                }
-                nextCommitTime = txn.getStartTime() + scanTimeLimit;
-                // Start at key, non-inclusive, snapshot
-                getStore().indexIterator(session, storeData, true, false, false, true);
-            }
         }
         visitor.finish(bucketCount);
         IndexStatistics indexStatistics = visitor.getIndexStatistics();

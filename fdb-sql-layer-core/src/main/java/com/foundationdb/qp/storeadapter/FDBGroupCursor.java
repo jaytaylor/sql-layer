@@ -25,6 +25,7 @@ import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
+import com.foundationdb.server.store.FDBScanTransactionOptions;
 import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
@@ -33,24 +34,39 @@ public class FDBGroupCursor extends RowCursorImpl implements GroupCursor {
     private final FDBAdapter adapter;
     private final FDBStoreData storeData;
     private final Schema schema;
+    private final FDBScanTransactionOptions transactionOptions;
     private HKey hKey;
     private boolean hKeyDeep;
     private GroupScan groupScan;
-    private int commitFrequency;
     // static state
     private static final PointTap TRAVERSE_COUNT = Tap.createCount("traverse: fdb group cursor");
 
-
     public FDBGroupCursor(FDBAdapter adapter, Group group) {
+        this(adapter, group, null);
+    }
+
+    public FDBGroupCursor(FDBAdapter adapter, Group group, int commitFrequency) {
+        this(adapter, group, optionsForFrequency(commitFrequency, adapter));
+    }
+
+    private static FDBScanTransactionOptions optionsForFrequency(int commitFrequency, FDBAdapter adapter) {
+        if (commitFrequency == 0) {
+            return null;
+        }
+        else if (commitFrequency == StoreAdapter.COMMIT_FREQUENCY_PERIODICALLY) {
+            return adapter.getTransaction().periodicallyCommitScanOptions();
+        }
+        else {
+            return new FDBScanTransactionOptions(commitFrequency, -1);
+        }
+    }
+
+    public FDBGroupCursor(FDBAdapter adapter, Group group, FDBScanTransactionOptions transactionOptions) {
         this.adapter = adapter;
         this.storeData = adapter.getUnderlyingStore()
             .createStoreData(adapter.getSession(), group);
         this.schema = SchemaCache.globalSchema(group.getAIS());
-    }
-
-    public FDBGroupCursor(FDBAdapter adapter, Group group, int commitFrequency) {
-        this(adapter, group);
-        this.commitFrequency = commitFrequency;
+        this.transactionOptions = transactionOptions;
     }
 
     @Override
@@ -63,7 +79,7 @@ public class FDBGroupCursor extends RowCursorImpl implements GroupCursor {
     @Override
     public void open() {
         super.open();
-        if(commitFrequency != 0) {
+        if(transactionOptions != null) {
             groupScan = new CommittingFullScan();
         } else if(hKey == null) {
             groupScan = new FullScan();
@@ -141,38 +157,8 @@ public class FDBGroupCursor extends RowCursorImpl implements GroupCursor {
     }
 
     private class CommittingFullScan extends GroupScan {
-        boolean first = true;
-        boolean auto;
-        int limit, remaining;
-
         public CommittingFullScan() {
-            auto = (commitFrequency == StoreAdapter.COMMIT_FREQUENCY_PERIODICALLY);
-            if (auto)
-                limit = adapter.getTransaction().periodicallyCommitScanLimit();
-            else
-                limit = commitFrequency;
-        }
-
-        @Override
-        public void advance() {
-            if (storeData.iterator == null) {
-                adapter.getUnderlyingStore().groupIterator(adapter.getSession(), storeData,
-                                                           !first, limit);
-                first = false;
-                remaining = limit;
-            }
-            TRAVERSE_COUNT.hit();
-            if (storeData.next()) {
-                remaining--;
-                if ((remaining <= 0) || 
-                    (auto && adapter.getTransaction().timeToCommit())) {
-                    storeData.closeIterator();
-                    adapter.getTransaction().commitAndReset(adapter.getSession());
-                }
-            }
-            else {
-                setIdle();
-            }
+            adapter.getUnderlyingStore().groupIterator(adapter.getSession(), storeData, transactionOptions);
         }
     }
 
