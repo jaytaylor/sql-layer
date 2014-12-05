@@ -1,0 +1,6 @@
+[varbinary(8192)]
+SelectQuery@351b6543
+  ResultSet@19952cf2[_SQL_COL_1]
+    Project@10b9d0fd[LIKE(Cast($0 AS MCOMPAT_ VARCHAR(4096, UTF8, UCS_BINARY) NULL),abc%)]
+      Select@326f1b30[]
+        ExpressionsSource@1c62062e([[]])

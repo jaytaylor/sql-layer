@@ -150,8 +150,8 @@ public class GroupScanIT extends OperatorITBase
         ValueSource v0 = row.value(0);
         ValueSource v1 = row.value(1);
         ValueSource v2 = row.value(2);
-        assertEquals(11L, v0.getInt64());
-        assertEquals(1L, v1.getInt64());
+        assertEquals(11L, v0.getInt32());
+        assertEquals(1L, v1.getInt32());
         assertEquals("ori", v2.getString());
     }
 

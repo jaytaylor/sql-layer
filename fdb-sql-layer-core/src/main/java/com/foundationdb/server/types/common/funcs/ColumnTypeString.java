@@ -96,7 +96,7 @@ public class ColumnTypeString extends TScalarBase
         if(parts[0].isEmpty()) {
             parts[0] = context.getCurrentSchema();
         }
-        AkibanInformationSchema ais = context.getQueryContext().getStore().schema().ais();
+        AkibanInformationSchema ais = context.getQueryContext().getAIS();
         Columnar columnar = ais.getTable(parts[0], parts[1]);
         if(columnar == null) {
             columnar = ais.getView(parts[0], parts[1]);

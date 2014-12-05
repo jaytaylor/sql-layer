@@ -50,19 +50,19 @@ public class QPProfilePTBase extends PTBase
         return uniqueStartupConfigProperties(getClass());
     }
 
-    PersistitAdapter persistitAdapter(Schema schema) {
+    PersistitAdapter persistitAdapter() {
         PersistitStore store = (PersistitStore)store();
-        return store.createAdapter(session(), schema);
+        return store.createAdapter(session());
     }
 
     protected Group group(int tableId)
     {
-        return getRowDef(tableId).table().getGroup();
+        return getRowType(tableId).table().getGroup();
     }
 
     protected Table table(int tableId)
     {
-        return getRowDef(tableId).table();
+        return getRowType(tableId).table();
     }
 
     protected IndexRowType indexType(int tableId, String... searchIndexColumnNamesArray)

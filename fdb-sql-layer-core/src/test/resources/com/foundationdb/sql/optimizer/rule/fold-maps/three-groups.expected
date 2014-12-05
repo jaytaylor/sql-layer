@@ -8,7 +8,7 @@ SelectQuery@1eb0c6
           Select@ba6c13[]
             Select@28115536[]
               Flatten@2e663768(orders)
-                Select@7523cde5[orders.order_date > Cast(2011-01-01 AS MCOMPAT_ DATE)]
+                Select@7523cde5[orders.order_date > 2011-01-01]
                   BranchLookup@1a2b178(customers -> customers)
                     SingleIndexScan@60313e1e(Index(test.customers.name[IndexColumn(name)]), NONE, =parent.name, rows = 9, cost = 607.054)
                     TableSource@73d55dd(orders - TableGroupJoin@40e554e8(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

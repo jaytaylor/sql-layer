@@ -71,7 +71,7 @@ public class ColumnKeysStorageFormatIT  extends FDBITBase
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         RowType t1Type = schema.tableRowType(getTable(t1));
         RowType t2Type = schema.tableRowType(getTable(t2));
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
 
         txnService().beginTransaction(session());
 

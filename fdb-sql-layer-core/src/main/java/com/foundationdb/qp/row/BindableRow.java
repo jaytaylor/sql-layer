@@ -134,7 +134,7 @@ public abstract class BindableRow {
             throw new UnsupportedOperationException();
         }
 
-        private RowPCopier(Row sourceRow) {
+        public RowPCopier(Row sourceRow) {
             this.sourceRow = sourceRow;
         }
 

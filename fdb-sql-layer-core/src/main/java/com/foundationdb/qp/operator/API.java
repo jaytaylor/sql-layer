@@ -341,7 +341,9 @@ public class API
                                              IndexKeyRange indexKeyRange,
                                              Ordering ordering)
     {
-        return indexScan_Default(indexType, indexKeyRange, ordering, indexType.tableType());
+        return indexScan_Default(indexType, indexKeyRange, ordering, 
+                IndexScanSelector.leftJoinAfter(indexType.index(),
+                        indexType.tableType().table()), 1);
     }
 
     /**
@@ -363,7 +365,7 @@ public class API
         for (int f = 0; f < fields; f++) {
             ordering.append(new TPreparedField(indexType.typeAt(f), f), !reverse);
         }
-        return indexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector);
+        return indexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector, 1);
     }
 
     public static Operator indexScan_Default(IndexRowType indexType,
@@ -375,7 +377,7 @@ public class API
                                  indexKeyRange,
                                  ordering,
                                  IndexScanSelector.leftJoinAfter(indexType.index(),
-                                                                 innerJoinUntilRowType.table()));
+                                                                 innerJoinUntilRowType.table()), 1);
     }
 
     public static Operator indexScan_Default(IndexRowType indexType,

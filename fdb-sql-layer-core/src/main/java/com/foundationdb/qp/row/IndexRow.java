@@ -19,6 +19,7 @@ package com.foundationdb.qp.row;
 
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.qp.rowtype.IndexRowType;
+import com.foundationdb.qp.storeadapter.NewRowBackedIndexRow;
 import com.foundationdb.server.types.TInstance;
 import com.geophile.z.Record;
 import com.geophile.z.Space;
@@ -100,7 +101,7 @@ public abstract class IndexRow extends AbstractRow implements com.geophile.z.Rec
 
     protected abstract int zPosition();
 
-    private long z = Space.Z_NULL;
+NewRowBackedIndexRow    private long z = Space.Z_NULL;
 
     public static enum EdgeValue {
         BEFORE,

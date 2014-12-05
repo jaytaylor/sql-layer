@@ -1,7 +1,7 @@
 SelectQuery@2d82ef6b
   ResultSet@5dde45e2[cid, name, oid, cid, order_date]
     Project@2bbe2893[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date]
-      Select@5bf02b85[or(orders.order_date < Cast(2000-01-01 AS MCOMPAT_ DATE),orders.order_date > Cast(2011-12-31 AS MCOMPAT_ DATE))]
+      Select@5bf02b85[or(orders.order_date < 2000-01-01,orders.order_date > 2011-12-31)]
         JoinNode@74b957ea(INNER[customers.cid == orders.cid])
           TableSource@343aff84(customers)
           TableSource@d5d4de6(orders)

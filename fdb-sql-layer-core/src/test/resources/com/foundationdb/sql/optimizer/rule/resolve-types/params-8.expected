@@ -1,0 +1,6 @@
+[decimal(12, 2)]
+SelectQuery@ca9fa31
+  ResultSet@6b68ad75[_SQL_COL_1]
+    Project@2554136a[absolute($0)]
+      Select@32c6a74b[]
+        ExpressionsSource@101146f8([[]])

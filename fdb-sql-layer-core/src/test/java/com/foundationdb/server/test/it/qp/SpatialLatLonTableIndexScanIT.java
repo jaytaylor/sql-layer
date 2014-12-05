@@ -65,7 +65,6 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         pointRowType = schema.tableRowType(table(point));
         pointOrdinal = pointRowType.table().getOrdinal();
         latLonIndexRowType = indexType(point, "lat", "lon");
@@ -73,7 +72,6 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
         latLonAfterIndexRowType = indexType(point, "lat", "lon", "after");
         beforeLatLonAfterIndexRowType = indexType(point, "before", "lat", "lon", "after");
         space = Spatial.createLatLonSpace();
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }

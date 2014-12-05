@@ -132,7 +132,5 @@ class ProtobufStorageDescriptionHelper
             throw new ProtobufBuildException(ex);
         }
         return ProtobufRowConverter.forGroup(group, fileDescriptor);
-        
-        
     }
 }

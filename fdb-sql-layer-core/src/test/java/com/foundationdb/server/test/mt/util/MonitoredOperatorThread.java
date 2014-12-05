@@ -78,7 +78,7 @@ public class MonitoredOperatorThread extends MonitoredThread
                 to(Stage.PRE_SCAN);
                 Schema schema = SchemaCache.globalSchema(getServiceHolder().getSchemaManager().getAis(session));
                 Operator plan = operatorCreator.create(schema);
-                StoreAdapter adapter = getServiceHolder().getStore().createAdapter(session, schema);
+                StoreAdapter adapter = getServiceHolder().getStore().createAdapter(session);
                 QueryContext context = new SimpleQueryContext(adapter);
                 QueryBindings bindings = context.createBindings();
                 Cursor cursor = API.cursor(plan, context, bindings);

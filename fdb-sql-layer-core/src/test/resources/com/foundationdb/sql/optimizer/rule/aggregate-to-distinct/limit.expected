@@ -6,7 +6,7 @@ SelectQuery@5742e558
           Distinct@163fcd3d
             Sort@36bb6b34[PROJECT[1], PROJECT[0]]
               Project@4a7b3efe[customers.cid, customers.name]
-                Select@6164bbe5[customers.cid == orders.cid, orders.order_date > Cast(2000-01-01 AS MCOMPAT_ DATE)]
+                Select@6164bbe5[customers.cid == orders.cid, orders.order_date > 2000-01-01]
                   JoinNode@1c6be957(INNER)
                     TableSource@61cdb690(customers)
                     TableSource@70a45d54(orders)

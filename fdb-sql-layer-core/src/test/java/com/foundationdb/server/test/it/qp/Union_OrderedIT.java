@@ -49,12 +49,10 @@ public class Union_OrderedIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         tRowType = schema.tableRowType(table(t));
         tPidIndexRowType = indexType(t, "pid");
         tXIndexRowType = indexType(t, "x");
         coi = group(t);
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         db = new Row[] {

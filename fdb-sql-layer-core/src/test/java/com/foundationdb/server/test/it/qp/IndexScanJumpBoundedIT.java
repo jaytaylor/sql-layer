@@ -55,7 +55,6 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         tRowType = schema.tableRowType(table(t));
         idxRowType = indexType(t, "a", "b", "c", "id");
         db = new Row[] {
@@ -66,7 +65,6 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
             row(t, 1014L, 1L, 13L, 131L),
             row(t, 1015L, 1L, 13L, 132L),
         };
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         use(db);

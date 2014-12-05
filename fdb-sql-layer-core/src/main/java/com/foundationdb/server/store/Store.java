@@ -29,12 +29,7 @@ import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.WriteIndexRow;
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
-import com.foundationdb.server.api.dml.ColumnSelector;
-import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.store.TableChanges.ChangeSet;
@@ -49,39 +44,24 @@ public interface Store extends KeyCreator {
     AkibanInformationSchema getAIS(Session session);
 
     /**  If not {@code null}, only maintain the given {@code tableIndexes} and {@code groupIndexes}. */
-    void writeRow(Session session, RowData row);
-    void writeRow(Session session, RowData row, Collection<TableIndex> tableIndexes, Collection<GroupIndex> groupIndexes);
-    void writeRow(Session session, RowDef rowDef, RowData row, Collection<TableIndex> tableIndexes, Collection<GroupIndex> groupIndexes);
-    void writeNewRow(Session session, NewRow row);
-
     void writeRow(Session session, Row row, Collection<TableIndex> tableIndexes, Collection<GroupIndex> groupIndexes);
 
-    void deleteRow(Session session, RowData row, boolean cascadeDelete);
-    void deleteRow(Session session, RowDef rowDef, RowData row, boolean cascadeDelete);
     void deleteRow(Session session, Row row, boolean cascadeDelete);
 
     /** newRow can be partial, as specified by selector, but oldRow must be fully present. */
-    void updateRow(Session session, RowData oldRow, RowData newRow, ColumnSelector selector);
-    void updateRow(Session session, RowDef oldRowDef, RowData oldRow, RowDef newRowDef, RowData newRow, ColumnSelector selector);
     void updateRow(Session session, Row oldRow, Row newRow);
 
     /** Save the TableIndex row for {@code rowData}. {@code hKey} must be populated. */
-    void writeIndexRow(Session session, TableIndex index, RowData rowData, Key hKey, WriteIndexRow buffer,
-                       SpatialColumnHandler spatialColumnHandler, long zValue, boolean doLock);
     void writeIndexRow(Session session, TableIndex index, Row row, Key hKey, WriteIndexRow buffer,
                         SpatialColumnHandler spatialColumnHandler, long zValue, boolean doLock);
     /** Clear the TableIndex row for {@code rowData]. {@code hKey} must be populated. */
-    void deleteIndexRow(Session session, TableIndex index, RowData rowData, Key hKey, WriteIndexRow buffer,
-                        SpatialColumnHandler spatialColumnHandler, long zValue, boolean doLock);
     void deleteIndexRow(Session session, TableIndex index, Row row, Key hKey, WriteIndexRow buffer,
             SpatialColumnHandler spatialColumnHandler, long zValue, boolean doLock);
 
     /** Save the GroupIndex rows for {@code rowData}. Locking handed by StoreGIHandler. */
-    void writeIndexRows(Session session, Table table, RowData rowData, Collection<GroupIndex> indexes);
     void writeIndexRows(Session session, Table table, Row row, Collection<GroupIndex> indexes);
 
     /** Clear the GroupIndex rows for {@code rowData}. Locking handled by StoreGIHandler. */
-    void deleteIndexRows(Session session, Table table, RowData rowData, Collection<GroupIndex> indexes);
     void deleteIndexRows(Session session, Table table, Row row, Collection<GroupIndex> indexes);
 
     /** Compute and return the next value for the given sequence */
@@ -145,7 +125,7 @@ public interface Store extends KeyCreator {
 
     void truncateIndexes(Session session, Collection<? extends Index> indexes);
 
-    StoreAdapter createAdapter(Session session, Schema schema);
+    StoreAdapter createAdapter(Session session);
 
     boolean treeExists(Session session, StorageDescription storageDescription);
 

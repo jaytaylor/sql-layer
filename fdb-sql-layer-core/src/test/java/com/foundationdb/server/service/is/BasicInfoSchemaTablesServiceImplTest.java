@@ -95,7 +95,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         createTables();
         bist = new BasicInfoSchemaTablesServiceImpl(schemaManager, null, null);
         bist.attachFactories(ais);
-        adapter = new MemoryAdapter(new Schema(ais), null, null);
+        adapter = new MemoryAdapter(null, null);
     }
 
     private static void simpleTable(TestAISBuilder builder, String group, String schema, String table, String parentName, boolean withPk) {
@@ -568,7 +568,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void referentialConstraintsScan() {
         final Object[][] expected = {
-                {null, "test", "fkey_parent", null, "test", "parent_pkey", "NONE", "RESTRICT", "RESTRICT", LONG},
+                {null, "test", "fkey_parent", null, "test", "parent_pkey", "SIMPLE", "RESTRICT", "RESTRICT", LONG},
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.REFERENTIAL_CONSTRAINTS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);

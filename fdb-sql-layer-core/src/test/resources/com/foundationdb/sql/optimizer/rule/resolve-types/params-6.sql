@@ -1,0 +1,1 @@
+select "LIKE" ( CAST(? AS CHAR(2) FOR BIT DATA), 'abc%' )

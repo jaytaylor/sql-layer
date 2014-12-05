@@ -20,7 +20,7 @@ package com.foundationdb.server.service.dxl;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.DMLFunctions;
 import com.foundationdb.server.error.ServiceNotStartedException;
-import com.foundationdb.server.error.ServiceStartupException;
+import com.foundationdb.server.error.ServiceAlreadyStartedException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
@@ -59,7 +59,7 @@ public class DXLServiceImpl implements DXLService, Service {
         DMLFunctions localDmlFunctions = new HookableDMLFunctions(createDMLFunctions(), hooks);
         synchronized (MONITOR) {
             if (ddlFunctions != null) {
-                throw new ServiceStartupException("service already started");
+                throw new ServiceAlreadyStartedException("DXLService");
             }
             ddlFunctions = localDdlFunctions;
             dmlFunctions = localDmlFunctions;

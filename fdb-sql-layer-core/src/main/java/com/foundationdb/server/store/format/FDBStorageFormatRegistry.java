@@ -31,7 +31,6 @@ import com.foundationdb.server.store.format.columnkeys.ColumnKeysStorageFormat;
 import com.foundationdb.server.store.format.protobuf.FDBProtobufStorageFormat;
 import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
 import com.foundationdb.server.store.format.tuple.TupleStorageFormat;
-import com.foundationdb.util.Strings;
 
 public class FDBStorageFormatRegistry extends StorageFormatRegistry
 {

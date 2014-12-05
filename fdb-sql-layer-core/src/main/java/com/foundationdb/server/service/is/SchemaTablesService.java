@@ -55,7 +55,7 @@ public class SchemaTablesService {
         assert table != null;
         schemaManager.registerMemoryInformationSchemaTable(table, factory);
     }
-    
+
     protected void attach (Table table, BasicFactoryBase factory) {
         schemaManager.registerMemoryInformationSchemaTable(table, factory);
     }

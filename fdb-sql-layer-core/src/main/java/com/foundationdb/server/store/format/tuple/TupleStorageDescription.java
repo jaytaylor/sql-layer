@@ -30,10 +30,10 @@ import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.FDBProtobuf.TupleUsage;
 import com.foundationdb.ais.protobuf.FDBProtobuf;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
@@ -46,8 +46,13 @@ import com.persistit.KeyShim;
 import java.util.Collections;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class TupleStorageDescription extends FDBStorageDescription
 {
+    private static final Logger LOG = LoggerFactory.getLogger(TupleStorageDescription.class);
+
     private TupleUsage usage;
 
     public TupleStorageDescription(HasStorage forObject, String storageFormat) {
@@ -253,50 +258,32 @@ public class TupleStorageDescription extends FDBStorageDescription
     }
     
     @Override
-    public void packRowData(FDBStore store, Session session,
-                            FDBStoreData storeData, RowData rowData) {
+    public Row expandRow(FDBStore store, Session session, 
+                            FDBStoreData storeData, Schema schema) {
         if (usage == TupleUsage.KEY_AND_ROW) {
-            RowDef rowDef = object.getAIS().getTable(rowData.getRowDefId()).rowDef();
-            Tuple2 t = TupleRowDataConverter.tupleFromRowData(rowDef, rowData);
-            storeData.rawValue = t.pack();
+            Tuple2 tuple = Tuple2.fromBytes(storeData.rawValue);
+            Table table = tableFromOrdinals((Group)object, storeData.persistitKey);
+            RowType rowType = schema.tableRowType(table);
+            
+            Row row = TupleRowDataConverter.tupleToRow(tuple, rowType);
+            return row; 
+        } else {
+            return super.expandRow(store, session, storeData, schema);
         }
-        else {
-            super.packRowData(store, session, storeData, rowData);
-        }
-    }
-
-    @Override
-    public void expandRow(FDBStore store, Session session, 
-                            FDBStoreData storeData, Row row) {
-        throw new UnsupportedOperationException();
     }
     
-    @Override
-    public void expandRowData(FDBStore store, Session session,
-                              FDBStoreData storeData, RowData rowData) {
-        if (usage == TupleUsage.KEY_AND_ROW) {
-            Tuple2 t = Tuple2.fromBytes(storeData.rawValue);
-            RowDef rowDef = rowDefFromOrdinals((Group) object, storeData);
-            TupleRowDataConverter.tupleToRowData(t, rowDef, rowData);
-        }
-        else {
-            super.expandRowData(store, session, storeData, rowData);
-        }
-    }
-
-    public static RowDef rowDefFromOrdinals(Group group, FDBStoreData storeData) {
+    public static Table tableFromOrdinals(Group group, Key hkey) {
         Table root = group.getRoot();
-        Key hkey = storeData.persistitKey;
+        Table table = root;
         hkey.reset();
         int ordinal = hkey.decodeInt();
         assert (root.getOrdinal() == ordinal) : hkey;
-        Table table = root;
         int index = 0;
         while (true) {
             int[] keyDepth = table.hKey().keyDepth();
             index = keyDepth[keyDepth.length - 1];
             if (index >= hkey.getDepth()) {
-                return table.rowDef();
+                return table;
             }
             hkey.indexTo(index);
             ordinal = hkey.decodeInt();

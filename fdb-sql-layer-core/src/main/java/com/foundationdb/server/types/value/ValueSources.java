@@ -279,6 +279,11 @@ public final class ValueSources {
             type = MBinary.BLOB.instance(false);
             value = new Value(type, Spatial.serialize((JTSSpatialObject) object));
         }
+        else if (object instanceof UUID) {
+            type = AkGUID.INSTANCE.instance(false);
+            value = new Value(type);
+            value.putObject(object);
+        }
         else {
             throw new UnsupportedOperationException("can't convert " + object + " of type " + object.getClass());
         }

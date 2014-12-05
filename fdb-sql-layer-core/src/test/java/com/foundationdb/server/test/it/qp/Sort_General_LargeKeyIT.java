@@ -50,7 +50,6 @@ public class Sort_General_LargeKeyIT extends OperatorITBase {
 
     @Override
     protected void setupPostCreateSchema() {
-        schema = new Schema(ais());
         tRowType = schema.tableRowType(table(t));
         group = group(t);
         List<Row> rows = new ArrayList<>();
@@ -74,7 +73,6 @@ public class Sort_General_LargeKeyIT extends OperatorITBase {
         }
         db = new Row[rows.size()];
         rows.toArray(db);
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         use(db);

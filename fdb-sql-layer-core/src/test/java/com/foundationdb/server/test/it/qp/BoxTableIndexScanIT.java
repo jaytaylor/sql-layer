@@ -27,6 +27,7 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.spatial.Spatial;
 import com.geophile.z.Space;
@@ -71,7 +72,6 @@ public class BoxTableIndexScanIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         boxRowType = schema.tableRowType(table(boxTable));
         boxOrdinal = boxRowType.table().getOrdinal();
         boxIndexRowType = indexType(boxTable, "box");
@@ -79,7 +79,6 @@ public class BoxTableIndexScanIT extends OperatorITBase
         boxAfterIndexRowType = indexType(boxTable, "box", "after");
         beforeBoxAfterIndexRowType = indexType(boxTable, "before", "box", "after");
         space = Spatial.createLatLonSpace();
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }

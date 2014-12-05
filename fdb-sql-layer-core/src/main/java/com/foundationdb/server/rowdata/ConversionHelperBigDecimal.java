@@ -187,7 +187,7 @@ public final class ConversionHelperBigDecimal {
         return declIntSize + declFracSize;
     }
 
-    static String normalizeToString(BigDecimal value, int declPrec, int declScale) {
+    public static String normalizeToString(BigDecimal value, int declPrec, int declScale) {
         // First, we have to turn the value into one that fits the FieldDef's constraints.
         int valuePrec = value.precision();
         int valueScale = value.scale();

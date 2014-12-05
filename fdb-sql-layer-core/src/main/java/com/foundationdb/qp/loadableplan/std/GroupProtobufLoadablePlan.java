@@ -96,7 +96,7 @@ public class GroupProtobufLoadablePlan extends LoadableDirectObjectPlan
                 schemaName = value.getString();
             tableName = bindings.getValue(1).getString();
             TableName groupName = new TableName(schemaName, tableName);
-            Group group = context.getStore().schema().ais().getGroup(groupName);
+            Group group = context.getAIS().getGroup(groupName);
             if (group == null)
                 throw new NoSuchGroupException(groupName);
             StorageDescription storage = group.getStorageDescription();

@@ -22,7 +22,6 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.Table;
@@ -35,16 +34,14 @@ import com.foundationdb.directory.PathUtil;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.WriteIndexRow;
-import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.qp.storeadapter.indexrow.FDBIndexRow;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.FDBNotCommittedException;
 import com.foundationdb.server.error.QueryCanceledException;
-import com.foundationdb.server.rowdata.FieldDef;
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -309,38 +306,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
     
     @Override
-    protected IndexRow readIndexRow(Session session,
-                                                   Index parentPKIndex,
-                                                   FDBStoreData storeData,
-                                                   RowDef childRowDef,
-                                                   RowData childRowData) {
-        Key parentPkKey = storeData.persistitKey;
-        PersistitKeyAppender keyAppender = PersistitKeyAppender.create(parentPkKey, parentPKIndex.getIndexName());
-        int[] fields = childRowDef.getParentJoinFields();
-        for(int field : fields) {
-            FieldDef fieldDef = childRowDef.getFieldDef(field);
-            keyAppender.append(fieldDef, childRowData);
-        }
-
-        // Only called when child row does not contain full HKey.
-        // Key contents are the logical parent of the actual index entry (if it exists).
-        byte[] packed = packedTuple(parentPKIndex, parentPkKey);
-        byte[] end = packedTuple(parentPKIndex, parentPkKey, Key.AFTER);
-        TransactionState txn = txnService.getTransaction(session);
-        List<KeyValue> pkValue = txn.getRangeAsValueList(packed, end);
-        FDBIndexRow indexRow = null;
-        if (!pkValue.isEmpty()) {
-            assert pkValue.size() == 1 : parentPKIndex;
-            KeyValue kv = pkValue.get(0);
-            assert kv.getValue().length == 0 : parentPKIndex + ", " + kv;
-            indexRow = new FDBIndexRow(this);
-            FDBStoreDataHelper.unpackTuple(parentPKIndex, parentPkKey, kv.getKey());
-            indexRow.resetForRead(parentPKIndex, parentPkKey, null);
-        }
-        return indexRow;
-    }
-
-    @Override
     public void writeIndexRow(Session session,
             TableIndex index,
             Row row, 
@@ -360,24 +325,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
     
     @Override
-    public void writeIndexRow(Session session,
-                              TableIndex index,
-                              RowData rowData,
-                              Key hKey,
-                              WriteIndexRow indexRow,
-                              SpatialColumnHandler spatialColumnHandler,
-                              long zValue,
-                              boolean doLock) {
-        TransactionState txn = txnService.getTransaction(session);
-        Key indexKey = createKey();
-        constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, spatialColumnHandler, zValue, true);
-        checkUniqueness(session, txn, index, rowData, indexKey);
-
-        byte[] packedKey = packedTuple(index, indexKey);
-        txn.setBytes(packedKey, EMPTY_BYTE_ARRAY);
-    }
-
-    @Override
     public void deleteIndexRow(Session session, TableIndex index, Row row, Key hKey, WriteIndexRow indexRow,
             SpatialColumnHandler spatialColumnHandler, long zValue, boolean doLock) {
         TransactionState txn = txnService.getTransaction(session);
@@ -387,27 +334,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         txn.clearKey(packed);
     }
     
-    @Override
-    public void deleteIndexRow(Session session,
-                               TableIndex index,
-                               RowData rowData,
-                               Key hKey,
-                               WriteIndexRow indexRow,
-                               SpatialColumnHandler spatialColumnHandler,
-                               long zValue,
-                               boolean doLock) {
-        TransactionState txn = txnService.getTransaction(session);
-        Key indexKey = createKey();
-        constructIndexRow(session, indexKey, rowData, index, hKey, indexRow, spatialColumnHandler, zValue, false);
-        byte[] packed = packedTuple(index, indexKey);
-        txn.clearKey(packed);
-    }
-
-    @Override
-    protected void lock(Session session, FDBStoreData storeData, RowDef rowDef, RowData rowData) {
-        // None
-    }
-
     @Override
     protected void lock (Session session, FDBStoreData storeData, Row row) {
         // None
@@ -475,8 +401,8 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
 
     @Override
-    public FDBAdapter createAdapter(Session session, Schema schema) {
-        return new FDBAdapter(this, schema, session, txnService, configService);
+    public FDBAdapter createAdapter(Session session) {
+        return new FDBAdapter(this, session, txnService, configService);
     }
 
     @Override
@@ -606,17 +532,16 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         FDBStoreData storeData = createStoreData(session, group);
         groupIterator(session, storeData);
         while (storeData.next()) {
-            RowData rowData = new RowData();
-            expandGroupData(session, storeData, rowData);
-            visitor.visit(storeData.persistitKey, rowData);
+            Row row = expandGroupData(session, storeData, SchemaCache.globalSchema(group.getAIS()));
+            visitor.visit(storeData.persistitKey, row);
         }
     }
 
-    public void expandGroupData(Session session, FDBStoreData storeData, RowData rowData) {
+    public Row expandGroupData(Session session, FDBStoreData storeData, Schema schema) {
         unpackKey(storeData);
-        expandRowData(session, storeData, rowData);
+        return expandRow(session, storeData, schema);
     }
-
+    
     @Override
     public <V extends IndexVisitor<Key, Value>> V traverse(Session session, Index index, V visitor, long scanTimeLimit, long sleepTime) {
         FDBStoreData storeData = createStoreData(session, index);
@@ -795,24 +720,9 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         indexKey.clear();
         indexRow.resetForWrite(index, indexKey);
         indexRow.initialize(row, hKey, spatialColumnHandler, zValue);
-        indexRow.close(session, this, forInsert);
+        indexRow.close(session, forInsert);
     }
     
-    private void constructIndexRow(Session session,
-                                   Key indexKey,
-                                   RowData rowData,
-                                   Index index,
-                                   Key hKey,
-                                   WriteIndexRow indexRow,
-                                   SpatialColumnHandler spatialColumnHandler,
-                                   long zValue,
-                                   boolean forInsert) {
-        indexKey.clear();
-        indexRow.resetForWrite(index, indexKey);
-        indexRow.initialize(rowData, hKey, spatialColumnHandler, zValue);
-        indexRow.close(session, this, forInsert);
-    }
-
     private void checkUniqueness(Session session, TransactionState txn, Index index, Row row, Key key) {
         if(index.isUnique() && !hasNullIndexSegments(row, index)) {
             int realSize = key.getEncodedSize();
@@ -824,18 +734,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             }
         }
         
-    }
-    
-    private void checkUniqueness(Session session, TransactionState txn, Index index, RowData rowData, Key key) {
-        if(index.isUnique() && !hasNullIndexSegments(rowData, index)) {
-            int realSize = key.getEncodedSize();
-            key.setDepth(index.getKeyColumns().size());
-            try {
-                checkKeyDoesNotExistInIndex(session, txn, rowData, index, key);
-            } finally {
-                key.setEncodedSize(realSize);
-            }
-        }
     }
 
     private void checkKeyDoesNotExistInIndex(Session session, TransactionState txn, Row row, Index index, Key key) {
@@ -855,23 +753,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             txn.getIndexChecks(false).add(session, txn, index, check);
         }
         
-    }
-    private void checkKeyDoesNotExistInIndex(Session session, TransactionState txn, RowData rowData, Index index, Key key) {
-        assert index.isUnique() : index;
-        FDBPendingIndexChecks.PendingCheck<?> check =
-            FDBPendingIndexChecks.keyDoesNotExistInIndexCheck(session, txn, index, key);
-        if (txn.getForceImmediateForeignKeyCheck() ||
-            txn.getIndexChecks(false) == null) {
-            check.blockUntilReady(txn);
-            if (!check.check(session, txn, index)) {
-                // Using RowData, can give better error than check.throwException().
-                String msg = formatIndexRowString(session, rowData, index);
-                throw new DuplicateKeyException(index.getIndexName(), msg);
-            }
-        }
-        else {
-            txn.getIndexChecks(false).add(session, txn, index, check);
-        }
     }
 
     private void removeIfExists(Session session, DirectorySubspace dir, List<String> dirs) {

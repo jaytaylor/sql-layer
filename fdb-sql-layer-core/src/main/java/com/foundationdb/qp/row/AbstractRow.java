@@ -19,7 +19,6 @@ package com.foundationdb.qp.row;
 
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.value.ValueSource;
@@ -125,10 +124,6 @@ public abstract class AbstractRow implements Row
         }
         builder.append(']');
         return builder.toString();
-    }
-
-    public RowData rowData() {
-        throw new UnsupportedOperationException();
     }
 
     // Geophile Record interface

@@ -24,17 +24,17 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.types.texpressions.TPreparedBoundField;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.texpressions.TPreparedField;
+
 import org.junit.Test;
 
 import java.util.*;
 
 import static com.foundationdb.qp.operator.API.*;
-import static com.foundationdb.qp.operator.API.groupScan_Default;
-import static com.foundationdb.qp.operator.API.project_Default;
 
 
 
@@ -121,7 +121,7 @@ public class Select_HashTableCT extends CostModelBase
                 schemaName, emptyTable,
                 "x int", "y int", "z int", "a int", "b int");
 
-        schema = new Schema(ais());
+        schema = SchemaCache.globalSchema(ais());
         d1RowType = schema.tableRowType(table(d1));
         h1RowType = schema.tableRowType(table(h1));
         d2RowType = schema.tableRowType(table(d2));
@@ -136,7 +136,7 @@ public class Select_HashTableCT extends CostModelBase
 
 
 
-        adapter = newStoreAdapter(schema);
+        adapter = newStoreAdapter();
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }

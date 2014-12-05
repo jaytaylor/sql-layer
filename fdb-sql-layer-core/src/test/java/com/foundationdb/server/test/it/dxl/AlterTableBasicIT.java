@@ -105,8 +105,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
     }
 
     private void scanAndCheckIndex(IndexRowType type, Row... expectedRows) {
-        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
         QueryContext queryContext = new SimpleQueryContext(adapter);
         QueryBindings queryBindings = queryContext.createBindings();
         compareRows(
@@ -172,7 +171,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         RowType cType = schema.tableRowType(getTable(SCHEMA, "c"));
         RowType oType = schema.tableRowType(getTable(SCHEMA, "o"));
         RowType iType = schema.tableRowType(getTable(SCHEMA, "i"));
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
         int pk = 1;
         compareRows(
                 new Row[]{
@@ -418,7 +417,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         IndexRowType indexRowType = schema.indexRowType(index);
 
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
         QueryContext queryContext = new SimpleQueryContext(adapter);
         QueryBindings queryBindings = queryContext.createBindings();
         compareRows(
@@ -711,7 +710,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         RowType oType = schema.tableRowType(getTable(SCHEMA, "o"));
         RowType iType = schema.tableRowType(getTable(SCHEMA, "i"));
 
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
         compareRows(
                 new Row[] {
                         // null c
@@ -755,7 +754,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         RowType cType = schema.tableRowType(getTable(SCHEMA, "c"));
         RowType oType = schema.tableRowType(getTable(SCHEMA, "o"));
 
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
         compareRows(
                 new Row[] {
                         testRow(cType, 1L, "asdf"),
@@ -804,7 +803,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         RowType oType = schema.tableRowType(getTable(SCHEMA, "o"));
         RowType iType = schema.tableRowType(getTable(SCHEMA, "i"));
 
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
         compareRows(
                 new Row[] {
                         // ?
@@ -855,7 +854,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         RowType oType = schema.tableRowType(getTable(SCHEMA, "o"));
         RowType iType = schema.tableRowType(getTable(SCHEMA, "i"));
 
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
         compareRows(
                 new Row[] {
                         testRow(cType, 1, "asdf"),
@@ -1263,7 +1262,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         RowType cType = schema.tableRowType(getTable(SCHEMA, C_TABLE));
         RowType oType = schema.tableRowType(getTable(SCHEMA, O_TABLE));
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
         compareRows(
                 new Row[] {
                         testRow(cType, 1L, "a"),
@@ -1319,7 +1318,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         TableRowType cType = schema.tableRowType(getTable(SCHEMA, C_TABLE));
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
         long pk = 1L;
         compareRows(
                 new Row[]{
@@ -1348,7 +1347,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         TableRowType cType = schema.tableRowType(getTable(SCHEMA, C_TABLE));
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
         long pk = 1L;
         compareRows(
                 new Row[]{

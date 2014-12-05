@@ -24,8 +24,6 @@ import com.foundationdb.server.rowdata.encoding.EncodingException;
 import com.foundationdb.server.spatial.Spatial;
 import com.foundationdb.util.AkibanAppender;
 
-import java.util.Arrays;
-
 /**
  * Represent one or more rows of table data. The backing store is a byte array
  * supplied in the constructor. The {@link #RowData(byte[], int, int)}

@@ -30,12 +30,13 @@ import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
+
 import org.junit.Before;
 import org.junit.Test;
-
 
 import static com.foundationdb.qp.operator.API.*;
 import static com.foundationdb.server.test.ExpressionGenerators.field;
@@ -66,7 +67,7 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
                 row(customer, 4L, "Aaa", "32.00")
         );
 
-        schema = new Schema(ddl().getAIS(session()));
+        schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         Table cTable = getTable(customer);
         customerRowType = schema.tableRowType(cTable);
         customerGroup = cTable.getGroup();
@@ -120,7 +121,7 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
     }
 
     private Cursor cursor(Operator plan) {
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
         QueryContext context = queryContext(adapter);
         QueryBindings bindings = context.createBindings();
         return API.cursor(plan, context, bindings);

@@ -23,8 +23,8 @@ import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.CommonProtobuf.ProtobufRowFormat;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.ProtobufReadException;
-import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
@@ -118,34 +118,18 @@ public class FDBProtobufStorageDescription extends TupleStorageDescription imple
         storeData.rawValue = msg.toByteArray();
     }
     
-    @Override
-    public void packRowData(FDBStore store, Session session,
-                            FDBStoreData storeData, RowData rowData) {
-        ensureRowDataConverter();
-        DynamicMessage msg = rowDataConverter.encode(rowData);
-        storeData.rawValue = msg.toByteArray();        
-    }
-
     @Override 
-    public void expandRow (FDBStore store, Session session,
-                            FDBStoreData storeData, Row row) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void expandRowData(FDBStore store, Session session,
-                              FDBStoreData storeData, RowData rowData) {
-        ensureRowDataConverter();
+    public Row expandRow (FDBStore store, Session session,
+                            FDBStoreData storeData, Schema schema) {
+        ensureRowConverter();
         DynamicMessage msg;
         try {
-            msg = DynamicMessage.parseFrom(rowDataConverter.getMessageType(), storeData.rawValue);
-        }
-        catch (InvalidProtocolBufferException ex) {
+            msg = DynamicMessage.parseFrom(rowConverter.getMessageType(), storeData.rawValue);
+        } catch (InvalidProtocolBufferException ex) {
             ProtobufReadException nex = new ProtobufReadException(rowDataConverter.getMessageType().getName(), ex.getMessage());
             nex.initCause(ex);
             throw nex;
         }
-        rowDataConverter.decode(msg, rowData);
+        return rowConverter.decode(msg);
     }
-
 }

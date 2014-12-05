@@ -23,7 +23,9 @@ import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.InvalidOperationException;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -60,7 +62,7 @@ public class InsertProfilePT extends QPProfilePTBase
         TableName groupName = coi.getName();
         createLeftGroupIndex(groupName, "name_salesman", "customer.name", "order.salesman");
         createLeftGroupIndex(groupName, "name_address", "customer.name", "address.address");
-        schema = new Schema(ais());
+        schema = SchemaCache.globalSchema(ais());
         customerRowType = schema.tableRowType(table(customer));
         orderRowType = schema.tableRowType(table(order));
         itemRowType = schema.tableRowType(table(item));
@@ -71,7 +73,7 @@ public class InsertProfilePT extends QPProfilePTBase
         itemIidIndexRowType = indexType(item, "iid");
         customerCidIndexRowType = indexType(customer, "cid");
         addressAddressIndexRowType = indexType(address, "address");
-        adapter = newStoreAdapter(schema);
+        adapter = newStoreAdapter();
     }
 
     @Test

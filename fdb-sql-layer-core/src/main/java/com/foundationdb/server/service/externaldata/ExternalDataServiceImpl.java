@@ -31,7 +31,6 @@ import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.service.Service;
@@ -99,10 +98,10 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
         return table;
     }
 
-    private StoreAdapter getAdapter(Session session, Table table, Schema schema) {
+    private StoreAdapter getAdapter(Session session, Table table) {
         if (table.hasMemoryTableFactory())
-            return new MemoryAdapter(schema, session, configService);
-        return store.createAdapter(session, schema);
+            return new MemoryAdapter(session, configService);
+        return store.createAdapter(session);
     }
 
     private TypesTranslator getTypesTranslator() {
@@ -115,10 +114,9 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                             List<List<Object>> keys,
                             int depth,
                             boolean withTransaction,
-                            Schema schema,
                             Operator plan,
                             FormatOptions options) {
-        StoreAdapter adapter = getAdapter(session, table, schema);
+        StoreAdapter adapter = getAdapter(session, table);
         QueryContext queryContext = new SimpleQueryContext(adapter) {
                 @Override
                 public ServiceManager getServiceManager() {
@@ -178,7 +176,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
         logger.debug("Writing all of {}", table);
         PlanGenerator generator = ais.getCachedValue(this, CACHED_PLAN_GENERATOR);
         Operator plan = generator.generateScanPlan(table);
-        dumpAsJson(session, writer, table, null, depth, withTransaction, generator.getSchema(), plan, options);
+        dumpAsJson(session, writer, table, null, depth, withTransaction, plan, options);
     }
 
     @Override
@@ -191,7 +189,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
         logger.debug("Writing from {}: {}", table, keys);
         PlanGenerator generator = ais.getCachedValue(this, CACHED_PLAN_GENERATOR);
         Operator plan = generator.generateBranchPlan(table);
-        dumpAsJson(session, writer, table, keys, depth, withTransaction, generator.getSchema(), plan, options);
+        dumpAsJson(session, writer, table, keys, depth, withTransaction, plan, options);
     }
 
     @Override
@@ -204,7 +202,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
         logger.debug("Writing from {}: {}", table, scan);
         PlanGenerator generator = ais.getCachedValue(this, CACHED_PLAN_GENERATOR);
         Operator plan = generator.generateBranchPlan(table, scan, scanType);
-        dumpAsJson(session, writer, table, Collections.singletonList(Collections.emptyList()), depth, withTransaction, generator.getSchema(), plan, options);
+        dumpAsJson(session, writer, table, Collections.singletonList(Collections.emptyList()), depth, withTransaction, plan, options);
     }
 
     @Override

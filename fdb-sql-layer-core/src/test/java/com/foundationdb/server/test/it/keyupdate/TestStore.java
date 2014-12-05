@@ -19,12 +19,16 @@ package com.foundationdb.server.test.it.keyupdate;
 
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.IndexKeyVisitor;
 import com.foundationdb.server.store.Store;
 import com.foundationdb.server.store.TreeRecordVisitor;
+import com.foundationdb.server.types.value.Value;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -38,26 +42,26 @@ public class TestStore
     public void writeRow(Session session, KeyUpdateRow row)
         throws Exception
     {
-        realStore.writeRow(session, row.toRowData());
-        map.put(row.hKey(), row);
+        realStore.writeRow(session, row, null, null);
+        map.put(row.keyUpdateHKey(), row);
     }
 
     public void deleteRow(Session session, KeyUpdateRow row)
         throws Exception
     {
-        realStore.deleteRow(session, row.toRowData(), false);
-        map.remove(row.hKey());
+        realStore.deleteRow(session, row, false);
+        map.remove(row.keyUpdateHKey());
     }
 
     public void updateRow(Session session, KeyUpdateRow oldRow, KeyUpdateRow newRow, ColumnSelector columnSelector)
     {
         realStore.updateRow(session,
-                            oldRow.toRowData(),
-                            newRow.toRowData(), // Not mergedRow. Rely on delegate to merge existing and new.
-                            null);
-        KeyUpdateRow currentRow = map.remove(oldRow.hKey());
-        KeyUpdateRow mergedRow = mergeRows(currentRow, newRow, columnSelector);
-        map.put(mergedRow.hKey(), mergedRow);
+                            oldRow,
+                            newRow);
+        KeyUpdateRow currentRow = map.remove(oldRow.keyUpdateHKey());
+        assert currentRow != null;
+        //KeyUpdateRow mergedRow = mergeRows(currentRow, newRow, columnSelector);
+        map.put(newRow.keyUpdateHKey(), newRow);
     }
 
     public void traverse(Session session, Group group, TreeRecordVisitor testVisitor, TreeRecordVisitor realVisitor)
@@ -88,33 +92,15 @@ public class TestStore
 
     public void writeTestRow(KeyUpdateRow row)
     {
-        map.put(row.hKey(), row);
+        map.put(row.keyUpdateHKey(), row);
     }
 
     public void deleteTestRow(KeyUpdateRow row)
     {
-        map.remove(row.hKey());
+        map.remove(row.keyUpdateHKey());
     }
 
     // For use by this class
-
-    private KeyUpdateRow mergeRows(KeyUpdateRow currentRow, KeyUpdateRow newRow, ColumnSelector columnSelector)
-    {
-        KeyUpdateRow mergedRow;
-        if (columnSelector == null) {
-            mergedRow = newRow;
-        } else {
-            if (currentRow.getRowDef() != newRow.getRowDef()) {
-                throw new RuntimeException();
-            }
-            mergedRow = new KeyUpdateRow(newRow.getRowDef().getRowDefId(), newRow.getRowDef(), currentRow.getStore());
-            int n = newRow.getRowDef().getFieldCount();
-            for (int i = 0; i < n; i++) {
-                mergedRow.put(i, columnSelector.includesColumn(i) ? newRow.get(i) : currentRow.get(i));
-            }
-        }
-        return mergedRow;
-    }
 
     // Object state
 

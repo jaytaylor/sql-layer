@@ -189,15 +189,6 @@ public interface DDLFunctions {
     public Table getTable(Session session, TableName tableName) throws NoSuchTableException;
 
     /**
-     * Resolves the given table ID to its RowDef
-     * @param session the session
-     * @param tableId the table to look up
-     * @return the rowdef
-     * @throws RowDefNotFoundException if the tableID has no associated RowDef.
-     */
-    RowDef getRowDef(Session session, int tableId) throws RowDefNotFoundException;
-
-    /**
      * Get an integer version of the generation of the AIS. Upon change this is only guaranteed to be different,
      * increasing or decreasing is unspecified, from the last.
      * @see #getGeneration

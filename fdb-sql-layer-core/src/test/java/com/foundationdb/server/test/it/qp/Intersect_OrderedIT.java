@@ -62,14 +62,12 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         uRowType = schema.tableRowType(table(u));
         tPidIndexRowType = indexType(t, "pid");
         tXIndexRowType = indexType(t, "x");
         uXIndexRowType = indexType(u, "x");
         vXIndexRowType = indexType(v, "x");
         wXIndexRowType = indexType(w, "x");
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
 
