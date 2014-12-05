@@ -18,10 +18,10 @@
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSource;
-import com.foundationdb.server.types.value.ValueSources;
 
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
@@ -38,7 +38,7 @@ public class QueryBindingsTest
         QueryBindings bindings = new SparseArrayQueryBindings();
         ValueSource value = new Value(MNumeric.INT.instance(false), 123);
         bindings.setValue(1, value);
-        assertTrue(ValueSources.areEqual(value, bindings.getValue(1)));
+        assertTrue(TClass.areEqual(value, bindings.getValue(1)));
     }
 
     @Test(expected=BindingNotSetException.class)
@@ -87,7 +87,7 @@ public class QueryBindingsTest
             child.setRow(1, row);
             assertEquals(row, child.getRow(1));
         }
-        assertTrue(ValueSources.areEqual(value, child.getValue(0)));
+        assertTrue(TClass.areEqual(value, child.getValue(0)));
         try {
             parent.getRow(1);
             fail();

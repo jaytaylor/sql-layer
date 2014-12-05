@@ -373,45 +373,6 @@ public final class ValueSources {
         }
     }
 
-    public static boolean areEqual(ValueSource one, ValueSource two) {
-        TInstance oneType = one.getType();
-        TInstance twoType = two.getType();
-        if (oneType == null || twoType == null)
-            return oneType == null && twoType == null;
-        if (!oneType.equalsExcludingNullable(twoType))
-            return false;
-        if (one.isNull())
-            return two.isNull();
-        if (two.isNull())
-            return false;
-        if (one.hasCacheValue() && two.hasCacheValue())
-            return one.getObject().equals(two.getObject());
-        switch (TInstance.underlyingType(oneType)) {
-        case BOOL:
-            return one.getBoolean() == two.getBoolean();
-        case INT_8:
-            return one.getInt8() == two.getInt8();
-        case INT_16:
-            return one.getInt16() == two.getInt16();
-        case UINT_16:
-            return one.getInt16() == two.getInt16();
-        case INT_32:
-            return one.getInt32() == two.getInt32();
-        case INT_64:
-            return one.getInt64() == two.getInt64();
-        case FLOAT:
-            return one.getFloat() == two.getFloat();
-        case DOUBLE:
-            return one.getDouble() == two.getDouble();
-        case STRING:
-            return one.getString().equals(two.getString());
-        case BYTES:
-            return Arrays.equals(one.getBytes(), two.getBytes());
-        default:
-            throw new AssertionError(String.valueOf(oneType));
-        }
-    }
-
     public static int hash(ValueSource source, AkCollator collator) {
         if (source.isNull())
             return 0;
