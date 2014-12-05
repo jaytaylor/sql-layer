@@ -102,7 +102,7 @@ public class FDBScanCommittingIterator implements AsyncIterator<KeyValue>
     protected void checkForRestart() {
         if (underlying != null) {
             if (resetCount != transaction.getResetCount()) {
-                logger.debug("Updating for current transaction", count);
+                logger.debug("Updating for current transaction");
                 totalCount += count;
                 dispose();
             }
