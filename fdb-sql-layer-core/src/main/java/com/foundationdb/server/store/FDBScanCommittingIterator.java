@@ -145,4 +145,14 @@ public class FDBScanCommittingIterator implements AsyncIterator<KeyValue>
         }
     }
 
+    @Override
+    public void remove() {
+        if (underlying != null) {
+            underlying.remove();
+        }
+        else {
+            throw new IllegalStateException();
+        }
+    }
+
 }
