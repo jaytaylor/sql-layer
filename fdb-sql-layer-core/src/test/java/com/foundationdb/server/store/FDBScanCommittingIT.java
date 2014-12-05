@@ -63,7 +63,7 @@ public class FDBScanCommittingIT extends FDBITBase
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         RowType t1Type = schema.tableRowType(t1);
         RowType t2Type = schema.tableRowType(t2);
-        adapter = (FDBAdapter)newStoreAdapter(schema);
+        adapter = (FDBAdapter)newStoreAdapter();
 
         txnService().beginTransaction(session());
         

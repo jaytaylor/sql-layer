@@ -26,6 +26,9 @@ import com.foundationdb.async.ReadyFuture;
 import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.NoSuchElementException;
 
 /**
@@ -34,6 +37,8 @@ import java.util.NoSuchElementException;
  */
 public class FDBScanCommittingIterator implements AsyncIterator<KeyValue>
 {
+    private static final Logger logger = LoggerFactory.getLogger(FDBScanCommittingIterator.class);
+
     private final TransactionState transaction;
     private final KeySelector start, end;
     private final int limit;
@@ -41,7 +46,7 @@ public class FDBScanCommittingIterator implements AsyncIterator<KeyValue>
     private final FDBScanTransactionOptions options;
     private AsyncIterator<KeyValue> underlying = null;
     private KeyValue lastKeyValue = null;
-    private int count = 0;
+    private int count, totalCount = 0;
     private int resetCount;
     
     public FDBScanCommittingIterator(TransactionState transaction,
@@ -97,10 +102,14 @@ public class FDBScanCommittingIterator implements AsyncIterator<KeyValue>
     protected void checkForRestart() {
         if (underlying != null) {
             if (resetCount != transaction.getResetCount()) {
+                logger.debug("Updating for current transaction", count);
+                totalCount += count;
                 dispose();
             }
             else if (options.shouldCommitAfterRows(count) ||
                      options.shouldCommitAfterMillis(transaction.getStartTime())) {
+                logger.debug("Commit after {} rows", count);
+                totalCount += count;
                 dispose();
                 transaction.commitAndReset();
                 try {
@@ -123,14 +132,15 @@ public class FDBScanCommittingIterator implements AsyncIterator<KeyValue>
                 }
             }
             if (limit != Transaction.ROW_LIMIT_UNLIMITED) {
-                limit -= count;
+                limit -= totalCount;
             }
             if (options.isSnapshot()) {
                 underlying = transaction.getSnapshotRangeIterator(start, end, limit, reverse);
-        }
+            }
             else {
                 underlying = transaction.getRangeIterator(start, end, limit, reverse);
             }
+            count = 0;
             resetCount = transaction.getResetCount();
         }
     }
