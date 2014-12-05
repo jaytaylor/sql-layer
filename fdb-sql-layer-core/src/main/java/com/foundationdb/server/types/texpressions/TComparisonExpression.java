@@ -30,8 +30,6 @@ public final class TComparisonExpression extends TComparisonExpressionBase {
                           TInstance rightInstance, ValueSource rightSource)
     {
         TClass tClass = leftInstance.typeClass();
-        assert rightInstance.typeClass().compatibleForCompare(tClass)
-                : "type class mismatch: " + leftInstance + " != " + rightInstance;
         if (collator != null) {
             assert tClass.underlyingType() == UnderlyingType.STRING : tClass + ": " + tClass.underlyingType();
             String leftString = leftSource.getString();
@@ -60,5 +58,6 @@ public final class TComparisonExpression extends TComparisonExpressionBase {
         this.collator = collator;
     }
 
+    // Collator in advance saves mergeCollations() every eval as TClass.compare() would do
     private final AkCollator collator;
 }

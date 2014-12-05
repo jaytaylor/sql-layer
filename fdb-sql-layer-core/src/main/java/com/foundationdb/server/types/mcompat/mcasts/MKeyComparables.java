@@ -35,6 +35,7 @@ import java.util.Set;
 
 import static com.foundationdb.server.types.value.ValueSources.getLong;
 
+@SuppressWarnings("unused") // via reflection
 public final class MKeyComparables {
 
     public static final TKeyComparable[] intComparisons = createIntComparisons();
