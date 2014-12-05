@@ -37,3 +37,5 @@ join-multi-fk-3 : multi-column fk, plus join to another table
 join-multi-fk-4 : negative test, multi-fk using one column, plus join to another table, no FK flagged
 
 join-multi-fk-5 : negative test, mulit-fk with join columns reversed
+
+m2m-order-by : many-to-many relation with weird order by
