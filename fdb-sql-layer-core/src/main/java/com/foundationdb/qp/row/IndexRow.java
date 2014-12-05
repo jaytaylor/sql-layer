@@ -101,7 +101,7 @@ public abstract class IndexRow extends AbstractRow implements com.geophile.z.Rec
 
     protected abstract int zPosition();
 
-NewRowBackedIndexRow    private long z = Space.Z_NULL;
+    private long z = Space.Z_NULL;
 
     public static enum EdgeValue {
         BEFORE,
