@@ -317,11 +317,15 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
 
     private void copyValue (ValueSource valueSource, Value valueTarget) {
         if (valueSource.hasAnyValue()) {
-            TKeyComparable compare = registry.getKeyComparable(valueSource.getType().typeClass(), valueTarget.getType().typeClass());
-            if (compare != null) {
-                compare.getComparison().copyComparables(valueSource, valueTarget);
+            if (valueSource.isNull()) {
+                valueTarget.putNull();
             } else {
-                ValueTargets.copyFrom(valueSource, valueTarget);
+                TKeyComparable compare = registry.getKeyComparable(valueSource.getType().typeClass(), valueTarget.getType().typeClass());
+                if (compare != null) {
+                    compare.getComparison().copyComparables(valueSource, valueTarget);
+                } else {
+                    ValueTargets.copyFrom(valueSource, valueTarget);
+                }
             }
         }        
     }
