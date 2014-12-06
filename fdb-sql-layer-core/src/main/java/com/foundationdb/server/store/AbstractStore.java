@@ -56,9 +56,9 @@ import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.listener.RowListener;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.types.value.ValueSource;
-import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.sql.optimizer.rule.PlanGenerator;
 import com.foundationdb.util.AkibanAppender;
 import com.foundationdb.util.tap.InOutTap;
@@ -236,7 +236,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         for (int keyFieldPosition = keyField.nextSetBit(0);
              allEqual && keyFieldPosition >= 0;
              keyFieldPosition = keyField.nextSetBit(keyFieldPosition + 1)) {
-            boolean fieldEqual = ValueSources.areEqual(oldRow.value(keyFieldPosition), newRow.value(keyFieldPosition));
+            boolean fieldEqual = TClass.areEqual(oldRow.value(keyFieldPosition), newRow.value(keyFieldPosition));
             if (!fieldEqual) {
                 allEqual = false;
             }
@@ -1014,7 +1014,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                                     IndexRowComposition indexRowComposition) {
         for (int i = 0; i < nkeys; i++) {
             int fieldIndex = indexRowComposition.getFieldPosition(i);
-            if (!ValueSources.areEqual(a.value(fieldIndex), b.value(fieldIndex))) {
+            if (!TClass.areEqual(a.value(fieldIndex), b.value(fieldIndex))) {
                 return false;
             }
         }
@@ -1025,7 +1025,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         int fields = a.rowType().nFields();
         BitSet differences = new BitSet(fields);
         for(int f = 0; f < fields; f++) {
-            differences.set(f, !ValueSources.areEqual(a.value(f), b.value(f))); 
+            differences.set(f, !TClass.areEqual(a.value(f), b.value(f)));
         }
         return differences;
     }

@@ -436,7 +436,7 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
                                         List<Column> columns) {
         for (Column column: columns) {
             int i = column.getPosition().intValue();
-            if (!ValueSources.areEqual(oldRow.value(i), newRow.value(i))) {
+            if (!TClass.areEqual(oldRow.value(i), newRow.value(i))) {
                 return true;
             }
         }
