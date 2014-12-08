@@ -22,9 +22,9 @@ import java.util.Queue;
 
 import com.foundationdb.ais.model.Parameter;
 import com.foundationdb.qp.operator.QueryBindings;
-import com.foundationdb.server.error.*;
+import com.foundationdb.server.error.ProtectedItemException;
 import com.foundationdb.server.explain.Explainable;
-import com.foundationdb.server.service.security.*;
+import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.sql.routinefw.ShieldedInvokable;
 import com.foundationdb.sql.routinefw.RoutineFirewall;
 
