@@ -186,11 +186,11 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         protected void pickJoinsAndIndexes (JoinNode joins) {
-            Plan rootPlan = pickRootJoinPlan(joins);
+            Plan rootPlan = pickRootJoinPlan(joins, true);
             installPlan (rootPlan, false);
         }
         
-        protected Plan pickRootJoinPlan (JoinNode joins) {
+        protected Plan pickRootJoinPlan (JoinNode joins, boolean sortAllowed) {
             JoinEnumerator processor = new JoinEnumerator (this);
             List<Joinable> tables = new ArrayList<>();
             JoinEnumerator.addTables(joins, tables);
@@ -201,7 +201,8 @@ public class JoinAndIndexPicker extends BaseRule
             // The number of tables in the set is smaller than our configuration threshold OR
             // The top join in the query isn't a FK join.
             if (tableCount <= threshold || ((JoinNode)joinable).getFKJoin() == null) {
-                return processor.run(joins, queryGoal.getWhereConditions()).bestPlan(Collections.<JoinOperator>emptyList());
+                return processor.run(joins, queryGoal.getWhereConditions()).
+                        bestPlan(Collections.<JoinOperator>emptyList(), sortAllowed);
             } else {
                 processor.init(joins, null);
             }
@@ -268,26 +269,28 @@ public class JoinAndIndexPicker extends BaseRule
             
             if (joins.getLeft() instanceof TableGroupJoinTree) {
                 leftClass = processor.evaluateTable(leftTable, joins.getLeft());
-                leftPlan = leftClass.bestPlan(outsideJoins);
+                leftPlan = leftClass.bestPlan(outsideJoins, sortAllowed);
             } else if (joins.getLeft() instanceof JoinNode) {
                 if (((JoinNode)joins.getLeft()).getFKJoin() != null) {
                     leftClass = new JoinPlanClass(processor, processor.rootJoinLeftTables());
-                    leftPlan = pickRootJoinPlan((JoinNode) joins.getLeft());
+                    leftPlan = pickRootJoinPlan((JoinNode) joins.getLeft(), sortAllowed);
                 } else {
                     JoinEnumerator innerProcessor = new JoinEnumerator (this);
                     leftClass = innerProcessor.run(joins.getLeft(), queryGoal.getWhereConditions());
-                    leftPlan = leftClass.bestPlan(Collections.<JoinOperator>emptyList());
+                    leftPlan = leftClass.bestPlan(Collections.<JoinOperator>emptyList(), sortAllowed);
                 }
             }
 
             if (joins.getRight() instanceof TableGroupJoinTree) {
-                 rightPlan = processor.evaluateTable(rightTable, joins.getRight()).bestNestedPlan (leftClass, operators, outsideJoins);
+                 rightPlan = processor.evaluateTable(rightTable, joins.getRight()).
+                         bestNestedPlan(leftClass, operators, outsideJoins);
             } else if (joins.getRight() instanceof JoinNode) {
                 if (((JoinNode)joins.getRight()).getFKJoin() != null) {
-                    rightPlan = pickRootJoinPlan((JoinNode)joins.getRight());
+                    rightPlan = pickRootJoinPlan((JoinNode)joins.getRight(), false);
                 } else {
                     JoinEnumerator innerProcessor = new JoinEnumerator (this);
-                    rightPlan = innerProcessor.run(joins.getRight(), queryGoal.getWhereConditions()).bestPlan(Collections.<JoinOperator>emptyList());
+                    rightPlan = innerProcessor.run(joins.getRight(), queryGoal.getWhereConditions()).
+                            bestPlan(Collections.<JoinOperator>emptyList(), false);
                 }
             }
 
@@ -397,7 +400,9 @@ public class JoinAndIndexPicker extends BaseRule
                     queryGoal.getWhereConditions().clear();
                     queryGoal.getWhereConditions().addAll(originalSubqueryWhereConditions);
                 }
-                return new JoinEnumerator(this, subqueryBoundTables, subqueryJoins, subqueryOutsideJoins).run((JoinNode)joinable, queryGoal.getWhereConditions()).bestPlan(Collections.<JoinOperator>emptyList());
+                return new JoinEnumerator(this, subqueryBoundTables, subqueryJoins, subqueryOutsideJoins).
+                        run((JoinNode) joinable, queryGoal.getWhereConditions()).
+                        bestPlan(Collections.<JoinOperator>emptyList(), enableFKJoins);
             }
             if (joinable instanceof SubquerySource) {
                 SubquerySource subquerySource = (SubquerySource) joinable;
@@ -482,11 +487,10 @@ public class JoinAndIndexPicker extends BaseRule
             this.bitset = bitset;
         }
 
-        public abstract Plan bestPlan(Collection<JoinOperator> outsideJoins);
+        public abstract Plan bestPlan(Collection<JoinOperator> outsideJoins, boolean sortAllowed);
 
-        public Plan bestNestedPlan(PlanClass outerPlan, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
-            return bestPlan(outsideJoins); // By default, side doesn't matter.
-        }
+        public abstract Plan bestNestedPlan(PlanClass outerPlan,
+                                            Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins);
 
         public abstract Plan bestPlan(Collection<JoinOperator> condJoins, Collection<JoinOperator> outsideJoins);
     }
@@ -597,35 +601,37 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Plan bestPlan(Collection<JoinOperator> outsideJoins) {
-            return bestPlan(JoinableBitSet.empty(), Collections.<JoinOperator>emptyList(), outsideJoins);
+        public Plan bestPlan(Collection<JoinOperator> outsideJoins, boolean sortAllowed) {
+            return bestPlan(JoinableBitSet.empty(), Collections.<JoinOperator>emptyList(), outsideJoins, true);
         }
 
         @Override
         public Plan bestNestedPlan(PlanClass outerPlan, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
-            return bestPlan(outerPlan.bitset, joins, outsideJoins);
+            return bestPlan(outerPlan.bitset, joins, outsideJoins, false);
         }
 
         @Override
         public Plan bestPlan(Collection<JoinOperator> condJoins, Collection<JoinOperator> outsideJoins) {
-            return bestPlan(JoinableBitSet.empty(), Collections.<JoinOperator>emptyList(), condJoins, outsideJoins);
+            return bestPlan(JoinableBitSet.empty(), Collections.<JoinOperator>emptyList(), condJoins, outsideJoins, true);
         }
 
         protected ConditionList getExtraConditions() {
             return null;
         }
 
-        protected GroupPlan bestPlan(long outerTables, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
-            return bestPlan(outerTables, joins, joins, outsideJoins);
+        protected GroupPlan bestPlan(long outerTables, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins, boolean sortAllowed) {
+            return bestPlan(outerTables, joins, joins, outsideJoins, sortAllowed);
         }
 
-        protected GroupPlan bestPlan(long outerTables, Collection<JoinOperator> queryJoins, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
+        protected GroupPlan bestPlan(long outerTables, Collection<JoinOperator> queryJoins,
+                                     Collection<JoinOperator> joins,
+                                     Collection<JoinOperator> outsideJoins,
+                                     boolean sortAllowed) {
             for (GroupPlan groupPlan : bestPlans) {
                 if (groupPlan.outerTables == outerTables) {
                     return groupPlan;
                 }
             }
-            boolean sortAllowed = queryJoins.isEmpty();
             Collection<JoinOperator> requiredJoins = joins;
             if (JoinableBitSet.isEmpty(outerTables)) {
                 // this is an outer plan
@@ -747,7 +753,7 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Plan bestPlan(Collection<JoinOperator> outsideJoins) {
+        public Plan bestPlan(Collection<JoinOperator> outsideJoins, boolean sortAllowed) {
             return bestPlan(JoinableBitSet.empty(), Collections.<JoinOperator>emptyList(), outsideJoins);
         }
 
@@ -824,7 +830,7 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Plan bestPlan(Collection<JoinOperator> outsideJoins) {
+        public Plan bestPlan(Collection<JoinOperator> outsideJoins, boolean sortAllowed) {
             return plan;
         }
 
@@ -855,7 +861,7 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Plan bestPlan(Collection<JoinOperator> outsideJoins) {
+        public Plan bestPlan(Collection<JoinOperator> outsideJoins, boolean sortAllowed) {
             return plan;
         }
 
@@ -1056,7 +1062,13 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Plan bestPlan(Collection<JoinOperator> outsideJoins) {
+        public Plan bestPlan(Collection<JoinOperator> outsideJoins, boolean sortAllowed) {
+            return bestPlan;
+        }
+
+        @Override
+        public Plan bestNestedPlan(PlanClass outerPlan, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
+            // TODO implement
             return bestPlan;
         }
 
@@ -1145,7 +1157,8 @@ public class JoinAndIndexPicker extends BaseRule
                 }
                 if ((asGroupWithIn != null) &&
                         (asGroupWithIn.getExtraConditions() != null)) {
-                    Plan withInPlan = asGroupWithIn.bestPlan(outsideJoins);
+                    // TODO do this both as nested and not
+                    Plan withInPlan = asGroupWithIn.bestPlan(outsideJoins, true);
                     if (withInPlan != null) {
                         planClass.asGroupWithIn = asGroupWithIn;
                         planClass.consider(withInPlan);
@@ -1171,6 +1184,8 @@ public class JoinAndIndexPicker extends BaseRule
             joinsForOuterPlan(condJoins, left, joinsForLeft);
 
             Plan leftPlan;
+            // TODO here, evaluate leftPlan the way we do now, and without sort
+            // Could potentially do a check if bitset == overall bitset
             if (joinType.isRightLinear() || joinType.isSemi()) {
                 leftPlan = left.bestPlan(condJoins, outsideJoins);
             } else {
