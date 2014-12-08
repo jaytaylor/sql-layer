@@ -20,6 +20,7 @@ package com.foundationdb.server.service.transaction;
 import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.sql.parser.IsolationLevel;
 
 import java.util.concurrent.Callable;
 
@@ -148,4 +149,14 @@ public interface TransactionService extends Service {
 
     /** Set if checks should be performed immediately (true disables all deferring). Return previous value. */
     boolean setForceImmediateForeignKeyCheck(Session session, boolean force);
+
+    /** Return the isolation level that would be in effect if the given one were requested. */
+    IsolationLevel actualIsolationLevel(IsolationLevel level);
+
+    /** Set isolation level for the session's transaction. */
+    IsolationLevel setIsolationLevel(Session session, IsolationLevel level);
+
+    /** Does this isolation level only work with read-only transactions? */
+    boolean isolationLevelRequiresReadOnly(Session session);
+
 }

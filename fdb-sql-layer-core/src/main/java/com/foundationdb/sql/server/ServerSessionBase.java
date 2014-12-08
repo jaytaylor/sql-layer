@@ -43,6 +43,7 @@ import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.optimizer.AISBinderContext;
 import com.foundationdb.sql.optimizer.rule.PipelineConfiguration;
 import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
+import com.foundationdb.sql.parser.IsolationLevel;
 
 import java.io.IOException;
 import java.util.*;
@@ -62,6 +63,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     protected StoreAdapterHolder adapters = new StoreAdapterHolder();
     protected ServerTransaction transaction;
     protected boolean transactionDefaultReadOnly = false;
+    protected IsolationLevel transactionDefaultIsolationLevel = IsolationLevel.UNSPECIFIED_ISOLATION_LEVEL;
     protected ServerTransaction.PeriodicallyCommit transactionPeriodicallyCommit = ServerTransaction.PeriodicallyCommit.OFF;
     protected ServerSessionMonitor sessionMonitor;
 
@@ -231,7 +233,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     public void beginTransaction() {
         if (transaction != null)
             throw new TransactionInProgressException();
-        transaction = new ServerTransaction(this, transactionDefaultReadOnly, transactionPeriodicallyCommit);
+        transaction = new ServerTransaction(this, transactionDefaultReadOnly, transactionDefaultIsolationLevel, transactionPeriodicallyCommit);
     }
 
     @Override
@@ -277,6 +279,19 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     @Override
     public ServerTransaction.PeriodicallyCommit getTransactionPeriodicallyCommit() {
         return transactionPeriodicallyCommit;
+    }
+
+    @Override
+    public IsolationLevel setTransactionIsolationLevel(IsolationLevel level) {
+        if (transaction == null)
+            throw new NoTransactionInProgressException();
+        return transaction.setIsolationLevel(level);
+    }
+
+    @Override
+    public IsolationLevel setTransactionDefaultIsolationLevel(IsolationLevel level) {
+        this.transactionDefaultIsolationLevel = getTransactionService().actualIsolationLevel(level);
+        return this.transactionDefaultIsolationLevel;
     }
 
     @Override
@@ -374,14 +389,14 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             case READ:
             case NEW:
             case IMPLICIT_COMMIT_AND_NEW:
-                transaction = new ServerTransaction(this, true, ServerTransaction.PeriodicallyCommit.OFF);
+                transaction = new ServerTransaction(this, true);
                 localTransaction = true;
                 break;
             case WRITE:
             case NEW_WRITE:
                 if (transactionDefaultReadOnly)
                     throw new TransactionReadOnlyException();
-                transaction = new ServerTransaction(this, false, ServerTransaction.PeriodicallyCommit.OFF);
+                transaction = new ServerTransaction(this, false);
                 transaction.beforeUpdate();
                 localTransaction = true;
                 break;

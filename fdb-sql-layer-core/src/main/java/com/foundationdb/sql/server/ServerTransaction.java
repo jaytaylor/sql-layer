@@ -20,8 +20,8 @@ package com.foundationdb.sql.server;
 import com.foundationdb.server.error.TransactionInProgressException;
 import com.foundationdb.server.error.TransactionReadOnlyException;
 import com.foundationdb.server.service.session.Session;
-
 import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.sql.parser.IsolationLevel;
 
 import java.util.Date;
 
@@ -46,18 +46,26 @@ public class ServerTransaction
 
     private final Session session;
     private final TransactionService txnService;
-    private boolean readOnly;
+    private boolean readOnly, anyWrites;
+    private IsolationLevel isolationLevel;
     private PeriodicallyCommit periodicallyCommit;
     private Date transactionTime;
     
     /** Begin a new transaction or signal an exception. */
     public ServerTransaction(ServerSession server, 
-                             boolean readOnly, PeriodicallyCommit periodicallyCommit) {
+                             boolean readOnly, IsolationLevel isolationLevel,
+                             PeriodicallyCommit periodicallyCommit) {
         this.session = server.getSession();
         this.txnService = server.getTransactionService();
-        this.readOnly = readOnly;
-        this.periodicallyCommit = periodicallyCommit;
         txnService.beginTransaction(session);
+        this.isolationLevel = txnService.setIsolationLevel(session, isolationLevel);
+        this.readOnly = readOnly || txnService.isolationLevelRequiresReadOnly(session);
+        this.periodicallyCommit = periodicallyCommit;
+    }
+
+    public ServerTransaction(ServerSession server, boolean readOnly) {
+        this(server, readOnly,
+             IsolationLevel.UNSPECIFIED_ISOLATION_LEVEL, ServerTransaction.PeriodicallyCommit.OFF);
     }
 
     public boolean isReadOnly() {
@@ -66,6 +74,17 @@ public class ServerTransaction
 
     public void setReadOnly(boolean readOnly) {
         this.readOnly = readOnly;
+    }
+
+    public IsolationLevel getIsolationLevel() {
+        return isolationLevel;
+    }
+
+    public IsolationLevel setIsolationLevel(IsolationLevel level) {
+        this.isolationLevel = txnService.setIsolationLevel(session, isolationLevel);
+        if (txnService.isolationLevelRequiresReadOnly(session))
+            this.readOnly = true;
+        return this.isolationLevel;
     }
 
     public PeriodicallyCommit getPeriodicallyCommit() {
@@ -85,6 +104,7 @@ public class ServerTransaction
         case WRITE:
             if (readOnly)
                 throw new TransactionReadOnlyException();
+            anyWrites = true;
             beforeUpdate();
         break;
         case IMPLICIT_COMMIT:

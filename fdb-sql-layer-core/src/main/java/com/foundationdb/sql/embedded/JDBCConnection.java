@@ -32,6 +32,7 @@ import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.parser.CallStatementNode;
 import com.foundationdb.sql.parser.DDLStatementNode;
 import com.foundationdb.sql.parser.DMLStatementNode;
+import com.foundationdb.sql.parser.IsolationLevel;
 import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.SQLParserException;
 import com.foundationdb.sql.parser.StatementNode;
@@ -184,7 +185,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
             }
             sessionMonitor.enterStage(MonitorStage.OPTIMIZE);
             if (transaction == null) {
-                transaction = new ServerTransaction(this, true, ServerTransaction.PeriodicallyCommit.OFF);
+                transaction = new ServerTransaction(this, true);
                 localTransaction = true;
             }
             if ((sqlStmt instanceof DMLStatementNode) && 
@@ -225,7 +226,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
             }
             sessionMonitor.enterStage(MonitorStage.OPTIMIZE);
             if (transaction == null) {
-                transaction = new ServerTransaction(this, true, ServerTransaction.PeriodicallyCommit.OFF);
+                transaction = new ServerTransaction(this, true);
                 localTransaction = true;
             }
             ExplainPlanContext context = new ExplainPlanContext(compiler, new EmbeddedQueryContext(this));
@@ -462,13 +463,47 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     @Override
     public void setTransactionIsolation(int level) throws SQLException {
-        if (level != TRANSACTION_SERIALIZABLE)
-            throw new SQLException("Only TRANSACTION_SERIALIZABLE supported");
+        IsolationLevel ilevel;
+        switch (level) {
+        case TRANSACTION_READ_COMMITTED:
+            ilevel = IsolationLevel.READ_COMMITTED_ISOLATION_LEVEL;
+            break;
+        case TRANSACTION_READ_UNCOMMITTED:
+            ilevel = IsolationLevel.READ_UNCOMMITTED_ISOLATION_LEVEL;
+            break;
+        case TRANSACTION_REPEATABLE_READ:
+            ilevel = IsolationLevel.REPEATABLE_READ_ISOLATION_LEVEL;
+            break;
+        case TRANSACTION_SERIALIZABLE:
+            ilevel = IsolationLevel.SERIALIZABLE_ISOLATION_LEVEL;
+            break;
+        default:
+            throw new SQLException("Unknown isolation level " + level);
+        }
+        if (isTransactionActive())
+            ilevel = setTransactionIsolationLevel(ilevel);
+        setTransactionDefaultIsolationLevel(ilevel);
     }
 
     @Override
     public int getTransactionIsolation() throws SQLException {
-        return TRANSACTION_SERIALIZABLE;
+        IsolationLevel level = transactionDefaultIsolationLevel;
+        if (level == IsolationLevel.UNSPECIFIED_ISOLATION_LEVEL)
+            level = getTransactionService().actualIsolationLevel(level);
+        switch (level) {
+        case READ_UNCOMMITTED_ISOLATION_LEVEL:
+        case READ_COMMITTED_NO_SNAPSHOT_ISOLATION_LEVEL:
+            return TRANSACTION_READ_UNCOMMITTED;
+        case READ_COMMITTED_ISOLATION_LEVEL:
+            return TRANSACTION_READ_COMMITTED;
+        case REPEATABLE_READ_ISOLATION_LEVEL:
+        case SNAPSHOT_ISOLATION_LEVEL:
+            return TRANSACTION_REPEATABLE_READ;
+        case SERIALIZABLE_ISOLATION_LEVEL:
+            return TRANSACTION_SERIALIZABLE;
+        default:
+            return TRANSACTION_NONE;
+        }
     }
 
     @Override

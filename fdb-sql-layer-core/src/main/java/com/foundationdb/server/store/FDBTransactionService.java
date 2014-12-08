@@ -28,6 +28,7 @@ import com.foundationdb.server.service.metrics.LongMetric;
 import com.foundationdb.server.service.metrics.MetricsService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.sql.parser.IsolationLevel;
 import com.foundationdb.util.MultipleCauseException;
 import com.foundationdb.KeySelector;
 import com.foundationdb.KeyValue;
@@ -661,6 +662,22 @@ public class FDBTransactionService implements TransactionService {
     public boolean setForceImmediateForeignKeyCheck(Session session, boolean force) {
         TransactionState txn = getTransaction(session);
         return txn.setForceImmediateForeignKeyCheck(force);
+    }
+
+    @Override
+    public IsolationLevel actualIsolationLevel(IsolationLevel level) {
+        return IsolationLevel.SERIALIZABLE_ISOLATION_LEVEL;
+    }
+
+    @Override
+    public IsolationLevel setIsolationLevel(Session session, IsolationLevel level) {
+        // Ignored.
+        return IsolationLevel.SERIALIZABLE_ISOLATION_LEVEL;
+    }
+
+    @Override
+    public boolean isolationLevelRequiresReadOnly(Session session) {
+        return false;
     }
 
     //
