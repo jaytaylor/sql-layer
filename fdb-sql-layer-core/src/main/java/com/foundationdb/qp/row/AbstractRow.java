@@ -23,7 +23,6 @@ import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.AkibanAppender;
-import com.geophile.z.Record;
 
 public abstract class AbstractRow implements Row
 {
@@ -124,27 +123,6 @@ public abstract class AbstractRow implements Row
         }
         builder.append(']');
         return builder.toString();
-    }
-
-    // Geophile Record interface
-
-    @Override
-    public long z()
-    {
-        assert false;
-        return -1L;
-    }
-
-    @Override
-    public void z(long z)
-    {
-        assert false;
-    }
-
-    @Override
-    public void copyTo(Record record)
-    {
-        assert false;
     }
 
     // For use by this class

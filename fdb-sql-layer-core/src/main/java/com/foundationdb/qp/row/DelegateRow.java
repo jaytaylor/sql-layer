@@ -20,7 +20,6 @@ package com.foundationdb.qp.row;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.types.value.ValueSource;
-import com.geophile.z.Record;
 
 public class DelegateRow implements Row {
     private final Row delegate;
@@ -80,25 +79,5 @@ public class DelegateRow implements Row {
     @Override
     public boolean isBindingsSensitive() {
         return delegate.isBindingsSensitive();
-    }
-    // Geophile Record interface
-
-    @Override
-    public long z()
-    {
-        assert false;
-        return -1L;
-    }
-
-    @Override
-    public void z(long z)
-    {
-        assert false;
-    }
-
-    @Override
-    public void copyTo(Record record)
-    {
-        assert false;
     }
 }

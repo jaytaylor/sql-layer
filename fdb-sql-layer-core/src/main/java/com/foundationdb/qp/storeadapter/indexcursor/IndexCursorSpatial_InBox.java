@@ -24,6 +24,7 @@ import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.BindingsAwareCursor;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.InternalIndexTypes;
@@ -118,12 +119,12 @@ class IndexCursorSpatial_InBox extends IndexCursor
         final SpatialObject spatialObject = spatialObject();
         // Set up spatial join and iterator over spatial join output
         SpatialJoin spatialJoin =
-            SpatialJoin.newSpatialJoin(SPATIAL_JOIN_DUPLICATION, null, null, SPATIAL_JOIN_OBSERVER);
-        Iterator<Pair<RecordWithSpatialObject, Row>> spatialJoinIterator = null;
+            SpatialJoin.newSpatialJoin(SPATIAL_JOIN_DUPLICATION, null, null, null /* SPATIAL_JOIN_OBSERVER */);
+        Iterator<Pair<RecordWithSpatialObject, IndexRow>> spatialJoinIterator = null;
         try {
             // Set up spatial index over the index
             GeophileIndex dataIndex = dataIndex(context, openEarly, spatialObject);
-            SpatialIndex<Row> dataSpatialIndex = SpatialIndex.newSpatialIndex(space, dataIndex);
+            SpatialIndex<IndexRow> dataSpatialIndex = SpatialIndex.newSpatialIndex(space, dataIndex);
             // Set up spatial index over query object
             SortedArray<RecordWithSpatialObject> queryIndex = new SortedArray.OfBaseRecord();
             SpatialIndex<RecordWithSpatialObject> querySpatialIndex = SpatialIndex.newSpatialIndex(space, queryIndex);
@@ -131,31 +132,18 @@ class IndexCursorSpatial_InBox extends IndexCursor
             record.spatialObject(spatialObject);
             querySpatialIndex.add(spatialObject, record, MAX_Z);
             spatialJoinIterator = spatialJoin.iterator(querySpatialIndex, dataSpatialIndex);
-/*
-            {
-                // Dump query index
-                System.out.println("Query index:");
-                Cursor<RecordWithSpatialObject> queryCursor = queryIndex.cursor();
-                RecordWithSpatialObject zMinRecord = queryIndex.newRecord();
-                zMinRecord.z(SpaceImpl.Z_MIN);
-                queryCursor.goTo(zMinRecord);
-                RecordWithSpatialObject queryRecord;
-                while ((queryRecord = queryCursor.next()) != null) {
-                    System.out.format("    %s\n", SpaceImpl.formatZ(queryRecord.z()));
-                }
-            }
-*/
+            // dumpQueryIndex(queryIndex);
         } catch (IOException | InterruptedException e) {
             // These exceptions are declared by Geophile, but Geophile sits on top of FDB which should be
             // doing the right thing.
-            assert false;
+            throw new IllegalStateException(e);
         }
         spatialJoinCursor =
             new IteratorToCursorAdapter(
-                new TransformingIterator<Pair<RecordWithSpatialObject, Row>, Row>(spatialJoinIterator)
+                new TransformingIterator<Pair<RecordWithSpatialObject, IndexRow>, IndexRow>(spatialJoinIterator)
                 {
                     @Override
-                    public Row transform(Pair<RecordWithSpatialObject, Row> pair)
+                    public IndexRow transform(Pair<RecordWithSpatialObject, IndexRow> pair)
                     {
                         return pair.right();
                     }
@@ -265,16 +253,28 @@ class IndexCursorSpatial_InBox extends IndexCursor
         return spatialObject;
     }
 
+    private void dumpQueryIndex(SortedArray<RecordWithSpatialObject> queryIndex)
+        throws IOException, InterruptedException
+    {
+        System.out.println("Query index:");
+        Cursor<RecordWithSpatialObject> queryCursor = queryIndex.cursor();
+        RecordWithSpatialObject zMinRecord = queryIndex.newRecord();
+        zMinRecord.z(SpaceImpl.Z_MIN);
+        queryCursor.goTo(zMinRecord);
+        RecordWithSpatialObject queryRecord;
+        while ((queryRecord = queryCursor.next()) != null) {
+            System.out.format("    %s\n", SpaceImpl.formatZ(queryRecord.z()));
+        }
+    }
+
     // Class state
 
     private static final SpatialJoin.Duplicates SPATIAL_JOIN_DUPLICATION = SpatialJoin.Duplicates.EXCLUDE;
     private static final int MAX_Z = 4;
-    private static final SpatialJoin.InputObserver SPATIAL_JOIN_OBSERVER = null;
-/*
+    private static final SpatialJoin.InputObserver SPATIAL_JOIN_OBSERVER =
         new SpatialJoin.InputObserver()
         {
-            @Override
-            public void randomAccess(Cursor cursor, long z)
+            @Override public void randomAccess(Cursor cursor, long z)
             {
                 System.out.format("%s\n", SpaceImpl.formatZ(z));
             }
@@ -288,7 +288,6 @@ class IndexCursorSpatial_InBox extends IndexCursor
                                   record);
             }
         };
-*/
 
     // Object state
 

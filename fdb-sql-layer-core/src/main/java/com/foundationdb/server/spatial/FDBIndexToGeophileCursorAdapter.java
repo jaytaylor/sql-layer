@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.spatial;
 
+import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.storeadapter.indexcursor.IndexCursor;
 import com.geophile.z.Cursor;
@@ -24,18 +25,18 @@ import com.geophile.z.Index;
 
 import java.io.IOException;
 
-class FDBIndexToGeophileCursorAdapter extends Cursor<Row>
+class FDBIndexToGeophileCursorAdapter extends Cursor<IndexRow>
 {
     // com.geophile.z.Cursor interface
 
     @Override
-    public Row next() throws IOException, InterruptedException
+    public IndexRow next() throws IOException, InterruptedException
     {
-        return indexCursor.next();
+        return (IndexRow) indexCursor.next();
     }
 
     @Override
-    public void goTo(Row key) throws IOException, InterruptedException
+    public void goTo(IndexRow key) throws IOException, InterruptedException
     {
         throw new UnsupportedOperationException();
     }
@@ -48,7 +49,7 @@ class FDBIndexToGeophileCursorAdapter extends Cursor<Row>
 
     // FDBIndexToGeophileCursorAdapter interface
 
-    public FDBIndexToGeophileCursorAdapter(Index<Row> index, IndexCursor indexCursor)
+    public FDBIndexToGeophileCursorAdapter(Index<IndexRow> index, IndexCursor indexCursor)
     {
         super(index);
         this.indexCursor = indexCursor;

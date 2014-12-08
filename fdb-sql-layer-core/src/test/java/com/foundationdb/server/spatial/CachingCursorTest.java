@@ -20,14 +20,18 @@ package com.foundationdb.server.spatial;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.CursorBase;
 import com.foundationdb.qp.row.HKey;
+import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.value.ValueSource;
 import com.geophile.z.Cursor;
 import com.geophile.z.DuplicateRecordException;
 import com.geophile.z.Index;
-import com.geophile.z.Record;
 import com.geophile.z.RecordFilter;
+import com.persistit.Key;
+import com.persistit.Value;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -142,10 +146,10 @@ public class CachingCursorTest
         START.z(0);
     }
 
-    private static class TestRecord implements Row
+    private static class TestRecord extends IndexRow
     {
         @Override
-        public RowType rowType()
+        public IndexRowType rowType()
         {
             fail();
             return null;
@@ -159,17 +163,28 @@ public class CachingCursorTest
         }
 
         @Override
-        public HKey ancestorHKey(Table table)
+        protected ValueSource uncheckedValue(int i)
         {
-            fail();
             return null;
         }
 
         @Override
-        public boolean ancestorOf(Row that)
+        public <S> void append(S source, TInstance type)
         {
             fail();
-            return false;
+        }
+
+        @Override
+        public void append(EdgeValue value)
+        {
+            fail();
+        }
+
+        @Override
+        public HKey ancestorHKey(Table table)
+        {
+            fail();
+            return null;
         }
 
         @Override
@@ -194,35 +209,87 @@ public class CachingCursorTest
         }
 
         @Override
-        public int compareTo(Row row, int leftStartIndex, int rightStartIndex, int fieldCount)
+        public void resetForRead(com.foundationdb.ais.model.Index index, Key key, Value value)
+        {
+            fail();
+        }
+
+        @Override
+        public void resetForWrite(com.foundationdb.ais.model.Index index, Key key)
+        {
+            fail();
+        }
+
+        @Override
+        public int compareTo(IndexRow startKey, int startBoundColumns, boolean[] ascending)
         {
             fail();
             return 0;
         }
 
         @Override
-        public ValueSource value(int index)
+        public int compareTo(IndexRow thatKey, int startBoundColumns)
         {
             fail();
-            return null;
+            return 0;
         }
 
         @Override
-        public long z()
-        {
-            return z;
-        }
-
-        @Override
-        public void z(long z)
-        {
-            this.z = z;
-        }
-
-        @Override
-        public void copyTo(Record record)
+        public void reset()
         {
             fail();
+        }
+
+        @Override
+        public boolean keyEmpty()
+        {
+            fail();
+            return false;
+        }
+
+        @Override
+        public void tableBitmap(long bitmap)
+        {
+            fail();
+        }
+
+        @Override
+        public long tableBitmap()
+        {
+            fail();
+            return 0;
+        }
+
+        @Override
+        public void copyPersistitKeyTo(Key key)
+        {
+            fail();
+        }
+
+        @Override
+        public void appendFieldTo(int position, Key target)
+        {
+            fail();
+        }
+
+        @Override
+        public void copyFrom(Key key, Value value)
+        {
+            fail();
+        }
+
+        @Override
+        protected int zPosition()
+        {
+            fail();
+            return -1;
+        }
+
+        @Override
+        public int compareTo(Row row, int leftStartIndex, int rightStartIndex, int fieldCount)
+        {
+            fail();
+            return 0;
         }
 
         public TestRecord(int id)

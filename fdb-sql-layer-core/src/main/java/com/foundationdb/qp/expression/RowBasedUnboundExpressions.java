@@ -30,7 +30,6 @@ import com.foundationdb.server.explain.Type;
 import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
-import com.geophile.z.Record;
 
 import java.util.List;
 
@@ -86,27 +85,6 @@ public final class RowBasedUnboundExpressions implements UnboundExpressions {
                                QueryContext context, QueryBindings bindings)
         {
             expressionRow = new ExpressionRow(rowType, context, bindings, pExprs);
-        }
-
-        // Geophile Record interface
-
-        @Override
-        public long z()
-        {
-            assert false;
-            return -1L;
-        }
-
-        @Override
-        public void z(long z)
-        {
-            assert false;
-        }
-
-        @Override
-        public void copyTo(Record record)
-        {
-            assert false;
         }
 
         private final ExpressionRow expressionRow;

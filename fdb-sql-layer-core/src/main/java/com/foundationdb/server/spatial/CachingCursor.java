@@ -20,6 +20,7 @@ package com.foundationdb.server.spatial;
 import com.foundationdb.qp.operator.BindingsAwareCursor;
 import com.foundationdb.qp.operator.CursorBase;
 import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.geophile.z.space.SpaceImpl;
@@ -40,13 +41,13 @@ public class CachingCursor implements BindingsAwareCursor
     }
 
     @Override
-    public Row next()
+    public IndexRow next()
     {
-        Row next;
+        IndexRow next;
         if (cachePosition < cachePositionsFilled) {
             next = cachedRecord(cachePosition++);
         } else {
-            next = input.next();
+            next = (IndexRow) input.next();
             if (cachePosition < CACHE_SIZE) {
                 recordCache[cachePosition++] = next;
                 cachePositionsFilled = cachePosition;
@@ -98,11 +99,14 @@ public class CachingCursor implements BindingsAwareCursor
 
     // RowOrientedCursorBase interface
 
+
     @Override
     public void jump(Row row, ColumnSelector columnSelector)
     {
-        if (row.z() != z) {
-            throw new NotResettableException(row.z());
+        assert row instanceof IndexRow;
+        IndexRow indexRow = (IndexRow) row;
+        if (indexRow.z() != z) {
+            throw new NotResettableException(indexRow.z());
         }
         if (!resettable) {
             throw new NotResettableException();
@@ -122,9 +126,9 @@ public class CachingCursor implements BindingsAwareCursor
 
     // For use by this class
 
-    private Row cachedRecord(int i)
+    private IndexRow cachedRecord(int i)
     {
-        return (Row) recordCache[i];
+        return (IndexRow) recordCache[i];
     }
 
     // Class state

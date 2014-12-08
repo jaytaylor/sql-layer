@@ -17,7 +17,9 @@
 
 package com.foundationdb.server.spatial;
 
+import com.foundationdb.qp.operator.CursorBase;
 import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.storeadapter.indexcursor.IndexCursor;
 import com.geophile.z.Cursor;
@@ -27,12 +29,12 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GeophileCursor extends Cursor<Row>
+public class GeophileCursor extends Cursor<IndexRow>
 {
     // Cursor interface
 
     @Override
-    public Row next() throws IOException, InterruptedException
+    public IndexRow next() throws IOException, InterruptedException
     {
         if (currentCursor == null) {
             // A cursor should have been registered with z-value corresponding to the entire space,
@@ -44,7 +46,7 @@ public class GeophileCursor extends Cursor<Row>
     }
 
     @Override
-    public void goTo(Row key) throws IOException, InterruptedException
+    public void goTo(IndexRow key) throws IOException, InterruptedException
     {
         long z = key.z();
         currentCursor = cursors.get(z);

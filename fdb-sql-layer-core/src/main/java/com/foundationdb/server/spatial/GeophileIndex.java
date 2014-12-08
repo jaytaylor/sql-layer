@@ -18,7 +18,7 @@
 package com.foundationdb.server.spatial;
 
 import com.foundationdb.qp.operator.StoreAdapter;
-import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.geophile.z.Cursor;
 import com.geophile.z.DuplicateRecordException;
@@ -27,30 +27,30 @@ import com.geophile.z.RecordFilter;
 
 import java.io.IOException;
 
-public class GeophileIndex extends Index<Row>
+public class GeophileIndex extends Index<IndexRow>
 {
     // Index interface
 
     @Override
-    public void add(Row record) throws IOException, InterruptedException, DuplicateRecordException
+    public void add(IndexRow record) throws IOException, InterruptedException, DuplicateRecordException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean remove(long z, RecordFilter<Row> recordFilter) throws IOException, InterruptedException
+    public boolean remove(long z, RecordFilter<IndexRow> recordFilter) throws IOException, InterruptedException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Cursor<Row> cursor() throws IOException, InterruptedException
+    public Cursor<IndexRow> cursor() throws IOException, InterruptedException
     {
         return cursorFactory.newCursor(this);
     }
 
     @Override
-    public Row newRecord()
+    public IndexRow newRecord()
     {
         return adapter.takeIndexRow(indexRowType);
     }
