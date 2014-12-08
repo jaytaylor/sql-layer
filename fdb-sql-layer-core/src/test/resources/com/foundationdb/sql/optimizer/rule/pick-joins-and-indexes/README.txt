@@ -187,3 +187,5 @@ hash-multiple-2: Some conditions not handled by hash table
 hash-left: Hash LEFT join
 
 hash-semi: Hash SEMI join
+
+m2m-order-by : many-to-many relation with multi-column order by that is partially in a subquery
