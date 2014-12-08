@@ -404,7 +404,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public void createIndexes(Session session, Collection<? extends Index> indexes, boolean keepStorage) {
         for (Index index : indexes) {
-            if (!securityService.isAccessible(session, index.getSchemaName())){
+            if (securityService != null && !securityService.isAccessible(session, index.getSchemaName())){
                 throw new ProtectedItemException(index.getIndexName().getTableName(), index.getSchemaName());
             }
         }
@@ -431,7 +431,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public void dropIndexes(Session session, final Collection<? extends Index> indexesToDrop) {
         for (Index index : indexesToDrop) {
-            if (!securityService.isAccessible(session, index.getSchemaName())){
+            if (securityService != null && !securityService.isAccessible(session, index.getSchemaName())){
                 throw new ProtectedItemException(index.getIndexName().getTableName(), index.getSchemaName());
             }
         }
@@ -468,7 +468,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public void dropSchema(Session session, String schemaName) {
-        if (!securityService.isAccessible(session, schemaName)){
+        if (securityService != null && !securityService.isAccessible(session, schemaName)){
             throw new ProtectedItemException(schemaName, schemaName);
         }
         AkibanInformationSchema newAIS = removeSchemaFromAIS(getAISForChange(session), schemaName);
@@ -483,7 +483,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             if (!TableName.inSystemSchema(schemaName)) {
                 affectedSchemas.add(schemaName);
             }
-            if (!securityService.isAccessible(session, schemaName)){
+            if (securityService != null && !securityService.isAccessible(session, schemaName)){
                 throw new ProtectedItemException(schemaName, schemaName);
             }
         }
@@ -585,7 +585,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public void alterSequence(Session session, TableName sequenceName, Sequence newDefinition) {
-        if (!securityService.isAccessible(session, sequenceName.getSchemaName())){
+        if (securityService != null && !securityService.isAccessible(session, sequenceName.getSchemaName())){
             throw new ProtectedItemException(sequenceName.getTableName(), sequenceName.getSchemaName());
         }
         AkibanInformationSchema oldAIS = getAISForChange(session);
@@ -616,7 +616,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public void createView(Session session, View view) {
-        if (!securityService.isAccessible(session, view.getName().getSchemaName())){
+        if (securityService != null && !securityService.isAccessible(session, view.getName().getSchemaName())){
             throw new ProtectedItemException(view.getName().getTableName(), view.getName().getSchemaName());
         }
         final AkibanInformationSchema oldAIS = getAISForChange(session);
@@ -630,7 +630,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public void dropView(Session session, TableName viewName) {
-        if (!securityService.isAccessible(session, viewName.getSchemaName())){
+        if (securityService != null && !securityService.isAccessible(session, viewName.getSchemaName())){
             throw new ProtectedItemException(viewName.getTableName(), viewName.getSchemaName());
         }
         final AkibanInformationSchema oldAIS = getAISForChange(session);
@@ -646,7 +646,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     /** Add the Sequence to the current AIS */
     @Override
     public void createSequence(final Session session, final Sequence sequence) {
-        if (!securityService.isAccessible(session, sequence.getSchemaName())){
+        if (securityService != null && !securityService.isAccessible(session, sequence.getSchemaName())){
             throw new ProtectedItemException(sequence.getSequenceName().getTableName(), sequence.getSchemaName());
         }
         checkSequenceName(session, sequence.getSequenceName(), false);
@@ -658,7 +658,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     /** Drop the given sequence from the current AIS. */
     @Override
     public void dropSequence(Session session, Sequence sequence) {
-        if (!securityService.isAccessible(session, sequence.getSchemaName())){
+        if (securityService != null && !securityService.isAccessible(session, sequence.getSchemaName())){
             throw new ProtectedItemException(sequence.getSequenceName().getTableName(), sequence.getSchemaName());
         }
         checkSequenceName(session, sequence.getSequenceName(), true);
@@ -671,7 +671,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public void createRoutine(Session session, Routine routine, boolean replaceExisting) {
-        if (!securityService.isAccessible(session, routine.getName().getSchemaName())){
+        if (securityService != null && !securityService.isAccessible(session, routine.getName().getSchemaName())){
             throw new ProtectedItemException(routine.getName().getTableName(), routine.getName().getSchemaName());
         }
         createRoutineCommon(session, routine, false, replaceExisting);
@@ -679,7 +679,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     @Override
     public void dropRoutine(Session session, TableName routineName) {
-        if (!securityService.isAccessible(session, routineName.getSchemaName())){
+        if (securityService != null && !securityService.isAccessible(session, routineName.getSchemaName())){
             throw new ProtectedItemException(routineName.getTableName(), routineName.getSchemaName());
         }
         dropRoutineCommon(session, routineName, false);

@@ -66,7 +66,7 @@ public abstract class ServerJavaRoutine implements Explainable, ShieldedInvokabl
 
     public void invoke() {
         SecurityService ss = context.getServiceManager().getServiceByClass(SecurityService.class);
-        if (!ss.isAccessible(context.getSession(), invocation.getRoutineName().getSchemaName()))  {
+        if (ss != null && !ss.isAccessible(context.getSession(), invocation.getRoutineName().getSchemaName()))  {
             throw new ProtectedItemException(invocation.getRoutineName().getTableName(), invocation.getRoutineName().getSchemaName());
         }
         RoutineFirewall.callInvoke(this);
