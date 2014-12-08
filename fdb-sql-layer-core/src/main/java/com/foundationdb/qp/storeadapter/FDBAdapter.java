@@ -75,8 +75,9 @@ public class FDBAdapter extends StoreAdapter {
         return new FDBGroupCursor(this, group, scanOptions());
     }
 
+    /** The transaction scan options for normal operator scans. */
     public FDBScanTransactionOptions scanOptions() {
-        return FDBScanTransactionOptions.NORMAL;
+        return getTransaction().getScanOptions();
     }
 
     @Override

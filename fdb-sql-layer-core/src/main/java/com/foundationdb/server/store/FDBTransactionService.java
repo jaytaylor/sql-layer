@@ -119,6 +119,7 @@ public class FDBTransactionService implements TransactionService {
         Map<ForeignKey,Boolean> deferredForeignKeys;
         boolean forceImmediateForeignKeyCheck;
         int resetCount;
+        FDBScanTransactionOptions scanOptions = FDBScanTransactionOptions.NORMAL;
 
         public TransactionState(FDBPendingIndexChecks.CheckTime checkTime, Session session) {
             this.transaction = createTransaction();
@@ -303,6 +304,14 @@ public class FDBTransactionService implements TransactionService {
             commitInternal(session, false, false);
             transaction.reset();
             reset();
+        }
+
+        public FDBScanTransactionOptions getScanOptions() {
+            return scanOptions;
+        }
+
+        public void setScanOptions(FDBScanTransactionOptions scanOptions) {
+            this.scanOptions = scanOptions;
         }
 
         public FDBScanTransactionOptions periodicallyCommitScanOptions() {
@@ -666,18 +675,40 @@ public class FDBTransactionService implements TransactionService {
 
     @Override
     public IsolationLevel actualIsolationLevel(IsolationLevel level) {
-        return IsolationLevel.SERIALIZABLE_ISOLATION_LEVEL;
+        // NOTE: This does not promote to the next tightest supported
+        // level, but instead requires an exact match for a special one.
+        switch (level) {
+        case SNAPSHOT_ISOLATION_LEVEL:
+        case READ_COMMITTED_NO_SNAPSHOT_ISOLATION_LEVEL:
+            return level;
+        default:
+            return IsolationLevel.SERIALIZABLE_ISOLATION_LEVEL;
+        }
     }
 
     @Override
     public IsolationLevel setIsolationLevel(Session session, IsolationLevel level) {
-        // Ignored.
-        return IsolationLevel.SERIALIZABLE_ISOLATION_LEVEL;
+        TransactionState txn = getTransaction(session);
+        FDBScanTransactionOptions scanOptions;
+        switch (level) {
+        case SNAPSHOT_ISOLATION_LEVEL:
+            scanOptions = FDBScanTransactionOptions.SNAPSHOT;
+            break;
+        case READ_COMMITTED_NO_SNAPSHOT_ISOLATION_LEVEL:
+            scanOptions = txn.periodicallyCommitScanOptions();
+            break;
+        default:
+            level = IsolationLevel.SERIALIZABLE_ISOLATION_LEVEL;
+            scanOptions = FDBScanTransactionOptions.NORMAL;
+        }
+        txn.setScanOptions(scanOptions);
+        return level;
     }
 
     @Override
     public boolean isolationLevelRequiresReadOnly(Session session) {
-        return false;
+        TransactionState txn = getTransaction(session);
+        return txn.getScanOptions().isCommitting();
     }
 
     //
