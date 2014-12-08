@@ -316,7 +316,7 @@ public class JoinAndIndexPicker extends BaseRule
         // Put the chosen plan in place.
         public void installPlan(Plan rootPlan, boolean copy) {
             joinable.getOutput().replaceInput(joinable, 
-                                              moveInSemiJoins(rootPlan.install(copy)));
+                                              moveInSemiJoins(rootPlan.install(copy, true)));
             query.setCostEstimate(rootPlan.costEstimate);
         }
 
@@ -427,7 +427,7 @@ public class JoinAndIndexPicker extends BaseRule
             return costEstimate.compareTo(other.costEstimate);
         }
 
-        public abstract JoinableWithConditionsToRemove install(boolean copy);
+        public abstract JoinableWithConditionsToRemove install(boolean copy, boolean sortAllowed);
 
         public void addDistinct() {
             throw new UnsupportedOperationException();
@@ -520,7 +520,7 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public JoinableWithConditionsToRemove install(boolean copy) {
+        public JoinableWithConditionsToRemove install(boolean copy, boolean sortAllowed) {
             if (extraConditions != null) {
                 // Move to WHERE clause or join condition so that any
                 // that survive indexing are preserved.
@@ -706,8 +706,8 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public JoinableWithConditionsToRemove install(boolean copy) {
-            picker.installPlan(rootPlan, copy);
+        public JoinableWithConditionsToRemove install(boolean copy, boolean sortAllowed) {
+            picker.installPlan(this.rootPlan, copy);
             return new JoinableWithConditionsToRemove(subquery, new ConditionList());
         }        
 
@@ -791,7 +791,7 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public JoinableWithConditionsToRemove install(boolean copy) {
+        public JoinableWithConditionsToRemove install(boolean copy, boolean sortAllowed) {
             return new JoinableWithConditionsToRemove(values, new ConditionList());
         }
 
@@ -884,7 +884,7 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public JoinableWithConditionsToRemove install(boolean copy) {
+        public JoinableWithConditionsToRemove install(boolean copy, boolean sortAllowed) {
             return new JoinableWithConditionsToRemove(values, null);
         }
 
@@ -931,11 +931,11 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public JoinableWithConditionsToRemove install(boolean copy) {
+        public JoinableWithConditionsToRemove install(boolean copy, boolean sortAllowed) {
             if (needDistinct)
                 left.addDistinct();
-            JoinableWithConditionsToRemove leftJoinable = left.install(copy);
-            JoinableWithConditionsToRemove rightJoinable = right.install(copy);
+            JoinableWithConditionsToRemove leftJoinable = left.install(copy, true && sortAllowed);
+            JoinableWithConditionsToRemove rightJoinable = right.install(copy, false);
             ConditionList conditionsToRemove = new ConditionList();
             if (leftJoinable.getConditions() != null) {
                 conditionsToRemove.addAll(leftJoinable.getConditions());
@@ -1011,12 +1011,12 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public JoinableWithConditionsToRemove install(boolean copy) {
+        public JoinableWithConditionsToRemove install(boolean copy, boolean sortAllowed) {
             if (needDistinct)
                 left.addDistinct();
-            JoinableWithConditionsToRemove loaderJoinable = loader.install(true);
-            JoinableWithConditionsToRemove inputJoinable = left.install(copy);
-            JoinableWithConditionsToRemove checkJoinable = right.install(copy);
+            JoinableWithConditionsToRemove loaderJoinable = loader.install(true, false);
+            JoinableWithConditionsToRemove inputJoinable = left.install(copy, true && sortAllowed);
+            JoinableWithConditionsToRemove checkJoinable = right.install(copy, false);
             ConditionList joinConditions = mergeJoinConditions(joins);
             if (loaderJoinable.getConditions() != null) {
                 joinConditions.removeAll(loaderJoinable.getConditions());
@@ -1419,7 +1419,7 @@ public class JoinAndIndexPicker extends BaseRule
             }
 
             @Override
-            public JoinableWithConditionsToRemove install(boolean copy) {
+            public JoinableWithConditionsToRemove install(boolean copy, boolean sortAllowed) {
                 HashTableLookup lookup = new HashTableLookup(hashTable,
                                                              hashTableColumns.matchColumns,
                                                              hashTableColumns.conditions,

@@ -476,8 +476,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
 
     // Determine how well this index does against the target.
     // Also, correct traversal order to match sort if possible.
-    protected IndexScan.OrderEffectiveness
-        determineOrderEffectiveness(SingleIndexScan index) {
+    protected IndexScan.OrderEffectiveness determineOrderEffectiveness(SingleIndexScan index) {
         IndexScan.OrderEffectiveness result = IndexScan.OrderEffectiveness.NONE;
         if (!sortAllowed) return result;
         List<OrderByExpression> indexOrdering = index.getOrdering();
@@ -1466,8 +1465,8 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     }
 
     public JoinAndIndexPicker.Plan.JoinableWithConditionsToRemove install(BaseScan scan,
-                                      List<ConditionList> conditionSources,
-                                      boolean sortAllowed, boolean copy) {
+                                                                          List<ConditionList> conditionSources,
+                                                                          boolean sortAllowed, boolean copy) {
         TableGroupJoinTree result = tables;
         List<? extends ConditionExpression> conditionsToRemove;
         // Need to have more than one copy of this tree in the final result.
