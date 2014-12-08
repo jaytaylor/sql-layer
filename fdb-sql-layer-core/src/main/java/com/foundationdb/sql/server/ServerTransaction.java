@@ -81,10 +81,11 @@ public class ServerTransaction
     }
 
     public IsolationLevel setIsolationLevel(IsolationLevel level) {
-        this.isolationLevel = txnService.setIsolationLevel(session, isolationLevel);
+        level = txnService.setIsolationLevel(session, level);
+        this.isolationLevel = level;
         if (txnService.isolationLevelRequiresReadOnly(session))
             this.readOnly = true;
-        return this.isolationLevel;
+        return level;
     }
 
     public PeriodicallyCommit getPeriodicallyCommit() {
