@@ -387,10 +387,6 @@ public class Table extends Columnar implements HasGroup, Visitable
                 nameForOutput = getName().toString(); 
             }
         }
-
-        for (ForeignKey fkey : foreignKeys) {
-            fkey.findIndexes();
-        }
     }
 
     public void addHiddenPrimaryKey(NameGenerator generator) {
