@@ -1201,10 +1201,8 @@ public class JoinAndIndexPicker extends BaseRule
                 outsideJoins.addAll(subqueryOutsideJoins);
             }
             outsideJoins.addAll(joins); // Total set for outer; inner must subtract.
-            // TODO: Divvy up sorting. Consider group joins. Consider merge joins.
-            Collection<JoinOperator> joinsForLeft = new ArrayList<>();
-            joinsForOuterPlan(condJoins, left, joinsForLeft);
 
+            // TODO Could potentially do a check if bitset == overall bitset
             considerJoinPlan(left, right, joinType, joins, outsideJoins, planClass, condJoins, true);
             considerJoinPlan(left, right, joinType, joins, outsideJoins, planClass, condJoins, false);
             return planClass;
@@ -1214,8 +1212,6 @@ public class JoinAndIndexPicker extends BaseRule
                                      Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins,
                                      JoinPlanClass planClass, Collection<JoinOperator> condJoins, boolean sortAllowed) {
             Plan leftPlan;
-            // TODO here, evaluate leftPlan the way we do now, and without sort
-            // Could potentially do a check if bitset == overall bitset
             if (joinType.isRightLinear() || joinType.isSemi()) {
                 leftPlan = left.bestPlan(condJoins, outsideJoins, sortAllowed);
             } else {
