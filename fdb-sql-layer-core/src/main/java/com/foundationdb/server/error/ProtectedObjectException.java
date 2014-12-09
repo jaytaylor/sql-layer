@@ -18,8 +18,8 @@
 package com.foundationdb.server.error;
 
 
-public final class rotectedObjectException extends InvalidOperationException {
-    public rotectedObjectException(String itemType, String itemName, String schema) {
+public final class ProtectedObjectException extends InvalidOperationException {
+    public ProtectedObjectException(String itemType, String itemName, String schema) {
         super(ErrorCode.PROTECTED_OBJECT, itemType, itemName, schema);
     }
 }
