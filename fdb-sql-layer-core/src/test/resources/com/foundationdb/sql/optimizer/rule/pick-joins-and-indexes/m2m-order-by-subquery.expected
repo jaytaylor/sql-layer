@@ -4,10 +4,10 @@ SelectQuery@76b3eddb
       Sort@3920a91[anon_1[0], m2m_1.id]
         Select@68f3b76b[]
           JoinNode@1e36505c(INNER/NESTED_LOOPS[m2m_1.bid == b.id])
-            TableGroupJoinTree@4939c302(TableGroup@2bfd5f0e(b), b - GroupScan@20062487(Group(test.b), rows = 1, cost = 0.00000))
+            TableGroupJoinTree@4939c302(TableGroup@2bfd5f0e(b), b - GroupScan@20062487(Group(test.b), rows = 1, cost = 3.00000))
               TableSource@6c0e42c0(b - TableGroup@2bfd5f0e(b))
             JoinNode@7fd5d782(INNER/NESTED_LOOPS[m2m_1.aid == anon_1[0]])
-              TableGroupJoinTree@3ebe0a6a(TableGroup@200ece1b(m2m), m2m_1 - GroupScan@37b60886(Group(test.m2m), rows = 1, cost = 0.00000))
+              TableGroupJoinTree@3ebe0a6a(TableGroup@200ece1b(m2m), m2m_1 - GroupScan@37b60886(Group(test.m2m), rows = 1, cost = 4.00000))
                 TableSource@7fd0e77e(m2m_1 - TableFKJoin@32dccf8c(Foreign Key m2m_fkey$1: test.m2m REFERENCES test.b))
               SubquerySource@429cc16d(anon_1)
                 Subquery@415efd45
@@ -15,5 +15,5 @@ SelectQuery@76b3eddb
                     Limit@20155887(LIMIT 10000000)
                       Project@59671785[a.id]
                         Select@7f394a9d[]
-                          TableGroupJoinTree@2e9dd554(TableGroup@7c2095b4(a), a - SingleIndexScan@6ca3b95(Index(test.a.PRIMARY[IndexColumn(id)]), covering/NONE, rows = 1, cost = 6.71280))
+                          TableGroupJoinTree@2e9dd554(TableGroup@7c2095b4(a), a - SingleIndexScan@6ca3b95(Index(test.a.PRIMARY[IndexColumn(id)]), covering/NONE, rows = 2, cost = 8.17960))
                             TableSource@a51caac(a - TableGroup@7c2095b4(a))

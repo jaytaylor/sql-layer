@@ -12,5 +12,5 @@ SelectQuery@86d374a
                   Limit@212d3276(LIMIT 10)
                     Project@3133055e[a.id]
                       Select@1e4bf1fe[]
-                        TableGroupJoinTree@bfc6a3c(TableGroup@a38ea9f(a), a - SingleIndexScan@1eb371f7(Index(test.a.PRIMARY[IndexColumn(id)]), covering/SORTED, rows = 1, cost = 6.71280))
+                        TableGroupJoinTree@bfc6a3c(TableGroup@a38ea9f(a), a - SingleIndexScan@1eb371f7(Index(test.a.PRIMARY[IndexColumn(id)]), covering/SORTED, rows = 2, cost = 8.17960))
                           TableSource@ca5778e(a - TableGroup@a38ea9f(a))

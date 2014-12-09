@@ -3,7 +3,7 @@ SelectQuery@4ed6e0c9
     Project@699bf6df[anon1[0], m2m.id, m2m.aid, m2m.bid]
       Select@1e102e2d[]
         JoinNode@17269d3(INNER/NESTED_LOOPS[m2m.aid == anon1[0]])
-          TableGroupJoinTree@156cacf6(TableGroup@11cf5577(m2m), m2m - SingleIndexScan@f53bd20(Index(test.m2m.PRIMARY[IndexColumn(id)]), SORTED, rows = 1, cost = 12.2006))
+          TableGroupJoinTree@156cacf6(TableGroup@11cf5577(m2m), m2m - SingleIndexScan@f53bd20(Index(test.m2m.PRIMARY[IndexColumn(id)]), SORTED, rows = 6, cost = 46.9736))
             TableSource@67842834(m2m - TableGroup@11cf5577(m2m))
           SubquerySource@65440107(anon1)
             Subquery@539fa681
@@ -11,5 +11,5 @@ SelectQuery@4ed6e0c9
                 Limit@2fdae3ad(LIMIT 10)
                   Project@4b998b66[a.id]
                     Select@66570ff7[]
-                      TableGroupJoinTree@156ba304(TableGroup@4d9b6698(a), a - SingleIndexScan@42a587bc(Index(test.a.PRIMARY[IndexColumn(id)]), covering/SORTED, rows = 1, cost = 6.71280))
+                      TableGroupJoinTree@156ba304(TableGroup@4d9b6698(a), a - SingleIndexScan@42a587bc(Index(test.a.PRIMARY[IndexColumn(id)]), covering/SORTED, rows = 2, cost = 8.17960))
                         TableSource@5dd9559e(a - TableGroup@4d9b6698(a))
