@@ -193,3 +193,5 @@ m2m-order-by-subquery: same as m2m-order-by, but part is in a subquery
 
 order-by-subquery: order by in a subquery clause joined with another table
 order-by-subquery2: same as order-by-subquery, but with an order-by on the outside too
+order-by-subquery-provides-order-by: The subquery here is sorted the same as the order by, but the other table doesn't help
+

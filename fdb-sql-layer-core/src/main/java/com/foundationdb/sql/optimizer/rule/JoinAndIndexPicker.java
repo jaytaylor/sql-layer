@@ -770,8 +770,6 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         protected SubqueryPlan bestPlan(long outerTables, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
-            // TODO this could provide sorting, add test:
-            // SELECT * FROM (SELECT c1 FROM T1 ORDER BY c1 LIMIT 10) JOIN t2 ON t2.c1 = c1 ORDER BY c1
             for (SubqueryPlan subqueryPlan : bestPlans) {
                 if (subqueryPlan.outerTables == outerTables) {
                     return subqueryPlan;
