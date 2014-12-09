@@ -64,6 +64,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     private String schema;
     private EmbeddedOperatorCompiler compiler;
     private List<JDBCResultSet> openResultSets = new ArrayList<>();
+    private boolean setNonStandardIsolationLevel;
 
     private static final Logger logger = LoggerFactory.getLogger(JDBCConnection.class);
     protected static final String SERVER_TYPE = "JDBC";
@@ -461,8 +462,17 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         return null;
     }
 
+    /** Non-standard values using the same API.
+     * TODO: Would a whole new method be better?
+     */
+    public static final int TRANSACTION_READ_COMMITTED_NO_SNAPSHOT = -2;
+    public static final int TRANSACTION_SERIALIZABLE_SNAPSHOT = -8;
+
     @Override
     public void setTransactionIsolation(int level) throws SQLException {
+        // Remember so get returns this, too.
+        if (level < 0)
+            setNonStandardIsolationLevel = true;
         IsolationLevel ilevel;
         switch (level) {
         case TRANSACTION_READ_COMMITTED:
@@ -476,6 +486,12 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
             break;
         case TRANSACTION_SERIALIZABLE:
             ilevel = IsolationLevel.SERIALIZABLE_ISOLATION_LEVEL;
+            break;
+        case TRANSACTION_READ_COMMITTED_NO_SNAPSHOT:
+            ilevel = IsolationLevel.READ_COMMITTED_NO_SNAPSHOT_ISOLATION_LEVEL;
+            break;
+        case TRANSACTION_SERIALIZABLE_SNAPSHOT:
+            ilevel = IsolationLevel.SNAPSHOT_ISOLATION_LEVEL;
             break;
         default:
             throw new SQLException("Unknown isolation level " + level);
@@ -491,13 +507,19 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         if (level == IsolationLevel.UNSPECIFIED_ISOLATION_LEVEL)
             level = getTransactionService().actualIsolationLevel(level);
         switch (level) {
-        case READ_UNCOMMITTED_ISOLATION_LEVEL:
         case READ_COMMITTED_NO_SNAPSHOT_ISOLATION_LEVEL:
+            if (setNonStandardIsolationLevel)
+                return TRANSACTION_READ_COMMITTED_NO_SNAPSHOT;
+            /* else falls through */
+        case READ_UNCOMMITTED_ISOLATION_LEVEL:
             return TRANSACTION_READ_UNCOMMITTED;
         case READ_COMMITTED_ISOLATION_LEVEL:
             return TRANSACTION_READ_COMMITTED;
-        case REPEATABLE_READ_ISOLATION_LEVEL:
         case SNAPSHOT_ISOLATION_LEVEL:
+            if (setNonStandardIsolationLevel)
+                return TRANSACTION_SERIALIZABLE_SNAPSHOT;
+            /* else falls through */
+        case REPEATABLE_READ_ISOLATION_LEVEL:
             return TRANSACTION_REPEATABLE_READ;
         case SERIALIZABLE_ISOLATION_LEVEL:
             return TRANSACTION_SERIALIZABLE;
