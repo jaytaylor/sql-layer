@@ -44,7 +44,6 @@ import com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.routines.ScriptEngineManagerProvider;
 import com.foundationdb.server.service.security.SecurityService;
