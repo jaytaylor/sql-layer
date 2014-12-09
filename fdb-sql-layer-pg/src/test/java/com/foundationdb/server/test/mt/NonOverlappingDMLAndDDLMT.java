@@ -21,7 +21,6 @@ import com.foundationdb.server.service.is.BasicInfoSchemaTablesService;
 import com.foundationdb.server.service.is.BasicInfoSchemaTablesServiceImpl;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.test.mt.util.ThreadHelper;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.sql.Connection;
