@@ -37,23 +37,23 @@
 ---
 - Statement: INSERT INTO all_types
     (bigint_field, double_field, varchar_field)
-    VALUES (1, 1.0, 'one'), (2, 2.0, 'two')
+    VALUES (1, 1.0, '111'), (2, 2.0, '222')
 ---
 - Statement: SELECT IF(bigint_field = 1, double_field, varchar_field)
     FROM all_types
-- output: [[null], [1.0], [two]]
+- output: [[null], [1.0], [222.0]]
 
 ---
 - Statement: SELECT IF(1, double_field, varchar_field) FROM all_types
 - output: [[null], [1.0], [2.0]]
 ---
 - Statement: SELECT IF(0, double_field, varchar_field) FROM all_types
-- output: [[null], ['one'], ['two']]
+- output: [[null], [111.0], [222.0]]
 
 ---
 - Statement: SELECT IF(?, double_field, varchar_field) FROM all_types
 - params: [[0]]
-- output: [[null], [one], [two]]
+- output: [[null], [111.0], [222.0]]
 
 ---
 - Statement: SELECT IF(bigint_field, double_field, double_field) FROM all_types;
@@ -69,7 +69,7 @@
 
 ---
 - Statement: SELECT IF(bigint_field, integer_field, date_field) FROM all_types;
-- output_types: [VARCHAR]
+- output_types: [DOUBLE]
 
 ---
 - Statement: SELECT IF(bigint_field, double_field, integer_field) FROM all_types;
@@ -85,7 +85,7 @@
 
 ---
 - Statement: SELECT IF(bigint_field, double_field, varchar_field) FROM all_types;
-- output_types: [VARCHAR]
+- output_types: [DOUBLE]
 
 ---
 - Statement: SELECT IF(bigint_field, integer_field, smallint_field) FROM all_types;
