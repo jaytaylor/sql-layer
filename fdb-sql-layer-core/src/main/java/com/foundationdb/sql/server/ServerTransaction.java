@@ -63,11 +63,6 @@ public class ServerTransaction
         this.periodicallyCommit = periodicallyCommit;
     }
 
-    public ServerTransaction(ServerSession server, boolean readOnly) {
-        this(server, readOnly,
-             IsolationLevel.UNSPECIFIED_ISOLATION_LEVEL, ServerTransaction.PeriodicallyCommit.OFF);
-    }
-
     public boolean isReadOnly() {
         return readOnly;
     }

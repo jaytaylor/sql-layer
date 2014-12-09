@@ -389,14 +389,14 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             case READ:
             case NEW:
             case IMPLICIT_COMMIT_AND_NEW:
-                transaction = new ServerTransaction(this, true);
+                transaction = new ServerTransaction(this, true, transactionDefaultIsolationLevel, ServerTransaction.PeriodicallyCommit.OFF);
                 localTransaction = true;
                 break;
             case WRITE:
             case NEW_WRITE:
                 if (transactionDefaultReadOnly)
                     throw new TransactionReadOnlyException();
-                transaction = new ServerTransaction(this, false);
+                transaction = new ServerTransaction(this, false, transactionDefaultIsolationLevel, transactionPeriodicallyCommit);
                 transaction.beforeUpdate();
                 localTransaction = true;
                 break;
