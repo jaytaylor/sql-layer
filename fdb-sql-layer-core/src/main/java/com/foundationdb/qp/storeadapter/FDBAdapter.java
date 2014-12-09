@@ -77,7 +77,11 @@ public class FDBAdapter extends StoreAdapter {
 
     /** The transaction scan options for normal operator scans. */
     public FDBScanTransactionOptions scanOptions() {
-        return getTransaction().getScanOptions();
+        if (txnService.isTransactionActive(getSession()))
+            return getTransaction().getScanOptions();
+        // This should only happen during tests that aren't careful
+        // about transactions, so it does not really matter.
+        return FDBScanTransactionOptions.NORMAL;
     }
 
     @Override
