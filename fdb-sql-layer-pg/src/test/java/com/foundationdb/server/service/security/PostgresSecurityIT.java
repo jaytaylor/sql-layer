@@ -98,4 +98,69 @@ public class PostgresSecurityIT extends SecurityServiceITBase
         stmt.executeQuery("DROP TABLE user2.utable");
     }
 
+    @Test(expected = SQLException.class)
+    public void postgresWrongSchemaDDLCreateView() throws Exception {
+        runStmt("CREATE VIEW user1.v2 AS SELECT * FROM user2.utable");
+    }
+    
+    @Test(expected = SQLException.class)
+    public void postgresWrongSchemaDDLDropView() throws Exception {
+        runStmt("DROP VIEW user1.v1");
+    }
+
+    @Test(expected = SQLException.class)
+    public void postgresWrongSchemaDDLCreateSequence() throws Exception {
+        runStmt("CREATE SEQUENCE user1.s2 START WITH 1 INCREMENT BY 1 NO CYCLE");
+    }
+
+    @Test(expected = SQLException.class)
+    public void postgresWrongSchemaDDLDropSequence() throws Exception {
+        runStmt("DROP SEQUENCE user1.s1 RESTRICT");
+    }
+
+    @Test(expected = SQLException.class)
+    public void postgresWrongSchemaDDLCreateIndex() throws Exception {
+        runStmt("CREATE INDEX user1.ind2 ON user1.utable(id)");
+    }
+
+    @Test(expected = SQLException.class)
+    public void postgresWrongSchemaDDLDropIndex() throws Exception {
+        runStmt("DROP INDEX user1.utable.ind");
+    }
+
+
+    @Test(expected = SQLException.class)
+    public void postgresWrongSchemaDDLCreateRoutine() throws Exception {
+        runStmt("CREATE OR REPLACE PROCEDURE user1.proc2(OUT total INT) " +
+                "    LANGUAGE javascript PARAMETER STYLE java EXTERNAL NAME 'fun' AS " +
+                "    $$ " +
+                "      function fun(total) { " +
+                "        total[0] = 5;" +
+                "      }" +
+                "    $$ ");
+    }
+
+
+    @Test(expected = SQLException.class)
+    public void postgresWrongSchemaDDLDropRoutine() throws Exception {
+        runStmt("DROP PROCEDURE user1.proc1");
+    }
+
+    @Test(expected = SQLException.class)
+    public void postgresWrongSchemaDDLDropGroup() throws Exception {
+        runStmt("DROP GROUP user1.utable");
+    }
+    
+    @Test(expected = SQLException.class)
+    public void postgresWrongSchemaDDLDropSchema() throws Exception {
+        runStmt("DROP SCHEMA user1 CASCADE");
+    }
+
+    private void runStmt(String sql) throws Exception {
+        Connection conn = openPostgresConnection("user2", "password");
+        Statement stmt = conn.createStatement();
+        stmt.executeQuery(sql);
+        stmt.close();
+        conn.close();        
+    }
 }
