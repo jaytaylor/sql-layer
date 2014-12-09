@@ -1,0 +1,13 @@
+SelectQuery@13043170
+  ResultSet@7849b9d0[b_id, b_data, anon_1_id, m2m_1_id]
+    Project@30464462[b.id, b.data, anon_1.id, m2m_1.id]
+      Sort@553396b0[anon_1.id, m2m_1.id]
+        Select@2dea2883[]
+          JoinNode@3b3335c8(INNER/NESTED_LOOPS[m2m_1.bid == b.id])
+            TableGroupJoinTree@1d8b74de(TableGroup@281b48b4(b), b - GroupScan@17979a90(Group(test.b), rows = 1, cost = 0.00000))
+              TableSource@59677282(b - TableGroup@281b48b4(b))
+            JoinNode@1f0ffbd5(INNER/NESTED_LOOPS)
+              TableGroupJoinTree@2ea5a9f9(TableGroup@7ec2d0d0(m2m), m2m_1 - GroupScan@3c9b2118(Group(test.m2m), rows = 1, cost = 0.00000))
+                TableSource@69fed553(m2m_1 - TableGroup@7ec2d0d0(m2m))
+              TableGroupJoinTree@7be6c29f(TableGroup@168ee2a9(a), anon_1 - SingleIndexScan@28c4920e(Index(test.a.PRIMARY[IndexColumn(id)]), covering/NONE, =m2m_1.aid, rows = 1, cost = 84.8928))
+                TableSource@770adc33(anon_1 - TableGroup@168ee2a9(a))
