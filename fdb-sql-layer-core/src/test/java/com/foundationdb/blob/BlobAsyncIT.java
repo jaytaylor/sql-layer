@@ -153,7 +153,6 @@ public class BlobAsyncIT extends FDBITBase
         });
     }
 
-    @Ignore
     @Test
     public void scanBounds() {
         final byte[] testBytes = generateBytes(4096);
@@ -186,7 +185,7 @@ public class BlobAsyncIT extends FDBITBase
             public Void apply(Transaction tr) {
                 BlobAsync blob = new BlobAsync(getDir(tr));
                 blob.write(tr, 0L, testBytes).get();
-                assertEquals(Integer.valueOf(len), blob.getSize(tr).get());
+                assertEquals(Long.valueOf(len), blob.getSize(tr).get());
                 byte[] readBytes = blob.read(tr).get();
                 if(len == 0) {
                     assertNull(readBytes);
