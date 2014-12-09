@@ -139,13 +139,17 @@ public class PostgresSecurityIT extends SecurityServiceITBase
                 "      }" +
                 "    $$ ");
     }
-
+    
+    @Test(expected = SQLException.class)
+    public void postgresWrongSchemaDDLCallRoutine() throws Exception {
+        runStmt("CALL user1.proc1(0)");
+    }
 
     @Test(expected = SQLException.class)
     public void postgresWrongSchemaDDLDropRoutine() throws Exception {
         runStmt("DROP PROCEDURE user1.proc1");
     }
-
+  
     @Test(expected = SQLException.class)
     public void postgresWrongSchemaDDLDropGroup() throws Exception {
         runStmt("DROP GROUP user1.utable");
