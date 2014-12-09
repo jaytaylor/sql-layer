@@ -42,7 +42,6 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
     {
         super(null);
         super.init(loadableOperator.plan(), null, columnNames, columnTypes, aisColumns, parameterTypes, null);
-        setSchema(loadableOperator.schema());
         this.invocation = invocation;
     }
     
