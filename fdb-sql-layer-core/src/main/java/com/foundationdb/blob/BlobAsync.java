@@ -26,6 +26,7 @@ import com.foundationdb.directory.DirectorySubspace;
 import com.foundationdb.server.error.*;
 import com.foundationdb.tuple.*;
 import com.foundationdb.blob.Lob;
+import com.foundationdb.subspace.Subspace;
 
 /** Represents a potentially large binary value in FoundationDB. */
 public class BlobAsync implements Lob {
@@ -58,14 +59,14 @@ public class BlobAsync implements Lob {
      */
     protected static final int CHUNK_SMALL = 200;
 
-    private final DirectorySubspace subspace;
+    private final Subspace subspace;
 
     /**
      * Create a new object representing a binary large object (blob).
      *
      * @param subspace Subspace to use to write data. Should be considered owned by the blob.
      */
-    public BlobAsync(DirectorySubspace subspace) {
+    public BlobAsync(Subspace subspace) {
         this.subspace = subspace;
     }
 
@@ -330,7 +331,7 @@ public class BlobAsync implements Lob {
      * 
      * @return The DirectorySubspace of the blob
      */
-    public DirectorySubspace getSubspace() {
+    public Subspace getSubspace() {
         return this.subspace;
     }
     

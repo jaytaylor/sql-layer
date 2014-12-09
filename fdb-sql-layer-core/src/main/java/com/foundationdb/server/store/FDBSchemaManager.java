@@ -779,8 +779,8 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
                 newValue = Arrays.copyOfRange(buffer.array(), buffer.position(), buffer.limit());
             }
             BlobAsync blob = new BlobAsync(blobDir);
-            blob.truncate(txn.getTransaction(), 0).get();
-            blob.write(txn.getTransaction(), 0, newValue).get();
+            blob.truncate(txn.getTransaction(), 0L).get();
+            blob.write(txn.getTransaction(), 0L, newValue).get();
         } else {
             dir.removeIfExists(txn.getTransaction(), PathUtil.from(schema)).get();
         }
@@ -876,7 +876,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
             if((skip != null) && skip.contains(subDirName)) {
                 continue;
             }
-            Subspace subDir = dir.open(txn.getTransaction(), PathUtil.from(subDirName)).get();
+            DirectorySubspace subDir = dir.open(txn.getTransaction(), PathUtil.from(subDirName)).get();
             BlobAsync blob = new BlobAsync(subDir);
             byte[] data = blob.read(txn.getTransaction()).get();
             if(data != null) {

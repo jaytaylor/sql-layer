@@ -18,15 +18,15 @@
 package com.foundationdb.blob;
 
 import com.foundationdb.*;
-import com.foundationdb.directory.*;
+import com.foundationdb.subspace.Subspace;
 import com.foundationdb.async.Future;
 
 import java.util.UUID;
 
 public interface Lob {
-    public UUID getId();
+    //public UUID getId();
     public Future<Long> getSize(TransactionContext tcx);
-    public DirectorySubspace getDirectorySubspace();
+    public Subspace getSubspace();
     public Future<Void> delete(TransactionContext tcx);
     public Future<Void> truncate(TransactionContext tcx, Long len);
 }
