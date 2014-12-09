@@ -22,8 +22,12 @@ import com.foundationdb.server.test.mt.OnlineCreateTableAsMT;
 import com.foundationdb.server.test.mt.util.ThreadMonitor.Stage;
 import com.foundationdb.sql.server.ServerSession;
 import com.foundationdb.sql.types.DataTypeDescriptor;
+import com.foundationdb.util.RandomRule;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
+
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +40,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
+//import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
@@ -283,13 +287,16 @@ public class ConcurrentTestBuilderImpl implements ConcurrentTestBuilder
         }
     }
 
+    @ClassRule
+    public static final RandomRule randomRule = new RandomRule();
+    @Rule
+    public final RandomRule delayRule = randomRule;
+    
     @SafeVarargs
     private static <T> T choose(T... values) {
-        Random r = new Random();
-        return values[r.nextInt(values.length)];
+        return values[randomRule.getRandom().nextInt(values.length)];
     }
-
-    public static final boolean DELAY_BEFORE = choose(true, false);
+    public static final boolean DELAY_BEFORE = randomRule.getRandom().nextBoolean();
     public static final OnlineDDLMonitor.Stage DELAY_DDL_STAGE = choose(OnlineDDLMonitor.Stage.values());
     public static final ThreadMonitor.Stage DELAY_THREAD_STAGE = choose(ThreadMonitor.Stage.values());
 }
