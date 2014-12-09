@@ -61,7 +61,6 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     private boolean closed;
     private JDBCWarning warnings;
     private Properties clientInfo = new Properties();
-    private String schema;
     private EmbeddedOperatorCompiler compiler;
     private List<JDBCResultSet> openResultSets = new ArrayList<>();
     private boolean setNonStandardIsolationLevel;
@@ -720,12 +719,12 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     @Override
     public void setSchema(String schema) throws SQLException {
-        this.schema = schema;
+        setDefaultSchemaName(schema);
     }
 
     @Override
     public String getSchema() throws SQLException {
-        return schema;
+        return getDefaultSchemaName();
     }
 
     @Override
