@@ -333,7 +333,7 @@ public enum ErrorCode {
     INVALID_SQLJ_DEPLOYMENT_DESCRIPTOR ("46", "200", Importance.DEBUG, InvalidSQLJDeploymentDescriptorException.class),
 
     // Class 50 - DDL definition failure
-    PROTECTED_ITEM          ("50", "001", Importance.DEBUG, ProtectedItemException.class),
+    PROTECTED_OBJECT        ("50", "001", Importance.DEBUG, ProtectedObjectException.class),
     PROTECTED_TABLE         ("50", "002", Importance.DEBUG, ProtectedTableDDLException.class), 
     JOIN_TO_PROTECTED_TABLE ("50", "003", Importance.DEBUG, JoinToProtectedTableException.class), 
     JOIN_TO_UNKNOWN_TABLE   ("50", "004", Importance.DEBUG, JoinToUnknownTableException.class),  

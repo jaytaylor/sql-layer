@@ -60,7 +60,7 @@ import com.foundationdb.server.error.ProtectedTableDDLException;
 import com.foundationdb.server.error.ReferencedSQLJJarException;
 import com.foundationdb.server.error.ReferencedTableException;
 import com.foundationdb.server.error.UndefinedViewException;
-import com.foundationdb.server.error.ProtectedItemException;
+import com.foundationdb.server.error.ProtectedObjectException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.security.SecurityService;
@@ -421,7 +421,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     public void createIndexes(Session session, Collection<? extends Index> indexes, boolean keepStorage) {
         for (Index index : indexes) {
             if (securityService != null && !securityService.isAccessible(session, index.getSchemaName())){
-                throw new ProtectedItemException(index.getIndexName().getTableName(), index.getSchemaName());
+                throw new ProtectedObjectException("index", index.getIndexName().getTableName(), index.getSchemaName());
             }
         }
         
@@ -448,7 +448,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     public void dropIndexes(Session session, final Collection<? extends Index> indexesToDrop) {
         for (Index index : indexesToDrop) {
             if (securityService != null && !securityService.isAccessible(session, index.getSchemaName())){
-                throw new ProtectedItemException(index.getIndexName().getTableName(), index.getSchemaName());
+                throw new ProtectedObjectException("index", index.getIndexName().getTableName(), index.getSchemaName());
             }
         }
         final AkibanInformationSchema newAIS = aisCloner.clone(
@@ -485,7 +485,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public void dropSchema(Session session, String schemaName) {
         if (securityService != null && !securityService.isAccessible(session, schemaName)){
-            throw new ProtectedItemException(schemaName, schemaName);
+            throw new ProtectedObjectException("schema", schemaName, schemaName);
         }
         AkibanInformationSchema newAIS = removeSchemaFromAIS(getAISForChange(session), schemaName);
         saveAISChange(session, newAIS, Collections.singleton(schemaName));
@@ -500,7 +500,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
                 affectedSchemas.add(schemaName);
             }
             if (securityService != null && !securityService.isAccessible(session, schemaName)){
-                throw new ProtectedItemException(schemaName, schemaName);
+                throw new ProtectedObjectException("schema", schemaName, schemaName);
             }
         }
         AkibanInformationSchema newAIS = aisCloner.clone(aisForChange,
@@ -602,7 +602,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public void alterSequence(Session session, TableName sequenceName, Sequence newDefinition) {
         if (securityService != null && !securityService.isAccessible(session, sequenceName.getSchemaName())){
-            throw new ProtectedItemException(sequenceName.getTableName(), sequenceName.getSchemaName());
+            throw new ProtectedObjectException("sequence", sequenceName.getTableName(), sequenceName.getSchemaName());
         }
         AkibanInformationSchema oldAIS = getAISForChange(session);
         Sequence oldSequence = oldAIS.getSequence(sequenceName);
@@ -633,7 +633,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public void createView(Session session, View view) {
         if (securityService != null && !securityService.isAccessible(session, view.getName().getSchemaName())){
-            throw new ProtectedItemException(view.getName().getTableName(), view.getName().getSchemaName());
+            throw new ProtectedObjectException("view", view.getName().getTableName(), view.getName().getSchemaName());
         }
         final AkibanInformationSchema oldAIS = getAISForChange(session);
         checkSystemSchema(view.getName(), false);
@@ -647,7 +647,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public void dropView(Session session, TableName viewName) {
         if (securityService != null && !securityService.isAccessible(session, viewName.getSchemaName())){
-            throw new ProtectedItemException(viewName.getTableName(), viewName.getSchemaName());
+            throw new ProtectedObjectException("view", viewName.getTableName(), viewName.getSchemaName());
         }
         final AkibanInformationSchema oldAIS = getAISForChange(session);
         checkSystemSchema(viewName, false);
@@ -663,7 +663,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public void createSequence(final Session session, final Sequence sequence) {
         if (securityService != null && !securityService.isAccessible(session, sequence.getSchemaName())){
-            throw new ProtectedItemException(sequence.getSequenceName().getTableName(), sequence.getSchemaName());
+            throw new ProtectedObjectException("sequence", sequence.getSequenceName().getTableName(), sequence.getSchemaName());
         }
         checkSequenceName(session, sequence.getSequenceName(), false);
         AISMerge merge = AISMerge.newForOther(aisCloner, getNameGenerator(session), getAISForChange(session));
@@ -675,7 +675,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public void dropSequence(Session session, Sequence sequence) {
         if (securityService != null && !securityService.isAccessible(session, sequence.getSchemaName())){
-            throw new ProtectedItemException(sequence.getSequenceName().getTableName(), sequence.getSchemaName());
+            throw new ProtectedObjectException("sequence", sequence.getSequenceName().getTableName(), sequence.getSchemaName());
         }
         checkSequenceName(session, sequence.getSequenceName(), true);
         AkibanInformationSchema oldAIS = getAISForChange(session);
@@ -688,7 +688,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public void createRoutine(Session session, Routine routine, boolean replaceExisting) {
         if (securityService != null && !securityService.isAccessible(session, routine.getName().getSchemaName())){
-            throw new ProtectedItemException(routine.getName().getTableName(), routine.getName().getSchemaName());
+            throw new ProtectedObjectException("routine", routine.getName().getTableName(), routine.getName().getSchemaName());
         }
         createRoutineCommon(session, routine, false, replaceExisting);
     }
@@ -696,7 +696,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public void dropRoutine(Session session, TableName routineName) {
         if (securityService != null && !securityService.isAccessible(session, routineName.getSchemaName())){
-            throw new ProtectedItemException(routineName.getTableName(), routineName.getSchemaName());
+            throw new ProtectedObjectException("routine", routineName.getTableName(), routineName.getSchemaName());
         }
         dropRoutineCommon(session, routineName, false);
     }

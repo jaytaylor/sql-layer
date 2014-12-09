@@ -17,10 +17,9 @@
 
 package com.foundationdb.server.error;
 
-import com.foundationdb.ais.model.TableName;
 
-public final class ProtectedItemException extends InvalidOperationException {
-    public ProtectedItemException(String item, String schema) {
-        super(ErrorCode.PROTECTED_ITEM, item, schema);
+public final class ProtectedObjectException extends InvalidOperationException {
+    public ProtectedObjectException(String itemType, String itemName, String schema) {
+        super(ErrorCode.PROTECTED_OBJECT, itemType, itemName, schema);
     }
 }
