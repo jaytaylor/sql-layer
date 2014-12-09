@@ -188,4 +188,8 @@ hash-left: Hash LEFT join
 
 hash-semi: Hash SEMI join
 
-m2m-order-by : many-to-many relation with multi-column order by that is partially in a subquery
+m2m-order-by: many-to-many relation with multi-column order by
+m2m-order-by-subquery: same as m2m-order-by, but part is in a subquery
+
+order-by-subquery: order by in a subquery clause joined with another table
+order-by-subquery2: same as order-by-subquery, but with an order-by on the outside too
