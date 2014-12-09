@@ -37,6 +37,7 @@ import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 import com.foundationdb.server.store.StoreStorageDescription;
 import com.foundationdb.KeySelector;
 import com.foundationdb.Transaction;
+import com.foundationdb.async.Future;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple2;
 import com.google.protobuf.ByteString;
@@ -205,12 +206,18 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
     public void groupIterator(FDBStore store, Session session, FDBStoreData storeData,
                               FDBStore.GroupIteratorBoundary left, FDBStore.GroupIteratorBoundary right,
                               int limit, FDBScanTransactionOptions transactionOptions) {
+        TransactionState txnState = store.getTransaction(session, storeData);
         if ((left == FDBStore.GroupIteratorBoundary.KEY) &&
             (right == FDBStore.GroupIteratorBoundary.NEXT_KEY) &&
             (limit == 1)) {
             byte[] key = packKey(storeData);
-            storeData.iterator = new FDBStoreDataSingleKeyValueIterator(storeData,
-              key, store.getTransaction(session, storeData).getFuture(key));
+            Future<byte[]> future;
+            if (transactionOptions.isSnapshot())
+                future = txnState.getSnapshotFuture(key);
+            else
+                future = txnState.getFuture(key);
+            storeData.iterator = new FDBStoreDataSingleKeyValueIterator(storeData, key,
+                                                                        future);
             return;
         }
         KeySelector ksLeft, ksRight;
@@ -240,7 +247,6 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
         default:
             throw new IllegalArgumentException(right.toString());
         }
-        TransactionState txnState = store.getTransaction(session, storeData);
         storeData.iterator = new FDBStoreDataKeyValueIterator(storeData,
             txnState.getRangeIterator(ksLeft, ksRight, limit, false, transactionOptions));
     }

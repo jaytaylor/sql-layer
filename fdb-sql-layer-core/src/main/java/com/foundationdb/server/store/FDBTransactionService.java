@@ -147,7 +147,11 @@ public class FDBTransactionService implements TransactionService {
         }
 
         public Future<byte[]> getFuture(byte[] key) {
-                return transaction.get(key);
+            return transaction.get(key);
+        }
+
+        public Future<byte[]> getSnapshotFuture(byte[] key) {
+            return transaction.snapshot().get(key);
         }
 
         public byte[] getValue(byte[] key) {
@@ -160,7 +164,7 @@ public class FDBTransactionService implements TransactionService {
         
         public byte[] getSnapshotValue(byte[] key) {
             try {
-                return transaction.snapshot().get(key).get();
+                return getSnapshotFuture(key).get();
             } catch (RuntimeException e) {
                 throw FDBAdapter.wrapFDBException(session, e);
             }
