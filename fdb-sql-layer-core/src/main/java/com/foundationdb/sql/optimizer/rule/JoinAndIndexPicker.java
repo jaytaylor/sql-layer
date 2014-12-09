@@ -1188,6 +1188,16 @@ public class JoinAndIndexPicker extends BaseRule
                     return planClass;
                 }
             }
+            // TODO Could potentially do a check if bitset == overall bitset
+            considerJoinPlan(left, right, joinType, joins, outsideJoins, planClass, true);
+            considerJoinPlan(left, right, joinType, joins, outsideJoins, planClass, false);
+            return planClass;
+        }
+
+        public void considerJoinPlan(PlanClass left, PlanClass right, JoinType joinType,
+                                     Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins,
+                                     JoinPlanClass planClass, boolean sortAllowed) {
+
             joins = duplicateJoins(joins);
             Collection<JoinOperator> condJoins = joins; // Joins with conditions for indexing.
             if (subqueryJoins != null) {
@@ -1202,15 +1212,6 @@ public class JoinAndIndexPicker extends BaseRule
             }
             outsideJoins.addAll(joins); // Total set for outer; inner must subtract.
 
-            // TODO Could potentially do a check if bitset == overall bitset
-            considerJoinPlan(left, right, joinType, joins, outsideJoins, planClass, condJoins, true);
-            considerJoinPlan(left, right, joinType, joins, outsideJoins, planClass, condJoins, false);
-            return planClass;
-        }
-
-        public void considerJoinPlan(PlanClass left, PlanClass right, JoinType joinType,
-                                     Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins,
-                                     JoinPlanClass planClass, Collection<JoinOperator> condJoins, boolean sortAllowed) {
             Plan leftPlan;
             if (joinType.isRightLinear() || joinType.isSemi()) {
                 leftPlan = left.bestPlan(condJoins, outsideJoins, sortAllowed);
