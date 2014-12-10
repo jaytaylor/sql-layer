@@ -463,9 +463,9 @@ class GroupLookup_Default extends Operator
 
         private Row readAncestorRow(HKey hKey)
         {
-            try {
                 lookupCursor.rebind(hKey, false);
                 lookupCursor.open();
+            try {
                 Row retrievedRow = lookupCursor.next();
                 if (retrievedRow != null) {
                     // Retrieved row might not actually be what we were looking for -- not all ancestors are present,
