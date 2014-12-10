@@ -41,6 +41,9 @@
 package com.foundationdb.sql.optimizer;
 
 import com.foundationdb.server.error.UnsupportedSQLException;
+import com.foundationdb.sql.optimizer.plan.AggregateFunctionExpression;
+import com.foundationdb.sql.optimizer.plan.ExpressionNode;
+import com.foundationdb.sql.optimizer.rule.ASTStatementLoader;
 import com.foundationdb.sql.parser.*;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
@@ -347,10 +350,7 @@ public class SubqueryFlattener
             (fromSubquery.getFetchFirst() != null))
             return false;
         if (hasOtherFromTables) {
-            AggregateCheckVisitor visitor =
-                    new AggregateCheckVisitor();
-            fromSubquery.accept(visitor);
-            if (visitor.hasAggregateNode) {
+            if (AggregateCheckVisitor.of(fromSubquery)) {
                 return false;
             }
         }
@@ -641,6 +641,29 @@ public class SubqueryFlattener
                 equated.contains(((ColumnReference)expr).getUserData()));
     }
 
+    public static boolean isAggregateMethod(Visitable node) {
+        return node instanceof  MethodCallNode &&
+                AggregateFunctionExpression.class.getName().equals(((MethodCallNode)node).getJavaClassName());
+    }
+
+    private static ValueNode getReference(ColumnReference reference, Collection<FromSubquery> subqueries) {
+        ColumnBinding binding = (ColumnBinding) reference.getUserData();
+        if (binding != null) {
+            FromTable bft = binding.getFromTable();
+            if (subqueries.contains(bft)) {
+                ResultColumn rc = binding.getResultColumn();
+                ValueNode expression = rc.getExpression();
+                if (expression instanceof VirtualColumnNode) {
+                    VirtualColumnNode virtualColumnNode = (VirtualColumnNode) expression;
+                    return virtualColumnNode.getSourceColumn().getExpression();
+                } else {
+                    return expression;
+                }
+            }
+        }
+        return null;
+    }
+
     static class FromTableBindingVisitor implements Visitor {
         enum Found { NOT_FOUND, FOUND_FROM_LIST, FOUND_TABLE };
 
@@ -736,13 +759,15 @@ public class SubqueryFlattener
      * subquery.
      */
     static class AggregateCheckVisitor implements Visitor {
-        private boolean hasAggregateNode = false;
+        boolean hasAggregateNode = false;
 
         public AggregateCheckVisitor() {
         }
 
         public Visitable visit(Visitable node) throws StandardException {
             if (node instanceof AggregateNode) {
+                hasAggregateNode = true;
+            } else if (isAggregateMethod(node)) {
                 hasAggregateNode = true;
             }
             return node;
@@ -755,6 +780,56 @@ public class SubqueryFlattener
         }
         public boolean visitChildrenFirst(Visitable node) {
             return false;
+        }
+
+        public static boolean of(FromSubquery node) throws StandardException {
+            AggregateCheckVisitor visitor = new AggregateCheckVisitor();
+            node.accept(visitor);
+            return visitor.hasAggregateNode;
+        }
+    }
+
+    static class ReferencedAggregateCheckVisitor implements Visitor {
+
+        private Collection<FromSubquery> subqueries;
+        private AggregateCheckVisitor aggregateCheckVisitor;
+        public ReferencedAggregateCheckVisitor(Collection<FromSubquery> subqueries) {
+            this.subqueries = subqueries;
+            aggregateCheckVisitor = new AggregateCheckVisitor();
+        }
+
+        @Override
+        public Visitable visit(Visitable node) throws StandardException {
+            if (node instanceof ColumnReference) {
+                ValueNode reference = getReference((ColumnReference) node, subqueries);
+                reference.accept(aggregateCheckVisitor);
+            }
+            return node;
+        }
+
+        @Override
+        public boolean visitChildrenFirst(Visitable node) {
+            return false;
+        }
+
+        @Override
+        public boolean stopTraversal() {
+            return aggregateCheckVisitor.hasAggregateNode;
+        }
+
+        @Override
+        public boolean skipChildren(Visitable node) throws StandardException {
+            return aggregateCheckVisitor.hasAggregateNode;
+        }
+
+        private boolean hasAggregateNode() {
+            return aggregateCheckVisitor.hasAggregateNode;
+        }
+
+        public static boolean of(ValueNode reference, Collection<FromSubquery> subqueries) throws StandardException {
+            ReferencedAggregateCheckVisitor referencedAggregateCheckVisitor = new ReferencedAggregateCheckVisitor(subqueries);
+            reference.accept(referencedAggregateCheckVisitor);
+            return referencedAggregateCheckVisitor.hasAggregateNode();
         }
     }
 
@@ -775,9 +850,7 @@ public class SubqueryFlattener
                 if (aggregate.getOperand() == null) {
                     // COUNT(*)
                     for (FromSubquery subquery : subqueries) {
-                        AggregateCheckVisitor visitor = new AggregateCheckVisitor();
-                        subquery.accept(visitor);
-                        if (visitor.hasAggregateNode) {
+                        if (AggregateCheckVisitor.of(subquery)) {
                             flattenable = false;
                             break;
                         }
@@ -785,23 +858,12 @@ public class SubqueryFlattener
                 }
                 else if (aggregate.getOperand() instanceof ColumnReference) {
                     // COUNT(v)
-                    ColumnBinding binding = (ColumnBinding)((ColumnReference)aggregate.getOperand()).getUserData();
-                    if (binding != null) {
-                        FromTable bft = binding.getFromTable();
-                        if (subqueries.contains(bft)) {
-                            ResultColumn rc = binding.getResultColumn();
-                            if ((rc.getExpression() instanceof ColumnReference)) {
-                                // ok to flatten
-                            } else if (rc.getExpression() instanceof VirtualColumnNode) {
-                                VirtualColumnNode virtualColumnNode = (VirtualColumnNode)rc.getExpression();
-                                if (virtualColumnNode.getSourceColumn().getExpression() instanceof ColumnReference) {
-                                    // ok to flatten
-                                } else {
-                                    flattenable = false;
-                                }
-                            }else {
-                                flattenable = false;
-                            }
+                    ValueNode reference = getReference((ColumnReference) aggregate.getOperand(), subqueries);
+                    if (reference != null) {
+                        if ((reference instanceof ColumnReference)) {
+                            // ok to flatten
+                        } else {
+                            flattenable = false;
                         }
                     }
                 } else {
@@ -809,9 +871,25 @@ public class SubqueryFlattener
                     // just mark it as not flattenable
                     flattenable = false;
                 }
+            } else if (isAggregateMethod(node)) {
+                // Simpler, you can put other calculations inside an aggregate method, just not an aggregate method.
+                JavaValueNode[] args = ((MethodCallNode) node).getMethodParameters();
+                for (JavaValueNode arg : args) {
+                    if (arg instanceof SQLToJavaValueNode) {
+                        ValueNode sqlValueNode = ((SQLToJavaValueNode) arg).getSQLValueNode();
+                        if (ReferencedAggregateCheckVisitor.of(sqlValueNode, subqueries)) {
+                            flattenable = false;
+                            break;
+                        }
+                    } else {
+                        flattenable = false;
+                        break;
+                    }
+                }
             }
             return node;
         }
+
         public boolean stopTraversal() {
             return !flattenable;
         }

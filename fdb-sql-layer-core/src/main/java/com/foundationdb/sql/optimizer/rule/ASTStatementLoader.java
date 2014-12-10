@@ -1989,33 +1989,6 @@ public class ASTStatementLoader extends BaseRule
             return HasAggregateFunction.of(expr);
         }
 
-        public static class HasAggregateFunction implements ExpressionVisitor {
-            private boolean found = false;
-
-            @Override
-            public boolean visitEnter(ExpressionNode n) {
-                return visit(n);
-            }
-            @Override
-            public boolean visitLeave(ExpressionNode n) {
-                return !found;
-            }
-            @Override
-            public boolean visit(ExpressionNode n) {
-                if (n instanceof AggregateFunctionExpression) {
-                    found = true;
-                    return false;
-                }
-                return true;
-            }
-
-            static boolean of(ExpressionNode expr) {
-                HasAggregateFunction haf = new HasAggregateFunction();
-                expr.accept(haf);
-                return haf.found;
-            }
-        }
-
         public int getInToOrMaxCount() {
             String prop = rulesContext.getProperty("inToOrMaxCount");
             if (prop != null)
@@ -2024,5 +1997,32 @@ public class ASTStatementLoader extends BaseRule
                 return IN_TO_OR_MAX_COUNT_DEFAULT;
         }
 
+    }
+
+    public static class HasAggregateFunction implements ExpressionVisitor {
+        private boolean found = false;
+
+        @Override
+        public boolean visitEnter(ExpressionNode n) {
+            return visit(n);
+        }
+        @Override
+        public boolean visitLeave(ExpressionNode n) {
+            return !found;
+        }
+        @Override
+        public boolean visit(ExpressionNode n) {
+            if (n instanceof AggregateFunctionExpression) {
+                found = true;
+                return false;
+            }
+            return true;
+        }
+
+        public static boolean of(ExpressionNode expr) {
+            HasAggregateFunction haf = new HasAggregateFunction();
+            expr.accept(haf);
+            return haf.found;
+        }
     }
 }

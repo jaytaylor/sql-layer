@@ -1,1 +1,1 @@
-SELECT anon1.bitored AS bitored, test.t1.c1 AS n3, (test.t1.id + 3) AS a3 FROM (SELECT bit_or(c1) AS bitored FROM test.t1) AS anon1(bitored), test.t1
+SELECT anon1.bitored AS bitored, test.t1.c1 AS n3, (test.t1.id + 3) AS a3 FROM (SELECT bit_or(test.t1.c1) AS bitored FROM test.t1) AS anon1(bitored), test.t1
