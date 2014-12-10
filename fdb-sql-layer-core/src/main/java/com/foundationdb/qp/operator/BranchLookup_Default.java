@@ -394,7 +394,7 @@ public class BranchLookup_Default extends Operator
                 if (limit.limitReached(currentLookupRow)) {
                     lookupState = LookupState.AFTER;
                     lookupRow = null;
-                    close();
+                    lookupCursor.close();
                 } else {
                     lookupRow = currentLookupRow;
                 }
