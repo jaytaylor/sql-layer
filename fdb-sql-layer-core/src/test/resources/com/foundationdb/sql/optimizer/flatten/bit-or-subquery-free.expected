@@ -1,0 +1,1 @@
+SELECT bit_or(test.t1.id) AS "_SQL_COL_1" FROM test.t1

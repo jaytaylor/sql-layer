@@ -1,0 +1,1 @@
+SELECT val+3 FROM (SELECT id*5 AS val, c1 FROM t1) AS anon1

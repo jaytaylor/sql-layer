@@ -1,0 +1,1 @@
+DELETE FROM test.parent AS c1 WHERE (c2.name = 'James') AND ((c1.id = c2.id) AND TRUE)

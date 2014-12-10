@@ -1,0 +1,1 @@
+SELECT anon1.counted AS counted, test.t1.c1 AS n3, (test.t1.id + 3) AS a3 FROM (SELECT COUNT(*) AS counted FROM test.t1) AS anon1(counted), test.t1
