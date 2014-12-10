@@ -157,9 +157,16 @@
 - Statement: SELECT a_int FROM types WHERE a_decimal = 3.14 
 - output: [['1']]
 ---
+- Statement: SELECT a_int FROM types WHERE a_decimal = '3.14'
+- output: [[1]]
+---
 - Statement: SELECT a_int FROM types WHERE a_decimal = ? 
 - params: [['3.14']]
 - output: [['1']]
+---
+- Statement: SELECT a_int FROM types WHERE a_decimal = ?
+- params: [[3.14]]
+- output: [[1]]
 ---
 - Statement: SELECT a_int FROM types WHERE a_double = 1000.0e0 
 - output: [['1']]
@@ -206,9 +213,16 @@
 - Statement: SELECT a_int FROM types WHERE a_udecimal = 2.72 
 - output: [['1']]
 ---
+- Statement: SELECT a_int FROM types WHERE a_udecimal = '2.72'
+- output: [['1']]
+---
 - Statement: SELECT a_int FROM types WHERE a_udecimal = ? 
 - params: [['2.72']]
 - output: [['1']]
+---
+- Statement: SELECT a_int FROM types WHERE a_udecimal = ?
+- params: [[2.72]]
+- output: [[1]]
 ---
 - Statement: SELECT a_int FROM types WHERE a_udouble = 3456.0e0 
 - output: [['1']]
@@ -262,9 +276,16 @@
 - Statement: SELECT a_int FROM types_i WHERE a_decimal = 3.14 
 - output: [['1']]
 ---
+- Statement: SELECT a_int FROM types_i WHERE a_decimal = '3.14'
+- output: [['1']]
+---
 - Statement: SELECT a_int FROM types_i WHERE a_decimal = ? 
 - params: [['3.14']]
 - output: [['1']]
+---
+- Statement: SELECT a_int FROM types_i WHERE a_decimal = ?
+- params: [[3.14]]
+- output: [[1]]
 ---
 - Statement: SELECT a_int FROM types_i WHERE a_double = 1000.0e0 
 - output: [['1']]
@@ -304,9 +325,16 @@
 - Statement: SELECT a_int FROM types_i WHERE a_udecimal = 2.72 
 - output: [['1']]
 ---
+- Statement: SELECT a_int FROM types_i WHERE a_udecimal = '2.72'
+- output: [['1']]
+---
 - Statement: SELECT a_int FROM types_i WHERE a_udecimal = ? 
 - params: [['2.72']]
 - output: [['1']]
+---
+- Statement: SELECT a_int FROM types_i WHERE a_udecimal = ?
+- params: [[2.72]]
+- output: [[1]]
 ---
 - Statement: SELECT a_int FROM types_i WHERE a_udouble = 3456.0e0 
 - output: [['1']]
