@@ -7,6 +7,7 @@ bit-or-expression-joined: bit_or(expression sourcing two subqueries, one with ag
 bit-or-expression: bit_or with a bit_or in the subquery
 
 count-aliased-column: count on outside of column that is aliased in the subquery
+count-bit-or: count with a bit_or in the subquery
 count-column-to-star: count on outside of a column, where subquery is SELECT *
 count-column: count on outside that just references column returned in subquery
 count-count: count of a subquery that is a count
