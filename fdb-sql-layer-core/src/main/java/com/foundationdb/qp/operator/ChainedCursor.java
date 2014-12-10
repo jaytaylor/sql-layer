@@ -66,6 +66,7 @@ public class ChainedCursor extends OperatorCursor
     protected ChainedCursor(QueryContext context, Cursor input) {
         super(context);
         this.input = input;
+        assert input != null;
     }
 
     public Cursor getInput() {
@@ -94,9 +95,7 @@ public class ChainedCursor extends OperatorCursor
     @Override
     public void close() {
         try {
-            if (input != null) {
-                input.close();
-            }
+            input.close();
         } finally {
             super.close();
         }
