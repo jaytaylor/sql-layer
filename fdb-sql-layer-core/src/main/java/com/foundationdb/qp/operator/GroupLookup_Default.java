@@ -463,8 +463,8 @@ class GroupLookup_Default extends Operator
 
         private Row readAncestorRow(HKey hKey)
         {
-                lookupCursor.rebind(hKey, false);
-                lookupCursor.open();
+            lookupCursor.rebind(hKey, false);
+            lookupCursor.open();
             try {
                 Row retrievedRow = lookupCursor.next();
                 if (retrievedRow != null) {
