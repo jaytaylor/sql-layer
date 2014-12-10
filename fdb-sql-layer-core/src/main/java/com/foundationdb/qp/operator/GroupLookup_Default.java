@@ -388,6 +388,7 @@ class GroupLookup_Default extends Operator
         public void close()
         {
             try {
+                // lookupCursor is closed between input rows
                 if (!lookupCursor.isClosed())
                     lookupCursor.close();
                 lookupRow = null;
