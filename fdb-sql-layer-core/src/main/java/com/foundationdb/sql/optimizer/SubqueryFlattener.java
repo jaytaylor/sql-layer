@@ -802,7 +802,9 @@ public class SubqueryFlattener
         public Visitable visit(Visitable node) throws StandardException {
             if (node instanceof ColumnReference) {
                 ValueNode reference = getReference((ColumnReference) node, subqueries);
-                reference.accept(aggregateCheckVisitor);
+                if (reference != null) {
+                    reference.accept(aggregateCheckVisitor);
+                }
             }
             return node;
         }

@@ -5,6 +5,7 @@ bit-or-count: bit_or on the outside, with count in the subquery
 bit-or-expression-expression: bit_or with expression in the argument & subquery
 bit-or-expression-joined: bit_or(expression sourcing two subqueries, one with aggregate)
 bit-or-expression: bit_or with a bit_or in the subquery
+bit-or-subquery-free: bit_or that just references a table
 
 count-aliased-column: count on outside of column that is aliased in the subquery
 count-bit-or: count with a bit_or in the subquery
@@ -16,6 +17,7 @@ count-in: counting a field, flatten IN clause
 count-in-expression: counting a field, flatten IN clause
 count-join-expression: count(*) on outside, two subqueries, one of which has an expression
 count-star-expression: count(*) with an expression in the subquery
+count-subquery-free: count that just references a table
 
 delete-1: just delete everything from a child -> causes a SelectNode with almost everything null
 delete-in: a delete with an IN clause in the WHERE clause
