@@ -372,7 +372,11 @@ public class BranchLookup_Default extends Operator
         {
             super.close();
             inputRow = null;
-            lookupCursor.close();
+            // lookupCursor may be closed if input.next() throws an exception in advanceInput, or
+            // if the limiti is reached.
+            if (!lookupCursor.isClosed()) {
+                lookupCursor.close();
+            }
             lookupRow = null;
         }
 
