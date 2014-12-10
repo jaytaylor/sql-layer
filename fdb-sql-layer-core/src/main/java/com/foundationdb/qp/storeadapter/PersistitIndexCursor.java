@@ -72,8 +72,11 @@ class PersistitIndexCursor extends RowCursorImpl implements BindingsAwareCursor
     @Override
     public void close()
     {
-        indexCursor.close(); // IndexCursor.close() closes the rowState (IndexCursor.iterationHelper)
-        super.close();
+        try {
+            indexCursor.close(); // IndexCursor.close() closes the rowState (IndexCursor.iterationHelper)
+        } finally {
+            super.close();
+        }
     }
 
     @Override

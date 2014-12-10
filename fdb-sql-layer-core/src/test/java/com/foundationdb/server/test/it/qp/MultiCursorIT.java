@@ -170,7 +170,7 @@ public class MultiCursorIT extends OperatorITBase
         @Override
         public void close()
         {
-            position = items.length;
+            position = items == null ? 0 : items.length;
         }
 
         @Override
@@ -205,7 +205,7 @@ public class MultiCursorIT extends OperatorITBase
         private int position;
         @Override
         public boolean isClosed() {
-            return position == items.length;
+            return items == null || position == items.length;
         }
 
         @Override

@@ -52,18 +52,18 @@ class SorterToCursorAdapter extends RowCursorImpl
     @Override
     public void close()
     {
-        if (ExecutionBase.CURSOR_LIFECYCLE_ENABLED) {
-            CursorLifecycle.checkIdleOrActive(this);
+        try {
+            if (cursor != null) {
+                cursor.close();
+                cursor = null;
+            }
+            if (sorter != null) {
+                sorter.close();
+                sorter = null;
+            }
+        } finally {
+            super.close();
         }
-        if (cursor != null) {
-            cursor.close();
-            cursor = null;
-        }
-        if (sorter != null) {
-            sorter.close();
-            sorter = null;
-        }
-        state = CursorLifecycle.CursorState.CLOSED;
     }
 
     // SorterToCursorAdapter interface

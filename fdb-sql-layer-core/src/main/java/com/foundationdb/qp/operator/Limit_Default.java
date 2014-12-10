@@ -224,6 +224,7 @@ final class Limit_Default extends Operator
 
         @Override 
         public void close() {
+            // TODO WHAT?
             // Because the checks in open() may 
             // prevent the cursor from being opened. 
             if (!isClosed()) {

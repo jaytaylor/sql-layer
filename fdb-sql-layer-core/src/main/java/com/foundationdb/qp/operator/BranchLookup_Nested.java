@@ -495,9 +495,12 @@ public class BranchLookup_Nested extends Operator
 
         @Override
         public void close() {
-            inputRow = null;
-            cursor.close();
-            super.close();
+            try {
+                inputRow = null;
+                cursor.close();
+            } finally {
+                super.close();
+            }
         }
 
         @Override

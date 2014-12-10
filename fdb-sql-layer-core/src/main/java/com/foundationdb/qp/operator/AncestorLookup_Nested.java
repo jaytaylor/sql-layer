@@ -384,10 +384,13 @@ class AncestorLookup_Nested extends Operator
 
         @Override
         public void close() {
-            for (GroupCursor cursor : cursors) {
-                cursor.close();
+            try {
+                for (GroupCursor cursor : cursors) {
+                    cursor.close();
+                }
+            } finally {
+                super.close();
             }
-            super.close();
         }
 
         @Override
@@ -397,7 +400,7 @@ class AncestorLookup_Nested extends Operator
 
         @Override
         public boolean isActive() {
-            return ((cursorIndex < cursors.length) && cursors[cursorIndex].isActive());
+            return ((cursors != null ) && (cursorIndex < cursors.length) && cursors[cursorIndex].isActive());
         }
 
         @Override

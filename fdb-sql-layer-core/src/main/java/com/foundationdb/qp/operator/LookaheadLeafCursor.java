@@ -82,8 +82,11 @@ public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends
 
     @Override
     public void close() {
-        resetActiveCursors();
-        super.close();
+        try {
+            resetActiveCursors();
+        } finally {
+            super.close();
+        }
     }
 
     @Override

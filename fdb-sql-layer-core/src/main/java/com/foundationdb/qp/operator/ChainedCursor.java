@@ -93,8 +93,13 @@ public class ChainedCursor extends OperatorCursor
     
     @Override
     public void close() {
-        input.close();
-        super.close();
+        try {
+            if (input != null) {
+                input.close();
+            }
+        } finally {
+            super.close();
+        }
     }
 
     @Override

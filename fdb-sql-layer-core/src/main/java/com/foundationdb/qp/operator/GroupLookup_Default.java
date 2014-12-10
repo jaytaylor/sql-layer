@@ -387,11 +387,14 @@ class GroupLookup_Default extends Operator
         @Override
         public void close()
         {
-            if (!lookupCursor.isClosed())
-                lookupCursor.close();
-            lookupRow = null;
-            pending.clear();
-            super.close();
+            try {
+                if (!lookupCursor.isClosed())
+                    lookupCursor.close();
+                lookupRow = null;
+                pending.clear();
+            } finally {
+                super.close();
+            }
         }
         // Execution interface
 
@@ -605,16 +608,19 @@ class GroupLookup_Default extends Operator
 
         @Override
         public void close() {
+            try {
                 // Any rows for the current bindings being closed need to be discarded.
-            while (currentBindings == inputs[currentIndex].queryBindings) {
-                inputs[currentIndex].clearState();
-                currentIndex = (currentIndex + 1) % quantum;
+                while (currentBindings == inputs[currentIndex].queryBindings) {
+                    inputs[currentIndex].clearState();
+                    currentIndex = (currentIndex + 1) % quantum;
+                }
+                if (inputs[nextIndex].inputRow == null && !input.isClosed()) {
+                    input.close();
+                    nextBindings = null;
+                }
+            } finally {
+                super.close();
             }
-            if (inputs[nextIndex].inputRow == null && !input.isClosed()) {
-                input.close();
-                nextBindings = null;
-            }
-            super.close();
         }
 
         @Override

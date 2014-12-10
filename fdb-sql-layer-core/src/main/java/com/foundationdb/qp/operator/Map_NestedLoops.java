@@ -319,10 +319,13 @@ class Map_NestedLoops extends Operator
             // The input may be closed in next(), 
             // in anticipation of of a call to nextBinding()
             // which never arrives.
-            if (!input.isClosed()) {
-                input.close();
+            try {
+                if (!input.isClosed()) {
+                    input.close();
+                }
+            } finally {
+                super.close();
             }
-            super.close();
             if (openBindings != null) {
                 cancelBindings(openBindings);
                 assert (inputOpenBindings == null);
@@ -445,9 +448,12 @@ class Map_NestedLoops extends Operator
         public void close()
         {
             super.close();
-            if (!innerInput.isClosed())
-                innerInput.close();
-            closeOuter();
+            try {
+                if (!innerInput.isClosed())
+                    innerInput.close();
+            } finally {
+                closeOuter();
+            }
         }
 
         @Override

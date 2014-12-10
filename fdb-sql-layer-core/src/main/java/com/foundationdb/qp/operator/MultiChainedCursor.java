@@ -67,13 +67,16 @@ public abstract class MultiChainedCursor extends  OperatorCursor {
 
     @Override
     public void close() {
-        if (CURSOR_LIFECYCLE_ENABLED) {
-            CursorLifecycle.checkIdleOrActive(leftInput);
-            CursorLifecycle.checkIdleOrActive(rightInput);
+        try {
+            if (CURSOR_LIFECYCLE_ENABLED) {
+                CursorLifecycle.checkIdleOrActive(leftInput);
+                CursorLifecycle.checkIdleOrActive(rightInput);
+            }
+            leftInput.close();
+            rightInput.close();
+        } finally {
+            super.close();
         }
-        leftInput.close();
-        rightInput.close();
-        super.close();
     }
 
     @Override

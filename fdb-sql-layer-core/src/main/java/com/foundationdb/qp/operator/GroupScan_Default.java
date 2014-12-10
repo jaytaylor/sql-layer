@@ -171,8 +171,11 @@ class GroupScan_Default extends Operator
         @Override
         public void close()
         {
-            cursor.close();
-            super.close();
+            try {
+                cursor.close();
+            } finally {
+                super.close();
+            }
         }
 
         @Override
@@ -385,8 +388,11 @@ class GroupScan_Default extends Operator
 
         @Override
         public void close() {
-            input.close();
-            super.close();
+            try {
+                input.close();
+            } finally {
+                super.close();
+            }
         }
 
         @Override
