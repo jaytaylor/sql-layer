@@ -187,8 +187,6 @@ public final class TypeResolver extends BaseRule {
                 n = handleCastExpression((CastExpression) n);
             else if (n instanceof FunctionExpression)
                 n = handleFunctionExpression((FunctionExpression) n);
-            else if (n instanceof IfElseExpression)
-                n = handleIfElseExpression((IfElseExpression) n);
             else if (n instanceof AggregateFunctionExpression)
                 n = handleAggregateFunctionExpression((AggregateFunctionExpression) n);
             else if (n instanceof ExistsCondition)
@@ -548,34 +546,6 @@ public final class TypeResolver extends BaseRule {
                 expression.setPreptimeValues(values);
 
             return result;
-        }
-
-        ExpressionNode handleIfElseExpression(IfElseExpression expression) {
-            ConditionList conditions = expression.getTestConditions();
-            ExpressionNode thenExpr = expression.getThenExpression();
-            ExpressionNode elseExpr = expression.getElseExpression();
-
-            // constant-fold if the condition is constant
-            if (conditions.size() == 1) {
-                ValueSource conditionVal = pval(conditions.get(0));
-                if (conditionVal != null) {
-                    boolean conditionMet = conditionVal.getBoolean(false);
-                    return conditionMet ? thenExpr : elseExpr;
-                }
-            }
-
-            TInstance commonInstance = commonInstance(registry.getCastsResolver(), type(thenExpr), type(elseExpr));
-            if (commonInstance == null)
-                return ConstantExpression.typedNull(null, null, null);
-
-            thenExpr = castTo(thenExpr, commonInstance, folder, parametersSync);
-            elseExpr = castTo(elseExpr, commonInstance, folder, parametersSync);
-
-            expression.setThenExpression(thenExpr);
-            expression.setElseExpression(elseExpr);
-
-            expression.setPreptimeValue(new TPreptimeValue(commonInstance));
-            return expression;
         }
 
         ExpressionNode handleAggregateFunctionExpression(AggregateFunctionExpression expression) {
