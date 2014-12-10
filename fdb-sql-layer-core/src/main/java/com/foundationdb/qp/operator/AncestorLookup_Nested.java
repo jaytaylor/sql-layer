@@ -334,13 +334,16 @@ class AncestorLookup_Nested extends Operator
             Row row;
             ancestorCursor.rebind(hKey, false);
             ancestorCursor.open();
-            row = ancestorCursor.next();
-            // Retrieved row might not actually be what we were looking for -- not all ancestors are present,
-            // (there are orphan rows).
-            if (row != null && !hKey.equals(row.hKey())) {
-                row = null;
+            try {
+                row = ancestorCursor.next();
+                // Retrieved row might not actually be what we were looking for -- not all ancestors are present,
+                // (there are orphan rows).
+                if (row != null && !hKey.equals(row.hKey())) {
+                    row = null;
+                }
+            } finally {
+                ancestorCursor.close();
             }
-            ancestorCursor.close();
             return row;
         }
 
