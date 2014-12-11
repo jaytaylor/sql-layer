@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.sql.JDBCProxy;
+package com.foundationdb.sql.jdbc;
 
 import java.sql.Connection;
 import java.sql.*;

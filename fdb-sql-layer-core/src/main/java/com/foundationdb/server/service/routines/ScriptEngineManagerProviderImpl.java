@@ -19,7 +19,7 @@ package com.foundationdb.server.service.routines;
 
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
-import com.foundationdb.sql.JDBCProxy.ProxyDriverImpl;
+import com.foundationdb.sql.jdbc.ProxyDriverImpl;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

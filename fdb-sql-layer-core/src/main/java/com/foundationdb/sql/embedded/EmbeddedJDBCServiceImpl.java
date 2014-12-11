@@ -36,13 +36,12 @@ import com.foundationdb.server.store.statistics.IndexStatisticsService;
 import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.sql.optimizer.rule.cost.CostModelFactory;
 import com.foundationdb.sql.server.ServerServiceRequirements;
-import com.foundationdb.sql.JDBCProxy.ProxyDriverImpl;
+import com.foundationdb.sql.jdbc.ProxyDriverImpl;
 
 import java.lang.reflect.*;
 import java.security.Principal;
 import java.sql.*;
 import java.util.Properties;
-import java.net.URL;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
