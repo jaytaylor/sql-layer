@@ -1,8 +1,10 @@
 ---
+- Statement: BEGIN
+---
 - Statement: SET TRANSACTION ISOLATION LEVEL SERIALIZABLE
 ---
 - Statement: SET TRANSACTION ISOLATION LEVEL READ COMMITTED
-- warnings: [[25004,'WARN:  ISOLATION LEVEL READ COMMITTED ignored; remains SERIALIZABLE']]
+- warnings: [[25004,'WARN:  ISOLATION LEVEL READ COMMITTED not supported; will use SERIALIZABLE']]
 ---
 # No warnings a second time
 - Statement: SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
@@ -10,4 +12,6 @@
 ---
 - Statement: SHOW TRANSACTION ISOLATION LEVEL
 - output: [['serializable']]
+---
+- Statement: ROLLBACK
 ...
