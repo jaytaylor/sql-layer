@@ -33,21 +33,23 @@ import java.util.UUID;
 
 public class LobServiceImpl implements Service, LobService {
     private final DirectorySubspace lobDirectory;
+    // update with configurable value
     private final String LOB_DIRECTORY = "lobs";
 
     @Inject
     public LobServiceImpl(FDBHolder fdbHolder) {
-        this.lobDirectory = fdbHolder.getRootDirectory().create(fdbHolder.getTransactionContext(), Arrays.asList(LOB_DIRECTORY)).get();
+        this.lobDirectory = fdbHolder.getRootDirectory().createOrOpen(fdbHolder.getTransactionContext(), Arrays.asList(LOB_DIRECTORY)).get();
     }
     
     @Override
     public BlobAsync getBlob(Subspace subspace) {
-        // perform more test to verify it it is a blob subspace, once clob is also initiated
+        // perform more test to verify it is a blob subspace, once clob is also initiated
         return new BlobAsync(subspace);
     }
 
     @Override
-    public Future<Void> removeLob(TransactionContext tcx, DirectorySubspace lob) { 
+    public Future<Void> removeLob(TransactionContext tcx, DirectorySubspace lob) {
+        // leakage of directories (?) perhaps delete parent directory if exists, and empty after removal of this child?
         return lob.remove(tcx); 
     }
 
@@ -55,9 +57,12 @@ public class LobServiceImpl implements Service, LobService {
     public Future<DirectorySubspace> moveLob(TransactionContext tcx, final DirectorySubspace sourceSubspace, final List<String> targetPath) {
         List<String> newPath = new LinkedList<>(lobDirectory.getPath());
         newPath.addAll(targetPath);
+        // check success, or handle failure when path already exists
+        lobDirectory.createOrOpen(tcx, targetPath.subList(0, targetPath.size()-1)).get();
         return sourceSubspace.moveTo(tcx, newPath);
     }
 
+    // split into separate get and create?
     @Override
     public Future<DirectorySubspace> getOrCreateLobSubspace(TransactionContext tcx, final String schemaName, final String tableName, final String columnName, final UUID id) {
         return getOrCreateLobSubspace(tcx, Arrays.asList(schemaName, tableName, columnName, id.toString()));

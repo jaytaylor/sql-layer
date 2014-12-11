@@ -517,6 +517,14 @@ public class AISBBasedBuilder
         }
 
         @Override
+        public NewRoutineBuilder returnVarBinary(String name, int length) {
+            TInstance type = typesTranslator.typeForJDBCType(Types.VARBINARY, length, true,
+                    schema, object, name);
+            aisb.parameter(schema, object, name, Parameter.Direction.RETURN, type);
+            return this;
+        }
+        
+        @Override
         public NewRoutineBuilder paramBooleanIn(String name) {
             TInstance type = typesTranslator.typeForJDBCType(Types.BOOLEAN, true,
                                                              schema, object, name);
@@ -533,12 +541,28 @@ public class AISBBasedBuilder
         }
 
         @Override
+        public NewRoutineBuilder paramIntegerIn(String name) {
+            TInstance type = typesTranslator.typeForJDBCType(Types.INTEGER, true,
+                    schema, object, name);
+            aisb.parameter(schema, object, name, Parameter.Direction.IN, type);
+            return this;
+        }
+        
+        @Override
         public NewRoutineBuilder paramStringIn(String name, int length) {
             TInstance type = typesTranslator.typeForJDBCType(Types.VARCHAR, length, true,
                                                              schema, object, name);
             aisb.parameter(schema, object, name, Parameter.Direction.IN, type);
             return this;
         }
+
+        @Override
+        public NewRoutineBuilder paramVarBinaryIn(String name, int length) {
+            TInstance type = typesTranslator.typeForJDBCType(Types.VARBINARY, length, true,
+                    schema, object, name);
+            aisb.parameter(schema, object, name, Parameter.Direction.IN, type);
+            return this;
+        }        
 
         @Override
         public NewRoutineBuilder paramDoubleIn(String name) {

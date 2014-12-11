@@ -23,6 +23,7 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
+import com.foundationdb.ais.protobuf.*;
 import com.foundationdb.qp.loadableplan.LoadablePlan;
 import com.foundationdb.qp.loadableplan.std.DumpGroupLoadablePlan;
 import com.foundationdb.qp.loadableplan.std.GroupProtobufLoadablePlan;
@@ -34,6 +35,7 @@ import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
+import com.foundationdb.server.service.blob.LobRoutines;
 
 import com.google.inject.Singleton;
 import javax.inject.Inject;
@@ -370,7 +372,70 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
             .paramStringIn("jar", PATH_MAX)
             .paramLongIn("undeploy")
             .externalName(SQLJJarRoutines.class.getCanonicalName(), "remove");
-
+        
+        aisb.defaultSchema(TableName.SYS_SCHEMA);
+        aisb.procedure("create_new_lob")
+            .language("java", Routine.CallingConvention.JAVA)
+            .returnString("lob_id", 36)
+            .externalName(LobRoutines.class.getCanonicalName(), "createNewLob");
+        aisb.procedure("read_blob")
+                .language("java", Routine.CallingConvention.JAVA)
+                .paramLongIn("offset")
+                .paramIntegerIn("length")
+                .paramStringIn("schema", PATH_MAX)
+                .paramStringIn("blob_id", PATH_MAX)
+                .returnVarBinary("data", Integer.MAX_VALUE)
+                .externalName(LobRoutines.class.getCanonicalName(), "readBlob");
+        aisb.procedure("read_in_table_blob")
+                .language("java", Routine.CallingConvention.JAVA)
+                .paramLongIn("offset")
+                .paramIntegerIn("length")
+                .paramStringIn("schema", PATH_MAX)
+                .paramStringIn("table", PATH_MAX)
+                .paramStringIn("column", PATH_MAX)
+                .paramStringIn("blob_id", PATH_MAX)
+                .returnVarBinary("data", Integer.MAX_VALUE)
+                .externalName(LobRoutines.class.getCanonicalName(), "readBlobInTable");
+        aisb.procedure("write_blob")
+                .language("java", Routine.CallingConvention.JAVA)
+                .paramLongIn("offset")
+                .paramVarBinaryIn("data", Integer.MAX_VALUE)
+                .paramStringIn("schema", PATH_MAX)
+                .paramStringIn("blob_id", PATH_MAX)
+                .externalName(LobRoutines.class.getCanonicalName(), "writeBlob");
+        aisb.procedure("append_blob")
+                .language("java", Routine.CallingConvention.JAVA)
+                .paramVarBinaryIn("data", Integer.MAX_VALUE)
+                .paramStringIn("schema", PATH_MAX)
+                .paramStringIn("blob_id", PATH_MAX)
+                .externalName(LobRoutines.class.getCanonicalName(), "appendBlob");
+        aisb.procedure("truncate_blob")
+                .language("java", Routine.CallingConvention.JAVA)
+                .paramLongIn("length")
+                .paramStringIn("schema", PATH_MAX)
+                .paramStringIn("blob_id", PATH_MAX)
+                .externalName(LobRoutines.class.getCanonicalName(), "truncateBlob");
+        aisb.procedure("move_blob")
+                .language("java", Routine.CallingConvention.JAVA)
+                .paramStringIn("schema", PATH_MAX)
+                .paramStringIn("blob_id", PATH_MAX)
+                .paramStringIn("new_schema", PATH_MAX)
+                .paramStringIn("new_table", PATH_MAX)
+                .paramStringIn("new_column", PATH_MAX)
+                .externalName(LobRoutines.class.getCanonicalName(), "moveBlob");
+        aisb.procedure("delete_blob")
+                .language("java", Routine.CallingConvention.JAVA)
+                .paramStringIn("schema", PATH_MAX)
+                .paramStringIn("blob_id", PATH_MAX)
+                .externalName(LobRoutines.class.getCanonicalName(), "deleteBlob");
+        aisb.procedure("delete_in_table_blob")
+                .language("java", Routine.CallingConvention.JAVA)
+                .paramStringIn("schema", PATH_MAX)
+                .paramStringIn("new_table", PATH_MAX)
+                .paramStringIn("new_column", PATH_MAX)
+                .paramStringIn("blob_id", PATH_MAX)
+                .externalName(LobRoutines.class.getCanonicalName(), "deleteBlobInTable");
+        
         Collection<Routine> procs = aisb.ais().getRoutines().values();
         for (Routine proc : procs) {
             schemaManager.registerSystemRoutine(proc);
