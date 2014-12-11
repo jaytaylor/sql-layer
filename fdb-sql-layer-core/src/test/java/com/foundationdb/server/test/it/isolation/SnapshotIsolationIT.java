@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.test.it.isolation;
 
+import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.sql.embedded.JDBCConnection;
 
 import java.sql.*;
@@ -57,7 +58,7 @@ public class SnapshotIsolationIT extends IsolationITBase
 
     @Test
     @Isolation(Connection.TRANSACTION_SERIALIZABLE)
-    @SQLExceptionExpected(sqlState = "40002")
+    @SQLExceptionExpected(errorCode = ErrorCode.FDB_NOT_COMMITTED)
     public void serializableConflicts() throws SQLException {
         switchColors();
     }

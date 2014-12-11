@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.test.it.isolation;
 
+import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.sql.embedded.EmbeddedJDBCITBase;
 
 import java.sql.Connection;
@@ -45,7 +46,7 @@ public abstract class IsolationITBase extends EmbeddedJDBCITBase
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
     public @interface SQLExceptionExpected {
-        public String sqlState();
+        public ErrorCode errorCode();
     }
 
     @Override
@@ -69,9 +70,9 @@ public abstract class IsolationITBase extends EmbeddedJDBCITBase
                 base.evaluate();
             }
             catch (SQLException ex) {
-                String expectedState = expected.sqlState();
-                if (expectedState != null) {
-                    Assert.assertEquals("expected SQL state", expectedState, ex.getSQLState());
+                ErrorCode errorCode = expected.errorCode();
+                if (errorCode != null) {
+                    Assert.assertEquals("expected SQL state", errorCode.getFormattedValue(), ex.getSQLState());
                 }
                 return;
             }
