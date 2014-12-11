@@ -86,7 +86,6 @@ public class RandomRule implements TestRule {
                     if (!success) {
                         // This only prints if the @Rule attribute is used, not if @ClassRule is used by itself
                         LOG.error("Test ({}) failed with seed {}", description.getDisplayName(), seed); 
-                        //System.err.printf("Test (%s) failed with seed %d\n", description.getDisplayName(), seed);
                     }
                 }
             }

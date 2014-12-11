@@ -113,6 +113,25 @@ public class NonOverlappingDMLAndDDLMT extends PostgresMTBase
         }
     }
 
+    private static class onlineDDLThread extends QueryThread 
+    {
+        public onlineDDLThread (Connection conn) throws SQLException {
+            super ("onlineDDL", "a_schema", conn);
+        }
+        
+        @Override
+        protected int getLoopCount() {
+            return 25;
+        }
+        
+        @Override 
+        protected String[] getQueries() {
+            return new String[] {
+                    "ALTER TABLE a_schema.t ADD COLUMN x INT",
+                    "ALTER TABLE a_schema.t DROP COLUMN x"
+            };
+        }
+    }
     @Test
     public void selectInfoSchema() throws SQLException {
         List<QueryThread> threads = Arrays.asList(
@@ -150,5 +169,34 @@ public class NonOverlappingDMLAndDDLMT extends PostgresMTBase
             new DDLThread(createConnection())
         );
         ThreadHelper.runAndCheck(30000, threads);
+    }
+    
+    @Test
+    public void ddlOnlineTable() throws SQLException {
+        int tid = createTable("a_schema", "t", "id INT NOT NULL PRIMARY KEY, v VARCHAR(32)");
+        for (int i = 1; i <= 5; i++) {
+            writeRow(tid, i, Integer.toString(i));
+        }
+        
+        List<QueryThread> threads = Arrays.asList(
+                new SelectThread (createConnection(), "information_schema", "tables"),
+                new onlineDDLThread(createConnection())
+                );
+        ThreadHelper.runAndCheck(30000, threads);
+    }
+    
+    @Test
+    public void ddlOnlineSelectTable() throws SQLException {
+        int tid = createTable("a_schema", "t", "id INT NOT NULL PRIMARY KEY, v VARCHAR(32)");
+        for (int i = 1; i <= 5; i++) {
+            writeRow(tid, i, Integer.toString(i));
+        }
+        
+        List<QueryThread> threads = Arrays.asList(
+                new SelectThread (createConnection(), "a_schema", "t"),
+                new onlineDDLThread(createConnection())
+                );
+        ThreadHelper.runAndCheck(30000, threads);
+        
     }
 }

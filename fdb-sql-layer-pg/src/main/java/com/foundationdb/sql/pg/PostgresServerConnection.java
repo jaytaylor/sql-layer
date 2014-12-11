@@ -1122,7 +1122,7 @@ public class PostgresServerConnection extends ServerSessionBase
         throw new UnsupportedSQLException ("", stmt);
     }
 
-    protected PostgresStatement finishGenerating(PostgresQueryContext context,// PostgresStatement pstmt,
+    protected PostgresStatement finishGenerating(PostgresQueryContext context,
                                                  String sql, StatementNode stmt,
                                                  List<ParameterNode> params,
                                                  int[] paramTypes) {
