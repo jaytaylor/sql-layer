@@ -23,6 +23,7 @@ import com.foundationdb.sql.embedded.JDBCConnection;
 import java.sql.*;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -76,6 +77,20 @@ public class SnapshotIsolationIT extends IsolationITBase
             assertTrue(rs.next());
             assertEquals("white", rs.getString(1));
             assertEquals("white count", NBALLS / 2, rs.getInt(2));
+        }
+    }
+
+    @Test
+    @Isolation(JDBCConnection.TRANSACTION_SERIALIZABLE_SNAPSHOT)
+    @Ignore("needs 3.0 semantics")
+    public void snapshotRYW() throws SQLException {
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement()) {
+            assertEquals(NBALLS / 2, stmt.executeUpdate("UPDATE balls SET color = 'blue' WHERE color = 'black'"));
+            try (ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM balls WHERE color <> 'black'")) {
+                rs.next();
+                assertEquals("See combined snapshot", NBALLS, rs.getInt(1));
+            }
         }
     }
 
