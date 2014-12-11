@@ -1,0 +1,1 @@
+SELECT (bit_and((anon1.a + anon2.b))) AS "_SQL_COL_1" FROM (SELECT COUNT(*) AS a FROM test.t1) AS anon1(a), (SELECT test.t1.id AS b FROM test.t1) AS anon2(b)

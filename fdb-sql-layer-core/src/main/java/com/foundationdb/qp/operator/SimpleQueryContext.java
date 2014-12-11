@@ -17,6 +17,7 @@
 
 package com.foundationdb.qp.operator;
 
+import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.service.ServiceManager;
@@ -92,6 +93,11 @@ public class SimpleQueryContext extends QueryContextBase
         return null;
     }
 
+    @Override
+    public AkibanInformationSchema getAIS() {
+        return adapter.getAIS();
+    }
+    
     @Override
     public int getSessionId() {
         requireAdapter();

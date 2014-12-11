@@ -55,7 +55,6 @@ public class IndexScanInvolvingUndeclaredColumnsIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         regionChildrenRowType = schema.tableRowType(table(regionChildren));
         idxRowType = indexType(regionChildren, "locid");
         db = new Row[]{
@@ -70,7 +69,6 @@ public class IndexScanInvolvingUndeclaredColumnsIT extends OperatorITBase
             row(regionChildren, 20L, 210L, 5L),
             row(regionChildren, 20L, 220L, 6L),
         };
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         use(db);

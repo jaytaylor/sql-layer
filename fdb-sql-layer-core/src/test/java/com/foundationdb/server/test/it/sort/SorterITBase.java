@@ -134,8 +134,7 @@ public abstract class SorterITBase extends ITBase {
         assertEquals("input = expected size", input.size(), expected.size());
 
         RowsBuilder inputRows = createBuilder(input);
-        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
         TestOperator inputOperator = new TestOperator(inputRows);
 
         QueryContext context = queryContext(adapter);

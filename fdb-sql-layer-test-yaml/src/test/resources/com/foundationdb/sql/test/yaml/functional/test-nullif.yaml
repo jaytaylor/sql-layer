@@ -21,10 +21,10 @@
 - Statement: SELECT NULLIF('2.0', 2) FROM all_types;
 - output: [[null]]
 
-# bug943357
----
-- Statement: SELECT NULLIF(null, null) FROM all_types;
-- output: [[null]]
+# Picking functions require at least 1 known type
+#---
+#- Statement: SELECT NULLIF(null, null) FROM all_types;
+#- output: [[null]]
 
 ---
 - Statement: SELECT NULLIF(null, 3) FROM all_types;
@@ -37,10 +37,10 @@
 - output: [[5.5]]
 ---
 - Statement: SELECT NULLIF(2, 3.5) FROM all_types;
-- output_types: [INTEGER]
+- output_types: [DECIMAL]
 ---
 - Statement: SELECT NULLIF(2, '3') FROM all_types;
-- output_types: [INTEGER]
+- output_types: [DOUBLE]
 
 ## Test with fields
 --- 
@@ -59,10 +59,12 @@
 - Statement: SELECT NULLIF(TIME('12:30:10'), '12:10:10') FROM all_types;
 - output: [['12:30:10']]
 
-# BUG: Fails in FTS. Enable when fixed.
 ---
-- Properties: fdb-sql
-- suppressed: true
+- Statement: SELECT NULLIF('a' COLLATE en_us_ci, 'b' COLLATE en_us_ci)
+- output: [['a']]
+---
+- Statement: SELECT NULLIF('a' COLLATE en_us_ci, 'A' COLLATE en_us_ci)
+- output: [[null]]
 
 ## Test with parameters
 ---

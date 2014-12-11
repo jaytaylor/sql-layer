@@ -27,10 +27,12 @@ import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.util.SequencerConstants;
 import com.foundationdb.server.util.ThreadSequencer;
+
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -61,7 +63,6 @@ public class ConcurrentUpdateIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         aRowType = schema.tableRowType(table(a));
         bRowType = schema.tableRowType(table(b));
         aGroup = group(a);
@@ -74,7 +75,6 @@ public class ConcurrentUpdateIT extends OperatorITBase
             row(b, 5L, 205L),
             row(b, 6L, 206L),
         };
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }
@@ -138,7 +138,7 @@ public class ConcurrentUpdateIT extends OperatorITBase
         public void run()
         {
             try(Session session = createNewSession()) {
-                StoreAdapter adapter = newStoreAdapter(session, schema);
+                StoreAdapter adapter = newStoreAdapter(session);
                 QueryContext queryContext = queryContext(adapter);
                 try(TransactionService.CloseableTransaction txn = txnService().beginCloseableTransaction(session)) {
                     runPlan(queryContext, queryBindings, plan);

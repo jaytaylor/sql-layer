@@ -39,7 +39,6 @@ import com.foundationdb.qp.operator.Rebindable;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.operator.Delete_Returning;
-import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.row.ProjectedRow;
 import com.foundationdb.qp.row.Row;
@@ -48,7 +47,6 @@ import com.foundationdb.qp.rowtype.ProjectedTableRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
-import com.foundationdb.qp.storeadapter.RowDataRow;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.ConcurrentViolationException;
@@ -59,7 +57,6 @@ import com.foundationdb.server.error.NotAllowedByConfigException;
 import com.foundationdb.server.error.SQLParserInternalException;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistryService;
-import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.dxl.DelegatingContext;
 import com.foundationdb.server.service.listener.RowListener;
 import com.foundationdb.server.service.session.Session;
@@ -155,7 +152,7 @@ public class OnlineHelper implements RowListener
                 groupMap.put(rowType.table().getGroup(), rowType);
             }
             // Scan all affected groups
-            StoreAdapter adapter = store.createAdapter(session, oldSchema);
+            StoreAdapter adapter = store.createAdapter(session);
             final TransformCache transformCache = getTransformCache(session, null);
             for(Entry<Group, Collection<RowType>> entry : groupMap.asMap().entrySet()) {
                 Operator plan = API.filter_Default(API.groupScan_Default(entry.getKey()), entry.getValue());
@@ -186,19 +183,6 @@ public class OnlineHelper implements RowListener
     // RowListener
     //
 
-    @Override
-    public void onInsertPost(Session session, Table table, Key hKey, RowData rowData) {
-        TableTransform transform = getConcurrentDMLTransform(session, table);
-        if(transform == null) {
-            return;
-        }
-        try {
-            concurrentDML(session, transform, hKey, null, rowData);
-        } catch(ConstraintViolationException e) {
-            setOnlineError(session, table, e);
-        }
-    }
-    
     public void onInsertPost(Session session, Table table, Key hKey, Row row) {
         TableTransform transform = getConcurrentDMLTransform(session, table);
         if(transform == null) {
@@ -226,19 +210,6 @@ public class OnlineHelper implements RowListener
     }
     
     @Override
-    public void onUpdatePre(Session session, Table table, Key hKey, RowData oldRowData, RowData newRowData) {
-        TableTransform transform = getConcurrentDMLTransform(session, table);
-        if(transform == null) {
-            return;
-        }
-        try {
-            concurrentDML(session, transform, hKey, oldRowData, null);
-        } catch(ConstraintViolationException e) {
-            setOnlineError(session, table, e);
-        }
-    }
-
-    @Override
     public void onUpdatePost(Session session, Table table, Key hKey, Row oldRow, Row newRow) {
         TableTransform transform = getConcurrentDMLTransform(session, table);
         if(transform == null) {
@@ -246,19 +217,6 @@ public class OnlineHelper implements RowListener
         }
         try {
             concurrentDML(session, transform, hKey, null, newRow);
-        } catch(ConstraintViolationException e) {
-            setOnlineError(session, table, e);
-        }
-    }
-
-    @Override
-    public void onUpdatePost(Session session, Table table, Key hKey, RowData oldRowData, RowData newRowData) {
-        TableTransform transform = getConcurrentDMLTransform(session, table);
-        if(transform == null) {
-            return;
-        }
-        try {
-            concurrentDML(session, transform, hKey, null, newRowData);
         } catch(ConstraintViolationException e) {
             setOnlineError(session, table, e);
         }
@@ -277,20 +235,6 @@ public class OnlineHelper implements RowListener
         }
     }
     
-    @Override
-    public void onDeletePre(Session session, Table table, Key hKey, RowData rowData) {
-        TableTransform transform = getConcurrentDMLTransform(session, table);
-        if(transform == null) {
-            return;
-        }
-        try {
-            concurrentDML(session, transform, hKey, rowData, null);
-        } catch(ConstraintViolationException e) {
-            setOnlineError(session, table, e);
-        }
-    }
-
-
     //
     // ConstraintHandler.Handler-ish
     //
@@ -312,23 +256,6 @@ public class OnlineHelper implements RowListener
         }
     }
     
-    public void handleInsert(Session session, Table table, RowData row) {
-        TableTransform transform = getConcurrentDMLTransform(session, table);
-        if(transform == null) {
-            return;
-        }
-        if(transform.checkConstraints) {
-            boolean orig = txnService.setForceImmediateForeignKeyCheck(session, true);
-            try {
-                constraintHandler.handleInsert(session, transform.rowType.table(), row);
-            } catch(ConstraintViolationException e) {
-                setOnlineError(session, table, e);
-            } finally {
-                txnService.setForceImmediateForeignKeyCheck(session, orig);
-            }
-        }
-    }
-
     public void handleUpdatePre(Session session, Table table, Row oldRow, Row newRow) {
         TableTransform transform = getConcurrentDMLTransform(session, table);
         if(transform == null) {
@@ -345,24 +272,6 @@ public class OnlineHelper implements RowListener
             }
         }
     }
-    
-    public void handleUpdatePre(Session session, Table table, RowData oldRow, RowData newRow) {
-        TableTransform transform = getConcurrentDMLTransform(session, table);
-        if(transform == null) {
-            return;
-        }
-        if(transform.checkConstraints) {
-            boolean orig = txnService.setForceImmediateForeignKeyCheck(session, true);
-            try {
-                constraintHandler.handleUpdatePre(session, transform.rowType.table(), oldRow, newRow);
-            } catch(ConstraintViolationException e) {
-                setOnlineError(session, table, e);
-            } finally {
-                txnService.setForceImmediateForeignKeyCheck(session, orig);
-            }
-        }
-    }
-
     
     public void handleUpdatePost(Session session, Table table, Row oldRow, Row newRow) {
         TableTransform transform = getConcurrentDMLTransform(session, table);
@@ -381,23 +290,6 @@ public class OnlineHelper implements RowListener
         }
     }
     
-    public void handleUpdatePost(Session session, Table table, RowData oldRow, RowData newRow) {
-        TableTransform transform = getConcurrentDMLTransform(session, table);
-        if(transform == null) {
-            return;
-        }
-        if(transform.checkConstraints) {
-            boolean orig = txnService.setForceImmediateForeignKeyCheck(session, true);
-            try {
-                constraintHandler.handleUpdatePost(session, transform.rowType.table(), oldRow, newRow);
-            } catch(ConstraintViolationException e) {
-                setOnlineError(session, table, e);
-            } finally {
-                txnService.setForceImmediateForeignKeyCheck(session, orig);
-            }
-        }
-    }
-
     public void handleDelete(Session session, Table table, Row row) {
         TableTransform transform = getConcurrentDMLTransform(session, table);
         if(transform == null) {
@@ -415,23 +307,6 @@ public class OnlineHelper implements RowListener
         }
     }
     
-    public void handleDelete(Session session, Table table, RowData row) {
-        TableTransform transform = getConcurrentDMLTransform(session, table);
-        if(transform == null) {
-            return;
-        }
-        if(transform.checkConstraints) {
-            boolean orig = txnService.setForceImmediateForeignKeyCheck(session, true);
-            try {
-                constraintHandler.handleDelete(session, transform.rowType.table(), row);
-            } catch(ConstraintViolationException e) {
-                setOnlineError(session, table, e);
-            } finally {
-                txnService.setForceImmediateForeignKeyCheck(session, orig);
-            }
-        }
-    }
-
     public void handleTruncate(Session session, Table table) {
         TableTransform transform = getConcurrentDMLTransform(session, table);
         if(transform == null) {
@@ -472,8 +347,7 @@ public class OnlineHelper implements RowListener
             groupIndexes.addAll(transform.groupIndexes);
         }
 
-        AkibanInformationSchema onlineAIS = schemaManager.getOnlineAIS(session);
-        StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(onlineAIS));
+        StoreAdapter adapter = store.createAdapter(session);
         if(!tableIndexes.isEmpty()) {
             buildTableIndexes(session, context, adapter, transformCache, tableIndexes);
         }
@@ -503,7 +377,7 @@ public class OnlineHelper implements RowListener
                 throw new SQLParserInternalException(e);//make specific runtime error unexpectedException
             }
             AkibanInformationSchema onlineAIS = schemaManager.getOnlineAIS(session);
-            StoreAdapter adapter = store.createAdapter(session, SchemaCache.globalSchema(onlineAIS));
+            StoreAdapter adapter = store.createAdapter(session);
             CreateAsCompiler compiler = new CreateAsCompiler(server, adapter, false, onlineAIS);
             DMLStatementNode dmlStmt = (DMLStatementNode) stmt;
             PlanContext planContext = new PlanContext(compiler);
@@ -527,8 +401,7 @@ public class OnlineHelper implements RowListener
         final AkibanInformationSchema origAIS = schemaManager.getAis(session);
         final AkibanInformationSchema newAIS = schemaManager.getOnlineAIS(session);
 
-        final Schema origSchema = SchemaCache.globalSchema(origAIS);
-        final StoreAdapter origAdapter = store.createAdapter(session, origSchema);
+        final StoreAdapter origAdapter = store.createAdapter(session);
         final QueryContext origContext = new DelegatingContext(origAdapter, context);
         final QueryBindings origBindings = origContext.createBindings();
 
@@ -553,7 +426,7 @@ public class OnlineHelper implements RowListener
                                    StoreAdapter adapter,
                                    final TransformCache transformCache,
                                    Multimap<Group,RowType> tableIndexes) {
-        final WriteIndexRow buffer = new WriteIndexRow(adapter.getKeyCreator());
+        final WriteIndexRow buffer = new WriteIndexRow();
         for(Entry<Group, Collection<RowType>> entry : tableIndexes.asMap().entrySet()) {
             if(entry.getValue().isEmpty()) {
                 continue;
@@ -564,28 +437,27 @@ public class OnlineHelper implements RowListener
             );
             runPlan(session, contextIfNull(context, adapter), schemaManager, txnService, plan, new RowHandler() {
                 @Override
-                public void handleRow(Row row) {
-                    final RowData rowData = ((AbstractRow)row).rowData();
-                    TableTransform transform = transformCache.get(rowData.getRowDefId());
-                    simpleCheckConstraints(session, transform, rowData);
+                public void handleRow(final Row row) {
+                    TableTransform transform = transformCache.get(row.rowType().typeId());
+                    simpleCheckConstraints(session, transformCache, row);
                     for(final TableIndex index : transform.tableIndexes) {
                         final Key hKey = store.createKey();
                         row.hKey().copyTo(hKey);
                         if (index.isSpatial()) {
                             final SpatialColumnHandler spatialColumnHandler = new SpatialColumnHandler(index);
                             spatialColumnHandler.processSpatialObject(
-                                rowData,
+                                row,
                                 new SpatialColumnHandler.Operation()
                                 {
                                     @Override
                                     public void handleZValue(long z)
                                     {
-                                        store.writeIndexRow(session, index, rowData, hKey, buffer,
+                                        store.writeIndexRow(session, index, row, hKey, buffer,
                                                             spatialColumnHandler, z, true);
                                     }
                                 });
                         } else {
-                            store.writeIndexRow(session, index, rowData, hKey, buffer, null, -1L, true);
+                            store.writeIndexRow(session, index, row, hKey, buffer, null, -1L, true);
                         }
                     }
                 }
@@ -602,7 +474,7 @@ public class OnlineHelper implements RowListener
             return;
         }
         for(final GroupIndex groupIndex : groupIndexes) {
-            Schema schema = adapter.schema();
+            Schema schema = SchemaCache.globalSchema(groupIndex.getAIS());
             final Operator plan = StoreGIMaintenancePlans.groupIndexCreationPlan(schema, groupIndex);
             final StoreGIHandler giHandler = StoreGIHandler.forBuilding((AbstractStore)store, session, schema, groupIndex);
             runPlan(session, contextIfNull(context, adapter), schemaManager, txnService, plan, new RowHandler() {
@@ -616,14 +488,10 @@ public class OnlineHelper implements RowListener
 
     private void simpleCheckConstraints(Session session, TransformCache transformCache, Row row) {
         TableTransform transform = transformCache.get(row.rowType().typeId());
-        simpleCheckConstraints(session, transform, ((AbstractRow) row).rowData());
-    }
-
-    private void simpleCheckConstraints(Session session, TableTransform transform, RowData rowData) {
         if(transform == null || !transform.checkConstraints) {
             return;
         }
-        constraintHandler.handleInsert(session, transform.rowType.table(), rowData);
+        constraintHandler.handleInsert(session, transform.rowType.table(), row);
     }
 
     private void concurrentDML(final Session session,
@@ -637,7 +505,7 @@ public class OnlineHelper implements RowListener
         switch(transform.changeLevel) {
             case INDEX:
                 if(!transform.tableIndexes.isEmpty()) {
-                    final WriteIndexRow buffer = new WriteIndexRow (store);
+                    final WriteIndexRow buffer = new WriteIndexRow ();
                     for(final TableIndex index : transform.tableIndexes) {
                         long oldZValue = -1;
                         long newZValue = -1;
@@ -706,8 +574,7 @@ public class OnlineHelper implements RowListener
                 break;
             case TABLE:
                 if(transform.deleteOperator != null && transform.insertOperator != null) {
-                    Schema schema = transform.rowType.schema();
-                    StoreAdapter adapter = store.createAdapter(session, schema);
+                    StoreAdapter adapter = store.createAdapter(session);
                     context = new SimpleQueryContext(adapter);
                     QueryBindings bindings = context.createBindings();
                     if (doDelete) {
@@ -731,8 +598,7 @@ public class OnlineHelper implements RowListener
                     break;
                 }
             case GROUP:
-                Schema schema = transform.rowType.schema();
-                StoreAdapter adapter = store.createAdapter(session, schema);
+                StoreAdapter adapter = store.createAdapter(session);
                 context = new SimpleQueryContext(adapter);
                 QueryBindings bindings = context.createBindings();
                 if(doDelete) {
@@ -752,125 +618,6 @@ public class OnlineHelper implements RowListener
         transform.hKeySaver.save(schemaManager, session, hKey);
     }
     
-    private void concurrentDML(final Session session,
-                               TableTransform transform,
-                               final Key hKey,
-                               final RowData oldRowData,
-                               final RowData newRowData) {
-        final boolean doDelete = (oldRowData != null);
-        final boolean doWrite = (newRowData != null);
-        QueryContext context = null;
-        switch(transform.changeLevel) {
-            case INDEX:
-                if(!transform.tableIndexes.isEmpty()) {
-                    final WriteIndexRow buffer = new WriteIndexRow (store);
-                    for(final TableIndex index : transform.tableIndexes) {
-                        if (index.isSpatial()) {
-                            final SpatialColumnHandler spatialColumnHandler = new SpatialColumnHandler(index);
-                            if (doDelete) {
-                                spatialColumnHandler.processSpatialObject(
-                                    oldRowData,
-                                    new SpatialColumnHandler.Operation()
-                                    {
-                                        @Override
-                                        public void handleZValue(long z)
-                                        {
-                                            store.deleteIndexRow(session,
-                                                                 index,
-                                                                 oldRowData,
-                                                                 hKey,
-                                                                 buffer,
-                                                                 spatialColumnHandler,
-                                                                 z,
-                                                                 false);
-                                        }
-                                    });
-                            }
-                            if (doWrite) {
-                                spatialColumnHandler.processSpatialObject(
-                                    newRowData,
-                                    new SpatialColumnHandler.Operation()
-                                    {
-                                        @Override
-                                        public void handleZValue(long z)
-                                        {
-                                            store.writeIndexRow(session,
-                                                                index,
-                                                                newRowData,
-                                                                hKey,
-                                                                buffer,
-                                                                spatialColumnHandler,
-                                                                z,
-                                                                false);
-                                        }
-                                    });
-                            }
-
-                        } else {
-                            store.deleteIndexRow(session, index, oldRowData, hKey, buffer, null, -1L, false);
-                            store.writeIndexRow(session, index, newRowData, hKey, buffer, null, -1L, false);
-                        }
-                    }
-                }
-                if(!transform.groupIndexes.isEmpty()) {
-                    if(doDelete) {
-                        store.deleteIndexRows(session, transform.rowType.table(), oldRowData, transform.groupIndexes);
-                    }
-                    if(doWrite) {
-                        store.writeIndexRows(session, transform.rowType.table(), newRowData, transform.groupIndexes);
-                    }
-                }
-                break;
-            case TABLE:
-                if(transform.deleteOperator != null && transform.insertOperator != null) {
-                    Schema schema = transform.rowType.schema();
-                    StoreAdapter adapter = store.createAdapter(session, schema);
-                    context = new SimpleQueryContext(adapter);
-                    QueryBindings bindings = context.createBindings();
-                    if (doDelete) {
-                        Row origOldRow = new RowDataRow(transform.rowType, oldRowData);
-                        bindings.setRow(OperatorAssembler.CREATE_AS_BINDING_POSITION, origOldRow);
-                        try {
-                            runPlan(context, transform.deleteOperator, bindings);
-                        } catch (NoSuchRowException e) {
-                            LOG.debug("row not present: {}", origOldRow);
-                        }
-                    }
-                    if (doWrite) {
-                        Row origOldRow = new RowDataRow(transform.rowType, newRowData);
-                        bindings.setRow(OperatorAssembler.CREATE_AS_BINDING_POSITION, origOldRow);
-                        try {
-                            runPlan(context, transform.insertOperator, bindings);
-                        } catch (NoSuchRowException e) {
-                            LOG.debug("row not present: {}", origOldRow);
-                        }
-                    }
-                    break;
-                }
-            case GROUP:
-                Schema schema = transform.rowType.schema();
-                StoreAdapter adapter = store.createAdapter(session, schema);
-                context = new SimpleQueryContext(adapter);
-                QueryBindings bindings = context.createBindings();
-                if(doDelete) {
-                    Row origOldRow = new RowDataRow(transform.rowType, oldRowData);
-                    Row newOldRow = transformRow(context, bindings, transform, origOldRow);
-                    try {
-                        adapter.deleteRow(newOldRow, false);
-                    } catch(NoSuchRowException e) {
-                        LOG.debug("row not present: {}", newOldRow);
-                    }
-                }
-                if(doWrite) {
-                    Row origNewRow = new RowDataRow(transform.rowType, newRowData);
-                    Row newNewRow = transformRow(context, bindings, transform, origNewRow);
-                    adapter.writeRow(newNewRow, transform.tableIndexes, transform.groupIndexes);
-                }
-                break;
-        }
-        transform.hKeySaver.save(schemaManager, session, hKey);
-    }
-
     private TransformCache getTransformCache(final Session session, final ServerSession server) {
         AkibanInformationSchema ais = schemaManager.getAis(session);
         TransformCache cache = ais.getCachedValue(TRANSFORM_CACHE_KEY, null);
@@ -934,7 +681,7 @@ public class OnlineHelper implements RowListener
                 } catch (StandardException e) {
                     throw new SQLParserInternalException(e);
                 }
-                StoreAdapter adapter = givenStore.createAdapter(session, SchemaCache.globalSchema(newAIS));
+                StoreAdapter adapter = givenStore.createAdapter(session);
                 CreateAsCompiler compiler = new CreateAsCompiler(server, adapter, true, newAIS);
                 PlanContext planContext = new PlanContext(compiler);
                 BasePlannable insertResult = compiler.compile((DMLStatementNode) insertStmt, null, planContext);

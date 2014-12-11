@@ -1,0 +1,4 @@
+t1 SEMI JOIN (t2 INNER JOIN t3 ON t3.c1 == t2.c2 AND t3.c2 == 7) ON t1.c1 == t2.c1
+t1 SEMI JOIN (t3 INNER JOIN t2 ON t3.c1 == t2.c2 AND t3.c2 == 7) ON t1.c1 == t2.c1
+t1 SEMI JOIN (t2 INNER JOIN t3 ON t3.c1 == t2.c2 AND t3.c2 == 7) ON t1.c1 == t2.c1
+t1 SEMI JOIN (t3 INNER JOIN t2 ON t3.c1 == t2.c2 AND t3.c2 == 7) ON t1.c1 == t2.c1

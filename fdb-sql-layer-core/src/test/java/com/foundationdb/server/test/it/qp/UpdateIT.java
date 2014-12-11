@@ -100,7 +100,7 @@ public class UpdateIT extends OperatorITBase
         UpdateFunction updateFunction = new UpdateFunction() {
                 @Override
                 public Row evaluate(Row original, QueryContext context, QueryBindings bindings) { 
-                    long id = original.value(0).getInt64();
+                    long id = original.value(0).getInt32();
                     // Make smaller to avoid Halloween (see next test).
                     return new OverlayingRow(original).overlay(0,
                             new Value(original.rowType().typeAt(0), (int)(id - 100)));

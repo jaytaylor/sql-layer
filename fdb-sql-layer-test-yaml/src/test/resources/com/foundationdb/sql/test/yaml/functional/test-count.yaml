@@ -213,5 +213,28 @@
 ---
 - Statement: SELECT COUNT(varchar_field) FROM all_types
 - output: [[1]]
-
+---
+- CreateTable: users (name VARCHAR(50))
+---
+- Statement: INSERT INTO users VALUES ('alice'), ('bob'), ('alice'), (NULL)
+---
+- Statement: SELECT COUNT(name) FROM users
+- output: [[3]]
+---
+- Statement: SELECT COUNT(DISTINCT name) FROM users
+- output: [[2]]
+---
+- Statement: SELECT COUNT(*) FROM (SELECT COUNT(name) AS c2 FROM users) AS anon1
+- output: [[1]]
+---
+- Statement: SELECT COUNT(*) FROM (SELECT COUNT(DISTINCT name) AS c2 FROM users) AS anon1
+- output: [[1]]
+---
+- Statement: INSERT INTO users VALUES ('al');
+---
+- Statement: SELECT COUNT(*) FROM
+                 (SELECT concat(name,'ice') AS val1 FROM users) AS anon1,
+                 (SELECT name AS val2 FROM users) AS anon2
+             WHERE val1 = val2
+- output: [[2]]
 ...

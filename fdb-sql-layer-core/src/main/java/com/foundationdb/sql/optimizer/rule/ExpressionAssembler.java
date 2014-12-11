@@ -312,8 +312,9 @@ class ExpressionAssembler
         if (tpv != null) {
             TInstance type = tpv.type();
             ValueSource value = tpv.value();
-            if (type != null && value != null)
+            if (type != null && value != null) {
                 result = new TPreparedLiteral(type, value);
+            }
         }
         return result;
     }

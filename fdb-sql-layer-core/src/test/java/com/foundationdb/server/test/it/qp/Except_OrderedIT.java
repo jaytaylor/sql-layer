@@ -25,7 +25,9 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.SetWrongNumColumns;
+
 import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.*;
@@ -62,14 +64,13 @@ public class Except_OrderedIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         uRowType = schema.tableRowType(table(u));
         tPidIndexRowType = indexType(t, "pid");
         tXIndexRowType = indexType(t, "x");
         uXIndexRowType = indexType(u, "x");
         vXIndexRowType = indexType(v, "x");
         wXIndexRowType = indexType(w, "x");
-        adapter = newStoreAdapter(schema);
+        adapter = newStoreAdapter();
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         

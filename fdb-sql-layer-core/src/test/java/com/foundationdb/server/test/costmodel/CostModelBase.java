@@ -46,12 +46,12 @@ public class CostModelBase extends ApiTestBase
 
     protected Group group(int tableId)
     {
-        return getRowDef(tableId).table().getGroup();
+        return ais().getTable(tableId).getGroup();
     }
 
     protected Table table(int tableId)
     {
-        return getRowDef(tableId).table();
+        return ais().getTable(tableId);
     }
 
     protected IndexRowType indexType(int tableId, String... searchIndexColumnNamesArray)

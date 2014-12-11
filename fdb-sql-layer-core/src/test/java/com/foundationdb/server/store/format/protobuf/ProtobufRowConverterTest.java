@@ -106,7 +106,7 @@ public class ProtobufRowConverterTest {
                     throws Exception {
         Row rowIn = new ValuesHolderRow(rowType, values);
         DynamicMessage msg = converter.encode(rowIn);
-        Row rowOut = converter.decode(msg, rowType);
+        Row rowOut = converter.decode(msg);
         assertTrue (rowIn.compareTo(rowOut, 0, 0, rowType.nFields()) == 0);
         
     }

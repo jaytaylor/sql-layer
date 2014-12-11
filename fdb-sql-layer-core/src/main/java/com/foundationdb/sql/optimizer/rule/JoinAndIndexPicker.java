@@ -1123,8 +1123,7 @@ public class JoinAndIndexPicker extends BaseRule
                                       long rightBitset, PlanClass right,
                                       long bitset, PlanClass existing,
                                       JoinType joinType, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
-
-            JoinPlanClass planClass = (JoinPlanClass)existing;
+            JoinPlanClass planClass = (JoinPlanClass) existing;
             if (planClass == null)
                 planClass = new JoinPlanClass(this, bitset);
             if ((joinType.isSemi() && (right instanceof ValuesPlanClass))) {
@@ -1133,20 +1132,19 @@ public class JoinAndIndexPicker extends BaseRule
                 assert (planClass.asGroupWithIn == null);
                 GroupWithInPlanClass asGroupWithIn = null;
                 if (left instanceof GroupPlanClass) {
-                    asGroupWithIn = new GroupWithInPlanClass((GroupPlanClass)left,
-                                                             (ValuesPlanClass)right,
-                                                             joins);
-                }
-                else if (left instanceof JoinPlanClass) {
-                    JoinPlanClass leftJoinPlanClass = (JoinPlanClass)left;
+                    asGroupWithIn = new GroupWithInPlanClass((GroupPlanClass) left,
+                            (ValuesPlanClass) right,
+                            joins);
+                } else if (left instanceof JoinPlanClass) {
+                    JoinPlanClass leftJoinPlanClass = (JoinPlanClass) left;
                     if (leftJoinPlanClass.asGroupWithIn != null) {
                         asGroupWithIn = new GroupWithInPlanClass(leftJoinPlanClass.asGroupWithIn,
-                                                                 (ValuesPlanClass)right,
-                                                                 joins);
+                                (ValuesPlanClass) right,
+                                joins);
                     }
                 }
                 if ((asGroupWithIn != null) &&
-                    (asGroupWithIn.getExtraConditions() != null)) {
+                        (asGroupWithIn.getExtraConditions() != null)) {
                     Plan withInPlan = asGroupWithIn.bestPlan(outsideJoins);
                     if (withInPlan != null) {
                         planClass.asGroupWithIn = asGroupWithIn;
@@ -1172,8 +1170,18 @@ public class JoinAndIndexPicker extends BaseRule
             Collection<JoinOperator> joinsForLeft = new ArrayList<>();
             joinsForOuterPlan(condJoins, left, joinsForLeft);
 
-            Plan leftPlan = left.bestPlan(condJoins, outsideJoins);
-            Plan rightPlan = right.bestNestedPlan(left, condJoins, outsideJoins);
+            Plan leftPlan;
+            if (joinType.isRightLinear() || joinType.isSemi()) {
+                leftPlan = left.bestPlan(condJoins, outsideJoins);
+            } else {
+                leftPlan = left.bestPlan(Collections.<JoinOperator>emptyList(), outsideJoins);
+            }
+            Plan rightPlan;
+            if (joinType.isLeftLinear()) {
+                rightPlan = right.bestNestedPlan(left, condJoins, outsideJoins);
+            } else {
+                rightPlan = right.bestNestedPlan(left, Collections.<JoinOperator>emptyList(), outsideJoins);
+            }
             CostEstimate costEstimate = leftPlan.costEstimate.nest(rightPlan.costEstimate);
             JoinPlan joinPlan = new JoinPlan(leftPlan, rightPlan,
                     joinType, JoinNode.Implementation.NESTED_LOOPS,
@@ -1370,7 +1378,8 @@ public class JoinAndIndexPicker extends BaseRule
                     ColumnSource columnSource = ((ColumnExpression)expression).getTable();
                     if (columnSource instanceof TableSource) {
                         TableNode table = ((TableSource)columnSource).getTable();
-                        outerColumnCount = table.getTable().rowDef().getFieldCount();
+                        outerColumnCount = table.getTable().getColumnsIncludingInternal().size();
+                        
                         break;
                     }
                 }
@@ -1380,7 +1389,7 @@ public class JoinAndIndexPicker extends BaseRule
                     ColumnSource columnSource = ((ColumnExpression)expression).getTable();
                     if (columnSource instanceof TableSource) {
                         TableNode table = ((TableSource)columnSource).getTable();
-                        innerColumnCount = table.getTable().rowDef().getFieldCount();
+                        innerColumnCount = table.getTable().getColumnsIncludingInternal().size();
                         break;
                     }
                 }

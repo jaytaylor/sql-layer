@@ -22,7 +22,6 @@ import com.foundationdb.ais.model.ForeignKey.Action;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.storeadapter.PersistitAdapter;
-import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -50,14 +49,6 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
         checkReferencing(session, index, exchange, row, foreignKey, operation, false);
     }
     
-    
-    @Override
-    protected void checkReferencing(Session session, Index index, Exchange exchange,
-                                    RowData row, ForeignKey foreignKey, String operation) {
-        checkReferencing(session, index, exchange, row, foreignKey, operation, false);
-    }
-
-    
     protected void checkReferencing(Session session, Index index, Exchange exchange,
                                     Row row, ForeignKey foreignKey, String operation,
                                     boolean recheck) {
@@ -83,40 +74,6 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
         }
     }
         
-    protected void checkReferencing(Session session, Index index, Exchange exchange,
-                                    RowData row, ForeignKey foreignKey, String operation,
-                                    boolean recheck) {
-        // At present, a unique index has the rest of the index entry
-        // in the value, so the passed in key will match exactly.
-        assert index.isUnique() : index;
-        boolean notReferencing = false;
-        try {
-            notReferencing = !entryExists(index, exchange);
-            // Avoid write skew from concurrent insert referencing and delete referenced.
-            exchange.lock();
-        }
-        catch (PersistitException | RollbackException e) {
-            throw PersistitAdapter.wrapPersistitException(session, e);
-        }
-        if (notReferencing) {
-            PersistitDeferredForeignKeys deferred = 
-                txnService.getDeferredForeignKeys(session, true);
-            if (!recheck && deferred.isDeferred(foreignKey, null)) {
-                deferred.addDeferred(new DeferredReferencingCheck(index, exchange, row, foreignKey, operation), foreignKey);
-            }
-            else {
-                notReferencing(session, index, exchange, row, foreignKey, operation);
-            }
-        }
-    }
-
-    @Override
-    protected void checkNotReferenced(Session session, Index index, Exchange exchange,
-                                      RowData row, ForeignKey foreignKey,
-                                      boolean selfReference, ForeignKey.Action action, String operation) {
-        checkNotReferenced(session, index, exchange, row, foreignKey, selfReference, action, operation, false);
-    }
-
     @Override
     protected void checkNotReferenced(Session session, Index index,
             Exchange exchange, Row row, ForeignKey foreignKey,
@@ -128,46 +85,6 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
                                         Row row, ForeignKey foreignKey,
                                         boolean selfReference, ForeignKey.Action action, String operation,
                                         boolean recheck) {
-        boolean stillReferenced = false;
-        int depth = exchange.getKey().getDepth();
-        try {
-            if (row == null) {
-                // Scan all (after null), filling exchange for error report.
-                while (exchange.traverse(Key.Direction.GT, true)) {
-                    if (!keyHasNullSegments(exchange.getKey(), index)) {
-                        stillReferenced = true;
-                        break;
-                    }
-                }
-            }
-            else {
-                if (selfReference) {
-                    stillReferenced = entryExistsSkipSelf(index, exchange);
-                } 
-                else {
-                    stillReferenced = entryExists(index, exchange);
-                }
-            }
-        }
-        catch (PersistitException | RollbackException e) {
-            throw PersistitAdapter.wrapPersistitException(session, e);
-        }
-        if (stillReferenced) {
-            PersistitDeferredForeignKeys deferred = 
-                txnService.getDeferredForeignKeys(session, true);
-            if (!recheck && deferred.isDeferred(foreignKey, action)) {
-                deferred.addDeferred(new DeferredNotReferencedCheck(index, exchange, depth, row, foreignKey, action, operation), foreignKey);
-            }
-            else {
-                stillReferenced(session, index, exchange, row, foreignKey, operation);
-            }
-        }
-    }
-
-    protected void checkNotReferenced(Session session, Index index, Exchange exchange,
-                                      RowData row, ForeignKey foreignKey,
-                                      boolean selfReference, ForeignKey.Action action, String operation,
-                                      boolean recheck) {
         boolean stillReferenced = false;
         int depth = exchange.getKey().getDepth();
         try {
@@ -238,43 +155,26 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
     class DeferredReferencingCheck implements PersistitDeferredForeignKeys.DeferredForeignKey {
         private final Index index;
         private final KeyState key;
-        private final RowData rowData;
         private final Row row;
         private final ForeignKey foreignKey;
         private final String operation;
-
-        public DeferredReferencingCheck(Index index, Exchange exchange,
-                                        RowData row, ForeignKey foreignKey,
-                                        String operation) {
-            this.index = index;
-            this.key = new KeyState(exchange.getKey());
-            this.rowData = row;
-            this.foreignKey = foreignKey;
-            this.operation = operation;
-            this.row = null;
-        }
 
         public DeferredReferencingCheck(Index index, Exchange exchange,
                                         Row row, ForeignKey foreignKey,
                                         String operation) {
             this.index = index;
             this.key = new KeyState(exchange.getKey());
-            this.rowData = null;
             this.foreignKey = foreignKey;
             this.operation = operation;
             this.row = row;
         }
+        
         @Override
         public void run(Session session) {
             Exchange exchange = store.createStoreData(session, index);
             key.copyTo(exchange.getKey());
             try {
-                if (rowData != null) {
-                    checkReferencing(session, index, exchange, rowData, foreignKey, operation, true);
-                } else {
-                    checkReferencing(session, index, exchange, row, foreignKey, operation, true);
-                }
-                    
+                checkReferencing(session, index, exchange, row, foreignKey, operation, true);
             }
             finally {
                 store.releaseStoreData(session, exchange);
@@ -285,30 +185,16 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
     class DeferredNotReferencedCheck implements PersistitDeferredForeignKeys.DeferredForeignKey {
         private final Index index;
         private final KeyState key;
-        private final RowData rowData;
         private final Row row;
         private final ForeignKey foreignKey;
         private final ForeignKey.Action action;
         private final String operation;
 
         public DeferredNotReferencedCheck(Index index, Exchange exchange, int depth,
-                                          RowData row, ForeignKey foreignKey,
-                                          ForeignKey.Action action, String operation) {
-            this.index = index;
-            this.key = copyKey(exchange.getKey(), depth, row);
-            this.rowData = row;
-            this.foreignKey = foreignKey;
-            this.action = action;
-            this.operation = operation;
-            this.row = null;
-        }
-        
-        public DeferredNotReferencedCheck(Index index, Exchange exchange, int depth,
                 Row row, ForeignKey foreignKey,
                 ForeignKey.Action action, String operation) {
             this.index = index;
             this.key = copyKey(exchange.getKey(), depth, row);
-            this.rowData = null;
             this.row = row;
             this.foreignKey = foreignKey;
             this.action = action;
@@ -320,12 +206,7 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
             Exchange exchange = store.createStoreData(session, index);
             key.copyTo(exchange.getKey());
             try {
-                if (rowData != null) {
-                    // selfReference = false on recheck; we deleted one row.
-                    checkNotReferenced(session, index, exchange, rowData, foreignKey, false, action, operation, true);
-                } else {
-                    checkNotReferenced(session, index, exchange, row, foreignKey, false, action, operation, true);
-                }                    
+                checkNotReferenced(session, index, exchange, row, foreignKey, false, action, operation, true);
             }
             finally {
                 store.releaseStoreData(session, exchange);
@@ -343,16 +224,4 @@ public class PersistitConstraintHandler extends ConstraintHandler<PersistitStore
         }
         return new KeyState(key);            
     }
-
-    protected static KeyState copyKey(Key key, int depth, RowData row) {
-        if (row == null) {
-            key.clear();
-            key.append(null);
-        }
-        else {
-            key.setDepth(depth);
-        }
-        return new KeyState(key);            
-    }
-
 }

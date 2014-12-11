@@ -1,0 +1,1 @@
+DELETE FROM parent c1 WHERE c1.id IN (SELECT c2.id FROM parent c2 WHERE name = 'James')

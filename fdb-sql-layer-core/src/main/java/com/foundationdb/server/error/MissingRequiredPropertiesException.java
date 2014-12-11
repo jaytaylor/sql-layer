@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 FoundationDB, LLC
+ * Copyright (C) 2009-2014 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -17,8 +17,14 @@
 
 package com.foundationdb.server.error;
 
-public final class ServiceStartupException extends InvalidOperationException {
-    public ServiceStartupException (String serviceName) {
-        super (ErrorCode.SERVICE_ALREADY_STARTED, serviceName);
+import java.util.Collection;
+
+public class MissingRequiredPropertiesException extends StartupFailureException
+{
+    public MissingRequiredPropertiesException(Collection<String> missingKeys)
+    {
+        super(ErrorCode.MISSING_REQUIRED_PROPERTIES,
+                missingKeys.size() == 1 ? "property" : "properties",
+                missingKeys);
     }
 }

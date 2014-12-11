@@ -19,7 +19,6 @@ package com.foundationdb.ais.model;
 
 import com.foundationdb.ais.model.validation.AISInvariants;
 import com.foundationdb.server.collation.AkCollator;
-import com.foundationdb.server.rowdata.FieldDef;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.DecimalAttribute;
@@ -410,16 +409,6 @@ public class Column implements ColumnContainer, Visitable
         return defaultFunction;
     }
 
-    public void setFieldDef(FieldDef fieldDef)
-    {
-        this.fieldDef = fieldDef;
-    }
-
-    public FieldDef getFieldDef()
-    {
-        return fieldDef;
-    }
-
     private Column(Columnar columnar,
                    String columnName,
                    Integer position,
@@ -461,7 +450,6 @@ public class Column implements ColumnContainer, Visitable
     private volatile Long maxStorageSize;
     private volatile Integer prefixSize;
 
-    private FieldDef fieldDef;
     private Boolean defaultIdentity;
     private Sequence identityGenerator;
     private String defaultValue;

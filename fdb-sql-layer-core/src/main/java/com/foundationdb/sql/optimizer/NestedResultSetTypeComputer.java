@@ -30,11 +30,12 @@ public class NestedResultSetTypeComputer extends FunctionsTypeComputer
     }
 
     @Override
-    public void compute(StatementNode stmt) throws StandardException {
-        stmt.accept(this);
-        if (stmt.getNodeType() == NodeTypes.CURSOR_NODE) {
-            checkForNestedResultSet(((CursorNode)stmt).getResultSetNode());
+    public Visitable visit(Visitable node) throws StandardException {
+        super.visit(node);
+        if(((QueryTreeNode)node).getNodeType() == NodeTypes.CURSOR_NODE) {
+            checkForNestedResultSet(((CursorNode)node).getResultSetNode());
         }
+        return node;
     }
 
     protected void checkForNestedResultSet(ResultSetNode resultSet) 

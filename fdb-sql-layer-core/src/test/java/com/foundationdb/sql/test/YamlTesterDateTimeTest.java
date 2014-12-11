@@ -36,12 +36,16 @@ import org.slf4j.LoggerFactory;
 public class YamlTesterDateTimeTest {
     private static final Logger LOG = LoggerFactory.getLogger(YamlTesterDateTimeTest.class);
 
-    private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
+    private static final DateTimeZone UTC = DateTimeZone.getProvider().getZone("UTC");
 
     static
     {
         String timezone="UTC";
-        DateTimeZone.setDefault(DateTimeZone.forID(timezone));
+        DateTimeZone dateTimeZone = DateTimeZone.forID(timezone);
+        assert dateTimeZone != null;
+        DateTimeZone.setDefault(dateTimeZone);
+        // We still have usages of java.util.Date, but thanks to the ConfigurationServiceImpl.validateTimezone
+        // These should always be the same in production, so leaving this here until we cleanup remaining usages
         TimeZone.setDefault(TimeZone.getTimeZone(timezone));
     }
     
@@ -65,7 +69,7 @@ public class YamlTesterDateTimeTest {
     }
 
     private static Calendar getCalendar() {
-        Calendar cal = Calendar.getInstance(UTC);
+        Calendar cal = Calendar.getInstance(UTC.toTimeZone());
         cal.setTimeInMillis(System.currentTimeMillis());
         return cal;
     }

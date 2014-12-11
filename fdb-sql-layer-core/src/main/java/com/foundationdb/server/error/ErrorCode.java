@@ -94,7 +94,8 @@ public enum ErrorCode {
     UNSUPPORTED_FULL_OUTER_JOIN("0A", "50B", Importance.DEBUG, UnsupportedFullOuterJoinException.class),
     UNSUPPORTED_GROUP_BY_ROLLUP("0A", "50C", Importance.DEBUG, UnsupportedGroupByRollupException.class),
     UNSUPPORTED_TRIGGER("0A", "50D", Importance.DEBUG, UnsupportedTriggerException.class),
-    
+    UNSUPPORTED_FK_MATCH    ("0A", "50E", Importance.DEBUG, UnsupportedFKMatchException.class),
+
     // Class 0D - invalid target type specification
     // Class 0E - invalid schema name list specification
     // Class 0F - locator exception
@@ -332,6 +333,7 @@ public enum ErrorCode {
     INVALID_SQLJ_DEPLOYMENT_DESCRIPTOR ("46", "200", Importance.DEBUG, InvalidSQLJDeploymentDescriptorException.class),
 
     // Class 50 - DDL definition failure
+    PROTECTED_OBJECT        ("50", "001", Importance.DEBUG, ProtectedObjectException.class),
     PROTECTED_TABLE         ("50", "002", Importance.DEBUG, ProtectedTableDDLException.class), 
     JOIN_TO_PROTECTED_TABLE ("50", "003", Importance.DEBUG, JoinToProtectedTableException.class), 
     JOIN_TO_UNKNOWN_TABLE   ("50", "004", Importance.DEBUG, JoinToUnknownTableException.class),  
@@ -425,7 +427,7 @@ public enum ErrorCode {
 
     // Class 52 - Configuration & startup errors
     SERVICE_NOT_STARTED     ("52", "001", Importance.ERROR, ServiceNotStartedException.class),
-    SERVICE_ALREADY_STARTED ("52", "002", Importance.ERROR, ServiceStartupException.class),
+    SERVICE_ALREADY_STARTED ("52", "002", Importance.ERROR, ServiceAlreadyStartedException.class),
     SERVICE_CIRC_DEPEND     ("52", "003", Importance.ERROR, CircularDependencyException.class),
     BAD_CONFIG_DIRECTORY    ("52", "004", Importance.ERROR, BadConfigDirectoryException.class),
     //52005
@@ -445,6 +447,8 @@ public enum ErrorCode {
     NO_CLUSTER_FILE         ("52", "013", Importance.ERROR, NoClusterFileException.class),
     CLUSTER_FILE_NOT_READABLE ("52", "014", Importance.ERROR, ClusterFileNotReadableException.class),
     CLUSTER_FILE_TOO_LARGE  ("52", "015", Importance.ERROR, ClusterFileTooLargeException.class),
+    INVALID_TIME_ZONE        ("52", "016", Importance.ERROR, InvalidTimeZoneException.class),
+    MISSING_REQUIRED_PROPERTIES ("52", "017", Importance.ERROR, MissingRequiredPropertiesException.class),
 
     // Class 53 - Internal error 
     INTERNAL_ERROR          ("53", "000", Importance.ERROR, null),

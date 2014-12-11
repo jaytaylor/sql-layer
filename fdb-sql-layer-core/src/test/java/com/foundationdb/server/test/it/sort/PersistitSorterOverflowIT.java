@@ -105,7 +105,7 @@ public class PersistitSorterOverflowIT extends PersistitITBase
     private void doSort() {
         InOutTap tap = Tap.createTimer("test");
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
 
         Table table = getTable(SCHEMA, TABLE);
         RowType rowType = schema.tableRowType(table);

@@ -81,7 +81,6 @@ public class IndexRowAndAncestorIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new com.foundationdb.qp.rowtype.Schema(ais());
         cRowType = schema.tableRowType(table(c));
         oRowType = schema.tableRowType(table(o));
         iRowType = schema.tableRowType(table(i));
@@ -98,7 +97,6 @@ public class IndexRowAndAncestorIT extends OperatorITBase
         iOrdinal = ddl().getTable(session(), i).getOrdinal();
         hOrdinal = ddl().getTable(session(), h).getOrdinal();
         group = group(c);
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         loadDatabase();

@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.types.service;
 
-import com.foundationdb.server.error.ServiceStartupException;
+import com.foundationdb.server.error.ServiceAlreadyStartedException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.jmx.JmxManageable;
 import com.foundationdb.server.types.TAggregator;
@@ -116,7 +116,7 @@ public final class TypesRegistryServiceImpl
             registry = new ReflectiveInstanceFinder();
         } catch (Exception e) {
             logger.error("while creating registry", e);
-            throw new ServiceStartupException("TypesRegistry");
+            throw new ServiceAlreadyStartedException("TypesRegistry");
         }
         start(registry);
     }

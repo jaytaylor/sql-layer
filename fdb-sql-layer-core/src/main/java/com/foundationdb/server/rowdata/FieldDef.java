@@ -18,7 +18,6 @@
 package com.foundationdb.server.rowdata;
 
 import com.foundationdb.ais.model.Column;
-import com.foundationdb.server.AkServerUtil;
 import com.foundationdb.server.rowdata.encoding.Encoders;
 import com.foundationdb.server.rowdata.encoding.Encoding;
 
@@ -112,6 +111,5 @@ public class FieldDef
         this.prefixSize = prefixSize;
         this.typeParameter1 = typeParameter1;
         this.typeParameter2 = typeParameter2;
-        this.column.setFieldDef(this);
     }
 }

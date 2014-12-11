@@ -1,0 +1,2 @@
+ta0 LEFT JOIN (t1 CROSS JOIN t3) ON ta0.c2 == t1.c1 AND ta0.c1 == t1.c3
+ta0 LEFT JOIN (t3 CROSS JOIN t1) ON ta0.c2 == t1.c1 AND ta0.c1 == t1.c3

@@ -95,7 +95,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         createTables();
         bist = new BasicInfoSchemaTablesServiceImpl(schemaManager, null, null);
         bist.attachFactories(ais);
-        adapter = new MemoryAdapter(new Schema(ais), null, null);
+        adapter = new MemoryAdapter(null, null);
     }
 
     private static void simpleTable(TestAISBuilder builder, String group, String schema, String table, String parentName, boolean withPk) {
@@ -429,7 +429,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { null, "zap",  null, null, null, null, null, null, null, null, LONG },
                 { null, "zzz",  null, null, null, null, null, null, null, null, LONG },
         };
-        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.SCHEMATA).getGroupScan(adapter);
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.SCHEMATA).getGroupScan(adapter,
+                ais.getTable(BasicInfoSchemaTablesServiceImpl.SCHEMATA).getGroup());
         int skipped = scanAndCompare(expected, scan);
         assertEquals("Skipped I_S schemas", 1, skipped);
     }
@@ -455,7 +456,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { null, "zzz", "zzz2", "TABLE", null, null, "YES", "NO", null, null, null, VARCHAR, null, null, VARCHAR, LONG_NULL, null, "zzz.zzz1", VARCHAR, LONG },
                 { null, "test", "voo", "VIEW",  null, null, "NO", "NO", null, null, null, null, null, null, null,   null,null,null, VARCHAR,  LONG },
         };
-        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLES).getGroupScan(adapter);
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLES).getGroupScan(adapter,
+                ais.getTable(BasicInfoSchemaTablesServiceImpl.TABLES).getGroup());
         int skipped = scanAndCompare(expected, scan);
         assertEquals("Skip I_S tables", 22, skipped);
     }
@@ -532,7 +534,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { null, "test", "voo", "c2", 1L,   null, false,  "INT",       null, null, null, null, null,   null, null, null, null, null, null,   
                          null, null, null, null, null, null, null, null, null,  null, "NO",  "NO", null, null, null, null, null, null,  "NO", null, "YES", null, null, null, LONG},
         };
-        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter);
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter,
+                ais.getTable(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroup());
         int skipped = scanAndCompare(expected, scan);
         assertEquals("Skipped I_S columns", 245, skipped);
     }
@@ -560,7 +563,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { null, "zzz", "zzz2/zzz1",      null, "zzz", "zzz2", "GROUPING", "NO", "NO", "YES", LONG },
                 { null, "zzz", "zzz2_pkey",   null, "zzz", "zzz2", "PRIMARY KEY", "NO", "NO", "YES", LONG },
         };
-        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLE_CONSTRAINTS).getGroupScan(adapter);
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLE_CONSTRAINTS).getGroupScan(adapter,
+                ais.getTable(BasicInfoSchemaTablesServiceImpl.TABLE_CONSTRAINTS).getGroup());
         int skipped = scanAndCompare(expected, scan);
         assertEquals("Skipped I_S constraints", 0, skipped);
     }
@@ -568,9 +572,10 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void referentialConstraintsScan() {
         final Object[][] expected = {
-                {null, "test", "fkey_parent", null, "test", "parent_pkey", "NONE", "RESTRICT", "RESTRICT", LONG},
+                {null, "test", "fkey_parent", null, "test", "parent_pkey", "SIMPLE", "RESTRICT", "RESTRICT", LONG},
         };
-        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.REFERENTIAL_CONSTRAINTS).getGroupScan(adapter);
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.REFERENTIAL_CONSTRAINTS).getGroupScan(adapter,
+                ais.getTable(BasicInfoSchemaTablesServiceImpl.REFERENTIAL_CONSTRAINTS).getGroup());
         int skipped = scanAndCompare(expected, scan);
         assertEquals("Skipped I_S referential_constraints", 0, skipped);
     }
@@ -596,7 +601,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { null, "zzz", "zzz1", null, "zzz", "zzz2", "zzz.zzz1/zzz.zzz2", 1L, "zzz2/zzz1", null, "zzz", "zzz1_pkey", LONG },
         };
 
-        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.GROUPING_CONSTRAINTS).getGroupScan(adapter);
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.GROUPING_CONSTRAINTS).getGroupScan(adapter,
+                ais.getTable(BasicInfoSchemaTablesServiceImpl.GROUPING_CONSTRAINTS).getGroup());
         int skipped = scanAndCompare(expected, scan);
         assertEquals("Skipped I_S grouping_constraints", 22, skipped);
     }
@@ -625,7 +631,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 {null, "zzz", "zzz2/zzz1", null, "zzz", "zzz2", "one_id", 0L, 0L, LONG },
                 {null, "zzz",  "zzz2_pkey",  null, "zzz", "zzz2","id", 0L, null, LONG },
         };
-        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.KEY_COLUMN_USAGE).getGroupScan(adapter);
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.KEY_COLUMN_USAGE).getGroupScan(adapter,
+                ais.getTable(BasicInfoSchemaTablesServiceImpl.KEY_COLUMN_USAGE).getGroup());
         int skipped = scanAndCompare(expected, scan);
         assertEquals("Skipped I_S key_column_usage", 0, skipped);
     }
@@ -647,7 +654,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { null, "zzz", "zzz1", "PRIMARY", null, "zzz", "zzz1_pkey", LONG, "zzz.zzz1.PRIMARY",VARCHAR, "PRIMARY", true, null, null, LONG },
                 { null, "zzz", "zzz2", "PRIMARY", null, "zzz", "zzz2_pkey", LONG, "zzz.zzz2.PRIMARY",VARCHAR, "PRIMARY", true, null, null, LONG },
         };
-        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.INDEXES).getGroupScan(adapter);
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.INDEXES).getGroupScan(adapter,
+                ais.getTable(BasicInfoSchemaTablesServiceImpl.INDEXES).getGroup());
         int skipped = scanAndCompare(expected, scan);
         assertEquals("Skipped I_S indexes", 0, skipped);
     }
@@ -671,7 +679,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { null, "zzz", "zzz1", "PRIMARY",  null, "zzz", "zzz1", "id", 0L, true, LONG },
                 { null, "zzz", "zzz2", "PRIMARY",  null, "zzz", "zzz2", "id", 0L, true, LONG },
         };
-        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.INDEX_COLUMNS).getGroupScan(adapter);
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.INDEX_COLUMNS).getGroupScan(adapter,
+                ais.getTable(BasicInfoSchemaTablesServiceImpl.INDEX_COLUMNS).getGroup());
         int skipped = scanAndCompare(expected, scan);
         assertEquals("Skipped I_S index_columns", 0, skipped);
     }
@@ -683,7 +692,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 {null, "test", "sequence",  "bigint",   1L, 0L, 1000L, 1L, false, "test.sequence", LONG },
                 {null, "test", "sequence1", "bigint", 1000L, 0L, 1000L, -1L,false, "test.sequence1", LONG},
         };
-        GroupScan scan = getFactory (BasicInfoSchemaTablesServiceImpl.SEQUENCES).getGroupScan(adapter);
+        GroupScan scan = getFactory (BasicInfoSchemaTablesServiceImpl.SEQUENCES).getGroupScan(adapter,
+                ais.getTable(BasicInfoSchemaTablesServiceImpl.SEQUENCES).getGroup());
         int skipped = scanAndCompare(expected, scan);
         assertEquals("Skip I_S sequences", 0, skipped);
     }
@@ -693,7 +703,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
         final Object[][] expected = {
                 { null, "test", "voo", new Text("CREATE VIEW voo(c1,c2) AS SELECT c2,c1 FROM foo"), "NONE", false, "NO", "NO", "NO", "NO", LONG },
         };
-        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.VIEWS).getGroupScan(adapter);
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.VIEWS).getGroupScan(adapter,
+                ais.getTable(BasicInfoSchemaTablesServiceImpl.VIEWS).getGroup());
         int skipped = scanAndCompare(expected, scan);
         assertEquals("Skip I_S views", 0, skipped);
     }
@@ -703,7 +714,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
         final Object[][] expected = {
                 { null, "test", "voo", null, "test", "foo", LONG },
         };
-        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.VIEW_TABLE_USAGE).getGroupScan(adapter);
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.VIEW_TABLE_USAGE).getGroupScan(adapter,
+                ais.getTable(BasicInfoSchemaTablesServiceImpl.VIEW_TABLE_USAGE).getGroup());
         int skipped = scanAndCompare(expected, scan);
         assertEquals("Skip I_S views", 0, skipped);
     }
@@ -714,7 +726,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { null, "test", "voo", null, "test", "foo", "c1", LONG },
                 { null, "test", "voo", null, "test", "foo", "c2", LONG },
         };
-        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.VIEW_COLUMN_USAGE).getGroupScan(adapter);
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.VIEW_COLUMN_USAGE).getGroupScan(adapter,
+                ais.getTable(BasicInfoSchemaTablesServiceImpl.VIEW_COLUMN_USAGE).getGroup());
         int skipped = scanAndCompare(expected, scan);
         assertEquals("Skip I_S views", 0, skipped);
     }
@@ -726,7 +739,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 null, "com.foundationdb.procs.Proc1.call", "java", "JAVA", 
                 "NO", null, null, null, "YES", 0L, null, null, null, null, false, null, null, null, LONG },
         };
-        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.ROUTINES).getGroupScan(adapter);
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.ROUTINES).getGroupScan(adapter,
+                ais.getTable(BasicInfoSchemaTablesServiceImpl.ROUTINES).getGroup());
         int skipped = scanAndCompare(expected, scan);
         assertEquals("Skip I_S routines", 0, skipped);
     }
@@ -739,7 +753,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
             { null, "test", "proc1", "n2", 3L, "DECIMAL", null, 10L, 10L, 5L, "IN", "NO", null, LONG },
             { null, "test", "proc1", null, 4L, "VARCHAR", 100L, null, null, null, "OUT", "NO", null, LONG },
         };
-        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.PARAMETERS).getGroupScan(adapter);
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.PARAMETERS).getGroupScan(adapter,
+                ais.getTable(BasicInfoSchemaTablesServiceImpl.PARAMETERS).getGroup());
         int skipped = scanAndCompare(expected, scan);
         assertEquals("Skip I_S parameters", 0, skipped);
     }
@@ -749,7 +764,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
         final Object[][] expected = {
             { null, "test", "ajar", "https://example.com/procs/ajar.jar", LONG },
         };
-        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.JARS).getGroupScan(adapter);
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.JARS).getGroupScan(adapter,
+                ais.getTable(BasicInfoSchemaTablesServiceImpl.JARS).getGroup());
         int skipped = scanAndCompare(expected, scan);
         assertEquals("Skip I_S jars", 0, skipped);
     }
@@ -759,7 +775,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
         final Object[][] expected = {
                 { null, "test", "proc1", null, "test", "ajar", LONG },
         };
-        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.ROUTINE_JAR_USAGE).getGroupScan(adapter);
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.ROUTINE_JAR_USAGE).getGroupScan(adapter,
+                ais.getTable(BasicInfoSchemaTablesServiceImpl.ROUTINE_JAR_USAGE).getGroup());
         int skipped = scanAndCompare(expected, scan);
         assertEquals("Skip I_S routines", 0, skipped);
     }

@@ -26,8 +26,10 @@ import com.foundationdb.qp.operator.TimeOperator;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.error.InvalidOperationException;
+
 import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.*;
@@ -63,12 +65,12 @@ public class FlattenCT extends CostModelBase
                             "primary key(cid)",
                             String.format("grouping foreign key(pid, parent_instance) references %s(pid, parent_instance)", 
                                           parentTableName));
-        schema = new Schema(ais());
+        schema = SchemaCache.globalSchema(ais());
         parentRowType = schema.tableRowType(table(parent));
         childRowType = schema.tableRowType(table(child));
         parentPKIndexType = indexType(parent, "pid", "parent_instance");
         group = group(parent);
-        adapter = newStoreAdapter(schema);
+        adapter = newStoreAdapter();
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }

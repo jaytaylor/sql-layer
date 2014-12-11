@@ -55,7 +55,7 @@ public class TupleStorageFormatIT  extends FDBITBase
 
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         RowType t1Type = schema.tableRowType(getTable(t1));
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
 
         txnService().beginTransaction(session());
 
@@ -84,7 +84,7 @@ public class TupleStorageFormatIT  extends FDBITBase
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         RowType parentType = schema.tableRowType(getTable(parent)); 
         RowType childType = schema.tableRowType(getTable(child));
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
 
         txnService().beginTransaction(session());
 

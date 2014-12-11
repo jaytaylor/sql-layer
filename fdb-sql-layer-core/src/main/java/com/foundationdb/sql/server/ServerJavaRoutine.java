@@ -22,8 +22,10 @@ import java.util.Queue;
 
 import com.foundationdb.ais.model.Parameter;
 import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.error.ProtectedObjectException;
 import com.foundationdb.server.explain.Explainable;
 import com.foundationdb.server.service.routines.*;
+import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.sql.routinefw.ShieldedInvokable;
 import com.foundationdb.sql.routinefw.RoutineFirewall;
 
@@ -64,6 +66,10 @@ public abstract class ServerJavaRoutine implements Explainable, ShieldedInvokabl
     }
 
     public void invoke() {
+        SecurityService ss = context.getServiceManager().getServiceByClass(SecurityService.class);
+        if (ss != null && !ss.isAccessible(context.getSession(), invocation.getRoutineName().getSchemaName()))  {
+            throw new ProtectedObjectException("routine", invocation.getRoutineName().getTableName(), invocation.getRoutineName().getSchemaName());
+        }
         if (invocation.getRoutine().isSystemRoutine()) {
             invokeShielded();
         }

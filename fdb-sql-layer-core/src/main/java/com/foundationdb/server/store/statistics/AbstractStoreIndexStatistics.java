@@ -23,12 +23,8 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.util.WrappingByteSource;
 
 import java.util.ArrayList;
 
@@ -71,7 +67,7 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
         switch(index.getIndexType()) {
             case TABLE:
             case GROUP:
-                return index.leafMostTable().rowDef().getTableStatus().getApproximateRowCount(session);
+                return index.leafMostTable().tableStatus().getApproximateRowCount(session);
             case FULL_TEXT:
                 throw new UnsupportedOperationException("FullTextIndex row count");
             default:
@@ -79,19 +75,18 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
         }
     }
 
-    protected RowDef getIndexStatsRowDef(Session session) {
+    protected RowType getIndexStatsRowType (Session session) {
         Table table = store.getAIS(session).getTable(INDEX_STATISTICS_TABLE_NAME);
         assert (table != null);
-        return table.rowDef();
+        return SchemaCache.globalSchema(table.getAIS()).tableRowType(table);
     }
-
-    protected RowDef getIndexStatsEntryRowDef(Session session) {
+    
+    protected RowType getIndexStatsEntryRowType (Session session) {
         Table table = store.getAIS(session).getTable(INDEX_STATISTICS_ENTRY_TABLE_NAME);
         assert (table != null);
-        return table.rowDef();
+        return SchemaCache.globalSchema(table.getAIS()).tableRowType(table);
     }
-
-
+    
     /* Storage formats.
      * Keep in sync with IndexStatisticsServiceImpl
      */
@@ -108,40 +103,25 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
     private static final int LT_COUNT_FIELD_INDEX = 7;
     private static final int DISTINCT_COUNT_FIELD_INDEX = 8;
 
-    protected final IndexStatistics decodeIndexStatisticsRow(RowData rowData,
-                                                             RowDef indexStatisticsRowDef,
-                                                             Index index) {
-        LegacyRowWrapper row = new LegacyRowWrapper(indexStatisticsRowDef, rowData);
-
-        long analysisTimestamp = ((Integer)row.get(ANALYSIS_TIMESTAMP_FIELD_INDEX)).longValue();
-        long rowCount = (Long)row.get(ROW_COUNT_FIELD_INDEX);
-        long sampledCount = (Long)row.get(SAMPLED_COUNT_FIELD_INDEX);
-
-        IndexStatistics result = new IndexStatistics(index);
-        result.setAnalysisTimestamp(analysisTimestamp * 1000);
-        result.setRowCount(rowCount);
-        result.setSampledCount(sampledCount);
-        return result;
+    protected final IndexStatistics decodeIndexStatisticsRow(Row row, Index index) {
+        long analysisTimeStamp = (long)row.value(ANALYSIS_TIMESTAMP_FIELD_INDEX).getInt32();
+        long rowCount = row.value(ROW_COUNT_FIELD_INDEX).getInt64();
+        long sampledCount = row.value(SAMPLED_COUNT_FIELD_INDEX).getInt64();
+        
+        return new IndexStatistics(index, analysisTimeStamp * 1000, rowCount, sampledCount);
     }
 
-    protected final void decodeIndexStatisticsEntryRow(RowData rowData,
-                                                       RowDef indexStatisticsEntryRowDef,
-                                                       IndexStatistics indexStatistics) {
-        LegacyRowWrapper row = new LegacyRowWrapper(indexStatisticsEntryRowDef, rowData);
-
-        int columnCount = ((Integer)row.get(COLUMN_COUNT_FIELD_INDEX)).intValue();
-        int itemNumber = ((Integer)row.get(ITEM_NUMBER_FIELD_INDEX)).intValue();
-        String keyString = (String)row.get(KEY_STRING_FIELD_INDEX);
-
-        WrappingByteSource byteSource = (WrappingByteSource)row.get(KEY_BYTES_FIELD_INDEX);
-        byte[] keyBytes = byteSource.toByteSubarray();
-
-        long eqCount = (Long)row.get(EQ_COUNT_FIELD_INDEX);
-        long ltCount = (Long)row.get(LT_COUNT_FIELD_INDEX);
-        long distinctCount = (Long)row.get(DISTINCT_COUNT_FIELD_INDEX);
-
+    protected final void decodeIndexStatisticsEntryRow (Row row, IndexStatistics indexStatistics) {
+        int columnCount = row.value(COLUMN_COUNT_FIELD_INDEX).getInt32();
+        //int itemNumber  = row.value(ITEM_NUMBER_FIELD_INDEX).getInt32();
+        String keyString = row.value(KEY_STRING_FIELD_INDEX).getString();
+        byte[] keyBytes = row.value(KEY_BYTES_FIELD_INDEX).getBytes();
+        long eqCount = row.value(EQ_COUNT_FIELD_INDEX).getInt64();
+        long ltCount = row.value(LT_COUNT_FIELD_INDEX).getInt64();
+        long distinctCount = row.value(DISTINCT_COUNT_FIELD_INDEX).getInt64();
+        
         int firstColumn = 0; // Correct for multi-column
-        if (columnCount < 0) {
+        if (columnCount < 0)  {
             firstColumn = -columnCount - 1;
             columnCount = 1;
         }
@@ -152,10 +132,10 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
         }
         histogram.getEntries().add(new HistogramEntry(keyString, keyBytes, eqCount, ltCount, distinctCount));
     }
-
+    
     /** Store statistics into database. */
     public final void storeIndexStatistics(Session session, Index index, IndexStatistics indexStatistics) {
-        int tableId = index.leafMostTable().rowDef().getRowDefId();
+        int tableId = index.leafMostTable().getTableId();
         RowType indexStatisticsRowType = SchemaCache.globalSchema(index.getAIS()).tableRowType(store.getAIS(session).getTable(INDEX_STATISTICS_TABLE_NAME));
         RowType indexStatisticsEntryRowType = SchemaCache.globalSchema(index.getAIS()).tableRowType(store.getAIS(session).getTable(INDEX_STATISTICS_ENTRY_TABLE_NAME));
 

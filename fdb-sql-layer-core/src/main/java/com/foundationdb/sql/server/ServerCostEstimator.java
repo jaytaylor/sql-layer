@@ -56,7 +56,7 @@ public class ServerCostEstimator extends CostEstimator
             if (count >= 0)
                 return count;
         }
-        return table.rowDef().getTableStatus().getApproximateRowCount(session.getSession());
+        return table.tableStatus().getApproximateRowCount(session.getSession());
     }
 
     @Override

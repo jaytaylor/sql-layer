@@ -26,7 +26,6 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.RowCursorImpl;
 import com.foundationdb.qp.row.ImmutableRow;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.rowtype.Schema;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,11 +38,10 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
 {
     private static final Logger logger = LoggerFactory.getLogger(ExecutableModifyOperatorStatement.class);
 
-    protected ExecutableModifyOperatorStatement(Schema schema,
-                                                Operator resultOperator,
+    protected ExecutableModifyOperatorStatement(Operator resultOperator,
                                                 JDBCResultSetMetaData resultSetMetaData, 
                                                 JDBCParameterMetaData parameterMetaData) {
-        super(schema, resultOperator, resultSetMetaData, parameterMetaData);
+        super(resultOperator, resultSetMetaData, parameterMetaData);
     }
     
     @Override
@@ -58,7 +56,6 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
         Cursor cursor = null;
         RuntimeException runtimeException = null;
         try {
-            context.initStore(getSchema());
             cursor = API.cursor(resultOperator, context, bindings);
             cursor.openTopLevel();
             Row row;

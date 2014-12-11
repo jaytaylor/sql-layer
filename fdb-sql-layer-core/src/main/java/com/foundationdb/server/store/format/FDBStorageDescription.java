@@ -24,9 +24,10 @@ import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.FDBProtobuf;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
-import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.FDBScanTransactionOptions;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.FDBStoreDataHelper;
@@ -134,23 +135,10 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
             output.reportFailure(new AISValidationFailure(new StorageDescriptionInvalidException(object, "is missing prefix bytes")));
         }
     }
-
-    @Override
-    public void expandRowData(FDBStore store, Session session,
-                              FDBStoreData storeData, RowData rowData) {
-        FDBStoreDataHelper.expandRowData(rowData, storeData, true);
-    }
     
-    @Override 
-    public void expandRow (FDBStore store, Session session, 
-                            FDBStoreData storeData, Row row) {
-        FDBStoreDataHelper.expandRow(row, storeData);
-    }
-
     @Override
-    public void packRowData(FDBStore store, Session session,
-                            FDBStoreData storeData, RowData rowData) {
-        FDBStoreDataHelper.packRowData(rowData, storeData);
+    public Row expandRow (FDBStore store, Session session, FDBStoreData storeData, Schema schema) {
+        return FDBStoreDataHelper.expandRow(schema, storeData);
     }
     
     @Override
@@ -216,7 +204,7 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
      */
     public void groupIterator(FDBStore store, Session session, FDBStoreData storeData,
                               FDBStore.GroupIteratorBoundary left, FDBStore.GroupIteratorBoundary right,
-                              int limit, boolean snapshot) {
+                              int limit, FDBScanTransactionOptions transactionOptions) {
         if ((left == FDBStore.GroupIteratorBoundary.KEY) &&
             (right == FDBStore.GroupIteratorBoundary.NEXT_KEY) &&
             (limit == 1)) {
@@ -254,8 +242,7 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
         }
         TransactionState txnState = store.getTransaction(session, storeData);
         storeData.iterator = new FDBStoreDataKeyValueIterator(storeData,
-                snapshot ? txnState.getSnapshotRangeIterator(ksLeft, ksRight, limit, false) 
-                        : txnState.getRangeIterator(ksLeft, ksRight, limit, false));
+            txnState.getRangeIterator(ksLeft, ksRight, limit, false, transactionOptions));
     }
 
     /** Set up <code>storeData.iterator</code> to iterate over index.
@@ -265,7 +252,8 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
      * @param snapshot Snapshot range scan
      */
     public void indexIterator(FDBStore store, Session session, FDBStoreData storeData,
-                              boolean key, boolean inclusive, boolean reverse, boolean snapshot) {
+                              boolean key, boolean inclusive, boolean reverse,
+                              FDBScanTransactionOptions transactionOptions) {
         KeySelector ksLeft, ksRight;
         byte[] prefixBytes = prefixBytes(storeData);
         if (!key) {
@@ -294,8 +282,6 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
         }
         TransactionState txnState = store.getTransaction(session, storeData);
         storeData.iterator = new FDBStoreDataKeyValueIterator(storeData,
-                snapshot ?
-                        txnState.getSnapshotRangeIterator(ksLeft, ksRight, Transaction.ROW_LIMIT_UNLIMITED, reverse) :
-                            txnState.getRangeIterator(ksLeft, ksRight, Transaction.ROW_LIMIT_UNLIMITED, reverse));
+            txnState.getRangeIterator(ksLeft, ksRight, Transaction.ROW_LIMIT_UNLIMITED, reverse, transactionOptions));
     }
 }

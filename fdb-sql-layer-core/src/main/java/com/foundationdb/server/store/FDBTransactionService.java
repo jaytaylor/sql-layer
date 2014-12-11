@@ -110,29 +110,38 @@ public class FDBTransactionService implements TransactionService {
 
     public class TransactionState {
         final Transaction transaction;
+        final Session session;
         FDBPendingIndexChecks indexChecks;
         long startTime;
         long bytesSet;
         public long uniquenessTime;
         Map<ForeignKey,Boolean> deferredForeignKeys;
         boolean forceImmediateForeignKeyCheck;
-        final Session session;
+        int resetCount;
 
         public TransactionState(FDBPendingIndexChecks.CheckTime checkTime, Session session) {
             this.transaction = createTransaction();
+            this.session = session;
             if ((checkTime != null) && checkTime.isDelayed())
                 this.indexChecks = new FDBPendingIndexChecks(checkTime,
                                                              uniquenessChecksMetric);
             reset();
-            this.session = session;
         }
 
         public Transaction getTransaction() {
             return transaction;
         }
 
+        public Session getSession() {
+            return session;
+        }
+
         public long getStartTime() {
             return startTime;
+        }
+
+        public int getResetCount() {
+            return resetCount;
         }
 
         public Future<byte[]> getFuture(byte[] key) {
@@ -185,6 +194,25 @@ public class FDBTransactionService implements TransactionService {
 
         public AsyncIterable<KeyValue> getRangeIterator(Range range, int limit) {
             return transaction.getRange(range, limit);
+        }
+
+        public AsyncIterator<KeyValue> getRangeIterator(byte[] start, byte[] end,
+                                                        FDBScanTransactionOptions transactionOptions) {
+            return getRangeIterator(KeySelector.firstGreaterOrEqual(start), KeySelector.firstGreaterOrEqual(end), Transaction.ROW_LIMIT_UNLIMITED, false);
+        }
+
+        public AsyncIterator<KeyValue> getRangeIterator(KeySelector start, KeySelector end, int limit, boolean reverse,
+                                                        FDBScanTransactionOptions transactionOptions) {
+            if (transactionOptions.isCommitting()) {
+                return new FDBScanCommittingIterator(this, start, end, limit, reverse,
+                                                     transactionOptions);
+            }
+            else if (transactionOptions.isSnapshot()) {
+                return getSnapshotRangeIterator(start, end, limit, reverse);
+            }
+            else {
+                return getRangeIterator(start, end, limit, reverse);
+            }
         }
 
         public boolean getRangeExists (Range range, int limit) {
@@ -251,6 +279,7 @@ public class FDBTransactionService implements TransactionService {
             this.forceImmediateForeignKeyCheck = false;
             if (indexChecks != null)
                 indexChecks.clear();
+            resetCount++;
         }
 
         public boolean timeToCommit() {
@@ -269,14 +298,14 @@ public class FDBTransactionService implements TransactionService {
          *
          * <i>All</i> exceptions are propagated immediately and leave the state unchanged.
          */
-        public void commitAndReset(Session session) {
+        public void commitAndReset() {
             commitInternal(session, false, false);
             transaction.reset();
             reset();
         }
 
-        public int periodicallyCommitScanLimit() {
-            return commitScanLimit;
+        public FDBScanTransactionOptions periodicallyCommitScanOptions() {
+            return new FDBScanTransactionOptions(commitScanLimit, commitAfterMillis);
         }
 
         public boolean isDeferred(ForeignKey foreignKey) {
@@ -476,7 +505,7 @@ public class FDBTransactionService implements TransactionService {
         TransactionState txn = getTransactionInternal(session);
         requireActive(txn);
         if (txn.timeToCommit()) {
-            txn.commitAndReset(session);
+            txn.commitAndReset();
             return true;
         } else {
             return false;

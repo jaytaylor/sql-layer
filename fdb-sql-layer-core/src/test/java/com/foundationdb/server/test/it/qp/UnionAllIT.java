@@ -23,12 +23,14 @@ import static com.foundationdb.qp.operator.API.unionAll_Default;
 import static com.foundationdb.qp.operator.API.union_Ordered;
 
 import com.foundationdb.qp.row.Row;
+
 import org.junit.Test;
 
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.SetWrongTypeColumns;
 import com.foundationdb.server.test.ExpressionGenerators;
 import com.foundationdb.server.types.texpressions.Comparison;
@@ -57,14 +59,13 @@ public class UnionAllIT extends OperatorITBase {
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
+        schema = SchemaCache.globalSchema(ais());
         tRowType = schema.tableRowType(table(t));
         uRowType = schema.tableRowType(table(u));
         vRowType = schema.tableRowType(table(v));
         tGroupTable = group(t);
         uGroupTable = group(u);
         vGroupTable = group(v);
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         db = new Row[]{

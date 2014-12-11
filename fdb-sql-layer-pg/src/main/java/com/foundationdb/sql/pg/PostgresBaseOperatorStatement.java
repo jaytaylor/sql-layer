@@ -17,7 +17,6 @@
 
 package com.foundationdb.sql.pg;
 
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.UnknownDataTypeException;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TypesTranslator;
@@ -34,7 +33,6 @@ import java.util.List;
 
 public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
 {
-    private Schema schema;
     private PostgresOperatorCompiler compiler;
 
     protected PostgresBaseOperatorStatement(PostgresOperatorCompiler compiler) {
@@ -45,9 +43,8 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
     public PostgresStatement finishGenerating(PostgresServerSession server,
                                               String sql, StatementNode stmt,
                                               List<ParameterNode> params, int[] paramTypes) {
-        setSchema(compiler.getSchema());
         DMLStatementNode dmlStmt = (DMLStatementNode)stmt;
-        PostgresQueryContext queryContext = new PostgresQueryContext(server, this.schema);
+        PostgresQueryContext queryContext = new PostgresQueryContext(server);
         PlanContext planContext = new ServerPlanContext(compiler, queryContext);
         // TODO: This needs to make types with better default attributes or else
         // decimals and strings get truncated, collation doesn't match, etc.
@@ -82,14 +79,6 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
                                            parameterTypes);
         pbos.compiler = null;
         return pbos;
-    }
-
-    protected Schema getSchema() {
-        return schema;
-    }
-
-    protected void setSchema(Schema schema) {
-        this.schema = schema;
     }
 
     protected PostgresType[] getParameterTypes(BasePlannable.ParameterType[] planTypes,

@@ -354,7 +354,7 @@ class IndexScan_Default extends Operator
         {
             super(context, bindingsCursor);
             Table table = index.rootMostTable();
-            this.cursor = adapter(table).newIndexCursor(context, index, indexKeyRange, ordering, scanSelector, false);
+            this.cursor = adapter(table).newIndexCursor(context, indexType, indexKeyRange, ordering, scanSelector, false);
         }
 
         // Object state
@@ -398,7 +398,7 @@ class IndexScan_Default extends Operator
 
         @Override
         protected BindingsAwareCursor newCursor(QueryContext context, StoreAdapter adapter) {
-            return (BindingsAwareCursor)adapter.newIndexCursor(context, index, indexKeyRange, ordering, scanSelector, true);
+            return (BindingsAwareCursor)adapter.newIndexCursor(context, indexType, indexKeyRange, ordering, scanSelector, true);
         }
 
         @Override
