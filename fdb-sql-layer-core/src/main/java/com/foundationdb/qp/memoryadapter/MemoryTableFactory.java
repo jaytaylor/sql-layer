@@ -17,6 +17,7 @@
 
 package com.foundationdb.qp.memoryadapter;
 
+import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.service.session.Session;
 
@@ -25,7 +26,7 @@ import static com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 public interface MemoryTableFactory {
     public TableName getName();
     
-    public GroupScan getGroupScan(MemoryAdapter adapter);
+    public GroupScan getGroupScan(MemoryAdapter adapter, Group group);
 
     public long rowCount(Session session);
 }

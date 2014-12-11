@@ -21,7 +21,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 
-import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
@@ -79,10 +79,6 @@ implements Service, TypesRegistrySchemaTablesService {
         return typesRegistry;
     }
     
-    private final AkibanInformationSchema getAIS(Session session) {
-        return schemaManager.getAis(session);
-    }
-    
     private abstract class MemTableBase extends BasicFactoryBase {
 
         protected abstract void buildTable(NewTableBuilder builder);
@@ -111,14 +107,14 @@ implements Service, TypesRegistrySchemaTablesService {
         }
 
         @Override
-        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter) {
+        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
             Collection<Map<TClass, TCast>> castsBySource = getTypeRegistry().getCastsResolver().castsBySource();
             Collection<TCast> castsCollections = new ArrayList<>(castsBySource.size());
             for (Map<?, TCast> castMap : castsBySource) {
                 castsCollections.addAll(castMap.values());
             }
             
-            return new SimpleMemoryGroupScan<TCast>(getAIS(adapter.getSession()), getName(), castsCollections.iterator()) {
+            return new SimpleMemoryGroupScan<TCast>(group.getAIS(), getName(), castsCollections.iterator()) {
                 @Override
                 protected Object[] createRow(TCast data, int hiddenPk) {
                     return new Object[] {
@@ -160,11 +156,11 @@ implements Service, TypesRegistrySchemaTablesService {
         }
 
         @Override
-        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter) {
+        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
             Iterator<? extends TValidatedOverload> allOverloads = Iterators.concat(
                     getTypeRegistry().getScalarsResolver().getRegistry().iterator(),
                     getTypeRegistry().getAggregatesResolver().getRegistry().iterator());
-            return new SimpleMemoryGroupScan<TValidatedOverload>(getAIS(adapter.getSession()), getName(), allOverloads) {
+            return new SimpleMemoryGroupScan<TValidatedOverload>(group.getAIS(), getName(), allOverloads) {
                 @Override
                 protected Object[] createRow(TValidatedOverload data, int hiddenPk) {
                     return new Object[] {

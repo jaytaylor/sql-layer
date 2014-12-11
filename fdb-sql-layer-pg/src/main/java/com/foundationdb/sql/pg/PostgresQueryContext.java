@@ -17,7 +17,6 @@
 
 package com.foundationdb.sql.pg;
 
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.sql.server.ServerQueryContext;
 
 import com.foundationdb.qp.operator.CursorBase;
@@ -26,10 +25,6 @@ import com.foundationdb.qp.operator.QueryBindings;
 public class PostgresQueryContext extends ServerQueryContext<PostgresServerSession>
 {
     public PostgresQueryContext(PostgresServerSession server) {
-        super(server);
-    }
-
-    public PostgresQueryContext(PostgresServerSession server, Schema schema) {
         super(server);
     }
 

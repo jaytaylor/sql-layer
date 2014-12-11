@@ -19,6 +19,7 @@ package com.foundationdb.server.store;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Columnar;
+import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
@@ -1327,8 +1328,8 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         }
 
         @Override
-        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan(getRowType(getSessionAIS(adapter.getSession())));
+        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+            return new Scan(getRowType(group.getAIS()));
         }
 
         @Override
