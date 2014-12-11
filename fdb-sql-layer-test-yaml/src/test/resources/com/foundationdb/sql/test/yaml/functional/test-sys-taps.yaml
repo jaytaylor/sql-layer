@@ -1,5 +1,3 @@
-- Properties: fts 
-- suppressed: true
 ---
 - Statement: "call sys.taps_set_enabled('sql: .*', 'true')"
 ---

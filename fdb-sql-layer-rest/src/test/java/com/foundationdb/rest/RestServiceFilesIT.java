@@ -192,7 +192,6 @@ public class RestServiceFilesIT extends ITBase {
         }
         return result;
     }
-
     
     private static String buildJsonBody(String key, String value) throws IOException {
         StringWriter stringWriter = new StringWriter();
