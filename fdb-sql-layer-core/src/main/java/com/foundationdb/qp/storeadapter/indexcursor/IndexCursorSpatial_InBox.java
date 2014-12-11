@@ -51,6 +51,8 @@ import com.geophile.z.SpatialObject;
 import com.geophile.z.index.RecordWithSpatialObject;
 import com.geophile.z.index.sortedarray.SortedArray;
 import com.geophile.z.space.SpaceImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -119,8 +121,11 @@ class IndexCursorSpatial_InBox extends IndexCursor
         final SpatialObject spatialObject = spatialObject();
         // Set up spatial join and iterator over spatial join output
         SpatialJoin spatialJoin =
-            SpatialJoin.newSpatialJoin(SPATIAL_JOIN_DUPLICATION, null, null, null /* SPATIAL_JOIN_OBSERVER */);
-        Iterator<Pair<RecordWithSpatialObject, IndexRow>> spatialJoinIterator = null;
+            SpatialJoin.newSpatialJoin(SPATIAL_JOIN_DUPLICATION,
+                                       null,
+                                       null,
+                                       LOG.isDebugEnabled() ? SPATIAL_JOIN_OBSERVER : null);
+        Iterator<Pair<RecordWithSpatialObject, IndexRow>> spatialJoinIterator;
         try {
             // Set up spatial index over the index
             GeophileIndex dataIndex = dataIndex(context, openEarly, spatialObject);
@@ -132,7 +137,9 @@ class IndexCursorSpatial_InBox extends IndexCursor
             record.spatialObject(spatialObject);
             querySpatialIndex.add(spatialObject, record, MAX_Z);
             spatialJoinIterator = spatialJoin.iterator(querySpatialIndex, dataSpatialIndex);
-            // dumpQueryIndex(queryIndex);
+            if (LOG.isDebugEnabled()) {
+                logQueryIndex(queryIndex);
+            }
         } catch (IOException | InterruptedException e) {
             // These exceptions are declared by Geophile, but Geophile sits on top of FDB which should be
             // doing the right thing.
@@ -253,17 +260,17 @@ class IndexCursorSpatial_InBox extends IndexCursor
         return spatialObject;
     }
 
-    private void dumpQueryIndex(SortedArray<RecordWithSpatialObject> queryIndex)
+    private void logQueryIndex(SortedArray<RecordWithSpatialObject> queryIndex)
         throws IOException, InterruptedException
     {
-        System.out.println("Query index:");
+        LOG.debug("Query index:");
         Cursor<RecordWithSpatialObject> queryCursor = queryIndex.cursor();
         RecordWithSpatialObject zMinRecord = queryIndex.newRecord();
         zMinRecord.z(SpaceImpl.Z_MIN);
         queryCursor.goTo(zMinRecord);
         RecordWithSpatialObject queryRecord;
         while ((queryRecord = queryCursor.next()) != null) {
-            System.out.format("    %s\n", SpaceImpl.formatZ(queryRecord.z()));
+            LOG.debug("    {}", SpaceImpl.formatZ(queryRecord.z()));
         }
     }
 
@@ -276,18 +283,23 @@ class IndexCursorSpatial_InBox extends IndexCursor
         {
             @Override public void randomAccess(Cursor cursor, long z)
             {
-                System.out.format("%s\n", SpaceImpl.formatZ(z));
+                LOG.debug("Random access using {}: {}", cursor, SpaceImpl.formatZ(z));
             }
 
             @Override
             public void sequentialAccess(Cursor cursor, long zRandomAccess, Record record)
             {
-                System.out.format("    %s -> %s: %s\n",
-                                  SpaceImpl.formatZ(zRandomAccess),
-                                  record == null ? SpaceImpl.Z_NULL : SpaceImpl.formatZ(record.z()),
-                                  record);
+                LOG.debug("    Sequential access using {} {} -> {}: {}",
+                          cursor,
+                          SpaceImpl.formatZ(zRandomAccess),
+                          record == null ? SpaceImpl.Z_NULL : SpaceImpl.formatZ(record.z()),
+                          record);
             }
         };
+
+    // Class state
+
+    private static final Logger LOG = LoggerFactory.getLogger(IndexCursorSpatial_InBox.class);
 
     // Object state
 
