@@ -60,19 +60,13 @@ public class FDBGroupCursor extends RowCursorImpl implements GroupCursor {
     public void open() {
         super.open();
         if (hKey == null) {
-            if (transactionOptions == FDBScanTransactionOptions.NORMAL) {
-                groupScan = new FullScan();
-            }
-            else {
-                groupScan = new CommittingFullScan();
-            }
+            groupScan = new FullScan();
+        }
+        else if (hKeyDeep) {
+            groupScan = new HKeyAndDescendantScan(hKey);
         }
         else {
-            if (hKeyDeep) {
-                groupScan = new HKeyAndDescendantScan(hKey);
-            } else {
-                groupScan = new HKeyWithoutDescendantScan(hKey);
-            }
+            groupScan = new HKeyWithoutDescendantScan(hKey);
         }
     }
 
@@ -109,14 +103,14 @@ public class FDBGroupCursor extends RowCursorImpl implements GroupCursor {
 
     private class FullScan extends GroupScan {
         public FullScan() {
-            adapter.getUnderlyingStore().groupIterator(adapter.getSession(), storeData);
+            adapter.getUnderlyingStore().groupIterator(adapter.getSession(), storeData, transactionOptions);
         }
     }
 
     private class HKeyAndDescendantScan extends GroupScan {
         public HKeyAndDescendantScan(HKey hKey) {
             hKey.copyTo(storeData.persistitKey.clear());
-            adapter.getUnderlyingStore().groupKeyAndDescendantsIterator(adapter.getSession(), storeData, false);
+            adapter.getUnderlyingStore().groupKeyAndDescendantsIterator(adapter.getSession(), storeData, transactionOptions);
         }
     }
 
@@ -138,13 +132,7 @@ public class FDBGroupCursor extends RowCursorImpl implements GroupCursor {
         public HKeyWithoutDescendantScan(HKey hKey)
         {
             hKey.copyTo(storeData.persistitKey.clear());
-            adapter.getUnderlyingStore().groupKeyIterator(adapter.getSession(), storeData);
-        }
-    }
-
-    private class CommittingFullScan extends GroupScan {
-        public CommittingFullScan() {
-            adapter.getUnderlyingStore().groupIterator(adapter.getSession(), storeData, transactionOptions);
+            adapter.getUnderlyingStore().groupKeyIterator(adapter.getSession(), storeData, transactionOptions);
         }
     }
 

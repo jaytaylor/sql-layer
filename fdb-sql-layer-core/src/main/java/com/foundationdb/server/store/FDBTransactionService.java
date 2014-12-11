@@ -23,6 +23,7 @@ import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.FDBCommitUnknownResultException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.InvalidParameterValueException;
+import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.metrics.LongMetric;
 import com.foundationdb.server.service.metrics.MetricsService;
@@ -152,6 +153,22 @@ public class FDBTransactionService implements TransactionService {
 
         public Future<byte[]> getSnapshotFuture(byte[] key) {
             return transaction.snapshot().get(key);
+        }
+
+        public Future<byte[]> getFuture(byte[] key, FDBScanTransactionOptions transactionOptions) {
+            if (transactionOptions.shouldCommitAfterMillis(getStartTime())) {
+                commitAndReset();
+                try {
+                    transactionOptions.maybeSleepAfterCommit();
+                }
+                catch (InterruptedException ex) {
+                    throw new QueryCanceledException(getSession());
+                }
+            }
+            if (transactionOptions.isSnapshot())
+                return getSnapshotFuture(key);
+            else
+                return getFuture(key);
         }
 
         public byte[] getValue(byte[] key) {

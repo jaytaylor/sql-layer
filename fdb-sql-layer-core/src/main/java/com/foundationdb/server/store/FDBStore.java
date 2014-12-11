@@ -636,11 +636,11 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
 
     /** Iterate over just <code>storeData.persistitKey</code>, if present. */
-    public void groupKeyIterator(Session session, FDBStoreData storeData) {
+    public void groupKeyIterator(Session session, FDBStoreData storeData, FDBScanTransactionOptions transactionOptions) {
         // NOTE: Caller checks whether key returned matches.
         groupIterator(session, storeData, 
                       GroupIteratorBoundary.KEY, GroupIteratorBoundary.NEXT_KEY,
-                      1, FDBScanTransactionOptions.NORMAL);
+                      1, transactionOptions);
     }
 
     /** Iterate over <code>storeData.persistitKey</code>'s descendants. */
@@ -651,10 +651,10 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
 
     /** Iterate over <code>storeData.persistitKey</code>'s descendants. */
-    public void groupKeyAndDescendantsIterator(Session session, FDBStoreData storeData, boolean snapshot) {
+    public void groupKeyAndDescendantsIterator(Session session, FDBStoreData storeData, FDBScanTransactionOptions transactionOptions) {
         groupIterator(session, storeData, 
                       GroupIteratorBoundary.KEY, GroupIteratorBoundary.LAST_DESCENDANT,
-                      Transaction.ROW_LIMIT_UNLIMITED, snapshot ? FDBScanTransactionOptions.SNAPSHOT : FDBScanTransactionOptions.NORMAL);
+                      Transaction.ROW_LIMIT_UNLIMITED, transactionOptions);
     }
 
     public void groupIterator(Session session, FDBStoreData storeData, FDBScanTransactionOptions transactionOptions) {

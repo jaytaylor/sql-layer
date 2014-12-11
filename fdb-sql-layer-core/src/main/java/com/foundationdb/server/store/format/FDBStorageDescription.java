@@ -211,11 +211,7 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
             (right == FDBStore.GroupIteratorBoundary.NEXT_KEY) &&
             (limit == 1)) {
             byte[] key = packKey(storeData);
-            Future<byte[]> future;
-            if (transactionOptions.isSnapshot())
-                future = txnState.getSnapshotFuture(key);
-            else
-                future = txnState.getFuture(key);
+            Future<byte[]> future = txnState.getFuture(key, transactionOptions);
             storeData.iterator = new FDBStoreDataSingleKeyValueIterator(storeData, key,
                                                                         future);
             return;
