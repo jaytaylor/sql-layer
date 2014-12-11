@@ -125,6 +125,8 @@ public abstract class AbstractRow implements Row
         return builder.toString();
     }
 
+    // For use by this class
+
     private ValueSource checkValueType(int i, ValueSource nextValue) {
         if (DEBUG_ROWTYPE) {
             TInstance nextValueType = nextValue.getType();
@@ -136,6 +138,4 @@ public abstract class AbstractRow implements Row
         }
         return nextValue;
     }
-
-    // Object state
 }

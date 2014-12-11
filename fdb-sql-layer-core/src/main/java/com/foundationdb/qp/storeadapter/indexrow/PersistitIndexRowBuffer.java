@@ -335,6 +335,11 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         key.copyTo(pKey);
     }
 
+    protected int zPosition()
+    {
+        return zPosition;
+    }
+
     protected void constructHKeyFromIndexKey(Key hKey, IndexToHKey indexToHKey)
     {
         hKey.clear();
@@ -401,9 +406,11 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         if (index.isSpatial()) {
             this.nIndexFields = index.getAllColumns().size() - index.spatialColumns() + 1;
             this.pKeyFields = this.nIndexFields;
+            this.zPosition = index.firstSpatialArgument();
         } else {
             this.nIndexFields = index.getAllColumns().size();
             this.pKeyFields = index.getAllColumns().size();
+            this.zPosition = -1;
         }
         if (writable) {
             if (this.pKeyTarget == null) {
@@ -479,6 +486,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
     // Not currently instantiated, left in-case needed again
     private SortKeyTarget pValueTarget;
     private Key pValue;
+    private int zPosition;
 
     private static final boolean ALLOCATE_VALUE_KEY = false;
 

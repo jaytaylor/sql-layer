@@ -77,7 +77,7 @@ public class ValuesHKeyTest {
 
         ValuesHKey target = createHKey("customer");
         
-        key.copyTo(target);
+        key.copyTo((HKey) target);
         
         assertEquals(target.valueAt(0).getInt32(), 42);
     }
@@ -91,7 +91,7 @@ public class ValuesHKeyTest {
         key.valueAt(1).putInt32(51);
         
         ValuesHKey target = createHKey("item");
-        key.copyTo(target);
+        key.copyTo((HKey) target);
         
         assertEquals (target.valueAt(0).getInt32(), 42);
         assertEquals (target.valueAt(1).getInt32(), 51);
@@ -108,7 +108,7 @@ public class ValuesHKeyTest {
         key.useSegments(2);
         
         ValuesHKey target = createHKey("item");
-        key.copyTo(target);
+        key.copyTo((HKey) target);
         
         assertEquals (target.valueAt(0).getInt32(), 42);
         assertEquals (target.valueAt(1).getInt32(), 51);
@@ -125,7 +125,7 @@ public class ValuesHKeyTest {
         key.useSegments(1);
         
         ValuesHKey target = createHKey("item");
-        key.copyTo(target);
+        key.copyTo((HKey) target);
         
         assertEquals (target.valueAt(0).getInt32(), 42);
         assertTrue (!target.valueAt(1).hasAnyValue());
@@ -138,7 +138,7 @@ public class ValuesHKeyTest {
         key.valueAt(0).putInt32(42);
         
         ValuesHKey target = createHKey("item");
-        key.copyTo(target);
+        key.copyTo((HKey) target);
         assertEquals (target.valueAt(0).getInt32(), 42);
         assertTrue (!target.valueAt(1).hasAnyValue());
         assertEquals(target.segments(), 1);
@@ -149,7 +149,7 @@ public class ValuesHKeyTest {
         ValuesHKey key = createHKey("customer");
         key.valueAt(0).putInt32(42);
         ValuesHKey target = createHKey("order");
-        key.copyTo(target);
+        key.copyTo((HKey) target);
         assertEquals(target.valueAt(0).getInt32(),42);
         assertEquals(target.segments(), 1);
         
@@ -319,7 +319,7 @@ public class ValuesHKeyTest {
         ValuesHKey key = createHKey("customer");
         key.valueAt(0).putInt32(42);
         ValuesHKey target = createHKey("order");
-        key.copyTo(target);
+        key.copyTo((HKey) target);
         assertEquals(target.valueAt(0).getInt32(),42);
         assertEquals(target.segments(), 1);
         
@@ -336,7 +336,7 @@ public class ValuesHKeyTest {
         key.valueAt(0).putInt32(42);
         
         ValuesHKey target = createHKey("item");
-        key.copyTo(target);
+        key.copyTo((HKey) target);
         
         assertEquals (target.valueAt(0).getInt32(), 42);
         assertTrue (!target.valueAt(1).hasAnyValue());
