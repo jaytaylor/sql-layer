@@ -1,14 +1,14 @@
-## Test the IFNULL functions
-## Related bug 943357, 943425
 ---
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types(bigint_field, double_field, varchar_field, date_field, time_field) VALUES (2, 2.5, '3', '2012-02-26', '10:25:24');
+
 ## Test with literals
 ---
 - Statement: SELECT IFNULL(null, 1) from all_types;
 - output: [[1]]
-#--- # BUG 943357: NPE thrown when all args are null
+# Picking functions require at least 1 known type
+#---
 #- Statement: SELECT IFNULL(null, null) FROM all_types;
 #- output: [[null]]
 ---
@@ -20,23 +20,25 @@
 - output_types: [DECIMAL] 
 ---
 - Statement: SELECT IFNULL ('', 3) FROM all_types;
-- output: [['']]
+- output: [[0.0]]
 ---
 - Statement: SELECT IFNULL ('abc', '') FROM all_types;
 - output: [['abc']]
 ---
 - Statement: SELECT IFNULL (DATE('1991-12-12'), 123.4) FROM all_types;
-- output: [['1991-12-12']]
-- output_types: [VARCHAR]
+- output: [[19911212.0]]
+- output_types: [DOUBLE]
+
 ## Test with params
 ---
 - Statement: SELECT IFNULL (?, 1) FROM all_types;
 - params: [['2002-12-12']]
-- output: [['2002-12-12']]
+- output: [[2002]]
 ---
 - Statement: SELECT IFNULL (TIME('12:12:10'), ?) FROM all_types;
 - params: [['b']]
 - output: [['12:12:10']]
+
 ## Test with fields
 ---
 - Statement: SELECT IFNULL (bigint_field, double_field) FROM all_types;
@@ -44,17 +46,18 @@
 - output: [[2.0]]
 ---
 - Statement: SELECT IFNULL (time_field, double_field) FROM all_types;
-- output: [['10:25:24']]
+- output: [[102524.0]]
 ---
 - Statement: SELECT IFNULL (10, bigint_field) FROM all_types;
 - output_types: [BIGINT]
 ---
 - Statement: SELECT IFNULL (bigint_field, varchar_field) FROM all_types;
-- output: [['2']]
+- output: [[2.0]]
 ---
 - Statement: SELECT IFNULL (date_field, bigint_field) FROM all_types;
-- output_types: [VARCHAR]
-- output: [['2012-02-26']]
+- output_types: [DOUBLE]
+- output: [[20120226.0]]
+
 ## Test wrong arity:
 --- # test empty list
 - Statement: SELECT IFNULL () FROM all_types;
@@ -62,13 +65,14 @@
 --- # test extraneous arg
 - Statement: SELECT IFNULL (1, 2, 3) FROM all_types;
 - error: [4250C]
+
 ## Test output types
 ---
 - Statement: SELECT IFNULL(bigint_field, varchar_field) from all_types
-- output_types: [VARCHAR]
+- output_types: [DOUBLE]
 ---
 - Statement: SELECT IFNULL(bigint_field, date_field) from all_types
-- output_types: [VARCHAR]
+- output_types: [DOUBLE]
 ---
 - Statement: SELECT IFNULL(bigint_field, integer_field) from all_types
 - output_types: [BIGINT]
@@ -83,5 +87,4 @@
 - output_types: [DOUBLE]
 ---
 - Statement: SELECT IFNULL(double_field, varchar_field) from all_types
-- output_types: [VARCHAR]
-...
+- output_types: [DOUBLE]

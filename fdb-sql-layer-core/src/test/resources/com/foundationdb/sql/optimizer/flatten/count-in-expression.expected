@@ -1,0 +1,1 @@
+SELECT COUNT(test.child.name) AS "_SQL_COL_1" FROM test.child, test.parent WHERE (test.parent.name = 'foo') AND (((test.child.pid + 5) = test.parent.id) AND TRUE)

@@ -54,11 +54,19 @@ public abstract class SecurityServiceITBase extends ITBase
         int t2 = createTable("user2", "utable", "id int primary key not null");        
         writeRow(t1, 1L);
         writeRow(t2, 2L);
+
+        createTable("user1", "utable2", "id int primary key not null");
+        createView("user1", "v1", "SELECT * FROM utable2");
+        createIndex("user1", "utable", "ind", "id");
+        createSequence("user1", "s1", "START WITH 1 INCREMENT BY 1 NO CYCLE");
+        createFromDDL("user1", "CREATE PROCEDURE user1.proc1(IN x INT) LANGUAGE javascript PARAMETER STYLE variables AS '[1]'");
         
         SecurityService securityService = securityService();
         securityService.addRole("rest-user");
         securityService.addRole("admin");
+        securityService.addRole("standard");
         securityService.addUser("user1", "password", Arrays.asList("rest-user"));
+        securityService.addUser("user2", "password", Arrays.asList("standard"));
         securityService.addUser("akiban", "topsecret", Arrays.asList("rest-user", "admin"));
     }
 

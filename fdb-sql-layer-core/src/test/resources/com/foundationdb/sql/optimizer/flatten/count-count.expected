@@ -1,0 +1,1 @@
+SELECT (COUNT(*) + 5) AS "_SQL_COL_1" FROM (SELECT COUNT(test.t1.c1) AS counted FROM test.t1) AS anon1(counted)
