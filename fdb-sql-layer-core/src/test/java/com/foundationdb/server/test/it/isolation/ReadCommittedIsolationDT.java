@@ -104,6 +104,13 @@ public class ReadCommittedIsolationDT extends IsolationITBase
     }
 
     @Test
+    @Isolation(JDBCConnection.TRANSACTION_SERIALIZABLE_SNAPSHOT)
+    @SQLExceptionExpected(errorCode = ErrorCode.FDB_PAST_VERSION)
+    public void slowScanSnapshotAlsoPastVersion() throws SQLException {
+        slowScan();
+    }
+
+    @Test
     @Isolation(Connection.TRANSACTION_SERIALIZABLE)
     @SQLExceptionExpected(errorCode = ErrorCode.FDB_PAST_VERSION)
     public void manyScansPastVersion() throws SQLException {
