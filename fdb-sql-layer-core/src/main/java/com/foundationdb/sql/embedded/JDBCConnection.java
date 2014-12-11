@@ -262,19 +262,22 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     // Slightly different contract than ServerSessionBase, since a transaction
     // remains open when a until its read result set is closed.
-    protected void beforeExecuteStatement(ExecutableStatement stmt) {
+    protected void beforeExecuteStatement(ExecutableStatement stmt) throws SQLException {
         sessionMonitor.enterStage(MonitorStage.EXECUTE);
-        // If there is already a transaction and not auto-commit, transaction mode needs to allow writes if appropriate
-        if (transaction != null && commitMode == CommitMode.MANUAL)
-            transaction.setReadOnly(transactionDefaultReadOnly);
-        boolean localTransaction = super.beforeExecute(stmt);
+        boolean localTransaction;
+        try {
+            localTransaction = super.beforeExecute(stmt);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
         if (localTransaction) {
             logger.debug("Auto BEGIN TRANSACTION");
             registerSessionMonitor();
         }
     }
 
-    protected void afterExecuteStatement(ExecutableStatement stmt, boolean success) {
+    protected void afterExecuteStatement(ExecutableStatement stmt, boolean success) throws SQLException {
         sessionMonitor.leaveStage();
         boolean localTransaction = false;
         if (checkAutoCommit()) {
@@ -286,7 +289,12 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
             deregisterSessionMonitor();
             logger.debug(success ? "Auto COMMIT TRANSACTION" : "Auto ROLLBACK TRANSACTION");
         }
-        super.afterExecute(stmt, localTransaction, success, true);
+        try {
+            super.afterExecute(stmt, localTransaction, success, true);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     protected void openingResultSet(JDBCResultSet resultSet) {
@@ -445,6 +453,8 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     @Override
     public void setReadOnly(boolean readOnly) throws SQLException {
         this.transactionDefaultReadOnly = readOnly;
+        if (transaction != null)
+            transaction.setReadOnly(readOnly);
     }
 
     @Override

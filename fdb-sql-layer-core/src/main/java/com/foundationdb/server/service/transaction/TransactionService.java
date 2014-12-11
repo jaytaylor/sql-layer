@@ -157,6 +157,6 @@ public interface TransactionService extends Service {
     IsolationLevel setIsolationLevel(Session session, IsolationLevel level);
 
     /** Does this isolation level only work with read-only transactions? */
-    boolean isolationLevelRequiresReadOnly(Session session);
+    boolean isolationLevelRequiresReadOnly(Session session, boolean commitNow);
 
 }

@@ -336,7 +336,7 @@ public class PersistitTransactionService implements TransactionService {
     }
 
     @Override
-    public boolean isolationLevelRequiresReadOnly(Session session) {
+    public boolean isolationLevelRequiresReadOnly(Session session, boolean commitNow) {
         return false;
     }
 

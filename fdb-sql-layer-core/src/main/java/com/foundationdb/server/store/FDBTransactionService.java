@@ -727,9 +727,13 @@ public class FDBTransactionService implements TransactionService {
     }
 
     @Override
-    public boolean isolationLevelRequiresReadOnly(Session session) {
+    public boolean isolationLevelRequiresReadOnly(Session session, boolean commitNow) {
         TransactionState txn = getTransaction(session);
-        return txn.getScanOptions().isCommitting();
+        boolean readOnly = txn.getScanOptions().isCommitting();
+        if (readOnly && commitNow) {
+            txn.commitAndReset();
+        }
+        return readOnly;
     }
 
     //

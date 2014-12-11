@@ -18,6 +18,7 @@
 package com.foundationdb.server.test.it.isolation;
 
 import com.foundationdb.sql.embedded.JDBCConnection;
+import com.foundationdb.server.error.ErrorCode;
 
 import java.sql.*;
 
@@ -25,6 +26,7 @@ import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -125,6 +127,50 @@ public class ReadCommittedIsolationIT extends IsolationITBase
                 assertEquals("id", i, rs.getInt(1));
                 assertEquals("n", i, rs.getInt(2));
             }
+        }
+    }
+
+    @Test
+    @Isolation(Connection.TRANSACTION_SERIALIZABLE)
+    public void updateThenReadOnly() throws SQLException {
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement()) {
+            assertEquals(1, stmt.executeUpdate("UPDATE t1 SET n = n + 1 WHERE id = 1"));
+
+            conn.setTransactionIsolation(JDBCConnection.TRANSACTION_READ_COMMITTED_NO_SNAPSHOT);
+            assumeTrue(conn.getTransactionIsolation() == JDBCConnection.TRANSACTION_READ_COMMITTED_NO_SNAPSHOT);
+
+            String sqlState = null;
+            try {
+                assertEquals(1, stmt.executeUpdate("UPDATE t1 SET n = n + 1 WHERE id = 2"));
+            }
+            catch (SQLException ex) {
+                sqlState = ex.getSQLState();
+            }
+            assertEquals("Expected read only", ErrorCode.TRANSACTION_READ_ONLY.getFormattedValue(), sqlState);
+
+            // See updated results in new read-only transaction.
+            try (ResultSet rs = stmt.executeQuery("SELECT id, n FROM t1 WHERE id IN (1,2) ORDER BY 1")) {
+                assertTrue(rs.next());
+                assertEquals(1, rs.getInt(1));
+                assertEquals(2, rs.getInt(2));
+                assertTrue(rs.next());
+                assertEquals(2, rs.getInt(1));
+                assertEquals(2, rs.getInt(2));
+            }
+
+            conn.rollback();
+        }
+        // Results committed before rollback.
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT id, n FROM t1 WHERE id IN (1,2) ORDER BY 1")) {
+            assertTrue(rs.next());
+            assertEquals(1, rs.getInt(1));
+            assertEquals(2, rs.getInt(2));
+            assertTrue(rs.next());
+            assertEquals(2, rs.getInt(1));
+            assertEquals(2, rs.getInt(2));
         }
     }
 

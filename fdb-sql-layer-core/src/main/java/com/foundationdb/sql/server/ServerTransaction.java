@@ -59,7 +59,7 @@ public class ServerTransaction
         this.txnService = server.getTransactionService();
         txnService.beginTransaction(session);
         this.isolationLevel = txnService.setIsolationLevel(session, isolationLevel);
-        this.readOnly = readOnly || txnService.isolationLevelRequiresReadOnly(session);
+        this.readOnly = readOnly || txnService.isolationLevelRequiresReadOnly(session, false);
         this.periodicallyCommit = periodicallyCommit;
     }
 
@@ -78,8 +78,11 @@ public class ServerTransaction
     public IsolationLevel setIsolationLevel(IsolationLevel level) {
         level = txnService.setIsolationLevel(session, level);
         this.isolationLevel = level;
-        if (txnService.isolationLevelRequiresReadOnly(session))
+        // Selecting snapshot after update commits right away, like DDL.
+        if (txnService.isolationLevelRequiresReadOnly(session, anyWrites)) {
             this.readOnly = true;
+            this.anyWrites = false;
+        }
         return level;
     }
 
@@ -100,7 +103,6 @@ public class ServerTransaction
         case WRITE:
             if (readOnly)
                 throw new TransactionReadOnlyException();
-            anyWrites = true;
             beforeUpdate();
         break;
         case IMPLICIT_COMMIT:
@@ -109,6 +111,7 @@ public class ServerTransaction
     }
 
     public void beforeUpdate() {
+        anyWrites = true;
     }
 
     public void afterUpdate() {
