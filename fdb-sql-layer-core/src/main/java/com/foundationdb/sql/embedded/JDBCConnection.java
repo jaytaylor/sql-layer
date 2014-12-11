@@ -274,6 +274,10 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         if (localTransaction) {
             logger.debug("Auto BEGIN TRANSACTION");
             registerSessionMonitor();
+            // If there is a new transaction and not auto-commit, transaction mode needs
+            // to allow writes based on connection setting, not the particular statement.
+            if (commitMode == CommitMode.MANUAL)
+                transaction.setReadOnly(transactionDefaultReadOnly);
         }
     }
 
