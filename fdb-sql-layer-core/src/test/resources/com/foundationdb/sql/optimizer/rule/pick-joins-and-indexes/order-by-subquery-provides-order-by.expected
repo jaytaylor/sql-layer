@@ -1,0 +1,16 @@
+SelectQuery@86d374a
+  ResultSet@3a48df98[c1, c2, c3, id]
+    Project@64f920d[t1.c1, t1.c2, t1.c3, anon1[0]]
+      Sort@68a28f49[anon1[0]]
+        Select@51fd96b7[]
+          JoinNode@1ba344d7(INNER/NESTED_LOOPS[t1.c1 == anon1[0]])
+            TableGroupJoinTree@434c121e(TableGroup@7bfc8d6d(t1), t1 - GroupScan@1a92eb3(Group(test.t1), rows = 1, cost = 0.00000))
+              TableSource@2ffcd819(t1 - TableGroup@7bfc8d6d(t1))
+            SubquerySource@cf69ec(anon1)
+              Subquery@df322a7
+                ResultSet@55680918[id]
+                  Limit@212d3276(LIMIT 10)
+                    Project@3133055e[a.id]
+                      Select@1e4bf1fe[]
+                        TableGroupJoinTree@bfc6a3c(TableGroup@a38ea9f(a), a - SingleIndexScan@1eb371f7(Index(test.a.PRIMARY[IndexColumn(id)]), covering/SORTED, rows = 2, cost = 8.17960))
+                          TableSource@ca5778e(a - TableGroup@a38ea9f(a))
