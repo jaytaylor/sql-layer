@@ -131,11 +131,8 @@ public class OuterJoinPromoter extends BaseRule
             for (ExpressionNode inside : stack) {
                 if (inside instanceof FunctionExpression) {
                     String name = ((FunctionExpression)inside).getFunction();
-                    if (name.equals("COALESCE"))
+                    if (name.equals("COALESCE") || name.equals("if"))
                         return true;
-                }
-                else if (inside instanceof IfElseExpression) {
-                    return true;
                 }
             }
             return false;

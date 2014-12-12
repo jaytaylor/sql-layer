@@ -1743,10 +1743,13 @@ public class ASTStatementLoader extends BaseRule
             }
             else if (valueNode instanceof ConditionalNode) {
                 ConditionalNode cond = (ConditionalNode)valueNode;
-                return new IfElseExpression(toConditions(cond.getTestCondition(), projects),
-                                            toExpression(cond.getThenNode(), projects),
-                                            toExpression(cond.getElseNode(), projects),
-                        sqlType, cond, type);
+                return new FunctionExpression("if",
+                                              Arrays.asList(toExpression(cond.getTestCondition(), projects),
+                                                            toExpression(cond.getThenNode(), projects),
+                                                            toExpression(cond.getElseNode(), projects)),
+                                              sqlType,
+                                              valueNode,
+                                              type);
             }
             else if (valueNode instanceof SimpleCaseNode) {
                 SimpleCaseNode caseNode = (SimpleCaseNode)valueNode;
@@ -1758,29 +1761,19 @@ public class ASTStatementLoader extends BaseRule
                 else
                     expr = ConstantExpression.typedNull(sqlType, valueNode, type);
                 for (int i = ncases - 1; i >= 0; i--) {
-                    ConditionList conds = new ConditionList(1);
-                    conds.add(new ComparisonCondition(Comparison.EQ, operand, toExpression(caseNode.getCaseOperand(i), projects), sqlType, caseNode, type));
-                    expr = new IfElseExpression(conds,
-                                                toExpression(caseNode.getResultValue(i), projects),
-                                                expr, sqlType, caseNode, type);
-                }
-                return expr;
-            }
-            else if (valueNode instanceof SimpleCaseNode) {
-                SimpleCaseNode caseNode = (SimpleCaseNode)valueNode;
-                ExpressionNode operand = toExpression(caseNode.getOperand(), projects);
-                int ncases = caseNode.getNumberOfCases();
-                ExpressionNode expr;
-                if (caseNode.getElseValue() != null)
-                    expr = toExpression(caseNode.getElseValue(), projects);
-                else
-                    expr = ConstantExpression.typedNull(sqlType, valueNode, type);
-                for (int i = ncases - 1; i >= 0; i--) {
-                    ConditionList conds = new ConditionList(1);
-                    conds.add(new ComparisonCondition(Comparison.EQ, operand, toExpression(caseNode.getCaseOperand(i), projects), sqlType, caseNode, type));
-                    expr = new IfElseExpression(conds,
-                                                toExpression(caseNode.getResultValue(i), projects),
-                                                expr, sqlType, caseNode, type);
+                    ComparisonCondition cond = new ComparisonCondition(Comparison.EQ,
+                                                                       operand,
+                                                                       toExpression(caseNode.getCaseOperand(i), projects),
+                                                                       sqlType,
+                                                                       caseNode,
+                                                                       type);
+                    expr = new FunctionExpression("if",
+                                                  Arrays.asList(cond,
+                                                                toExpression(caseNode.getResultValue(i), projects),
+                                                                expr),
+                                                  sqlType,
+                                                  caseNode,
+                                                  type);
                 }
                 return expr;
             }
