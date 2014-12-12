@@ -95,7 +95,10 @@ public class ChainedCursor extends OperatorCursor
     @Override
     public void close() {
         try {
-            input.close();
+            // Sort_General.Execution creates a SorterToCursorAdapter which closes the input once sorting is complete
+            if (!input.isClosed()) {
+                input.close();
+            }
         } finally {
             super.close();
         }
