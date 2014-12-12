@@ -55,6 +55,8 @@ public class ParameterFinder implements Visitor
     @Override
     public boolean skipChildren(Visitable node) {
         if (node instanceof SetOperatorNode) {
+            // visiting all children will result in duplicate ParameterNodes.
+            // instead, just visit the LeftResultSet and RightResult set, skipping the resultColumns list
             try {
                 ((SetOperatorNode)node).getLeftResultSet().accept(this);
                 ((SetOperatorNode)node).getRightResultSet().accept(this);
