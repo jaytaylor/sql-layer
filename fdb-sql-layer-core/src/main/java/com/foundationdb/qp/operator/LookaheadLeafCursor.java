@@ -149,8 +149,12 @@ public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends
             if (!bandc.bindings.isAncestor(bindings)) break;
             bandc = pendingBindings.remove();
             if (bandc.cursor != null) {
-                bandc.cursor.close();
-                cursorPool.add(bandc.cursor);
+                try {
+                    bandc.cursor.close();
+                    cursorPool.add(bandc.cursor);
+                } finally {
+                    bandc.cursor = null;
+                }
             }
         }
         bindingsCursor.cancelBindings(bindings);
@@ -190,14 +194,20 @@ public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends
 
     protected void resetActiveCursors() {
         if (currentCursor != null) {
-            currentCursor.close();
-            cursorPool.add(currentCursor);
-            currentCursor = null;
+            try {
+                currentCursor.close();
+                cursorPool.add(currentCursor);
+            } finally {
+                currentCursor = null;
+            }
         }
         if (pendingCursor != null) {
-            pendingCursor.close();
-            cursorPool.add(pendingCursor);
-            pendingCursor = null;
+            try {
+                pendingCursor.close();
+                cursorPool.add(pendingCursor);
+            } finally {
+                pendingCursor = null;
+            }
         }
     }
     
@@ -206,8 +216,12 @@ public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends
             BindingsAndCursor<C> bandc = pendingBindings.poll();
             if (bandc == null) break;
             if (bandc.cursor != null) {
-                bandc.cursor.close();
-                cursorPool.add(bandc.cursor);
+                try {
+                    bandc.cursor.close();
+                    cursorPool.add(bandc.cursor);
+                } finally {
+                    bandc.cursor = null;
+                }
             }
         }
     }
