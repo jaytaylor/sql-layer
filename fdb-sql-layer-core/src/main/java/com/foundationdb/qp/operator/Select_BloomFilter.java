@@ -408,9 +408,12 @@ class Select_BloomFilter extends Operator
                     }
                     assert (bindings.getDepth() == depth);
                     input.open();
-                    inputOpenBindings = bindings;
-                    row = input.next();
-                    input.close();
+                    try {
+                        inputOpenBindings = bindings;
+                        row = input.next();
+                    } finally {
+                        input.close();
+                    }
                     inputOpenBindings = null;
                     if (row != null) {
                         row = bindings.getRow(bindingPosition);
