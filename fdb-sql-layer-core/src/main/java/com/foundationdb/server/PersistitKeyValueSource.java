@@ -180,7 +180,7 @@ public class PersistitKeyValueSource implements ValueSource {
     private ValueSource decode() {
         if (needsDecoding) {
             key.indexTo(depth);
-            if (key.isNull()) {
+            if (key.getEncodedSize() == 0 || key.isNull()) {
                 output.putNull();
             }
             else
