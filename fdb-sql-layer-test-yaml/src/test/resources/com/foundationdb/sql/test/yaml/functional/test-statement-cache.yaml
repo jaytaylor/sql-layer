@@ -145,6 +145,8 @@
 - set: StatementCacheCapacity
 - params: ['0']
 ---
-# Return the setting to the server standard
+# Return settings to the server standard
+- Statement: SET SCHEMA test
+---
 - Statement: SET optimizerDummySetting TO DEFAULT
 ...
