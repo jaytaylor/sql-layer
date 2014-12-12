@@ -223,7 +223,11 @@ class Map_NestedLoops extends Operator
         public void closeBindings() {
             if (baseBindings != null) {
                 baseBindings = null;
-                input.close();
+                // if an exception is thrown in nextBindings, after close, but before nextBindings marks it as open
+                // the input could be in a closed state right now.
+                if (!input.isClosed()) {
+                    input.close();
+                }
             }
             input.closeBindings();
         }
