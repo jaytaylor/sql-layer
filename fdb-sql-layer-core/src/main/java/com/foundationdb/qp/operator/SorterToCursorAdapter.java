@@ -34,12 +34,8 @@ class SorterToCursorAdapter extends RowCursorImpl
     public void open()
     {
         super.open();
-        try {
-            sorter = adapter.createSorter(context, bindings, input, rowType, ordering, sortOption, loadTap);
-            cursor = sorter.sort();
-        } finally {
-            input.close();
-        }
+        sorter = adapter.createSorter(context, bindings, input, rowType, ordering, sortOption, loadTap);
+        cursor = sorter.sort();
         cursor.open();
         state = CursorLifecycle.CursorState.ACTIVE;
     }
@@ -72,6 +68,7 @@ class SorterToCursorAdapter extends RowCursorImpl
 
     /**
      * input must be open before calling open() on this cursor.
+     * SorterToCursorAdapter does not close input, but may exhaust it.
      */
     public SorterToCursorAdapter(StoreAdapter adapter,
                                  QueryContext context,
