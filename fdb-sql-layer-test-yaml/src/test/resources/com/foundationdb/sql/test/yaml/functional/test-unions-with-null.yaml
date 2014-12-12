@@ -88,13 +88,6 @@
 ---
 - Statement: SELECT NULL AS t1 UNION ALL SELECT NULL AS t1;
 - output: [[null], [null]]
-
-
-# BUG: Fails in FTS. Enable when fixed.
----
-- Properties: fts
-- suppressed: true
-
 ---
 # prepared statement
 - Statement: PREPARE s AS
