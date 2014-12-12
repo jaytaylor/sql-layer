@@ -171,7 +171,7 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
 
     private void deregisterProxy(Driver driver) throws SQLException {
         try {
-            Class<?> deregisterProxyDriverHelper = Class.forName("com.foundationdb.sql.JDBCProxy.DeregisterProxyDriverHelper", true, proxyDriver.getClass().getClassLoader());
+            Class<?> deregisterProxyDriverHelper = Class.forName("com.foundationdb.sql.jdbc.DeregisterProxyDriverHelper", true, proxyDriver.getClass().getClassLoader());
             Object dph = deregisterProxyDriverHelper.newInstance();
             Method method = deregisterProxyDriverHelper.getMethod("deregisterProxy", Driver.class);
             method.invoke(dph, proxyDriver);
@@ -183,13 +183,13 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
             throw new AkibanInternalException("Cannot deregister proxy driver", ite);
         }
         catch (ClassNotFoundException cnfe) {
-            throw new AkibanInternalException("Cannot find DeregisterProxyHelper class", cnfe);
+            throw new AkibanInternalException("Cannot find DeregisterProxyDriverHelper class", cnfe);
         }
         catch (IllegalAccessException iae) {
-            throw new AkibanInternalException("Cannot access DeregisterProxyHelper", iae);
+            throw new AkibanInternalException("Cannot access DeregisterProxyDriverHelper", iae);
         }
         catch (InstantiationException ie) {
-            throw new AkibanInternalException("Cannot instantiate DeregisterProxyHelper", ie);
+            throw new AkibanInternalException("Cannot instantiate DeregisterProxyDriverHelper", ie);
         }
     }
 }
