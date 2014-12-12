@@ -86,5 +86,21 @@ public class AkParsers
             }
         }
     };
-    
+
+    public static final TParser BLOB = new TParser()
+    {
+        @Override
+        public void parse(TExecutionContext context, ValueSource source, ValueTarget target) {
+            String s = source.getString();
+            if (s.startsWith("{") && s.endsWith("}")) {
+                s = s.substring(1, s.length()-1);
+            }
+            try {
+                UUID uuid = UUID.fromString(s);
+                target.putObject(uuid);
+            } catch (IllegalArgumentException e) {
+                throw new InvalidGuidFormatException(s);
+            }
+        }
+    };
 }

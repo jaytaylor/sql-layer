@@ -63,6 +63,26 @@ public class TFormatter {
                 format(type, source, out);
                 out.append("\"");
             }
+        },
+        BLOB {
+            @Override
+            public void format(TInstance type, ValueSource source, AkibanAppender out) {
+                out.append(((UUID) source.getObject()).toString());
+            }
+
+            @Override
+            public void formatAsLiteral(TInstance type, ValueSource source, AkibanAppender out) {
+                out.append("'");
+                format(type, source, out);
+                out.append("'");
+            }
+
+            @Override
+            public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out, FormatOptions options) {
+                out.append("\"");
+                format(type, source, out);
+                out.append("\"");
+            }
         };
     }
     

@@ -360,7 +360,7 @@ public abstract class TypesTranslator
             return typeForJDBCType(Types.DOUBLE, sqlType.isNullable(),
                     schemaName, tableName, columnName);
         case TypeId.FormatIds.BLOB_TYPE_ID:
-            return typeForJDBCType(Types.LONGVARBINARY, sqlType.isNullable(), // TODO: Types.BLOB
+            return typeForJDBCType(Types.BLOB, sqlType.isNullable(), // TODO: Types.BLOB
                     schemaName, tableName, columnName);
         /* Width attribute types. */
         case TypeId.FormatIds.BIT_TYPE_ID:
