@@ -225,7 +225,8 @@ public class FDBIterationHelper implements IterationHelper
             }
 
             adapter.getUnderlyingStore().indexIterator(adapter.getSession(), storeData,
-                                                       exact, reverse);
+                                                       true, exact, reverse,
+                                                       adapter.scanOptions());
             storeData.nudgeDir = null;
             if (saveState != null) {
                 saveState.copyTo(storeData.persistitKey);

@@ -17,8 +17,8 @@
 
 package com.foundationdb.server.error;
 
-public class IsolationLevelIgnoredException extends InvalidOperationException {
-    public IsolationLevelIgnoredException(String level, String oldLevel) {
-        super(ErrorCode.ISOLATION_LEVEL_IGNORED, level, oldLevel);
+public class IsolationLevelChangedException extends InvalidOperationException {
+    public IsolationLevelChangedException(String level, String oldLevel) {
+        super(ErrorCode.ISOLATION_LEVEL_CHANGED, level, oldLevel);
     }
 }

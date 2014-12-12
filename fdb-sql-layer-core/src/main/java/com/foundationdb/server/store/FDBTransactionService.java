@@ -23,11 +23,13 @@ import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.FDBCommitUnknownResultException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.InvalidParameterValueException;
+import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.metrics.LongMetric;
 import com.foundationdb.server.service.metrics.MetricsService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.sql.parser.IsolationLevel;
 import com.foundationdb.util.MultipleCauseException;
 import com.foundationdb.KeySelector;
 import com.foundationdb.KeyValue;
@@ -118,6 +120,7 @@ public class FDBTransactionService implements TransactionService {
         Map<ForeignKey,Boolean> deferredForeignKeys;
         boolean forceImmediateForeignKeyCheck;
         int resetCount;
+        FDBScanTransactionOptions scanOptions = FDBScanTransactionOptions.NORMAL;
 
         public TransactionState(FDBPendingIndexChecks.CheckTime checkTime, Session session) {
             this.transaction = createTransaction();
@@ -145,7 +148,27 @@ public class FDBTransactionService implements TransactionService {
         }
 
         public Future<byte[]> getFuture(byte[] key) {
-                return transaction.get(key);
+            return transaction.get(key);
+        }
+
+        public Future<byte[]> getSnapshotFuture(byte[] key) {
+            return transaction.snapshot().get(key);
+        }
+
+        public Future<byte[]> getFuture(byte[] key, FDBScanTransactionOptions transactionOptions) {
+            if (transactionOptions.shouldCommitAfterMillis(getStartTime())) {
+                commitAndReset();
+                try {
+                    transactionOptions.maybeSleepAfterCommit();
+                }
+                catch (InterruptedException ex) {
+                    throw new QueryCanceledException(getSession());
+                }
+            }
+            if (transactionOptions.isSnapshot())
+                return getSnapshotFuture(key);
+            else
+                return getFuture(key);
         }
 
         public byte[] getValue(byte[] key) {
@@ -158,7 +181,7 @@ public class FDBTransactionService implements TransactionService {
         
         public byte[] getSnapshotValue(byte[] key) {
             try {
-                return transaction.snapshot().get(key).get();
+                return getSnapshotFuture(key).get();
             } catch (RuntimeException e) {
                 throw FDBAdapter.wrapFDBException(session, e);
             }
@@ -302,6 +325,14 @@ public class FDBTransactionService implements TransactionService {
             commitInternal(session, false, false);
             transaction.reset();
             reset();
+        }
+
+        public FDBScanTransactionOptions getScanOptions() {
+            return scanOptions;
+        }
+
+        public void setScanOptions(FDBScanTransactionOptions scanOptions) {
+            this.scanOptions = scanOptions;
         }
 
         public FDBScanTransactionOptions periodicallyCommitScanOptions() {
@@ -661,6 +692,48 @@ public class FDBTransactionService implements TransactionService {
     public boolean setForceImmediateForeignKeyCheck(Session session, boolean force) {
         TransactionState txn = getTransaction(session);
         return txn.setForceImmediateForeignKeyCheck(force);
+    }
+
+    @Override
+    public IsolationLevel actualIsolationLevel(IsolationLevel level) {
+        // NOTE: This does not promote to the next tightest supported
+        // level, but instead requires an exact match for a special one.
+        switch (level) {
+        case SNAPSHOT_ISOLATION_LEVEL:
+        case READ_COMMITTED_NO_SNAPSHOT_ISOLATION_LEVEL:
+            return level;
+        default:
+            return IsolationLevel.SERIALIZABLE_ISOLATION_LEVEL;
+        }
+    }
+
+    @Override
+    public IsolationLevel setIsolationLevel(Session session, IsolationLevel level) {
+        TransactionState txn = getTransaction(session);
+        FDBScanTransactionOptions scanOptions;
+        switch (level) {
+        case SNAPSHOT_ISOLATION_LEVEL:
+            scanOptions = FDBScanTransactionOptions.SNAPSHOT;
+            break;
+        case READ_COMMITTED_NO_SNAPSHOT_ISOLATION_LEVEL:
+            scanOptions = txn.periodicallyCommitScanOptions();
+            break;
+        default:
+            level = IsolationLevel.SERIALIZABLE_ISOLATION_LEVEL;
+            scanOptions = FDBScanTransactionOptions.NORMAL;
+        }
+        txn.setScanOptions(scanOptions);
+        return level;
+    }
+
+    @Override
+    public boolean isolationLevelRequiresReadOnly(Session session, boolean commitNow) {
+        TransactionState txn = getTransaction(session);
+        boolean readOnly = txn.getScanOptions().isCommitting();
+        if (readOnly && commitNow) {
+            txn.commitAndReset();
+        }
+        return readOnly;
     }
 
     //

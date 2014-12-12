@@ -100,24 +100,35 @@ public class FDBScanCommittingIterator implements AsyncIterator<KeyValue>
     }
 
     protected void checkForRestart() {
+        boolean dispose = false, commit = false;
         if (underlying != null) {
             if (resetCount != transaction.getResetCount()) {
                 logger.debug("Updating for current transaction");
-                totalCount += count;
-                dispose();
+                dispose = true;
             }
             else if (options.shouldCommitAfterRows(count) ||
                      options.shouldCommitAfterMillis(transaction.getStartTime())) {
                 logger.debug("Commit after {} rows", count);
-                totalCount += count;
-                dispose();
-                transaction.commitAndReset();
-                try {
-                    options.maybeSleepAfterCommit();
-                }
-                catch (InterruptedException ex) {
-                    throw new QueryCanceledException(transaction.getSession());
-                }
+                dispose = commit = true;
+            }
+        }
+        else {
+            if (options.shouldCommitAfterMillis(transaction.getStartTime())) {
+                logger.debug("Commit before starting");
+                commit = true;
+            }
+        }
+        if (dispose) {
+            totalCount += count;
+            dispose();
+        }
+        if (commit) {
+            transaction.commitAndReset();
+            try {
+                options.maybeSleepAfterCommit();
+            }
+            catch (InterruptedException ex) {
+                throw new QueryCanceledException(transaction.getSession());
             }
         }
         if (underlying == null) {

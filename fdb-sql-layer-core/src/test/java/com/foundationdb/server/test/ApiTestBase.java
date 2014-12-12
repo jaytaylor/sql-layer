@@ -133,9 +133,14 @@ public class ApiTestBase {
         }
     };
 
-    private static class RetryRule implements MethodRule {
-        private static int MAX_TRIES = 5;
-        private static int totalRetries = 0;
+    protected boolean retryException(Throwable t) {
+        return Exceptions.isRollbackException(t);
+    }
+
+    protected static final int MAX_TRIES = 5;
+    protected static int totalRetries = 0;
+
+    protected class RetryRule implements MethodRule {
 
         @Override
         public Statement apply(final Statement base, FrameworkMethod method, Object target) {
@@ -146,7 +151,7 @@ public class ApiTestBase {
                     try {
                         base.evaluate();
                     } catch(Throwable t) {
-                        if(++tryCount > MAX_TRIES || !Exceptions.isRollbackException(t)) {
+                        if(++tryCount > MAX_TRIES || !retryException(t)) {
                             throw t;
                         }
                         ++totalRetries;
