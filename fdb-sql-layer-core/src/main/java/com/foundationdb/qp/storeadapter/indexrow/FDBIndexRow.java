@@ -75,7 +75,12 @@ public class FDBIndexRow extends IndexRow {
             ancestorHKey = keyCreator.newHKey(index.leafMostTable().hKey());
             indexToHKey = ((TableIndex)index).indexToHKey();
         }
-        
+
+        //Short circuit if the key is empty.
+        if (this.keyEmpty()) {
+            this.leafTableHKey = ancestorHKey; 
+            return ancestorHKey;
+        }
         int segment = 0;
         int columns = 0;
         ValuesHKey ancestor = (ValuesHKey)ancestorHKey;
