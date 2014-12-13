@@ -7,10 +7,12 @@
 ---
 - Statement: SELECT IFNULL(null, 1) from all_types;
 - output: [[1]]
+
 # Picking functions require at least 1 known type
-#---
-#- Statement: SELECT IFNULL(null, null) FROM all_types;
-#- output: [[null]]
+---
+- Statement: SELECT IFNULL(null, null) FROM all_types;
+- error: ['22509'] # ARGUMENT_TYPE_REQUIRED
+
 ---
 - Statement: SELECT IFNULL (2.4, null) FROM all_types;
 - output: [[2.4]]

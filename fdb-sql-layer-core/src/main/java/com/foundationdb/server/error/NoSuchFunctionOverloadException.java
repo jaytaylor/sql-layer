@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 FoundationDB, LLC
+ * Copyright (C) 2009-2014 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -17,15 +17,9 @@
 
 package com.foundationdb.server.error;
 
-import com.foundationdb.server.types.TClass;
-import com.foundationdb.server.types.TInstance;
-
-public final class NoSuchCastException extends InvalidOperationException {
-    public NoSuchCastException(TInstance source, TInstance target) {
-        this(source.typeClass(), target.typeClass());
-    }
-
-    public NoSuchCastException(TClass source, TClass target) {
-        super(ErrorCode.NO_SUCH_CAST, source.name().unqualifiedName(), target.name().unqualifiedName());
+public class NoSuchFunctionOverloadException extends InvalidOperationException
+{
+    public NoSuchFunctionOverloadException(String functionName, String argumentsDescription) {
+        super(ErrorCode.NO_SUCH_FUNCTION_OVERLOAD, functionName, argumentsDescription);
     }
 }
