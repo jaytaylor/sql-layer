@@ -25,6 +25,7 @@ import com.foundationdb.ais.model.IndexToHKey;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.IndexRow;
+import com.foundationdb.qp.row.ValuesHKey;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.storeadapter.indexcursor.SortKeyAdapter;
 import com.foundationdb.qp.storeadapter.indexcursor.SortKeyTarget;
@@ -74,29 +75,32 @@ public class FDBIndexRow extends IndexRow {
             ancestorHKey = keyCreator.newHKey(index.leafMostTable().hKey());
             indexToHKey = ((TableIndex)index).indexToHKey();
         }
-        
-        
-        Key hKey = keyCreator.createKey();
-        hKey.clear();
+
+        //Short circuit if the key is empty.
+        if (this.keyEmpty()) {
+            this.leafTableHKey = ancestorHKey; 
+            return ancestorHKey;
+        }
+        int segment = 0;
+        int columns = 0;
+        ValuesHKey ancestor = (ValuesHKey)ancestorHKey;
         for (int i = 0; i < indexToHKey.getLength(); i++) {
+            
             if (indexToHKey.isOrdinal(i)) {
-                hKey.append(indexToHKey.getOrdinal(i));
+                // Do nothing, the ValuesHKey should have the correct ordinals
+                // built from the metadata. 
+                assert indexToHKey.getOrdinal(i) == ancestor.ordinals()[segment++];
             } else {
                 int indexField = indexToHKey.getIndexRowPosition(i);
-                if (index.isSpatial()) {
+                if (index.isSpatial() && indexField > index.firstSpatialArgument()) {
                     // A spatial index has a single key column (the z-value), representing the declared spatial key columns.
-                    if (indexField > index.firstSpatialArgument())
-                        indexField -= index.spatialColumns() - 1;
+                    indexField -= index.spatialColumns() - 1;
                 }
-                Key keySource = iKey;
-                if (indexField < 0 || indexField > keySource.getDepth()) {
-                    throw new IllegalStateException(String.format("keySource: %s, indexField: %s",
-                                                                  keySource, indexField));
-                }
-                PersistitKey.appendFieldFromKey(hKey, keySource, indexField, index.getIndexName());
+                ancestor.copyValueTo(this.value(indexField), columns++);
             }
-        }
-        ancestorHKey.copyFrom(hKey);
+        }        
+        // Copy the leaf table HKey for later use. 
+        // Return the correct (shortened) HKey for others to use.
         if (index.isTableIndex() && index.leafMostTable() != table) {
             this.leafTableHKey = ancestorHKey; 
             ancestorHKey = keyCreator.newHKey(table.hKey());
