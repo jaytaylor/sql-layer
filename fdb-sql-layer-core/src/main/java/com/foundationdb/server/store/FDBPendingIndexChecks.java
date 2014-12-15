@@ -48,6 +48,7 @@ public class FDBPendingIndexChecks
 {
     static enum CheckTime { 
         IMMEDIATE,
+        STATEMENT,
         DELAYED,
         DELAYED_WITH_RANGE_CACHE,
         // For testing
@@ -156,7 +157,15 @@ public class FDBPendingIndexChecks
 
         public boolean delayOrDefer(CheckTime checkTime, CheckPass pass,
                                     Session session, TransactionState txn, Index index) {
-            return (checkTime.isDelayed() && (pass != CheckPass.TRANSACTION));
+            switch (pass) {
+            case ROW:
+                return checkTime.isDelayed();
+            case STATEMENT:
+                return (checkTime != CheckTime.STATEMENT);
+            case TRANSACTION:
+            default:
+                return false;
+            }
         }
 
         public void blockUntilReady(TransactionState txn) {
