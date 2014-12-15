@@ -142,7 +142,7 @@ public interface TransactionService extends Service {
     void setDeferredForeignKey(Session session, ForeignKey foreignKey, boolean deferred);
 
     /** Repeat any checks that are scoped to the statement. */
-    void checkStatementForeignKeys(Session session);
+    void checkStatementConstraints(Session session);
 
     /** Check if checks should be performed immediately. */
     boolean getForceImmediateForeignKeyCheck(Session session);

@@ -675,7 +675,7 @@ public class FDBTransactionService implements TransactionService {
     }
 
     @Override
-    public void checkStatementForeignKeys(Session session) {
+    public void checkStatementConstraints(Session session) {
         TransactionState txn = getTransaction(session);
         if (txn.getIndexChecks(false) != null) {
             txn.getIndexChecks(false).performChecks(session, txn, FDBPendingIndexChecks.CheckPass.STATEMENT);
