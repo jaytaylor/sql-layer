@@ -18,7 +18,10 @@
 package com.foundationdb.sql.optimizer.rule;
 
 import com.foundationdb.server.error.CorruptedPlanException;
+import com.foundationdb.server.types.common.funcs.BoolLogic;
+import com.foundationdb.server.types.texpressions.TValidatedScalar;
 import com.foundationdb.sql.optimizer.plan.*;
+import com.foundationdb.sql.optimizer.plan.JoinNode.JoinType;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,7 +97,9 @@ public class NestedLoopMapper extends BaseRule
             PlanNode outer = join.getLeft();
             PlanNode inner = join.getRight();
             if (join.hasJoinConditions()) {
-                outer = moveConditionsToOuterNode(outer, join.getJoinConditions(), getQuery(join).getOuterTables());
+                outer = moveConditionsToOuterNode(outer, join.getJoinConditions(),
+                                                  getQuery(join).getOuterTables(),
+                                                  JoinType.ANTI.equals(join.getJoinType()));
                 if (join.hasJoinConditions())
                     inner = new Select(inner, join.getJoinConditions());
             }
@@ -147,11 +152,20 @@ public class NestedLoopMapper extends BaseRule
 
 
     private PlanNode moveConditionsToOuterNode(PlanNode planNode, ConditionList conditions,
-                                               Set<ColumnSource> outerSources) {
+                                               Set<ColumnSource> outerSources, boolean isAntiJoin) {
         ConditionList selectConditions = new ConditionList();
         Iterator<ConditionExpression> iterator = conditions.iterator();
         while (iterator.hasNext()) {
             ConditionExpression condition = iterator.next();
+            if (isAntiJoin) {
+                List<ConditionExpression> conditionList = new ArrayList<ConditionExpression>();
+                conditionList.add(condition);
+                condition = new LogicalFunctionCondition("not", conditionList,
+                        condition.getSQLtype(), condition.getSQLsource(),
+                        condition.getType());
+                TValidatedScalar validatedScalar = new TValidatedScalar(BoolLogic.NOT);
+                ((LogicalFunctionCondition)condition).setResolved(validatedScalar);
+            }
             Set<ColumnSource> columnSources = new ConditionColumnSourcesFinder().find(condition);
             columnSources.removeAll(outerSources);
             PlanNodeProvidesSourcesChecker checker = new PlanNodeProvidesSourcesChecker(columnSources, planNode);
