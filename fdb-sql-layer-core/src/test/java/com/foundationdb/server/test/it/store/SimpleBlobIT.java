@@ -40,15 +40,15 @@ public class SimpleBlobIT extends ITBase {
         TestAISBuilder builder = new TestAISBuilder(typesRegistry());
         builder.table(SCHEMA, TABLE);
         builder.column(SCHEMA, TABLE, "a", 0, "MCOMPAT", "int", false);
-        builder.column(SCHEMA, TABLE, "b", 1, "MCOMPAT", "blob", false);
-        builder.column(SCHEMA, TABLE, "c", 2, "MCOMPAT", "mediumblob", false);
+        builder.column(SCHEMA, TABLE, "b", 1, "AKSQL", "blob", false);
+        //builder.column(SCHEMA, TABLE, "c", 2, "MCOMPAT", "mediumblob", false);
         builder.pk(SCHEMA, TABLE);
         builder.indexColumn(SCHEMA, TABLE, Index.PRIMARY, "a", 0, true, null);
         ddl().createTable(session(), builder.akibanInformationSchema().getTable(SCHEMA, TABLE));
         return tableId(SCHEMA, TABLE);
     }
     
-// suppress until blobs are active    @Test
+    @Test
     public void testBlobs_1() throws Exception {
         testBlobs(1);
     }
@@ -88,7 +88,7 @@ public class SimpleBlobIT extends ITBase {
             int csize = (int)Math.pow(10, i);
             Row row = row(tid, i, bigString(bsize), bigString(csize));
             writeRows(row);
-            row = row(tid, i, bigBytes(bsize), bigBytes(csize));
+            row = row(tid, i, bigBytes(bsize));
             expected.add(row);
         }
         expectRows(
