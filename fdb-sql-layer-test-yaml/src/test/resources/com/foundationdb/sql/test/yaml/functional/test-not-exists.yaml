@@ -1,0 +1,16 @@
+---
+- Statement: create table t1(c1 int, c2 int, c3 int);
+---
+- Statement: create table t2(c1 int, c2 int, c3 int);
+---
+- Statement: create table t3(c1 int, c2 int, c3 int);
+---
+- Statement: insert into t1 values(1, 2, 3), (2, 3, 4);
+---
+- Statement: insert into t2 values(3, 4, 5), (4, 5, 6);
+---
+- Statement: insert into t3 values(5, 6, 7), (6, 7, 8);
+---
+- Statement: SELECT c1 FROM t1 WHERE NOT EXISTS (SELECT c1 FROM t2 WHERE t1.c1 = 5 AND t1.c1 = t2.c2);
+- output: [[1], [2]]
+...
