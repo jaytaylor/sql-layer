@@ -15,15 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.service.routines;
+package com.foundationdb.sql.jdbc;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.sql.Driver;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 
-import javax.script.ScriptEngineManager;
+public class DeregisterProxyDriverHelper {
 
-public interface ScriptEngineManagerProvider {
-    public static final String CLASS_PATH = "fdbsql.routines.script_class_path";
-    public ScriptEngineManager getManager();
-    public ClassLoader getSafeClassLoader();
+    public void deregisterProxy(Driver driver) throws SQLException {
+        SecurityManager security = System.getSecurityManager();
+        if (security != null) {
+            // Prevents method from being called inside a routine
+            security.checkPermission(new RuntimePermission("setContextClassLoader"));
+        }
+        DriverManager.deregisterDriver(driver);
+    }
+
 }
