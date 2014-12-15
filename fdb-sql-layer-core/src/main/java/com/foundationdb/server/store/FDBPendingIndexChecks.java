@@ -46,7 +46,7 @@ import java.util.Map;
 
 public class FDBPendingIndexChecks
 {
-    static enum CheckTime { 
+    public static enum CheckTime { 
         IMMEDIATE,
         STATEMENT,
         STATEMENT_WITH_RANGE_CACHE,
