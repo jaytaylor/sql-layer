@@ -41,7 +41,6 @@ public class SimpleBlobIT extends ITBase {
         builder.table(SCHEMA, TABLE);
         builder.column(SCHEMA, TABLE, "a", 0, "MCOMPAT", "int", false);
         builder.column(SCHEMA, TABLE, "b", 1, "AKSQL", "blob", false);
-        //builder.column(SCHEMA, TABLE, "c", 2, "MCOMPAT", "mediumblob", false);
         builder.pk(SCHEMA, TABLE);
         builder.indexColumn(SCHEMA, TABLE, Index.PRIMARY, "a", 0, true, null);
         ddl().createTable(session(), builder.akibanInformationSchema().getTable(SCHEMA, TABLE));
@@ -84,9 +83,8 @@ public class SimpleBlobIT extends ITBase {
         final int tid = setUpTable();
         final List<Row> expected = new ArrayList<>();
         for (int i = 1; i <= rowCount; ++i) {
-            int bsize = (int)Math.pow(5, i);
-            int csize = (int)Math.pow(10, i);
-            Row row = row(tid, i, bigString(bsize), bigString(csize));
+            int bsize = 16;
+            Row row = row(tid, i, bigString(bsize));
             writeRows(row);
             row = row(tid, i, bigBytes(bsize));
             expected.add(row);

@@ -1,4 +1,11 @@
 ---
+- CreateTable: blob  (id INT PRIMARY KEY, bl BLOB)
+---
+- Statement: INSERT INTO blob VALUES (1, '3f2504e0-4f89-41d3-9a0c-0305e82c3388' )
+---
+- Statement: SELECT * FROM blob
+- output: [[1, '3f2504e0-4f89-41d3-9a0c-0305e82c3388']]
+---
 - Include: all-types-schema.yaml
 ---
 - Statement: "INSERT INTO all_types(bigint_field, blob_field)
