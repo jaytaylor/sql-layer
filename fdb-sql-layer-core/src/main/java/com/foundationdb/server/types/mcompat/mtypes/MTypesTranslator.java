@@ -19,6 +19,7 @@ package com.foundationdb.server.types.mcompat.mtypes;
 
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.aksql.aktypes.*;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
@@ -47,9 +48,9 @@ public class MTypesTranslator extends TypesTranslator
         case Types.BINARY:
         case Types.BIT:
             return MBinary.BINARY;
-//        case Types.BLOB:
+        case Types.BLOB:
 //        case Types.LONGVARBINARY:
-//            return MBinary.LONGBLOB;
+            return AkBlob.INSTANCE;
         case Types.CHAR:
         case Types.NCHAR:
             return MString.CHAR;
@@ -170,11 +171,11 @@ public class MTypesTranslator extends TypesTranslator
                         schemaName, tableName, columnName);
             }
             break;
-//        case TypeId.FormatIds.BLOB_TYPE_ID:
-//            if (typeId == TypeId.BLOB_ID) {
-//                return MBinary.BLOB.instance(sqlType.isNullable());
-//            }
-//            break;
+        case TypeId.FormatIds.BLOB_TYPE_ID:
+            if (typeId == TypeId.BLOB_ID) {
+                return AkBlob.INSTANCE.instance(sqlType.isNullable());
+            }
+            break;
         }
         return super.typeForSQLType(typeId, sqlType,
                 defaultCharsetId, defaultCollationId,

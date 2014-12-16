@@ -52,17 +52,17 @@ public class SimpleBlobIT extends ITBase {
         testBlobs(1);
     }
 
-//    @Test
+    @Test
     public void testBlobs_2() throws Exception {
         testBlobs(2);
     }
 
-//    @Test
+    @Test
     public void testBlobs_3() throws Exception {
         testBlobs(3);
     }
 
-//    @Test
+    @Test
     public void testBlobs_4() throws Exception {
         testBlobs(4);
     }

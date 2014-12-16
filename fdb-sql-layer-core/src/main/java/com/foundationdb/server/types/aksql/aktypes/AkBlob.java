@@ -73,7 +73,7 @@ public class AkBlob extends NoAttrTClass {
         public boolean canConvertToValue(Object cached) {
             return true;
         }
-    }
+    } 
 
     @Override
     protected ValueIO getValueIO() {
