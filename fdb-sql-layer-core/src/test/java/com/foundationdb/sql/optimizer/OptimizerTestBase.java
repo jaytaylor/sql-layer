@@ -30,6 +30,7 @@ import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.service.text.FullTextIndexService;
 import com.foundationdb.server.service.text.FullTextIndexServiceImpl;
 
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -69,8 +70,14 @@ public class OptimizerTestBase extends ASTTransformTestBase
         System.setProperty("fdbsql.home", System.getProperty("user.home"));
         ServiceManager ret = createServiceManager();
         ret.startServices();
-        
+
         sm = ret;
+    }
+
+    @AfterClass
+    public static void teardownServices() throws Exception
+    {
+        sm.stopServices();
     }
 
     @Before
