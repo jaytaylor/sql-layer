@@ -22,10 +22,7 @@ import com.foundationdb.server.error.UnsupportedColumnDataTypeException;
 import com.foundationdb.server.error.UnsupportedDataTypeException;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.aksql.aktypes.AkBool;
-import com.foundationdb.server.types.aksql.aktypes.AkGUID;
-import com.foundationdb.server.types.aksql.aktypes.AkInterval;
-import com.foundationdb.server.types.aksql.aktypes.AkResultSet;
+import com.foundationdb.server.types.aksql.aktypes.*;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.StringFactory;
@@ -509,6 +506,8 @@ public abstract class TypesTranslator
     public TClass typeClassForJDBCType(int jdbcType,
                                        String schemaName, String tableName, String columnName) {
         switch (jdbcType) {
+        case Types.BLOB:
+            return AkBlob.INSTANCE;
         case Types.BOOLEAN:
             return AkBool.INSTANCE;
         case Types.ARRAY:

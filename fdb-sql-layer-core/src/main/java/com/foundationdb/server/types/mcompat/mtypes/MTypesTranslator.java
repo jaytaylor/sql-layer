@@ -48,9 +48,6 @@ public class MTypesTranslator extends TypesTranslator
         case Types.BINARY:
         case Types.BIT:
             return MBinary.BINARY;
-        case Types.BLOB:
-//        case Types.LONGVARBINARY:
-            return AkBlob.INSTANCE;
         case Types.CHAR:
         case Types.NCHAR:
             return MString.CHAR;
@@ -169,11 +166,6 @@ public class MTypesTranslator extends TypesTranslator
                 return typeForStringType(MString.LONGTEXT, sqlType,
                         defaultCharsetId, defaultCollationId,
                         schemaName, tableName, columnName);
-            }
-            break;
-        case TypeId.FormatIds.BLOB_TYPE_ID:
-            if (typeId == TypeId.BLOB_ID) {
-                return AkBlob.INSTANCE.instance(sqlType.isNullable());
             }
             break;
         }
