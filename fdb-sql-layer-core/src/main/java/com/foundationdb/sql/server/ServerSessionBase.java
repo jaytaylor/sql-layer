@@ -20,7 +20,6 @@ package com.foundationdb.sql.server;
 import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.StoreAdapterHolder;
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.ImplicitlyCommittedException;
 import com.foundationdb.server.error.InvalidOperationException;
@@ -44,6 +43,7 @@ import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.optimizer.AISBinderContext;
 import com.foundationdb.sql.optimizer.rule.PipelineConfiguration;
 import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
+import com.foundationdb.sql.parser.IsolationLevel;
 
 import java.io.IOException;
 import java.util.*;
@@ -63,6 +63,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     protected StoreAdapterHolder adapters = new StoreAdapterHolder();
     protected ServerTransaction transaction;
     protected boolean transactionDefaultReadOnly = false;
+    protected IsolationLevel transactionDefaultIsolationLevel = IsolationLevel.UNSPECIFIED_ISOLATION_LEVEL;
     protected ServerTransaction.PeriodicallyCommit transactionPeriodicallyCommit = ServerTransaction.PeriodicallyCommit.OFF;
     protected ServerSessionMonitor sessionMonitor;
 
@@ -209,13 +210,8 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
      }
 
     @Override
-    public StoreAdapterHolder getStoreHolder(Schema schema) {
-        if(adapters.getSchema() == schema) {
-            return adapters;
-        }
-        StoreAdapterHolder holder = new StoreAdapterHolder();
-        holder.init(session, reqs.config(), reqs.store(), schema);
-        return holder;
+    public StoreAdapterHolder getStoreHolder() {
+        return adapters;
     }
 
     @Override
@@ -237,7 +233,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     public void beginTransaction() {
         if (transaction != null)
             throw new TransactionInProgressException();
-        transaction = new ServerTransaction(this, transactionDefaultReadOnly, transactionPeriodicallyCommit);
+        transaction = new ServerTransaction(this, transactionDefaultReadOnly, transactionDefaultIsolationLevel, transactionPeriodicallyCommit);
     }
 
     @Override
@@ -283,6 +279,19 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     @Override
     public ServerTransaction.PeriodicallyCommit getTransactionPeriodicallyCommit() {
         return transactionPeriodicallyCommit;
+    }
+
+    @Override
+    public IsolationLevel setTransactionIsolationLevel(IsolationLevel level) {
+        if (transaction == null)
+            throw new NoTransactionInProgressException();
+        return transaction.setIsolationLevel(level);
+    }
+
+    @Override
+    public IsolationLevel setTransactionDefaultIsolationLevel(IsolationLevel level) {
+        this.transactionDefaultIsolationLevel = getTransactionService().actualIsolationLevel(level);
+        return this.transactionDefaultIsolationLevel;
     }
 
     @Override
@@ -349,7 +358,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     protected void initAdapters(ServerOperatorCompiler compiler) {
-        adapters.init(session, reqs.config(), reqs.store(), compiler.getSchema());
+        adapters.init(session, reqs.config(), reqs.store());
     }
 
     /** Prepare to execute given statement.
@@ -380,14 +389,14 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             case READ:
             case NEW:
             case IMPLICIT_COMMIT_AND_NEW:
-                transaction = new ServerTransaction(this, true, ServerTransaction.PeriodicallyCommit.OFF);
+                transaction = new ServerTransaction(this, true, transactionDefaultIsolationLevel, ServerTransaction.PeriodicallyCommit.OFF);
                 localTransaction = true;
                 break;
             case WRITE:
             case NEW_WRITE:
                 if (transactionDefaultReadOnly)
                     throw new TransactionReadOnlyException();
-                transaction = new ServerTransaction(this, false, ServerTransaction.PeriodicallyCommit.OFF);
+                transaction = new ServerTransaction(this, false, transactionDefaultIsolationLevel, transactionPeriodicallyCommit);
                 transaction.beforeUpdate();
                 localTransaction = true;
                 break;

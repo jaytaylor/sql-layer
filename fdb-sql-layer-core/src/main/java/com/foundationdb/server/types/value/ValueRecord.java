@@ -17,8 +17,7 @@
 
 package com.foundationdb.server.types.value;
 
-import com.foundationdb.server.types.value.ValueSource;
-
-public interface ValueRecord {
+public interface ValueRecord
+{
     ValueSource value(int index);
 }

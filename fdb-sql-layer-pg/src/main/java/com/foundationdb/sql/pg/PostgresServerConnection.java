@@ -741,7 +741,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 boolean local = beforeExecute(pstmt);
                 boolean success = false;
                 try {
-                    pstmt = finishGenerating(context, pstmt, stmtSQL, stmt, null, null);
+                    pstmt = finishGenerating(context, stmtSQL, stmt, null, null);
                     if ((statementCache != null) && singleStmt && pstmt.putInCache())
                         statementCache.put(stmtSQL, pstmt);
                     pstmt.sendDescription(context, false, false);
@@ -822,7 +822,7 @@ public class PostgresServerConnection extends ServerSessionBase
             boolean local = beforeExecute(pstmt);
             boolean success = false;
             try {
-                pstmt = finishGenerating(context, pstmt, sql, stmt, params, paramTypes);
+                pstmt = finishGenerating(context, sql, stmt, params, paramTypes);
                 success = true;
             } finally {
                 afterExecute(pstmt, local, success, false);
@@ -1122,13 +1122,14 @@ public class PostgresServerConnection extends ServerSessionBase
         throw new UnsupportedSQLException ("", stmt);
     }
 
-    protected PostgresStatement finishGenerating(PostgresQueryContext context, PostgresStatement pstmt,
+    protected PostgresStatement finishGenerating(PostgresQueryContext context,
                                                  String sql, StatementNode stmt,
                                                  List<ParameterNode> params,
                                                  int[] paramTypes) {
         try {
             sessionMonitor.enterStage(MonitorStage.OPTIMIZE);
             updateAIS(context);
+            PostgresStatement pstmt = generateStatementStub(sql, stmt, params, paramTypes);
             PostgresStatement newpstmt = pstmt.finishGenerating(this, sql, stmt, params, paramTypes);
             if (!newpstmt.hasAISGeneration())
                 newpstmt.setAISGeneration(ais.getGeneration());
@@ -1190,7 +1191,7 @@ public class PostgresServerConnection extends ServerSessionBase
         boolean local = beforeExecute(pstmt);
         boolean success = false;
         try {
-            pstmt = finishGenerating(context, pstmt, sql, stmt, params, paramTypes);
+            pstmt = finishGenerating(context, sql, stmt, params, paramTypes);
             success = true;
         } 
         finally {
@@ -1236,7 +1237,7 @@ public class PostgresServerConnection extends ServerSessionBase
         boolean local = beforeExecute(pstmt);
         boolean success = false;
         try {
-            pstmt = finishGenerating(context, pstmt, sql, stmt, null, null);
+            pstmt = finishGenerating(context, sql, stmt, null, null);
             success = true;
         } 
         finally {

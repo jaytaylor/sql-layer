@@ -94,7 +94,8 @@ public enum ErrorCode {
     UNSUPPORTED_FULL_OUTER_JOIN("0A", "50B", Importance.DEBUG, UnsupportedFullOuterJoinException.class),
     UNSUPPORTED_GROUP_BY_ROLLUP("0A", "50C", Importance.DEBUG, UnsupportedGroupByRollupException.class),
     UNSUPPORTED_TRIGGER("0A", "50D", Importance.DEBUG, UnsupportedTriggerException.class),
-    
+    UNSUPPORTED_FK_MATCH    ("0A", "50E", Importance.DEBUG, UnsupportedFKMatchException.class),
+
     // Class 0D - invalid target type specification
     // Class 0E - invalid schema name list specification
     // Class 0F - locator exception
@@ -186,7 +187,11 @@ public enum ErrorCode {
     EXTERNAL_ROW_READER_EXCEPTION ("22", "505", Importance.DEBUG, ExternalRowReaderException.class),
     SECURITY                ("22", "506", Importance.ERROR, SecurityException.class),
     STORAGE_KEY_SIZE_EXCEEDED("22", "507", Importance.ERROR, StorageKeySizeExceededException.class),
-    OVERLOAD_EXCEPTION("22", "508", Importance.ERROR, OverloadException.class),
+
+    NO_SUCH_FUNCTION_OVERLOAD("22", "508", Importance.DEBUG, NoSuchFunctionOverloadException.class),
+    ARGUMENT_TYPE_REQUIRED   ("22", "509", Importance.DEBUG, ArgumentTypeRequiredException.class),
+    NO_COMMON_TYPE           ("22", "510", Importance.DEBUG, NoCommonTypeException.class),
+
         // SubClass 6xx - Spatial objects
     INVALID_SPATIAL_OBJECT("22", "601", Importance.DEBUG, InvalidSpatialObjectException.class),
 
@@ -205,7 +210,7 @@ public enum ErrorCode {
         // SubClass 003 - inappropriate access mode for branch transaction
     TRANSACTION_READ_ONLY   ("25", "003", Importance.DEBUG, TransactionReadOnlyException.class),
         // SubClass 004 - inappropriate isolation level for branch transaction
-    ISOLATION_LEVEL_IGNORED ("25", "004", Importance.DEBUG, IsolationLevelIgnoredException.class),
+    ISOLATION_LEVEL_CHANGED ("25", "004", Importance.DEBUG, IsolationLevelChangedException.class),
         // SubClass 005 - no active SQL-transaction for branch transaction
     NO_TRANSACTION          ("25", "005", Importance.DEBUG, NoTransactionInProgressException.class),
         // SubClass 006 - read-only SQL-transaction
@@ -332,6 +337,7 @@ public enum ErrorCode {
     INVALID_SQLJ_DEPLOYMENT_DESCRIPTOR ("46", "200", Importance.DEBUG, InvalidSQLJDeploymentDescriptorException.class),
 
     // Class 50 - DDL definition failure
+    PROTECTED_OBJECT        ("50", "001", Importance.DEBUG, ProtectedObjectException.class),
     PROTECTED_TABLE         ("50", "002", Importance.DEBUG, ProtectedTableDDLException.class), 
     JOIN_TO_PROTECTED_TABLE ("50", "003", Importance.DEBUG, JoinToProtectedTableException.class), 
     JOIN_TO_UNKNOWN_TABLE   ("50", "004", Importance.DEBUG, JoinToUnknownTableException.class),  
@@ -425,7 +431,7 @@ public enum ErrorCode {
 
     // Class 52 - Configuration & startup errors
     SERVICE_NOT_STARTED     ("52", "001", Importance.ERROR, ServiceNotStartedException.class),
-    SERVICE_ALREADY_STARTED ("52", "002", Importance.ERROR, ServiceStartupException.class),
+    SERVICE_ALREADY_STARTED ("52", "002", Importance.ERROR, ServiceAlreadyStartedException.class),
     SERVICE_CIRC_DEPEND     ("52", "003", Importance.ERROR, CircularDependencyException.class),
     BAD_CONFIG_DIRECTORY    ("52", "004", Importance.ERROR, BadConfigDirectoryException.class),
     //52005
@@ -445,6 +451,8 @@ public enum ErrorCode {
     NO_CLUSTER_FILE         ("52", "013", Importance.ERROR, NoClusterFileException.class),
     CLUSTER_FILE_NOT_READABLE ("52", "014", Importance.ERROR, ClusterFileNotReadableException.class),
     CLUSTER_FILE_TOO_LARGE  ("52", "015", Importance.ERROR, ClusterFileTooLargeException.class),
+    INVALID_TIME_ZONE        ("52", "016", Importance.ERROR, InvalidTimeZoneException.class),
+    MISSING_REQUIRED_PROPERTIES ("52", "017", Importance.ERROR, MissingRequiredPropertiesException.class),
 
     // Class 53 - Internal error 
     INTERNAL_ERROR          ("53", "000", Importance.ERROR, null),

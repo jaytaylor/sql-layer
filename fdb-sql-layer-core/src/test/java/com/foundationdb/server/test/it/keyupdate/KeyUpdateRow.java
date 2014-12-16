@@ -17,19 +17,30 @@
 
 package com.foundationdb.server.test.it.keyupdate;
 
+import java.util.List;
+
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.ValuesHolderRow;
+import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.store.Store;
+import com.foundationdb.server.types.value.Value;
 
-public class KeyUpdateRow extends NiceRow
+public class KeyUpdateRow extends ValuesHolderRow
 {
-    public KeyUpdateRow(int tableId, RowDef rowDef, Store store)
+    public KeyUpdateRow(RowType type, Store store, Object...objects) 
     {
-        super(tableId, rowDef);
+        super (type, objects);
+        this.store = store;
+    }
+    
+    public KeyUpdateRow(RowType type, Store store, List<Value> values) {
+        super (type, values);
         this.store = store;
     }
 
-    public HKey hKey()
+    public com.foundationdb.server.test.it.keyupdate.HKey keyUpdateHKey()
     {
         return hKey;
     }
@@ -52,8 +63,19 @@ public class KeyUpdateRow extends NiceRow
     public Store getStore() {
         return store;
     }
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null) return false;
+        
+        if (obj instanceof Row) {
+            return this.compareTo((Row)obj, 0, 0, rowType().nFields()) == 0;
+        }
+        return false;
+    }
 
-    private HKey hKey;
+    private com.foundationdb.server.test.it.keyupdate.HKey hKey;
     private KeyUpdateRow parent;
     private final Store store;
 }

@@ -17,8 +17,11 @@
 
 package com.foundationdb.qp.memoryadapter;
 
+import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.util.SchemaCache;
 
 public abstract class BasicFactoryBase implements MemoryTableFactory {
     private final TableName sourceTable;
@@ -32,8 +35,9 @@ public abstract class BasicFactoryBase implements MemoryTableFactory {
         return sourceTable;
     }
 
-    public RowType getRowType(MemoryAdapter adapter) {
-        return adapter.schema().tableRowType(adapter.schema().ais().getTable(sourceTable));
+    public RowType getRowType(AkibanInformationSchema ais) {
+        Table table = ais.getTable(sourceTable);
+        return SchemaCache.globalSchema(ais).tableRowType(table);
     }
     
     public static String boolResult(boolean bool) {

@@ -17,9 +17,9 @@
 
 package com.foundationdb.server.service.routines;
 
-import com.foundationdb.server.error.ServiceStartupException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.sql.jdbc.ProxyDriverImpl;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,14 +37,18 @@ public final class ScriptEngineManagerProviderImpl implements ScriptEngineManage
     }
 
     @Override
+    public ClassLoader getSafeClassLoader() {
+        return safeClassLoader;
+    }
+    
+    @Override
     public void start() {
-        // TODO: The idea should be to restrict scripts to standard Java
-        // classes without the rest of the sql layer. But note
-        // java.sql.DriverManager.isDriverAllowed(), which requires that a
-        // registered driver's class by accessible to its caller by name.
-        // May need a JDBCDriver proxy just to register without putting all
-        // of com.foundationdb.sql.embedded into the parent.
-        ClassLoader parentClassLoader = getClass().getClassLoader()/*.getParent()*/;
+        ClassLoader parentClassLoader = getClass().getClassLoader().getParent();
+
+        URL[] urlsSC = new URL[1];
+        // registers both ProxyDriverImpl + DeregisterProxyDriverHelper
+        urlsSC[0] = ProxyDriverImpl.class.getProtectionDomain().getCodeSource().getLocation();
+        safeClassLoader = new URLClassLoader(urlsSC, parentClassLoader);
 
         String classPath = configService.getProperty(CLASS_PATH);
         String[] paths = classPath.split(File.pathSeparator);
@@ -57,8 +61,8 @@ public final class ScriptEngineManagerProviderImpl implements ScriptEngineManage
             logger.warn("Error setting script class loader", ex);
             urls = new URL[0];
         }
-        ClassLoader scriptClassLoader = new URLClassLoader(urls, parentClassLoader);
-        manager = new ScriptEngineManager(scriptClassLoader);
+        URLClassLoader scriptEngineClassLoader = new URLClassLoader(urls, safeClassLoader);
+        manager = new ScriptEngineManager(scriptEngineClassLoader);
     }
 
     @Override
@@ -78,6 +82,7 @@ public final class ScriptEngineManagerProviderImpl implements ScriptEngineManage
 
     private final ConfigurationService configService;
     private ScriptEngineManager manager;
+    private ClassLoader safeClassLoader;
 
     private static final Logger logger = LoggerFactory.getLogger(ScriptEngineManagerProviderImpl.class);
 

@@ -18,9 +18,6 @@
 package com.foundationdb.ais;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.Schema;
-import com.foundationdb.ais.model.Table;
-import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.protobuf.AISProtobuf;
 import com.foundationdb.ais.protobuf.ProtobufReader;
 import com.foundationdb.ais.protobuf.ProtobufWriter;

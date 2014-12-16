@@ -34,7 +34,7 @@ public class MemoryGroupCursor extends RowCursorImpl implements GroupCursor {
     @Override
     public void open() {
         super.open();
-        scan = factory.getGroupScan(adapter);
+        scan = factory.getGroupScan(adapter, group);
     }
 
     @Override
@@ -74,10 +74,12 @@ public class MemoryGroupCursor extends RowCursorImpl implements GroupCursor {
     public MemoryGroupCursor (MemoryAdapter adapter, Group group) {
         this.adapter = adapter;
         this.factory = MemoryAdapter.getMemoryTableFactory(group);
+        this.group = group;
         assert this.factory != null : group;
     }
     
     private final MemoryAdapter adapter;
     private final MemoryTableFactory factory;
     private GroupScan scan;
+    private Group group;
 }

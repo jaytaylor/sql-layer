@@ -1,6 +1,7 @@
 - com.foundationdb.sql.optimizer.rule.ASTStatementLoader
 - com.foundationdb.sql.optimizer.rule.AggregateMapper
 #- com.foundationdb.sql.optimizer.rule.AggregateToDistinctMapper
+- com.foundationdb.sql.optimizer.rule.TypeResolver
 #- com.foundationdb.sql.optimizer.rule.ConstantFolder
 #- com.foundationdb.sql.optimizer.rule.OuterJoinPromoter
 - com.foundationdb.sql.optimizer.rule.GroupJoinFinder

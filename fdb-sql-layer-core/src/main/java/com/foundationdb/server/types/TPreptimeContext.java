@@ -19,9 +19,9 @@ package com.foundationdb.server.types;
 
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.util.SparseArray;
+import org.joda.time.DateTimeZone;
 
 import java.util.List;
-import java.util.TimeZone;
 
 public final class TPreptimeContext {
     public List<TInstance> getInputTypes() {
@@ -49,7 +49,7 @@ public final class TPreptimeContext {
     public String getCurrentTimezone()
     {
         // TODO need to get this from the session
-        return TimeZone.getDefault().getID();
+        return DateTimeZone.getDefault().getID();
     }
     
     public String getLocale()

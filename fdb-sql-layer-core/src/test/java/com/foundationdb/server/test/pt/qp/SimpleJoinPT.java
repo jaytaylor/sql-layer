@@ -23,9 +23,11 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.util.tap.Tap;
 import com.foundationdb.util.tap.TapReport;
+
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -68,7 +70,7 @@ public class SimpleJoinPT extends QPProfilePTBase
         createIndex("schema", "customer", "idx_cname", "name");
         createIndex("schema", "orders", "idx_osalesman", "salesman");
         createIndex("schema", "address", "idx_aaddress", "address");
-        schema = new Schema(ais());
+        schema = SchemaCache.globalSchema(ais());
         customerRowType = schema.tableRowType(table(customer));
         orderRowType = schema.tableRowType(table(order));
         itemRowType = schema.tableRowType(table(item));
@@ -80,7 +82,7 @@ public class SimpleJoinPT extends QPProfilePTBase
         customerCidIndexRowType = indexType(customer, "cid");
         addressAddressIndexRowType = indexType(address, "address");
         coi = group(customer);
-        adapter = persistitAdapter(schema);
+        adapter = persistitAdapter();
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }

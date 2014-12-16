@@ -29,10 +29,7 @@ import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.*;
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.KeyCreator;
@@ -58,6 +55,11 @@ public class PersistitAdapter extends StoreAdapter
     // StoreAdapter interface
 
     @Override
+    public AkibanInformationSchema getAIS() {
+        return getUnderlyingStore().getAIS(getSession());
+    }
+
+    @Override
     public GroupCursor newGroupCursor(Group group)
     {
         GroupCursor cursor;
@@ -71,15 +73,18 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public RowCursor newIndexCursor(QueryContext context, Index index, IndexKeyRange keyRange, API.Ordering ordering,
-                                    IndexScanSelector selector, boolean openAllSubCursors)
-    {
+    public RowCursor newIndexCursor(QueryContext context,
+                                    IndexRowType rowType,
+                                    IndexKeyRange keyRange, 
+                                    API.Ordering ordering,
+                                    IndexScanSelector scanSelector,
+                                    boolean openAllSubCursors) {
         return new PersistitIndexCursor(context,
-                                        schema.indexRowType(index),
-                                        keyRange,
-                                        ordering,
-                                        selector,
-                                        openAllSubCursors);
+                rowType,
+                keyRange,
+                ordering,
+                scanSelector,
+                openAllSubCursors);
     }
 
     @Override
@@ -124,33 +129,11 @@ public class PersistitAdapter extends StoreAdapter
         }
     }
 
-    @Override
-    public RowData rowData(RowDef rowDef, Row row, RowDataCreator creator) {
-        if(row instanceof PersistitGroupRow) {
-            return ((PersistitGroupRow)row).rowData();
-        }
-        return super.rowData(rowDef, row, creator);
-    }
-
     // PersistitAdapter interface
 
     public PersistitStore persistit()
     {
         return store;
-    }
-
-    public RowDef rowDef(int tableId)
-    {
-        return schema.ais().getTable(tableId).rowDef();
-    }
-
-    private RowDataCreator rowDataCreator() {
-        return new RowDataCreator();
-    }
-
-    public PersistitGroupRow newGroupRow()
-    {
-        return PersistitGroupRow.newPersistitGroupRow(this);
     }
 
     @Override
@@ -234,13 +217,12 @@ public class PersistitAdapter extends StoreAdapter
         return treeService.getTransaction(getSession());
     }
 
-    public PersistitAdapter(Schema schema,
-                            PersistitStore store,
+    public PersistitAdapter(PersistitStore store,
                             TreeService treeService,
                             Session session,
                             ConfigurationService config)
     {
-        super(schema, session, config);
+        super(session, config);
         this.store = store;
         this.treeService = treeService;
     }
@@ -283,4 +265,5 @@ public class PersistitAdapter extends StoreAdapter
 
     private final TreeService treeService;
     private final PersistitStore store;
+
 }

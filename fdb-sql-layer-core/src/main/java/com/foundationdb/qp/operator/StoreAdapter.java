@@ -17,26 +17,20 @@
 
 package com.foundationdb.qp.operator;
 
+import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
-import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.expression.IndexKeyRange;
-import com.foundationdb.qp.storeadapter.RowDataCreator;
 import com.foundationdb.qp.storeadapter.Sorter;
 import com.foundationdb.qp.storeadapter.indexcursor.IterationHelper;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.api.dml.scan.NiceRow;
 import com.foundationdb.server.error.NoSuchSequenceException;
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.KeyCreator;
@@ -57,17 +51,12 @@ public abstract class StoreAdapter
     }
 
     public abstract RowCursor newIndexCursor(QueryContext context,
-                                             Index index,
-                                             IndexKeyRange keyRange,
+                                             IndexRowType rowType,
+                                             IndexKeyRange keyRange, 
                                              API.Ordering ordering,
                                              IndexScanSelector scanSelector,
                                              boolean openAllSubCursors);
-
-    public final Schema schema()
-    {
-        return schema;
-    }
-
+    
     public abstract void updateRow(Row oldRow, Row newRow);
 
     public void writeRow(Row newRow) {
@@ -92,11 +81,11 @@ public abstract class StoreAdapter
 
     public long rowCount(Session session, RowType tableType) {
         assert tableType.hasTable() : tableType;
-        return tableType.table().rowDef().getTableStatus().getRowCount(session);
+        return tableType.table().tableStatus().getRowCount(session);
     }
 
     public Sequence getSequence(TableName sequenceName) {
-        Sequence sequence = schema().ais().getSequence(sequenceName);
+        Sequence sequence = getAIS().getSequence(sequenceName);
         if(sequence == null) {
             throw new NoSuchSequenceException(sequenceName);
         }
@@ -109,16 +98,6 @@ public abstract class StoreAdapter
 
     public final Session getSession() {
         return session;
-    }
-
-    public RowData rowData(RowDef rowDef, Row row, RowDataCreator creator) {
-        // Generic conversion, subclasses should override to check for known group rows
-        NewRow niceRow = new NiceRow(rowDef.getRowDefId(), rowDef);
-        int fields = rowDef.table().getColumnsIncludingInternal().size();
-        for(int i = 0; i < fields; ++i) {
-            creator.put(row.value(i), niceRow, i);
-        }
-        return niceRow.toRowData();
     }
 
     public abstract IndexRow newIndexRow (IndexRowType indexRowType);
@@ -145,12 +124,12 @@ public abstract class StoreAdapter
     public abstract KeyCreator getKeyCreator();
 
     protected abstract Store getUnderlyingStore();
+    
+    public abstract AkibanInformationSchema getAIS();
 
-    protected StoreAdapter(Schema schema,
-            Session session,
+    protected StoreAdapter(Session session,
             ConfigurationService config)
     {
-        this.schema = schema;
         this.session = session;
         this.config = config;
     }
@@ -161,7 +140,6 @@ public abstract class StoreAdapter
 
     // Object state
 
-    protected final Schema schema;
     private final Session session;
     private final ConfigurationService config;
     private final long id = idCounter.incrementAndGet();

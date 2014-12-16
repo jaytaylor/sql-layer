@@ -1,7 +1,7 @@
 SelectQuery@7bd349e2
   ResultSet@6c97d3f0[order_date]
     Project@63db6942[orders.order_date]
-      Select@59db9f45[or(EXISTS(Subquery@61b59919),orders.order_date == Cast(0000-00-00 AS MCOMPAT_ DATE))]
+      Select@59db9f45[or(EXISTS(Subquery@61b59919),orders.order_date == 0000-00-00)]
         SingleIndexScan@f35b47c(Index(test.orders.order_date[IndexColumn(order_date)]), covering/NONE, rows = 1000, cost = 1522.78)
 
 Subquery@61b59919

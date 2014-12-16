@@ -1,14 +1,16 @@
 SelectQuery@7222477e
   ResultSet@2883dbbc[cid]
     MapJoin@7b79f4a()
-      SingleIndexScan@283ab73b(Index(test.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 74.1740)
+      SingleIndexScan@283ab73b( on [c3] Index(test.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 74.1740)
       MapJoin@26d3971f()
         NullIfEmpty@d668823
-          SingleIndexScan@4673b8b4(Index(test.customers.name[IndexColumn(name)]), covering/NONE, =c3.name, rows = 1, cost = 6.04220)
-        MapJoin@5763558e()
-          NullIfEmpty@3a860a74
-            SingleIndexScan@361863b0(Index(test.customers.name[IndexColumn(name)]), covering/NONE, =c2.name, rows = 1, cost = 6.04220)
-          Project@68cf286b[c1.cid]
-            Select@7866be8e[]
-              Limit@7b38d38e(LIMIT 1)
-                SingleIndexScan@4fc94ed5(Index(test.customers.name[IndexColumn(name)]), covering/NONE, =c1.name, rows = 1, cost = 6.04220)
+          MapJoin@5f3511be()
+            SingleIndexScan@4673b8b4( on [c1] Index(test.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 74.1740)
+            Select@78744659[c3.name == c2.name]
+              Project@6854baa6[c1.name, c1.cid, c2.name]
+                NullIfEmpty@3a860a74
+                  SingleIndexScan@361863b0( on [c2] Index(test.customers.name[IndexColumn(name)]), covering/NONE, =c1.name, rows = 1, cost = 6.04220)
+        Project@68cf286b[c1.cid]
+          Select@7866be8e[]
+            Limit@7b38d38e(LIMIT 1)
+              SingleIndexScan@4fc94ed5( on [c4] Index(test.customers.name[IndexColumn(name)]), covering/NONE, =c1.name, rows = 1, cost = 6.04220)

@@ -18,7 +18,7 @@
 package com.foundationdb.server.service.servicemanager;
 
 import com.foundationdb.sql.LayerInfoInterface;
-import com.foundationdb.server.error.ServiceStartupException;
+import com.foundationdb.server.error.ServiceAlreadyStartedException;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.dxl.DXLService;
@@ -39,7 +39,7 @@ public abstract class DelegatingServiceManager implements ServiceManager {
     }
 
     @Override
-    public void startServices() throws ServiceStartupException {
+    public void startServices() throws ServiceAlreadyStartedException {
         throw new UnsupportedOperationException("can't start services via the static delegate");
     }
 

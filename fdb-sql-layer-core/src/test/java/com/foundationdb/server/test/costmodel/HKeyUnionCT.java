@@ -28,8 +28,10 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.api.dml.scan.NewRow;
+
 import org.junit.Test;
 
 import java.util.Random;
@@ -63,10 +65,10 @@ public class HKeyUnionCT extends CostModelBase
             "c5 int not null",
             "primary key(c1, c2, c3, c4, c5)");
         Index index = createIndex(schemaName(), tableName, "idx", "index_key");
-        schema = new Schema(ais());
+        schema = SchemaCache.globalSchema(ais());
         tRowType = schema.tableRowType(table(t));
         indexRowType = schema.indexRowType(index);
-        adapter = newStoreAdapter(schema);
+        adapter = newStoreAdapter();
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }

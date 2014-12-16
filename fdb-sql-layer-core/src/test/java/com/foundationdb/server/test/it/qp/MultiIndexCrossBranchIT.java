@@ -63,7 +63,6 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         pRowType = schema.tableRowType(table(p));
         cRowType = schema.tableRowType(table(c));
         dRowType = schema.tableRowType(table(d));
@@ -72,7 +71,6 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
         dZIndexRowType = indexType(d, "z");
         hKeyRowType = schema.newHKeyRowType(pRowType.table().hKey());
         coi = group(p);
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         db = new Row[]{

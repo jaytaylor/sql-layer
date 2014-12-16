@@ -23,6 +23,7 @@ import com.foundationdb.qp.rowtype.AggregatedRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.TAggregator;
+import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.mcompat.aggr.MCount;
 import com.foundationdb.server.types.value.*;
@@ -419,7 +420,7 @@ final class Aggregate_Partial extends Operator
                 for (int i = 0; i < keyValues.size(); ++i) {
                     Value key = keyValues.get(i);
                     ValueSource input = givenInput.value(i);
-                    if (!ValueSources.areEqual(key, input)) {
+                    if (!TClass.areEqual(key, input)) {
                         gatheringRows = true;
                         return true;
                     }

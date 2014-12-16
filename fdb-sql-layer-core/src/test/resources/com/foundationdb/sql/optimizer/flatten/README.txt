@@ -1,6 +1,14 @@
 combine-expressions: an expression on the outside and an expression on the subquery
 
+bit-or-bit-or: bit_or in subquery ignored so outer bit_or ok
+bit-or-count: bit_or on the outside, with count in the subquery
+bit-or-expression-expression: bit_or with expression in the argument & subquery
+bit-or-expression-joined: bit_or(expression sourcing two subqueries, one with aggregate)
+bit-or-expression: bit_or with a bit_or in the subquery
+bit-or-subquery-free: bit_or that just references a table
+
 count-aliased-column: count on outside of column that is aliased in the subquery
+count-bit-or: count with a bit_or in the subquery
 count-column-to-star: count on outside of a column, where subquery is SELECT *
 count-column: count on outside that just references column returned in subquery
 count-count: count of a subquery that is a count
@@ -9,6 +17,7 @@ count-in: counting a field, flatten IN clause
 count-in-expression: counting a field, flatten IN clause
 count-join-expression: count(*) on outside, two subqueries, one of which has an expression
 count-star-expression: count(*) with an expression in the subquery
+count-subquery-free: count that just references a table
 
 delete-1: just delete everything from a child -> causes a SelectNode with almost everything null
 delete-in: a delete with an IN clause in the WHERE clause
@@ -48,4 +57,5 @@ select-triple-nested-inner-ordered:
     triple select where inner most has order by and can't be flattened
 select-triple-outer-count: triple select where outer most has count and can't be flattened
 
+star-bit-or-join: bit_or on one side a joined subquery
 star-count-join: outer query is just *, one subquery has a COUNT, the other does not

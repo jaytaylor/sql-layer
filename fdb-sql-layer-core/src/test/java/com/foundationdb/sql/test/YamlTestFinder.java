@@ -37,6 +37,8 @@ public class YamlTestFinder
     static {
         String timezone = "UTC";
         DateTimeZone.setDefault(DateTimeZone.forID(timezone));
+        // We still have usages of java.util.Date, but thanks to the ConfigurationServiceImpl.validateTimezone
+        // These should always be the same in production, so leaving this here until we cleanup remaining usages
         TimeZone.setDefault(TimeZone.getTimeZone(timezone));
     }
 

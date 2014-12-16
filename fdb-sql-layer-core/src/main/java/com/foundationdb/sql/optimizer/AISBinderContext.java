@@ -18,7 +18,6 @@
 package com.foundationdb.sql.optimizer;
 
 import com.foundationdb.sql.StandardException;
-import com.foundationdb.sql.compiler.TypeComputer;
 import com.foundationdb.sql.parser.CreateViewNode;
 import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.SQLParserFeature;
@@ -101,9 +100,11 @@ public class AISBinderContext
         parser.getFeatures().clear();
         parser.getFeatures().addAll(parserFeatures);
 
-        defaultSchemaName = getProperty("database");
-        if (defaultSchemaName == null)
-            defaultSchemaName = getProperty("user");
+        if (defaultSchemaName == null) {
+            defaultSchemaName = getProperty("database");
+            if (defaultSchemaName == null)
+                defaultSchemaName = getProperty("user");
+        }
         // TODO: Any way / need to ask AIS if schema exists and report error?
 
         BindingNodeFactory.wrap(parser);
@@ -238,7 +239,7 @@ public class AISBinderContext
             // like a table for those purposes.
             binder.bind(view.getSubquery(), false);
             if (typeComputer != null)
-                view.getSubquery().accept(typeComputer);
+                typeComputer.compute(view.getSubquery());
             return view;
         }
         catch (StandardException ex) {
@@ -256,7 +257,7 @@ public class AISBinderContext
             // If the view uses another view, it gets expanded, too.
             binder.bind(view.getSubquery(), true);
             if (typeComputer != null)
-                view.getSubquery().accept(typeComputer);
+                typeComputer.compute(view.getSubquery());
         }
         catch (StandardException ex) {
             String name = ddl;

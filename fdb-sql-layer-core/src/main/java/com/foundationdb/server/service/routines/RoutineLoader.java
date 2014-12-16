@@ -19,6 +19,7 @@ package com.foundationdb.server.service.routines;
 
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.Routine;
 
 import com.foundationdb.qp.loadableplan.LoadablePlan;
 import com.foundationdb.server.service.session.Session;
@@ -28,7 +29,7 @@ import java.util.jar.JarFile;
 
 public interface RoutineLoader
 {
-    public ClassLoader loadSQLJJar(Session session, TableName jarName);
+    public ClassLoader loadSQLJJar(Session session, TableName jarName, boolean isSystemRoutine);
     public void checkUnloadSQLJJar(Session session, TableName jarName);
     public void registerSystemSQLJJar(SQLJJar sqljJar, ClassLoader classLoader);
     public JarFile openSQLJJarFile(Session session, TableName jarName) throws IOException;

@@ -63,12 +63,22 @@ class SupportedColumnTypes implements AISValidation {
         @Override
         public void visit(IndexColumn indexColumn) {
             Index index = indexColumn.getIndex();
-            boolean nonPointSpatialIndex =
-                index.isSpatial() &&
-                index.firstSpatialArgument() == index.lastSpatialArgument();
             TInstance columnType = indexColumn.getColumn().getType();
-            if (!(!nonPointSpatialIndex && TypeValidator.isSupportedForIndex(columnType) ||
-                  nonPointSpatialIndex && TypeValidator.isSupportedForNonPiontSpatialIndex(columnType))) {
+            int columnPosition = indexColumn.getPosition();
+            boolean columnTypeOK;
+            if (index.isSpatial() &&
+                columnPosition >= index.firstSpatialArgument() &&
+                columnPosition <= index.lastSpatialArgument()) {
+                if (index.firstSpatialArgument() == index.lastSpatialArgument()) {
+                    // Non-point spatial index
+                    columnTypeOK = TypeValidator.isSupportedForNonPointSpatialIndex(columnType);
+                } else {
+                    columnTypeOK = TypeValidator.isSupportedForIndex(columnType);
+                }
+            } else {
+                columnTypeOK = TypeValidator.isSupportedForIndex(columnType);
+            }
+            if (!columnTypeOK) {
                 failures.reportFailure(new AISValidationFailure (
                         new UnsupportedIndexDataTypeException (
                                 new TableName (index.getIndexName().getSchemaName(),

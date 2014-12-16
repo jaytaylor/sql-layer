@@ -91,7 +91,7 @@ public class SequenceDDLIT extends AISDDLITBase {
 
     @Test
     public void durableAfterRollbackAndRestart() throws Exception {
-        StoreAdapter adapter = newStoreAdapter(SchemaCache.globalSchema(ddl().getAIS(session())));
+        StoreAdapter adapter = newStoreAdapter();
         TableName seqName = new TableName("test", "s1");
         String sql = "CREATE SEQUENCE "+seqName+" START WITH 1 INCREMENT BY 1";
         executeDDL(sql);
@@ -114,7 +114,7 @@ public class SequenceDDLIT extends AISDDLITBase {
         txnService().commitTransaction(session());
 
         safeRestartTestServices();
-        adapter = newStoreAdapter(SchemaCache.globalSchema(ddl().getAIS(session())));
+        adapter = newStoreAdapter();
 
         s1 = ais().getSequence(seqName);
         txnService().beginTransaction(session());
@@ -128,7 +128,7 @@ public class SequenceDDLIT extends AISDDLITBase {
 
     @Test
     public void freshValueAfterDropAndRecreate() throws Exception {
-        StoreAdapter adapter = newStoreAdapter(SchemaCache.globalSchema(ddl().getAIS(session())));
+        StoreAdapter adapter = newStoreAdapter();
         final TableName seqName = new TableName("test", "s2");
         final String create = "CREATE SEQUENCE "+seqName+" START WITH 1 INCREMENT BY 1";
         final String drop = "DROP SEQUENCE "+seqName+" RESTRICT";
@@ -181,7 +181,7 @@ public class SequenceDDLIT extends AISDDLITBase {
 
     @Test
     public void wrapCacheSize() throws Exception {
-        StoreAdapter adapter = newStoreAdapter(SchemaCache.globalSchema(ddl().getAIS(session())));
+        StoreAdapter adapter = newStoreAdapter();
         final TableName seqName = new TableName ("test", "s5");
         final String create = "CREATE SEQUENCE "+seqName+" START WITH 1 INCREMENT BY 1";
         executeDDL(create);

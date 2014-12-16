@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.types.service;
 
-import com.foundationdb.server.error.OverloadException;
+import com.foundationdb.server.error.NoSuchCastException;
 import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
@@ -94,7 +94,7 @@ public final class TCastResolver {
         // to find the MOST SPECIFIC cast M such that any element of castGroup which is not M can be strongly castable
         // from M.
         if (castGroup.isEmpty())
-            throw new OverloadException("no common types found for " + tClass1 + " and " + tClass2);
+            throw new NoSuchCastException(tClass1, tClass2);
 
         // N^2 operation number 2...
         TClass mostSpecific = null;

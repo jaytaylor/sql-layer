@@ -18,7 +18,7 @@
 package com.foundationdb.server.service;
 
 import com.foundationdb.sql.LayerInfoInterface;
-import com.foundationdb.server.error.ServiceStartupException;
+import com.foundationdb.server.error.ServiceAlreadyStartedException;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.monitor.MonitorService;
@@ -39,7 +39,7 @@ public interface ServiceManager extends ServiceManagerBase {
 
     State getState();
 
-    void startServices() throws ServiceStartupException;
+    void startServices() throws ServiceAlreadyStartedException;
 
     void stopServices() throws Exception;
     

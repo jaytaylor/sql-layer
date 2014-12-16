@@ -26,7 +26,9 @@ import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.util.tap.Tap;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -68,13 +70,13 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
             "cid2_copy int," +
             "grouping foreign key(pid) references parent(pid)");
         createIndex("schema", "child2", "idx_cid2_copy", "cid2_copy");
-        schema = new Schema(ais());
+        schema = SchemaCache.globalSchema(ais());
         grandparentRowType = schema.tableRowType(table(grandparent));
         parentRowType = schema.tableRowType(table(parent));
         child1RowType = schema.tableRowType(table(child1));
         child2RowType = schema.tableRowType(table(child2));
         group = group(grandparent);
-        adapter = persistitAdapter(schema);
+        adapter = persistitAdapter();
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         // The following is adapter from super.setUpProfiling. Leave taps disabled, they'll be enabled after loading

@@ -17,10 +17,13 @@
 
 package com.foundationdb.server.test.it.keyupdate;
 
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.rowdata.RowDef;
+
 import org.junit.Test;
 
 import java.util.List;
@@ -36,12 +39,11 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
     public void testItemFKUpdate() throws Exception
     {
         // Set item.oid1 = 0 for item 1222
-        KeyUpdateRow originalItem = testStore.find(new HKey(vendorRD, 1L, 1L,
-                                                       customerRD, 12L, 12L,
-                                                       orderRD, 122L, 122L,
-                                                       itemRD, 1222L, 1222L));
-        KeyUpdateRow updatedItem = copyRow(originalItem);
-        updateRow(updatedItem, i_oid1, 0L);
+        KeyUpdateRow originalItem = testStore.find(new HKey(vendorRT, 1L, 1L,
+                                                       customerRT, 12L, 12L,
+                                                       orderRT, 122L, 122L,
+                                                       itemRT, 1222L, 1222L));
+        KeyUpdateRow updatedItem = updateRow(originalItem, i_oid1, 0L);
         startMonitoringHKeyPropagation();
         dbUpdate(originalItem, updatedItem);
         checkHKeyPropagation(0, 0);
@@ -58,12 +60,11 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
     public void testItemPKUpdate() throws Exception
     {
         // Set item.iid = 0 for item 1222
-        KeyUpdateRow originalItem = testStore.find(new HKey(vendorRD, 1L, 1L,
-                                                       customerRD, 12L, 12L,
-                                                       orderRD, 122L, 122L,
-                                                       itemRD, 1222L, 1222L));
-        KeyUpdateRow updatedItem = copyRow(originalItem);
-        updateRow(updatedItem, i_iid2, 1221L);
+        KeyUpdateRow originalItem = testStore.find(new HKey(vendorRT, 1L, 1L,
+                                                       customerRT, 12L, 12L,
+                                                       orderRT, 122L, 122L,
+                                                       itemRT, 1222L, 1222L));
+        KeyUpdateRow updatedItem = updateRow(originalItem, i_iid2, 1221L);
         startMonitoringHKeyPropagation();
         dbUpdate(originalItem, updatedItem);
         checkHKeyPropagation(0, 0);
@@ -80,13 +81,11 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
     public void testItemPKUpdateCreatingDuplicate() throws Exception
     {
         // Set item.iid = 1223 for item 1222
-        KeyUpdateRow originalItem = testStore.find(new HKey(vendorRD, 1L, 1L,
-                                                       customerRD, 12L, 12L,
-                                                       orderRD, 122L, 122L,
-                                                       itemRD, 1222L, 1222L));
-        KeyUpdateRow updatedItem = copyRow(originalItem);
-        updateRow(updatedItem, i_iid1, 1223L);
-        updateRow(updatedItem, i_iid2, 1223L);
+        KeyUpdateRow originalItem = testStore.find(new HKey(vendorRT, 1L, 1L,
+                                                       customerRT, 12L, 12L,
+                                                       orderRT, 122L, 122L,
+                                                       itemRT, 1222L, 1222L));
+        KeyUpdateRow updatedItem = updateRow(originalItem, i_iid1, 1223L, i_iid2, 1223L);
         try {
             dbUpdate(originalItem, updatedItem);
             fail();
@@ -101,17 +100,16 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
     public void testOrderFKUpdate() throws Exception
     {
         // Set order.cid = 0 for order 222
-        KeyUpdateRow originalOrder = testStore.find(new HKey(vendorRD, 2L, 2L,
-                                                        customerRD, 22L, 22L,
-                                                        orderRD, 222L, 222L));
-        KeyUpdateRow updatedOrder = copyRow(originalOrder);
-        updateRow(updatedOrder, o_cid1, 24L, null);
+        KeyUpdateRow originalOrder = testStore.find(new HKey(vendorRT, 2L, 2L,
+                                                        customerRT, 22L, 22L,
+                                                        orderRT, 222L, 222L));
+        KeyUpdateRow updatedOrder = updateRow(originalOrder, o_cid1, 24L, null);
         // Propagate change to order 222's items to reflect db state
         for (long iid = 2221; iid <= 2223; iid++) {
-            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 2L, 2L,
-                                                         customerRD, 22L, 22L,
-                                                         orderRD, 222L, 222L,
-                                                         itemRD, iid, iid));
+            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRT, 2L, 2L,
+                                                         customerRT, 22L, 22L,
+                                                         orderRT, 222L, 222L,
+                                                         itemRT, iid, iid));
             KeyUpdateRow newItemRow = copyRow(oldItemRow);
             newItemRow.hKey(hKey(newItemRow, updatedOrder));
             testStore.deleteTestRow(oldItemRow);
@@ -123,10 +121,10 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
         checkDB();
         // Revert change
         for (long iid = 2221; iid <= 2223; iid++) {
-            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 2L, 2L,
-                                                         customerRD, 22L, 22L,
-                                                         orderRD, 222L, 222L,
-                                                         itemRD, iid, iid));
+            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRT, 2L, 2L,
+                                                         customerRT, 22L, 22L,
+                                                         orderRT, 222L, 222L,
+                                                         itemRT, iid, iid));
             KeyUpdateRow newItemRow = copyRow(oldItemRow);
             newItemRow.hKey(hKey(newItemRow, originalOrder));
             testStore.deleteTestRow(oldItemRow);
@@ -143,18 +141,16 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
     public void testOrderPKUpdate() throws Exception
     {
         // Set order.oid = 0 for order 222
-        KeyUpdateRow originalOrder = testStore.find(new HKey(vendorRD, 2L, 2L,
-                                                        customerRD, 22L, 22L,
-                                                        orderRD, 222L, 222L));
-        KeyUpdateRow udpatedOrder = copyRow(originalOrder);
-        updateRow(udpatedOrder, o_oid1, 0L);
-        updateRow(udpatedOrder, o_oid2, 0L);
+        KeyUpdateRow originalOrder = testStore.find(new HKey(vendorRT, 2L, 2L,
+                                                        customerRT, 22L, 22L,
+                                                        orderRT, 222L, 222L));
+        KeyUpdateRow udpatedOrder = updateRow(originalOrder, o_oid1, 0L, o_oid2, 0L);
         // Propagate change to order 222's items to reflect db state
         for (long iid = 2221; iid <= 2223; iid++) {
-            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 2L, 2L,
-                                                         customerRD, 22L, 22L,
-                                                         orderRD, 222L, 222L,
-                                                         itemRD, iid, iid));
+            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRT, 2L, 2L,
+                                                         customerRT, 22L, 22L,
+                                                         orderRT, 222L, 222L,
+                                                         itemRT, iid, iid));
             KeyUpdateRow newItemRow = copyRow(oldItemRow);
             newItemRow.hKey(hKey(newItemRow, null));
             testStore.deleteTestRow(oldItemRow);
@@ -166,10 +162,10 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
         checkDB();
         // Revert change
         for (long iid = 2221; iid <= 2223; iid++) {
-            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 2L, 2L,
-                                                         customerRD, 22L, 22L,
-                                                         orderRD, 222L, 222L,
-                                                         itemRD, iid, iid));
+            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRT, 2L, 2L,
+                                                         customerRT, 22L, 22L,
+                                                         orderRT, 222L, 222L,
+                                                         itemRT, iid, iid));
             KeyUpdateRow newItemRow = copyRow(oldItemRow);
             newItemRow.hKey(hKey(newItemRow, originalOrder));
             testStore.deleteTestRow(oldItemRow);
@@ -186,12 +182,10 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
     public void testOrderPKUpdateCreatingDuplicate() throws Exception
     {
         // Set order.oid = 221 for order 222
-        KeyUpdateRow originalOrder = testStore.find(new HKey(vendorRD, 2L, 2L,
-                                                        customerRD, 22L, 22L,
-                                                        orderRD, 222L, 222L));
-        KeyUpdateRow updatedOrder = copyRow(originalOrder);
-        updateRow(updatedOrder, o_oid1, 221L);
-        updateRow(updatedOrder, o_oid2, 221L);
+        KeyUpdateRow originalOrder = testStore.find(new HKey(vendorRT, 2L, 2L,
+                                                        customerRT, 22L, 22L,
+                                                        orderRT, 222L, 222L));
+        KeyUpdateRow updatedOrder = updateRow(originalOrder, o_oid1, 221L, o_oid2, 221L);
         try {
             dbUpdate(originalOrder, updatedOrder);
             fail();
@@ -205,25 +199,23 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
     public void testCustomerFKUpdate() throws Exception
     {
         // Set customer.vid = 0 for customer 13
-        KeyUpdateRow originalCustomer = testStore.find(new HKey(vendorRD, 1L, 1L,
-                                                           customerRD, 13L, 13L));
-        KeyUpdateRow udpatedCustomer = copyRow(originalCustomer);
-        updateRow(udpatedCustomer, c_vid1, 0L, null);
-        updateRow(udpatedCustomer, c_vid2, 0L, null);
+        KeyUpdateRow originalCustomer = testStore.find(new HKey(vendorRT, 1L, 1L,
+                                                           customerRT, 13L, 13L));
+        KeyUpdateRow udpatedCustomer = updateRow(originalCustomer, c_vid1, 0L, c_vid2, 0L, null);
         // Propagate change to customer 13s descendents to reflect db state
         for (long oid = 131; oid <= 133; oid++) {
-            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, 1L,
-                                                          customerRD, 13L, 13L,
-                                                          orderRD, oid, oid));
+            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRT, 1L, 1L,
+                                                          customerRT, 13L, 13L,
+                                                          orderRT, oid, oid));
             KeyUpdateRow newOrderRow = copyRow(oldOrderRow);
             newOrderRow.hKey(hKey(newOrderRow, udpatedCustomer));
             testStore.deleteTestRow(oldOrderRow);
             testStore.writeTestRow(newOrderRow);
             for (long iid = oid * 10 + 1; iid <= oid * 10 + 3; iid++) {
-                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 1L, 1L,
-                                                             customerRD, 13L, 13L,
-                                                             orderRD, oid, oid,
-                                                             itemRD, iid, iid));
+                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRT, 1L, 1L,
+                                                             customerRT, 13L, 13L,
+                                                             orderRT, oid, oid,
+                                                             itemRT, iid, iid));
                 KeyUpdateRow newItemRow = copyRow(oldItemRow);
                 newItemRow.hKey(hKey(newItemRow, newOrderRow, udpatedCustomer));
                 testStore.deleteTestRow(oldItemRow);
@@ -236,18 +228,18 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
         checkDB();
         // Revert change
         for (long oid = 131; oid <= 133; oid++) {
-            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, 1L,
-                                                          customerRD, 13L, 13L,
-                                                          orderRD, oid, oid));
+            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRT, 1L, 1L,
+                                                          customerRT, 13L, 13L,
+                                                          orderRT, oid, oid));
             KeyUpdateRow newOrderRow = copyRow(oldOrderRow);
             newOrderRow.hKey(hKey(newOrderRow, originalCustomer));
             testStore.deleteTestRow(oldOrderRow);
             testStore.writeTestRow(newOrderRow);
             for (long iid = oid * 10 + 1; iid <= oid * 10 + 3; iid++) {
-                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 1L, 1L,
-                                                             customerRD, 13L, 13L,
-                                                             orderRD, oid, oid,
-                                                             itemRD, iid, iid));
+                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRT, 1L, 1L,
+                                                             customerRT, 13L, 13L,
+                                                             orderRT, oid, oid,
+                                                             itemRT, iid, iid));
                 KeyUpdateRow newItemRow = copyRow(oldItemRow);
                 newItemRow.hKey(hKey(newItemRow, newOrderRow, originalCustomer));
                 testStore.deleteTestRow(oldItemRow);
@@ -265,24 +257,23 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
     public void testCustomerPKUpdate() throws Exception
     {
         // Set customer.cid = 0 for customer 22
-        KeyUpdateRow originalCustomer = testStore.find(new HKey(vendorRD, 2L, 2L,
-                                                           customerRD, 22L, 22L));
-        KeyUpdateRow updatedCustomer = copyRow(originalCustomer);
-        updateRow(updatedCustomer, c_cid2, 23L, null);
+        KeyUpdateRow originalCustomer = testStore.find(new HKey(vendorRT, 2L, 2L,
+                                                           customerRT, 22L, 22L));
+        KeyUpdateRow updatedCustomer = updateRow(originalCustomer, c_cid2, 23L, null);
         // Propagate change to customer 22's orders and items to reflect db state
         for (long oid = 221; oid <= 223; oid++) {
-            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRD, 2L, 2L,
-                                                          customerRD, 22L, 22L,
-                                                          orderRD, oid, oid));
+            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRT, 2L, 2L,
+                                                          customerRT, 22L, 22L,
+                                                          orderRT, oid, oid));
             KeyUpdateRow newOrderRow = copyRow(oldOrderRow);
             newOrderRow.hKey(hKey(newOrderRow, null));
             testStore.deleteTestRow(oldOrderRow);
             testStore.writeTestRow(newOrderRow);
             for (long iid = oid * 10 + 1; iid <= oid * 10 + 3; iid++) {
-                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 2L, 2L,
-                                                             customerRD, 22L, 22L,
-                                                             orderRD, oid, oid,
-                                                             itemRD, iid, iid));
+                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRT, 2L, 2L,
+                                                             customerRT, 22L, 22L,
+                                                             orderRT, oid, oid,
+                                                             itemRT, iid, iid));
                 KeyUpdateRow newItemRow = copyRow(oldItemRow);
                 newItemRow.hKey(hKey(newItemRow, newOrderRow));
                 testStore.deleteTestRow(oldItemRow);
@@ -295,18 +286,18 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
         checkDB();
         // Revert change
         for (long oid = 221; oid <= 223; oid++) {
-            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRD, 2L, 2L,
-                                                          customerRD, 22L, 22L,
-                                                          orderRD, oid, oid));
+            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRT, 2L, 2L,
+                                                          customerRT, 22L, 22L,
+                                                          orderRT, oid, oid));
             KeyUpdateRow newOrderRow = copyRow(oldOrderRow);
             newOrderRow.hKey(hKey(newOrderRow, originalCustomer));
             testStore.deleteTestRow(oldOrderRow);
             testStore.writeTestRow(newOrderRow);
             for (long iid = oid * 10 + 1; iid <= oid * 10 + 3; iid++) {
-                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 2L, 2L,
-                                                             customerRD, 22L, 22L,
-                                                             orderRD, oid, oid,
-                                                             itemRD, iid, iid));
+                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRT, 2L, 2L,
+                                                             customerRT, 22L, 22L,
+                                                             orderRT, oid, oid,
+                                                             itemRT, iid, iid));
                 KeyUpdateRow newItemRow = copyRow(oldItemRow);
                 newItemRow.hKey(hKey(newItemRow, newOrderRow, originalCustomer));
                 testStore.deleteTestRow(oldItemRow);
@@ -324,11 +315,9 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
     public void testCustomerPKUpdateCreatingDuplicate() throws Exception
     {
         // Set customer.cid = 11 for customer 23
-        KeyUpdateRow originalCustomer = testStore.find(new HKey(vendorRD, 2L, 2L,
-                                                           customerRD, 23L, 23L));
-        KeyUpdateRow updatedCustomer = copyRow(originalCustomer);
-        updateRow(updatedCustomer, c_cid1, 21L);
-        updateRow(updatedCustomer, c_cid2, 21L);
+        KeyUpdateRow originalCustomer = testStore.find(new HKey(vendorRT, 2L, 2L,
+                                                           customerRT, 23L, 23L));
+        KeyUpdateRow updatedCustomer = updateRow(originalCustomer, c_cid1, 21L, c_cid2, 21L);
         try {
             dbUpdate(originalCustomer, updatedCustomer);
             fail();
@@ -342,9 +331,8 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
     public void testVendorPKUpdate() throws Exception
     {
         // Set vendor.vid = 0 for vendor 1
-        KeyUpdateRow originalVendor = testStore.find(new HKey(vendorRD, 1L, 1L));
-        KeyUpdateRow updatedVendor = copyRow(originalVendor);
-        updateRow(updatedVendor, v_vid1, 0L, null);
+        KeyUpdateRow originalVendor = testStore.find(new HKey(vendorRT, 1L, 1L));
+        KeyUpdateRow updatedVendor = updateRow(originalVendor, v_vid1, 0L, null);
         startMonitoringHKeyPropagation();
         dbUpdate(originalVendor, updatedVendor);
         checkHKeyPropagation(2, 0); // customer has vid, isn't affected by vendor update
@@ -361,10 +349,8 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
     public void testVendorPKUpdateCreatingDuplicate() throws Exception
     {
         // Set vendor.vid = 2 for vendor 1
-        KeyUpdateRow originalVendorRow = testStore.find(new HKey(vendorRD, 1L, 1L));
-        KeyUpdateRow updatedVendorRow = copyRow(originalVendorRow);
-        updateRow(updatedVendorRow, v_vid1, 2L, null);
-        updateRow(updatedVendorRow, v_vid2, 2L, null);
+        KeyUpdateRow originalVendorRow = testStore.find(new HKey(vendorRT, 1L, 1L));
+        KeyUpdateRow updatedVendorRow = updateRow(originalVendorRow, v_vid1, 2L, v_vid2, 2L, null);
         try {
             dbUpdate(originalVendorRow, updatedVendorRow);
             fail();
@@ -377,10 +363,10 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
     @Test
     public void testItemDelete() throws Exception
     {
-        KeyUpdateRow itemRow = testStore.find(new HKey(vendorRD, 2L, 2L,
-                                                  customerRD, 22L, 22L,
-                                                  orderRD, 222L, 222L,
-                                                  itemRD, 2222L, 2222L));
+        KeyUpdateRow itemRow = testStore.find(new HKey(vendorRT, 2L, 2L,
+                                                  customerRT, 22L, 22L,
+                                                  orderRT, 222L, 222L,
+                                                  itemRT, 2222L, 2222L));
         startMonitoringHKeyPropagation();
         dbDelete(itemRow);
         checkHKeyPropagation(0, 0);
@@ -396,17 +382,17 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
     @Test
     public void testOrderDelete() throws Exception
     {
-        KeyUpdateRow customerRow = testStore.find(new HKey(vendorRD, 2L, 2L,
-                                                      customerRD, 22L, 22L));
-        KeyUpdateRow orderRow = testStore.find(new HKey(vendorRD, 2L, 2L,
-                                                   customerRD, 22L, 22L,
-                                                   orderRD, 222L, 222L));
+        KeyUpdateRow customerRow = testStore.find(new HKey(vendorRT, 2L, 2L,
+                                                      customerRT, 22L, 22L));
+        KeyUpdateRow orderRow = testStore.find(new HKey(vendorRT, 2L, 2L,
+                                                   customerRT, 22L, 22L,
+                                                   orderRT, 222L, 222L));
         // Propagate change to order 222's items to reflect db state
         for (long iid = 2221; iid <= 2223; iid++) {
-            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 2L, 2L,
-                                                         customerRD, 22L, 22L,
-                                                         orderRD, 222L, 222L,
-                                                         itemRD, iid, iid));
+            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRT, 2L, 2L,
+                                                         customerRT, 22L, 22L,
+                                                         orderRT, 222L, 222L,
+                                                         itemRT, iid, iid));
             KeyUpdateRow newItemRow = copyRow(oldItemRow);
             newItemRow.hKey(hKey(newItemRow, null));
             testStore.deleteTestRow(oldItemRow);
@@ -418,10 +404,10 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
         checkDB();
         // Revert change
         for (long iid = 2221; iid <= 2223; iid++) {
-            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 2L, 2L,
-                                                         customerRD, 22L, 22L,
-                                                         orderRD, 222L, 222L,
-                                                         itemRD, iid, iid));
+            KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRT, 2L, 2L,
+                                                         customerRT, 22L, 22L,
+                                                         orderRT, 222L, 222L,
+                                                         itemRT, iid, iid));
             KeyUpdateRow newItemRow = copyRow(oldItemRow);
             newItemRow.hKey(hKey(newItemRow, orderRow, customerRow));
             testStore.deleteTestRow(oldItemRow);
@@ -437,22 +423,22 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
     @Test
     public void testCustomerDelete() throws Exception
     {
-        KeyUpdateRow customerRow = testStore.find(new HKey(vendorRD, 2L, 2L,
-                                                      customerRD, 22L, 22L));
+        KeyUpdateRow customerRow = testStore.find(new HKey(vendorRT, 2L, 2L,
+                                                      customerRT, 22L, 22L));
         // Propagate change to customer's descendents to reflect db state
         for (long oid = 221; oid <= 223; oid++) {
-            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRD, 2L, 2L,
-                                                          customerRD, 22L, 22L,
-                                                          orderRD, oid, oid));
+            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRT, 2L, 2L,
+                                                          customerRT, 22L, 22L,
+                                                          orderRT, oid, oid));
             KeyUpdateRow newOrderRow = copyRow(oldOrderRow);
             newOrderRow.hKey(hKey(newOrderRow));
             testStore.deleteTestRow(oldOrderRow);
             testStore.writeTestRow(newOrderRow);
             for (long iid = oid * 10 + 1; iid <= oid * 10 + 3; iid++) {
-                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 2L, 2L,
-                                                             customerRD, 22L, 22L,
-                                                             orderRD, oid, oid,
-                                                             itemRD, iid, iid));
+                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRT, 2L, 2L,
+                                                             customerRT, 22L, 22L,
+                                                             orderRT, oid, oid,
+                                                             itemRT, iid, iid));
                 KeyUpdateRow newItemRow = copyRow(oldItemRow);
                 newItemRow.hKey(hKey(newItemRow, newOrderRow));
                 testStore.deleteTestRow(oldItemRow);
@@ -466,18 +452,18 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
         checkDB();
         // Revert change
         for (long oid = 221; oid <= 223; oid++) {
-            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRD, 2L, 2L,
-                                                          customerRD, 22L, 22L,
-                                                          orderRD, oid, oid));
+            KeyUpdateRow oldOrderRow = testStore.find(new HKey(vendorRT, 2L, 2L,
+                                                          customerRT, 22L, 22L,
+                                                          orderRT, oid, oid));
             KeyUpdateRow newOrderRow = copyRow(oldOrderRow);
             newOrderRow.hKey(hKey(newOrderRow, customerRow));
             testStore.deleteTestRow(oldOrderRow);
             testStore.writeTestRow(newOrderRow);
             for (long iid = oid * 10 + 1; iid <= oid * 10 + 3; iid++) {
-                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRD, 2L, 2L,
-                                                             customerRD, 22L, 22L,
-                                                             orderRD, oid, oid,
-                                                             itemRD, iid, iid));
+                KeyUpdateRow oldItemRow = testStore.find(new HKey(vendorRT, 2L, 2L,
+                                                             customerRT, 22L, 22L,
+                                                             orderRT, oid, oid,
+                                                             itemRT, iid, iid));
                 KeyUpdateRow newItemRow = copyRow(oldItemRow);
                 newItemRow.hKey(hKey(newItemRow, newOrderRow, customerRow));
                 testStore.deleteTestRow(oldItemRow);
@@ -494,7 +480,7 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
     @Test
     public void testVendorDelete() throws Exception
     {
-        KeyUpdateRow vendorRow = testStore.find(new HKey(vendorRD, 1L, 1L));
+        KeyUpdateRow vendorRow = testStore.find(new HKey(vendorRT, 1L, 1L));
         startMonitoringHKeyPropagation();
         dbDelete(vendorRow);
         checkHKeyPropagation(1, 39);
@@ -580,24 +566,25 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
         i_iid2 = 8;
         i_ix = 1;
         // group
-        vendorRD = getRowDef(vendorId);
-        customerRD = getRowDef(customerId);
-        orderRD = getRowDef(orderId);
-        itemRD = getRowDef(itemId);
-        group = customerRD.getGroup();
+        vendorRT = getRowType(vendorId);
+        customerRT = getRowType(customerId);
+        orderRT = getRowType (orderId);
+        itemRT = getRowType (itemId);
+                
+        group = customerRT.table().getGroup();
     }
 
     @Override
     protected List<List<Object>> vendorPKIndex(List<TreeRecord> records)
     {
-        return indexFromRecords(records, vendorRD,
+        return indexFromRecords(records, vendorRT,
                                 v_vid1, v_vid2);
     }
 
     @Override
     protected List<List<Object>> customerPKIndex(List<TreeRecord> records)
     {
-        return indexFromRecords(records, customerRD,
+        return indexFromRecords(records, customerRT,
                                 c_vid1, c_vid2,
                                 c_cid1, c_cid2);
     }
@@ -605,7 +592,7 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
     @Override
     protected List<List<Object>> orderPKIndex(List<TreeRecord> records)
     {
-        return indexFromRecords(records, orderRD,
+        return indexFromRecords(records, orderRT,
                                 o_vid1, o_vid2,
                                 o_cid1, o_cid2,
                                 o_oid1, o_oid2);
@@ -614,7 +601,7 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
     @Override
     protected List<List<Object>> itemPKIndex(List<TreeRecord> records)
     {
-        return indexFromRecords(records, itemRD,
+        return indexFromRecords(records, itemRT,
                                 i_vid1, i_vid2,
                                 i_cid1, i_cid2,
                                 i_oid1, i_oid2,
@@ -624,7 +611,7 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
     @Override
     protected List<List<Object>> orderPriorityIndex(List<TreeRecord> records)
     {
-        return indexFromRecords(records, orderRD,
+        return indexFromRecords(records, orderRT,
                                 o_priority,
                                 o_vid1, o_vid2,
                                 o_cid1, o_cid2,
@@ -634,7 +621,7 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
     @Override
     protected List<List<Object>> orderWhenIndex(List<TreeRecord> records)
     {
-        return indexFromRecords(records, orderRD,
+        return indexFromRecords(records, orderRT,
                                 o_when,
                                 o_vid1, o_vid2,
                                 o_cid1, o_cid2,
@@ -754,60 +741,29 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
 
     private KeyUpdateRow vendorRow(long vid, long vx)
     {
-        KeyUpdateRow vendor = createTestRow(vendorId);
-        vendor.put(v_vid1, vid);
-        vendor.put(v_vid2, vid);
-        vendor.put(v_vx, vx);
-        vendor.hKey(new HKey(vendorRD, vid, vid));
+        KeyUpdateRow vendor = createTestRow(vendorRT, vid, vx, vid);
+        vendor.hKey(hKey(vendor));
         return vendor;
     }
 
     private KeyUpdateRow customerRow(long vid, long cid, long cx)
     {
-        KeyUpdateRow customer = createTestRow(customerId);
-        customer.put(c_vid1, vid);
-        customer.put(c_vid2, vid);
-        customer.put(c_cid1, cid);
-        customer.put(c_cid2, cid);
-        customer.put(c_cx, cx);
-        customer.hKey(new HKey(vendorRD, vid, vid, customerRD, cid, cid));
+        KeyUpdateRow customer = createTestRow(customerRT, vid, cid, vid, cx, cid);
+        customer.hKey(hKey(customer));
         return customer;
     }
 
     private KeyUpdateRow orderRow(long vid, long cid, long oid, long ox, long priority, long when)
     {
-        KeyUpdateRow order = createTestRow(orderId);
-        order.put(o_vid1, vid);
-        order.put(o_vid2, vid);
-        order.put(o_cid1, cid);
-        order.put(o_cid2, cid);
-        order.put(o_oid1, oid);
-        order.put(o_oid2, oid);
-        order.put(o_ox, ox);
-        order.put(o_priority, priority);
-        order.put(o_when, when);
-        order.hKey(new HKey(vendorRD, vid, vid,
-                            customerRD, cid, cid,
-                            orderRD, oid, oid));
+        KeyUpdateRow order = createTestRow(orderRT, vid, cid, cid, oid, oid, ox, priority, vid, when);
+        order.hKey(hKey(order));
         return order;
     }
 
     private KeyUpdateRow itemRow(long vid, long cid, long oid, long iid, long ix)
     {
-        KeyUpdateRow item = createTestRow(itemId);
-        item.put(i_vid1, vid);
-        item.put(i_vid2, vid);
-        item.put(i_cid1, cid);
-        item.put(i_cid2, cid);
-        item.put(i_oid1, oid);
-        item.put(i_oid2, oid);
-        item.put(i_iid1, iid);
-        item.put(i_iid2, iid);
-        item.put(i_ix, ix);
-        item.hKey(new HKey(vendorRD, vid, vid,
-                           customerRD, cid, cid,
-                           orderRD, oid, oid,
-                           itemRD, iid, iid));
+        KeyUpdateRow item = createTestRow(itemRT, cid, ix, oid, vid, oid, vid, cid, iid, iid);
+        item.hKey(hKey(item));
         return item;
     }
 
@@ -815,21 +771,21 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
     protected HKey hKey(KeyUpdateRow row)
     {
         HKey hKey = null;
-        RowDef rowDef = row.getRowDef();
-        if (rowDef == vendorRD) {
-            hKey = new HKey(vendorRD, row.get(v_vid1), row.get(v_vid2));
-        } else if (rowDef == customerRD) {
-            hKey = new HKey(vendorRD, row.get(c_vid1), row.get(c_vid2), 
-                            customerRD, row.get(c_cid1), row.get(c_cid2));
-        } else if (rowDef == orderRD) {
-            hKey = new HKey(vendorRD, row.get(o_vid1), row.get(o_vid2),
-                            customerRD, row.get(o_cid1), row.get(o_cid2),
-                            orderRD, row.get(o_oid1), row.get(o_oid2));
-        } else if (rowDef == itemRD) {
-            hKey = new HKey(vendorRD, row.get(i_vid1), row.get(i_vid1),
-                            customerRD, row.get(i_cid1), row.get(i_cid2),
-                            orderRD, row.get(i_oid1), row.get(i_oid2),
-                            itemRD, row.get(i_iid1), row.get(i_iid2));
+        RowType rowType = row.rowType();
+        if (rowType == vendorRT) {
+            hKey = new HKey(vendorRT, row.value(v_vid1).getInt64(), row.value(v_vid2).getInt64());
+        } else if (rowType == customerRT) {
+            hKey = new HKey(vendorRT, row.value(c_vid1).getInt64(), row.value(c_vid2).getInt64(), 
+                            customerRT, row.value(c_cid1).getInt64(), row.value(c_cid2).getInt64());
+        } else if (rowType == orderRT) {
+            hKey = new HKey(vendorRT, row.value(o_vid1).getInt64(), row.value(o_vid2).getInt64(),
+                            customerRT, row.value(o_cid1).getInt64(), row.value(o_cid2).getInt64(),
+                            orderRT, row.value(o_oid1).getInt64(), row.value(o_oid2).getInt64());
+        } else if (rowType == itemRT) {
+            hKey = new HKey(vendorRT, row.value(i_vid1).getInt64(), row.value(i_vid1).getInt64(),
+                            customerRT, row.value(i_cid1).getInt64(), row.value(i_cid2).getInt64(),
+                            orderRT, row.value(i_oid1).getInt64(), row.value(i_oid2).getInt64(),
+                            itemRT, row.value(i_iid1).getInt64(), row.value(i_iid2).getInt64());
         } else {
             fail();
         }
@@ -847,68 +803,70 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
         return hKey(row);
     }
 
-    protected void checkInitialState(NewRow row)
+    @Override
+    protected void checkInitialState(Row row)
     {
-        RowDef rowDef = row.getRowDef();
-        if (rowDef == vendorRD) {
-            assertEquals(row.get(v_vx), ((Long)row.get(v_vid1)) * 100);
-            assertEquals(row.get(v_vx), ((Long)row.get(v_vid2)) * 100);
-        } else if (rowDef == customerRD) {
-            assertEquals(row.get(c_vid1), ((Long) row.get(c_cid1)) / 10);
-            assertEquals(row.get(c_vid2), ((Long) row.get(c_cid2)) / 10);
-            assertEquals(row.get(c_cx), ((Long)row.get(c_cid1)) * 100);
-            assertEquals(row.get(c_cx), ((Long)row.get(c_cid2)) * 100);
-        } else if (rowDef == orderRD) {
-            assertEquals(row.get(o_vid1), ((Long) row.get(o_cid1)) / 10);
-            assertEquals(row.get(o_vid2), ((Long) row.get(o_cid2)) / 10);
-            assertEquals(row.get(o_cid1), ((Long)row.get(o_oid1)) / 10);
-            assertEquals(row.get(o_cid2), ((Long)row.get(o_oid2)) / 10);
-            assertEquals(row.get(o_ox), ((Long)row.get(o_oid1)) * 100);
-            assertEquals(row.get(o_ox), ((Long)row.get(o_oid2)) * 100);
-        } else if (rowDef == itemRD) {
-            assertEquals(row.get(i_vid1), ((Long) row.get(i_cid1)) / 10);
-            assertEquals(row.get(i_vid2), ((Long) row.get(i_cid2)) / 10);
-            assertEquals(row.get(i_cid1), ((Long)row.get(i_oid1)) / 10);
-            assertEquals(row.get(i_cid2), ((Long)row.get(i_oid2)) / 10);
-            assertEquals(row.get(i_oid1), ((Long)row.get(i_iid1)) / 10);
-            assertEquals(row.get(i_oid2), ((Long)row.get(i_iid2)) / 10);
-            assertEquals(row.get(i_ix), ((Long)row.get(i_iid1)) * 100);
-            assertEquals(row.get(i_ix), ((Long)row.get(i_iid2)) * 100);
+        RowType rowType = row.rowType();
+        if (rowType == vendorRT) {
+            assertEquals(row.value(v_vx).getInt64(), row.value(v_vid1).getInt64() * 100);
+            assertEquals(row.value(v_vx).getInt64(), row.value(v_vid2).getInt64() * 100);
+        } else if (rowType == customerRT) {
+            assertEquals(row.value(c_vid1).getInt64(),  row.value(c_cid1).getInt64() / 10);
+            assertEquals(row.value(c_vid2).getInt64(),  row.value(c_cid2).getInt64() / 10);
+            assertEquals(row.value(c_cx).getInt64(), row.value(c_cid1).getInt64() * 100);
+            assertEquals(row.value(c_cx).getInt64(), row.value(c_cid2).getInt64() * 100);
+        } else if (rowType == orderRT) {
+            assertEquals(row.value(o_vid1).getInt64(),  row.value(o_cid1).getInt64() / 10);
+            assertEquals(row.value(o_vid2).getInt64(),  row.value(o_cid2).getInt64() / 10);
+            assertEquals(row.value(o_cid1).getInt64(), row.value(o_oid1).getInt64() / 10);
+            assertEquals(row.value(o_cid2).getInt64(), row.value(o_oid2).getInt64() / 10);
+            assertEquals(row.value(o_ox).getInt64(), row.value(o_oid1).getInt64() * 100);
+            assertEquals(row.value(o_ox).getInt64(), row.value(o_oid2).getInt64() * 100);
+        } else if (rowType == itemRT) {
+            assertEquals(row.value(i_vid1).getInt64(),  row.value(i_cid1).getInt64() / 10);
+            assertEquals(row.value(i_vid2).getInt64(),  row.value(i_cid2).getInt64() / 10);
+            assertEquals(row.value(i_cid1).getInt64(), row.value(i_oid1).getInt64() / 10);
+            assertEquals(row.value(i_cid2).getInt64(), row.value(i_oid2).getInt64() / 10);
+            assertEquals(row.value(i_oid1).getInt64(), row.value(i_iid1).getInt64() / 10);
+            assertEquals(row.value(i_oid2).getInt64(), row.value(i_iid2).getInt64() / 10);
+            assertEquals(row.value(i_ix).getInt64(), row.value(i_iid1).getInt64() * 100);
+            assertEquals(row.value(i_ix).getInt64(), row.value(i_iid2).getInt64() * 100);
         } else {
             fail();
         }
     }
 
+    @Override
     protected void confirmColumns()
     {
-        confirmColumn(vendorRD, v_vid1, "vid1");
-        confirmColumn(vendorRD, v_vid2, "vid2");
-        confirmColumn(vendorRD, v_vx, "vx");
+        confirmColumn(vendorRT, v_vid1, "vid1");
+        confirmColumn(vendorRT, v_vid2, "vid2");
+        confirmColumn(vendorRT, v_vx, "vx");
 
-        confirmColumn(customerRD, c_vid1, "vid1");
-        confirmColumn(customerRD, c_vid2, "vid2");
-        confirmColumn(customerRD, c_cid1, "cid1");
-        confirmColumn(customerRD, c_cid2, "cid2");
-        confirmColumn(customerRD, c_cx, "cx");
+        confirmColumn(customerRT, c_vid1, "vid1");
+        confirmColumn(customerRT, c_vid2, "vid2");
+        confirmColumn(customerRT, c_cid1, "cid1");
+        confirmColumn(customerRT, c_cid2, "cid2");
+        confirmColumn(customerRT, c_cx, "cx");
 
-        confirmColumn(orderRD, o_vid1, "vid1");
-        confirmColumn(orderRD, o_vid2, "vid2");
-        confirmColumn(orderRD, o_cid1, "cid1");
-        confirmColumn(orderRD, o_cid2, "cid2");
-        confirmColumn(orderRD, o_oid1, "oid1");
-        confirmColumn(orderRD, o_oid2, "oid2");
-        confirmColumn(orderRD, o_ox, "ox");
-        confirmColumn(orderRD, o_priority, "priority");
-        confirmColumn(orderRD, o_when, "when");
+        confirmColumn(orderRT, o_vid1, "vid1");
+        confirmColumn(orderRT, o_vid2, "vid2");
+        confirmColumn(orderRT, o_cid1, "cid1");
+        confirmColumn(orderRT, o_cid2, "cid2");
+        confirmColumn(orderRT, o_oid1, "oid1");
+        confirmColumn(orderRT, o_oid2, "oid2");
+        confirmColumn(orderRT, o_ox, "ox");
+        confirmColumn(orderRT, o_priority, "priority");
+        confirmColumn(orderRT, o_when, "when");
 
-        confirmColumn(itemRD, i_vid1, "vid1");
-        confirmColumn(itemRD, i_vid2, "vid2");
-        confirmColumn(itemRD, i_cid1, "cid1");
-        confirmColumn(itemRD, i_cid2, "cid2");
-        confirmColumn(itemRD, i_oid1, "oid1");
-        confirmColumn(itemRD, i_oid2, "oid2");
-        confirmColumn(itemRD, i_iid1, "iid1");
-        confirmColumn(itemRD, i_iid2, "iid2");
-        confirmColumn(itemRD, i_ix, "ix");
+        confirmColumn(itemRT, i_vid1, "vid1");
+        confirmColumn(itemRT, i_vid2, "vid2");
+        confirmColumn(itemRT, i_cid1, "cid1");
+        confirmColumn(itemRT, i_cid2, "cid2");
+        confirmColumn(itemRT, i_oid1, "oid1");
+        confirmColumn(itemRT, i_oid2, "oid2");
+        confirmColumn(itemRT, i_iid1, "iid1");
+        confirmColumn(itemRT, i_iid2, "iid2");
+        confirmColumn(itemRT, i_ix, "ix");
     }
 }

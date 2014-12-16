@@ -24,6 +24,7 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.util.SchemaCache;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FileDescriptor;
@@ -61,7 +62,7 @@ public abstract class ProtobufRowConverter
     public abstract DynamicMessage encode(Row row);
 
     /** Copy the given message into the given row data. */
-    public abstract Row decode(DynamicMessage msg, RowType rowType);
+    public abstract Row decode(DynamicMessage msg);
 
     public String shortFormat(DynamicMessage msg) {
         return TextFormat.shortDebugString(msg);
@@ -134,7 +135,7 @@ public abstract class ProtobufRowConverter
         }
 
         @Override
-        public Row decode(DynamicMessage msg, RowType rowType) {
+        public Row decode(DynamicMessage msg) {
             boolean first = true;
             Row row = null;
             for (FieldDescriptor field : msg.getAllFields().keySet()) {
@@ -143,7 +144,7 @@ public abstract class ProtobufRowConverter
                 if (tableConverter != null) {
                     assert first;
                     first = false;
-                    row = tableConverter.decode((DynamicMessage)msg.getField(field), rowType);
+                    row = tableConverter.decode((DynamicMessage)msg.getField(field));
                 }
             }
             assert !first;
@@ -158,6 +159,7 @@ public abstract class ProtobufRowConverter
         private final FieldDescriptor[] nullFields;
         private final Map<FieldDescriptor,Integer> columnIndexesByField;
         private final Map<FieldDescriptor,Integer> nullableIndexesByField;
+        private final RowType rowType;
         
         public TableConverter(Table table, Descriptor tableMessage) {
             super(table.getTableId(), tableMessage);
@@ -195,6 +197,7 @@ public abstract class ProtobufRowConverter
             }
             this.nullFields = nullFields;
             this.nullableIndexesByField = nullableIndexesByField;
+            this.rowType = SchemaCache.globalSchema(table.getAIS()).tableRowType(table);
         }
 
         @Override
@@ -216,7 +219,7 @@ public abstract class ProtobufRowConverter
         }
 
         @Override
-        public Row decode(DynamicMessage msg, RowType rowType) {
+        public Row decode(DynamicMessage msg) {
             Object[] objects = new Object[fields.length];
             for (FieldDescriptor field : msg.getAllFields().keySet()) {
                 Integer columnIndex = columnIndexesByField.get(field);
@@ -232,7 +235,6 @@ public abstract class ProtobufRowConverter
                     }
                 }
             }
-
             ValuesHolderRow row = new ValuesHolderRow (rowType, objects);
             return row;
         }

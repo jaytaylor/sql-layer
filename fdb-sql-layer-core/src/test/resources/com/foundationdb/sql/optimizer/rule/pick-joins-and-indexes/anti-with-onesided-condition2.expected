@@ -1,0 +1,14 @@
+SelectQuery@4f3b8e0f
+  ResultSet@4eeba36c[c1, c2, c3]
+    Project@50362fee[primary1.c1, primary1.c2, primary1.c3]
+      Select@1584db66[]
+        JoinNode@4db8b87d(ANTI/NESTED_LOOPS[primary1.c1 == 80, t2.c2 == primary1.c2])
+          TableGroupJoinTree@6cf25a2b(TableGroup@1afdf4ee(primary1), primary1 - GroupScan@220d96d9(Group(test.primary1), rows = 1, cost = 0.00000))
+            TableSource@25e0467a(primary1 - TableGroup@1afdf4ee(primary1))
+          HashJoinNode@1a583e68(INNER/HASH_TABLE[t3.c1] = [t2.c3])
+            TableGroupJoinTree@17692b5b(TableGroup@79cc97b4(t3), t3 - GroupScan@6dfc7502(Group(test.t3), rows = 1, cost = 0.00000))
+              TableSource@651e24d7(t3 - TableGroup@79cc97b4(t3))
+            TableGroupJoinTree@16db431a(TableGroup@15126baf(t2), t2 - GroupScan@18d3b3a3(Group(test.t2), rows = 1, cost = 0.00000))
+              TableSource@122b7d0a(t2 - TableGroup@15126baf(t2))
+            HashTableLookup@799d6f5e(HashTable@4efac2b2, [t2.c3])
+              TableSource@651e24d7(t3 - TableGroup@79cc97b4(t3))

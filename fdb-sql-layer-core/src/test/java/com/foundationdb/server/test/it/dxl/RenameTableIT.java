@@ -24,7 +24,6 @@ import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.DuplicateTableNameException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.ProtectedTableDDLException;
-import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.test.it.ITBase;
 import org.junit.Assert;
 import org.junit.Test;

@@ -88,7 +88,6 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
         OutputStream outputStream = null;
         try {
             preExecute(context, DXLFunction.UNSPECIFIED_DML_READ);
-            context.initStore(getSchema());
             cursor = context.startCursor(this, bindings);
             outputStream = new FileOutputStream(toFile);
             int ncols = getColumnTypes().size();

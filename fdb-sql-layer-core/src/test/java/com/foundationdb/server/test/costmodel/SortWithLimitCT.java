@@ -24,7 +24,9 @@ import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.operator.TimeOperator;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.test.ExpressionGenerators;
+
 import org.junit.Test;
 
 import java.util.Random;
@@ -72,9 +74,9 @@ public class SortWithLimitCT extends CostModelBase
             "e int",
             "primary key(id)");
         group = group(t);
-        schema = new Schema(ais());
+        schema = SchemaCache.globalSchema(ais());
         tRowType = schema.tableRowType(table(t));
-        adapter = newStoreAdapter(schema);
+        adapter = newStoreAdapter();
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }

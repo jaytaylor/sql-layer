@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.test.it.keyupdate;
 
-import com.foundationdb.server.api.dml.scan.NewRow;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.store.TreeRecordVisitor;
 
 import java.util.ArrayList;
@@ -26,7 +26,7 @@ import java.util.List;
 class RecordCollectingTreeRecordVisistor extends TreeRecordVisitor
 {
     @Override
-    public void visit(Object[] key, NewRow row)
+    public void visit(Object[] key, Row row)
     {
         records.add(new TreeRecord(key, row));
     }

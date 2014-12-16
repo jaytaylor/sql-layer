@@ -1,4 +1,3 @@
-# Test the COALESCE function
 ---
 - Include: all-types-schema.yaml
 
@@ -9,11 +8,10 @@
 
 # Test mixed types
 ---
-- Statement: INSERT INTO all_types (varchar_field, integer_field)
-    VALUES ('abc', 123)
-#--- #tempoary commented out, will fix when CompareExpression goes in
-#- Statement: SELECT COALESCE(varchar_field, integer_field) FROM all_types
-#- output: [['abc']]
+- Statement: INSERT INTO all_types (varchar_field, integer_field) VALUES ('5.0', 123)
+---
+- Statement: SELECT COALESCE(varchar_field, integer_field) FROM all_types
+- output: [[5.0]]
 ---
 - Statement: DELETE FROM all_types
 
@@ -106,7 +104,7 @@
 ---
 - Statement: INSERT INTO all_types (varchar_field) VALUES ('yup')
 
-# Now retreive
+# Now retrieve
 ---
 - Statement: SELECT COALESCE(bigint_field, bigint_unsigned_field,
         double_field, float_field, integer_field, numeric_field,
@@ -126,7 +124,7 @@
 - output: [[x], [x], [x], [c], [x], [x], [x], [x], [x], [x], [x], [x],
     [x], [x], [x]]
 
-# Use parameter -- not working
+# Use parameter
 ---
 - Statement: SELECT COALESCE(char_field, ?) FROM all_types
 - params: [[x]]
@@ -202,17 +200,20 @@
 - Statement: SELECT COALESCE(bigint_field, double_field, double_field) FROM all_types;
 - output_types: [DOUBLE]
 
+# There is no strong cast for bigint to/from varchar so the "best" common is picked (double)
 ---
 - Statement: SELECT COALESCE(bigint_field, varchar_field, varchar_field) FROM all_types;
-- output_types: [BIGINT]
+- output_types: [DOUBLE]
 
+# Ditto strong cast
 ---
 - Statement: SELECT COALESCE(bigint_field, date_field, date_field) FROM all_types;
-- output_types: [DATE]
+- output_types: [DOUBLE]
 
+# Ditto strong cast
 ---
 - Statement: SELECT COALESCE(bigint_field, integer_field, date_field) FROM all_types;
-- output_types: [DATE]
+- output_types: [DOUBLE]
 
 ---
 - Statement: SELECT COALESCE(bigint_field, double_field, integer_field) FROM all_types;

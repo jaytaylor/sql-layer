@@ -22,6 +22,7 @@ import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.TableRowType;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.test.it.qp.OperatorITBase;
 
@@ -70,7 +71,7 @@ public class PartialCascadeHKeyIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new com.foundationdb.qp.rowtype.Schema(ais());
+        schema = SchemaCache.globalSchema(ais());
         wRowType = schema.tableRowType(table(w));
         dRowType = schema.tableRowType(table(d));
         cRowType = schema.tableRowType(table(c));
@@ -82,7 +83,7 @@ public class PartialCascadeHKeyIT extends OperatorITBase
         oOrdinal = ddl().getTable(session(), o).getOrdinal();
         iOrdinal = ddl().getTable(session(), i).getOrdinal();
         group = group(c);
-        adapter = newStoreAdapter(schema);
+        adapter = newStoreAdapter();
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         loadDatabase();

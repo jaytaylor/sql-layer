@@ -137,12 +137,16 @@ public class EmbeddedJDBCIT extends EmbeddedJDBCITBase
             }
         }
     }
-
-    @Test
+    @Test 
     public void testJavaProcedure() throws Exception {
         try (Connection conn = getConnection()) {
-            try (Statement stmt = conn.createStatement()) {
-                stmt.execute("CREATE PROCEDURE add_sub(IN x INT, IN y INT, OUT \"sum\" INT, out diff INT) LANGUAGE java PARAMETER STYLE java EXTERNAL NAME 'com.foundationdb.server.test.it.routines.TestJavaBasic.addSub'");
+            try (CallableStatement cstmt0 = conn.prepareCall("CALL sqlj.install_jar(?, 'sql_layer', 0)")) {
+                String jarName = getClass().getProtectionDomain().getCodeSource().getLocation().getFile();
+                cstmt0.setString(1, jarName);
+                cstmt0.execute();
+            }
+            try (Statement stmt2 = conn.createStatement()) {
+                stmt2.execute("CREATE PROCEDURE add_sub(IN x INT, IN y INT, OUT \"sum\" INT, out diff INT) LANGUAGE java PARAMETER STYLE java EXTERNAL NAME 'sql_layer:com.foundationdb.server.test.it.routines.TestJavaBasic.addSub'");
             }
             try (CallableStatement cstmt = conn.prepareCall("CALL add_sub(100,?,?,?)")) {
                 cstmt.setInt(1, 23);

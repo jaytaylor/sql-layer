@@ -17,10 +17,8 @@
 
 package com.foundationdb.server.store.format.columnkeys;
 
-import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
-import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.validation.AISValidationFailure;
@@ -30,22 +28,19 @@ import com.foundationdb.ais.protobuf.FDBProtobuf;
 import com.foundationdb.ais.protobuf.FDBProtobuf.ColumnKeys;
 import com.foundationdb.ais.protobuf.FDBProtobuf.TupleUsage;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.qp.row.ValuesHolderRow;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
-import com.foundationdb.server.rowdata.FieldDef;
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDataValueSource;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.store.FDBScanTransactionOptions;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.server.store.format.tuple.TupleRowDataConverter;
 import com.foundationdb.server.store.format.tuple.TupleStorageDescription;
-import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
-import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple2;
 import com.persistit.Key;
@@ -136,68 +131,23 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
         storeData.otherValue = value;
     }
     
-    @Override
-    public void packRowData(FDBStore store, Session session,
-                            FDBStoreData storeData, RowData rowData) {
-        RowDef rowDef = rowDefFromId(((Group)object).getRoot(), rowData.getRowDefId());
-        if (rowDef == null) {
-            throw new AkibanInternalException("Cannot find table " + rowData);
-        }
-        RowDataValueSource valueSource = new RowDataValueSource();
-        int nfields = rowDef.getFieldCount();
-        Map<String,Object> value = new HashMap<>(nfields); // Intermediate form of value.
-        for (int i = 0; i < nfields; i++) {
-            FieldDef fieldDef = rowDef.getFieldDef(i);
-            valueSource.bind(fieldDef, rowData);
-            value.put(fieldDef.getName(), ValueSources.toObject(valueSource));
-        }
-        storeData.otherValue = value;
-    }
-
-    private static RowDef rowDefFromId(Table table, int tableId) {
-        if (table.getTableId() == tableId) {
-            return table.rowDef();
-        }
-        for (Join join : table.getChildJoins()) {
-            RowDef rowDef = rowDefFromId(join.getChild(), tableId);
-            if (rowDef != null) {
-                return rowDef;
-            }
-        }
-        return null;
-    }
-
     @Override 
     @SuppressWarnings("unchecked")
-    public void expandRow(FDBStore store, Session session, 
-                            FDBStoreData storeData, Row row) {
+    public Row expandRow(FDBStore store, Session session, 
+                            FDBStoreData storeData, Schema schema) {
         Map<String,Object> value = (Map<String,Object>)storeData.otherValue;
-        int nfields = row.rowType().nFields();
-        for (int i = 0; i < nfields; i++) {
-            Column column = row.rowType().table().getColumn(i);
-            ValueSource val = ValueSources.valuefromObject(value.get(column.getName()), column.getType());
-            column.getType().writeCollating(val, (ValueTarget)row.value(i));
-        }
-    }
-    
-    @Override
-    @SuppressWarnings("unchecked")
-    public void expandRowData(FDBStore store, Session session,
-                              FDBStoreData storeData, RowData rowData) {
-        Map<String,Object> value = (Map<String,Object>)storeData.otherValue;
-        RowDef rowDef = TupleStorageDescription.rowDefFromOrdinals((Group)object, storeData);
-        assert (rowDef != null) : storeData.persistitKey;
-        int nfields = rowDef.getFieldCount();
+        
+        Table table = TupleStorageDescription.tableFromOrdinals((Group)object, storeData.persistitKey);
+        RowType rowType = schema.tableRowType(table);
+        int nfields = rowType.nFields();
         Object[] objects = new Object[nfields];
         for (int i = 0; i < nfields; i++) {
-            objects[i] = value.get(rowDef.getFieldDef(i).getName());
+            objects[i] = value.get(rowType.fieldColumn(i).getName());
         }
-        if (rowData.getBytes() == null) {
-            rowData.reset(new byte[RowData.CREATE_ROW_INITIAL_SIZE]);
-        }
-        rowData.createRow(rowDef, objects, true);
+        Row row = new ValuesHolderRow(rowType, objects);
+        return row;
     }
-
+    
     @Override
     @SuppressWarnings("unchecked")
     public void store(FDBStore store, Session session, FDBStoreData storeData) {
@@ -219,7 +169,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
             groupIterator(store, session, storeData,
                           FDBStore.GroupIteratorBoundary.KEY,
                           FDBStore.GroupIteratorBoundary.FIRST_DESCENDANT,
-                          1, false);
+                          1, FDBScanTransactionOptions.NORMAL);
             return storeData.next();
         }
         finally {
@@ -238,7 +188,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
     @Override
     public void groupIterator(FDBStore store, Session session, FDBStoreData storeData,
                               FDBStore.GroupIteratorBoundary left, FDBStore.GroupIteratorBoundary right,
-                              int limit, boolean snapshot) {
+                              int limit, FDBScanTransactionOptions transactionOptions) {
         byte[] begin, end;
         switch (left) {
         case START:
@@ -272,7 +222,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
         storeData.iterator = 
             new ColumnKeysStorageIterator(storeData,
                                           store.getTransaction(session, storeData)
-                                          .getRangeIterator(begin, end),
+                                          .getRangeIterator(begin, end, transactionOptions),
                                           limit);
     }
 

@@ -23,6 +23,7 @@ import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.explain.CompoundExplainer;
 import com.foundationdb.server.explain.ExplainContext;
 import com.foundationdb.server.explain.std.DistinctExplainer;
+import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.value.*;
@@ -231,7 +232,7 @@ class Distinct_Partial extends Operator
                         currentRow = null;
                 }
                 ValueSource inputValue = inputRow.value(i);
-                if (!eqP(currentValues[i], inputValue, rowType().typeAt(i))) {
+                if (!TClass.areEqual(currentValues[i], inputValue)) {
                     ValueTargets.copyFrom(inputValue, currentValues[i]);
                     nvalid = i + 1;
                     if (i < nfields - 1)
@@ -241,17 +242,6 @@ class Distinct_Partial extends Operator
                 }
             }
             return false;
-        }
-
-        private boolean eqP(ValueSource x, ValueSource y, TInstance type)
-        {
-            if (type.typeClass() instanceof TString) {
-                AkCollator collator = TString.getCollator(type);
-                if (collator != null) {
-                    return collator.compare(x, y) == 0;
-                }
-            }
-            return ValueSources.areEqual(x, y);
         }
 
         // Object state

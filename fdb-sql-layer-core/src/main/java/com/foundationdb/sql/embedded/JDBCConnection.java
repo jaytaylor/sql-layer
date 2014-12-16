@@ -32,6 +32,7 @@ import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.parser.CallStatementNode;
 import com.foundationdb.sql.parser.DDLStatementNode;
 import com.foundationdb.sql.parser.DMLStatementNode;
+import com.foundationdb.sql.parser.IsolationLevel;
 import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.SQLParserException;
 import com.foundationdb.sql.parser.StatementNode;
@@ -60,9 +61,9 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     private boolean closed;
     private JDBCWarning warnings;
     private Properties clientInfo = new Properties();
-    private String schema;
     private EmbeddedOperatorCompiler compiler;
     private List<JDBCResultSet> openResultSets = new ArrayList<>();
+    private boolean setNonStandardIsolationLevel;
 
     private static final Logger logger = LoggerFactory.getLogger(JDBCConnection.class);
     protected static final String SERVER_TYPE = "JDBC";
@@ -74,9 +75,9 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         if ((defaultSchemaName != null) &&
             (info.getProperty("database") == null))
             info.put("database", defaultSchemaName);
-        setProperties(info);
         if (session == null)
             session = reqs.sessionService().createSession();
+        setProperties(info);
         commitMode = (transaction != null) ? CommitMode.INHERITED : CommitMode.AUTO;
     }
 
@@ -184,7 +185,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
             }
             sessionMonitor.enterStage(MonitorStage.OPTIMIZE);
             if (transaction == null) {
-                transaction = new ServerTransaction(this, true, ServerTransaction.PeriodicallyCommit.OFF);
+                transaction = new ServerTransaction(this, true, IsolationLevel.UNSPECIFIED_ISOLATION_LEVEL, ServerTransaction.PeriodicallyCommit.OFF);
                 localTransaction = true;
             }
             if ((sqlStmt instanceof DMLStatementNode) && 
@@ -225,7 +226,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
             }
             sessionMonitor.enterStage(MonitorStage.OPTIMIZE);
             if (transaction == null) {
-                transaction = new ServerTransaction(this, true, ServerTransaction.PeriodicallyCommit.OFF);
+                transaction = new ServerTransaction(this, true, IsolationLevel.UNSPECIFIED_ISOLATION_LEVEL, ServerTransaction.PeriodicallyCommit.OFF);
                 localTransaction = true;
             }
             ExplainPlanContext context = new ExplainPlanContext(compiler, new EmbeddedQueryContext(this));
@@ -261,19 +262,26 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     // Slightly different contract than ServerSessionBase, since a transaction
     // remains open when a until its read result set is closed.
-    protected void beforeExecuteStatement(ExecutableStatement stmt) {
+    protected void beforeExecuteStatement(ExecutableStatement stmt) throws SQLException {
         sessionMonitor.enterStage(MonitorStage.EXECUTE);
-        // If there is already a transaction and not auto-commit, transaction mode needs to allow writes if appropriate
-        if (transaction != null && commitMode == CommitMode.MANUAL)
-            transaction.setReadOnly(transactionDefaultReadOnly);
-        boolean localTransaction = super.beforeExecute(stmt);
+        boolean localTransaction;
+        try {
+            localTransaction = super.beforeExecute(stmt);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
         if (localTransaction) {
             logger.debug("Auto BEGIN TRANSACTION");
             registerSessionMonitor();
+            // If there is a new transaction and not auto-commit, transaction mode needs
+            // to allow writes based on connection setting, not the particular statement.
+            if (commitMode == CommitMode.MANUAL)
+                transaction.setReadOnly(transactionDefaultReadOnly);
         }
     }
 
-    protected void afterExecuteStatement(ExecutableStatement stmt, boolean success) {
+    protected void afterExecuteStatement(ExecutableStatement stmt, boolean success) throws SQLException {
         sessionMonitor.leaveStage();
         boolean localTransaction = false;
         if (checkAutoCommit()) {
@@ -285,7 +293,12 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
             deregisterSessionMonitor();
             logger.debug(success ? "Auto COMMIT TRANSACTION" : "Auto ROLLBACK TRANSACTION");
         }
-        super.afterExecute(stmt, localTransaction, success, true);
+        try {
+            super.afterExecute(stmt, localTransaction, success, true);
+        }
+        catch (RuntimeException ex) {
+            throw JDBCException.throwUnwrapped(ex);
+        }
     }
 
     protected void openingResultSet(JDBCResultSet resultSet) {
@@ -444,6 +457,8 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     @Override
     public void setReadOnly(boolean readOnly) throws SQLException {
         this.transactionDefaultReadOnly = readOnly;
+        if (transaction != null)
+            transaction.setReadOnly(readOnly);
     }
 
     @Override
@@ -460,15 +475,70 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         return null;
     }
 
+    /** Non-standard values using the same API.
+     * TODO: Would a whole new method be better?
+     */
+    public static final int TRANSACTION_READ_COMMITTED_NO_SNAPSHOT = -2;
+    public static final int TRANSACTION_SERIALIZABLE_SNAPSHOT = -8;
+
     @Override
     public void setTransactionIsolation(int level) throws SQLException {
-        if (level != TRANSACTION_SERIALIZABLE)
-            throw new SQLException("Only TRANSACTION_SERIALIZABLE supported");
+        // Remember so get returns this, too.
+        if (level < 0)
+            setNonStandardIsolationLevel = true;
+        IsolationLevel ilevel;
+        switch (level) {
+        case TRANSACTION_READ_COMMITTED:
+            ilevel = IsolationLevel.READ_COMMITTED_ISOLATION_LEVEL;
+            break;
+        case TRANSACTION_READ_UNCOMMITTED:
+            ilevel = IsolationLevel.READ_UNCOMMITTED_ISOLATION_LEVEL;
+            break;
+        case TRANSACTION_REPEATABLE_READ:
+            ilevel = IsolationLevel.REPEATABLE_READ_ISOLATION_LEVEL;
+            break;
+        case TRANSACTION_SERIALIZABLE:
+            ilevel = IsolationLevel.SERIALIZABLE_ISOLATION_LEVEL;
+            break;
+        case TRANSACTION_READ_COMMITTED_NO_SNAPSHOT:
+            ilevel = IsolationLevel.READ_COMMITTED_NO_SNAPSHOT_ISOLATION_LEVEL;
+            break;
+        case TRANSACTION_SERIALIZABLE_SNAPSHOT:
+            ilevel = IsolationLevel.SNAPSHOT_ISOLATION_LEVEL;
+            break;
+        default:
+            throw new SQLException("Unknown isolation level " + level);
+        }
+        if (isTransactionActive())
+            ilevel = setTransactionIsolationLevel(ilevel);
+        setTransactionDefaultIsolationLevel(ilevel);
     }
 
     @Override
     public int getTransactionIsolation() throws SQLException {
-        return TRANSACTION_SERIALIZABLE;
+        IsolationLevel level = transactionDefaultIsolationLevel;
+        if (level == IsolationLevel.UNSPECIFIED_ISOLATION_LEVEL)
+            level = getTransactionService().actualIsolationLevel(level);
+        switch (level) {
+        case READ_COMMITTED_NO_SNAPSHOT_ISOLATION_LEVEL:
+            if (setNonStandardIsolationLevel)
+                return TRANSACTION_READ_COMMITTED_NO_SNAPSHOT;
+            /* else falls through */
+        case READ_UNCOMMITTED_ISOLATION_LEVEL:
+            return TRANSACTION_READ_UNCOMMITTED;
+        case READ_COMMITTED_ISOLATION_LEVEL:
+            return TRANSACTION_READ_COMMITTED;
+        case SNAPSHOT_ISOLATION_LEVEL:
+            if (setNonStandardIsolationLevel)
+                return TRANSACTION_SERIALIZABLE_SNAPSHOT;
+            /* else falls through */
+        case REPEATABLE_READ_ISOLATION_LEVEL:
+            return TRANSACTION_REPEATABLE_READ;
+        case SERIALIZABLE_ISOLATION_LEVEL:
+            return TRANSACTION_SERIALIZABLE;
+        default:
+            return TRANSACTION_NONE;
+        }
     }
 
     @Override
@@ -663,12 +733,12 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     @Override
     public void setSchema(String schema) throws SQLException {
-        this.schema = schema;
+        setDefaultSchemaName(schema);
     }
 
     @Override
     public String getSchema() throws SQLException {
-        return schema;
+        return getDefaultSchemaName();
     }
 
     @Override

@@ -24,7 +24,6 @@ import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryBindings;
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.sql.optimizer.plan.CostEstimate;
 
 class ExecutableQueryOperatorStatement extends ExecutableOperatorStatement
@@ -32,12 +31,11 @@ class ExecutableQueryOperatorStatement extends ExecutableOperatorStatement
     private CostEstimate costEstimate;
     private static final Logger LOG = LoggerFactory.getLogger(ExecutableQueryOperatorStatement.class);
     
-    protected ExecutableQueryOperatorStatement(Schema schema,
-                                               Operator resultOperator,
+    protected ExecutableQueryOperatorStatement(Operator resultOperator,
                                                JDBCResultSetMetaData resultSetMetaData, 
                                                JDBCParameterMetaData parameterMetaData,
                                                CostEstimate costEstimate) {
-        super(schema, resultOperator, resultSetMetaData, parameterMetaData);
+        super(resultOperator, resultSetMetaData, parameterMetaData);
         this.costEstimate = costEstimate;
     }
     
@@ -45,7 +43,6 @@ class ExecutableQueryOperatorStatement extends ExecutableOperatorStatement
     public ExecuteResults execute(EmbeddedQueryContext context, QueryBindings bindings) {
         Cursor cursor = null;
         try {
-            context.initStore(getSchema());
             cursor = API.cursor(resultOperator, context, bindings);
             cursor.openTopLevel();
             ExecuteResults result = new ExecuteResults(cursor);

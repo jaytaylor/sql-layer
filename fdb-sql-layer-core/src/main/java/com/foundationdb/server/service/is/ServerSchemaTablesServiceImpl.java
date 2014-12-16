@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
+import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
@@ -162,6 +163,7 @@ public class ServerSchemaTablesServiceImpl
             }
         }
     }
+    
     private class InstanceSummary extends BasicFactoryBase {
 
         public InstanceSummary(TableName sourceTable) {
@@ -169,8 +171,8 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan(adapter.getSession(), getRowType(adapter));
+        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+            return new Scan(adapter.getSession(), getRowType(group.getAIS()));
         }
 
         @Override
@@ -217,8 +219,8 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan (adapter.getSession(), getRowType(adapter));
+        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+            return new Scan(adapter.getSession(), getRowType(group.getAIS()));
         }
 
         @Override
@@ -255,8 +257,8 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan (adapter.getSession(), getRowType(adapter));
+        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+            return new Scan(adapter.getSession(), getRowType(group.getAIS()));
         }
 
         @Override
@@ -303,8 +305,8 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan (adapter.getSession(), getRowType(adapter));
+        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+            return new Scan(adapter.getSession(), getRowType(group.getAIS()));
         }
 
         @Override
@@ -340,8 +342,8 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan (adapter.getSession(), getRowType(adapter));
+        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+            return new Scan(adapter.getSession(), getRowType(group.getAIS()));
         }
 
         @Override
@@ -374,8 +376,8 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan (adapter.getSession(), getRowType(adapter));
+        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+            return new Scan(adapter.getSession(), getRowType(group.getAIS()));
         }
 
         @Override
@@ -410,8 +412,8 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan (adapter.getSession(), getRowType(adapter));
+        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+            return new Scan(adapter.getSession(), getRowType(group.getAIS()));
         }
 
         @Override
@@ -450,8 +452,8 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan (adapter.getSession(), getRowType(adapter));
+        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+            return new Scan(adapter.getSession(), getRowType(group.getAIS()));
         }
 
         @Override
@@ -492,8 +494,8 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan (adapter.getSession(), getRowType(adapter));
+        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+            return new Scan(adapter.getSession(), getRowType(group.getAIS()));
         }
 
         @Override
@@ -533,8 +535,8 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan (adapter.getSession(), getRowType(adapter));
+        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+            return new Scan(adapter.getSession(), getRowType(group.getAIS()));
         }
 
         @Override
@@ -582,8 +584,8 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan (adapter.getSession(), getRowType(adapter));
+        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+            return new Scan(adapter.getSession(), getRowType( group.getAIS()));
         }
 
         @Override
@@ -631,8 +633,8 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan (adapter.getSession(), getRowType(adapter));
+        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+            return new Scan(adapter.getSession(), getRowType(group.getAIS()));
         }
 
         @Override

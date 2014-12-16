@@ -27,41 +27,29 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.error.OutOfRangeException;
 import com.foundationdb.server.spatial.Spatial;
 import com.geophile.z.Space;
-import com.geophile.z.spatialobject.d2.Box;
 import com.geophile.z.spatialobject.jts.JTS;
 import com.geophile.z.spatialobject.jts.JTSSpatialObject;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.GeometryFactory;
-import org.junit.Ignore;
 import org.junit.Test;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 import static com.foundationdb.qp.operator.API.cursor;
 import static com.foundationdb.qp.operator.API.indexScan_Default;
-import static java.lang.Math.abs;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class BoxTableIndexScanIT extends OperatorITBase
 {
@@ -73,20 +61,24 @@ public class BoxTableIndexScanIT extends OperatorITBase
             "id int not null",
             "before int not null", // id mod 3
             "after int not null", // id mod 5
-            "box_blob blob",
+            "box blob",
             "primary key(id)");
-        createSpatialTableIndex("schema", "boxTable", "idx_box_blob", 0, 1, "box_blob");
+        createSpatialTableIndex("schema", "boxTable", "idx_box", 0, 1, "box");
+        createSpatialTableIndex("schema", "boxTable", "idx_before_box", 1, 1, "before", "box");
+        createSpatialTableIndex("schema", "boxTable", "idx_box_after", 0, 1, "box", "after");
+        createSpatialTableIndex("schema", "boxTable", "idx_before_box_after", 1, 1, "before", "box", "after");
     }
 
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         boxRowType = schema.tableRowType(table(boxTable));
         boxOrdinal = boxRowType.table().getOrdinal();
-        boxBlobIndexRowType = indexType(boxTable, "box_blob");
+        boxIndexRowType = indexType(boxTable, "box");
+        beforeBoxIndexRowType = indexType(boxTable, "before", "box");
+        boxAfterIndexRowType = indexType(boxTable, "box", "after");
+        beforeBoxAfterIndexRowType = indexType(boxTable, "before", "box", "after");
         space = Spatial.createLatLonSpace();
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }
@@ -100,8 +92,8 @@ public class BoxTableIndexScanIT extends OperatorITBase
     {
         loadDB();
         {
-            // Check box_blob index
-            Operator plan = indexScan_Default(boxBlobIndexRowType);
+            // Check box index
+            Operator plan = indexScan_Default(boxIndexRowType);
             long[][] expected = zToId.toArray(
                 new ZToIdMapping.ExpectedRowCreator()
                 {
@@ -111,7 +103,52 @@ public class BoxTableIndexScanIT extends OperatorITBase
                         return new long[]{z, id};
                     }
                 });
-            compareRows(rows(boxBlobIndexRowType.physicalRowType(), sort(expected)),
+            compareRows(rows(boxIndexRowType.physicalRowType(), sort(expected)),
+                        cursor(plan, queryContext, queryBindings));
+        }
+        {
+            // Check (before, box) index
+            Operator plan = indexScan_Default(beforeBoxIndexRowType);
+            long[][] expected = zToId.toArray(
+                new ZToIdMapping.ExpectedRowCreator()
+                {
+                    @Override
+                    public long[] fields(long z, int id)
+                    {
+                        return new long[]{before(id), z, id};
+                    }
+                });
+            compareRows(rows(beforeBoxIndexRowType.physicalRowType(), sort(expected)),
+                        cursor(plan, queryContext, queryBindings));
+        }
+        {
+            // Check (box, after) index
+            Operator plan = indexScan_Default(boxAfterIndexRowType);
+            long[][] expected = zToId.toArray(
+                new ZToIdMapping.ExpectedRowCreator()
+                {
+                    @Override
+                    public long[] fields(long z, int id)
+                    {
+                        return new long[]{z, after(id), id};
+                    }
+                });
+            compareRows(rows(boxAfterIndexRowType.physicalRowType(), sort(expected)),
+                        cursor(plan, queryContext, queryBindings));
+        }
+        {
+            // Check (before, box, after) index
+            Operator plan = indexScan_Default(beforeBoxAfterIndexRowType);
+            long[][] expected = zToId.toArray(
+                new ZToIdMapping.ExpectedRowCreator()
+                {
+                    @Override
+                    public long[] fields(long z, int id)
+                    {
+                        return new long[]{before(id), z, after(id), id};
+                    }
+                });
+            compareRows(rows(beforeBoxAfterIndexRowType.physicalRowType(), sort(expected)),
                         cursor(plan, queryContext, queryBindings));
         }
     }
@@ -120,22 +157,6 @@ public class BoxTableIndexScanIT extends OperatorITBase
     public void testLoadAndRemove()
     {
         loadDB();
-/*
-        {
-            System.out.println("Index dump");
-            Operator plan = indexScan_Default(boxBlobIndexRowType);
-            Cursor cursor = cursor(plan, queryContext, queryBindings);
-            try {
-                cursor.openTopLevel();
-                Row row;
-                while ((row = cursor.next()) != null) {
-                    System.out.format("    %s\n", row);
-                }
-            } finally {
-                cursor.closeTopLevel();
-            }
-        }
-*/
         {
             // Delete rows with odd ids
             for (int id = 1; id < nIds; id += 2) {
@@ -144,8 +165,8 @@ public class BoxTableIndexScanIT extends OperatorITBase
             }
         }
         {
-            // Check box_blob index
-            Operator plan = indexScan_Default(boxBlobIndexRowType);
+            // Check box index
+            Operator plan = indexScan_Default(boxIndexRowType);
             long[][] expected = zToId.toArray(
                 new ZToIdMapping.ExpectedRowCreator()
                 {
@@ -158,7 +179,61 @@ public class BoxTableIndexScanIT extends OperatorITBase
                             : null;
                     }
                 });
-            compareRows(rows(boxBlobIndexRowType.physicalRowType(), sort(expected)),
+            compareRows(rows(boxIndexRowType.physicalRowType(), sort(expected)),
+                        cursor(plan, queryContext, queryBindings));
+        }
+        {
+            // Check (before, box) index
+            Operator plan = indexScan_Default(beforeBoxIndexRowType);
+            long[][] expected = zToId.toArray(
+                new ZToIdMapping.ExpectedRowCreator()
+                {
+                    @Override
+                    public long[] fields(long z, int id)
+                    {
+                        return
+                            id % 2 == 0
+                            ? new long[]{before(id), z, id}
+                            : null;
+                    }
+                });
+            compareRows(rows(beforeBoxIndexRowType.physicalRowType(), sort(expected)),
+                        cursor(plan, queryContext, queryBindings));
+        }
+        {
+            // Check (box, after) index
+            Operator plan = indexScan_Default(boxAfterIndexRowType);
+            long[][] expected = zToId.toArray(
+                new ZToIdMapping.ExpectedRowCreator()
+                {
+                    @Override
+                    public long[] fields(long z, int id)
+                    {
+                        return
+                            id % 2 == 0
+                            ? new long[]{z, after(id), id}
+                            : null;
+                    }
+                });
+            compareRows(rows(boxAfterIndexRowType.physicalRowType(), sort(expected)),
+                        cursor(plan, queryContext, queryBindings));
+        }
+        {
+            // Check (before, box, after) index
+            Operator plan = indexScan_Default(beforeBoxAfterIndexRowType);
+            long[][] expected = zToId.toArray(
+                new ZToIdMapping.ExpectedRowCreator()
+                {
+                    @Override
+                    public long[] fields(long z, int id)
+                    {
+                        return
+                            id % 2 == 0
+                            ? new long[]{before(id), z, after(id), id}
+                            : null;
+                    }
+                });
+            compareRows(rows(beforeBoxAfterIndexRowType.physicalRowType(), sort(expected)),
                         cursor(plan, queryContext, queryBindings));
         }
     }
@@ -187,8 +262,8 @@ public class BoxTableIndexScanIT extends OperatorITBase
             }
         }
         {
-            // Check box_blob index
-            Operator plan = indexScan_Default(boxBlobIndexRowType);
+            // Check box index
+            Operator plan = indexScan_Default(boxIndexRowType);
             long[][] expected = zToId.toArray(
                 new ZToIdMapping.ExpectedRowCreator()
                 {
@@ -198,65 +273,142 @@ public class BoxTableIndexScanIT extends OperatorITBase
                         return new long[]{z, id};
                     }
                 });
-            compareRows(rows(boxBlobIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
+            compareRows(rows(boxIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
+        }
+        {
+            // Check (before, box) index
+            Operator plan = indexScan_Default(beforeBoxIndexRowType);
+            long[][] expected = zToId.toArray(
+                new ZToIdMapping.ExpectedRowCreator()
+                {
+                    @Override
+                    public long[] fields(long z, int id)
+                    {
+                        return new long[]{before(id), z, id};
+                    }
+                });
+            compareRows(rows(beforeBoxIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
+        }
+        {
+            // Check (box, after) index
+            Operator plan = indexScan_Default(boxAfterIndexRowType);
+            long[][] expected = zToId.toArray(
+                new ZToIdMapping.ExpectedRowCreator()
+                {
+                    @Override
+                    public long[] fields(long z, int id)
+                    {
+                        return new long[]{z, after(id), id};
+                    }
+                });
+            compareRows(rows(boxAfterIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
+        }
+        {
+            // Check (before, box, after) index
+            Operator plan = indexScan_Default(beforeBoxAfterIndexRowType);
+            long[][] expected = zToId.toArray(
+                new ZToIdMapping.ExpectedRowCreator()
+                {
+                    @Override
+                    public long[] fields(long z, int id)
+                    {
+                        return new long[]{before(id), z, after(id), id};
+                    }
+                });
+            compareRows(rows(beforeBoxAfterIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
         }
     }
 
-    @Ignore
     @Test
-    public void testSpatialQueryLatLon()
+    public void testSpatialQuery()
     {
+        final int ID_COLUMN = 1;
         loadDB();
+        // dumpIndex(boxIndexRowType);
         final int QUERIES = 100;
-        double latLo;
-        double latHi;
-        double lonLo;
-        double lonHi;
         for (int q = 0; q < QUERIES; q++) {
-            latLo = randomLat();
-            latHi = randomLat();
-            if (latLo > latHi) {
-                double swap = latLo;
-                latLo = latHi;
-                latHi = swap;
-            }
-            lonLo = randomLon();
-            lonHi = randomLon();
-            if (lonLo > lonHi) {
-                double swap = lonLo;
-                lonLo = lonHi;
-                lonHi = swap;
-            }
+            JTSSpatialObject queryBox = randomBox();
             // Get the right answer
             Set<Integer> expected = new HashSet<>();
-            JTSSpatialObject queryBox = box(latLo, latHi, lonLo, lonHi);
-            System.out.format("Query %d: %s\n", q, queryBox);
-            System.out.println("    Expected:");
             for (int id = 0; id < boxes.size(); id++) {
                 if (boxes.get(id).geometry().overlaps(queryBox.geometry())) {
                     expected.add(id);
-                    System.out.format("        %d: %s\n", id, boxes.get(id));
                 }
             }
-            // Get the query result using the box_blob index
+            // Get the query result using the box index
             Set<Integer> actual = new HashSet<>();
-            IndexBound boxBound = new IndexBound(row(boxBlobIndexRowType, queryBox),
+            IndexBound boxBound = new IndexBound(row(boxIndexRowType, queryBox),
                                                  new SetColumnSelector(0));
-            IndexKeyRange box = IndexKeyRange.spatial(boxBlobIndexRowType, boxBound, boxBound);
-            Operator plan = indexScan_Default(boxBlobIndexRowType, box, lookaheadQuantum());
+            IndexKeyRange box = IndexKeyRange.spatialObject(boxIndexRowType, boxBound);
+            Operator plan = indexScan_Default(boxIndexRowType, box, lookaheadQuantum());
             Cursor cursor = API.cursor(plan, queryContext, queryBindings);
             cursor.openTopLevel();
             Row row;
-            System.out.println("    Actual:");
             while ((row = cursor.next()) != null) {
-                int id = getLong(row, 1).intValue();
+                int id = getLong(row, ID_COLUMN).intValue();
                 actual.add(id);
-                System.out.format("        %d: %s\n", id, boxes.get(id));
             }
             // There should be no false negatives
             assertTrue(actual.containsAll(expected));
         }
     }
+
+    @Test
+    public void testHybridQuery()
+    {
+        final int ID_COLUMN = 2;
+        loadDB();
+        // dumpIndex(beforeBoxIndexRowType);
+        final int QUERIES = 100;
+        for (int q = 0; q < QUERIES; q++) {
+            JTSSpatialObject queryBox = randomBox();
+            // before = id mod 3, so try before = 0, 1, 2
+            for (int before = 0; before <= 2; before++) {
+/*
+                System.out.format("q = %d, before = %d, queryBox = %s\n",
+                                  q, before, queryBox);
+*/
+                // Get the right answer
+                Set<Integer> expected = new HashSet<>();
+                for (int id = 0; id < boxes.size(); id++) {
+                    if (before(id) == before &&
+                        boxes.get(id).geometry().overlaps(queryBox.geometry())) {
+                        expected.add(id);
+                    }
+                }
+                // Get the query result using the (before, box) index
+                Set<Integer> actual = new HashSet<>();
+                IndexBound boxBound = new IndexBound(row(beforeBoxIndexRowType, before, queryBox),
+                                                     new SetColumnSelector(0, 1));
+                IndexKeyRange box = IndexKeyRange.spatialObject(beforeBoxIndexRowType, boxBound);
+                Operator plan = indexScan_Default(boxIndexRowType, box, lookaheadQuantum());
+                Cursor cursor = API.cursor(plan, queryContext, queryBindings);
+                cursor.openTopLevel();
+                Row row;
+                while ((row = cursor.next()) != null) {
+                    int id = getLong(row, ID_COLUMN).intValue();
+                    actual.add(id);
+                }
+                // There should be no false negatives
+                List<Integer> actualSorted = new ArrayList<>(actual);
+                Collections.sort(actualSorted);
+                List<Integer> expectedSorted = new ArrayList<>(expected);
+                Collections.sort(expectedSorted);
+/*
+                System.out.println("Expected:");
+                for (Integer e : expectedSorted) {
+                    System.out.format("    %d: %d - %s\n", e, before(e), boxes.get(e));
+                }
+                System.out.println("Actual:");
+                for (Integer a : actualSorted) {
+                    System.out.format("    %d: %d - %s\n", a, before(a), boxes.get(a));
+                }
+*/
+                assertTrue(actual.containsAll(expected));
+            }
+        }
+    }
+
 
     private void loadDB()
     {
@@ -356,38 +508,47 @@ public class BoxTableIndexScanIT extends OperatorITBase
         return a;
     }
 
-    private double randomLat()
+    private void dumpIndex(IndexRowType indexRowType)
     {
-        return random.nextDouble() * LAT_RANGE + LAT_LO;
-    }
-
-    private double randomLon()
-    {
-        return random.nextDouble() * LON_RANGE + LON_LO;
+        System.out.println("Boxes dump");
+        for (int id = 0; id < boxes.size(); id++) {
+            System.out.format("    %s: %s\n", id, boxes.get(id));
+        }
+        System.out.println();
+        System.out.println("Index dump");
+        Operator plan = indexScan_Default(indexRowType);
+        Cursor cursor = cursor(plan, queryContext, queryBindings);
+        try {
+            cursor.openTopLevel();
+            Row row;
+            while ((row = cursor.next()) != null) {
+                System.out.format("    %s\n", row);
+            }
+        } finally {
+            cursor.closeTopLevel();
+        }
     }
 
     private static final int LAT_LO = -90;
     private static final int LAT_HI = 90;
     private static final int LON_LO = -180;
     private static final int LON_HI = 180;
-    private static final int LAT_RANGE = LAT_HI - LAT_LO;
-    private static final int LON_RANGE = LON_HI - LON_LO;
     private static final int DLAT = 10;
     private static final int DLON = 10;
-    private static final int BOX_WIDTH = 15; // Overlapping boxes, because it exceends DLAT, DLON.
-    private static final int QUERY_WIDTH = 30; // Overlapping boxes, because it exceends DLAT, DLON.
+    private static final int BOX_WIDTH = 15; // Overlapping boxes, because it exceeds DLAT, DLON.
+    private static final int QUERY_WIDTH = 30;
     private static final GeometryFactory FACTORY = new GeometryFactory();
 
     private int boxTable;
     private TableRowType boxRowType;
     private int boxOrdinal;
-    private IndexRowType boxBlobIndexRowType;
-    private IndexRowType beforeLatLonIndexRowType;
-    private IndexRowType latLonAfterIndexRowType;
-    private IndexRowType beforeLatLonAfterIndexRowType;
+    private IndexRowType boxIndexRowType;
+    private IndexRowType beforeBoxIndexRowType;
+    private IndexRowType boxAfterIndexRowType;
+    private IndexRowType beforeBoxAfterIndexRowType;
     private Space space;
     private ZToIdMapping zToId = new ZToIdMapping();
     List<JTSSpatialObject> boxes = new ArrayList<>();
     private int nIds;
-    Random random = new Random(123456);
+    Random random = new Random(1234567);
 }

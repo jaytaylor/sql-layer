@@ -17,6 +17,7 @@
 
 package com.foundationdb.qp.rowtype;
 
+import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.HKey;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Table;
@@ -67,6 +68,18 @@ public class TableRowType extends AisRowType
         return explainer;
     }
 
+    @Override
+    public boolean fieldHasColumn(int field) {
+        checkFieldRange(field);
+        return true;
+    }
+    
+    @Override 
+    public Column fieldColumn(int field) {
+        checkFieldRange(field);
+        return table.getColumnsIncludingInternal().get(field);
+    }
+    
     // TableRowType interface
     @Override
     public Table table()

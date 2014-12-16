@@ -17,7 +17,6 @@
 
 package com.foundationdb.sql.pg;
 
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.sql.server.ServerQueryContext;
 
 import com.foundationdb.qp.operator.CursorBase;
@@ -27,11 +26,6 @@ public class PostgresQueryContext extends ServerQueryContext<PostgresServerSessi
 {
     public PostgresQueryContext(PostgresServerSession server) {
         super(server);
-    }
-
-    public PostgresQueryContext(PostgresServerSession server, Schema schema) {
-        super(server);
-        initStore(schema);
     }
 
     public boolean isColumnBinary(int i) {

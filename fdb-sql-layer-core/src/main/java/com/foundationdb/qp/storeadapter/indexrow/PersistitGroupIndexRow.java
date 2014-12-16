@@ -17,6 +17,7 @@
 package com.foundationdb.qp.storeadapter.indexrow;
 
 import com.foundationdb.ais.model.GroupIndex;
+import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexToHKey;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.StoreAdapter;
@@ -34,7 +35,7 @@ public class PersistitGroupIndexRow extends PersistitIndexRow
     {
         HKey ancestorHKey = hKeyCache.hKey(table);
         Key hKey = keyCreator.createKey();
-        constructHKeyFromIndexKey(hKey, index.indexToHKey(table.getDepth()));
+        constructHKeyFromIndexKey(hKey, ((GroupIndex)index).indexToHKey(table.getDepth()));
         ancestorHKey.copyFrom(hKey);
         return ancestorHKey;
     }
@@ -44,7 +45,7 @@ public class PersistitGroupIndexRow extends PersistitIndexRow
     @Override
     public IndexToHKey indexToHKey()
     {
-        return index.indexToHKey(index.leafMostTable().getDepth());
+        return ((GroupIndex)index).indexToHKey(index.leafMostTable().getDepth());
     }
 
     @Override
@@ -65,11 +66,12 @@ public class PersistitGroupIndexRow extends PersistitIndexRow
     public PersistitGroupIndexRow(StoreAdapter adapter, IndexRowType indexRowType)
     {
         super(adapter, indexRowType);
-        this.index = (GroupIndex) indexRowType.index();
+        Index groupIndex = indexRowType.index();
+        assert groupIndex.isGroupIndex();
+        index = groupIndex;
     }
 
     // Object state
 
-    private final GroupIndex index;
     private long tableBitmap;
 }

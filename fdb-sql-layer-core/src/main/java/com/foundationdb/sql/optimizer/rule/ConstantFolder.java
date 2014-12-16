@@ -157,8 +157,6 @@ public class ConstantFolder extends BaseRule
                     else
                         return functionExpression((FunctionExpression)expr);
                 }
-                else if (expr instanceof IfElseExpression)
-                    return ifElseExpression((IfElseExpression)expr);
                 else if (expr instanceof ColumnExpression)
                     return columnExpression((ColumnExpression)expr);
                 else if (expr instanceof SubqueryValueExpression)
@@ -340,16 +338,6 @@ public class ConstantFolder extends BaseRule
             if (operands.isEmpty())
                 return newBooleanConstant(null, fun);
             return fun;
-        }
-
-        protected ExpressionNode ifElseExpression(IfElseExpression cond) {
-            boolean keep = checkConditions(cond.getTestConditions());
-            if (!keep)
-                return cond.getElseExpression();
-            else if (cond.getTestConditions().isEmpty())
-                return cond.getThenExpression();
-            else
-                return cond;
         }
 
         protected ExpressionNode ifFunction(FunctionExpression fun) {

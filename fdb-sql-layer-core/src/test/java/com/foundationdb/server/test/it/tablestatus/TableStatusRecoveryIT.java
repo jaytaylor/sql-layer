@@ -72,7 +72,7 @@ public class TableStatusRecoveryIT extends ITBase {
         {
             @Override
             public Long call() throws Exception {
-                return getTable(tableId).rowDef().getTableStatus().getRowCount(session());
+                return getTable(tableId).tableStatus().getRowCount(session());
             }
         });
     }

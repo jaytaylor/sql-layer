@@ -22,7 +22,10 @@ import com.foundationdb.qp.operator.GroupCursor;
 import com.foundationdb.qp.operator.RowCursorImpl;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.HKey;
-import com.foundationdb.server.rowdata.RowData;
+import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
+import com.foundationdb.server.store.FDBScanTransactionOptions;
 import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
@@ -30,23 +33,20 @@ import com.foundationdb.util.tap.Tap;
 public class FDBGroupCursor extends RowCursorImpl implements GroupCursor {
     private final FDBAdapter adapter;
     private final FDBStoreData storeData;
+    private final Schema schema;
+    private final FDBScanTransactionOptions transactionOptions;
     private HKey hKey;
     private boolean hKeyDeep;
     private GroupScan groupScan;
-    private int commitFrequency;
     // static state
     private static final PointTap TRAVERSE_COUNT = Tap.createCount("traverse: fdb group cursor");
 
-
-    public FDBGroupCursor(FDBAdapter adapter, Group group) {
+    public FDBGroupCursor(FDBAdapter adapter, Group group, FDBScanTransactionOptions transactionOptions) {
         this.adapter = adapter;
         this.storeData = adapter.getUnderlyingStore()
             .createStoreData(adapter.getSession(), group);
-    }
-
-    public FDBGroupCursor(FDBAdapter adapter, Group group, int commitFrequency) {
-        this(adapter, group);
-        this.commitFrequency = commitFrequency;
+        this.schema = SchemaCache.globalSchema(group.getAIS());
+        this.transactionOptions = transactionOptions;
     }
 
     @Override
@@ -59,13 +59,13 @@ public class FDBGroupCursor extends RowCursorImpl implements GroupCursor {
     @Override
     public void open() {
         super.open();
-        if(commitFrequency != 0) {
-            groupScan = new CommittingFullScan();
-        } else if(hKey == null) {
+        if (hKey == null) {
             groupScan = new FullScan();
-        } else if(hKeyDeep) {
+        }
+        else if (hKeyDeep) {
             groupScan = new HKeyAndDescendantScan(hKey);
-        } else {
+        }
+        else {
             groupScan = new HKeyWithoutDescendantScan(hKey);
         }
     }
@@ -79,10 +79,8 @@ public class FDBGroupCursor extends RowCursorImpl implements GroupCursor {
             groupScan.advance();
             next = isActive();
             if (next) {
-                RowData rowData = new RowData();
-                adapter.getUnderlyingStore().expandGroupData(adapter.getSession(), storeData, rowData);
-                row = new FDBGroupRow(adapter);
-                row.set(storeData.persistitKey, rowData);
+                Row tempRow = adapter.getUnderlyingStore().expandGroupData(adapter.getSession(), storeData, schema);
+                row = new FDBGroupRow(adapter.getKeyCreator(), tempRow, storeData.persistitKey);
             }
         }
         return row;
@@ -105,14 +103,14 @@ public class FDBGroupCursor extends RowCursorImpl implements GroupCursor {
 
     private class FullScan extends GroupScan {
         public FullScan() {
-            adapter.getUnderlyingStore().groupIterator(adapter.getSession(), storeData);
+            adapter.getUnderlyingStore().groupIterator(adapter.getSession(), storeData, transactionOptions);
         }
     }
 
     private class HKeyAndDescendantScan extends GroupScan {
         public HKeyAndDescendantScan(HKey hKey) {
             hKey.copyTo(storeData.persistitKey.clear());
-            adapter.getUnderlyingStore().groupKeyAndDescendantsIterator(adapter.getSession(), storeData, false);
+            adapter.getUnderlyingStore().groupKeyAndDescendantsIterator(adapter.getSession(), storeData, transactionOptions);
         }
     }
 
@@ -134,43 +132,7 @@ public class FDBGroupCursor extends RowCursorImpl implements GroupCursor {
         public HKeyWithoutDescendantScan(HKey hKey)
         {
             hKey.copyTo(storeData.persistitKey.clear());
-            adapter.getUnderlyingStore().groupKeyIterator(adapter.getSession(), storeData);
-        }
-    }
-
-    private class CommittingFullScan extends GroupScan {
-        boolean first = true;
-        boolean auto;
-        int limit, remaining;
-
-        public CommittingFullScan() {
-            auto = (commitFrequency == StoreAdapter.COMMIT_FREQUENCY_PERIODICALLY);
-            if (auto)
-                limit = adapter.getTransaction().periodicallyCommitScanLimit();
-            else
-                limit = commitFrequency;
-        }
-
-        @Override
-        public void advance() {
-            if (storeData.iterator == null) {
-                adapter.getUnderlyingStore().groupIterator(adapter.getSession(), storeData,
-                                                           !first, limit);
-                first = false;
-                remaining = limit;
-            }
-            TRAVERSE_COUNT.hit();
-            if (storeData.next()) {
-                remaining--;
-                if ((remaining <= 0) || 
-                    (auto && adapter.getTransaction().timeToCommit())) {
-                    storeData.closeIterator();
-                    adapter.getTransaction().commitAndReset(adapter.getSession());
-                }
-            }
-            else {
-                setIdle();
-            }
+            adapter.getUnderlyingStore().groupKeyIterator(adapter.getSession(), storeData, transactionOptions);
         }
     }
 

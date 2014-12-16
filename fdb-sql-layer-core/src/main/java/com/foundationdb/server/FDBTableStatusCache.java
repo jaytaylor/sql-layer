@@ -97,7 +97,7 @@ public class FDBTableStatusCache implements TableStatusCache {
 
     @Override
     public synchronized void clearTableStatus(Session session, Table table) {
-        TableStatus status = table.rowDef().getTableStatus();
+        TableStatus status = table.tableStatus();
         if(status instanceof FDBTableStatus) {
             ((FDBTableStatus)status).clearState(session);
         } else if(status != null) {

@@ -17,9 +17,9 @@
 
 package com.foundationdb.qp.operator;
 
+import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
-import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.qp.expression.IndexKeyRange;
@@ -33,9 +33,9 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.store.Store;
+import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.value.ValueSource;
-import com.foundationdb.server.types.value.ValueSources;
 import com.foundationdb.util.Strings;
 import com.foundationdb.util.tap.InOutTap;
 
@@ -86,7 +86,7 @@ public final class OperatorTestHelper {
         assertTrue(expectedType + " != " + actualType, expectedType.equalsExcludingNullable(actualType));
 
         
-        if(!ValueSources.areEqual(actualSource, expectedSource) &&
+        if(!TClass.areEqual(actualSource, expectedSource) &&
            !(actualSource.isNull() && expectedSource.isNull())) {
             Assert.assertEquals(
                     String.format("row[%d] field[%d]", rowCount, i),
@@ -159,7 +159,7 @@ public final class OperatorTestHelper {
 
         @Override
         public Cursor newIndexCursor(QueryContext context,
-                                     Index index,
+                                     IndexRowType indexType,
                                      IndexKeyRange keyRange,
                                      API.Ordering ordering,
                                      IndexScanSelector selector,
@@ -242,7 +242,7 @@ public final class OperatorTestHelper {
 
         public TestAdapter()
         {
-            super(null, null, null);
+            super(null, null);
         }
 
         @Override
@@ -252,6 +252,11 @@ public final class OperatorTestHelper {
 
         @Override
         public KeyCreator getKeyCreator() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public AkibanInformationSchema getAIS() {
             throw new UnsupportedOperationException();
         }
     }

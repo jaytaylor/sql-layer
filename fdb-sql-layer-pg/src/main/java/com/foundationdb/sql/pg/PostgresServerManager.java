@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.pg;
 
-import com.foundationdb.server.error.ServiceStartupException;
+import com.foundationdb.server.error.ServiceAlreadyStartedException;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
@@ -27,7 +27,6 @@ import com.foundationdb.server.service.is.BasicInfoSchemaTablesService;
 import com.foundationdb.server.service.metrics.MetricsService;
 import com.foundationdb.server.service.monitor.MonitorService;
 import com.foundationdb.server.service.jmx.JmxManageable;
-import com.foundationdb.server.service.monitor.MonitorService;
 import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.SessionService;
@@ -75,7 +74,7 @@ public class PostgresServerManager implements PostgresService, Service, JmxManag
     }
 
     @Override
-    public void start() throws ServiceStartupException {
+    public void start() throws ServiceAlreadyStartedException {
         infoSchemaService.setPostgresTypeMapper(new BasicInfoSchemaTablesService.PostgresTypeMapper() {
                 @Override
                 public long getOid(TInstance type) {

@@ -17,9 +17,9 @@
 
 package com.foundationdb.qp.storeadapter;
 
+import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
-import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.qp.expression.IndexKeyRange;
@@ -37,7 +37,6 @@ import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.FDBAdapterException;
@@ -47,11 +46,10 @@ import com.foundationdb.server.error.FDBNotCommittedException;
 import com.foundationdb.server.error.FDBPastVersionException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.QueryCanceledException;
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.KeyCreator;
+import com.foundationdb.server.store.FDBScanTransactionOptions;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBTransactionService;
 import com.foundationdb.util.tap.InOutTap;
@@ -66,37 +64,56 @@ public class FDBAdapter extends StoreAdapter {
     private final FDBStore store;
     private final FDBTransactionService txnService;
 
-    public FDBAdapter(FDBStore store, Schema schema, Session session, FDBTransactionService txnService, ConfigurationService config) {
-        super(schema, session, config);
+    public FDBAdapter(FDBStore store, Session session, FDBTransactionService txnService, ConfigurationService config) {
+        super(session, config);
         this.store = store;
         this.txnService = txnService;
     }
 
     @Override
     public FDBGroupCursor newGroupCursor(Group group) {
-        return new FDBGroupCursor(this, group);
+        return new FDBGroupCursor(this, group, scanOptions());
+    }
+
+    /** The transaction scan options for normal operator scans. */
+    public FDBScanTransactionOptions scanOptions() {
+        if (txnService.isTransactionActive(getSession()))
+            return getTransaction().getScanOptions();
+        // This should only happen during tests that aren't careful
+        // about transactions, so it does not really matter.
+        return FDBScanTransactionOptions.NORMAL;
     }
 
     @Override
     public FDBGroupCursor newDumpGroupCursor(Group group, int commitFrequency) {
-        return new FDBGroupCursor(this, group, commitFrequency);
+        FDBScanTransactionOptions transactionOptions;
+        if (commitFrequency == 0) {
+            transactionOptions = FDBScanTransactionOptions.NORMAL;
+        }
+        else if (commitFrequency == StoreAdapter.COMMIT_FREQUENCY_PERIODICALLY) {
+            transactionOptions = getTransaction().periodicallyCommitScanOptions();
+        }
+        else {
+            transactionOptions = new FDBScanTransactionOptions(commitFrequency, -1);
+        }
+        return new FDBGroupCursor(this, group, transactionOptions);
     }
 
     @Override
     public RowCursor newIndexCursor(QueryContext context,
-                                    Index index,
-                                    IndexKeyRange keyRange,
+                                    IndexRowType rowType,
+                                    IndexKeyRange keyRange, 
                                     API.Ordering ordering,
                                     IndexScanSelector scanSelector,
                                     boolean openAllSubCursors) {
         return new PersistitIndexCursor(context,
-                                        schema.indexRowType(index),
-                                        keyRange,
-                                        ordering,
-                                        scanSelector,
-                                        openAllSubCursors);
+                rowType,
+                keyRange,
+                ordering,
+                scanSelector,
+                openAllSubCursors);
     }
-
+    
     @Override
     public void updateRow(Row oldRow, Row newRow) {
         try {
@@ -174,6 +191,11 @@ public class FDBAdapter extends StoreAdapter {
     @Override
     public KeyCreator getKeyCreator() {
         return store;
+    }
+    
+    @Override
+    public AkibanInformationSchema getAIS() {
+        return store.getAIS(getSession());
     }
 
     @Override

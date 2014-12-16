@@ -1,7 +1,7 @@
 SelectQuery@76b3d4d2
   ResultSet@185963e0[cid, name, oid, cid, order_date]
     Project@14ac139d[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date]
-      Select@2d3bb305[Cast(IF([orders.order_date < Cast(2000-01-01 AS MCOMPAT_ DATE)], customers.name == Smith, customers.name == Jones) AS AKSQL_ BOOLEAN)]
+      Select@2d3bb305[Cast(if(orders.order_date < 2000-01-01,customers.name == Smith,customers.name == Jones) AS AKSQL_ BOOLEAN)]
         JoinNode@2a662476(LEFT[customers.cid == orders.cid])
           TableSource@17e3d4b9(customers)
           TableSource@6ea2c9ef(orders)
