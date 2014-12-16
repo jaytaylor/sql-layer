@@ -669,8 +669,11 @@ class GroupLookup_Default extends Operator
             }
             currentBindings = null;
             newBindings = false;
-            input.cancelBindings(bindings);
             if ((nextBindings != null) && nextBindings.isAncestor(bindings)) {
+                if (!input.isClosed()){
+                    input.close();
+                }
+                input.cancelBindings(nextBindings);
                 nextBindings = null;
             }
         }
