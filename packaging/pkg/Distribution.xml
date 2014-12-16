@@ -11,7 +11,7 @@
     <script>
     <![CDATA[
         var gMinJavaVersion = "1.7.0";
-        var gMinFDBCVersion = "2.0.0";
+        var gMinFDBCVersion = "3.0.0";
 
         function findJava() {
             try {
