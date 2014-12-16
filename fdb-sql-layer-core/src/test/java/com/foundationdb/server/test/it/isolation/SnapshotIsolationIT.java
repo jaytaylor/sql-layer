@@ -23,7 +23,6 @@ import com.foundationdb.sql.embedded.JDBCConnection;
 import java.sql.*;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -82,7 +81,6 @@ public class SnapshotIsolationIT extends IsolationITBase
 
     @Test
     @Isolation(JDBCConnection.TRANSACTION_SERIALIZABLE_SNAPSHOT)
-    @Ignore("needs 3.0 semantics")
     public void snapshotRYW() throws SQLException {
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
