@@ -31,6 +31,7 @@ import com.foundationdb.server.service.text.FullTextIndexService;
 import com.foundationdb.server.service.text.FullTextIndexServiceImpl;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 
 import java.io.File;
@@ -51,7 +52,7 @@ public class OptimizerTestBase extends ASTTransformTestBase
                  + OptimizerTestBase.class.getPackage().getName().replace('.', '/'));
     public static final String DEFAULT_SCHEMA = "test";
 
-    protected static ServiceManager sm = prepareServices();
+    protected static ServiceManager sm;
 
     // Base class has all possible transformers for convenience.
     protected AISBinder binder;
@@ -60,6 +61,18 @@ public class OptimizerTestBase extends ASTTransformTestBase
     protected SubqueryFlattener subqueryFlattener;
     protected DistinctEliminator distinctEliminator;
     
+
+    
+    @BeforeClass
+    public static void prepareServices()
+    {
+        System.setProperty("fdbsql.home", System.getProperty("user.home"));
+        ServiceManager ret = createServiceManager();
+        ret.startServices();
+        
+        sm = ret;
+    }
+
     @Before
     public void makeTransformers() throws Exception {
         parser = new SQLParser();
@@ -122,14 +135,5 @@ public class OptimizerTestBase extends ASTTransformTestBase
                     .testUrls()
                         .bindAndRequire(FullTextIndexService.class,
                                         FullTextIndexServiceImpl.class);
-    }
-    
-    private static ServiceManager prepareServices()
-    {
-        System.setProperty("fdbsql.home", System.getProperty("user.home"));
-        ServiceManager ret = createServiceManager();
-        ret.startServices();
-        
-        return ret;
     }
 }
