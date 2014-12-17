@@ -345,17 +345,18 @@ public class BulkInsertQT extends EmbeddedJDBCITBase
             }
         }
         System.out.println();
-        results.sort(new Comparator<TestResult>() {
-                         @Override
-                         public int compare(TestResult r1, TestResult r2) {
-                             if (r1.rowsPerSecond < r2.rowsPerSecond)
-                                 return -1;
-                             else if (r1.rowsPerSecond > r2.rowsPerSecond)
-                                 return +1;
-                             else
-                                 return 0;
-                         }
-                     });
+        Collections.sort(results,
+                         new Comparator<TestResult>() {
+                             @Override
+                             public int compare(TestResult r1, TestResult r2) {
+                                 if (r1.rowsPerSecond < r2.rowsPerSecond)
+                                     return -1;
+                                 else if (r1.rowsPerSecond > r2.rowsPerSecond)
+                                     return +1;
+                                 else
+                                     return 0;
+                             }
+                         });
         for (TestResult result : results) {
             System.out.println(result);
         }
