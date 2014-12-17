@@ -284,8 +284,6 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
     @Override
     public HKey ancestorHKey(Table table)
     {
-        // TODO: This does the wrong thing for hkeys derived from group index rows!
-        // TODO: See bug 997746.
         HKeyRowType rowType = this.rowType().schema().newHKeyRowType(table.hKey());
         HKey ancestorHKey = new ValuesHKey(rowType, this.registry);
         copyTo(ancestorHKey);
@@ -330,7 +328,7 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
         }        
     }
     // For testing purposes
-    protected int[] ordinals() { return ordinals; }
+    public int[] ordinals() { return ordinals; }
     
     private int[] ordinals;
     private int[] keyDepth;

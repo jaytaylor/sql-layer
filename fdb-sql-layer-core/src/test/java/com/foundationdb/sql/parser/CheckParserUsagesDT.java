@@ -515,7 +515,13 @@ public class CheckParserUsagesDT {
                 .removeMethod("getLeftmostResultSet","()Lcom/foundationdb/sql/parser/ResultSetNode;")
                 .removeMethod("getTableName","()Lcom/foundationdb/sql/parser/TableName;")
                 .removeMethod("getResultColumns","()Lcom/foundationdb/sql/parser/ResultColumnList;");
-
+        finder.getNodes().get("com/foundationdb/sql/parser/ExplicitCollateNode")
+                .removeMethod("getType","()Lcom/foundationdb/sql/types/DataTypeDescriptor;")
+                .removeMethod("getSourceResultColumn","()Lcom/foundationdb/sql/parser/ResultColumn;")
+                .removeMethod("getColumnName","()Ljava/lang/String;")
+                .removeMethod("getSchemaName","()Ljava/lang/String;")
+                .removeMethod("getTableName","()Ljava/lang/String;")
+                .removeMethod("getTypeId","()Lcom/foundationdb/sql/types/TypeId;");
     }
 
     @Test

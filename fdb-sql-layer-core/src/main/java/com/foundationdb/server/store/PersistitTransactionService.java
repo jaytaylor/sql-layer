@@ -25,6 +25,7 @@ import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.TreeService;
+import com.foundationdb.sql.parser.IsolationLevel;
 import com.foundationdb.util.MultipleCauseException;
 import com.google.inject.Inject;
 import com.persistit.SessionId;
@@ -277,7 +278,7 @@ public class PersistitTransactionService implements TransactionService {
     }
 
     @Override
-    public void checkStatementForeignKeys(Session session) {
+    public void checkStatementConstraints(Session session) {
         PersistitDeferredForeignKeys deferred = getDeferredForeignKeys(session, false);
         if (deferred != null)
             deferred.checkStatementForeignKeys(session);
@@ -322,6 +323,22 @@ public class PersistitTransactionService implements TransactionService {
             session.remove(DEFERRED_FOREIGN_KEYS_KEY);
         }
     };
+
+    @Override
+    public IsolationLevel actualIsolationLevel(IsolationLevel level) {
+        return IsolationLevel.SNAPSHOT_ISOLATION_LEVEL;
+    }
+
+    @Override
+    public IsolationLevel setIsolationLevel(Session session, IsolationLevel level) {
+        // Ignored.
+        return IsolationLevel.SNAPSHOT_ISOLATION_LEVEL;
+    }
+
+    @Override
+    public boolean isolationLevelRequiresReadOnly(Session session, boolean commitNow) {
+        return false;
+    }
 
     @Override
     public void start() {

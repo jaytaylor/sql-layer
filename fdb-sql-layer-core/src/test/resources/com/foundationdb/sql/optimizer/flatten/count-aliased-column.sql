@@ -1,0 +1,1 @@
+SELECT COUNT(v)+5 FROM (SELECT c1 AS v FROM t1) AS anon1

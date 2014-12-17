@@ -41,14 +41,11 @@ import java.util.List;
 
 public class BoolLogic extends TScalarBase
 {
-    public static final TScalar BINARIES[] = new TScalar[Op.values().length];
+    public static final TScalar AND = new BoolLogic(Op.AND);
+    public static final TScalar OR = new BoolLogic(Op.OR);
+    public static final TScalar XOR = new BoolLogic(Op.XOR);
+
     private static final int OUT_VAL = 0;
-    static
-    {
-        Op op[] = Op.values();
-        for (int n = 0; n <  op.length; ++n)
-            BINARIES[n] = new BoolLogic(op[n]);
-    }
 
     public static final TScalar NOT = new TScalarBase() {
         @Override

@@ -19,7 +19,6 @@ package com.foundationdb.server.service.dxl;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.QueryContextBase;
 import com.foundationdb.qp.operator.SimpleQueryContext;

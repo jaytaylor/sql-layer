@@ -29,7 +29,6 @@ import com.foundationdb.sql.optimizer.plan.ConditionExpression;
 import com.foundationdb.sql.optimizer.plan.ConstantExpression;
 import com.foundationdb.sql.optimizer.plan.ExpressionNode;
 import com.foundationdb.sql.optimizer.plan.FunctionExpression;
-import com.foundationdb.sql.optimizer.plan.IfElseExpression;
 import com.foundationdb.sql.optimizer.plan.InListCondition;
 import com.foundationdb.sql.optimizer.plan.IsNullIndexKey;
 import com.foundationdb.sql.optimizer.plan.ParameterExpression;
@@ -65,7 +64,6 @@ import com.foundationdb.server.types.TComparison;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TKeyComparable;
 import com.foundationdb.server.types.TPreptimeValue;
-import com.foundationdb.server.types.aksql.akfuncs.AkIfElse;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.TString;
 import com.foundationdb.server.types.service.OverloadResolver;
@@ -99,8 +97,6 @@ import java.util.List;
 class ExpressionAssembler 
 {
     private static final Logger logger = LoggerFactory.getLogger(ExpressionAssembler.class);
-
-    private static final TValidatedScalar ifElseValidated = new TValidatedScalar(AkIfElse.INSTANCE);
 
     private final PlanContext planContext;
     private final PlanExplainContext explainContext;
@@ -155,14 +151,6 @@ class ExpressionAssembler
             FunctionExpression funcNode = (FunctionExpression)node;
             return assembleFunction(funcNode, funcNode.getFunction(),
                     funcNode.getOperands(),
-                    columnContext, subqueryAssembler);
-        }
-        else if (node instanceof IfElseExpression) {
-            IfElseExpression ifElse = (IfElseExpression)node;
-            return assembleFunction(ifElse, "if",
-                    Arrays.asList(ifElse.getTestCondition(),
-                            ifElse.getThenExpression(),
-                            ifElse.getElseExpression()),
                     columnContext, subqueryAssembler);
         }
         else if (node instanceof InListCondition) {
@@ -270,9 +258,6 @@ class ExpressionAssembler
             OverloadResolver<TValidatedScalar> scalarsResolver = registryService.getScalarsResolver();
             OverloadResult<TValidatedScalar> overloadResult = scalarsResolver.get(functionName, inputPreptimeValues);
             overload = overloadResult.getOverload();
-        }
-        else if (functionNode instanceof IfElseExpression) {
-            overload = ifElseValidated;
         }
         else {
             throw new AssertionError(functionNode);

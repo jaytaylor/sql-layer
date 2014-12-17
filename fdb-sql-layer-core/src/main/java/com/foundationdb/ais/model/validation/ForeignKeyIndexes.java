@@ -32,7 +32,6 @@ class ForeignKeyIndexes implements AISValidation {
         for (Table table : ais.getTables().values()) {
             for (ForeignKey foreignKey : table.getForeignKeys()) {
                 if (foreignKey.getReferencingTable() == table) { // Only check once
-                    foreignKey.findIndexes();
                     if (foreignKey.getReferencingIndex() == null) {
                         output.reportFailure(new AISValidationFailure(new ForeignKeyIndexRequiredException(foreignKey.getConstraintName().getTableName(), foreignKey.getReferencingTable().getName(), foreignKey.getReferencingColumns().toString())));
                     }

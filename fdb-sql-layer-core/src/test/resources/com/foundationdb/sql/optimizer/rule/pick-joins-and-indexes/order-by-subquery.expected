@@ -1,0 +1,15 @@
+SelectQuery@373506de
+  ResultSet@7a55f522[id, id, aid, bid]
+    Project@2150c9ed[anon1[0], m2m.id, m2m.aid, m2m.bid]
+      Select@3ef8f7b1[]
+        JoinNode@18b64ed5(INNER/NESTED_LOOPS[m2m.aid == anon1[0]])
+          TableGroupJoinTree@6b32ddee(TableGroup@58886b3d(m2m), m2m - GroupScan@63c6ec18(Group(test.m2m), rows = 1, cost = 4.00000))
+            TableSource@4016b9f(m2m - TableGroup@58886b3d(m2m))
+          SubquerySource@56bdcbd4(anon1)
+            Subquery@4690f7c9
+              ResultSet@577bd150[id]
+                Limit@1eb080f(LIMIT 10)
+                  Project@6d5e11c4[a.id]
+                    Select@6dcfef5e[]
+                      TableGroupJoinTree@794095c6(TableGroup@7f29385a(a), a - SingleIndexScan@38247deb(Index(test.a.PRIMARY[IndexColumn(id)]), covering/SORTED, rows = 2, cost = 8.17960))
+                        TableSource@6e6c3ca4(a - TableGroup@7f29385a(a))

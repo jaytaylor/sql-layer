@@ -25,7 +25,6 @@ import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryBindings;
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.NoSuchColumnException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.UnsupportedSQLException;
@@ -56,13 +55,11 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
     private long skipRows;
     private long commitFrequency;
     private int maxRetries;
-    private Schema schema;
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresCopyInStatement.class);
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresCopyInStatement: execute shared");
 
-    protected PostgresCopyInStatement(Schema schema) {
-        this.schema = schema;
+    protected PostgresCopyInStatement() {
     }
     
 

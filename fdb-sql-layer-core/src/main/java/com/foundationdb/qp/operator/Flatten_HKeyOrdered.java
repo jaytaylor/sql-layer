@@ -24,7 +24,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.FlattenedRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.explain.*;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.util.ArgumentValidation;
 import com.foundationdb.util.tap.InOutTap;
 import org.slf4j.Logger;

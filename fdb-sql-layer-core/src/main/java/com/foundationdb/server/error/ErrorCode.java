@@ -187,7 +187,11 @@ public enum ErrorCode {
     EXTERNAL_ROW_READER_EXCEPTION ("22", "505", Importance.DEBUG, ExternalRowReaderException.class),
     SECURITY                ("22", "506", Importance.ERROR, SecurityException.class),
     STORAGE_KEY_SIZE_EXCEEDED("22", "507", Importance.ERROR, StorageKeySizeExceededException.class),
-    OVERLOAD_EXCEPTION("22", "508", Importance.ERROR, OverloadException.class),
+
+    NO_SUCH_FUNCTION_OVERLOAD("22", "508", Importance.DEBUG, NoSuchFunctionOverloadException.class),
+    ARGUMENT_TYPE_REQUIRED   ("22", "509", Importance.DEBUG, ArgumentTypeRequiredException.class),
+    NO_COMMON_TYPE           ("22", "510", Importance.DEBUG, NoCommonTypeException.class),
+
         // SubClass 6xx - Spatial objects
     INVALID_SPATIAL_OBJECT("22", "601", Importance.DEBUG, InvalidSpatialObjectException.class),
 
@@ -206,7 +210,7 @@ public enum ErrorCode {
         // SubClass 003 - inappropriate access mode for branch transaction
     TRANSACTION_READ_ONLY   ("25", "003", Importance.DEBUG, TransactionReadOnlyException.class),
         // SubClass 004 - inappropriate isolation level for branch transaction
-    ISOLATION_LEVEL_IGNORED ("25", "004", Importance.DEBUG, IsolationLevelIgnoredException.class),
+    ISOLATION_LEVEL_CHANGED ("25", "004", Importance.DEBUG, IsolationLevelChangedException.class),
         // SubClass 005 - no active SQL-transaction for branch transaction
     NO_TRANSACTION          ("25", "005", Importance.DEBUG, NoTransactionInProgressException.class),
         // SubClass 006 - read-only SQL-transaction
@@ -333,6 +337,7 @@ public enum ErrorCode {
     INVALID_SQLJ_DEPLOYMENT_DESCRIPTOR ("46", "200", Importance.DEBUG, InvalidSQLJDeploymentDescriptorException.class),
 
     // Class 50 - DDL definition failure
+    PROTECTED_OBJECT        ("50", "001", Importance.DEBUG, ProtectedObjectException.class),
     PROTECTED_TABLE         ("50", "002", Importance.DEBUG, ProtectedTableDDLException.class), 
     JOIN_TO_PROTECTED_TABLE ("50", "003", Importance.DEBUG, JoinToProtectedTableException.class), 
     JOIN_TO_UNKNOWN_TABLE   ("50", "004", Importance.DEBUG, JoinToUnknownTableException.class),  

@@ -81,16 +81,25 @@ public class ScriptCache {
         Routine routine = dxlService.ddlFunctions().getAIS(session).getRoutine(routineName);
         if (null == routine)
             throw new NoSuchRoutineException(routineName);
-        long currentVersion = routine.getVersion();        
+        long currentVersion = routine.getVersion();
         CacheEntry entry = cache.get(routineName);
-        if ((entry != null) && (entry.version == currentVersion))
+        if ((entry != null) && (entry.version == currentVersion)) 
             return entry;
+
+        ClassLoader origCL = Thread.currentThread().getContextClassLoader();
+        if (!routine.isSystemRoutine()) {
+            Thread.currentThread().setContextClassLoader(engineProvider.getSafeClassLoader());
+        }
+        
         ScriptEngine engine = getManager(session).getEngineByName(routine.getLanguage());
         if (engine == null)
             throw new ExternalRoutineInvocationException(routineName, "Cannot find " + routine.getLanguage()
                     + " script engine");
         entry = new CacheEntry(routine, engine);
         cache.put(routineName, entry);
+        if (!routine.isSystemRoutine()) {
+            Thread.currentThread().setContextClassLoader(origCL);
+        }
         return entry;
     }
 
@@ -151,6 +160,7 @@ public class ScriptCache {
             if (compilable) {
                 CompiledEvaluator compiled = null;
                 if (engine != null)
+                    
                     compiled = new CompiledEvaluator(routineName, engine, script, false);
                 return new CompiledEvaluatorPool(routineName, factory, script, compiled);
             } else {

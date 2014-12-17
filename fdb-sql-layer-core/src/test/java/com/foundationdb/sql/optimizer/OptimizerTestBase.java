@@ -51,15 +51,14 @@ public class OptimizerTestBase extends ASTTransformTestBase
                  + OptimizerTestBase.class.getPackage().getName().replace('.', '/'));
     public static final String DEFAULT_SCHEMA = "test";
 
-    protected static ServiceManager sm = prepareServices();
-
     // Base class has all possible transformers for convenience.
     protected AISBinder binder;
     protected TypeComputer typeComputer;
     protected BooleanNormalizer booleanNormalizer;
     protected SubqueryFlattener subqueryFlattener;
     protected DistinctEliminator distinctEliminator;
-    
+
+
     @Before
     public void makeTransformers() throws Exception {
         parser = new SQLParser();
@@ -69,11 +68,6 @@ public class OptimizerTestBase extends ASTTransformTestBase
         booleanNormalizer = new BooleanNormalizer(parser);
         subqueryFlattener = new SubqueryFlattener(parser);
         distinctEliminator = new DistinctEliminator(parser);
-    }
-
-    protected static ServiceManager serviceManager()
-    {
-        return sm;
     }
 
     public static AkibanInformationSchema parseSchema(List<File> ddls) throws Exception {
@@ -122,14 +116,5 @@ public class OptimizerTestBase extends ASTTransformTestBase
                     .testUrls()
                         .bindAndRequire(FullTextIndexService.class,
                                         FullTextIndexServiceImpl.class);
-    }
-    
-    private static ServiceManager prepareServices()
-    {
-        System.setProperty("fdbsql.home", System.getProperty("user.home"));
-        ServiceManager ret = createServiceManager();
-        ret.startServices();
-        
-        return ret;
     }
 }

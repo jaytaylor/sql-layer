@@ -18,6 +18,7 @@
 package com.foundationdb.sql.optimizer;
 
 
+import com.foundationdb.junit.SelectedParameterizedRunner;
 import com.foundationdb.qp.operator.SimpleQueryContext;
 import com.foundationdb.sql.NamedParamsTestBase;
 import com.foundationdb.sql.TestBase;
@@ -41,12 +42,10 @@ import com.foundationdb.server.types.service.TypesRegistryServiceImpl;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.mcompat.mtypes.MTypesTranslator;
 
-import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
-import com.foundationdb.junit.NamedParameterizedRunner;
-import com.foundationdb.junit.Parameterization;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -56,7 +55,7 @@ import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-@RunWith(NamedParameterizedRunner.class)
+@RunWith(SelectedParameterizedRunner.class)
 public class OperatorCompilerTest extends NamedParamsTestBase 
                                   implements TestBase.GenerateAndCheckResult
 {
@@ -143,8 +142,8 @@ public class OperatorCompilerTest extends NamedParamsTestBase
         }
     }
 
-    @TestParameters
-    public static Collection<Parameterization> statements() throws Exception {
+    @Parameterized.Parameters(name="{0}")
+    public static Iterable<Object[]> statements() throws Exception {
         Collection<Object[]> result = new ArrayList<>();
         for (File subdir : RESOURCE_DIR.listFiles(new FileFilter() {
                 public boolean accept(File file) {
@@ -173,7 +172,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
                 }
             }
         }
-        return namedCases(result);
+        return result;
     }
 
     public OperatorCompilerTest(String caseName, 

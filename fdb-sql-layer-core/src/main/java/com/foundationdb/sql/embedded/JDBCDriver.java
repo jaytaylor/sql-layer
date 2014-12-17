@@ -26,10 +26,6 @@ import org.slf4j.LoggerFactory;
 import java.sql.*;
 import java.util.*;
 
-// TODO: Consider having an EmbeddedDriver proxy class also implements
-// Driver and wraps this. It can live in a separate .jar file in a
-// class loader that servlets, scripts, etc. have access to and so
-// satisfy java.sql.DriverManager.isDriverAllowed().
 public class JDBCDriver implements Driver, ServerMonitor {
     public static final String URL = "jdbc:default:connection";
 

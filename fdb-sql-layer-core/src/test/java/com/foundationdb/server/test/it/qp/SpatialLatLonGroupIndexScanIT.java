@@ -287,7 +287,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                                                   new SetColumnSelector(0, 1, 2));
             IndexBound upperRight = new IndexBound(row(pSpatialIndexRowType, beforeEQ, latHi, lonHi),
                                                    new SetColumnSelector(0, 1, 2));
-            IndexKeyRange box = IndexKeyRange.spatial(pSpatialIndexRowType, lowerLeft, upperRight);
+            IndexKeyRange box = IndexKeyRange.spatialCoords(pSpatialIndexRowType, lowerLeft, upperRight);
             Operator plan = indexScan_Default(pSpatialIndexRowType, box, lookaheadQuantum());
             Cursor cursor = API.cursor(plan, queryContext, queryBindings);
             cursor.openTopLevel();
@@ -366,7 +366,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                                                   new SetColumnSelector(0, 1, 2));
             IndexBound upperRight = new IndexBound(row(cSpatialIndexRowType, beforeEQ, latHi, lonHi),
                                                    new SetColumnSelector(0, 1, 2));
-            IndexKeyRange box = IndexKeyRange.spatial(cSpatialIndexRowType, lowerLeft, upperRight);
+            IndexKeyRange box = IndexKeyRange.spatialCoords(cSpatialIndexRowType, lowerLeft, upperRight);
             Operator plan = indexScan_Default(cSpatialIndexRowType, box, lookaheadQuantum());
             Cursor cursor = API.cursor(plan, queryContext, queryBindings);
             cursor.openTopLevel();

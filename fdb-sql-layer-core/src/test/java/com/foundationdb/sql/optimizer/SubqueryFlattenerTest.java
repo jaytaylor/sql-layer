@@ -17,33 +17,34 @@
 
 package com.foundationdb.sql.optimizer;
 
+import com.foundationdb.junit.SelectedParameterizedRunner;
 import com.foundationdb.sql.NamedParamsTestBase;
 import com.foundationdb.sql.TestBase;
 
 import com.foundationdb.sql.parser.DMLStatementNode;
 import com.foundationdb.sql.parser.StatementNode;
 
-import com.foundationdb.junit.NamedParameterizedRunner;
-import com.foundationdb.junit.NamedParameterizedRunner.TestParameters;
 import com.foundationdb.junit.Parameterization;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+
 import static org.junit.Assert.*;
 
 import java.io.File;
 import java.util.Collection;
 
-@RunWith(NamedParameterizedRunner.class)
+@RunWith(SelectedParameterizedRunner.class)
 public class SubqueryFlattenerTest extends OptimizerTestBase 
                                    implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 
         new File(OptimizerTestBase.RESOURCE_DIR, "flatten");
 
-    @TestParameters
-    public static Collection<Parameterization> statements() throws Exception {
-        return NamedParamsTestBase.namedCases(sqlAndExpected(RESOURCE_DIR));
+    @Parameterized.Parameters(name="{0}")
+    public static Collection<Object[]> statements() throws Exception {
+        return sqlAndExpected(RESOURCE_DIR);
     }
 
     public SubqueryFlattenerTest(String caseName, String sql, 

@@ -17,10 +17,15 @@
 
 package com.foundationdb.server.error;
 
+import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 
 public final class NoSuchCastException extends InvalidOperationException {
     public NoSuchCastException(TInstance source, TInstance target) {
-        super(ErrorCode.NO_SUCH_CAST, source.toString(), target.toString());
+        this(source.typeClass(), target.typeClass());
+    }
+
+    public NoSuchCastException(TClass source, TClass target) {
+        super(ErrorCode.NO_SUCH_CAST, source.name().unqualifiedName(), target.name().unqualifiedName());
     }
 }

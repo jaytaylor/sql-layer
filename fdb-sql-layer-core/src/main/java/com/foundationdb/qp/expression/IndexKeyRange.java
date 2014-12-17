@@ -122,9 +122,9 @@ public class IndexKeyRange
      * @param hi           Upper bound of the range.
      * @return IndexKeyRange covering the keys lying between lo and hi.
      */
-    public static IndexKeyRange spatial(IndexRowType indexRowType,
-                                        IndexBound lo,
-                                        IndexBound hi)
+    public static IndexKeyRange spatialCoords(IndexRowType indexRowType,
+                                              IndexBound lo,
+                                              IndexBound hi)
     {
         if (lo == null) {
             throw new IllegalArgumentException("lo must not be null");
@@ -137,17 +137,16 @@ public class IndexKeyRange
      * They describe the lower-left and upper-right corners of a query box.
      * The ColumnSelectors for lo and hi must select for the same columns.
      *
-     * @param indexRowType The row type of index keys.
-     * @param spatialObject           Upper bound of the range.
+     * @param indexRowType The row type of index keys. Contains a spatial object.
+     * @param indexBound           Upper bound of the range.
      * @return IndexKeyRange covering the keys lying between lo and hi.
      */
-    public static IndexKeyRange spatial(IndexRowType indexRowType,
-                                        IndexBound spatialObject)
+    public static IndexKeyRange spatialObject(IndexRowType indexRowType, IndexBound indexBound)
     {
-        if (spatialObject == null) {
+        if (indexBound == null) {
             throw new IllegalArgumentException("spatialObjectIndex must not be null");
         }
-        return new IndexKeyRange(indexRowType, spatialObject, true, null, true, IndexKind.SPATIAL_OBJECT);
+        return new IndexKeyRange(indexRowType, indexBound, true, indexBound, true, IndexKind.SPATIAL_OBJECT);
     }
 
     /**

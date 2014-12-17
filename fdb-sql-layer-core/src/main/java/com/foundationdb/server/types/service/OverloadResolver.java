@@ -16,8 +16,11 @@
  */
 package com.foundationdb.server.types.service;
 
+import com.foundationdb.server.error.ArgumentTypeRequiredException;
+import com.foundationdb.server.error.NoCommonTypeException;
+import com.foundationdb.server.error.NoSuchCastException;
+import com.foundationdb.server.error.NoSuchFunctionOverloadException;
 import com.foundationdb.server.error.NoSuchFunctionException;
-import com.foundationdb.server.error.OverloadException;
 import com.foundationdb.server.error.WrongExpressionArityException;
 import com.foundationdb.server.types.InputSetFlags;
 import com.foundationdb.server.types.TCast;
@@ -189,7 +192,7 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                     else {
                         TCast requiredCast = resolver.cast(inputTClass, targetTClass);
                         if (requiredCast == null)
-                            throw new OverloadException("can't cast " + inputInstance + " to " + targetTClass);
+                            throw new NoSuchCastException(inputInstance.typeClass(), targetTClass);
                         inputInstance = requiredCast.preferredTarget(inputTpv);
                         resultInstance = inputInstance;
                     }
@@ -215,7 +218,7 @@ public final class OverloadResolver<V extends TValidatedOverload> {
 
         /**
          * Never returns null.
-         * Note: if inputSet.isPicking() and no common tclass can be found, then varchar will be returned.
+         * Note: If !inputSet.isPicking() and no common tclass can be found, then VARCHAR(0) will be returned.
          */
         private TInstance findCommon(V overload, TInputSet inputSet,
                                   List<? extends TPreptimeValue> inputs, TCastResolver resolver)
@@ -258,8 +261,7 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                     // which has already been handled.
                     TClass newCommon = resolver.commonTClass(common, inputClass);
                     if (newCommon == null)
-                        throw new OverloadException(overload + ": couldn't find common types for " + inputSet
-                            + " with " + inputs);
+                        throw new NoCommonTypeException(overload.displayName(), typeNameList(inputs));
 
                     if (newCommon == inputClass) { // case #2
                         common = newCommon;
@@ -275,7 +277,8 @@ public final class OverloadResolver<V extends TValidatedOverload> {
             if (common == null) {
                 if (!inputSet.isPicking())
                     return MString.VARCHAR.instance(0, nullable); // Unknown type and callee doesn't care.
-                throw new OverloadException("couldn't resolve type for " + inputSet + " with " + inputs);
+                else
+                    throw new ArgumentTypeRequiredException(overload.displayName(), inputSet);
             }
             return (commonInst == null)
                 ? common.instance(nullable)
@@ -355,15 +358,16 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                     break; // found one!
                 }
                 else {
-                    // this priority group had too many candidates; this is an error
-                    throw overloadException(name, inputs);
+                    // Too many candidates in priority group.
+                    // An error that is normally caught by function registry.
+                    throw new IllegalStateException(name + " has too many candidates for " + typeNameList(inputs));
                 }
             }
         }
         if (mostSpecific == null) {
             // no priority group had any candidates; this is an error
             if (sawRightArity)
-                throw overloadException(name, inputs);
+                throw new NoSuchFunctionOverloadException(name, typeNameList(inputs));
             throw new WrongExpressionArityException(aritySeen, inputs.size());
         }
         return buildResult(mostSpecific, inputs);
@@ -373,26 +377,19 @@ public final class OverloadResolver<V extends TValidatedOverload> {
         return overloadsRegistry;
     }
 
-    private OverloadException overloadException(String name, List<? extends TPreptimeValue> inputs) {
-        StringBuilder sb = new StringBuilder("no suitable overload found for ");
-        sb.append(name).append('(');
-        for (int i = 0, inputsSize = inputs.size(); i < inputsSize; i++) {
-            TPreptimeValue tpv = inputs.get(i);
-            if (tpv == null) {
-                sb.append('?');
+    private static String typeNameList(List<? extends TPreptimeValue> inputs) {
+        StringBuilder sb = new StringBuilder();
+        for(TPreptimeValue tpv : inputs) {
+            if(sb.length() > 0) {
+                sb.append(",");
             }
-            else {
-                TInstance type = tpv.type();
-                String className = (type == null)
-                        ? "?"
-                        : type.typeClass().name().toString();
-                sb.append(className);
+            if(tpv == null || tpv.type() == null) {
+                sb.append("?");
+            } else {
+                sb.append(tpv.type().typeClass().name().unqualifiedName());
             }
-            if ( (i+1) < inputsSize)
-                sb.append(", ");
         }
-        sb.append(')');
-        return new OverloadException(sb.toString());
+        return sb.toString();
     }
 
     private boolean isCandidate(V overload,
@@ -436,7 +433,7 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                     if (hasNext)              // , but we might find a match in the subsequent ones
                         return false;
                     else
-                        throw new OverloadException("couldn't resolve overload because of unknown input at position " + i);
+                        throw new ArgumentTypeRequiredException(overload.displayName(), i);
                 }
             }
             else {

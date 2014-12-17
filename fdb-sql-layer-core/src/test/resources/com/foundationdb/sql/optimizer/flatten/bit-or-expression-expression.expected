@@ -1,0 +1,1 @@
+SELECT (bit_or(((test.t1.id + 5) * 4))) AS b FROM test.t1

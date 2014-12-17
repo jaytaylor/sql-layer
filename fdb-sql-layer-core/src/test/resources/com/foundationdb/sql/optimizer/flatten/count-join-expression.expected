@@ -1,0 +1,1 @@
+SELECT COUNT(*) AS "_SQL_COL_1" FROM test.t1, test.t1 WHERE ((concat(test.t1.c1, 'ice')) = test.t1.c1) AND TRUE

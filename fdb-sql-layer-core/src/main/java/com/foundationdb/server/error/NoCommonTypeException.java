@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 FoundationDB, LLC
+ * Copyright (C) 2009-2014 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -17,9 +17,9 @@
 
 package com.foundationdb.server.error;
 
-public class OverloadException extends InvalidOperationException
+public class NoCommonTypeException extends InvalidOperationException
 {
-    public OverloadException(String message) {
-        super(ErrorCode.OVERLOAD_EXCEPTION,message);
+    public NoCommonTypeException(String functionName, String typeDesc) {
+        super(ErrorCode.NO_COMMON_TYPE, functionName, typeDesc);
     }
 }

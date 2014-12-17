@@ -15,10 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.error;
+package com.foundationdb.sql.jdbc;
 
-public class IsolationLevelIgnoredException extends InvalidOperationException {
-    public IsolationLevelIgnoredException(String level, String oldLevel) {
-        super(ErrorCode.ISOLATION_LEVEL_IGNORED, level, oldLevel);
+import java.sql.Driver;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+public class DeregisterProxyDriverHelper {
+
+    public void deregisterProxy(Driver driver) throws SQLException {
+        SecurityManager security = System.getSecurityManager();
+        if (security != null) {
+            // Prevents method from being called inside a routine
+            security.checkPermission(new RuntimePermission("setContextClassLoader"));
+        }
+        DriverManager.deregisterDriver(driver);
     }
+
 }

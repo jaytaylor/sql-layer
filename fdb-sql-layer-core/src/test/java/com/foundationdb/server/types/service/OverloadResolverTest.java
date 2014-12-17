@@ -16,8 +16,10 @@
  */
 package com.foundationdb.server.types.service;
 
+import com.foundationdb.server.error.ArgumentTypeRequiredException;
+import com.foundationdb.server.error.NoSuchCastException;
+import com.foundationdb.server.error.NoSuchFunctionOverloadException;
 import com.foundationdb.server.error.NoSuchFunctionException;
-import com.foundationdb.server.error.OverloadException;
 import com.foundationdb.server.error.WrongExpressionArityException;
 import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TBundleID;
@@ -241,7 +243,7 @@ public class OverloadResolverTest {
         TClass actualCommon;
         try {
             actualCommon = registry.getCastsResolver().commonTClass(a, b);
-        } catch (OverloadException e) {
+        } catch (NoSuchCastException e) {
             actualCommon = null;
         }
         assertSame("common(" + a + ", " + b +")", common, actualCommon);
@@ -305,7 +307,7 @@ public class OverloadResolverTest {
     }
 
     // input resolution, no casts
-    @Test(expected = OverloadException.class)
+    @Test(expected = NoSuchFunctionOverloadException.class)
     public void mulIntMulBigIntWithIntsNoCasts() {
         new Initializer().types(TINT, TBIGINT, TDATE).overloads(MUL_INTS, MUL_BIGINTS).init();
         checkResolved("INT*INT", null, MUL_NAME, prepVals(TDATE, TDATE));
@@ -349,12 +351,12 @@ public class OverloadResolverTest {
             // 3 survive filtering, 1 less specific, 2 candidates
             checkResolved("?*INT", null, MUL_NAME, prepVals(null, TINT));
             fail("expected OverloadException");
-        } catch (OverloadException e) {
+        } catch (ArgumentTypeRequiredException e) {
             // expected
         }
     }
 
-    @Test(expected = OverloadException.class)
+    @Test(expected = IllegalStateException.class)
     public void conflictingOverloads() {
         final String NAME = "foo";
         // Overloads aren't valid and should(?) be rejected by real registry,
@@ -396,7 +398,7 @@ public class OverloadResolverTest {
         try {
             checkResolved(NAME+"(null,DATE,INT)", coalesce, NAME, prepVals(null, TDATE, TINT));
             fail("expected overload exception");
-        } catch (OverloadException e) {
+        } catch (NoSuchCastException e) {
             // There is no common type between date and int
         }
     }
@@ -419,7 +421,7 @@ public class OverloadResolverTest {
         try {
             checkResolved(NAME+"(null)", first, NAME, Arrays.asList(prepVal(null)));
             fail("expected overload exception");
-        } catch (OverloadException e) {
+        } catch (ArgumentTypeRequiredException e) {
             // can't find picking type for first if it's null
         }
     }

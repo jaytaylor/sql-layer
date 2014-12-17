@@ -49,6 +49,7 @@ import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.KeyCreator;
+import com.foundationdb.server.store.FDBScanTransactionOptions;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBTransactionService;
 import com.foundationdb.util.tap.InOutTap;
@@ -71,12 +72,31 @@ public class FDBAdapter extends StoreAdapter {
 
     @Override
     public FDBGroupCursor newGroupCursor(Group group) {
-        return new FDBGroupCursor(this, group);
+        return new FDBGroupCursor(this, group, scanOptions());
+    }
+
+    /** The transaction scan options for normal operator scans. */
+    public FDBScanTransactionOptions scanOptions() {
+        if (txnService.isTransactionActive(getSession()))
+            return getTransaction().getScanOptions();
+        // This should only happen during tests that aren't careful
+        // about transactions, so it does not really matter.
+        return FDBScanTransactionOptions.NORMAL;
     }
 
     @Override
     public FDBGroupCursor newDumpGroupCursor(Group group, int commitFrequency) {
-        return new FDBGroupCursor(this, group, commitFrequency);
+        FDBScanTransactionOptions transactionOptions;
+        if (commitFrequency == 0) {
+            transactionOptions = FDBScanTransactionOptions.NORMAL;
+        }
+        else if (commitFrequency == StoreAdapter.COMMIT_FREQUENCY_PERIODICALLY) {
+            transactionOptions = getTransaction().periodicallyCommitScanOptions();
+        }
+        else {
+            transactionOptions = new FDBScanTransactionOptions(commitFrequency, -1);
+        }
+        return new FDBGroupCursor(this, group, transactionOptions);
     }
 
     @Override

@@ -47,7 +47,7 @@ public class PersistitTableIndexRow extends PersistitIndexRow
     @Override
     public IndexToHKey indexToHKey()
     {
-        return index.indexToHKey();
+        return ((TableIndex)index).indexToHKey();
     }
 
     // PersistitTableIndexRow interface
@@ -55,10 +55,6 @@ public class PersistitTableIndexRow extends PersistitIndexRow
     public PersistitTableIndexRow(StoreAdapter adapter, IndexRowType indexRowType)
     {
         super(adapter, indexRowType);
-        this.index = (TableIndex) indexRowType.index();
+        this.index = indexRowType.index();
     }
-
-    // Object state
-
-    private final TableIndex index;
 }
