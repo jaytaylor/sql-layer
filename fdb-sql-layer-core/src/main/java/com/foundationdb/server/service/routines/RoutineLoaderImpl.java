@@ -376,6 +376,7 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
         aisb.defaultSchema(TableName.SYS_SCHEMA);
         aisb.procedure("create_new_lob")
             .language("java", Routine.CallingConvention.JAVA)
+            .paramStringIn("schema", PATH_MAX)
             .returnString("lob_id", 36)
             .externalName(LobRoutines.class.getCanonicalName(), "createNewLob");
         aisb.procedure("read_blob")
