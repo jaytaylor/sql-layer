@@ -163,13 +163,16 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
     public void close()
     {
         super.close();
-        if (startKey != null) {
-            adapter.returnIndexRow(startKey);
-            startKey = null;
-        }
-        if (endKey != null) {
-            adapter.returnIndexRow(endKey);
-            endKey = null;
+        try {
+            if (startKey != null) {
+                adapter.returnIndexRow(startKey);
+                startKey = null;
+            }
+        } finally {
+            if (endKey != null) {
+                adapter.returnIndexRow(endKey);
+                endKey = null;
+            }
         }
     }
 
