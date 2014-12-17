@@ -31,19 +31,30 @@ public class LobRoutines {
     
     private LobRoutines() {
     }
-
-    // not necessary(?)
-    public static String createNewLob(String schema) {
-        // add security check on schema (securityService.isWriteAccessible() )
-        // perhaps create Directory here, and change  getOrCreateLobSubspace to getLobSubspace
-        // perhaps return as UUID 
-        
-        
-        return UUID.randomUUID().toString();
+    
+    public static String createNewLobInTable(String schemaName, String tableName, String columnName ) {
+        return createNewLob( Arrays.asList(schemaName,tableName, columnName));
     }
 
+    public static String createNewLob(String schemaName) {
+        return createNewLob( Arrays.asList(schemaName));
+    }
+    
+    private static String createNewLob(List<String> path) {
+        // add security check on schema (securityService.isWriteAccessible() )
+        ServerQueryContext context = ServerCallContextStack.getCallingContext();
+        ServiceManager serviceManager = context.getServer().getServiceManager();
+        LobService ls = serviceManager.getServiceByClass(LobService.class);
+        FDBHolder fdbHolder = serviceManager.getServiceByClass(FDBHolder.class);
+        TransactionContext tcx = fdbHolder.getTransactionContext();
+        String id = java.util.UUID.randomUUID().toString();
+        path.add(id);
+        ls.createLobSubspace(tcx, path);
+        return id;
+    }
+    
     public static byte[] readBlob(long offset, int length, String schemaName, String blobID) {
-        return readBlob(offset, length, Arrays.asList(schemaName, blobID));        
+        return readBlob(offset, length, Arrays.asList(schemaName, blobID));
     }
 
     public static byte[] readBlobInTable(long offset, int length, String schemaName, String tableName, String columnName, String blobID){
@@ -56,7 +67,7 @@ public class LobRoutines {
         LobService ls = serviceManager.getServiceByClass(LobService.class);
         FDBHolder fdbHolder = serviceManager.getServiceByClass(FDBHolder.class);
         TransactionContext tcx = fdbHolder.getTransactionContext();
-        DirectorySubspace ds = ls.getOrCreateLobSubspace(tcx, pathElements).get();
+        DirectorySubspace ds = ls.getLobSubspace(tcx, pathElements).get();
         BlobAsync blob = ls.getBlob(ds);
         
         return blob.read(tcx, offset, length).get();
@@ -65,6 +76,10 @@ public class LobRoutines {
     public static void writeBlob(long offset, byte[] data, String schemaName, String blobID){
         writeBlob(offset, data, Arrays.asList(schemaName, blobID));
     }
+
+    public static void writeBlobInTable(long offset, byte[] data, String schemaName, String tableName, String columnName, String blobID){
+        writeBlob(offset, data, Arrays.asList(schemaName, tableName, columnName, blobID));
+    }
     
     private static void writeBlob(long offset, byte[] data, List<String> pathElements){
         ServerQueryContext context = ServerCallContextStack.getCallingContext();
@@ -72,7 +87,7 @@ public class LobRoutines {
         LobService ls = serviceManager.getServiceByClass(LobService.class);
         FDBHolder fdbHolder = serviceManager.getServiceByClass(FDBHolder.class);
         TransactionContext tcx = fdbHolder.getTransactionContext();
-        DirectorySubspace ds = ls.getOrCreateLobSubspace(tcx, pathElements).get();
+        DirectorySubspace ds = ls.getLobSubspace(tcx, pathElements).get();
         BlobAsync blob = ls.getBlob(ds);
 
         blob.write(tcx, offset, data).get();
@@ -88,7 +103,7 @@ public class LobRoutines {
         LobService ls = serviceManager.getServiceByClass(LobService.class);
         FDBHolder fdbHolder = serviceManager.getServiceByClass(FDBHolder.class);
         TransactionContext tcx = fdbHolder.getTransactionContext();
-        DirectorySubspace ds = ls.getOrCreateLobSubspace(tcx, pathElements).get();
+        DirectorySubspace ds = ls.getLobSubspace(tcx, pathElements).get();
         BlobAsync blob = ls.getBlob(ds);    
 
         blob.append(tcx, data).get();
@@ -97,6 +112,10 @@ public class LobRoutines {
     public static void truncateBlob(long newLength, String schemaName, String blob_id) {
         truncateBlob(newLength, Arrays.asList(schemaName, blob_id));
     }
+
+    public static void truncateBlobInTable(long newLength, String schemaName, String tableName, String columnName, String blob_id) {
+        truncateBlob(newLength, Arrays.asList(schemaName, tableName, columnName, blob_id));
+    }
     
     private static void truncateBlob(long newLength, List<String> pathElements) {
         ServerQueryContext context = ServerCallContextStack.getCallingContext();
@@ -104,7 +123,7 @@ public class LobRoutines {
         LobService ls = serviceManager.getServiceByClass(LobService.class);
         FDBHolder fdbHolder = serviceManager.getServiceByClass(FDBHolder.class);
         TransactionContext tcx = fdbHolder.getTransactionContext();
-        DirectorySubspace ds = ls.getOrCreateLobSubspace(tcx, pathElements).get();
+        DirectorySubspace ds = ls.getLobSubspace(tcx, pathElements).get();
         BlobAsync blob = ls.getBlob(ds);
 
         blob.truncate(tcx, newLength).get();
@@ -114,14 +133,13 @@ public class LobRoutines {
         moveBlob(Arrays.asList(schemaName, blobId), Arrays.asList(newSchemaName, tableName, columnName, blobId));
     }
     
-    
     private static void moveBlob( List<String> pathElementsOld, List<String> pathElementsNew){
         ServerQueryContext context = ServerCallContextStack.getCallingContext();
         ServiceManager serviceManager = context.getServer().getServiceManager();
         LobService ls = serviceManager.getServiceByClass(LobService.class);
         FDBHolder fdbHolder = serviceManager.getServiceByClass(FDBHolder.class);
         TransactionContext tcx = fdbHolder.getTransactionContext();
-        DirectorySubspace ds = ls.getOrCreateLobSubspace(tcx,pathElementsOld).get();
+        DirectorySubspace ds = ls.getLobSubspace(tcx, pathElementsOld).get();
         
         ls.moveLob(tcx, ds, pathElementsNew).get();
     }
@@ -142,7 +160,7 @@ public class LobRoutines {
         LobService ls = serviceManager.getServiceByClass(LobService.class);
         FDBHolder fdbHolder = serviceManager.getServiceByClass(FDBHolder.class);
         TransactionContext tcx = fdbHolder.getTransactionContext();
-        DirectorySubspace ds = ls.getOrCreateLobSubspace(tcx, pathElements).get();
+        DirectorySubspace ds = ls.getLobSubspace(tcx, pathElements).get();
         
         ls.removeLob(tcx, ds).get();
     }

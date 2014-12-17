@@ -26,10 +26,7 @@ import com.foundationdb.server.store.FDBHolder;
 import com.foundationdb.subspace.Subspace;
 import com.google.inject.*;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.LinkedList;
-import java.util.UUID;
+import java.util.*;
 
 public class LobServiceImpl implements Service, LobService {
     private final DirectorySubspace lobDirectory;
@@ -40,7 +37,18 @@ public class LobServiceImpl implements Service, LobService {
     public LobServiceImpl(FDBHolder fdbHolder) {
         this.lobDirectory = fdbHolder.getRootDirectory().createOrOpen(fdbHolder.getTransactionContext(), Arrays.asList(LOB_DIRECTORY)).get();
     }
-    
+
+    @Override
+    public Future<DirectorySubspace> createLobSubspace(TransactionContext tcx, final List<String> path) {
+        return lobDirectory.create(tcx, path);
+    }
+
+    @Override
+    public Future<DirectorySubspace> getLobSubspace(TransactionContext tcx, final List<String> path) {
+        return lobDirectory.open(tcx, path);
+    }
+
+
     @Override
     public BlobAsync getBlob(Subspace subspace) {
         // perform more test to verify it is a blob subspace, once clob is also initiated
@@ -58,20 +66,12 @@ public class LobServiceImpl implements Service, LobService {
         List<String> newPath = new LinkedList<>(lobDirectory.getPath());
         newPath.addAll(targetPath);
         // check success, or handle failure when path already exists
+        
+        // ensure presence of parent directory for target path
         lobDirectory.createOrOpen(tcx, targetPath.subList(0, targetPath.size()-1)).get();
         return sourceSubspace.moveTo(tcx, newPath);
     }
-
-    // split into separate get and create?
-    @Override
-    public Future<DirectorySubspace> getOrCreateLobSubspace(TransactionContext tcx, final String schemaName, final String tableName, final String columnName, final UUID id) {
-        return getOrCreateLobSubspace(tcx, Arrays.asList(schemaName, tableName, columnName, id.toString()));
-    }
     
-    @Override
-    public Future<DirectorySubspace> getOrCreateLobSubspace(TransactionContext tcx, final List<String> path) {
-        return lobDirectory.createOrOpen(tcx, path);
-    }
     
     @Override
     public void start() {

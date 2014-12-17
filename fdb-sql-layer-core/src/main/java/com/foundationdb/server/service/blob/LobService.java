@@ -29,11 +29,12 @@ import com.foundationdb.blob.BlobAsync;
 import java.util.*;
 
 public interface LobService {
+    public Future<DirectorySubspace> createLobSubspace(TransactionContext tcx, List<String> path);
+    public Future<DirectorySubspace> getLobSubspace(TransactionContext tcx, List<String> path);
     public BlobAsync getBlob(Subspace subspace);
     public Future<Void> removeLob(TransactionContext tcx, DirectorySubspace lob);
     public Future<DirectorySubspace> moveLob(TransactionContext tcx, DirectorySubspace sourceSubspace, List<String> targetPath);
-    public Future<DirectorySubspace> getOrCreateLobSubspace(TransactionContext tcx, String schemaName, String tableName, String columnName, java.util.UUID id);
-    public Future<DirectorySubspace> getOrCreateLobSubspace(TransactionContext tcx, List<String> path);
+
 }
 
 

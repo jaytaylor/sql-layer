@@ -29,7 +29,15 @@ import org.junit.*;
 
 
 public class LobServiceIT extends ITBase {
-
+    private String schemaName = "test";
+    private String tableName = "table";
+    private String columnName = "name";
+    private final byte[] data = "foo".getBytes();
+    
+    @Before
+    public void setParameters() {
+        
+    }
     
     @Test
     public void utilizeLobService() {
@@ -40,26 +48,57 @@ public class LobServiceIT extends ITBase {
         TransactionContext tcx = fdbHolder.getTransactionContext();
 
         // blob creation
-        DirectorySubspace ds = ls.getOrCreateLobSubspace(fdbHolder.getTransactionContext(), "schema", "table", "column", UUID.randomUUID()).get();
+        DirectorySubspace ds = ls.createLobSubspace(fdbHolder.getTransactionContext(), Arrays.asList(schemaName, tableName, columnName, UUID.randomUUID().toString())).get();
 
         BlobAsync blob = ls.getBlob(ds);
-        byte[] input = "foo".getBytes();
-        blob.append(tcx, input).get();
-        Assert.assertEquals(blob.getSize(tcx).get().longValue(), new Long(input.length).longValue());
+        blob.append(tcx, data).get();
+        Assert.assertEquals(blob.getSize(tcx).get().longValue(), new Long(data.length).longValue());
         
         // blob transfer to new address
         List<String> newPath = Arrays.asList("newTestLob");
         ls.moveLob(tcx, ds, newPath).get();
-        DirectorySubspace  ds3 = ls.getOrCreateLobSubspace(tcx, newPath).get();
+        DirectorySubspace  ds3 = ls.getLobSubspace(tcx, newPath).get();
         BlobAsync blob2 = ls.getBlob(ds3);
         
         // data retrieval
         byte[] output = blob2.read(tcx).get();
-        Assert.assertArrayEquals(input, output);
+        Assert.assertArrayEquals(data, output);
         
         // lob removal
         ls.removeLob(tcx, ds3).get();
         Assert.assertEquals(blob2.getSize(tcx).get().longValue(), 0L);
         Assert.assertFalse(ds3.exists(tcx).get());
+    }
+
+    // move to yaml test?
+    public void testRoutines() {
+        // create lob, write, append, read data
+        String lobName = LobRoutines.createNewLob(schemaName);
+        LobRoutines.writeBlob(0, data, schemaName, lobName);
+        LobRoutines.appendBlob("bar".getBytes(), schemaName, lobName);
+        byte[] res1 = LobRoutines.readBlob(0, 10, schemaName, lobName);
+        Assert.assertArrayEquals("foobar".getBytes(), res1);
+        
+        // move, truncate up, write data
+        LobRoutines.moveBlob(schemaName, lobName, schemaName, tableName, columnName);
+        LobRoutines.truncateBlobInTable(20, schemaName, tableName, columnName, lobName);
+        LobRoutines.writeBlobInTable(7, data, schemaName, tableName, columnName, lobName);
+        byte[] res2 = LobRoutines.readBlobInTable(0, 10, schemaName, tableName, columnName, lobName);
+        Assert.assertArrayEquals("foobarfoo".getBytes(), res2);
+        
+        // truncate down
+        LobRoutines.truncateBlobInTable(6, schemaName, tableName, columnName, lobName);
+        byte[] res3 = LobRoutines.readBlobInTable(0, 10, schemaName, tableName, columnName, lobName);
+        Assert.assertArrayEquals("foobar".getBytes(), res2);
+        
+        // delete blob
+        LobRoutines.deleteBlobInTable(schemaName, tableName, columnName, lobName);
+        
+        //try {
+            LobRoutines.readBlobInTable(0, 10, schemaName, tableName, columnName, lobName);
+        //} catch(Exception ex){
+        //    ex.toString();
+        //}
+        
     }
 }
