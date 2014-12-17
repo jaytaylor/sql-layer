@@ -26,6 +26,7 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.aksql.aktypes.AkGUID;
+import com.foundationdb.server.types.aksql.aktypes.AkBlob;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
 import com.foundationdb.server.types.common.types.StringFactory;
@@ -342,6 +343,13 @@ public final class ValueSources {
                 return (UUID) source.getObject();
             }
             logger.error("GUID with underlying object of : {}", source.getObject().getClass());
+        }
+
+        if (source.getType().typeClass() == AkBlob.INSTANCE.widestComparable()) {
+            if (source.getObject() instanceof UUID) {
+                return (UUID) source.getObject();
+            }
+            logger.error("Blob with underlying object of : {}", source.getObject().getClass());
         }
         
         if (source.getType().typeClass() == MBinary.VARBINARY) {

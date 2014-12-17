@@ -23,7 +23,7 @@ import java.util.UUID;
 import com.foundationdb.server.AkServerUtil;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.aksql.aktypes.AkGUID;
+import com.foundationdb.server.types.aksql.aktypes.*;
 import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
 import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.common.types.TString;
@@ -140,7 +140,9 @@ abstract class AbstractRowDataValueSource implements ValueSource {
             return getDecimal();
         } else if (fieldDef().column().getType().typeClass() instanceof AkGUID) {
             return getGUID();
-        } else {
+        } else if (fieldDef().column().getType().typeClass() instanceof AkBlob) {
+            return getBlob();
+        }  else {
             assert false : "Unable to get object for type: " + fieldDef();
         }
         return null;
@@ -152,6 +154,9 @@ abstract class AbstractRowDataValueSource implements ValueSource {
     protected abstract FieldDef fieldDef();
 
     
+    private UUID getBlob() {
+        return getGUID();
+    }
     
     // for use within this class
     private UUID getGUID() {
@@ -167,7 +172,7 @@ abstract class AbstractRowDataValueSource implements ValueSource {
         if (location == 0) {
             return null;
         } else {
-            return AkGUID.bytesToUUID(bytes, offset+prefixSize);
+            return AkGUID.bytesToUUID(bytes, offset + prefixSize);
         }
     }
     

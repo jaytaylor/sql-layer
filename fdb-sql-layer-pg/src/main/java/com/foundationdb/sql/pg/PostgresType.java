@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.pg;
 
-import com.foundationdb.server.types.aksql.aktypes.AkGUID;
+import com.foundationdb.server.types.aksql.aktypes.*;
 import com.foundationdb.sql.server.ServerType;
 
 import com.foundationdb.sql.types.DataTypeDescriptor;
@@ -328,7 +328,7 @@ public class PostgresType extends ServerType
         case Types.BIT:
         case Types.LONGVARBINARY:
         case Types.VARBINARY:
-        case Types.BLOB:
+//        case Types.BLOB:
             oid = TypeOid.BYTEA_TYPE_OID;
             break;
         case Types.LONGNVARCHAR:
@@ -336,8 +336,9 @@ public class PostgresType extends ServerType
         case Types.CLOB:
             oid = TypeOid.TEXT_TYPE_OID;
             break;
+        case Types.BLOB:
         case Types.OTHER:
-            if (tClass == AkGUID.INSTANCE){
+            if (tClass == AkGUID.INSTANCE || tClass == AkBlob.INSTANCE){
                 oid = TypeOid.UUID_TYPE_OID;
                 break;
             }
@@ -446,7 +447,7 @@ public class PostgresType extends ServerType
         case TypeId.FormatIds.VARBIT_TYPE_ID:
             oid = TypeOid.BYTEA_TYPE_OID;
             break;
-        case TypeId.FormatIds.BLOB_TYPE_ID:
+        case TypeId.FormatIds.BLOB_TYPE_ID: // may need update
             oid = TypeOid.TEXT_TYPE_OID;
             break;
         case TypeId.FormatIds.VARCHAR_TYPE_ID:
