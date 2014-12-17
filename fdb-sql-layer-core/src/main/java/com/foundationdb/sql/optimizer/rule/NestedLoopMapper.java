@@ -174,12 +174,12 @@ public class NestedLoopMapper extends BaseRule
         ConditionExpression firstCondition = conditionList.get(0);
 
         // and all the conditions first
-        ConditionExpression condition = new LogicalFunctionCondition("and", conditionList,
-                                                                     firstCondition.getSQLtype(),
-                                                                     firstCondition.getSQLsource(),
-                                                                     firstCondition.getType());
+        LogicalFunctionCondition condition = new LogicalFunctionCondition("and", conditionList,
+                                                                          firstCondition.getSQLtype(),
+                                                                          firstCondition.getSQLsource(),
+                                                                          firstCondition.getType());
         TValidatedScalar validatedScalarAnd = new TValidatedScalar(BoolLogic.BINARIES[0]); // and
-        ((LogicalFunctionCondition)condition).setResolved(validatedScalarAnd);
+        condition.setResolved(validatedScalarAnd);
         List<ConditionExpression> newConditionList = new ArrayList<ConditionExpression>();
         newConditionList.add(condition);
 
@@ -189,7 +189,7 @@ public class NestedLoopMapper extends BaseRule
                                                  condition.getSQLsource(),
                                                  condition.getType());
         TValidatedScalar validatedScalarNot = new TValidatedScalar(BoolLogic.NOT);
-        ((LogicalFunctionCondition)condition).setResolved(validatedScalarNot);
+        condition.setResolved(validatedScalarNot);
 
         ConditionList negatedConjunction = new ConditionList();
         negatedConjunction.add(condition);
