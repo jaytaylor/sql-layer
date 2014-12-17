@@ -31,13 +31,13 @@ public class LobRoutines {
     
     private LobRoutines() {
     }
-    
-    public static String createNewLobInTable(String schemaName, String tableName, String columnName ) {
-        return createNewLob( Arrays.asList(schemaName,tableName, columnName));
-    }
 
     public static String createNewLob(String schemaName) {
         return createNewLob( Arrays.asList(schemaName));
+    }
+
+    public static String createNewLobInTable(String schemaName, String tableName, String columnName ) {
+        return createNewLob( Arrays.asList(schemaName,tableName, columnName));
     }
     
     private static String createNewLob(List<String> path) {
@@ -96,6 +96,10 @@ public class LobRoutines {
     public static void appendBlob(byte[] data, String schemaName, String blobId) {
         appendBlob(data, Arrays.asList(schemaName, blobId));
     }
+
+    public static void appendBlobInTable(byte[] data, String schemaName, String tableName, String columnName, String blobId) {
+        appendBlob(data, Arrays.asList(schemaName, tableName, columnName, blobId));
+    }
     
     private static void appendBlob(byte[] data, List<String> pathElements){
         ServerQueryContext context = ServerCallContextStack.getCallingContext();
@@ -151,8 +155,6 @@ public class LobRoutines {
     public static void deleteBlobInTable( String schemaName, String tableName, String columnName, String blobId){
         deleteBlob(Arrays.asList(schemaName, tableName, columnName, blobId));
     }
-    
-    
     
     private static void deleteBlob( List<String> pathElements){
         ServerQueryContext context = ServerCallContextStack.getCallingContext();
