@@ -183,7 +183,10 @@ public abstract class LookaheadLeafCursor<C extends BindingsAwareCursor> extends
     protected static final class BindingsAndCursor<C extends BindingsAwareCursor> {
         QueryBindings bindings;
         C cursor;
-            
+
+        /**
+         * @param cursor An Open cursor
+         */
         BindingsAndCursor(QueryBindings bindings, C cursor) {
             this.bindings = bindings;
             this.cursor = cursor;
