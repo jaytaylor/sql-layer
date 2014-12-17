@@ -25,6 +25,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.types.value.Value;
@@ -100,9 +101,9 @@ public class TreeScanCT extends CostModelBase
                         indexedColumn.declaration(),
                         "primary key(id)");
         createIndex(schemaName, tableName, "idx", indexedColumn.name());
-        schema = new Schema(ais());
+        schema = SchemaCache.globalSchema(ais());
         idxRowType = indexType(t, indexedColumn.name());
-        adapter = newStoreAdapter(schema);
+        adapter = newStoreAdapter();
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }

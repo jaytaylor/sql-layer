@@ -21,7 +21,7 @@ Vendor:     FoundationDB
 Epoch:      %{_fdb_sql_epoch}
 %endif
 
-Requires:       jre >= 1.7.0, foundationdb-clients >= 2.0.0
+Requires:       jre >= 1.7.0, foundationdb-clients >= 3.0.0
 Requires(post): chkconfig >= 0.9, /sbin/service
 Requires(pre):  /usr/sbin/useradd, /usr/sbin/groupadd, /usr/bin/getent
 BuildArch:      noarch

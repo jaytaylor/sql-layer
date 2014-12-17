@@ -20,27 +20,26 @@ package com.foundationdb.qp.storeadapter;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.HKey;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.util.HKeyCache;
-import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
-import com.foundationdb.server.rowdata.encoding.EncodingException;
-import com.foundationdb.server.rowdata.*;
+import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.types.value.ValueSource;
-import com.foundationdb.util.SparseArray;
-import com.persistit.Exchange;
-import com.persistit.exception.PersistitException;
+import com.persistit.Key;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // public for access by OperatorIT
 public class PersistitGroupRow extends AbstractRow
 {
-    // Object interface
 
-    @Override
-    public String toString()
-    {
-        return rowData == null ? null : rowData.toString();
+    public PersistitGroupRow(KeyCreator keyCreator, Row abstractRow, Key key) {
+        underlying = abstractRow;
+        this.keyCreator = keyCreator;
+        currentHKey = keyCreator.newHKey(rowType().table().hKey());
+        if(key != null) {
+            currentHKey.copyFrom(key);
+        }
     }
 
     // Row interface
@@ -48,21 +47,12 @@ public class PersistitGroupRow extends AbstractRow
     @Override
     public RowType rowType()
     {
-        if (rowDef() == lastRowDef) {
-            return lastRowType;
-        }
-        lastRowDef = rowDef();
-        lastRowType = adapter.schema().tableRowType(lastRowDef.table());
-        return lastRowType;
+        return underlying.rowType();
     }
 
     @Override
-    public ValueSource uncheckedValue(int i) {
-        FieldDef fieldDef = rowDef().getFieldDef(i);
-        RowData rowData = rowData();
-        RowDataValueSource valueSource = valueSource(i);
-        valueSource.bind(fieldDef, rowData);
-        return valueSource;
+    protected ValueSource uncheckedValue(int i) {
+        return underlying.value(i);
     }
 
     @Override
@@ -74,7 +64,7 @@ public class PersistitGroupRow extends AbstractRow
     @Override
     public HKey ancestorHKey(Table table)
     {
-        HKey ancestorHKey = hKeyCache.hKey(table);
+        HKey ancestorHKey = keyCreator.newHKey(table.hKey());
         currentHKey.copyTo(ancestorHKey);
         ancestorHKey.useSegments(table.getDepth() + 1);
         return ancestorHKey;
@@ -83,106 +73,7 @@ public class PersistitGroupRow extends AbstractRow
     @Override
     public boolean containsRealRowOf(Table table)
     {
-        return row.getRowDef().table() == table;
-    }
-
-    // PersistitGroupRow interface
-
-    static PersistitGroupRow newPersistitGroupRow(PersistitAdapter adapter)
-    {
-        return new PersistitGroupRow(adapter);
-    }
-
-    // For use by OperatorIT
-    public static PersistitGroupRow newPersistitGroupRow(PersistitAdapter adapter, RowData rowData)
-    {
-        return new PersistitGroupRow(adapter, rowData);
-    }
-
-    // For use by this package
-
-    RowDef rowDef()
-    {
-        if (row != null) {
-            return row.getRowDef();
-        }
-        if (rowData != null) {
-            return adapter.rowDef(rowData.getRowDefId());
-        }
-        throw new IllegalStateException("no active row");
-    }
-
-    void copyFromExchange(Exchange exchange) throws PersistitException
-    {
-        this.row = new LegacyRowWrapper((RowDef) null);
-        RuntimeException exception;
-        do {
-            try {
-                exception = null;
-                adapter.persistit().expandRowData(adapter.getSession(), exchange, rowData);
-                RowDef rowDef = adapter.schema().ais().getTable(rowData.getRowDefId()).rowDef();
-                row.setRowDef(rowDef);
-                row.setRowData(rowData);
-                HKey persistitHKey = persistitHKey();
-                persistitHKey.copyFrom(exchange.getKey());
-            } catch (ArrayIndexOutOfBoundsException e) {
-                exception = e;
-            } catch (EncodingException e) {
-                if (e.getCause() instanceof ArrayIndexOutOfBoundsException) {
-                    exception = e;
-                } else {
-                    throw e;
-                }
-            }
-            if (exception != null) {
-                int newSize = rowData.getBytes().length * 2;
-                if (newSize >= MAX_ROWDATA_SIZE_BYTES) {
-                    LOG.error("{}: Unable to copy from exchange for key {}: {}",
-                              new Object[] {this, exchange.getKey(), exception.getMessage()});
-                    throw exception;
-                }
-                rowData.reset(new byte[newSize]);
-            }
-        } while (exception != null);
-    }
-
-    @Override
-    public RowData rowData()
-    {
-        return rowData;
-    }
-
-    // For use by this class
-
-    private HKey persistitHKey()
-    {
-        currentHKey = hKeyCache.hKey(row.getRowDef().table());
-        return currentHKey;
-    }
-
-    private PersistitGroupRow(PersistitAdapter adapter)
-    {
-        this(adapter, new RowData(new byte[INITIAL_ROW_SIZE]));
-    }
-
-    private PersistitGroupRow(PersistitAdapter adapter, RowData rowData)
-    {
-        this.adapter = adapter;
-        this.rowData = rowData;
-        this.hKeyCache = new HKeyCache<>(adapter.getUnderlyingStore());
-    }
-
-    private RowDataValueSource valueSource(int i) {
-        if (valueSources == null) {
-            valueSources = new SparseArray<RowDataValueSource>()
-            {
-                @Override
-                protected RowDataValueSource initialValue() {
-                    return new RowDataValueSource();
-                }
-            };
-        }
-        return valueSources.get(i);
+        return rowType().table() == table;
     }
 
     @Override
@@ -193,17 +84,11 @@ public class PersistitGroupRow extends AbstractRow
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(PersistitGroupRow.class);
-    private static final int INITIAL_ROW_SIZE = 500;
-    private static final int MAX_ROWDATA_SIZE_BYTES = 5000000;
 
     // Object state
 
-    private SparseArray<RowDataValueSource> valueSources;
-    private final PersistitAdapter adapter;
-    private RowData rowData;
-    private LegacyRowWrapper row;
+    private final KeyCreator keyCreator;
+    private final Row underlying;
     private HKey currentHKey;
-    private HKeyCache<HKey> hKeyCache;
-    private RowDef lastRowDef;
-    private RowType lastRowType;
+
 }

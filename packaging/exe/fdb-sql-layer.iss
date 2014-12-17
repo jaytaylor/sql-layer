@@ -12,8 +12,8 @@
 
 #define APPNAME 'FoundationDB SQL Layer'
 #define FDB_UPGRADE_GUID '{A95EA002-686E-4164-8356-C715B7F8B1C8}'
-#define FDB_VERSION_STR '2.0.0'
-#define FDB_VERSION_NUM '$02000000'
+#define FDB_VERSION_STR '3.0.0'
+#define FDB_VERSION_NUM '$03000000'
 
 
 [Setup]

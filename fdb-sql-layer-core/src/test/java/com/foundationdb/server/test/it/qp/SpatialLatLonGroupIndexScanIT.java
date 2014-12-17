@@ -76,7 +76,6 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         parentRowType = schema.tableRowType(table(parent));
         childRowType = schema.tableRowType(table(child));
         parentOrdinal = parentRowType.table().getOrdinal();
@@ -84,7 +83,6 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
         cSpatialIndexRowType = groupIndexType(groupName, "parent.pbefore", "child.clat", "child.clon", "child.cafter");
         pSpatialIndexRowType = groupIndexType(groupName, "parent.pbefore", "parent.plat", "parent.plon", "child.cafter");
         space = Spatial.createLatLonSpace();
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }
@@ -289,7 +287,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                                                   new SetColumnSelector(0, 1, 2));
             IndexBound upperRight = new IndexBound(row(pSpatialIndexRowType, beforeEQ, latHi, lonHi),
                                                    new SetColumnSelector(0, 1, 2));
-            IndexKeyRange box = IndexKeyRange.spatial(pSpatialIndexRowType, lowerLeft, upperRight);
+            IndexKeyRange box = IndexKeyRange.spatialCoords(pSpatialIndexRowType, lowerLeft, upperRight);
             Operator plan = indexScan_Default(pSpatialIndexRowType, box, lookaheadQuantum());
             Cursor cursor = API.cursor(plan, queryContext, queryBindings);
             cursor.openTopLevel();
@@ -368,7 +366,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                                                   new SetColumnSelector(0, 1, 2));
             IndexBound upperRight = new IndexBound(row(cSpatialIndexRowType, beforeEQ, latHi, lonHi),
                                                    new SetColumnSelector(0, 1, 2));
-            IndexKeyRange box = IndexKeyRange.spatial(cSpatialIndexRowType, lowerLeft, upperRight);
+            IndexKeyRange box = IndexKeyRange.spatialCoords(cSpatialIndexRowType, lowerLeft, upperRight);
             Operator plan = indexScan_Default(cSpatialIndexRowType, box, lookaheadQuantum());
             Cursor cursor = API.cursor(plan, queryContext, queryBindings);
             cursor.openTopLevel();

@@ -187,8 +187,6 @@ public final class TypeResolver extends BaseRule {
                 n = handleCastExpression((CastExpression) n);
             else if (n instanceof FunctionExpression)
                 n = handleFunctionExpression((FunctionExpression) n);
-            else if (n instanceof IfElseExpression)
-                n = handleIfElseExpression((IfElseExpression) n);
             else if (n instanceof AggregateFunctionExpression)
                 n = handleAggregateFunctionExpression((AggregateFunctionExpression) n);
             else if (n instanceof ExistsCondition)
@@ -550,34 +548,6 @@ public final class TypeResolver extends BaseRule {
             return result;
         }
 
-        ExpressionNode handleIfElseExpression(IfElseExpression expression) {
-            ConditionList conditions = expression.getTestConditions();
-            ExpressionNode thenExpr = expression.getThenExpression();
-            ExpressionNode elseExpr = expression.getElseExpression();
-
-            // constant-fold if the condition is constant
-            if (conditions.size() == 1) {
-                ValueSource conditionVal = pval(conditions.get(0));
-                if (conditionVal != null) {
-                    boolean conditionMet = conditionVal.getBoolean(false);
-                    return conditionMet ? thenExpr : elseExpr;
-                }
-            }
-
-            TInstance commonInstance = commonInstance(registry.getCastsResolver(), type(thenExpr), type(elseExpr));
-            if (commonInstance == null)
-                return ConstantExpression.typedNull(null, null, null);
-
-            thenExpr = castTo(thenExpr, commonInstance, folder, parametersSync);
-            elseExpr = castTo(elseExpr, commonInstance, folder, parametersSync);
-
-            expression.setThenExpression(thenExpr);
-            expression.setElseExpression(elseExpr);
-
-            expression.setPreptimeValue(new TPreptimeValue(commonInstance));
-            return expression;
-        }
-
         ExpressionNode handleAggregateFunctionExpression(AggregateFunctionExpression expression) {
             List<ExpressionNode> operands = new ArrayList<>();
             ExpressionNode operand = expression.getOperand();
@@ -676,7 +646,7 @@ public final class TypeResolver extends BaseRule {
                                         ? null
                                         : new TPreptimeValue(columnType, asColType);
                                 ValueSource backToConstType = castValue(colToConst, asColTypeTpv, constType);
-                                if (ValueSources.areEqual(constValue.value(), backToConstType)) {
+                                if (TClass.areEqual(constValue.value(), backToConstType)) {
                                     TPreptimeValue constTpv = new TPreptimeValue(columnType, asColType);
                                     ConstantExpression constCasted = new ConstantExpression(constTpv);
                                     expression.setRight(constCasted);

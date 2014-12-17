@@ -20,10 +20,12 @@ package com.foundationdb.qp.row;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.server.types.TInstance;
+import com.geophile.z.Record;
+import com.geophile.z.Space;
 import com.persistit.Key;
 import com.persistit.Value;
 
-public abstract class IndexRow extends AbstractRow
+public abstract class IndexRow extends AbstractRow implements com.geophile.z.Record
 {
     // Row interface
 
@@ -65,12 +67,40 @@ public abstract class IndexRow extends AbstractRow
     public abstract void tableBitmap(long bitmap);
     public abstract long tableBitmap(); 
 
-    
+    // com.geophile.z.Record interface
+
+    @Override
+    public final long z()
+    {
+        // z is set only for a query object. If it hasn't been set, then we have an index row
+        // with a field containing a z-value.
+        if (z == Space.Z_NULL) {
+            z = this.uncheckedValue(zPosition()).getInt64();
+        }
+        return z;
+    }
+
+    @Override
+    public final void z(long z)
+    {
+        this.z = z;
+    }
+
+    @Override
+    public final void copyTo(Record record)
+    {
+        throw new UnsupportedOperationException();
+    }
+
     // TODO: Remove these as we get rid of the Key use in the upper layers
     
     public abstract void copyPersistitKeyTo(Key key);
     public abstract void appendFieldTo(int position, Key target);
     public abstract void copyFrom(Key key, Value value);
+
+    protected abstract int zPosition();
+
+    private long z = Space.Z_NULL;
 
     public static enum EdgeValue {
         BEFORE,

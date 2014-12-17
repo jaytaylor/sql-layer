@@ -44,12 +44,24 @@ public class HashJoinNode extends JoinNode
         this.collators = collators;
     }
 
+    /**
+     * This joinable produces the hash table
+     */
     public Joinable getLoader() {
         return loader;
     }
+
+    /**
+     * This joinable is compared with the values in the hash table.
+     * Note: the ordering of this determines the final ordering
+     */
     public Joinable getInput() {
         return getLeft();
     }
+
+    /**
+     * This joinable is used to verify the results of the hash table lookup.
+     */
     public Joinable getCheck() {
         return getRight();
     }

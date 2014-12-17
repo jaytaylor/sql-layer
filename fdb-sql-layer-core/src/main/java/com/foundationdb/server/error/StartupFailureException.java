@@ -16,14 +16,14 @@
  */
 package com.foundationdb.server.error;
 
-public class StartupFailureException extends FDBAdapterException {
+public class StartupFailureException extends InvalidOperationException {
 
     protected StartupFailureException(ErrorCode code, Long i, Long j, Long k,
             Long l) {
         super(code, i, j, k, l);
     }
 
-    protected StartupFailureException(ErrorCode code, String desc) {
-        super(code, desc);
+    protected StartupFailureException(ErrorCode code, Object... args) {
+        super(code, args);
     }
 }

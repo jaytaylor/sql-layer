@@ -18,7 +18,7 @@
 package com.foundationdb.server.types.service;
 
 import com.foundationdb.server.error.AkibanInternalException;
-import com.foundationdb.server.error.OverloadException;
+import com.foundationdb.server.error.NoSuchCastException;
 import com.foundationdb.server.types.InputSetFlags;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TCommutativeOverloads;
@@ -296,7 +296,7 @@ final class ResolvablesRegistry<V extends TValidatedOverload> implements Iterabl
                     try {
                         return castResolver.commonTClass(accumulated, input);
                     }
-                    catch (OverloadException e) {
+                    catch (NoSuchCastException e) {
                         return differentTargetTypes;
                     }
                 }

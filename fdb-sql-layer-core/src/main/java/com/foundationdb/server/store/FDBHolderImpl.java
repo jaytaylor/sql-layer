@@ -74,7 +74,7 @@ public class FDBHolderImpl implements FDBHolder, Service {
         // Just one FDB for whole JVM and its dispose doesn't do anything.
         if(fdb == null) {
             apiVersion = Integer.parseInt(configService.getProperty(CONFIG_API_VERSION));
-            LOG.info("Staring with API Version {}", apiVersion);
+            LOG.info("Starting with API Version {}", apiVersion);
             fdb = FDB.selectAPIVersion(apiVersion);
             // Legal to call more than once but will only apply the first time (network started once)
             setOptions(fdb.options());

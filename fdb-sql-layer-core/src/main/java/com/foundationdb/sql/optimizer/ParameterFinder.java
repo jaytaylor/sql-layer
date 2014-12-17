@@ -19,6 +19,7 @@ package com.foundationdb.sql.optimizer;
 
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.parser.ParameterNode;
+import com.foundationdb.sql.parser.SetOperatorNode;
 import com.foundationdb.sql.parser.Visitable;
 import com.foundationdb.sql.parser.Visitor;
 import com.foundationdb.server.error.SQLParserInternalException;
@@ -53,12 +54,25 @@ public class ParameterFinder implements Visitor
 
     @Override
     public boolean skipChildren(Visitable node) {
+        if (node instanceof SetOperatorNode) {
+            // visiting all children will result in duplicate ParameterNodes.
+            // instead, just visit the LeftResultSet and RightResult set, skipping the resultColumns list
+            try {
+                ((SetOperatorNode)node).getLeftResultSet().accept(this);
+                ((SetOperatorNode)node).getRightResultSet().accept(this);
+            } catch (StandardException e) {
+                throw new SQLParserInternalException(e);
+            }
+            return true;
+        }
         return false;
     }
+
     @Override
     public boolean visitChildrenFirst(Visitable node) {
         return false;
     }
+
     @Override
     public boolean stopTraversal() {
         return false;

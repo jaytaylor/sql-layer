@@ -26,8 +26,10 @@ import com.foundationdb.qp.operator.TimeOperator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.test.ExpressionGenerators;
+
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -67,9 +69,9 @@ public class DistinctCT extends CostModelBase
             "c4 int",
             "c5 int");
         group = group(t);
-        schema = new Schema(ais());
+        schema = SchemaCache.globalSchema(ais());
         tRowType = schema.tableRowType(table(t));
-        adapter = newStoreAdapter(schema);
+        adapter = newStoreAdapter();
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }

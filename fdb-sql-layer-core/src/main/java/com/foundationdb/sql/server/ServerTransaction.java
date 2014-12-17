@@ -20,8 +20,8 @@ package com.foundationdb.sql.server;
 import com.foundationdb.server.error.TransactionInProgressException;
 import com.foundationdb.server.error.TransactionReadOnlyException;
 import com.foundationdb.server.service.session.Session;
-
 import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.sql.parser.IsolationLevel;
 
 import java.util.Date;
 
@@ -46,18 +46,21 @@ public class ServerTransaction
 
     private final Session session;
     private final TransactionService txnService;
-    private boolean readOnly;
+    private boolean readOnly, anyWrites;
+    private IsolationLevel isolationLevel;
     private PeriodicallyCommit periodicallyCommit;
     private Date transactionTime;
     
     /** Begin a new transaction or signal an exception. */
     public ServerTransaction(ServerSession server, 
-                             boolean readOnly, PeriodicallyCommit periodicallyCommit) {
+                             boolean readOnly, IsolationLevel isolationLevel,
+                             PeriodicallyCommit periodicallyCommit) {
         this.session = server.getSession();
         this.txnService = server.getTransactionService();
-        this.readOnly = readOnly;
-        this.periodicallyCommit = periodicallyCommit;
         txnService.beginTransaction(session);
+        this.isolationLevel = txnService.setIsolationLevel(session, isolationLevel);
+        this.readOnly = readOnly || txnService.isolationLevelRequiresReadOnly(session, false);
+        this.periodicallyCommit = periodicallyCommit;
     }
 
     public boolean isReadOnly() {
@@ -66,6 +69,21 @@ public class ServerTransaction
 
     public void setReadOnly(boolean readOnly) {
         this.readOnly = readOnly;
+    }
+
+    public IsolationLevel getIsolationLevel() {
+        return isolationLevel;
+    }
+
+    public IsolationLevel setIsolationLevel(IsolationLevel level) {
+        level = txnService.setIsolationLevel(session, level);
+        this.isolationLevel = level;
+        // Selecting snapshot after update commits right away, like DDL.
+        if (txnService.isolationLevelRequiresReadOnly(session, anyWrites)) {
+            this.readOnly = true;
+            this.anyWrites = false;
+        }
+        return level;
     }
 
     public PeriodicallyCommit getPeriodicallyCommit() {
@@ -93,10 +111,11 @@ public class ServerTransaction
     }
 
     public void beforeUpdate() {
+        anyWrites = true;
     }
 
     public void afterUpdate() {
-        txnService.checkStatementForeignKeys(session);
+        txnService.checkStatementConstraints(session);
     }
 
     /** Commit transaction. */

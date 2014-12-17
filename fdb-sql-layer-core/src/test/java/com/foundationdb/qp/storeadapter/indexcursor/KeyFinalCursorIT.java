@@ -33,6 +33,7 @@ import java.util.Random;
 import com.fasterxml.sort.IterableSorterException;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.storeadapter.indexcursor.MergeJoinSorter.KeyReader;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -44,6 +45,7 @@ import com.foundationdb.qp.storeadapter.indexcursor.MergeJoinSorter.KeyReadCurso
 import com.foundationdb.qp.storeadapter.indexcursor.MergeJoinSorter.KeyWriter;
 import com.foundationdb.qp.storeadapter.indexcursor.MergeJoinSorter.KeyFinalCursor;
 import com.foundationdb.qp.storeadapter.indexcursor.MergeJoinSorter.SortKey;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.qp.row.BindableRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
@@ -65,7 +67,7 @@ public class KeyFinalCursorIT extends OperatorITBase
     
     @Before
     public void createFileBuffers() {
-        schema = new Schema(ais());
+        schema = SchemaCache.globalSchema(ais());
         os = new ByteArrayOutputStream();
         startKey = new SortKey();
         writer = new KeyWriter(os);

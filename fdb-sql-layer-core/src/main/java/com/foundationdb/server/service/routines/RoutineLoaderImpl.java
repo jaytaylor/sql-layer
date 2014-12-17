@@ -72,6 +72,7 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
     private final Map<TableName,VersionedItem<LoadablePlan<?>>> loadablePlans = new HashMap<>();
     private final Map<TableName,VersionedItem<Method>> javaMethods = new HashMap<>();
     private final ScriptCache scripts;
+    private final ScriptEngineManagerProvider engineProvider;
     private final static Logger logger = LoggerFactory.getLogger(RoutineLoaderImpl.class);
 
     @Inject @SuppressWarnings("unused")
@@ -82,6 +83,7 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
         this.dxlService = dxlService;
         this.schemaManager = schemaManager;
         scripts = new ScriptCache(dxlService, engineProvider);
+        this.engineProvider = engineProvider;
     }
 
     private AkibanInformationSchema ais(Session session) {
@@ -91,18 +93,21 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
     /* RoutineLoader */
 
     @Override
-    public ClassLoader loadSQLJJar(Session session, TableName jarName) {
-        if (jarName == null)
+    public ClassLoader loadSQLJJar(Session session, TableName jarName, boolean isSystemRoutine) {
+        if (isSystemRoutine)
             return getClass().getClassLoader();
+        if (jarName == null) 
+            return engineProvider.getSafeClassLoader();
+        
         SQLJJar sqljJar = ais(session).getSQLJJar(jarName);
         if (sqljJar == null)
             throw new NoSuchSQLJJarException(jarName);
         long currentVersion = sqljJar.getVersion();
         synchronized (classLoaders) {
-            VersionedItem<ClassLoader> entry = classLoaders.get(jarName);
+            VersionedItem<ClassLoader> entry = classLoaders.get(jarName);  
             if ((entry != null) && (entry.version == currentVersion))
                 return entry.item;
-            ClassLoader loader = new URLClassLoader(new URL[] { sqljJar.getURL() });
+            ClassLoader loader = new URLClassLoader(new URL[] { sqljJar.getURL() }, engineProvider.getSafeClassLoader() );
             if (entry != null) {
                 entry.item = loader;
             }
@@ -138,7 +143,7 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
                 entry.version = currentVersion;
                 entry.item = classLoader;
             }
-            else {
+            else { 
                 entry = new VersionedItem<>(currentVersion, classLoader);
                 classLoaders.put(jarName, entry);
             }
@@ -173,7 +178,7 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
                 TableName jarName = null;
                 if (routine.getSQLJJar() != null)
                     jarName = routine.getSQLJJar().getName();
-                ClassLoader classLoader = loadSQLJJar(session, jarName);
+                ClassLoader classLoader = loadSQLJJar(session, jarName, routine.isSystemRoutine());
                 try {
                     loadablePlan = (LoadablePlan<?>)
                         Class.forName(routine.getClassName(), true, classLoader).newInstance();
@@ -212,7 +217,7 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
             TableName jarName = null;
             if (routine.getSQLJJar() != null)
                 jarName = routine.getSQLJJar().getName();
-            ClassLoader classLoader = loadSQLJJar(session, jarName);
+            ClassLoader classLoader = loadSQLJJar(session, jarName, routine.isSystemRoutine());
             Class<?> clazz;
             try {
                 clazz = Class.forName(routine.getClassName(), true, classLoader);

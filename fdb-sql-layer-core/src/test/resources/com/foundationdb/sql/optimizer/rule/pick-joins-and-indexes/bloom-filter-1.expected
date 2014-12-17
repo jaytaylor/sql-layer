@@ -3,7 +3,7 @@ SelectQuery@11f46b16
     Project@2e1c6600[items.sku]
       Select@21e8bf76[]
         HashJoinNode@47004b78(SEMI/BLOOM_FILTER[categories.sku] = [items.sku])
-          TableGroupJoinTree@645ad7b2(TableGroup@366412da(categories), categories - SingleIndexScan@22cf38a2(Index(test.categories.cat_sku[IndexColumn(cat), IndexColumn(sku)]), covering/SORTED, =1, rows = 100, cost = 77.9500))
+          TableGroupJoinTree@645ad7b2(TableGroup@366412da(categories), categories - SingleIndexScan@22cf38a2(Index(test.categories.cat_sku[IndexColumn(cat), IndexColumn(sku)]), covering/NONE, =1, rows = 100, cost = 1641.95))
             TableSource@6b04d3c8(categories - TableGroup@366412da(categories))
           TableGroupJoinTree@6411c21b(TableGroup@49deadf0(customers), items - SingleIndexScan@44585f2a(Index(test.items.sku[IndexColumn(sku)]), covering/SORTED, rows = 20000, cost = 15241.5))
             TableSource@774943d6(items - TableGroup@49deadf0(customers))

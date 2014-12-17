@@ -1,0 +1,1 @@
+SELECT bit_or(anon1.x) AS b FROM (SELECT COUNT(*) AS x FROM test.t1) AS anon1(x)

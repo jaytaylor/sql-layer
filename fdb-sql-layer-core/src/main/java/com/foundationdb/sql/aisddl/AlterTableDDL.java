@@ -619,15 +619,23 @@ public class AlterTableDDL {
                 continue;
             }
             TableIndex indexCopy = TableIndex.create(tableCopy, origIndex);
+            boolean indexViable = true;
             int pos = 0;
             for(IndexColumn indexColumn : origIndex.getKeyColumns()) {
                 String newName = findNewName(columnChanges, indexColumn.getColumn().getName());
                 if(newName != null) {
                     IndexColumn.create(indexCopy, tableCopy.getColumn(newName), indexColumn, pos++);
+                } else if (indexCopy.isSpatial() &&
+                           indexColumn.getPosition() >= origIndex.firstSpatialArgument() &&
+                           indexColumn.getPosition() <= origIndex.lastSpatialArgument()) {
+                    indexViable = false;
                 }
             }
             // DROP and MODIFY detection for indexes handled downstream
             if(indexCopy.getKeyColumns().isEmpty()) {
+                indexViable = false;
+            }
+            if (!indexViable) {
                 tableCopy.removeIndexes(Collections.singleton(indexCopy));
             }
         }

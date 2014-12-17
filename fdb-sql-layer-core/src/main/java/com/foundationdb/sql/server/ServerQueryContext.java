@@ -17,11 +17,11 @@
 
 package com.foundationdb.sql.server;
 
+import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryContextBase;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.operator.StoreAdapterHolder;
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.session.Session;
@@ -36,14 +36,11 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
 
     public ServerQueryContext(T server) {
         this.server = server;
+        this.storeHolder = server.getStoreHolder();
     }
 
     public T getServer() {
         return server;
-    }
-
-    public void initStore(Schema schema) {
-        storeHolder = server.getStoreHolder(schema);
     }
 
     @Override
@@ -63,6 +60,11 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
         return server.getSession();
     }
 
+    @Override 
+    public AkibanInformationSchema getAIS() {
+        return storeHolder.getAdapter().getAIS();
+    }
+    
     @Override
     public ServiceManager getServiceManager() {
         return server.getServiceManager();

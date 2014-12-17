@@ -133,9 +133,14 @@ public class ApiTestBase {
         }
     };
 
-    private static class RetryRule implements MethodRule {
-        private static int MAX_TRIES = 5;
-        private static int totalRetries = 0;
+    protected boolean retryException(Throwable t) {
+        return Exceptions.isRollbackException(t);
+    }
+
+    protected static final int MAX_TRIES = 5;
+    protected static int totalRetries = 0;
+
+    protected class RetryRule implements MethodRule {
 
         @Override
         public Statement apply(final Statement base, FrameworkMethod method, Object target) {
@@ -146,7 +151,7 @@ public class ApiTestBase {
                     try {
                         base.evaluate();
                     } catch(Throwable t) {
-                        if(++tryCount > MAX_TRIES || !Exceptions.isRollbackException(t)) {
+                        if(++tryCount > MAX_TRIES || !retryException(t)) {
                             throw t;
                         }
                         ++totalRetries;
@@ -375,12 +380,12 @@ public class ApiTestBase {
         return sharedSession;
     }
 
-    protected final StoreAdapter newStoreAdapter(Schema schema) {
-        return newStoreAdapter(session(), schema);
+    protected final StoreAdapter newStoreAdapter() {
+        return newStoreAdapter(session());
     }
-
-    protected final StoreAdapter newStoreAdapter(Session session, Schema schema) {
-        return store().createAdapter(session, schema);
+    
+    protected final StoreAdapter newStoreAdapter(Session session) {
+        return store().createAdapter(session);
     }
 
     protected final QueryContext queryContext(StoreAdapter adapter) {
@@ -786,7 +791,7 @@ public class ApiTestBase {
             @Override
             public void run() {
                 Table table = getTable(tableId);
-                assertEquals("rows by TableStatistics", rowsExpected, table.rowDef().getTableStatus().getRowCount(session()));
+                assertEquals("rows by TableStatistics", rowsExpected, table.tableStatus().getRowCount(session()));
             }
         };
         if(txnService().isTransactionActive(session())) {
@@ -983,7 +988,7 @@ public class ApiTestBase {
     }
 
     protected List<Row> runPlanInternal(Session session, Schema schema, Operator plan) {
-        StoreAdapter adapter = newStoreAdapter(session, schema);
+        StoreAdapter adapter = newStoreAdapter(session);
         QueryContext context = queryContext(adapter);
         return runPlan(context, context.createBindings(), plan);
     }
@@ -1165,7 +1170,7 @@ public class ApiTestBase {
 
     public Row row(RowType rowType, Object... fields) {
         if(fields.length < rowType.nFields()) {
-            QueryContext context = new SimpleQueryContext(newStoreAdapter(rowType.schema()));
+            QueryContext context = new SimpleQueryContext(newStoreAdapter());
             List<TPreparedExpression> expressions = new ArrayList<>();
             for(int i = 0; i < fields.length; ++i) {
                 TInstance type = rowType.typeAt(i);
@@ -1267,12 +1272,8 @@ public class ApiTestBase {
         return getTable(rowDefId).rowDef();
     }
 
-    protected final RowDef getRowDef(String schema, String table) {
-        return getTable(schema, table).rowDef();
-    }
-
-    protected final RowDef getRowDef(TableName tableName) {
-        return getTable(tableName).rowDef();
+    protected final RowType getRowType (int tableId) {
+        return SchemaCache.globalSchema(getTable(tableId).getAIS()).tableRowType(tableId);
     }
 
     protected final Table getTable(int tableId) {

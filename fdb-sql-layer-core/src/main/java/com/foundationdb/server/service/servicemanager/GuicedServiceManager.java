@@ -17,8 +17,9 @@
 
 package com.foundationdb.server.service.servicemanager;
 
+import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.error.StartupFailureException;
 import com.foundationdb.sql.LayerInfoInterface;
-import com.foundationdb.server.error.ServiceStartupException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -43,7 +44,6 @@ import javax.management.ObjectName;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -224,7 +224,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         }
         catch (IOException ex) {
             logger.error("while reading services config " + ex);
-            throw new ServiceStartupException("error while reading services config");
+            throw new InvalidDefaultServicesConfigException();
         }
         while (e.hasMoreElements()) {
             URL source = e.nextElement();
@@ -657,5 +657,11 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
         // object state
         private final AtomicInteger counter = new AtomicInteger();
+    }
+
+    private static final class InvalidDefaultServicesConfigException extends RuntimeException {
+        public InvalidDefaultServicesConfigException() {
+            super("error while reading default services config");
+        }
     }
 }

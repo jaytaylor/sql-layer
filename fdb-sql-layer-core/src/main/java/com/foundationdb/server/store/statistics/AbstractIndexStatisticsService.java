@@ -392,7 +392,8 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
                 .on("table_id", "table_id")
                 .and("index_id", "index_id");
 
-        // Statistics service relies on decoding rowdata manually
+        // TODO: Use "tuple" as storage description
+        // TODO: What happens if we're using a different schema manager? 
         if (schemaManager instanceof FDBSchemaManager) {
             Group istn = builder.unvalidatedAIS().getTable(INDEX_STATISTICS_TABLE_NAME).getGroup();
             istn.setStorageDescription(new FDBStorageDescription(istn, "rowdata"));

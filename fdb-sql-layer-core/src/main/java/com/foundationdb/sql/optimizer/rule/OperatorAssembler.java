@@ -271,7 +271,7 @@ public class OperatorAssembler extends BaseRule
                 TInstance type = column.getType();
                 int pos = column.getPosition();
                 row[pos] = insertsP.get(i);
-                
+
                 if (!type.equals(row[pos].resultType())) {
                     TypesRegistryService registry = rulesContext.getTypesRegistry();
                     TCast tcast = registry.getCastsResolver().cast(type.typeClass(), row[pos].resultType().typeClass());
@@ -1724,12 +1724,12 @@ public class OperatorAssembler extends BaseRule
             List<ExpressionNode> operands = func.getOperands();
             IndexRowType indexRowType = getIndexRowType(index);
             if ("_center".equals(func.getFunction())) {
-                return IndexKeyRange.spatial(indexRowType,
-                                             assembleSpatialIndexPoint(index,
-                                                                       operands.get(0),
-                                                                       operands.get(1),
-                                                                       fieldOffsets),
-                                             null);
+                return IndexKeyRange.spatialCoords(indexRowType,
+                                                   assembleSpatialIndexPoint(index,
+                                                                             operands.get(0),
+                                                                             operands.get(1),
+                                                                             fieldOffsets),
+                                                   null);
             }
             else if ("_center_radius".equals(func.getFunction())) {
                 ExpressionNode centerY = operands.get(0);
@@ -1754,9 +1754,9 @@ public class OperatorAssembler extends BaseRule
                 left = resolveAddedExpression(left, planContext);
                 top = resolveAddedExpression(top, planContext);
                 right = resolveAddedExpression(right, planContext);
-                return IndexKeyRange.spatial(indexRowType,
-                                             assembleSpatialIndexPoint(index, bottom, left, fieldOffsets),
-                                             assembleSpatialIndexPoint(index, top, right, fieldOffsets));
+                return IndexKeyRange.spatialCoords(indexRowType,
+                                                   assembleSpatialIndexPoint(index, bottom, left, fieldOffsets),
+                                                   assembleSpatialIndexPoint(index, top, right, fieldOffsets));
             }
             else {
                 throw new AkibanInternalException("Unrecognized spatial index " + index);

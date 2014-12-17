@@ -21,10 +21,12 @@ import static org.junit.Assert.*;
 
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor;
 import com.foundationdb.qp.util.SchemaCache;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
@@ -78,7 +80,7 @@ public class MemoryAdapterIT extends ServerSessionITBase {
         
         TestSession sqlSession = new TestSession();
 
-        StoreAdapter adapter = sqlSession.getStoreHolder(SchemaCache.globalSchema(ais())).getAdapter(newtable);
+        StoreAdapter adapter = sqlSession.getStoreHolder().getAdapter(newtable);
         assertNotNull (adapter);
         assertTrue (adapter instanceof MemoryAdapter);
     }
@@ -91,7 +93,7 @@ public class MemoryAdapterIT extends ServerSessionITBase {
         }
 
         @Override
-        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adaper) {
+        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adaper, Group group) {
             return null;
         }
 

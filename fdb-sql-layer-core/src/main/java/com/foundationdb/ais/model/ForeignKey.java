@@ -58,15 +58,6 @@ public class ForeignKey implements Constraint
         return fk;
     }
 
-    public void findIndexes() {
-        if (referencingIndex == null) {
-            referencingIndex = join.getChild().getIndex(constraintName.getTableName());
-        }
-        if (referencedIndex == null) {
-            referencedIndex = findReferencedIndex(join.getParent(), join.getParentColumns());
-        }
-    }
-
     /** Find a unique index on <code>referencedTable</code> with
      * <code>referencedColumns</code> in some order.
      */
@@ -103,6 +94,13 @@ public class ForeignKey implements Constraint
     }
 
     public TableIndex getReferencingIndex() {
+        if (referencingIndex == null) {
+            synchronized (this) {
+                if (referencingIndex == null) {
+                    referencingIndex = join.getChild().getIndex(constraintName.getTableName());
+                }
+            }
+        }
         return referencingIndex;
     }
 
@@ -115,6 +113,13 @@ public class ForeignKey implements Constraint
     }
 
     public TableIndex getReferencedIndex() {
+        if (referencedIndex == null) {
+            synchronized (this) {
+                if (referencedIndex == null) {
+                    referencedIndex = findReferencedIndex(join.getParent(), join.getParentColumns());
+                }
+            }
+        }
         return referencedIndex;
     }
 
@@ -203,8 +208,8 @@ public class ForeignKey implements Constraint
     private final Action deleteAction;
     private final Action updateAction;
     private final boolean deferrable, initiallyDeferred;
-    private TableIndex referencingIndex;
-    private TableIndex referencedIndex;
+    private volatile TableIndex referencingIndex;
+    private volatile TableIndex referencedIndex;
     private Join join;
 
 }

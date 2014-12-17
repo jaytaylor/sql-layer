@@ -3,9 +3,9 @@ SelectQuery@29d65b
     MapJoin@552a2b()
       Select@6f13cd2e[]
         Flatten@143a083(customers INNER orders)
-          Select@df0256[orders.order_date > Cast(2011-01-01 AS MCOMPAT_ DATE)]
+          Select@df0256[orders.order_date > 2011-01-01]
             AncestorLookup@1127b52(items -> [customers, orders])
-              SingleIndexScan@5e7020(Index(test.items.sku[IndexColumn(sku)]), NONE, =1234, rows = 82, cost = 10107.9)
+              SingleIndexScan@5e7020(Index(test.items.sku[IndexColumn(sku)]), NONE, =1234, rows = 83, cost = 10107.9)
               TableSource@1991de1(customers - TableGroup@135daf(customers))
               TableSource@178aae1(orders - TableGroupJoin@16b904d(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
       Project@a1d7b[orders.order_date, child.name]

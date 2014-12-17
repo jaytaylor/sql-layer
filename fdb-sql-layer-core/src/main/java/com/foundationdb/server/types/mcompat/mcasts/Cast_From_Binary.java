@@ -16,16 +16,20 @@
  */
 package com.foundationdb.server.types.mcompat.mcasts;
 
+import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TCastBase;
-import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TPreptimeValue;
+import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.TBinary;
+import com.foundationdb.server.types.common.types.TBinary.Attrs;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 
-import java.nio.charset.Charset;
+import java.io.UnsupportedEncodingException;
 
 public final class Cast_From_Binary {
 
@@ -41,7 +45,23 @@ public final class Cast_From_Binary {
 
         @Override
         public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
-            TBinary.putBytes(context, target, source.getBytes());
+            byte[] in = source.getBytes();
+            byte[] out = in;
+            TInstance outputType = context.outputType();
+            int maxLen = outputType.attribute(Attrs.LENGTH);
+            if (in.length > maxLen) {
+                out = new byte[maxLen];
+                System.arraycopy(in, 0, out, 0, maxLen);
+                context.reportTruncate("bytes of length " + in.length,  "bytes of length " + maxLen);
+            }
+            TBinary.putBytes(context, target, out);
+        }
+
+        @Override
+        public TInstance preferredTarget(TPreptimeValue source) {
+            TInstance sourceType =  source.type();
+            return targetClass().instance(sourceType.attribute(Attrs.LENGTH),
+                    source.isNullable());
         }
     }
 }

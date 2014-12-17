@@ -284,8 +284,6 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
     @Override
     public HKey ancestorHKey(Table table)
     {
-        // TODO: This does the wrong thing for hkeys derived from group index rows!
-        // TODO: See bug 997746.
         HKeyRowType rowType = this.rowType().schema().newHKeyRowType(table.hKey());
         HKey ancestorHKey = new ValuesHKey(rowType, this.registry);
         copyTo(ancestorHKey);
@@ -317,16 +315,20 @@ public class ValuesHKey extends AbstractValuesHolderRow implements HKey {
 
     private void copyValue (ValueSource valueSource, Value valueTarget) {
         if (valueSource.hasAnyValue()) {
-            TKeyComparable compare = registry.getKeyComparable(valueSource.getType().typeClass(), valueTarget.getType().typeClass());
-            if (compare != null) {
-                compare.getComparison().copyComparables(valueSource, valueTarget);
+            if (valueSource.isNull()) {
+                valueTarget.putNull();
             } else {
-                ValueTargets.copyFrom(valueSource, valueTarget);
+                TKeyComparable compare = registry.getKeyComparable(valueSource.getType().typeClass(), valueTarget.getType().typeClass());
+                if (compare != null) {
+                    compare.getComparison().copyComparables(valueSource, valueTarget);
+                } else {
+                    ValueTargets.copyFrom(valueSource, valueTarget);
+                }
             }
         }        
     }
     // For testing purposes
-    protected int[] ordinals() { return ordinals; }
+    public int[] ordinals() { return ordinals; }
     
     private int[] ordinals;
     private int[] keyDepth;

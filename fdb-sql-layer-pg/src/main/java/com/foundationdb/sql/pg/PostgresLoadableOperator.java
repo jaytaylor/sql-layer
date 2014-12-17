@@ -42,7 +42,6 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
     {
         super(null);
         super.init(loadableOperator.plan(), null, columnNames, columnTypes, aisColumns, parameterTypes, null);
-        setSchema(loadableOperator.schema());
         this.invocation = invocation;
     }
     
@@ -59,7 +58,6 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
         boolean success = false;
         stack.push(context, invocation);
         try {
-            context.initStore(getSchema());
             int result = super.execute(context, bindings, maxrows);
             success = true;
             return result;

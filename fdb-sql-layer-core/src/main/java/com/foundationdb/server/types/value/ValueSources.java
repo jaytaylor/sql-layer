@@ -280,6 +280,11 @@ public final class ValueSources {
             type = MBinary.VARBINARY.instance(65535, false);
             value = new Value(type, Spatial.serialize((JTSSpatialObject) object));
         }
+        else if (object instanceof UUID) {
+            type = AkGUID.INSTANCE.instance(false);
+            value = new Value(type);
+            value.putObject(object);
+        }
         else {
             throw new UnsupportedOperationException("can't convert " + object + " of type " + object.getClass());
         }
@@ -369,45 +374,6 @@ public final class ValueSources {
         case BYTES:     return source.getBytes();
         case STRING:    return source.getString();
         default:        throw new AssertionError(underlying);
-        }
-    }
-
-    public static boolean areEqual(ValueSource one, ValueSource two) {
-        TInstance oneType = one.getType();
-        TInstance twoType = two.getType();
-        if (oneType == null || twoType == null)
-            return oneType == null && twoType == null;
-        if (!oneType.equalsExcludingNullable(twoType))
-            return false;
-        if (one.isNull())
-            return two.isNull();
-        if (two.isNull())
-            return false;
-        if (one.hasCacheValue() && two.hasCacheValue())
-            return one.getObject().equals(two.getObject());
-        switch (TInstance.underlyingType(oneType)) {
-        case BOOL:
-            return one.getBoolean() == two.getBoolean();
-        case INT_8:
-            return one.getInt8() == two.getInt8();
-        case INT_16:
-            return one.getInt16() == two.getInt16();
-        case UINT_16:
-            return one.getInt16() == two.getInt16();
-        case INT_32:
-            return one.getInt32() == two.getInt32();
-        case INT_64:
-            return one.getInt64() == two.getInt64();
-        case FLOAT:
-            return one.getFloat() == two.getFloat();
-        case DOUBLE:
-            return one.getDouble() == two.getDouble();
-        case STRING:
-            return one.getString().equals(two.getString());
-        case BYTES:
-            return Arrays.equals(one.getBytes(), two.getBytes());
-        default:
-            throw new AssertionError(String.valueOf(oneType));
         }
     }
 

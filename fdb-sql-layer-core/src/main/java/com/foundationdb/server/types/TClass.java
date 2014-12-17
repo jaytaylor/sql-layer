@@ -77,6 +77,14 @@ public abstract class TClass {
         return (this == other);
     }
 
+    public static boolean areEqual(ValueSource sourceA, ValueSource sourceB) {
+        return (compare(sourceA, sourceB) == 0);
+    }
+
+    public static int compare(ValueSource sourceA, ValueSource sourceB) {
+        return compare(sourceA.getType(), sourceA, sourceB.getType(), sourceB);
+    }
+
     public static int compare(TInstance typeA, ValueSource sourceA, TInstance typeB, ValueSource sourceB) {
         if (comparisonNeedsCasting(typeA, typeB))
             throw new IllegalArgumentException("can't compare " + typeA + " and " + typeB);
@@ -128,6 +136,7 @@ public abstract class TClass {
         case BYTES:
             return UnsignedBytes.lexicographicalComparator().compare(sourceA.getBytes(), sourceB.getBytes());
         case STRING:
+            // Remember: TString overrides and handles collator
             return sourceA.getString().compareTo(sourceB.getString());
         default:
             throw new AssertionError(sourceA.getType());

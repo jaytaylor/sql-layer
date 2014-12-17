@@ -18,19 +18,19 @@
 package com.foundationdb.server.test.it.keyupdate;
 
 import com.foundationdb.ais.model.Group;
-import com.foundationdb.server.rowdata.RowDef;
+import com.foundationdb.qp.rowtype.RowType;
 
 public class Schema
 {
     // For all KeyUpdate*IT
     static Integer vendorId;
-    static RowDef vendorRD;
+    static RowType vendorRT;
     static Integer customerId;
-    static RowDef customerRD;
+    static RowType customerRT;
     static Integer orderId;
-    static RowDef orderRD;
+    static RowType orderRT;
     static Integer itemId;
-    static RowDef itemRD;
+    static RowType itemRT;
     static Group group;
     // For KeyUpdateIT and KeyUpdateCascadingKeysIT
     static Integer v_vid;

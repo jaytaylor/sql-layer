@@ -21,15 +21,9 @@ import com.foundationdb.ais.model.HKey;
 import com.foundationdb.ais.model.HKeySegment;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.server.rowdata.RowData;
-import com.foundationdb.server.rowdata.RowDef;
-import com.foundationdb.server.api.dml.scan.LegacyRowWrapper;
-import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.service.session.Session;
-import com.persistit.Exchange;
 import com.persistit.Key;
-import com.persistit.exception.PersistitException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -49,21 +43,20 @@ public abstract class TreeRecordVisitor
         }
     }
 
-    public void visit(Key key, RowData rowData) {
-        RowDef rowDef = store.getAIS(session).getTable(rowData.getRowDefId()).rowDef();
-        Object[] keyObjs = key(key, rowDef);
-        NewRow newRow = new LegacyRowWrapper(rowDef, rowData);
-        visit(keyObjs, newRow);
+
+    public void visit(Key key, Row row)  {
+        Object[] keyObjs = key(key, row);
+        visit(keyObjs, row);
     }
-
-    public abstract void visit(Object[] key, NewRow row);
-
-    private Object[] key(Key key, RowDef rowDef)
-    {
+    
+    public abstract void visit(Object[] key, Row row);
+    
+    
+    private Object[] key(Key key, Row row) {
         // Key traversal
         int keySize = key.getDepth();
         // HKey traversal
-        HKey hKey = rowDef.table().hKey();
+        HKey hKey = row.rowType().table().hKey();
         List<HKeySegment> hKeySegments = hKey.segments();
         int k = 0;
         // Traverse key, guided by hKey, populating result
@@ -81,6 +74,7 @@ public abstract class TreeRecordVisitor
             }
         }
         return keyArray;
+        
     }
 
     private Store store;

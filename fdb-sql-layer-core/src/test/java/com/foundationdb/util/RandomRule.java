@@ -20,6 +20,8 @@ package com.foundationdb.util;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Random;
 
@@ -52,6 +54,8 @@ import java.util.Random;
  */
 public class RandomRule implements TestRule {
 
+    private static final Logger LOG = LoggerFactory.getLogger(RandomRule.class);
+
     private long seed;
     private Random random;
 
@@ -81,7 +85,7 @@ public class RandomRule implements TestRule {
                 } finally {
                     if (!success) {
                         // This only prints if the @Rule attribute is used, not if @ClassRule is used by itself
-                        System.err.printf("Test (%s) failed with seed %d\n", description.getDisplayName(), seed);
+                        LOG.error("Test ({}) failed with seed {}", description.getDisplayName(), seed); 
                     }
                 }
             }

@@ -22,7 +22,7 @@ import com.foundationdb.ais.model.Schema;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.error.ForeignKeyNotDeferrableException;
-import com.foundationdb.server.error.IsolationLevelIgnoredException;
+import com.foundationdb.server.error.IsolationLevelChangedException;
 import com.foundationdb.server.error.NoSuchConstraintException;
 import com.foundationdb.server.error.NoSuchSchemaException;
 import com.foundationdb.server.error.UnsupportedConfigurationException;
@@ -232,17 +232,17 @@ public class PostgresSessionStatement implements PostgresStatement
         case TRANSACTION_ISOLATION:
             {
                 SetTransactionIsolationNode node = (SetTransactionIsolationNode)statement;
-                IsolationLevel level = node.getIsolationLevel();
-                switch (level) {
-                case UNSPECIFIED_ISOLATION_LEVEL:
-                case SERIALIZABLE_ISOLATION_LEVEL:
-                    break;
-                default:
-                    if (server.getAttribute(ISOLATION_LEVEL_WARNED) == null) {
-                        context.warnClient(new IsolationLevelIgnoredException(level.getSyntax(), IsolationLevel.SERIALIZABLE_ISOLATION_LEVEL.getSyntax()));
-                        server.setAttribute(ISOLATION_LEVEL_WARNED, Boolean.TRUE);
-                    }
-                    break;
+                boolean current = node.isCurrent();
+                IsolationLevel requestedLevel = node.getIsolationLevel(), actualLevel;
+                if (current)
+                    actualLevel = server.setTransactionIsolationLevel(requestedLevel);
+                else
+                    actualLevel = server.setTransactionDefaultIsolationLevel(requestedLevel);
+                if ((requestedLevel != IsolationLevel.UNSPECIFIED_ISOLATION_LEVEL) &&
+                    (requestedLevel != actualLevel) &&
+                    (server.getAttribute(ISOLATION_LEVEL_WARNED) == null)) {
+                    context.warnClient(new IsolationLevelChangedException(requestedLevel.getSyntax(), actualLevel.getSyntax()));
+                    server.setAttribute(ISOLATION_LEVEL_WARNED, Boolean.TRUE);
                 }
             }
             break;

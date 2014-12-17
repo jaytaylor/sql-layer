@@ -2026,3 +2026,125 @@ Statistics:
     lt: 0
 Table: sources
 Timestamp: 2013-01-08T00:00:00.000Z
+---
+Index: PRIMARY
+RowCount: 2
+SampledCount: 2
+Statistics:
+- Columns: 1
+  FirstColumn: 0
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [1]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [2]
+    lt: 0
+Table: a
+Timestamp: 2014-12-09T22:05:33.845Z
+---
+Index: PRIMARY
+RowCount: 4
+SampledCount: 4
+Statistics:
+- Columns: 1
+  FirstColumn: 0
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [1]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [2]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [3]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [4]
+    lt: 0
+Table: b
+Timestamp: 2014-12-09T22:05:41.255Z
+---
+Index: PRIMARY
+RowCount: 6
+SampledCount: 6
+Statistics:
+- Columns: 1
+  FirstColumn: 0
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [1]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [2]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [3]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [4]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [5]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [6]
+    lt: 0
+Table: m2m
+Timestamp: 2014-12-09T21:53:27Z
+---
+Index: m2m_fkey
+RowCount: 6
+SampledCount: 6
+Statistics:
+- Columns: 1
+  FirstColumn: 0
+  Histogram:
+  - distinct: 0
+    eq: 3
+    key: [1]
+    lt: 0
+  - distinct: 0
+    eq: 3
+    key: [2]
+    lt: 0
+Table: m2m
+Timestamp: 2014-12-09T21:53:27Z
+---
+Index: m2m_fkey$1
+RowCount: 6
+SampledCount: 6
+Statistics:
+- Columns: 1
+  FirstColumn: 0
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [1]
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: [2]
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: [3]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [4]
+    lt: 0
+Table: m2m
+Timestamp: 2014-12-09T21:53:27Z

@@ -138,7 +138,6 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
             IOException exceptionDuringExecution = null;
             try {
                 preExecute(context, DXLFunction.UNSPECIFIED_DML_WRITE);
-                context.initStore(getSchema());
                 cursor = openCursor(context, bindings);
                 PostgresOutputter<Row> outputter = null;
                 if (outputResult) {

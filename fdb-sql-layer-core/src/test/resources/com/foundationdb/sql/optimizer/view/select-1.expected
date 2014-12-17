@@ -92,12 +92,12 @@ resultSet:
 				com.foundationdb.sql.parser.NotNode@3b75078b
 				operator: not
 				methodName: not
-				type: BOOLEAN NOT NULL
+				type: null
 				operand: 					
 					com.foundationdb.sql.parser.IsNullNode@42552c
 					operator: is null
 					methodName: isNull
-					type: BOOLEAN NOT NULL
+					type: null
 					operand: 						
 						com.foundationdb.sql.parser.ColumnReference@2e5bbd6
 						columnName: y

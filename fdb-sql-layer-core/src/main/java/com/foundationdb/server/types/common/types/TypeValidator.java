@@ -45,7 +45,7 @@ public class TypeValidator
         return ((tclass != null) && isSupportedForIndex(tclass));
     }
 
-    public static boolean isSupportedForNonPiontSpatialIndex(TInstance type) {
+    public static boolean isSupportedForNonPointSpatialIndex(TInstance type) {
         TClass tclass = TInstance.tClass(type);
         return ((tclass != null) && isSupportedForNonPointSpatialIndex(tclass));
     }

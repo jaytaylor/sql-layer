@@ -18,7 +18,10 @@
 package com.foundationdb.sql.optimizer.rule;
 
 import com.foundationdb.server.error.CorruptedPlanException;
+import com.foundationdb.server.types.common.funcs.BoolLogic;
+import com.foundationdb.server.types.texpressions.TValidatedScalar;
 import com.foundationdb.sql.optimizer.plan.*;
+import com.foundationdb.sql.optimizer.plan.JoinNode.JoinType;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,7 +97,9 @@ public class NestedLoopMapper extends BaseRule
             PlanNode outer = join.getLeft();
             PlanNode inner = join.getRight();
             if (join.hasJoinConditions()) {
-                outer = moveConditionsToOuterNode(outer, join.getJoinConditions(), getQuery(join).getOuterTables());
+                outer = moveConditionsToOuterNode(outer, join.getJoinConditions(),
+                                                  getQuery(join).getOuterTables(),
+                                                  JoinType.ANTI.equals(join.getJoinType()));
                 if (join.hasJoinConditions())
                     inner = new Select(inner, join.getJoinConditions());
             }
@@ -147,7 +152,7 @@ public class NestedLoopMapper extends BaseRule
 
 
     private PlanNode moveConditionsToOuterNode(PlanNode planNode, ConditionList conditions,
-                                               Set<ColumnSource> outerSources) {
+                                               Set<ColumnSource> outerSources, boolean isAntiJoin) {
         ConditionList selectConditions = new ConditionList();
         Iterator<ConditionExpression> iterator = conditions.iterator();
         while (iterator.hasNext()) {
@@ -160,7 +165,35 @@ public class NestedLoopMapper extends BaseRule
                 iterator.remove();
             }
         }
-        return selectConditions.isEmpty() ? planNode : new Select(planNode, selectConditions);
+        return selectConditions.isEmpty() ? planNode
+                                          : isAntiJoin ? new Select(planNode, negateConjunction(selectConditions))
+                                                       : new Select(planNode, selectConditions);
+    }
+
+    private ConditionList negateConjunction(ConditionList conditionList) {
+        ConditionExpression firstCondition = conditionList.get(0);
+
+        // and all the conditions first
+        LogicalFunctionCondition condition = new LogicalFunctionCondition("and", conditionList,
+                                                                          firstCondition.getSQLtype(),
+                                                                          firstCondition.getSQLsource(),
+                                                                          firstCondition.getType());
+        TValidatedScalar validatedScalarAnd = new TValidatedScalar(BoolLogic.AND); // and
+        condition.setResolved(validatedScalarAnd);
+        List<ConditionExpression> newConditionList = new ArrayList<ConditionExpression>();
+        newConditionList.add(condition);
+
+        // negate the resulting condition
+        condition = new LogicalFunctionCondition("not", newConditionList,
+                                                 condition.getSQLtype(),
+                                                 condition.getSQLsource(),
+                                                 condition.getType());
+        TValidatedScalar validatedScalarNot = new TValidatedScalar(BoolLogic.NOT);
+        condition.setResolved(validatedScalarNot);
+
+        ConditionList negatedConjunction = new ConditionList();
+        negatedConjunction.add(condition);
+        return negatedConjunction;
     }
 
     private static class PlanNodeProvidesSourcesChecker implements PlanVisitor {

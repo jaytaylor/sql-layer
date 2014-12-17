@@ -57,13 +57,11 @@ public class ParentAndChildSkipScanIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         parentRowType = schema.tableRowType(table(parent));
         childRowType = schema.tableRowType(table(child));
         parentPidIndexRowType = indexType(parent, "pid");
         parentXIndexRowType = indexType(parent, "x");
         childYIndexRowType = indexType(child, "y");
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         db = new Row[]{

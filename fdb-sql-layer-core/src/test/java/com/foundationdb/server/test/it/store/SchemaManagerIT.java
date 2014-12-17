@@ -32,6 +32,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
+import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.Schema;
@@ -56,6 +57,7 @@ import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.TableChanges.IndexChange;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.server.types.common.types.TypesTranslator;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -830,7 +832,7 @@ public final class SchemaManagerIT extends ITBase {
         }
 
         @Override
-        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter) {
+        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
             throw new UnsupportedOperationException();
         }
 

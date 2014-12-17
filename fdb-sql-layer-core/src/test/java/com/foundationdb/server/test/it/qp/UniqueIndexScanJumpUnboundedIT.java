@@ -57,7 +57,6 @@ public class UniqueIndexScanJumpUnboundedIT extends OperatorITBase
     @Override
     protected void setupPostCreateSchema()
     {
-        schema = new Schema(ais());
         tRowType = schema.tableRowType(table(t));
         idxRowType = indexType(t, "a", "b", "c", "id");
         db = new Row[] {
@@ -86,7 +85,6 @@ public class UniqueIndexScanJumpUnboundedIT extends OperatorITBase
             row(t, 2031L, 3L, null, 5L),
             row(t, 2032L, 3L, 4L, null),
         };
-        adapter = newStoreAdapter(schema);
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         use(db);

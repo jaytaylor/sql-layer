@@ -33,7 +33,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.rowdata.RowData;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.server.test.it.qp.TestRow;
 import org.junit.Test;
@@ -205,7 +204,7 @@ public final class COIBasicIT extends ITBase {
         RowType cType = schema.tableRowType(getTable(tids.c));
         RowType oType = schema.tableRowType(getTable(tids.o));
         RowType iType = schema.tableRowType(getTable(tids.i));
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
 
         Object[] o1Cols = { 10, 1 };
         Object[] cCols = { 2, "c2" };
@@ -239,7 +238,7 @@ public final class COIBasicIT extends ITBase {
         RowType cType = schema.tableRowType(getTable(tids.c));
         RowType oType = schema.tableRowType(getTable(tids.o));
         RowType iType = schema.tableRowType(getTable(tids.i));
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
 
         Object[] o1Cols = { 10, 1 };
         Object[] cCols = { 2, "c2" };
@@ -277,7 +276,7 @@ public final class COIBasicIT extends ITBase {
         RowType cType = schema.tableRowType(getTable(tids.c));
         RowType oType = schema.tableRowType(getTable(tids.o));
         RowType iType = schema.tableRowType(getTable(tids.i));
-        StoreAdapter adapter = newStoreAdapter(schema);
+        StoreAdapter adapter = newStoreAdapter();
 
         Object[] o1Cols = { 10, 1 };
         Object[] cCols = { 2, "c2" };

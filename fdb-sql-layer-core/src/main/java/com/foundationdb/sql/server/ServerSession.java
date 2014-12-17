@@ -17,17 +17,12 @@
 
 package com.foundationdb.sql.server;
 
-import com.foundationdb.qp.operator.StoreAdapterHolder;
-import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.server.error.InvalidOperationException;
-import com.foundationdb.server.types.FormatOptions;
-import com.foundationdb.sql.parser.SQLParser;
-
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.qp.operator.QueryContext;
+import com.foundationdb.qp.operator.StoreAdapterHolder;
 import com.foundationdb.server.error.ErrorCode;
-import com.foundationdb.server.types.service.TypesRegistryService;
+import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.externaldata.ExternalDataService;
@@ -37,10 +32,14 @@ import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.service.tree.KeyCreator;
+import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.sql.optimizer.AISBinderContext;
 import com.foundationdb.sql.optimizer.rule.PipelineConfiguration;
 import com.foundationdb.sql.optimizer.rule.cost.CostEstimator;
+import com.foundationdb.sql.parser.IsolationLevel;
+import com.foundationdb.sql.parser.SQLParser;
 
 import java.io.IOException;
 import java.util.Date;
@@ -106,7 +105,7 @@ public interface ServerSession
     public SessionMonitor getSessionMonitor();
 
     /** Get adapters for the given schema. */
-    public StoreAdapterHolder getStoreHolder(Schema schema);
+    public StoreAdapterHolder getStoreHolder();
 
     /** Return the transaction service */
     public TransactionService getTransactionService();
@@ -131,6 +130,12 @@ public interface ServerSession
 
     /** Set following transaction to read-only / read-write. */
     public void setTransactionDefaultReadOnly(boolean readOnly);
+
+    /** Set current transaction isolation level. */
+    public IsolationLevel setTransactionIsolationLevel(IsolationLevel level);
+
+    /** Set following transaction isolation level. */
+    public IsolationLevel setTransactionDefaultIsolationLevel(IsolationLevel level);
 
     /** Return whether to commit as determined by store. */
     public ServerTransaction.PeriodicallyCommit getTransactionPeriodicallyCommit();

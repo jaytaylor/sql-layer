@@ -29,7 +29,7 @@ import java.util.jar.JarFile;
 public class MockRoutineLoader implements RoutineLoader
 {
     @Override
-    public ClassLoader loadSQLJJar(Session session, TableName jarName) {
+    public ClassLoader loadSQLJJar(Session session, TableName jarName, boolean isSystemRoutine) {
         throw new UnsupportedOperationException();
     }
 

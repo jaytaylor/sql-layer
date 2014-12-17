@@ -29,9 +29,11 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
+import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.test.ExpressionGenerators;
+
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -70,12 +72,12 @@ public class Select_BloomFilterCT extends CostModelBase
             "x int");
         Index dx = createIndex(schemaName, dTableName, "idx_dx", "x");
         Index fx = createIndex(schemaName, fTableName, "idx_fx", "x");
-        schema = new Schema(ais());
+        schema = SchemaCache.globalSchema(ais());
         dRowType = schema.tableRowType(table(d));
         fRowType = schema.tableRowType(table(f));
         dIndexRowType = dRowType.indexRowType(dx);
         fIndexRowType = fRowType.indexRowType(fx);
-        adapter = newStoreAdapter(schema);
+        adapter = newStoreAdapter();
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }

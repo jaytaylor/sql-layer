@@ -19,6 +19,7 @@ package com.foundationdb.sql.pg;
 
 import com.foundationdb.junit.SelectedParameterizedRunner;
 import com.foundationdb.util.RandomRule;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Ignore;
@@ -54,6 +55,14 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(RandomSemiJoinTestDT.class);
 
+    /**
+     * Setting this property will cause this tester to run against postgresql instead of fdbsql, useful for verifying
+     * that the test is correct.
+     * You will need to add credentials, for easy reference, run psql and call:
+     * CREATE USER auser WITH PASSWORD 'apassword';
+     * GRANT ALL PRIVILEGES ON DATABASE test to auser;
+     */
+    private static final boolean hitPostgresql = Boolean.parseBoolean(System.getProperty("fdbsql.test.hit-postgresql"));
     private static final int DDL_COUNT = 10;
     private static final int QUERY_COUNT = 30;
     private static final int TABLE_COUNT = 3;
@@ -76,6 +85,15 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
      * The seed used for individual parameterized tests, so that they can have different DDL & DML
      */
     private Long testSeed;
+
+    @Override
+    protected String getConnectionURL() {
+        if (hitPostgresql) {
+            return "jdbc:postgresql:" + SCHEMA_NAME;
+        } else {
+            return super.getConnectionURL();
+        }
+    }
 
     @Parameterized.Parameters(name="Test Seed: {0}")
     public static List<Object[]> params() throws Exception {
@@ -282,6 +300,16 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
 
     @Before
     public void setup() {
+        if (hitPostgresql) {
+            // It kept whining about tables already existing if I ever stopped the tests mid run,
+            // so drop them before every test.
+            for (int i = 0; i < TABLE_COUNT; i++) {
+                StringBuilder stringBuilder = new StringBuilder();
+                stringBuilder.append("DROP TABLE IF EXISTS ");
+                stringBuilder.append(table(i));
+                sql(stringBuilder.toString());
+            }
+        }
         // RandomRule is used to generate parameters, so that we have different DDL sets of tests
         Random random = new Random(testSeed);
         for (int i=0; i<TABLE_COUNT; i++) {
@@ -306,24 +334,40 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         // TODO create random groups & group indexes
     }
 
+    @After
+    public void teardown() {
+        if (hitPostgresql) {
+            // our teardown method won't work against postgres because it uses drop schema magic,
+            // just drop the tables individually.
+            // Also drop them at startup
+            for (int i = 0; i < TABLE_COUNT; i++) {
+                StringBuilder stringBuilder = new StringBuilder();
+                stringBuilder.append("DROP TABLE IF EXISTS ");
+                stringBuilder.append(table(i));
+                sql(stringBuilder.toString());
+            }
+        }
+    }
+
     @Test
     public void Test() {
         Random random = new Random(testSeed);
         for (int i=0; i<QUERY_COUNT; i++) {
+            LOG.debug("Query #{}", i);
             boolean useExists  = random.nextBoolean();
             int limitOutside = random.nextInt(MAX_OUTER_LIMIT * 10);
             TableAliasGenerator tag = new TableAliasGenerator(random);
             if (useExists) {
                 testOneQueryExists(buildQuery(random, useExists, true, tag), buildQuery(random, useExists, false, tag),
-                        limitOutside);
+                        limitOutside, i);
             } else {
                 testOneQueryIn(buildQuery(random, useExists, true, tag), buildQuery(random, useExists, false, tag),
-                        limitOutside);
+                        limitOutside, i);
             }
         }
     }
 
-    private void testOneQueryExists(String query1, String query2, int limitOutside) {
+    private void testOneQueryExists(String query1, String query2, int limitOutside, int queryIndex) {
         boolean negative = randomRule.getRandom().nextBoolean();
         String existsClause = negative ? "NOT EXISTS" : "EXISTS";
         boolean query1IsJustATable = query1.startsWith("table");
@@ -340,6 +384,67 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         String q1 = query1IsJustATable ? query1 : "(" + query1 + ")";
         String finalQuery = "SELECT main FROM " + q1 + " AS T1 WHERE " + existsClause +
                 " (" + String.format(query2, "T1.main") + ")" + finalQueryLimit(limitOutside);
+        compareToFinalQuery(limitOutside, expected, finalQuery, queryIndex);
+    }
+
+    private void testOneQueryIn(String query1, String query2, int limitOutside, int queryIndex) {
+        boolean useIn = randomRule.getRandom().nextBoolean();
+        String inClause = useIn ? "IN" : "NOT IN";
+        LOG.debug("Outer: {}", query1);
+        LOG.debug("Inner: {}", query2);
+        boolean query1IsJustATable = query1.startsWith("table");
+        List<List<?>> results1 = sql(query1IsJustATable ? "SELECT main FROM " + query1 : query1);
+        List<List<?>> results2 = sql(query2);
+        List<Integer> expected = calculateInExpectedResults(useIn, results1, results2);
+        String q1 = query1IsJustATable ? query1 : "(" + query1 + ")";
+        String finalQuery = "SELECT main FROM " + q1 + " AS T1 WHERE main " + inClause + " (" + query2 + ")" +
+                finalQueryLimit(limitOutside);
+        compareToFinalQuery(limitOutside, expected, finalQuery, queryIndex);
+    }
+
+    private List<Integer> calculateInExpectedResults(boolean useIn, List<List<?>> results1, List<List<?>> results2) {
+        boolean insideHasNull = false;
+        // setting of insideHasNull only matters if it's NOT IN, if it is NOT IN, expected is always the empty list
+        if (!useIn) {
+            for (List<?> row : results2) {
+                if (row.get(0) == null) {
+                    insideHasNull = true;
+                    break;
+                }
+            }
+        }
+        List<Integer> expected = new ArrayList<>();
+        // if the inside has null NOT IN will always return the empty list
+        if (useIn || !insideHasNull) {
+            for (List<?> row : results1) {
+                // null from the left hand side is never in or not in the right hand side.
+                // unless the right side has nothing in it, then it's not in the right hand side.
+                if (row.get(0) == null && results2.size() != 0) {
+                    continue;
+                }
+                boolean rowIsInResults2 = false;
+                for (List<?> row2 : results2) {
+                    if (nullableEquals(row.get(0), row2.get(0))) {
+                        rowIsInResults2 = true;
+                        break;
+                    }
+                }
+                if (useIn) {
+                    if (rowIsInResults2) {
+                        expected.add((Integer) row.get(0));
+                    }
+                } else {
+                    // if the inside has a null, then NOT IN always returns the empty list
+                    if (!rowIsInResults2) {
+                        expected.add((Integer) row.get(0));
+                    }
+                }
+            }
+        }
+        return expected;
+    }
+
+    private void compareToFinalQuery(int limitOutside, List<Integer> expected, String finalQuery, int queryIndex) {
         LOG.debug("Final: {}", finalQuery);
         List<List<?>> sqlResults = sql(finalQuery);
         List<Integer> actual = new ArrayList<>();
@@ -350,51 +455,11 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         Collections.sort(expected, new NullableIntegerComparator());
         Collections.sort(actual, new NullableIntegerComparator());
         expected = applyLimit(expected, limitOutside);
-        assertEqualLists("Results different for " + finalQuery, expected, actual);
-    }
-
-    private void testOneQueryIn(String query1, String query2, int limitOutside) {
-        boolean useIn = randomRule.getRandom().nextBoolean();
-        String inClause = useIn ? "IN" : "NOT IN";
-        LOG.debug("Outer: {}", query1);
-        LOG.debug("Inner: {}", query2);
-        boolean query1IsJustATable = query1.startsWith("table");
-        List<List<?>> results1 = sql(query1IsJustATable ? "SELECT main FROM " + query1 : query1);
-        List<List<?>> results2 = sql(query2);
-        List<Integer> expected = new ArrayList<>();
-        for (List<?> row : results1) {
-            // null not in t never gets returned
-            if (row.get(0) == null) {
-                continue;
-            }
-            boolean rowIsInResults2 = false;
-            for (List<?> row2 : results2) {
-                if (nullableEquals(row.get(0), row2.get(0))) {
-                    rowIsInResults2 = true;
-                    break;
-                }
-            }
-            if (useIn == rowIsInResults2) {
-                expected.add((Integer) row.get(0));
-            }
-        }
-        String q1 = query1IsJustATable ? query1 : "(" + query1 + ")";
-        String finalQuery = "SELECT main FROM " + q1 + " AS T1 WHERE main " + inClause + " (" + query2 + ")" +
-                finalQueryLimit(limitOutside);
-        LOG.debug("Final: {}", finalQuery);
-        List<List<?>> sqlResults = sql(finalQuery);
-        List<Object> actual = new ArrayList<>();
-        for (List<?> actualRow : sqlResults) {
-            assertEquals("Expected 1 column" + actualRow, 1, actualRow.size());
-            actual.add(actualRow.get(0));
-        }
-        expected = applyLimit(expected, limitOutside);
-        assertEqualLists("Results different for " + finalQuery, expected, actual);
+        assertEqualLists("Results different for Query #" + queryIndex + ": " + finalQuery, expected, actual);
     }
 
     private List<Integer> applyLimit(List<Integer> expected, int limitOutside) {
         if (limitOutside < MAX_OUTER_LIMIT) {
-            Collections.sort(expected, new NullableIntegerComparator());
             if (limitOutside+1 < expected.size()) {
                 return expected.subList(0, limitOutside + 1);
             }
@@ -403,8 +468,9 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
     }
 
     private String finalQueryLimit(int limitOutside) {
-        if (limitOutside < 10) {
-            return " ORDER BY T1.main LIMIT " + (limitOutside + 1);
+        if (limitOutside < MAX_OUTER_LIMIT) {
+            // Postgresql puts null last by default
+            return " ORDER BY T1.main NULLS FIRST LIMIT " + (limitOutside + 1);
         } else {
             return "";
         }
