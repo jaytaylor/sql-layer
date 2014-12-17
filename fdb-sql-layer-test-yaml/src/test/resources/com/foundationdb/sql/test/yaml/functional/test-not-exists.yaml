@@ -9,4 +9,7 @@
 ---
 - Statement: SELECT c1 FROM t1 WHERE NOT EXISTS (SELECT c1 FROM t2 WHERE t1.c1 = 5 AND t1.c1 = t2.c2);
 - output: [[1], [2]]
+---
+- Statement: SELECT c1 FROM t1 WHERE NOT EXISTS (SELECT c1 FROM t2 WHERE t1.c1 = 5 AND t1.c2 = 3 AND t1.c1 = t2.c2);
+- output: [[1], [2]]
 ...
