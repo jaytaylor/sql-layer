@@ -393,7 +393,9 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         LOG.debug("Inner: {}", query2);
         boolean query1IsJustATable = query1.startsWith("table");
         List<List<?>> results1 = sql(query1IsJustATable ? "SELECT main FROM " + query1 : query1);
+        LOG.trace("Results 1 is {} rows", results1.size());
         List<List<?>> results2 = sql(query2);
+        LOG.trace("Results 2 is {} rows", results2.size());
         List<Integer> expected = calculateInExpectedResults(useIn, results1, results2);
         String q1 = query1IsJustATable ? query1 : "(" + query1 + ")";
         String finalQuery = "SELECT main FROM " + q1 + " AS T1 WHERE main " + inClause + " (" + query2 + ")" +
