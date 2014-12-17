@@ -48,8 +48,9 @@ public class LobRoutines {
         FDBHolder fdbHolder = serviceManager.getServiceByClass(FDBHolder.class);
         TransactionContext tcx = fdbHolder.getTransactionContext();
         String id = java.util.UUID.randomUUID().toString();
-        path.add(id);
-        ls.createLobSubspace(tcx, path);
+        List<String> newPath = Arrays.asList(Arrays.copyOf((String[])path.toArray(), path.size()+1));
+        newPath.set(newPath.size()-1, id);
+        ls.createLobSubspace(tcx, newPath);
         return id;
     }
     
