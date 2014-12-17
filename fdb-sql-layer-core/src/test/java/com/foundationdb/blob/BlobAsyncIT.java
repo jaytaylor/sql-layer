@@ -25,6 +25,7 @@ import com.foundationdb.server.test.it.FDBITBase;
 import com.foundationdb.subspace.Subspace;
 import com.foundationdb.tuple.ByteArrayUtil;
 import org.junit.Test;
+import org.junit.Ignore;
 
 import java.util.Arrays;
 
@@ -93,13 +94,13 @@ public class BlobAsyncIT extends FDBITBase
             @Override
             public Void apply(Transaction tr) {
                 BlobAsync blob = new BlobAsync(getDir(tr));
-                blob.write(tr, 0, testBytes).get();
+                blob.write(tr, 0L, testBytes).get();
 
-                blob.truncate(tr, 50).get();
+                blob.truncate(tr, 50L).get();
                 byte[] readBytes = blob.read(tr).get();
                 assertArrayEquals(Arrays.copyOf(testBytes, 50), readBytes);
 
-                blob.truncate(tr, 0).get();
+                blob.truncate(tr, 0L).get();
                 readBytes = blob.read(tr).get();
                 assertNull(readBytes);
                 return null;
@@ -114,14 +115,14 @@ public class BlobAsyncIT extends FDBITBase
             @Override
             public Void apply(Transaction tr) {
                 BlobAsync blob = new BlobAsync(getDir(tr));
-                blob.write(tr, 0, testBytes).get();
+                blob.write(tr, 0L, testBytes).get();
 
                 byte[] subBytes = new byte[10];
                 for(int i = 0; i < subBytes.length; ++i) {
                     subBytes[i] = (byte)(0x42 + i);
                 }
 
-                blob.write(tr, 42, subBytes).get();
+                blob.write(tr, 42L, subBytes).get();
 
                 byte[] newBytes = Arrays.copyOf(testBytes, testBytes.length);
                 System.arraycopy(subBytes, 0, newBytes, 42, subBytes.length);
@@ -141,10 +142,10 @@ public class BlobAsyncIT extends FDBITBase
             @Override
             public Void apply(Transaction tr) {
                 BlobAsync blob = new BlobAsync(getDir(tr));
-                blob.write(tr, 0, testBytes).get();
+                blob.write(tr, 0L, testBytes).get();
 
                 byte[] subBytes = Arrays.copyOfRange(testBytes, 42, 52);
-                byte[] readBytes = blob.read(tr, 42, 10).get();
+                byte[] readBytes = blob.read(tr, 42L, 10).get();
                 assertArrayEquals(subBytes, readBytes);
 
                 return null;
@@ -167,7 +168,7 @@ public class BlobAsyncIT extends FDBITBase
                 tr.set(afterPrefix, afterPrefix);
 
                 BlobAsync blob = new BlobAsync(new Subspace(blobPrefix));
-                blob.write(tr, 0, testBytes).get();
+                blob.write(tr, 0L, testBytes).get();
 
                 byte[] readBytes = blob.read(tr).get();
                 assertArrayEquals(testBytes, readBytes);
@@ -183,8 +184,8 @@ public class BlobAsyncIT extends FDBITBase
             @Override
             public Void apply(Transaction tr) {
                 BlobAsync blob = new BlobAsync(getDir(tr));
-                blob.write(tr, 0, testBytes).get();
-                assertEquals(Integer.valueOf(len), blob.getSize(tr).get());
+                blob.write(tr, 0L, testBytes).get();
+                assertEquals(Long.valueOf(len), blob.getSize(tr).get());
                 byte[] readBytes = blob.read(tr).get();
                 if(len == 0) {
                     assertNull(readBytes);
