@@ -278,7 +278,7 @@ public class PersistitTransactionService implements TransactionService {
     }
 
     @Override
-    public void checkStatementForeignKeys(Session session) {
+    public void checkStatementConstraints(Session session) {
         PersistitDeferredForeignKeys deferred = getDeferredForeignKeys(session, false);
         if (deferred != null)
             deferred.checkStatementForeignKeys(session);

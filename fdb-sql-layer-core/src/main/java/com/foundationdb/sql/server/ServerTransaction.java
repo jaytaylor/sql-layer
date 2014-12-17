@@ -115,7 +115,7 @@ public class ServerTransaction
     }
 
     public void afterUpdate() {
-        txnService.checkStatementForeignKeys(session);
+        txnService.checkStatementConstraints(session);
     }
 
     /** Commit transaction. */

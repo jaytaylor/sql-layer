@@ -46,8 +46,10 @@ import java.util.Map;
 
 public class FDBPendingIndexChecks
 {
-    static enum CheckTime { 
+    public static enum CheckTime { 
         IMMEDIATE,
+        STATEMENT,
+        STATEMENT_WITH_RANGE_CACHE,
         DELAYED,
         DELAYED_WITH_RANGE_CACHE,
         // For testing
@@ -59,22 +61,28 @@ public class FDBPendingIndexChecks
             return (this != IMMEDIATE);
         }
 
+        public boolean isStatement() {
+            return (this == STATEMENT) || (this == STATEMENT_WITH_RANGE_CACHE);
+        }
+
         public boolean isTestOnly() {
             return (this == DELAYED_ALWAYS_UNTIL_COMMIT) || (this == DELAYED_WITH_RANGE_CACHE_ALWAYS_UNTIL_COMMIT);
         }
 
         public boolean isRanged() {
-            return (this == DELAYED_WITH_RANGE_CACHE) || (this == DELAYED_WITH_RANGE_CACHE_ALWAYS_UNTIL_COMMIT);
+            return (this == STATEMENT_WITH_RANGE_CACHE) || (this == DELAYED_WITH_RANGE_CACHE) || (this == DELAYED_WITH_RANGE_CACHE_ALWAYS_UNTIL_COMMIT);
         }
 
         public CheckTime getNonRanged() {
             switch(this) {
-                case DELAYED_WITH_RANGE_CACHE:
-                    return DELAYED;
-                case DELAYED_WITH_RANGE_CACHE_ALWAYS_UNTIL_COMMIT:
-                    return DELAYED_ALWAYS_UNTIL_COMMIT;
-                default:
-                    return this;
+            case STATEMENT_WITH_RANGE_CACHE:
+                return STATEMENT;
+            case DELAYED_WITH_RANGE_CACHE:
+                return DELAYED;
+            case DELAYED_WITH_RANGE_CACHE_ALWAYS_UNTIL_COMMIT:
+                return DELAYED_ALWAYS_UNTIL_COMMIT;
+            default:
+                return this;
             }
         }
     }
@@ -156,7 +164,15 @@ public class FDBPendingIndexChecks
 
         public boolean delayOrDefer(CheckTime checkTime, CheckPass pass,
                                     Session session, TransactionState txn, Index index) {
-            return (checkTime.isDelayed() && (pass != CheckPass.TRANSACTION));
+            switch (pass) {
+            case ROW:
+                return checkTime.isDelayed();
+            case STATEMENT:
+                return !checkTime.isStatement();
+            case TRANSACTION:
+            default:
+                return false;
+            }
         }
 
         public void blockUntilReady(TransactionState txn) {
