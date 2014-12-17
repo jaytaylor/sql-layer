@@ -178,7 +178,7 @@ public class NestedLoopMapper extends BaseRule
                                                                           firstCondition.getSQLtype(),
                                                                           firstCondition.getSQLsource(),
                                                                           firstCondition.getType());
-        TValidatedScalar validatedScalarAnd = new TValidatedScalar(BoolLogic.BINARIES[0]); // and
+        TValidatedScalar validatedScalarAnd = new TValidatedScalar(BoolLogic.AND); // and
         condition.setResolved(validatedScalarAnd);
         List<ConditionExpression> newConditionList = new ArrayList<ConditionExpression>();
         newConditionList.add(condition);
