@@ -456,7 +456,8 @@ class Map_NestedLoops extends Operator
                 if (!innerInput.isClosed())
                     innerInput.close();
             } finally {
-                closeOuter();
+                outerRow = null;
+                outerInput.close();
             }
         }
 
@@ -511,12 +512,6 @@ class Map_NestedLoops extends Operator
                 }
             }
             return outputRow;
-        }
-
-        private void closeOuter()
-        {
-            outerRow = null;
-            outerInput.close();
         }
 
         private void startNewInnerLoop(Row row)
