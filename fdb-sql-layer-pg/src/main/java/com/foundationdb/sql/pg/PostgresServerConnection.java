@@ -1414,7 +1414,7 @@ public class PostgresServerConnection extends ServerSessionBase
         else if ("DateStyle".equals(key))
             return "ISO, MDY";
         else if ("transaction_isolation".equals(key))
-            return "serializable";
+            return getTransactionIsolationLevel().getSyntax().toLowerCase();
         else if ("integer_datetimes".equals(key))
             return "on";
         else if ("standard_conforming_strings".equals(key))
