@@ -362,10 +362,28 @@ class AncestorLookup_Nested extends Operator
             super.open();
             Row rowFromBindings = bindings.getRow(inputBindingPosition);
             assert rowFromBindings.rowType() == rowType : rowFromBindings;
-            for (int i = 0; i < hKeys.length; i++) {
-                hKeys[i] = rowFromBindings.ancestorHKey(ancestors.get(i));
-                cursors[i].rebind(hKeys[i], false);
-                cursors[i].open();
+            try {
+                for (int i = 0; i < hKeys.length; i++) {
+                    hKeys[i] = rowFromBindings.ancestorHKey(ancestors.get(i));
+                    cursors[i].rebind(hKeys[i], false);
+                    cursors[i].open();
+                }
+            } catch (Exception e) {
+                try {
+                    for (GroupCursor c : cursors) {
+                        try {
+                            if (!c.isClosed()) {
+                                c.close();
+                            }
+                        } catch (Exception innerE) {
+                            LOG.warn("Failed to close cursor", e);
+                        }
+                    }
+                } catch (Exception innerE2) {
+                    LOG.warn("Failed to close nested cursors", e);
+                } finally {
+                    throw e;
+                }
             }
             cursorIndex = 0;
         }
