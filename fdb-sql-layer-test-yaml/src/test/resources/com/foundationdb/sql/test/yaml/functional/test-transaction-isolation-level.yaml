@@ -13,5 +13,10 @@
 - Statement: SHOW TRANSACTION ISOLATION LEVEL
 - output: [['serializable']]
 ---
+- Statement: SET TRANSACTION ISOLATION LEVEL SNAPSHOT
+---
+- Statement: SHOW TRANSACTION ISOLATION LEVEL
+- output: [['snapshot']]
+---
 - Statement: ROLLBACK
 ...

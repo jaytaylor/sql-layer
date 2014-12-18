@@ -516,10 +516,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     @Override
     public int getTransactionIsolation() throws SQLException {
-        IsolationLevel level = transactionDefaultIsolationLevel;
-        if (level == IsolationLevel.UNSPECIFIED_ISOLATION_LEVEL)
-            level = getTransactionService().actualIsolationLevel(level);
-        switch (level) {
+        switch (getTransactionIsolationLevel()) {
         case READ_COMMITTED_NO_SNAPSHOT_ISOLATION_LEVEL:
             if (setNonStandardIsolationLevel)
                 return TRANSACTION_READ_COMMITTED_NO_SNAPSHOT;
