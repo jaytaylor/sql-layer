@@ -30,13 +30,15 @@ public class JDBCDriver implements Driver, ServerMonitor {
     public static final String URL = "jdbc:default:connection";
 
     private final ServerServiceRequirements reqs;
+    private final Properties properties;
     private long startTime;
     private int nconnections;
 
     private static final Logger logger = LoggerFactory.getLogger(JDBCDriver.class);
 
-    protected JDBCDriver(ServerServiceRequirements reqs) {
+    protected JDBCDriver(ServerServiceRequirements reqs, Properties properties) {
         this.reqs = reqs;
+        this.properties = properties;
     }
 
     public void register() throws SQLException {
@@ -56,7 +58,13 @@ public class JDBCDriver implements Driver, ServerMonitor {
     public Connection connect(String url, Properties info) throws SQLException {
         if (!url.equals(URL)) return null;
         nconnections++;
-        return new JDBCConnection(reqs, info);
+        Properties connProps = new Properties(properties);
+        if (info != null) {
+            for (String prop : info.stringPropertyNames()) { // putAll would not inherit.
+                connProps.put(prop, info.getProperty(prop));
+            }
+        }
+        return new JDBCConnection(reqs, connProps);
     }
 
     @Override
