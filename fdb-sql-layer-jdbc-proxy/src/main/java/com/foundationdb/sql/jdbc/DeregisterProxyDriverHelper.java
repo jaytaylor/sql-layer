@@ -21,6 +21,7 @@ import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+@SuppressWarnings("unused") // Instantiated via name by fdb-sql-layer-core
 public class DeregisterProxyDriverHelper {
 
     public void deregisterProxy(Driver driver) throws SQLException {
