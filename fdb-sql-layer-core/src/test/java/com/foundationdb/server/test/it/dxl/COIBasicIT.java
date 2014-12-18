@@ -41,8 +41,6 @@ import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.PrimaryKey;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.server.api.dml.scan.NewRow;
-import com.foundationdb.server.api.dml.scan.NewRowBuilder;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.UnsupportedDropException;
 
