@@ -69,11 +69,6 @@ public abstract class TScalarBase implements TScalar {
     }
 
     @Override
-    public Predicate<List<? extends TPreptimeValue>> isCandidate() {
-        return null;
-    }
-
-    @Override
     public void finishPreptimePhase(TPreptimeContext context) {
     }
 

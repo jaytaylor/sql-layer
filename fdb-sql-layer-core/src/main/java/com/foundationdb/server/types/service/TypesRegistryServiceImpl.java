@@ -161,11 +161,6 @@ public final class TypesRegistryServiceImpl
                     public TValidatedScalar apply(TScalar input) {
                         return new TValidatedScalar(input);
                     }
-                }, new Function<TValidatedScalar, TValidatedScalar>() {
-                    @Override
-                    public TValidatedScalar apply(TValidatedScalar input) {
-                        return input.createCommuted();
-                    }
                 }
         );
         scalarsResolver = new OverloadResolver<>(scalarsRegistry, castsResolver);
@@ -179,8 +174,7 @@ public final class TypesRegistryServiceImpl
                     public TValidatedAggregator apply(TAggregator input) {
                         return new TValidatedAggregator(input);
                     }
-                },
-                null
+                }
         );
         aggregatesResolver = new OverloadResolver<>(aggreatorsRegistry, castsResolver);
 
