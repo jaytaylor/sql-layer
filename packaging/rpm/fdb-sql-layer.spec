@@ -73,7 +73,6 @@ rm -rf "${RPM_BUILD_ROOT}"
 
 %files
 %defattr(-,root,root)
-%dir /etc/foundationdb
 %config(noreplace) /etc/foundationdb/sql
 %doc /usr/share/doc/fdb-sql-layer
 %dir /usr/share/foundationdb
