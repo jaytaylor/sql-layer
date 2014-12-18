@@ -21,7 +21,6 @@ import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.NoSuchCastException;
 import com.foundationdb.server.types.InputSetFlags;
 import com.foundationdb.server.types.TClass;
-import com.foundationdb.server.types.TCommutativeOverloads;
 import com.foundationdb.server.types.TOverload;
 import com.foundationdb.server.types.aksql.AkBundle;
 import com.foundationdb.server.types.common.types.NoAttrTClass;
@@ -83,11 +82,10 @@ final class ResolvablesRegistry<V extends TValidatedOverload> implements Iterabl
     ResolvablesRegistry<V> create(InstanceFinder finder,
                                   TCastResolver castResolver,
                                   Class<R> plainClass,
-                                  Function<R, V> validator,
-                                  Function<V, V> commutor)
+                                  Function<R, V> validator)
     {
         ListMultimap<String, ScalarsGroup<V>> overloadsByName = createScalars(finder, castResolver, plainClass,
-                                                                              validator, commutor);
+                                                                              validator);
         return new ResolvablesRegistry<>(overloadsByName);
     }
 
@@ -99,20 +97,8 @@ final class ResolvablesRegistry<V extends TValidatedOverload> implements Iterabl
     ListMultimap<String, ScalarsGroup<V>> createScalars(InstanceFinder finder,
                                                         TCastResolver castResolver,
                                                         Class<R> plainClass,
-                                                        Function<R, V> validator,
-                                                        Function<V, V> commutor)
+                                                        Function<R, V> validator)
     {
-
-        Set<TOverload> commutedOverloads;
-        if (commutor != null) {
-            commutedOverloads = new HashSet<>();
-            for (TCommutativeOverloads commutativeOverloads : finder.find(TCommutativeOverloads.class)) {
-                commutativeOverloads.addTo(commutedOverloads);
-            }
-        }
-        else {
-            commutedOverloads = null;
-        }
         Multimap<String, V> overloadsByName = ArrayListMultimap.create();
 
         int errors = 0;
@@ -126,12 +112,6 @@ final class ResolvablesRegistry<V extends TValidatedOverload> implements Iterabl
 
                 for (String name : names)
                     overloadsByName.put(name, validated);
-
-                if ((commutedOverloads != null) && commutedOverloads.remove(scalar)) {
-                    V commuted = commutor.apply(validated);
-                    for (String name : names)
-                        overloadsByName.put(name, commuted);
-                }
             } catch (RuntimeException e) {
                 rejectTOverload(scalar, e);
                 ++errors;
@@ -139,10 +119,6 @@ final class ResolvablesRegistry<V extends TValidatedOverload> implements Iterabl
                 rejectTOverload(scalar, e);
                 ++errors;
             }
-        }
-        if ((commutedOverloads != null) && (!commutedOverloads.isEmpty())) {
-            logger.error("overload(s) were marked as commutative, but not found: {}", commutedOverloads);
-            ++errors;
         }
 
         if (errors > 0) {

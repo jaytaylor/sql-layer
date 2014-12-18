@@ -57,14 +57,6 @@ public class TValidatedOverload implements TOverload {
     }
 
     @Override
-    public Predicate<List<? extends TPreptimeValue>> isCandidate() {
-        Predicate<List<? extends TPreptimeValue>> overloadIsCandidate = overload.isCandidate();
-        return (overloadIsCandidate == null)
-                ? Predicates.<List<? extends TPreptimeValue>>alwaysTrue()
-                : overloadIsCandidate;
-    }
-
-    @Override
     public boolean equals(Object obj) {
         return (obj instanceof TOverload) && overload.equals(obj);
     }
