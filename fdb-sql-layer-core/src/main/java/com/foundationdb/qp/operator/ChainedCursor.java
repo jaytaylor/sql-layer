@@ -66,7 +66,9 @@ public class ChainedCursor extends OperatorCursor
     protected ChainedCursor(QueryContext context, Cursor input) {
         super(context);
         this.input = input;
-        assert input != null;
+        if (input == null) {
+            throw new NullPointerException("Input to ChainedCursor");
+        }
     }
 
     public Cursor getInput() {
