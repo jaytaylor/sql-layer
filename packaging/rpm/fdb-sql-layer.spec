@@ -87,10 +87,10 @@ rm -rf "${RPM_BUILD_ROOT}"
   %attr(755,-,-) /etc/rc.d/init.d/fdb-sql-layer
 %else
   %if %{_el_version} == el7
-    %attr(600,-,-) /etc/tmpfiles.d/fdb-sql-layer.conf
     %attr(644,-,-) /lib/systemd/system/fdb-sql-layer.service
   %else
     %{error: unexpected _el_version %{_el_version}}
   %endif
 %endif
 %attr(755,-,-) /usr/sbin/fdbsqllayer
+
