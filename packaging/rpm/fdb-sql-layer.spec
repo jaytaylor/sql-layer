@@ -4,11 +4,12 @@
 %{!?_fdb_sql_layer_jar: %{error: required _fdb_sql_layer_jar}}
 %{!?_fdb_sql_layer_rf_jar: %{error: required _fdb_sql_layer_rf_jar}}
 %{!?_fdb_sql_epoch: %{error: required _fdb_sql_epoch}}
+%{!?_el_version: %{error: required _el_version}}
 
 
 Name:       fdb-sql-layer
 Version:    %{_fdb_sql_version}
-Release:    %{_fdb_sql_release}%{?dist}
+Release:    %{_fdb_sql_release}.%{_el_version}
 Group:      Applications/Databases
 License:    AGPLv3
 URL:        https://foundationdb.com/layers/sql

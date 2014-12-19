@@ -208,13 +208,17 @@ case "${1}" in
         fi
 
         mkdir -p "${STAGE_ROOT}"/{SOURCES,SRPMS,RPMS/noarch}
-        rpmbuild --target=noarch -bb "${PACKAGING_DIR}/rpm/fdb-sql-layer.spec" \
-            --define "_topdir ${STAGE_ROOT}" \
-            --define "_fdb_sql_version ${LAYER_VERSION}" \
-            --define "_fdb_sql_release ${RELEASE}" \
-            --define "_fdb_sql_layer_jar ${LAYER_JAR_NAME}" \
-            --define "_fdb_sql_layer_rf_jar ${RF_JAR_NAME}" \
-            --define "_fdb_sql_epoch ${EPOCH}"
+        for EL_VERSION in "el6" "el7"
+        do
+            rpmbuild --target=noarch -bb "${PACKAGING_DIR}/rpm/fdb-sql-layer.spec" \
+                --define "_topdir ${STAGE_ROOT}" \
+                --define "_fdb_sql_version ${LAYER_VERSION}" \
+                --define "_fdb_sql_release ${RELEASE}" \
+                --define "_fdb_sql_layer_jar ${LAYER_JAR_NAME}" \
+                --define "_fdb_sql_layer_rf_jar ${RF_JAR_NAME}" \
+                --define "_fdb_sql_epoch ${EPOCH}" \
+                --define "_el_version ${EL_VERSION}"
+        done
             
 
         mv "${STAGE_ROOT}"/RPMS/noarch/* "${TOP_DIR}/target/"
