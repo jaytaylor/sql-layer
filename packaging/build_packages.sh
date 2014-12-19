@@ -218,15 +218,16 @@ case "${1}" in
         fi
 
         mkdir -p "${STAGE_ROOT}"/{SOURCES,SRPMS,RPMS/noarch}
-        # build for el6
+
+        echo "# building for el6"
         mkdir -p "${BUILD_DIR}/etc/rc.d/init.d/"
         cp "${PACKAGING_DIR}/rpm/fdb-sql-layer.init" "${BUILD_DIR}/etc/rc.d/init.d/fdb-sql-layer"
         build_rpm "el6"
         rm -rf "${BUILD_DIR}/etc/rc.d/init.d/"
-        # build for el7
-        mkdir -p "${BUILD_DIR}/lib/systemd"
-        echo cp "${PACKAGING_DIR}/rpm/fdb-sql-layer.service" "${BUILD_DIR}/lib/systemd/fdb-sql-layer.service"
-        cp "${PACKAGING_DIR}/rpm/fdb-sql-layer.service" "${BUILD_DIR}/lib/systemd/fdb-sql-layer.service"
+
+        echo "# building for el7"
+        mkdir -p "${BUILD_DIR}/lib/systemd/system"
+        cp "${PACKAGING_DIR}/rpm/fdb-sql-layer.service" "${BUILD_DIR}/lib/systemd/system/fdb-sql-layer.service"
         build_rpm "el7"
         rm -rf "${BUILD_DIR}/lib/systemd"
 
