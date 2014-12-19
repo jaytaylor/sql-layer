@@ -80,6 +80,14 @@ rm -rf "${RPM_BUILD_ROOT}"
 /usr/share/foundationdb/sql/
 %attr(700,foundationdb,foundationdb) /var/lib/foundationdb/sql
 %attr(700,foundationdb,foundationdb) /var/log/foundationdb/sql
-%attr(755,-,-) /etc/rc.d/init.d/fdb-sql-layer
+%if %{_el_version} == el6
+  %attr(755,-,-) /etc/rc.d/init.d/fdb-sql-layer
+%else
+  %if %{_el_version} == el7
+    %{error: el7 init script}}
+  %else
+    %{error: unexpected _el_version %{_el_version}}
+  %endif
+%endif
 %attr(755,-,-) /usr/sbin/fdbsqllayer
 
