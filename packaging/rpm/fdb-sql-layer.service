@@ -4,11 +4,12 @@ After=syslog.target network.target
 
 [Service]
 Type=forking
-PIDFile=/var/run/fdb-sql-layer.pid
+RuntimeDirectory=fdb-sql-layer
+PIDFile=/var/run/fdb-sql-layer/fdb-sql-layer.pid
 User=foundationdb
 StandardOutput=/var/log/foundationdb/sql/stdout.log
 StandardError=inherit
-ExecStart=/usr/sbin/fdbsqllayer -H /usr/share/foundationdb/sql -c /etc/foundationdb/sql -p /var/run/fdb-sql-layer.pid -q
+ExecStart=/usr/sbin/fdbsqllayer -H /usr/share/foundationdb/sql -c /etc/foundationdb/sql -p /var/run/fdb-sql-layer/fdb-sql-layer.pid -q
 KillMode=process
 
 [Install]

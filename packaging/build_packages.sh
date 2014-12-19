@@ -151,7 +151,7 @@ filter_config_files() {
 
 # $1 el6 or el7
 build_rpm() {
-    rpmbuild --target=noarch -bb "${PACKAGING_DIR}/rpm/fdb-sql-layer.spec" \
+    rpmbuild --quiet --target=noarch -bb "${PACKAGING_DIR}/rpm/fdb-sql-layer.spec" \
         --define "_topdir ${STAGE_ROOT}" \
         --define "_fdb_sql_version ${LAYER_VERSION}" \
         --define "_fdb_sql_release ${RELEASE}" \
