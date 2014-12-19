@@ -194,6 +194,7 @@ public enum ErrorCode {
 
         // SubClass 6xx - Spatial objects
     INVALID_SPATIAL_OBJECT("22", "601", Importance.DEBUG, InvalidSpatialObjectException.class),
+    UNSUPPORTED_SPATIAL_CAST("22", "602", Importance.DEBUG, UnsupportedSpatialCast.class),
 
     // Class 23 - integrity constraint violation
     DUPLICATE_KEY           ("23", "501", Importance.DEBUG, DuplicateKeyException.class),

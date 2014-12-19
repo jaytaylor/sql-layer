@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 FoundationDB, LLC
+ * Copyright (C) 2009-2014 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -17,13 +17,9 @@
 
 package com.foundationdb.server.error;
 
-public class InvalidSpatialObjectException extends InvalidOperationException
+public class UnsupportedSpatialCast extends InvalidOperationException
 {
-    public InvalidSpatialObjectException() {
-        this("");
-    }
-
-    public InvalidSpatialObjectException(String message) {
-        super(ErrorCode.INVALID_SPATIAL_OBJECT, message);
+    public UnsupportedSpatialCast() {
+        super(ErrorCode.UNSUPPORTED_SPATIAL_CAST);
     }
 }
