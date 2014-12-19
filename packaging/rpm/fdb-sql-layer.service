@@ -1,0 +1,15 @@
+[Unit]
+Description=FoundationDB SQL Layer
+After=syslog.target network.target
+
+[Service]
+Type=forking
+PIDFile=/var/run/fdbmonitor.pid
+User=foundationdb
+StandardOutput=/var/log/foundationdb/sql/stdout.log
+StandardError=inherit
+ExecStart=/usr/sbin/fdbsqllayer -H /usr/share/foundationdb/sql -c /etc/foundationdb/sql -p /var/run/fdbmonitor.pid -q
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target

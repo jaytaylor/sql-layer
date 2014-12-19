@@ -149,6 +149,18 @@ filter_config_files() {
     popd
 }
 
+# $1 el6 or el7
+build_rpm() {
+    rpmbuild --target=noarch -bb "${PACKAGING_DIR}/rpm/fdb-sql-layer.spec" \
+        --define "_topdir ${STAGE_ROOT}" \
+        --define "_fdb_sql_version ${LAYER_VERSION}" \
+        --define "_fdb_sql_release ${RELEASE}" \
+        --define "_fdb_sql_layer_jar ${LAYER_JAR_NAME}" \
+        --define "_fdb_sql_layer_rf_jar ${RF_JAR_NAME}" \
+        --define "_fdb_sql_epoch ${EPOCH}" \
+        --define "_el_version ${1}"
+}
+
 case "${1}" in
     "deb")
         umask 0022
@@ -197,8 +209,6 @@ case "${1}" in
         BUILD_DIR="${STAGE_ROOT}/BUILD"
         build_sql_layer "${BUILD_DIR}/usr/sbin" "${BUILD_DIR}/usr/share/foundationdb/sql"
         filter_config_files "${BUILD_DIR}/etc/foundationdb/sql" "/var/lib/foundationdb/sql" "/var/log/foundationdb/sql" "/tmp"
-        mkdir -p "${BUILD_DIR}/etc/rc.d/init.d/"
-        cp "${PACKAGING_DIR}/rpm/fdb-sql-layer.init" "${BUILD_DIR}/etc/rc.d/init.d/fdb-sql-layer"
         
         mkdir -p "${BUILD_DIR}/usr/share/doc/fdb-sql-layer/"
         cp "${TOP_DIR}/LICENSE.txt" ${BUILD_DIR}/usr/share/doc/fdb-sql-layer/LICENSE
@@ -208,18 +218,17 @@ case "${1}" in
         fi
 
         mkdir -p "${STAGE_ROOT}"/{SOURCES,SRPMS,RPMS/noarch}
-        for EL_VERSION in "el6" "el7"
-        do
-            rpmbuild --target=noarch -bb "${PACKAGING_DIR}/rpm/fdb-sql-layer.spec" \
-                --define "_topdir ${STAGE_ROOT}" \
-                --define "_fdb_sql_version ${LAYER_VERSION}" \
-                --define "_fdb_sql_release ${RELEASE}" \
-                --define "_fdb_sql_layer_jar ${LAYER_JAR_NAME}" \
-                --define "_fdb_sql_layer_rf_jar ${RF_JAR_NAME}" \
-                --define "_fdb_sql_epoch ${EPOCH}" \
-                --define "_el_version ${EL_VERSION}"
-        done
-            
+        # build for el6
+        mkdir -p "${BUILD_DIR}/etc/rc.d/init.d/"
+        cp "${PACKAGING_DIR}/rpm/fdb-sql-layer.init" "${BUILD_DIR}/etc/rc.d/init.d/fdb-sql-layer"
+        build_rpm "el6"
+        rm -rf "${BUILD_DIR}/etc/rc.d/init.d/"
+        # build for el7
+        mkdir -p "${BUILD_DIR}/lib/systemd"
+        echo cp "${PACKAGING_DIR}/rpm/fdb-sql-layer.service" "${BUILD_DIR}/lib/systemd/fdb-sql-layer.service"
+        cp "${PACKAGING_DIR}/rpm/fdb-sql-layer.service" "${BUILD_DIR}/lib/systemd/fdb-sql-layer.service"
+        build_rpm "el7"
+        rm -rf "${BUILD_DIR}/lib/systemd"
 
         mv "${STAGE_ROOT}"/RPMS/noarch/* "${TOP_DIR}/target/"
     ;;
