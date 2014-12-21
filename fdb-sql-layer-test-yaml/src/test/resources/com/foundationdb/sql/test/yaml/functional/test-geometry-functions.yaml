@@ -1,0 +1,31 @@
+---
+- Statement: SELECT GEO_TYPE_STRING( GEO_WKT('point(0 0)') )
+- output: [['Point']]
+---
+- Statement: SELECT GEO_TYPE_STRING( NULL )
+- output: [[null]]
+---
+- Statement: SELECT GEO_TYPE_STRING( GEO_WKT( NULL ) )
+- output: [[null]]
+
+---
+- Statement: SELECT GEO_TYPE_STRING( GEO_WKT(?) )
+- params: [['polygon((0 0, 10 0, 10 10, 0 10, 0 0))']]
+- output: [['Polygon']]
+---
+- Statement: SELECT GEO_TYPE_STRING( GEO_WKT(?) )
+- params: [[null]]
+- output: [[null]]
+
+---
+- Statement: CREATE TABLE t(g GEOMETRY)
+- error: [55001] # UNKNOWN_DATA_TYPE
+---
+- Statement: CREATE TABLE t AS SELECT GEO_WKT('point(0 0)') WITH DATA
+- error: [55001] # UNKNOWN_DATA_TYPE
+---
+- Statement: SELECT GEO_WKT('foo(1 2 3)')
+- error: [22601] # INVALID_SPATIAL_OBJECT
+---
+- Statement: SELECT GEO_TYPE_STRING( 'point(0 0)' )
+- error: [22602] # UNSUPPORTED_SPATIAL_CAST
