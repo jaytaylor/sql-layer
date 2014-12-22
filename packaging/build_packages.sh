@@ -226,10 +226,12 @@ case "${1}" in
         rm -rf "${BUILD_DIR}/etc/rc.d/init.d/"
 
         echo "# building for el7"
+        mkdir -p "${BUILD_DIR}/run/fdb-sql-layer"
         mkdir -p "${BUILD_DIR}/lib/systemd/system"
         cp "${PACKAGING_DIR}/rpm/fdb-sql-layer.service" "${BUILD_DIR}/lib/systemd/system/fdb-sql-layer.service"
         build_rpm "el7"
         rm -rf "${BUILD_DIR}/lib/systemd"
+        rm -rf "${BUILD_DIR}/run/fdb-sql-layer"
 
         mv "${STAGE_ROOT}"/RPMS/noarch/* "${TOP_DIR}/target/"
     ;;

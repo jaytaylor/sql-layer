@@ -88,7 +88,6 @@ rm -rf "${RPM_BUILD_ROOT}"
 %else
   %if %{_el_version} == el7
     %attr(644,-,-) /lib/systemd/system/fdb-sql-layer.service
-    %dir /run/fdb-sql-layer
     %attr(755,foundationdb,foundationdb) /run/fdb-sql-layer
   %else
     %{error: unexpected _el_version %{_el_version}}
