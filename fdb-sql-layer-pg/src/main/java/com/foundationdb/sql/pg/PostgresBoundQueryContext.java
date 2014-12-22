@@ -101,6 +101,9 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
         return super.finishCursor(generator, cursor, nrows, suspended);
     }
 
+    /**
+     * Closes this context, and any suspended cursors. You should call finishCursor on any cursors before calling this.
+     */
     protected void close() {
         if (cursor != null) {
             cursor.close();

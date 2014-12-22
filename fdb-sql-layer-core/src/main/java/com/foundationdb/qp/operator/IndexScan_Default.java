@@ -336,8 +336,11 @@ class IndexScan_Default extends Operator
 
         @Override
         public void close() {
-            cursor.close();
-            super.close();
+            try {
+                cursor.close();
+            } finally {
+                super.close();
+            }
         }
 
         @Override

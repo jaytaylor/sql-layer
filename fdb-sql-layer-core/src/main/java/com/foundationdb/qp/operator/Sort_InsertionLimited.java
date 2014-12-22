@@ -281,10 +281,6 @@ class Sort_InsertionLimited extends Operator
         @Override
         public void close()
         {
-            // This cursor may never be opened if started with limit 0
-            if (CURSOR_LIFECYCLE_ENABLED) {
-                CursorLifecycle.checkIdleOrActive(this);
-            }
             super.close();
             if (limit > 0) {
                 if (sorted != null) {

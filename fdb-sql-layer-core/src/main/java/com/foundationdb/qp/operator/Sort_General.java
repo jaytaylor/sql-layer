@@ -201,12 +201,7 @@ class Sort_General extends Operator
         @Override
         public void close()
         {
-            //NOTE: Not calling super.close() because the
-            // sorter has already closed the input. 
-            if (CURSOR_LIFECYCLE_ENABLED) {
-                CursorLifecycle.checkIdleOrActive(this);
-            }
-            state = CursorLifecycle.CursorState.CLOSED;
+            super.close();
             output.close();
         }
 

@@ -107,7 +107,7 @@ public class SubqueryFlattener
         }
         flattenFromList(selectNode, parentNode);
 
-        // After CFN, only possibilities are AND and nothing.
+        // After CNF, only possibilities are AND and nothing.
         if (selectNode.getWhereClause() != null) {
             AndNode andNode = (AndNode)selectNode.getWhereClause();
             andNode(andNode);
