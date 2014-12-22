@@ -23,7 +23,15 @@ Epoch:      %{_fdb_sql_epoch}
 %endif
 
 Requires:       jre >= 1.7.0, foundationdb-clients >= 3.0.0
+%if %{_el_version} == el6
 Requires(post): chkconfig >= 0.9, /sbin/service
+%else
+%if %{_el_version} == el7
+Requires(post): /usr/bin/systemctl
+%else
+%{error: unexpected _el_version %{_el_version}}
+%endif
+%endif
 Requires(pre):  /usr/sbin/useradd, /usr/sbin/groupadd, /usr/bin/getent
 BuildArch:      noarch
 
@@ -45,18 +53,47 @@ getent passwd foundationdb >/dev/null || useradd -c "FoundationDB" -g foundation
 exit 0
 
 %post
+%if %{_el_version} == el7
+  systemctl daemon-reload
+%endif
 if [ $1 -eq 1 ]; then
-    /sbin/chkconfig --add fdb-sql-layer
-    /sbin/service fdb-sql-layer start &>/dev/null
+    %if %{_el_version} == el6
+      /sbin/chkconfig --add fdb-sql-layer
+      /sbin/service fdb-sql-layer start &>/dev/null
+    %else
+      %if %{_el_version} == el7
+        /usr/bin/systemctl enable fdb-sql-layer &>/dev/null
+        /usr/bin/systemctl start fdb-sql-layer &>/dev/null
+      %else
+        %{error: unexpected _el_version %{_el_version}}
+      %endif
+    %endif
 else
-    /sbin/service fdb-sql-layer condrestart &>/dev/null
+    %if %{_el_version} == el6
+      /sbin/service fdb-sql-layer condrestart &>/dev/null
+    %else
+      %if %{_el_version} == el7
+        /usr/bin/systemctl condrestart fdb-sql-layer &>/dev/null
+      %else
+        %{error: unexpected _el_version %{_el_version}}
+      %endif
+    %endif
 fi
 exit 0
 
 %preun
 if [ $1 -eq 0 ]; then
-    /sbin/service fdb-sql-layer stop &>/dev/null
-    /sbin/chkconfig --del fdb-sql-layer
+    %if %{_el_version} == el6
+      /sbin/service fdb-sql-layer stop &>/dev/null
+      /sbin/chkconfig --del fdb-sql-layer
+    %else
+      %if %{_el_version} == el7
+        /usr/bin/systemctl stop fdb-sql-layer &>/dev/null
+        /usr/bin/systemctl disable fdb-sql-layer &>/dev/null
+      %else
+        %{error: unexpected _el_version %{_el_version}}
+      %endif
+    %endif
 fi
 exit 0
 
