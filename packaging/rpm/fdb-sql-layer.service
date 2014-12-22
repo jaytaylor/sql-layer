@@ -4,7 +4,6 @@ After=syslog.target network.target
 
 [Service]
 Type=forking
-RuntimeDirectory=fdb-sql-layer
 PIDFile=/var/run/fdb-sql-layer/fdb-sql-layer.pid
 User=foundationdb
 StandardOutput=/var/log/foundationdb/sql/stdout.log
