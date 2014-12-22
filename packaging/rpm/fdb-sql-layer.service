@@ -9,6 +9,7 @@ User=foundationdb
 StandardOutput=/var/log/foundationdb/sql/stdout.log
 StandardError=inherit
 ExecStart=/usr/sbin/fdbsqllayer -H /usr/share/foundationdb/sql -c /etc/foundationdb/sql -p /var/run/fdb-sql-layer/fdb-sql-layer.pid -q
+SuccessExitStatus=143
 KillMode=process
 
 [Install]
