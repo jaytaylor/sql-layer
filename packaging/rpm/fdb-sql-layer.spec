@@ -67,6 +67,7 @@ mkdir -p "${RPM_BUILD_ROOT}/usr/share/doc/fdb-sql-layer"
 cp -r etc/ "${RPM_BUILD_ROOT}/"
 %if %{_el_version} == el7
   cp -r lib/ "${RPM_BUILD_ROOT}/"
+  cp -r run/ "${RPM_BUILD_ROOT}/"
 %endif
 cp -r usr/ "${RPM_BUILD_ROOT}/"
 ln -s /usr/share/foundationdb/sql/%{_fdb_sql_layer_jar} "${RPM_BUILD_ROOT}/usr/share/foundationdb/sql/fdb-sql-layer.jar"
