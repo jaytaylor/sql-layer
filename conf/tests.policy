@@ -19,10 +19,8 @@ grant codeBase "file:${mvn.settings.localRepository}/-" {
 };
 
 grant {
-  permission java.io.FilePermission "<<ALL FILES>>", "read,write";
   permission java.io.FilePermission "${java.io.tmpdir}${/}-", "read,write,delete";
-  /*  permission java.lang.RuntimePermission "loadLibrary.*";*/
-  permission java.io.FilePermission "${mvn.main.basedir}/target/surefire/-", "read,write";
+  permission java.io.FilePermission "${mvn.main.basedir}/*/target/surefire/-", "read,write";
   permission java.util.PropertyPermission "taps_default_on", "read";
 };
 
