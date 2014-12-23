@@ -11,18 +11,7 @@ grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-core/plugins/
 
 grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-core/fdb-sql-layer-routinefw/target/*" {
 };
-/*
-grant codeBase "file:/Users/scott/.m2/repository/org/apache/maven/surefire/-" {
-  permission java.security.AllPermission;
-};
-grant codeBase "file:/Users/scott/.m2/repository/com/google/inject/guice/-" {
-  permission java.lang.RuntimePermission "accessDeclaredMembers";
-  permission java.lang.RuntimePermission "getProtectionDomain";
-  permission java.lang.RuntimePermission "getProtectionDomain";
-  permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
-  permission java.util.PropertyPermission "*", "read";
-};
-*/
+
 grant codeBase "file:/Users/scott/.m2/repository/-" {
   permission java.security.AllPermission;
   permission java.util.PropertyPermission "*", "read";
@@ -31,22 +20,10 @@ grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-jdbc-proxy/ta
   permission java.security.AllPermission;
 };
 
-/*
-grant codeBase "file:/Users/scott/.m2/repository/junit/-" {
-  permission java.security.AllPermission;
-};
-
-grant codeBase "file:/Users/scott/.m2/repository/com/google/guava/-" {
-  permission java.security.AllPermission;
-};
-*/
-
 grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-core/target/classes/-" {
-/*  permission java.util.PropertyPermission "*", "read,write"; */
   permission java.security.AllPermission;
 };
 grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-pg/target/classes/-" {
-/*  permission java.util.PropertyPermission "*", "read,write"; */
   permission java.security.AllPermission;
 };
 grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-core/target/test-classes/-" {
