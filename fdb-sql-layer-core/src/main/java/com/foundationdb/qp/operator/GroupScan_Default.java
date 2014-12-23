@@ -375,6 +375,7 @@ class GroupScan_Default extends Operator
             atTable = atTable.getParentTable();
             HKey hkey = getHKeyFromBindings();
             hkey.useSegments(atTable.getDepth() + 1);
+            input.rebind(hkey, deep);
             input.open();
             return next();
         }
