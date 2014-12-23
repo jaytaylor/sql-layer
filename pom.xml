@@ -107,7 +107,10 @@
                         <fdbsql.port>${fdbsql.port}</fdbsql.port>
                         <fdbsql.postgres.port>${fdbsql.postgres.port}</fdbsql.postgres.port>
                     </systemPropertyVariables>
-                    <argLine>-Xmx512m ${fdbsql.test.extraJvmArgs} ${fdbsql.test.JmxJvmArgs} ${surefireJacocoArg} </argLine>
+                    <argLine>-Xmx512m ${fdbsql.test.extraJvmArgs} ${fdbsql.test.JmxJvmArgs} ${surefireJacocoArg}</argLine>
+                    <configuration>
+                      <skipTests>true</skipTests>
+                    </configuration>
                     <includes>
                         <include>**/*Test.java</include>
                         <include>**/*Test?.java</include>
@@ -125,8 +128,11 @@
                     <systemPropertyVariables>
                         <fdbsql.port>${fdbsql.port}</fdbsql.port>
                         <fdbsql.postgres.port>${fdbsql.postgres.port}</fdbsql.postgres.port>
+                        <build.basedir>${basedir}</build.basedir>
                     </systemPropertyVariables>
-                    <argLine>-Xmx512m ${fdbsql.test.extraJvmArgs} ${fdbsql.test.JmxJvmArgs} ${failsafeJacocoArg}</argLine>
+
+                    <argLine>-Xmx512m ${fdbsql.test.extraJvmArgs} ${fdbsql.test.JmxJvmArgs} ${failsafeJacocoArg} -Djava.security.debug="access,failure"
+                             -Djava.security.manager -Djava.security.policy=${basedir}/src/test/resources/java.policy</argLine>
                 </configuration>
                 <executions>
                     <execution>

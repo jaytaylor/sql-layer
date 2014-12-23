@@ -1,0 +1,63 @@
+/* Policy file limiting the permissions for routines
+   Testing version */
+
+grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-core/target/-" {
+  permission java.security.AllPermission;
+};
+
+grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-core/plugins/-" {
+  permission java.security.AllPermission;
+};
+
+grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-core/fdb-sql-layer-routinefw/target/*" {
+};
+/*
+grant codeBase "file:/Users/scott/.m2/repository/org/apache/maven/surefire/-" {
+  permission java.security.AllPermission;
+};
+grant codeBase "file:/Users/scott/.m2/repository/com/google/inject/guice/-" {
+  permission java.lang.RuntimePermission "accessDeclaredMembers";
+  permission java.lang.RuntimePermission "getProtectionDomain";
+  permission java.lang.RuntimePermission "getProtectionDomain";
+  permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
+  permission java.util.PropertyPermission "*", "read";
+};
+*/
+grant codeBase "file:/Users/scott/.m2/repository/-" {
+  permission java.security.AllPermission;
+  permission java.util.PropertyPermission "*", "read";
+};
+grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-jdbc-proxy/target/-" {
+  permission java.security.AllPermission;
+};
+
+/*
+grant codeBase "file:/Users/scott/.m2/repository/junit/-" {
+  permission java.security.AllPermission;
+};
+
+grant codeBase "file:/Users/scott/.m2/repository/com/google/guava/-" {
+  permission java.security.AllPermission;
+};
+*/
+
+grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-core/target/classes/-" {
+/*  permission java.util.PropertyPermission "*", "read,write"; */
+  permission java.security.AllPermission;
+};
+grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-core/target/test-classes/-" {
+  permission java.security.AllPermission;
+  permission java.util.PropertyPermission "it.taps", "read";
+    permission java.util.PropertyPermission "log4j.*", "read";
+  /* at com.foundationdb.server.test.ApiTestBase.startTestServices(ApiTestBase.java:194) */
+  permission java.util.PropertyPermission "user.home", "read";
+  permission java.util.PropertyPermission "fdbsql.home", "write";
+};
+
+grant {
+  permission java.io.FilePermission "<<ALL FILES>>", "read,write";
+  permission java.io.FilePermission "${java.io.tmpdir}${/}-", "read,write,delete";
+  /*  permission java.lang.RuntimePermission "loadLibrary.*";*/
+  permission java.io.FilePermission "${build.basedir}/target/surefire/-", "read,write";
+};
+
