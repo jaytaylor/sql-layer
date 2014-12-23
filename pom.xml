@@ -132,7 +132,7 @@
                     </systemPropertyVariables>
 
                     <argLine>-Xmx512m ${fdbsql.test.extraJvmArgs} ${fdbsql.test.JmxJvmArgs} ${failsafeJacocoArg} -Djava.security.debug="access,failure"
-                             -Djava.security.manager -Djava.security.policy=${basedir}/src/test/resources/java.policy</argLine>
+                             -Djava.security.manager -Djava.security.policy=${main.basedir}/tests.policy</argLine>
                 </configuration>
                 <executions>
                     <execution>
