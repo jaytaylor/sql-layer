@@ -125,10 +125,10 @@
                     <systemPropertyVariables>
                         <fdbsql.port>${fdbsql.port}</fdbsql.port>
                         <fdbsql.postgres.port>${fdbsql.postgres.port}</fdbsql.postgres.port>
-                        <build.basedir>${basedir}</build.basedir>
                     </systemPropertyVariables>
-<!-- -Djava.security.debug="access,failure"-->
-                    <argLine>-Xmx512m ${fdbsql.test.extraJvmArgs} ${fdbsql.test.JmxJvmArgs} ${failsafeJacocoArg} -Djava.security.debug="policy"
+                    <argLine>-Xmx512m ${fdbsql.test.extraJvmArgs} ${fdbsql.test.JmxJvmArgs} ${failsafeJacocoArg}
+                              <!-- These two properties have to be set here rather than in the systemPropertyVariables section
+                                   because they bubble into the policy file before failsafe starts setting properties -->
                              -Dmvn.main.basedir=${main.basedir} -Dmvn.settings.localRepository=${settings.localRepository}
                              -Djava.security.manager -Djava.security.policy=${main.basedir}/tests.policy</argLine>
                 </configuration>
