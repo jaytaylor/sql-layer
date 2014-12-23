@@ -45,13 +45,15 @@ grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-core/target/c
 /*  permission java.util.PropertyPermission "*", "read,write"; */
   permission java.security.AllPermission;
 };
+grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-pg/target/classes/-" {
+/*  permission java.util.PropertyPermission "*", "read,write"; */
+  permission java.security.AllPermission;
+};
 grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-core/target/test-classes/-" {
   permission java.security.AllPermission;
-  permission java.util.PropertyPermission "it.taps", "read";
-    permission java.util.PropertyPermission "log4j.*", "read";
-  /* at com.foundationdb.server.test.ApiTestBase.startTestServices(ApiTestBase.java:194) */
-  permission java.util.PropertyPermission "user.home", "read";
-  permission java.util.PropertyPermission "fdbsql.home", "write";
+};
+grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-pg/target/test-classes/-" {
+  permission java.security.AllPermission;
 };
 
 grant {
