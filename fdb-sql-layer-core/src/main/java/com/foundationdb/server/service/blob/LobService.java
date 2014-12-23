@@ -33,7 +33,7 @@ public interface LobService {
     public Future<DirectorySubspace> getLobSubspace(TransactionContext tcx, List<String> path);
     public BlobAsync getBlob(Subspace subspace);
     public Future<DirectorySubspace> moveLob(TransactionContext tcx, DirectorySubspace sourceSubspace, List<String> targetPath);
-    public Future<Void> removeLob(TransactionContext tcx, DirectorySubspace lob);
+    public Future<Void> removeLob(TransactionContext tcx, List<String> path);
 }
 
 

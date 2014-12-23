@@ -56,9 +56,9 @@ public class LobServiceImpl implements Service, LobService {
     }
 
     @Override
-    public Future<Void> removeLob(TransactionContext tcx, DirectorySubspace lob) {
+    public Future<Void> removeLob(TransactionContext tcx, List<String> path) {
         // leakage of directories (?) perhaps delete parent directory if exists, and empty after removal of this child?
-        return lob.remove(tcx); 
+        return lobDirectory.remove(tcx, path); 
     }
 
     @Override

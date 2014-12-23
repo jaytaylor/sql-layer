@@ -23,6 +23,7 @@ import com.foundationdb.directory.*;
 import com.foundationdb.server.store.*;
 import com.foundationdb.server.test.it.ITBase;
 
+import java.sql.*;
 import java.util.*;
 
 import org.junit.*;
@@ -33,11 +34,6 @@ public class LobServiceIT extends ITBase {
     private String tableName = "table";
     private String columnName = "name";
     private final byte[] data = "foo".getBytes();
-    
-    @Before
-    public void setParameters() {
-        
-    }
     
     @Test
     public void utilizeLobService() {
@@ -65,40 +61,8 @@ public class LobServiceIT extends ITBase {
         Assert.assertArrayEquals(data, output);
         
         // lob removal
-        ls.removeLob(tcx, ds3).get();
+        ls.removeLob(tcx, newPath).get();
         Assert.assertEquals(blob2.getSize(tcx).get().longValue(), 0L);
         Assert.assertFalse(ds3.exists(tcx).get());
-    }
-
-    // move to yaml test?
-    public void testRoutines() {
-        // create lob, write, append, read data
-        String lobName = LobRoutines.createNewLob(schemaName);
-        LobRoutines.writeBlob(0, data, schemaName, lobName);
-        LobRoutines.appendBlob("bar".getBytes(), schemaName, lobName);
-        byte[] res1 = LobRoutines.readBlob(0, 10, schemaName, lobName);
-        Assert.assertArrayEquals("foobar".getBytes(), res1);
-        
-        // move, truncate up, write data
-        LobRoutines.moveBlob(schemaName, lobName, schemaName, tableName, columnName);
-        LobRoutines.truncateBlobInTable(20, schemaName, tableName, columnName, lobName);
-        LobRoutines.writeBlobInTable(7, data, schemaName, tableName, columnName, lobName);
-        byte[] res2 = LobRoutines.readBlobInTable(0, 10, schemaName, tableName, columnName, lobName);
-        Assert.assertArrayEquals("foobarfoo".getBytes(), res2);
-        
-        // truncate down
-        LobRoutines.truncateBlobInTable(6, schemaName, tableName, columnName, lobName);
-        byte[] res3 = LobRoutines.readBlobInTable(0, 10, schemaName, tableName, columnName, lobName);
-        Assert.assertArrayEquals("foobar".getBytes(), res2);
-        
-        // delete blob
-        LobRoutines.deleteBlobInTable(schemaName, tableName, columnName, lobName);
-        
-        //try {
-            LobRoutines.readBlobInTable(0, 10, schemaName, tableName, columnName, lobName);
-        //} catch(Exception ex){
-        //    ex.toString();
-        //}
-        
     }
 }
