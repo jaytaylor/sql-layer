@@ -27,8 +27,7 @@ import com.foundationdb.util.WrappingByteSource;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 
@@ -47,22 +46,22 @@ public class SimpleBlobIT extends ITBase {
         return tableId(SCHEMA, TABLE);
     }
     
-    @Test
+//    @Test
     public void testBlobs_1() throws Exception {
         testBlobs(1);
     }
 
-    @Test
+//    @Test
     public void testBlobs_2() throws Exception {
         testBlobs(2);
     }
 
-    @Test
+//    @Test
     public void testBlobs_3() throws Exception {
         testBlobs(3);
     }
 
-    @Test
+//    @Test
     public void testBlobs_4() throws Exception {
         testBlobs(4);
     }

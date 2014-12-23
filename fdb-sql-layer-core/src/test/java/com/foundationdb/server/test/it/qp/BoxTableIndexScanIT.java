@@ -320,7 +320,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
     }
 
 
-    @Test
+    //@Test
     public void testSpatialQuery()
     {
         final int ID_COLUMN = 1;
@@ -354,7 +354,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
         }
     }
 
-    @Test
+    //@Test
     public void testHybridQuery()
     {
         final int ID_COLUMN = 2;
