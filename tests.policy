@@ -4,33 +4,18 @@
 grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-core/target/-" {
   permission java.security.AllPermission;
 };
-
-grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-core/plugins/-" {
+grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-pg/target/-" {
   permission java.security.AllPermission;
 };
-
-grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-core/fdb-sql-layer-routinefw/target/*" {
-};
-
-grant codeBase "file:/Users/scott/.m2/repository/-" {
-  permission java.security.AllPermission;
-  permission java.util.PropertyPermission "*", "read";
+grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-routinefw/target/*" {
 };
 grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-jdbc-proxy/target/-" {
   permission java.security.AllPermission;
 };
 
-grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-core/target/classes/-" {
+grant codeBase "file:/Users/scott/.m2/repository/-" {
   permission java.security.AllPermission;
-};
-grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-pg/target/classes/-" {
-  permission java.security.AllPermission;
-};
-grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-core/target/test-classes/-" {
-  permission java.security.AllPermission;
-};
-grant codeBase "file:/Users/scott/projects/sql-layer/fdb-sql-layer-pg/target/test-classes/-" {
-  permission java.security.AllPermission;
+  permission java.util.PropertyPermission "*", "read";
 };
 
 grant {
