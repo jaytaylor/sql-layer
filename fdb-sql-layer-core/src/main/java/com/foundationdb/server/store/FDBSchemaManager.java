@@ -878,7 +878,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
             if((skip != null) && skip.contains(subDirName)) {
                 continue;
             }
-            DirectorySubspace subDir = dir.open(txn.getTransaction(), PathUtil.from(subDirName)).get();
+            Subspace subDir = dir.open(txn.getTransaction(), PathUtil.from(subDirName)).get();
             BlobAsync blob = new BlobAsync(subDir);
             byte[] data = blob.read(txn.getTransaction()).get();
             if(data != null) {
