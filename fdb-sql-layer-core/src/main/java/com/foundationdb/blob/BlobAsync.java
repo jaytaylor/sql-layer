@@ -73,13 +73,13 @@ public class BlobAsync implements Lob {
     private static class Chunk {
         private final byte[] key;
         private final byte[] data;
-        private final Long startOffset;
+        private final long startOffset;
 
         private Chunk() {
-            this(null, null, Long.valueOf(0));
+            this(null, null, 0L);
         }
 
-        private Chunk(byte[] key, byte[] data, Long startOffset) {
+        private Chunk(byte[] key, byte[] data, long startOffset) {
             this.key = key;
             this.data = data;
             this.startOffset = startOffset;
@@ -98,12 +98,12 @@ public class BlobAsync implements Lob {
     }
 
     /** The key to data "offset" chunks from the beginning of the Blob. */
-    private byte[] dataKey(Long offset) {
+    private byte[] dataKey(long offset) {
         return subspace.pack(Tuple2.from(DATA_KEY, String.format("%16d", offset)));
     }
 
     /** Given a key to some data, this will return how many chunks from the beginning the data is. **/
-    private Long dataKeyOffset(byte[] key) {
+    private long dataKeyOffset(byte[] key) {
         Tuple t = subspace.unpack(key);
         return Long.valueOf(t.getString(t.size() - 1).trim());
     }
@@ -114,7 +114,7 @@ public class BlobAsync implements Lob {
     }
 
     /** Returns either (key, data, startOffset) or (null, null, 0) */
-    private Future<Chunk> getChunkAt(TransactionContext tcx, final Long offset) {
+    private Future<Chunk> getChunkAt(TransactionContext tcx, final long offset) {
         return tcx.runAsync(new Function<Transaction, Future<Chunk>>() {
             @Override
             public Future<Chunk> apply(final Transaction tr) {
@@ -150,7 +150,7 @@ public class BlobAsync implements Lob {
      * Splits up the data so that a unit of data which we care about that is split
      * across multiple chunks in the blob can be accessed.
      */
-    private Future<Void> makeSplitPoint(TransactionContext tcx, final Long offset) {
+    private Future<Void> makeSplitPoint(TransactionContext tcx, final long offset) {
         return tcx.runAsync(new Function<Transaction, Future<Void>>() {
             @Override
             public Future<Void> apply(final Transaction tr) {
@@ -183,7 +183,7 @@ public class BlobAsync implements Lob {
     }
 
     /** Removed data between start and end. It will break up chunks if necessary. */
-    private Future<Void> makeSparse(TransactionContext tcx, final Long start, final Long end) {
+    private Future<Void> makeSparse(TransactionContext tcx, final long start, final long end) {
         return tcx.runAsync(new Function<Transaction, Future<Void>>() {
             @Override
             public Future<Void> apply(final Transaction tr) {
@@ -206,7 +206,7 @@ public class BlobAsync implements Lob {
     }
 
     /** Return true if split point successfully made and false otherwise. */
-    private Future<Boolean> tryRemoveSplitPoint(TransactionContext tcx, final Long offset) {
+    private Future<Boolean> tryRemoveSplitPoint(TransactionContext tcx, final long offset) {
         return tcx.runAsync(new Function<Transaction, Future<Boolean>>() {
             @Override
             public Future<Boolean> apply(final Transaction tr) {
@@ -249,7 +249,7 @@ public class BlobAsync implements Lob {
     }
 
     /** Split data into chunks and write into the blob. */
-    private Future<Void> writeToSparse(TransactionContext tcx, final Long offset, final byte[] data) {
+    private Future<Void> writeToSparse(TransactionContext tcx, final long offset, final byte[] data) {
         return tcx.runAsync(new Function<Transaction, Future<Void>>() {
             @Override
             public Future<Void> apply(Transaction tr) {
@@ -275,7 +275,7 @@ public class BlobAsync implements Lob {
     }
 
     /** Sets the value of the size parameter. Does not change any blob data. */
-    private Future<Void> setSize(TransactionContext tcx, final Long size) {
+    private Future<Void> setSize(TransactionContext tcx, final long size) {
         return tcx.runAsync(new Function<Transaction, Future<Void>>() {
             @Override
             public Future<Void> apply(Transaction tr) {
@@ -350,7 +350,7 @@ public class BlobAsync implements Lob {
      * @return The data accessed from the blob. <code>null</code> is returned if
      * there is no data to read.
      */
-    public Future<byte[]> read(TransactionContext tcx, final Long offset, final int n) {
+    public Future<byte[]> read(TransactionContext tcx, final long offset, final int n) {
         return tcx.runAsync(new Function<Transaction, Future<byte[]>>() {
             @Override
             public Future<byte[]> apply(final Transaction tr) {
@@ -372,7 +372,7 @@ public class BlobAsync implements Lob {
                                          // Copy the data over from the list into a byte array.
                                          byte[] result = new byte[(int)Math.min(n, (size-offset))];
                                          for(KeyValue chunk : chunks){
-                                             Long chunkOffset = dataKeyOffset(chunk.getKey());
+                                             long chunkOffset = dataKeyOffset(chunk.getKey());
                                              for(int i = 0; i < chunk.getValue().length; i++){
                                                  int rPos = (int)(chunkOffset + i -offset);
                                                  if(rPos >= 0 && rPos < result.length) {
@@ -403,7 +403,7 @@ public class BlobAsync implements Lob {
                     @Override
                     public Future<byte[]> apply(Long size) {
                         if (size > Integer.MAX_VALUE) {
-                            throw new LobException("Lob too large for returning entire lob");
+                            throw new LobException("Lob too large to return entire lob");
                         }
                         return read(tr, Long.valueOf(0), Integer.valueOf(size.intValue()));
                     }
@@ -422,7 +422,7 @@ public class BlobAsync implements Lob {
      * offset from the beginning of the blob.
      * @param data The bytes to write to the blob.
      */
-    public Future<Void> write(TransactionContext tcx, final Long offset, final byte[] data) {
+    public Future<Void> write(TransactionContext tcx, final long offset, final byte[] data) {
          return tcx.runAsync(new Function<Transaction,Future<Void>>() {
             @Override
             public Future<Void> apply(final Transaction tr) {
@@ -430,7 +430,7 @@ public class BlobAsync implements Lob {
                     return new ReadyFuture<>((Void)null); // Don't bother writing nothing.
                 }
                 
-                final Long end = offset + data.length;
+                final long end = offset + data.length;
                 return makeSparse(tr, offset, end).flatMap(new Function<Void,Future<Void>>() {
                     @Override
                     public Future<Void> apply(Void v1) {
@@ -495,7 +495,7 @@ public class BlobAsync implements Lob {
      * @param tcx The context in which to truncate the blob.
      * @param newLength The new size of the blob as expressed in bytes.
      */
-    public Future<Void> truncate(TransactionContext tcx, final Long newLength) {
+    public Future<Void> truncate(TransactionContext tcx, final long newLength) {
         return tcx.runAsync(new Function<Transaction,Future<Void>>() {
             @Override
             public Future<Void> apply(final Transaction tr) {
