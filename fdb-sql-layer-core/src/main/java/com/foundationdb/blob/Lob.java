@@ -24,9 +24,8 @@ import com.foundationdb.async.Future;
 import java.util.UUID;
 
 public interface Lob {
-    //public UUID getId();
     public Future<Long> getSize(TransactionContext tcx);
     public Subspace getSubspace();
     public Future<Void> delete(TransactionContext tcx);
-    public Future<Void> truncate(TransactionContext tcx, Long len);
+    public Future<Void> truncate(TransactionContext tcx, long len);
 }
