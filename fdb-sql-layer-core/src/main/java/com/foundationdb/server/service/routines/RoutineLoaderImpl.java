@@ -443,7 +443,6 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
                 .paramVarBinaryIn("data", Integer.MAX_VALUE)
                 .paramStringIn("schema", PATH_MAX)
                 .paramStringIn("blob_id", PATH_MAX)
-                .returnBoolean("done")
                 .externalName(LobRoutines.class.getCanonicalName(), "writeBlob");
         aisb.procedure("write_in_table_blob")
                 .language("java", Routine.CallingConvention.JAVA)
@@ -453,14 +452,12 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
                 .paramStringIn("table", PATH_MAX)
                 .paramStringIn("column", PATH_MAX)
                 .paramStringIn("blob_id", PATH_MAX)
-                .returnBoolean("done")
                 .externalName(LobRoutines.class.getCanonicalName(), "writeBlobInTable");
         aisb.procedure("append_blob")
                 .language("java", Routine.CallingConvention.JAVA)
                 .paramVarBinaryIn("data", Integer.MAX_VALUE)
                 .paramStringIn("schema", PATH_MAX)
                 .paramStringIn("blob_id", PATH_MAX)
-                .returnBoolean("done")
                 .externalName(LobRoutines.class.getCanonicalName(), "appendBlob");
         aisb.procedure("append_in_table_blob")
                 .language("java", Routine.CallingConvention.JAVA)
@@ -469,14 +466,12 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
                 .paramStringIn("table", PATH_MAX)
                 .paramStringIn("column", PATH_MAX)
                 .paramStringIn("blob_id", PATH_MAX)
-                .returnBoolean("done")
                 .externalName(LobRoutines.class.getCanonicalName(), "appendBlobInTable");
         aisb.procedure("truncate_blob")
                 .language("java", Routine.CallingConvention.JAVA)
                 .paramLongIn("length")
                 .paramStringIn("schema", PATH_MAX)
                 .paramStringIn("blob_id", PATH_MAX)
-                .returnBoolean("done")
                 .externalName(LobRoutines.class.getCanonicalName(), "truncateBlob");
         aisb.procedure("truncate_in_table_blob")
                 .language("java", Routine.CallingConvention.JAVA)
@@ -485,7 +480,6 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
                 .paramStringIn("table", PATH_MAX)
                 .paramStringIn("column", PATH_MAX)
                 .paramStringIn("blob_id", PATH_MAX)
-                .returnBoolean("done")
                 .externalName(LobRoutines.class.getCanonicalName(), "truncateBlobInTable");
         // unnecessary? Only used by SQL layer on insert / update
         aisb.procedure("move_blob")
@@ -495,14 +489,12 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
                 .paramStringIn("new_schema", PATH_MAX)
                 .paramStringIn("new_table", PATH_MAX)
                 .paramStringIn("new_column", PATH_MAX)
-                .returnBoolean("done")
                 .externalName(LobRoutines.class.getCanonicalName(), "moveBlob");
         // unnecessary? - only via drop table?
         aisb.procedure("delete_blob")
                 .language("java", Routine.CallingConvention.JAVA)
                 .paramStringIn("schema", PATH_MAX)
                 .paramStringIn("blob_id", PATH_MAX)
-                .returnBoolean("done")
                 .externalName(LobRoutines.class.getCanonicalName(), "deleteBlob");
         // unnecessary? - only via drop table?
         aisb.procedure("delete_in_table_blob")
@@ -511,7 +503,6 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
                 .paramStringIn("new_table", PATH_MAX)
                 .paramStringIn("new_column", PATH_MAX)
                 .paramStringIn("blob_id", PATH_MAX)
-                .returnBoolean("done")
                 .externalName(LobRoutines.class.getCanonicalName(), "deleteBlobInTable");
         
         Collection<Routine> procs = aisb.ais().getRoutines().values();

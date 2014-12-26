@@ -108,15 +108,15 @@ public class LobRoutines {
         return res != null ? res : new byte[]{};
     }
 
-    public static boolean writeBlob(long offset, byte[] data, String schemaName, String blobID){
-        return writeBlob(offset, data, Arrays.asList(schemaName, blobID));
+    public static void writeBlob(long offset, byte[] data, String schemaName, String blobID){
+        writeBlob(offset, data, Arrays.asList(schemaName, blobID));
     }
 
-    public static boolean writeBlobInTable(long offset, byte[] data, String schemaName, String tableName, String columnName, String blobID){
-        return writeBlob(offset, data, Arrays.asList(schemaName, tableName, columnName, blobID));
+    public static void writeBlobInTable(long offset, byte[] data, String schemaName, String tableName, String columnName, String blobID){
+        writeBlob(offset, data, Arrays.asList(schemaName, tableName, columnName, blobID));
     }
     
-    private static boolean writeBlob(long offset, byte[] data, List<String> pathElements){
+    private static void writeBlob(long offset, byte[] data, List<String> pathElements){
         ServerQueryContext context = ServerCallContextStack.getCallingContext();
         ServiceManager serviceManager = context.getServer().getServiceManager();
         LobService ls = serviceManager.getServiceByClass(LobService.class);
@@ -126,18 +126,17 @@ public class LobRoutines {
         BlobAsync blob = ls.getBlob(ds);
 
         blob.write(tcx, offset, data).get();
-        return true;
     }
 
-    public static boolean appendBlob(byte[] data, String schemaName, String blobId) {
-        return appendBlob(data, Arrays.asList(schemaName, blobId));
+    public static void appendBlob(byte[] data, String schemaName, String blobId) {
+        appendBlob(data, Arrays.asList(schemaName, blobId));
     }
 
-    public static boolean appendBlobInTable(byte[] data, String schemaName, String tableName, String columnName, String blobId) {
-        return appendBlob(data, Arrays.asList(schemaName, tableName, columnName, blobId));
+    public static void appendBlobInTable(byte[] data, String schemaName, String tableName, String columnName, String blobId) {
+        appendBlob(data, Arrays.asList(schemaName, tableName, columnName, blobId));
     }
     
-    private static boolean appendBlob(byte[] data, List<String> pathElements){
+    private static void appendBlob(byte[] data, List<String> pathElements){
         ServerQueryContext context = ServerCallContextStack.getCallingContext();
         ServiceManager serviceManager = context.getServer().getServiceManager();
         LobService ls = serviceManager.getServiceByClass(LobService.class);
@@ -147,18 +146,17 @@ public class LobRoutines {
         BlobAsync blob = ls.getBlob(ds);    
 
         blob.append(tcx, data).get();
-        return true;
     }
 
-    public static boolean truncateBlob(long newLength, String schemaName, String blob_id) {
-        return truncateBlob(newLength, Arrays.asList(schemaName, blob_id));
+    public static void truncateBlob(long newLength, String schemaName, String blob_id) {
+        truncateBlob(newLength, Arrays.asList(schemaName, blob_id));
     }
 
-    public static boolean truncateBlobInTable(long newLength, String schemaName, String tableName, String columnName, String blob_id) {
-        return truncateBlob(newLength, Arrays.asList(schemaName, tableName, columnName, blob_id));
+    public static void truncateBlobInTable(long newLength, String schemaName, String tableName, String columnName, String blob_id) {
+        truncateBlob(newLength, Arrays.asList(schemaName, tableName, columnName, blob_id));
     }
     
-    private static boolean truncateBlob(long newLength, List<String> pathElements) {
+    private static void truncateBlob(long newLength, List<String> pathElements) {
         ServerQueryContext context = ServerCallContextStack.getCallingContext();
         ServiceManager serviceManager = context.getServer().getServiceManager();
         LobService ls = serviceManager.getServiceByClass(LobService.class);
@@ -168,14 +166,13 @@ public class LobRoutines {
         BlobAsync blob = ls.getBlob(ds);
 
         blob.truncate(tcx, newLength).get();
-        return true;
     }
 
-    public static boolean moveBlob( String schemaName, String blobId, String newSchemaName, String tableName, String columnName) {
-        return moveBlob(Arrays.asList(schemaName, blobId), Arrays.asList(newSchemaName, tableName, columnName, blobId));
+    public static void moveBlob( String schemaName, String blobId, String newSchemaName, String tableName, String columnName) {
+        moveBlob(Arrays.asList(schemaName, blobId), Arrays.asList(newSchemaName, tableName, columnName, blobId));
     }
     
-    private static boolean moveBlob( List<String> pathElementsOld, List<String> pathElementsNew){
+    private static void moveBlob( List<String> pathElementsOld, List<String> pathElementsNew){
         ServerQueryContext context = ServerCallContextStack.getCallingContext();
         ServiceManager serviceManager = context.getServer().getServiceManager();
         LobService ls = serviceManager.getServiceByClass(LobService.class);
@@ -184,18 +181,17 @@ public class LobRoutines {
         DirectorySubspace ds = ls.getLobSubspace(tcx, pathElementsOld).get();
         
         ls.moveLob(tcx, ds, pathElementsNew).get();
-        return true;
     }
 
-    public static boolean deleteBlob( String schemaName, String blobId){
-        return deleteBlob(Arrays.asList(schemaName, blobId));
+    public static void deleteBlob( String schemaName, String blobId){
+        deleteBlob(Arrays.asList(schemaName, blobId));
     }
 
-    public static boolean deleteBlobInTable( String schemaName, String tableName, String columnName, String blobId){
-        return deleteBlob(Arrays.asList(schemaName, tableName, columnName, blobId));
+    public static void deleteBlobInTable( String schemaName, String tableName, String columnName, String blobId){
+        deleteBlob(Arrays.asList(schemaName, tableName, columnName, blobId));
     }
     
-    private static boolean deleteBlob( List<String> pathElements){
+    private static void deleteBlob( List<String> pathElements){
         ServerQueryContext context = ServerCallContextStack.getCallingContext();
         ServiceManager serviceManager = context.getServer().getServiceManager();
         LobService ls = serviceManager.getServiceByClass(LobService.class);
@@ -203,7 +199,6 @@ public class LobRoutines {
         TransactionContext tcx = fdbHolder.getTransactionContext();
         
         ls.removeLob(tcx, pathElements).get();
-        return true;
     }
 
 }
