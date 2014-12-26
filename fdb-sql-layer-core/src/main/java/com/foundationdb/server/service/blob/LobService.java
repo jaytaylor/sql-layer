@@ -24,14 +24,14 @@ import com.foundationdb.subspace.Subspace;
 import com.foundationdb.directory.DirectorySubspace;
 import com.foundationdb.async.Future;
 
-import com.foundationdb.blob.BlobAsync;
+import com.foundationdb.blob.BlobBase;
 
 import java.util.*;
 
 public interface LobService {
     public Future<DirectorySubspace> createLobSubspace(TransactionContext tcx, List<String> path);
     public Future<DirectorySubspace> getLobSubspace(TransactionContext tcx, List<String> path);
-    public BlobAsync getBlob(Subspace subspace);
+    public BlobBase getBlob(Subspace subspace);
     public Future<DirectorySubspace> moveLob(TransactionContext tcx, DirectorySubspace sourceSubspace, List<String> targetPath);
     public Future<Void> removeLob(TransactionContext tcx, List<String> path);
 }

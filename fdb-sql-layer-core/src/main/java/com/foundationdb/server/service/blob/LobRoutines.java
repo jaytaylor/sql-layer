@@ -19,9 +19,12 @@ package com.foundationdb.server.service.blob;
 
 
 import com.foundationdb.*;
+import com.foundationdb.async.*;
 import com.foundationdb.blob.*;
 import com.foundationdb.directory.*;
+import com.foundationdb.server.error.*;
 import com.foundationdb.server.service.*;
+import com.foundationdb.server.service.security.*;
 import com.foundationdb.server.store.*;
 import com.foundationdb.sql.server.*;
 
@@ -69,7 +72,7 @@ public class LobRoutines {
         FDBHolder fdbHolder = serviceManager.getServiceByClass(FDBHolder.class);
         TransactionContext tcx = fdbHolder.getTransactionContext();
         DirectorySubspace ds = ls.getLobSubspace(tcx, pathElements).get();
-        BlobAsync blob = ls.getBlob(ds);
+        BlobBase blob = ls.getBlob(ds);
         
         return blob.getSize(tcx).get().longValue();
     }
@@ -85,8 +88,15 @@ public class LobRoutines {
         FDBHolder fdbHolder = serviceManager.getServiceByClass(FDBHolder.class);
         TransactionContext tcx = fdbHolder.getTransactionContext();
         DirectorySubspace ds = ls.getLobSubspace(tcx, pathElements).get();
-        BlobAsync blob = ls.getBlob(ds);
-        byte[] res = blob.read(tcx, offset, length).get(); 
+        BlobBase blob = ls.getBlob(ds);
+        Future<byte[]> result = blob.read(tcx, offset, length);
+        Future<String> fSchemaName = blob.getLinkedSchema(tcx);
+        SecurityService ss = context.getServer().getSecurityService();
+        String schemaName = fSchemaName.get();
+        if ( !schemaName.equals("") && !ss.isAccessible(context.getServer().getSession(), schemaName)) {
+            throw new LobException("Cannot find lob");
+        };
+        byte[] res = result.get();
         return res != null ? res : new byte[]{};
     }
 
@@ -101,9 +111,14 @@ public class LobRoutines {
         FDBHolder fdbHolder = serviceManager.getServiceByClass(FDBHolder.class);
         TransactionContext tcx = fdbHolder.getTransactionContext();
         DirectorySubspace ds = ls.getLobSubspace(tcx, pathElements).get();
-        BlobAsync blob = ls.getBlob(ds);
-
-        blob.write(tcx, offset, data).get();
+        BlobBase blob = ls.getBlob(ds);
+        Future<Void> res = blob.write(tcx, offset, data); 
+        SecurityService ss = context.getServer().getSecurityService();
+        String schemaName = blob.getLinkedSchema(tcx).get();
+        if ( !schemaName.equals("") && !ss.isAccessible(context.getServer().getSession(), schemaName)) {
+            throw new LobException("Cannot find lob");
+        };
+        res.get();
     }
 
     public static void appendBlob(byte[] data, String blobId) {
@@ -117,9 +132,15 @@ public class LobRoutines {
         FDBHolder fdbHolder = serviceManager.getServiceByClass(FDBHolder.class);
         TransactionContext tcx = fdbHolder.getTransactionContext();
         DirectorySubspace ds = ls.getLobSubspace(tcx, pathElements).get();
-        BlobAsync blob = ls.getBlob(ds);    
+        BlobBase blob = ls.getBlob(ds);    
 
-        blob.append(tcx, data).get();
+        Future<Void> res = blob.append(tcx, data);
+        SecurityService ss = context.getServer().getSecurityService();
+        String schemaName = blob.getLinkedSchema(tcx).get();
+        if ( !schemaName.equals("") && !ss.isAccessible(context.getServer().getSession(), schemaName)) {
+            throw new LobException("Cannot find lob");
+        };
+        res.get();
     }
 
     public static void truncateBlob(long newLength, String blob_id) {
@@ -133,9 +154,15 @@ public class LobRoutines {
         FDBHolder fdbHolder = serviceManager.getServiceByClass(FDBHolder.class);
         TransactionContext tcx = fdbHolder.getTransactionContext();
         DirectorySubspace ds = ls.getLobSubspace(tcx, pathElements).get();
-        BlobAsync blob = ls.getBlob(ds);
+        BlobBase blob = ls.getBlob(ds);
 
-        blob.truncate(tcx, newLength).get();
+        Future<Void> res = blob.truncate(tcx, newLength);
+        SecurityService ss = context.getServer().getSecurityService();
+        String schemaName = blob.getLinkedSchema(tcx).get();
+        if ( !schemaName.equals("") && !ss.isAccessible(context.getServer().getSession(), schemaName)) {
+            throw new LobException("Cannot find lob");
+        };
+        res.get();        
     }
 
     public static void deleteBlob(String blobId){
@@ -148,8 +175,16 @@ public class LobRoutines {
         LobService ls = serviceManager.getServiceByClass(LobService.class);
         FDBHolder fdbHolder = serviceManager.getServiceByClass(FDBHolder.class);
         TransactionContext tcx = fdbHolder.getTransactionContext();
+        DirectorySubspace ds = ls.getLobSubspace(tcx, pathElements).get();
+        BlobBase blob = ls.getBlob(ds);
+        SecurityService ss = context.getServer().getSecurityService();
+        String schemaName = blob.getLinkedSchema(tcx).get();
+        if ( !schemaName.equals("") && !ss.isAccessible(context.getServer().getSession(), schemaName)) {
+            throw new LobException("Cannot find lob");
+        };
         
         ls.removeLob(tcx, pathElements).get();
+
     }
 
 }

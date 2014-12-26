@@ -22,10 +22,8 @@ import java.util.List;
 
 import com.foundationdb.*;
 import com.foundationdb.async.*;
-import com.foundationdb.directory.DirectorySubspace;
 import com.foundationdb.server.error.*;
 import com.foundationdb.tuple.*;
-import com.foundationdb.blob.Lob;
 import com.foundationdb.subspace.Subspace;
 
 /** Represents a potentially large binary value in FoundationDB. */
@@ -324,15 +322,6 @@ public class BlobAsync implements Lob {
                 });
             }
         });
-    }
-
-    /**
-     * Gets the associated directory subspace
-     * 
-     * @return The DirectorySubspace of the blob
-     */
-    public Subspace getSubspace() {
-        return this.subspace;
     }
     
     /**

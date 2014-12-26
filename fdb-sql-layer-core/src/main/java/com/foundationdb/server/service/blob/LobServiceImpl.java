@@ -20,6 +20,7 @@ package com.foundationdb.server.service.blob;
 import com.foundationdb.*;
 import com.foundationdb.async.*;
 import com.foundationdb.blob.BlobAsync;
+import com.foundationdb.blob.BlobBase;
 import com.foundationdb.directory.DirectorySubspace;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.store.FDBHolder;
@@ -50,9 +51,9 @@ public class LobServiceImpl implements Service, LobService {
 
 
     @Override
-    public BlobAsync getBlob(Subspace subspace) {
+    public BlobBase getBlob(Subspace subspace) {
         // perform more test to verify it is a blob subspace, once clob is also initiated
-        return new BlobAsync(subspace);
+        return new BlobBase(subspace);
     }
 
     @Override

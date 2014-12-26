@@ -25,7 +25,6 @@ import java.util.UUID;
 
 public interface Lob {
     public Future<Long> getSize(TransactionContext tcx);
-    public Subspace getSubspace();
     public Future<Void> delete(TransactionContext tcx);
     public Future<Void> truncate(TransactionContext tcx, long len);
 }
