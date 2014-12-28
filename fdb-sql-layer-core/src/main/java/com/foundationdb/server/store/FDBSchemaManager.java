@@ -832,9 +832,9 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         for (final Table table : newAIS.getTables().values()) {
             final TableStatus status;
             if (table.hasMemoryTableFactory()) {
-                status = tableStatusCache.createTableStatus(table);
-            } else {
                 status = tableStatusCache.getOrCreateMemoryTableStatus(table.getTableId(), MemoryAdapter.getMemoryTableFactory(table));
+            } else {
+                status = tableStatusCache.createTableStatus(table);
             }
             table.tableStatus(status);
         }

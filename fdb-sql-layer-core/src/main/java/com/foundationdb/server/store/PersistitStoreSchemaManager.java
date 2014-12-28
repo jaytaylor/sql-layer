@@ -712,17 +712,17 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
     private void buildRowDefs(Session session, AkibanInformationSchema newAis) throws PersistitException {
         treeService.getTableStatusCache().detachAIS();
-
+        // TODO: this attaches the TableStatus to each table. 
+        // This used to be done in RowDefBuilder#build() but no longer.
         for (final Table table : newAis.getTables().values()) {
             final TableStatus status;
             if (table.hasMemoryTableFactory()) {
-                status = treeService.getTableStatusCache().createTableStatus(table);
-            } else {
                 status = treeService.getTableStatusCache().getOrCreateMemoryTableStatus(table.getTableId(), MemoryAdapter.getMemoryTableFactory(table));
+            } else {
+                status = treeService.getTableStatusCache().createTableStatus(table);
             }
             table.tableStatus(status);
         }
-        
         
         RowDefBuilder rowDefBuilder = new RowDefBuilder(null, newAis, treeService.getTableStatusCache());
         rowDefBuilder.build();

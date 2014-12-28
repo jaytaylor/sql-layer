@@ -134,6 +134,17 @@ public class SchemaFactory {
 
     public void buildRowDefs(AkibanInformationSchema ais) {
         MemoryOnlyTableStatusCache tableStatusCache = new MemoryOnlyTableStatusCache();
+        // TODO: this attaches the TableStatus to each table. 
+        // This used to be done in RowDefBuilder#build() but no longer.
+        for (final Table table : ais.getTables().values()) {
+            final TableStatus status;
+            if (table.hasMemoryTableFactory()) {
+                status = tableStatusCache.getOrCreateMemoryTableStatus(table.getTableId(), MemoryAdapter.getMemoryTableFactory(table));
+            } else {
+                status = tableStatusCache.createTableStatus(table);
+            }
+            table.tableStatus(status);
+        }
         RowDefBuilder rowDefBuilder = new MockRowDefBuilder(ais, tableStatusCache);
         rowDefBuilder.build();
     }
