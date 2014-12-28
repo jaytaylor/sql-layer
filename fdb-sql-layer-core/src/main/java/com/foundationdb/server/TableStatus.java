@@ -17,8 +17,6 @@
 
 package com.foundationdb.server;
 
-import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
 
 /**
@@ -35,9 +33,6 @@ public interface TableStatus {
 
     /** Reset, but do not remove, the state of a table. */
     void truncate(Session session);
-
-    /** Set the RowDef of a given table.*/
-    void setRowDef(RowDef rowDef);
 
     /**
      * @return Current number of rows in the associated table.

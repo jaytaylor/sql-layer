@@ -35,11 +35,15 @@ import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.blob.BlobAsync;
 import com.foundationdb.directory.DirectorySubspace;
 import com.foundationdb.directory.PathUtil;
+import com.foundationdb.qp.memoryadapter.MemoryAdapter;
+import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.server.FDBTableStatusCache;
+import com.foundationdb.server.TableStatus;
 import com.foundationdb.server.error.FDBAdapterException;
 import com.foundationdb.server.error.MetadataVersionNewerException;
 import com.foundationdb.server.error.MetadataVersionTooOldException;
+import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.rowdata.RowDefBuilder;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
@@ -823,8 +827,17 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
 
     private void buildRowDefs(Session session, AkibanInformationSchema newAIS) {
         tableStatusCache.detachAIS();
-        // TODO: RowDefBuilder may be going away, but this attaches the TableStatus to each table. 
-        // Replace that work in build() here. 
+        // TODO: this attaches the TableStatus to each table. 
+        // This used to be done in RowDefBuilder#build() but no longer.
+        for (final Table table : newAIS.getTables().values()) {
+            final TableStatus status;
+            if (table.hasMemoryTableFactory()) {
+                status = tableStatusCache.getOrCreateMemoryTableStatus(table.getTableId(), MemoryAdapter.getMemoryTableFactory(table));
+            } else {
+                status = tableStatusCache.createTableStatus(table);
+            }
+            table.tableStatus(status);
+        }
         RowDefBuilder rowDefBuilder = new RowDefBuilder(session, newAIS, tableStatusCache);
         rowDefBuilder.build();
     }

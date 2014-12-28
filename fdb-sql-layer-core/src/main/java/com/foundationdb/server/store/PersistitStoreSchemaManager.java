@@ -38,6 +38,7 @@ import com.foundationdb.qp.memoryadapter.MemoryGroupCursor;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.server.TableStatus;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.rowdata.RowDefBuilder;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -711,6 +712,18 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
     private void buildRowDefs(Session session, AkibanInformationSchema newAis) throws PersistitException {
         treeService.getTableStatusCache().detachAIS();
+        // TODO: this attaches the TableStatus to each table. 
+        // This used to be done in RowDefBuilder#build() but no longer.
+        for (final Table table : newAis.getTables().values()) {
+            final TableStatus status;
+            if (table.hasMemoryTableFactory()) {
+                status = treeService.getTableStatusCache().getOrCreateMemoryTableStatus(table.getTableId(), MemoryAdapter.getMemoryTableFactory(table));
+            } else {
+                status = treeService.getTableStatusCache().createTableStatus(table);
+            }
+            table.tableStatus(status);
+        }
+        
         RowDefBuilder rowDefBuilder = new RowDefBuilder(null, newAis, treeService.getTableStatusCache());
         rowDefBuilder.build();
         // This creates|verifies the trees exist for sequences.
