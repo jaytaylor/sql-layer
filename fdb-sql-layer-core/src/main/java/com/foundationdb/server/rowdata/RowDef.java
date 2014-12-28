@@ -23,7 +23,6 @@ import java.util.Map;
 
 import com.foundationdb.ais.model.*;
 import com.foundationdb.server.AkServerUtil;
-import com.foundationdb.server.TableStatus;
 
 /**
  * Contain the relevant schema information for one version of a table
@@ -37,8 +36,6 @@ public class RowDef {
 
     private final Table table;
 
-    private final TableStatus tableStatus;
-    
     /**
      * Array of FieldDef, one per column
      */
@@ -79,9 +76,8 @@ public class RowDef {
      */
     private final byte[][] varLenFieldMap;
 
-    public RowDef(Table table, final TableStatus tableStatus) {
+    public RowDef(Table table) {
         this.table = table;
-        this.tableStatus = tableStatus;
         table.rowDef(this);
         List<Column> columns = table.getColumnsIncludingInternal();
         this.fieldDefs = new FieldDef[columns.size()];
@@ -278,10 +274,6 @@ public class RowDef {
 
     public int getRowDefId() {
         return table.getTableId();
-    }
-
-    public TableStatus getTableStatus() {
-        return tableStatus;
     }
 
     public void setIndexes(Collection<TableIndex> indexes) {

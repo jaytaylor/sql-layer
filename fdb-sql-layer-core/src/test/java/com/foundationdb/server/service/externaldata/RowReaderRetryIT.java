@@ -86,7 +86,7 @@ public class RowReaderRetryIT extends ITBase
         }
         assertEquals(NROWS, total);
         txnService().beginTransaction(session());
-        assertEquals(NROWS, getRowDef(tableId).getTableStatus().getRowCount(session()));
+        assertEquals(NROWS, getTable(tableId).tableStatus().getRowCount(session()));
         txnService().commitTransaction(session());
     }
     

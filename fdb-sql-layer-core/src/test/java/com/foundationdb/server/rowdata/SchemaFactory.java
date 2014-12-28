@@ -26,8 +26,10 @@ import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.View;
+import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.MemoryOnlyTableStatusCache;
+import com.foundationdb.server.TableStatus;
 import com.foundationdb.server.TableStatusCache;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.ddl.DDLFunctionsMockBase;
@@ -131,7 +133,8 @@ public class SchemaFactory {
     }
 
     public void buildRowDefs(AkibanInformationSchema ais) {
-        RowDefBuilder rowDefBuilder = new MockRowDefBuilder(ais, new MemoryOnlyTableStatusCache());
+        MemoryOnlyTableStatusCache tableStatusCache = new MemoryOnlyTableStatusCache();
+        RowDefBuilder rowDefBuilder = new MockRowDefBuilder(ais, tableStatusCache);
         rowDefBuilder.build();
     }
 
