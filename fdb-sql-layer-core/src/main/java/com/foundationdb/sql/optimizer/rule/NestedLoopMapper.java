@@ -171,17 +171,19 @@ public class NestedLoopMapper extends BaseRule
     }
 
     private ConditionList negateConjunction(ConditionList conditionList) {
-        ConditionExpression firstCondition = conditionList.get(0);
-
-        // and all the conditions first
-        LogicalFunctionCondition condition = new LogicalFunctionCondition("and", conditionList,
-                                                                          firstCondition.getSQLtype(),
-                                                                          firstCondition.getSQLsource(),
-                                                                          firstCondition.getType());
-        TValidatedScalar validatedScalarAnd = new TValidatedScalar(BoolLogic.AND); // and
-        condition.setResolved(validatedScalarAnd);
-        List<ConditionExpression> newConditionList = new ArrayList<ConditionExpression>();
-        newConditionList.add(condition);
+        List<ConditionExpression> newConditionList = conditionList;
+        ConditionExpression condition = conditionList.get(0);
+        if (conditionList.size() > 1) {
+            // and all the conditions first
+            condition = new LogicalFunctionCondition("and", conditionList,
+                                                     condition.getSQLtype(),
+                                                     condition.getSQLsource(),
+                                                     condition.getType());
+            TValidatedScalar validatedScalarAnd = new TValidatedScalar(BoolLogic.AND); // and
+            ((LogicalFunctionCondition)condition).setResolved(validatedScalarAnd);
+            newConditionList = new ArrayList<ConditionExpression>();
+            newConditionList.add(condition);
+        }
 
         // negate the resulting condition
         condition = new LogicalFunctionCondition("not", newConditionList,
@@ -189,7 +191,7 @@ public class NestedLoopMapper extends BaseRule
                                                  condition.getSQLsource(),
                                                  condition.getType());
         TValidatedScalar validatedScalarNot = new TValidatedScalar(BoolLogic.NOT);
-        condition.setResolved(validatedScalarNot);
+        ((LogicalFunctionCondition)condition).setResolved(validatedScalarNot);
 
         ConditionList negatedConjunction = new ConditionList();
         negatedConjunction.add(condition);
