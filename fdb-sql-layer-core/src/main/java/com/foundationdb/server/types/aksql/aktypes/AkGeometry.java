@@ -17,7 +17,9 @@
 
 package com.foundationdb.server.types.aksql.aktypes;
 
+import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.UnsupportedSpatialCast;
+import com.foundationdb.server.spatial.Spatial;
 import com.foundationdb.server.types.Attribute;
 import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.TClass;
@@ -33,7 +35,11 @@ import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.util.AkibanAppender;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.io.WKTWriter;
 
+import java.io.IOException;
+import java.io.StringWriter;
 import java.sql.Types;
 
 /** An internal, runtime only wrapper around JTS Geometry objects. */
@@ -66,16 +72,25 @@ public class AkGeometry extends TClassBase
     {
         @Override
         public void format(TInstance type, ValueSource source, AkibanAppender out) {
-            throw new UnsupportedSpatialCast();
+            out.append(source.getObject().toString());
         }
 
         @Override
         public void formatAsLiteral(TInstance type, ValueSource source, AkibanAppender out) {
-            throw new UnsupportedSpatialCast();
+            StringWriter sw = new StringWriter();
+            try {
+                new WKTWriter(Spatial.LAT_LON_DIMENSIONS).write((Geometry)source.getObject(),
+                                                                sw);
+            }
+            catch (IOException ex) {
+                throw new AkibanInternalException("Error formatting to string", ex);
+            }
+            out.append(sw.toString());
         }
 
         @Override
         public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out, FormatOptions options) {
+            // TODO: GeoJSON?
             throw new UnsupportedSpatialCast();
         }
     }
