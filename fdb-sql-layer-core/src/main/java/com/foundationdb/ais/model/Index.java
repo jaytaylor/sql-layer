@@ -422,6 +422,8 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
     }
 
     public enum IndexMethod {
+        // TODO: Replace Z_ORDER_LAT_LON with GEO_LAT_LON, GEO_WKB,
+        // GEO_WKT, GEO_JSON, etc.
         NORMAL, Z_ORDER_LAT_LON, FULL_TEXT
     }
 

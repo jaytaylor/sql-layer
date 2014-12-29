@@ -1720,55 +1720,27 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected IndexKeyRange assembleSpatialIndexKeyRange(SingleIndexScan index, ColumnExpressionToIndex fieldOffsets) {
-            FunctionExpression func = (FunctionExpression)index.getLowComparand();
-            List<ExpressionNode> operands = func.getOperands();
             IndexRowType indexRowType = getIndexRowType(index);
-            if ("_center".equals(func.getFunction())) {
-                return IndexKeyRange.spatialCoords(indexRowType,
-                                                   assembleSpatialIndexPoint(index,
-                                                                             operands.get(0),
-                                                                             operands.get(1),
-                                                                             fieldOffsets),
-                                                   null);
-            }
-            else if ("_center_radius".equals(func.getFunction())) {
-                ExpressionNode centerY = operands.get(0);
-                ExpressionNode centerX = operands.get(1);
-                ExpressionNode radius = operands.get(2);
-                // Make circle into box. Comparison still remains to eliminate corners.
-                // TODO: May need some casts.
-                // Note: the types of the 4 functions below, get set by the resolveAddedExpression
-                ExpressionNode bottom = new FunctionExpression("minus",
-                                                               Arrays.asList(centerY, radius),
-                                                               null, null, null);
-                ExpressionNode left = new FunctionExpression("minus",
-                                                             Arrays.asList(centerX, radius),
-                                                             null, null, null);
-                ExpressionNode top = new FunctionExpression("plus",
-                                                            Arrays.asList(centerY, radius),
-                                                            null, null, null);
-                ExpressionNode right = new FunctionExpression("plus",
-                                                              Arrays.asList(centerX, radius),
-                                                              null, null, null);
-                bottom = resolveAddedExpression(bottom, planContext);
-                left = resolveAddedExpression(left, planContext);
-                top = resolveAddedExpression(top, planContext);
-                right = resolveAddedExpression(right, planContext);
-                return IndexKeyRange.spatialCoords(indexRowType,
-                                                   assembleSpatialIndexPoint(index, bottom, left, fieldOffsets),
-                                                   assembleSpatialIndexPoint(index, top, right, fieldOffsets));
-            }
-            else {
+            if (index.getHighComparand() == null)
+                return IndexKeyRange.aroundObject(indexRowType,
+                                                  assembleSpatialIndexObject(index,
+                                                                             index.getLowComparand(),
+                                                                             fieldOffsets));
+            else if (index.getLowComparand() == index.getHighComparand())
+                return IndexKeyRange.spatialObject(indexRowType,
+                                                   assembleSpatialIndexObject(index,
+                                                                              index.getLowComparand(),
+                                                                              fieldOffsets));
+            else
                 throw new AkibanInternalException("Unrecognized spatial index " + index);
-            }
         }
 
-        protected IndexBound assembleSpatialIndexPoint(SingleIndexScan index, ExpressionNode y, ExpressionNode x, ColumnExpressionToIndex fieldOffsets) {
+        protected IndexBound assembleSpatialIndexObject(SingleIndexScan index, ExpressionNode spatialExpr, ColumnExpressionToIndex fieldOffsets) {
             List<ExpressionNode> equalityComparands = index.getEqualityComparands();
             int nkeys = 0;
             if (equalityComparands != null)
                 nkeys = equalityComparands.size();
-            nkeys += 2;
+            nkeys += index.getIndex().spatialColumns();
             TPreparedExpression[] pkeys = new TPreparedExpression[nkeys];
             int kidx = 0;
             if (equalityComparands != null) {
@@ -1779,9 +1751,9 @@ public class OperatorAssembler extends BaseRule
                     kidx++;
                 }
             }
-            assembleExpressionInto(y, fieldOffsets, pkeys, kidx++);
-            assembleExpressionInto(x, fieldOffsets, pkeys, kidx++);
-            assert (kidx == nkeys) : "kidx (" +kidx + ") != nkeys (" + nkeys + ")";
+            // May have been transformed from original SQL to index key expression.
+            spatialExpr = resolveAddedExpression(spatialExpr, planContext);
+            assembleExpressionInto(spatialExpr, fieldOffsets, pkeys, kidx++);
             return getIndexBound(index.getIndex(), pkeys, nkeys);
         }
 

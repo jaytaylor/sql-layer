@@ -37,6 +37,7 @@ import com.foundationdb.ais.model.Index.JoinType;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.text.FullTextQueryBuilder;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.common.funcs.GeoOverlap;
 import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
@@ -400,21 +401,32 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     }
 
     private static void setColumnsAndOrdering(SingleIndexScan index) {
-        List<IndexColumn> indexColumns = index.getAllColumns();
+        Index aisIndex = index.getIndex();
+        List<IndexColumn> indexColumns = aisIndex.getAllColumns();
         int ncols = indexColumns.size();
         int firstSpatialColumn, spatialColumns;
         SpecialIndexExpression.Function spatialFunction;
-        if (index.getIndex().isSpatial()) {
-            Index spatialIndex = index.getIndex();
-            firstSpatialColumn = spatialIndex.firstSpatialArgument();
-            spatialColumns = spatialIndex.spatialColumns();
-            assert (spatialColumns == Spatial.LAT_LON_DIMENSIONS);
-            spatialFunction = SpecialIndexExpression.Function.Z_ORDER_LAT_LON;
-        }
-        else {
+        switch (aisIndex.getIndexMethod()) {
+        case Z_ORDER_LAT_LON:
+            firstSpatialColumn = aisIndex.firstSpatialArgument();
+            spatialColumns = aisIndex.spatialColumns();
+            if (spatialColumns == Spatial.LAT_LON_DIMENSIONS)
+                spatialFunction = SpecialIndexExpression.Function.GEO_LAT_LON;
+            else if (spatialColumns == 1)
+                spatialFunction = SpecialIndexExpression.Function.GEO_WKB;
+            else {
+                spatialFunction = null;
+                assert false : spatialColumns;
+            }
+            break;
+        default:
+            assert false : aisIndex.getIndexMethod();
+            /* and fall through */
+        case NORMAL:
             firstSpatialColumn = Integer.MAX_VALUE;
             spatialColumns = 0;
             spatialFunction = null;
+            break;
         }
         List<OrderByExpression> orderBy = new ArrayList<>(ncols);
         List<ExpressionNode> indexExpressions = new ArrayList<>(ncols);
@@ -1756,53 +1768,61 @@ public class GroupIndexGoal implements Comparator<BaseScan>
      * Z-order of two coordinates.
      */
     public boolean spatialUsable(SingleIndexScan index, int nequals) {
-        // There are two cases to recognize:
+        // Look for a spatial-join compatible predicate one of whose operands
+        // matches the spatial index definition.
+
+        // There are two additional legacy cases to recognize (for the time being):
+        // WHERE distance_lat_lon(column_lat, column_lon, start_lat, start_lon) <= radius
         // ORDER BY znear(column_lat, column_lon, start_lat, start_lon), which
         // means fan out from that center in Z-order.
-        // WHERE distance_lat_lon(column_lat, column_lon, start_lat, start_lon) <= radius
         
         ExpressionNode nextColumn = index.getColumns().get(nequals);
         if (!(nextColumn instanceof SpecialIndexExpression)) 
             return false;       // Did not have enough equalities to get to spatial part.
         SpecialIndexExpression indexExpression = (SpecialIndexExpression)nextColumn;
-        assert (indexExpression.getFunction() == SpecialIndexExpression.Function.Z_ORDER_LAT_LON);
+        SpecialIndexExpression.Function spatialFunction = indexExpression.getFunction();
         List<ExpressionNode> operands = indexExpression.getOperands();
 
         boolean matched = false;
         for (ConditionExpression condition : conditions) {
-            if (condition instanceof ComparisonCondition) {
+            ExpressionNode spatialJoinTo = null;
+            if (condition instanceof FunctionCondition) {
+                FunctionCondition fcond = (FunctionCondition)condition;
+                spatialJoinTo = matchSpatialPredicate(spatialFunction, operands, fcond);
+            }
+            else if (condition instanceof ComparisonCondition) {
                 ComparisonCondition ccond = (ComparisonCondition)condition;
-                ExpressionNode centerRadius = null;
                 switch (ccond.getOperation()) {
                 case LE:
                 case LT:
-                    centerRadius = matchDistanceLatLon(operands,
-                                                       ccond.getLeft(), 
-                                                       ccond.getRight());
+                    spatialJoinTo = matchDistanceLatLon(spatialFunction, operands,
+                                                        ccond.getLeft(), 
+                                                        ccond.getRight());
                     break;
                 case GE:
                 case GT:
-                    centerRadius = matchDistanceLatLon(operands,
-                                                       ccond.getRight(), 
-                                                       ccond.getLeft());
+                    spatialJoinTo = matchDistanceLatLon(spatialFunction, operands,
+                                                        ccond.getRight(), 
+                                                        ccond.getLeft());
                     break;
                 }
-                if (centerRadius != null) {
-                    index.setLowComparand(centerRadius, true);
-                    index.setOrderEffectiveness(IndexScan.OrderEffectiveness.NONE);
-                    matched = true;
-                    break;
-                }
+            }
+            if (spatialJoinTo != null) {
+                index.setLowComparand(spatialJoinTo, true);
+                index.setHighComparand(spatialJoinTo, true);
+                index.setOrderEffectiveness(IndexScan.OrderEffectiveness.NONE);
+                matched = true;
+                break;
             }
         }
         if (!matched) {
             if (sortAllowed && (queryGoal.getOrdering() != null)) {
                 List<OrderByExpression> orderBy = queryGoal.getOrdering().getOrderBy();
                 if (orderBy.size() == 1) {
-                    ExpressionNode center = matchZnear(operands,
-                                                       orderBy.get(0));
-                    if (center != null) {
-                        index.setLowComparand(center, true);
+                    ExpressionNode spatialJoinTo = matchZnear(spatialFunction, operands,
+                                                              orderBy.get(0));
+                    if (spatialJoinTo != null) {
+                        index.setLowComparand(spatialJoinTo, true);
                         index.setOrderEffectiveness(IndexScan.OrderEffectiveness.SORTED);
                         matched = true;
                     }
@@ -1817,9 +1837,73 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         return true;
     }
 
-    private ExpressionNode matchDistanceLatLon(List<ExpressionNode> indexExpressions,
+    private ExpressionNode matchSpatialPredicate(SpecialIndexExpression.Function indexFunction,
+                                                 List<ExpressionNode> indexExpressions,
+                                                 FunctionCondition cond) {
+        String function = cond.getFunction();
+        List<ExpressionNode> operands = cond.getOperands();
+
+        for (GeoOverlap.OverlapType overlap : GeoOverlap.OverlapType.values()) {
+            if (function.equalsIgnoreCase(overlap.functionName())) {
+                ExpressionNode op1 = operands.get(0);
+                ExpressionNode op2 = operands.get(1);
+                if (matchSpatialIndex(indexFunction, indexExpressions, op1) &&
+                    constantOrBound(op2)) {
+                    return op2;
+                }
+                else if (matchSpatialIndex(indexFunction, indexExpressions, op2) &&
+                    constantOrBound(op1)) {
+                    return op1;
+                }
+            }
+        }
+
+        if (function.equalsIgnoreCase("geo_point_in_circle")) {
+            ExpressionNode op1 = operands.get(0);
+            ExpressionNode op2 = operands.get(1);
+            ExpressionNode radius = operands.get(2);
+            if (constantOrBound(radius)) {
+                if (matchSpatialIndex(indexFunction, indexExpressions, op1) &&
+                    constantOrBound(op2)) {
+                    return spatialWithinDistance(op2, radius);
+                }
+                if (matchSpatialIndex(indexFunction, indexExpressions, op2) &&
+                         constantOrBound(op1)) {
+                    return spatialWithinDistance(op1, radius);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private boolean matchSpatialIndex(SpecialIndexExpression.Function indexFunction,
+                                      List<ExpressionNode> indexExpressions,
+                                      ExpressionNode expr) {
+        if (!(expr instanceof FunctionExpression))
+            return false;
+        FunctionExpression func = (FunctionExpression)expr;
+        return (func.getFunction().equalsIgnoreCase(indexFunction.functionName()) &&
+                func.getOperands().equals(indexExpressions));
+    }
+
+    private ExpressionNode spatialWithinDistance(ExpressionNode op, ExpressionNode distance) {
+        return new FunctionExpression("geo_buffer",
+                                      Arrays.asList(op, distance),
+                                      null, null, null);
+    }
+
+    private ExpressionNode spatialPoint(ExpressionNode lat, ExpressionNode lon) {
+        return new FunctionExpression("geo_lat_lon",
+                                      Arrays.asList(lat, lon),
+                                      null, null, null);
+    }
+
+    private ExpressionNode matchDistanceLatLon(SpecialIndexExpression.Function function,
+                                               List<ExpressionNode> indexExpressions,
                                                ExpressionNode left, ExpressionNode right) {
-        if (!((left instanceof FunctionExpression) &&
+        if (!((function == SpecialIndexExpression.Function.GEO_LAT_LON) &&
+              (left instanceof FunctionExpression) &&
               ((FunctionExpression)left).getFunction().equalsIgnoreCase("distance_lat_lon") &&
               constantOrBound(right)))
             return null;
@@ -1831,6 +1915,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         ExpressionNode op2 = operands.get(1);
         ExpressionNode op3 = operands.get(2);
         ExpressionNode op4 = operands.get(3);
+        /* TODO: Should not be needed.
         if ((right.getType() != null) &&
             (right.getType().typeClass().jdbcType() != Types.DECIMAL)) {
             DataTypeDescriptor sqlType = 
@@ -1839,24 +1924,24 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 .getTypesTranslator().typeForSQLType(sqlType);
             right = new CastExpression(right, sqlType, right.getSQLsource(), type);
         }
+        */
         if (columnMatches(col1, op1) && columnMatches(col2, op2) &&
             constantOrBound(op3) && constantOrBound(op4)) {
-            return new FunctionExpression("_center_radius",
-                                          Arrays.asList(op3, op4, right),
-                                          null, null, null);
+            return spatialWithinDistance(spatialPoint(op3, op4), right);
         }
         if (columnMatches(col1, op3) && columnMatches(col2, op4) &&
             constantOrBound(op1) && constantOrBound(op2)) {
-            return new FunctionExpression("_center_radius",
-                                          Arrays.asList(op1, op2, right),
-                                          null, null, null);
+            return spatialWithinDistance(spatialPoint(op1, op2), right);
         }
         return null;
     }
 
-    private ExpressionNode matchZnear(List<ExpressionNode> indexExpressions, 
+    private ExpressionNode matchZnear(SpecialIndexExpression.Function function,
+                                      List<ExpressionNode> indexExpressions, 
                                       OrderByExpression orderBy) {
-        if (!orderBy.isAscending()) return null;
+        if (!((function == SpecialIndexExpression.Function.GEO_LAT_LON) &&
+              orderBy.isAscending()))
+            return null;
         ExpressionNode orderExpr = orderBy.getExpression();
         if (!((orderExpr instanceof FunctionExpression) &&
               ((FunctionExpression)orderExpr).getFunction().equalsIgnoreCase("znear")))
@@ -1871,12 +1956,12 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         ExpressionNode op4 = operands.get(3);
         if (columnMatches(col1, op1) && columnMatches(col2, op2) &&
             constantOrBound(op3) && constantOrBound(op4))
-            return new FunctionExpression("_center",
+            return new FunctionExpression("geo_lat_lon",
                                           Arrays.asList(op3, op4),
                                           null, null, null);
         if (columnMatches(col1, op3) && columnMatches(col2, op4) &&
             constantOrBound(op1) && constantOrBound(op2))
-            return new FunctionExpression("_center",
+            return new FunctionExpression("geo_lat_lon",
                                           Arrays.asList(op1, op2),
                                           null, null, null);
         return null;
