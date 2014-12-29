@@ -55,6 +55,15 @@ public class ViewDDLIT extends AISDDLITBase {
         assertEquals(2, tcols.size());
     }
 
+    @Test
+    public void testCreateWithFunctions() throws Exception {
+        executeDDL("CREATE VIEW v AS SELECT current_session_id() AS r");
+        View v = ais().getView(SCHEMA_NAME, "v");
+        assertNotNull(v);
+        assertEquals(1, v.getColumns().size());
+        assertEquals("r", v.getColumn(0).getName());
+    }
+
     @Test(expected=UndefinedViewException.class)
     public void testDropNonexistent() throws Exception {
         executeDDL("DROP VIEW no_such_view");
