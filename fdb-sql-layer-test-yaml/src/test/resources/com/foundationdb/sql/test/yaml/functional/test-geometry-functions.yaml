@@ -1,4 +1,7 @@
 ---
+- Statement: SELECT CAST( GEO_WKT('point(0 0)') AS VARCHAR(128) )
+- output: [['POINT (0 0)']]
+---
 - Statement: SELECT GEO_TYPE_STRING( GEO_WKT('point(0 0)') )
 - output: [['Point']]
 ---
@@ -8,6 +11,10 @@
 - Statement: SELECT GEO_TYPE_STRING( GEO_WKT( NULL ) )
 - output: [[null]]
 
+---
+- Statement: SELECT CAST( GEO_WKT(?) AS VARCHAR(256) )
+- params: [['polygon((0 0, 10 0, 10 10, 0 10, 0 0))']]
+- output: [['POLYGON ((0 0, 10 0, 10 10, 0 10, 0 0))']]
 ---
 - Statement: SELECT GEO_TYPE_STRING( GEO_WKT(?) )
 - params: [['polygon((0 0, 10 0, 10 10, 0 10, 0 0))']]
