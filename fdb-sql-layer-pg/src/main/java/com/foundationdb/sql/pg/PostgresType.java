@@ -448,7 +448,7 @@ public class PostgresType extends ServerType
             oid = TypeOid.BYTEA_TYPE_OID;
             break;
         case TypeId.FormatIds.BLOB_TYPE_ID: // may need update
-            oid = TypeOid.TEXT_TYPE_OID;
+            oid = TypeOid.UUID_TYPE_OID;
             break;
         case TypeId.FormatIds.VARCHAR_TYPE_ID:
             oid = TypeOid.VARCHAR_TYPE_OID;
