@@ -20,6 +20,7 @@ package com.foundationdb.server.types.aksql;
 import com.foundationdb.server.error.InvalidGuidFormatException;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TParser;
+import com.foundationdb.server.types.aksql.aktypes.*;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 
@@ -91,15 +92,21 @@ public class AkParsers
     {
         @Override
         public void parse(TExecutionContext context, ValueSource source, ValueTarget target) {
-            String s = source.getString();
-            if (s.startsWith("{") && s.endsWith("}")) {
-                s = s.substring(1, s.length()-1);
+            if (source.getType().typeClass() == AkGUID.INSTANCE) {
+                UUID id = (UUID) source.getObject();
+                target.putObject(id);
             }
-            try {
-                UUID uuid = UUID.fromString(s);
-                target.putObject(uuid);
-            } catch (IllegalArgumentException e) {
-                throw new InvalidGuidFormatException(s);
+            else {
+                String s = source.getString();
+                if (s.startsWith("{") && s.endsWith("}")) {
+                    s = s.substring(1, s.length() - 1);
+                }
+                try {
+                    UUID uuid = UUID.fromString(s);
+                    target.putObject(uuid);
+                } catch (IllegalArgumentException e) {
+                    throw new InvalidGuidFormatException(s);
+                }
             }
         }
     };
