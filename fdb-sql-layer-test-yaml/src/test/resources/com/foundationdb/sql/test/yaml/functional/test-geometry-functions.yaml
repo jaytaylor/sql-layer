@@ -29,23 +29,27 @@
 - output: [['POINT (10 0)']]
 
 ---
-- Statement: SELECT GEO_OVERLAP( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(10, 20) ), GEO_COVER( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(10, 20) ), GEO_CONTAIN( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(10, 20) )
+- Statement: SELECT GEO_OVERLAPS( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(10, 20) ), GEO_COVERS( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(10, 20) ), GEO_CONTAINS( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(10, 20) )
 - output: [[false, true, true]]
 ---
-- Statement: SELECT GEO_OVERLAP( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(20, 30) ), GEO_COVER( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(20, 30) ), GEO_CONTAIN( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(20, 30) )
+- Statement: SELECT GEO_OVERLAPS( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(20, 30) ), GEO_COVERS( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(20, 30) ), GEO_CONTAINS( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(20, 30) )
 - output: [[false, false, false]]
 ---
-- Statement: SELECT GEO_OVERLAP( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(15, 25) ), GEO_COVER( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(15, 25) ), GEO_CONTAIN( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(15, 25) )
+- Statement: SELECT GEO_OVERLAPS( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(15, 25) ), GEO_COVERS( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(15, 25) ), GEO_CONTAINS( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(15, 25) )
 - output: [[false, true, false]]
 
 ---
-- Statement: SELECT CAST( GEO_BUFFER( GEO_LAT_LON(10, 20), 5) AS VARCHAR(128) )
+- Statement: SELECT CAST( GEO_EXPANDED_ENVELOPE( GEO_LAT_LON(10, 20), 5) AS VARCHAR(128) )
 - output: [['POLYGON ((5 15, 5 25, 15 25, 15 15, 5 15))']]
 ---
-- Statement: SELECT GEO_POINT_IN_CIRCLE( GEO_LAT_LON(10, 20), GEO_LAT_LON(8, 18), 5)
+- Statement: SELECT GEO_CONTAINS(GEO_EXPANDED_ENVELOPE( GEO_LAT_LON(10, 20), 5) , GEO_LAT_LON(12, 22) )
+- output: [[true]]
+
+---
+- Statement: SELECT GEO_WITHIN_DISTANCE( GEO_LAT_LON(10, 20), GEO_LAT_LON(8, 18), 5)
 - output: [[true]]
 ---
-- Statement: SELECT GEO_POINT_IN_CIRCLE( GEO_LAT_LON(10, 20), GEO_LAT_LON(8, 18), 1)
+- Statement: SELECT GEO_WITHIN_DISTANCE( GEO_LAT_LON(10, 20), GEO_LAT_LON(8, 18), 1)
 - output: [[false]]
 
 ---

@@ -29,13 +29,13 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.vividsolutions.jts.geom.Geometry;
 
-/** Circle containment predicate. */
-public class GeoPointInCircle extends TScalarBase
+/** Geometry distance (e.g., circle containment) predicate. */
+public class GeoWithinDistance extends TScalarBase
 {
     private final TClass geometryType;
     private final TClass radiusType;
 
-    public GeoPointInCircle(TClass geometryType, TClass radiusType) {
+    public GeoWithinDistance(TClass geometryType, TClass radiusType) {
         this.geometryType = geometryType;
         this.radiusType = radiusType;
     }
@@ -55,7 +55,7 @@ public class GeoPointInCircle extends TScalarBase
 
     @Override
     public String displayName() {
-        return "GEO_POINT_IN_CIRCLE";
+        return "GEO_WITHIN_DISTANCE";
     }
 
     @Override

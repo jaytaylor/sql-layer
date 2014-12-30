@@ -37,7 +37,7 @@ import com.foundationdb.ais.model.Index.JoinType;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.text.FullTextQueryBuilder;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.common.funcs.GeoOverlap;
+import com.foundationdb.server.types.common.funcs.GeoOverlaps;
 import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
@@ -1843,7 +1843,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         String function = cond.getFunction();
         List<ExpressionNode> operands = cond.getOperands();
 
-        for (GeoOverlap.OverlapType overlap : GeoOverlap.OverlapType.values()) {
+        for (GeoOverlaps.OverlapType overlap : GeoOverlaps.OverlapType.values()) {
             if (function.equalsIgnoreCase(overlap.functionName())) {
                 ExpressionNode op1 = operands.get(0);
                 ExpressionNode op2 = operands.get(1);
@@ -1858,7 +1858,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             }
         }
 
-        if (function.equalsIgnoreCase("geo_point_in_circle")) {
+        if (function.equalsIgnoreCase("geo_within_distance")) {
             ExpressionNode op1 = operands.get(0);
             ExpressionNode op2 = operands.get(1);
             ExpressionNode radius = operands.get(2);
@@ -1888,7 +1888,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     }
 
     private ExpressionNode spatialWithinDistance(ExpressionNode op, ExpressionNode distance) {
-        return new FunctionExpression("geo_buffer",
+        return new FunctionExpression("geo_expanded_envelope",
                                       Arrays.asList(op, distance),
                                       null, null, null);
     }

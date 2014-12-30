@@ -30,10 +30,10 @@ import com.foundationdb.server.types.value.ValueTarget;
 import com.vividsolutions.jts.geom.Geometry;
 
 /** Simple predicates between two {@link Geometry} objects. */
-public class GeoOverlap extends TScalarBase
+public class GeoOverlaps extends TScalarBase
 {
     public enum OverlapType {
-        GEO_OVERLAP, GEO_CONTAIN, GEO_COVER;
+        GEO_OVERLAPS, GEO_CONTAINS, GEO_COVERS;
 
         public String functionName() {
             return name();
@@ -43,7 +43,7 @@ public class GeoOverlap extends TScalarBase
     public static TScalar[] create(TClass geometryType) {
         TScalar[] funs = new TScalar[OverlapType.values().length];
         for (int i = 0; i < funs.length; i++) {
-            funs[i] = new GeoOverlap(geometryType, OverlapType.values()[i]);
+            funs[i] = new GeoOverlaps(geometryType, OverlapType.values()[i]);
         }
         return funs;
     }
@@ -51,7 +51,7 @@ public class GeoOverlap extends TScalarBase
     private final TClass geometryType;
     private final OverlapType overlapType;
 
-    public GeoOverlap(TClass geometryType, OverlapType overlapType) {
+    public GeoOverlaps(TClass geometryType, OverlapType overlapType) {
         this.geometryType = geometryType;
         this.overlapType = overlapType;
     }
@@ -67,13 +67,13 @@ public class GeoOverlap extends TScalarBase
         Geometry geo2 = (Geometry)inputs.get(1).getObject();
         boolean result = false;
         switch (overlapType) {
-        case GEO_OVERLAP:
+        case GEO_OVERLAPS:
             result = geo1.overlaps(geo2);
             break;
-        case GEO_CONTAIN:
+        case GEO_CONTAINS:
             result = geo1.contains(geo2);
             break;
-        case GEO_COVER:
+        case GEO_COVERS:
             result = geo1.covers(geo2);
             break;
         }

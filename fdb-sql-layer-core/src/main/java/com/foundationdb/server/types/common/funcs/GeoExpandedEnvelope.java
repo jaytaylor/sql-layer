@@ -27,16 +27,16 @@ import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
+import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
-import static com.vividsolutions.jts.operation.buffer.BufferOp.bufferOp;
 
 /** Geometry buffer / offset by radius. */
-public class GeoBuffer extends TScalarBase
+public class GeoExpandedEnvelope extends TScalarBase
 {
     private final TClass geometryType;
     private final TClass radiusType;
 
-    public GeoBuffer(TClass geometryType, TClass radiusType) {
+    public GeoExpandedEnvelope(TClass geometryType, TClass radiusType) {
         this.geometryType = geometryType;
         this.radiusType = radiusType;
     }
@@ -50,13 +50,16 @@ public class GeoBuffer extends TScalarBase
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
         Geometry geometry = (Geometry)inputs.get(0).getObject();
         double distance = inputs.get(1).getDouble();
-        // TODO: Is this the calculation we want?
-        output.putObject(bufferOp(geometry, distance).getEnvelope());
+        Envelope envelope = geometry.getEnvelopeInternal();
+        envelope = new Envelope(envelope);
+        envelope.expandBy(distance);
+        Geometry expanded = geometry.getFactory().toGeometry(envelope);
+        output.putObject(expanded);
     }
 
     @Override
     public String displayName() {
-        return "GEO_BUFFER";
+        return "GEO_EXPANDED_ENVELOPE";
     }
 
     @Override
