@@ -85,7 +85,9 @@ public class AkGeometry extends TClassBase
             catch (IOException ex) {
                 throw new AkibanInternalException("Error formatting to string", ex);
             }
+            out.append('\'');
             out.append(sw.toString());
+            out.append('\'');
         }
 
         @Override
