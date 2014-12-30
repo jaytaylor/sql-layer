@@ -171,19 +171,19 @@ public class NestedLoopMapper extends BaseRule
     }
 
     private ConditionList negateConjunction(ConditionList conditionList) {
-        ConditionExpression condition = conditionList.get(0);
-        List<ConditionExpression> newConditionList = buildAndConditions(conditionList);
+        ConditionExpression firstCondition = conditionList.get(0); // just to use for types.
+        ConditionList newConditionList = buildAndConditions(conditionList);
 
         // negate the resulting condition
-        condition = new LogicalFunctionCondition("not", newConditionList,
-                                                 condition.getSQLtype(),
-                                                 condition.getSQLsource(),
-                                                 condition.getType());
+        LogicalFunctionCondition notCondition = new LogicalFunctionCondition("not", newConditionList,
+                                                                             firstCondition.getSQLtype(),
+                                                                             firstCondition.getSQLsource(),
+                                                                             firstCondition.getType());
         TValidatedScalar validatedScalarNot = new TValidatedScalar(BoolLogic.NOT);
-        ((LogicalFunctionCondition)condition).setResolved(validatedScalarNot);
+        notCondition.setResolved(validatedScalarNot);
 
         ConditionList negatedConjunction = new ConditionList();
-        negatedConjunction.add(condition);
+        negatedConjunction.add(notCondition);
         return negatedConjunction;
     }
 
