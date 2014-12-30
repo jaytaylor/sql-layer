@@ -172,10 +172,10 @@ public class NestedLoopMapper extends BaseRule
 
     private ConditionList negateConjunction(ConditionList conditionList) {
         ConditionExpression firstCondition = conditionList.get(0); // just to use for types.
-        ConditionList newConditionList = buildAndConditions(conditionList);
+        ConditionList andedConditionList = buildAndConditions(conditionList);
 
         // negate the resulting condition
-        LogicalFunctionCondition notCondition = new LogicalFunctionCondition("not", newConditionList,
+        LogicalFunctionCondition notCondition = new LogicalFunctionCondition("not", andedConditionList,
                                                                              firstCondition.getSQLtype(),
                                                                              firstCondition.getSQLsource(),
                                                                              firstCondition.getType());
