@@ -3,4 +3,4 @@ PhysicalSelect@115515c2[city, state]
     Sort_General(DISTANCE_LAT_LON(Field(3), Field(4), 42.3583, -71.0603) ASC)
       Select_HKeyOrdered(DISTANCE_LAT_LON(Field(3), Field(4), 42.3583, -71.0603) <= 3.600000e+02)
         GroupLookup_Default(Index(test.places.places_geo) -> test.places)
-          IndexScan_Default(Index(test.places.places_geo), (lat, lon) OVERLAP('POLYGON ((-431.0603 -317.6417, -431.0603 402.3583, 288.9397 402.3583, 288.9397 -317.6417, -431.0603 -317.6417))'))
+          IndexScan_Default(Index(test.places.places_geo), (lat, lon) OVERLAP('POLYGON ((-317.6417 -431.0603, -317.6417 288.9397, 402.3583 288.9397, 402.3583 -431.0603, -317.6417 -431.0603))'))

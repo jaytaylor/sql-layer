@@ -60,9 +60,9 @@ public class GeoLatLon extends TScalarBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
         GeometryFactory factory = (GeometryFactory)context.preptimeObjectAt(FACTORY_CONTEXT_POS);
-        double y = doubleInRange(TBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0)), MIN_LAT, MAX_LAT);
-        double x = doubleInRange(TBigDecimal.getWrapper(inputs.get(1), context.inputTypeAt(1)), MIN_LON, MAX_LON);
-        Geometry geometry = factory.createPoint(new Coordinate(x, y));
+        double lat = doubleInRange(TBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0)), MIN_LAT, MAX_LAT);
+        double lon = doubleInRange(TBigDecimal.getWrapper(inputs.get(1), context.inputTypeAt(1)), MIN_LON, MAX_LON);
+        Geometry geometry = factory.createPoint(new Coordinate(lat, lon));
         output.putObject(geometry);
     }
 
