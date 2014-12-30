@@ -3,5 +3,5 @@ SelectQuery@27c4cca4
     Project@5cf4f74e[places.pid]
       Sort@40881b7d[distance_lat_lon(places.lat,places.lon,42.3583,-71.0603)]
         Select@5698518f[distance_lat_lon(places.lat,places.lon,42.3583,-71.0603) <= 0.0466]
-          TableGroupJoinTree@2a12afb3(TableGroup@6c90b616(places), places - SingleIndexScan@10a29609(Index(test.places.places_geo[IndexColumn(state), IndexColumn(lat), IndexColumn(lon), IndexColumn(lat), IndexColumn(lon)])application space: (-90.0:90.0, -180.0:180.0)  gBits: 28, 29, covering/NONE, =MA, >=_center_radius(42.3583,-71.0603,Cast(0.0466 AS MCOMPAT_ DECIMAL(10, 6) NULL)), rows = 7, cost = 217.849))
+          TableGroupJoinTree@2a12afb3(TableGroup@6c90b616(places), places - SingleIndexScan@10a29609(Index(test.places.places_geo[IndexColumn(state), IndexColumn(lat), IndexColumn(lon), IndexColumn(lat), IndexColumn(lon)])application space: (-90.0:90.0, -180.0:180.0)  gBits: 28, 29, covering/NONE, =MA, @geo_buffer(geo_lat_lon(42.3583,-71.0603),0.0466), rows = 1, cost = 85.9784))
             TableSource@419d563a(places - TableGroup@6c90b616(places))

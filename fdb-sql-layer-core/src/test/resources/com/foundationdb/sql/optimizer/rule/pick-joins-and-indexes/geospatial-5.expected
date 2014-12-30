@@ -1,0 +1,6 @@
+SelectQuery@5399f6c5
+  ResultSet@4fe64d23[pid]
+    Project@58437801[places.pid]
+      Select@6af5bbd0[geo_overlap(geo_lat_lon(places.lat,places.lon),POLYGON ((-71.1069 42.3117, -71.1069 42.4049, -71.0137 42.4049, -71.0137 42.3117, -71.1069 42.3117)))]
+        TableGroupJoinTree@76464795(TableGroup@fb2e3fd(places), places - SingleIndexScan@43a09ce2(Index(test.places.places_geo[IndexColumn(lat), IndexColumn(lon)])application space: (-90.0:90.0, -180.0:180.0)  gBits: 28, 29, NONE, @POLYGON ((-71.1069 42.3117, -71.1069 42.4049, -71.0137 42.4049, -71.0137 42.3117, -71.1069 42.3117)), rows = 1, cost = 13.5186))
+          TableSource@37b56ac7(places - TableGroup@fb2e3fd(places))

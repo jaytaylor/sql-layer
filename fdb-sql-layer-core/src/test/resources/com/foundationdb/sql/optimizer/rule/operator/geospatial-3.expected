@@ -2,4 +2,4 @@ PhysicalSelect@428ee942[pid]
   Project_Default(Field(4))
     Sort_General(DISTANCE_LAT_LON(Field(2), Field(3), 42.3583, -71.0603) ASC)
       Select_HKeyOrdered(DISTANCE_LAT_LON(Field(2), Field(3), 42.3583, -71.0603) <= 4.660000e-02)
-        IndexScan_Default(Index(test.places.places_geo), state = 'MA', (lat, lon) BETWEEN (42.311700, -71.106900) AND (42.404900, -71.013700))
+        IndexScan_Default(Index(test.places.places_geo), state = 'MA', (lat, lon) OVERLAP(POLYGON ((-71.1069 42.3117, -71.1069 42.4049, -71.0137 42.4049, -71.0137 42.3117, -71.1069 42.3117))))

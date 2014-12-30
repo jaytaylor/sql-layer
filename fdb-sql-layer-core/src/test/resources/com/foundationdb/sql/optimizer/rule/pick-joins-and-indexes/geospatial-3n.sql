@@ -1,0 +1,3 @@
+SELECT pid FROM places
+ WHERE state = 'MA'
+   AND GEO_POINT_IN_CIRCLE(GEO_LAT_LON(lat, lon), GEO_LAT_LON(42.3583, -71.0603), 0.0466)
