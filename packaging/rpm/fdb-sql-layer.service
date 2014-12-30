@@ -7,6 +7,9 @@ Type=forking
 PIDFile=/var/run/fdb-sql-layer/fdb-sql-layer.pid
 User=foundationdb
 ExecStart=/usr/sbin/fdbsqllayer -H /usr/share/foundationdb/sql -c /etc/foundationdb/sql -p /var/run/fdb-sql-layer/fdb-sql-layer.pid -q
+# java returns the exit status 143 when killed with SIGTERM
+# `systemctl stop fdb-sql-layer` uses SIGTERM
+# the docs say that you can just put "SIGTERM" here, but my testing says otherwise
 SuccessExitStatus=143
 KillMode=process
 
