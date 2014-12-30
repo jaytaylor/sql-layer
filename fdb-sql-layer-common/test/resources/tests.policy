@@ -7,6 +7,9 @@ grant codeBase "file:${mvn.main.basedir}/fdb-sql-layer-core/target/-" {
 grant codeBase "file:${mvn.main.basedir}/fdb-sql-layer-pg/target/-" {
   permission java.security.AllPermission;
 };
+grant codeBase "file:${mvn.main.basedir}/fdb-sql-layer-rest/target/-" {
+  permission java.security.AllPermission;
+};
 grant codeBase "file:${mvn.main.basedir}/fdb-sql-layer-routinefw/target/*" {
 };
 grant codeBase "file:${mvn.main.basedir}/fdb-sql-layer-jdbc-proxy/target/-" {
