@@ -171,19 +171,8 @@ public class NestedLoopMapper extends BaseRule
     }
 
     private ConditionList negateConjunction(ConditionList conditionList) {
-        List<ConditionExpression> newConditionList = conditionList;
         ConditionExpression condition = conditionList.get(0);
-        if (conditionList.size() > 1) {
-            // and all the conditions first
-            condition = new LogicalFunctionCondition("and", conditionList,
-                                                     condition.getSQLtype(),
-                                                     condition.getSQLsource(),
-                                                     condition.getType());
-            TValidatedScalar validatedScalarAnd = new TValidatedScalar(BoolLogic.AND); // and
-            ((LogicalFunctionCondition)condition).setResolved(validatedScalarAnd);
-            newConditionList = new ArrayList<ConditionExpression>();
-            newConditionList.add(condition);
-        }
+        List<ConditionExpression> newConditionList = buildAndConditions(conditionList);
 
         // negate the resulting condition
         condition = new LogicalFunctionCondition("not", newConditionList,
@@ -196,6 +185,39 @@ public class NestedLoopMapper extends BaseRule
         ConditionList negatedConjunction = new ConditionList();
         negatedConjunction.add(condition);
         return negatedConjunction;
+    }
+
+    private ConditionList buildAndConditions(ConditionList conditionList) {
+        int ndx = conditionList.size() - 1;
+        if (ndx == 0) return conditionList;
+
+        ConditionExpression rightCondition = conditionList.get(ndx);
+        ConditionExpression leftCondition = conditionList.get(ndx-1);
+        ConditionList newConditionList = new ConditionList();
+        newConditionList.add(rightCondition);
+        newConditionList.add(leftCondition);
+        LogicalFunctionCondition condition = new LogicalFunctionCondition("and", newConditionList,
+                                                                          rightCondition.getSQLtype(),
+                                                                          rightCondition.getSQLsource(),
+                                                                          rightCondition.getType());
+        TValidatedScalar validatedScalarAnd = new TValidatedScalar(BoolLogic.AND);
+        condition.setResolved(validatedScalarAnd);
+        ndx -= 2;
+        while (ndx >= 0) {
+            newConditionList = new ConditionList();
+            newConditionList.add(conditionList.get(ndx));
+            newConditionList.add(condition);
+            condition = new LogicalFunctionCondition("and", newConditionList,
+                                                     rightCondition.getSQLtype(),
+                                                     rightCondition.getSQLsource(),
+                                                     rightCondition.getType());
+            condition.setResolved(validatedScalarAnd);
+            ndx--;
+        }
+
+        newConditionList = new ConditionList();
+        newConditionList.add(condition);
+        return newConditionList;
     }
 
     private static class PlanNodeProvidesSourcesChecker implements PlanVisitor {
