@@ -28,31 +28,49 @@ public class BlobBase extends BlobAsync {
         super (subspace);
     }
 
-    public Future<Void> setLinkedSchema(TransactionContext tcx, final String schemaName) {
+    public Future<Void> setLinkedTable(TransactionContext tcx, final int tableId) {
         return tcx.runAsync(new Function<Transaction, Future<Void>>() {
             @Override
             public Future<Void> apply(Transaction tr) {
-                tr.set(attributeKey(), Tuple2.from(schemaName).pack());
+                tr.set(attributeKey(), Tuple2.from(String.valueOf(tableId)).pack());
                 return new ReadyFuture<>((Void) null);
             }
         });
-        
     }
     
-    public Future<String> getLinkedSchema(TransactionContext tcx) {
-        return tcx.runAsync(new Function<Transaction, Future<String>>() {
+    public Future<Integer> getLinkedTable(TransactionContext tcx) {
+        return tcx.runAsync(new Function<Transaction, Future<Integer>>() {
             @Override
-            public Future<String> apply(Transaction tr) {
-                return tr.get(attributeKey()).map(new Function<byte[],String>() {
+            public Future<Integer> apply(Transaction tr) {
+                return tr.get(attributeKey()).map(new Function<byte[], Integer>() {
                     @Override
-                    public String apply(byte[] schemaNameBytes) {
-                        if(schemaNameBytes == null) {
-                            return "";
+                    public Integer apply(byte[] tableIdBytes) {
+                        if(tableIdBytes == null) {
+                            return -1;
                         }
-                        return Tuple2.fromBytes(schemaNameBytes).getString(0);
+                        String tableIDString = Tuple2.fromBytes(tableIdBytes).getString(0);
+                        return Integer.valueOf(tableIDString);
                     }
                 });
             }
         });
     }
+
+    public Future<Boolean> isLinked(TransactionContext tcx) {
+        return tcx.runAsync(new Function<Transaction, Future<Boolean>>() {
+            @Override
+            public Future<Boolean> apply(Transaction tr) {
+                return tr.get(attributeKey()).map(new Function<byte[], Boolean>() {
+                    @Override
+                    public Boolean apply(byte[] tableIdBytes) {
+                        if(tableIdBytes == null) {
+                            return false;
+                        }
+                        String tableIDString = Tuple2.fromBytes(tableIdBytes).getString(0);
+                        return Integer.valueOf(tableIDString) == -1 ? false : true;
+                    }
+                });
+            }
+        });
+    }    
 }
