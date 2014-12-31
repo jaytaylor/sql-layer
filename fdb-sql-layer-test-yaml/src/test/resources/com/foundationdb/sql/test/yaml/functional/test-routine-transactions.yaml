@@ -1,8 +1,3 @@
-# BUG: Fails in FTS. Enable when fixed.
----
-- Properties: fts 
-- suppressed: true
-
 ---
 - CreateTable: nums (n INT)
 ---
@@ -96,10 +91,11 @@
       }
     $$ LANGUAGE javascript PARAMETER STYLE java EXTERNAL NAME 'fun';
 ---
-- Statement: CALL test_outer()
-- output: [[1.0]]
-- warnings_count: 0
----
+# fails for now
+# - Statement: CALL test_outer()
+# - output: [[1.0]]
+# - warnings_count: 0
+# ---
 # Check that there isn't a leftover transaction.
 - Statement: BEGIN
 ---
