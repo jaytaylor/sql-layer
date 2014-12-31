@@ -229,7 +229,9 @@ class IndexScan_Default extends Operator
             if (indexKeyRange.hi() != null) {
                 hiExprs = indexKeyRange.hi().getExplainer(context).get().get(Label.EXPRESSIONS);
             }
-            if (indexKeyRange.spatialCoordsIndex()) {
+            if (indexKeyRange.spatialCoordsIndex() ||
+                indexKeyRange.spatialObjectIndex()) {
+                atts.put(Label.INDEX_SPATIAL_DIMENSIONS, PrimitiveExplainer.getInstance(index.spatialColumns()));
                 if (index.isGroupIndex()) {
                     atts.remove(Label.INDEX_KIND);
                     atts.put(Label.INDEX_KIND, PrimitiveExplainer.getInstance("SPATIAL GROUP"));
@@ -237,14 +239,13 @@ class IndexScan_Default extends Operator
                     atts.put(Label.INDEX_KIND, PrimitiveExplainer.getInstance("SPATIAL"));
                 }
                 int nequals = indexKeyRange.boundColumns() - index.spatialColumns();
-                if (nequals > 0) {
-                    for (int i = 0; i < nequals; i++) {
-                        atts.put(Label.EQUAL_COMPARAND, loExprs.get(i));
-                    }
-                    loExprs = loExprs.subList(nequals, loExprs.size());
-                    if (hiExprs != null) {
-                        hiExprs = hiExprs.subList(nequals, hiExprs.size());
-                    }
+                for (int i = 0; i < nequals; i++) {
+                    atts.put(Label.EQUAL_COMPARAND, loExprs.get(i));
+                }
+                int nspatial = indexKeyRange.spatialCoordsIndex() ? 2 : 1;
+                loExprs = loExprs.subList(nequals, nequals+nspatial);
+                if (hiExprs != null) {
+                    hiExprs = hiExprs.subList(nequals, nequals+nspatial);
                 }
                 atts.put(Label.LOW_COMPARAND, loExprs);
                 if (hiExprs != null) {

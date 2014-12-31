@@ -40,12 +40,12 @@ public class DistanceLatLon extends TScalarBase
         this.doubleType = doubleType;
     }
     
-    static final double MAX_LAT = 90;
-    static final double MIN_LAT = -90;
-    static final double MAX_LON = 180;
-    static final double MIN_LON = -180;
+    public static final double MAX_LAT = 90;
+    public static final double MIN_LAT = -90;
+    public static final double MAX_LON = 180;
+    public static final double MIN_LON = -180;
     
-    static final double MAX_LON_DIS = MAX_LON * 2;
+    public static final double MAX_LON_DIS = MAX_LON * 2;
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
@@ -71,7 +71,7 @@ public class DistanceLatLon extends TScalarBase
         output.putDouble(Math.sqrt(dx * dx + dy * dy));
     }
 
-    private static double doubleInRange(BigDecimalWrapper val, double min, double max)
+    public static double doubleInRange(BigDecimalWrapper val, double min, double max)
     {
         double dVar = val.asBigDecimal().doubleValue();
         
