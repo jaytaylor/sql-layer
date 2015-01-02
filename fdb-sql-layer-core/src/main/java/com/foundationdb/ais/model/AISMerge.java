@@ -475,9 +475,6 @@ public class AISMerge {
 
         if (sourceTable.getPrimaryKeyIncludingInternal() != null) {
             TableIndex index = sourceTable.getPrimaryKeyIncludingInternal().getIndex();
-            final int rootTableID = (targetGroup != null) ? 
-                    targetGroup.getRoot().getTableId() : 
-                        builder.akibanInformationSchema().getTable(sourceTable.getName()).getTableId();
             IndexName indexName = index.getIndexName();
             builder.index(sourceTable.getName().getSchemaName(), 
                     sourceTable.getName().getTableName(),
