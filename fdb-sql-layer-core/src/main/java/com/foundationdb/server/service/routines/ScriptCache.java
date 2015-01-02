@@ -94,14 +94,21 @@ public class ScriptCache {
             setContextClassLoader(engineProvider.getSafeClassLoader());
         }
         
-        ScriptEngine engine = getManager(session).getEngineByName(routine.getLanguage());
-        if (engine == null)
-            throw new ExternalRoutineInvocationException(routineName, "Cannot find " + routine.getLanguage()
-                    + " script engine");
-        entry = new CacheEntry(routine, engine);
-        cache.put(routineName, entry);
-        if (!routine.isSystemRoutine()) {
-            setContextClassLoader(origCL);
+        try {
+            ScriptEngine engine = getManager(session).getEngineByName(routine.getLanguage());
+            if (engine == null)
+                throw new ExternalRoutineInvocationException(routineName, "Cannot find " + routine.getLanguage()
+                        + " script engine");
+            entry = new CacheEntry(routine, engine);
+            cache.put(routineName, entry);
+        }
+        catch (Exception e){
+            throw e;
+        }
+        finally {
+            if (!routine.isSystemRoutine()) {
+                setContextClassLoader(origCL);
+            }
         }
         return entry;
     }
