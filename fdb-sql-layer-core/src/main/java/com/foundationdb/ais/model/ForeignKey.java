@@ -58,18 +58,23 @@ public class ForeignKey implements Constraint
         return fk;
     }
 
-    /** Find a unique index on <code>referencedTable</code> with
-     * <code>referencedColumns</code> in some order.
-     */
-    public static TableIndex findReferencedIndex(Table referencedTable,
-                                                 List<Column> referencedColumns) {
-        int ncols = referencedColumns.size();
-        for (TableIndex index : referencedTable.getIndexesIncludingInternal()) {
-            if (!(index.isUnique() && (index.getKeyColumns().size() == ncols)))
+    /** Find an index on {@code table} starting with
+     * {@code requiredColumns} in some order. */
+    public static TableIndex findIndex(Table table,
+                                       List<Column> requiredColumns,
+                                       boolean requireUnique) {
+        int ncols = requiredColumns.size();
+        for (TableIndex index : table.getIndexesIncludingInternal()) {
+            if (requireUnique) {
+                if (!index.isUnique() || (index.getKeyColumns().size() != ncols)) {
+                    continue;
+                }
+            } else if (index.getKeyColumns().size() < ncols) {
                 continue;
+            }
             boolean found = true;
             for (int i = 0; i < ncols; i++) {
-                if (referencedColumns.indexOf(index.getKeyColumns().get(i).getColumn()) < 0) {
+                if (requiredColumns.indexOf(index.getKeyColumns().get(i).getColumn()) < 0) {
                     found = false;
                     break;
                 }
@@ -79,6 +84,21 @@ public class ForeignKey implements Constraint
             }
         }
         return null;
+    }
+
+    /** Find a unique index on <code>referencedTable</code> exactly
+     * <code>referencedColumns</code> in some order.
+     */
+    public static TableIndex findReferencedIndex(Table referencedTable,
+                                                 List<Column> referencedColumns) {
+        return findIndex(referencedTable, referencedColumns, true);
+    }
+
+    /** Find an index on {@code referencingTable} starting with
+     * {@code referencingColumns} in some order. */
+    public static TableIndex findReferencingIndex(Table referencingTable,
+                                                  List<Column> referencingColumns) {
+        return findIndex(referencingTable, referencingColumns, false);
     }
 
     public TableName getConstraintName() {
@@ -97,7 +117,7 @@ public class ForeignKey implements Constraint
         if (referencingIndex == null) {
             synchronized (this) {
                 if (referencingIndex == null) {
-                    referencingIndex = join.getChild().getIndex(constraintName.getTableName());
+                    referencingIndex = findReferencingIndex(join.getChild(), join.getChildColumns());
                 }
             }
         }

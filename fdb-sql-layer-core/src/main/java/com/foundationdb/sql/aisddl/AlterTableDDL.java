@@ -232,10 +232,6 @@ public class AlterTableDDL {
                                             new NoSuchForeignKeyException(fkNode.getConstraintName().getTableName(), origTable.getName()));
                                 fkNode = null;
                             }
-                            if(fkNode != null) {
-                                // Also drop the referencing index.
-                                indexChanges.add(TableChange.createDrop(fkNode.getConstraintName().getTableName()));
-                            }
                         }
                     }
                     if(fkNode != null) {

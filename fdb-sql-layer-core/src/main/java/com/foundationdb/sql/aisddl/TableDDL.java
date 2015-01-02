@@ -25,6 +25,7 @@ import java.util.Set;
 
 import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.Columnar;
+import com.foundationdb.ais.model.DefaultNameGenerator;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Sequence;
@@ -695,23 +696,46 @@ public class TableDDL
                                                   referencedColumnNames.length);
         }
         List<Column> referencedColumns = new ArrayList<>(referencedColumnNames.length);
+        List<Column> referencingColumns = new ArrayList<>(referencingColumnNames.length);
         for (int i = 0; i < referencingColumnNames.length; i++) {
-            if (referencingTable.getColumn(referencingColumnNames[i]) == null) {
+            Column referencingColumn = referencingTable.getColumn(referencingColumnNames[i]);
+            if (referencingColumn == null) {
                 throw new NoSuchColumnException(referencingColumnNames[i]); 
             }
+            referencingColumns.add(referencingColumn);
             Column referencedColumn = referencedTable.getColumn(referencedColumnNames[i]);
             if (referencedColumn == null) {
                 throw new NoSuchColumnException(referencedColumnNames[i]);
             }
             referencedColumns.add(referencedColumn);
         }
-        // Pick an index.
-        TableIndex referencedIndex = ForeignKey.findReferencedIndex(referencedTable,
-                                                                    referencedColumns);
-        if (referencedIndex == null) {
-            throw new ForeignKeyIndexRequiredException(constraintName, referencedName,
-                                                       Arrays.toString(referencedColumnNames));
+
+        // Note: Referenced side index checked in validation
+
+        // Pick (or create) a referencing side index
+        TableIndex referencingIndex = ForeignKey.findReferencingIndex(referencingTable,
+                                                                      referencingColumns);
+        if (referencingIndex == null) {
+            List<String> allIndexNames = new ArrayList<>();
+            for(Index index : referencingTable.getIndexesIncludingInternal()) {
+                allIndexNames.add(index.getIndexName().getName());
+            }
+            for(Index index : referencingTable.getFullTextIndexes()) {
+                allIndexNames.add(index.getIndexName().getName());
+            }
+            String name = DefaultNameGenerator.findUnique(allIndexNames, constraintName, DefaultNameGenerator.MAX_IDENT);
+            builder.index(referencingSchemaName, referencingTableName, name);
+            for(int i = 0; i < referencingColumnNames.length; ++i) {
+                builder.indexColumn(referencingSchemaName,
+                                    referencingTableName,
+                                    name,
+                                    referencingColumnNames[i],
+                                    i,
+                                    true,
+                                    null /*indexedLength*/);
+            }
         }
+
         builder.foreignKey(referencingSchemaName, referencingTableName,
                            Arrays.asList(referencingColumnNames),
                            referencedName.getSchemaName(), referencedName.getTableName(),

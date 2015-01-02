@@ -17,6 +17,7 @@
 
 package com.foundationdb.ais.model;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,7 +35,7 @@ import org.slf4j.LoggerFactory;
 public class DefaultNameGenerator implements NameGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultNameGenerator.class);
 
-    static final int MAX_IDENT = 64;
+    public static final int MAX_IDENT = 64;
     static final String IDENTITY_SEQUENCE_FORMAT = "%s_%s_seq";
 
     // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
@@ -248,7 +249,7 @@ public class DefaultNameGenerator implements NameGenerator {
     }
 
     /** Find a name that would be unique if added to {@code set}. */
-    private static TableName findUnique(Set<TableName> set, TableName original) {
+    private static TableName findUnique(Collection<TableName> set, TableName original) {
         int counter = 1;
         String baseName = original.getTableName();
         TableName proposed = original;
@@ -263,7 +264,7 @@ public class DefaultNameGenerator implements NameGenerator {
         return proposed;
     }
 
-    public static String findUnique(Set<String> set, String original, int maxLength) {
+    public static String findUnique(Collection<String> set, String original, int maxLength) {
         int counter = 1;
         String baseName = original;
         String proposed = original;
@@ -278,7 +279,7 @@ public class DefaultNameGenerator implements NameGenerator {
         return proposed;
     }
 
-    public static String makeUnique(Set<String> treeNames, String proposed, int maxLength) {
+    public static String makeUnique(Collection<String> treeNames, String proposed, int maxLength) {
         String actual = findUnique(treeNames, proposed, maxLength);
         treeNames.add(actual);
         return actual;

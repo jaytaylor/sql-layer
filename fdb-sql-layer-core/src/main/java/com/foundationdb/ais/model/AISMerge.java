@@ -501,7 +501,8 @@ public class AISMerge {
         builder.groupingIsComplete();
         
         for (TableIndex index : sourceTable.getIndexes()) {
-            if (!index.isPrimaryKey() && !index.isConnectedToFK()) {
+            // PRIMARY is added above as it is needed before groupingIsComplete()
+            if (!index.isPrimaryKey()) {
                 mergeIndex(index);
             }
         }

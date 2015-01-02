@@ -40,7 +40,7 @@
 - error: [2B001, 'ERROR: Cannot drop table `test`.`t1` due for foreign key constraint `t2_fkey` on `test`.`t2`']
 ---
 - Statement: DROP INDEX t2.`t2_fkey`
-- error: [5000H, 'ERROR: Index `t2_fkey` can not be added or removed from table `test`.`t2`']
+- error: [50032, 'ERROR: Foreign key `t2_fkey` requires a INDEX on `test`.`t2` for columns [t2.pid]']
 ---
 - Statement: ALTER TABLE t1 ALTER COLUMN id SET DATA TYPE BIGINT
 - error: [2B002, 'ERROR: Cannot alter column `id` on `test`.`t1` due for foreign key constraint `t2_fkey`']
@@ -53,7 +53,7 @@
 - CreateTable: t2 (id INT PRIMARY KEY NOT NULL, pid INT, m1 INT, m2 INT)
 ---
 - Statement: ALTER TABLE t2 ADD FOREIGN KEY(m2,m1) REFERENCES t1(n1,n2)
-- error: [50032, 'ERROR: Foreign key `t2_fkey` requires a unique index on `test`.`t1` for columns [n1, n2]']
+- error: [50032, 'ERROR: Foreign key `t2_fkey` requires a UNIQUE on `test`.`t1` for columns [t1.n1, t1.n2]']
 ---
 - Statement: CREATE UNIQUE INDEX t1_n ON t1(n1, n2);
 ---
@@ -146,3 +146,121 @@
 - DropTable: c
 ---
 - DropTable: p
+
+# Index picking and automatic creation on referencing table
+---
+- CreateTable: parent(pid INT PRIMARY KEY)
+
+# Compatible index, exact column
+---
+- CreateTable: child(cid INT PRIMARY KEY, pid INT, INDEX idx(pid), FOREIGN KEY(pid) REFERENCES parent(pid))
+---
+- Statement: SELECT index_name FROM information_schema.indexes WHERE table_schema = CURRENT_SCHEMA AND table_name = 'child'
+- output: [['idx'], ['PRIMARY']]
+---
+- DropTable: child
+
+# Compatible index, extra suffix column
+---
+- CreateTable: child(cid INT PRIMARY KEY, pid INT, x INT, INDEX idx(pid,x), CONSTRAINT fk1 FOREIGN KEY(pid) REFERENCES parent(pid))
+---
+- Statement: SELECT index_name FROM information_schema.indexes WHERE table_schema = CURRENT_SCHEMA AND table_name = 'child'
+- output: [['idx'], ['PRIMARY']]
+
+# Another FK using the same index
+---
+- Statement: ALTER TABLE child ADD CONSTRAINT fk2 FOREIGN KEY(pid) REFERENCES parent(pid)
+---
+- Statement: SELECT index_name FROM information_schema.indexes WHERE table_schema = CURRENT_SCHEMA AND table_name = 'child'
+- output: [['idx'], ['PRIMARY']]
+
+# Another compatible index
+---
+- Statement: CREATE INDEX idx2 ON child(pid)
+
+# Original index
+---
+- Statement: DROP INDEX child.idx
+
+# Now used by both FKs
+---
+- Statement: DROP INDEX child.idx2
+- error: [50032] # Ignore message, could be either FK
+---
+- Statement: ALTER TABLE child DROP FOREIGN KEY fk1
+---
+- Statement: DROP INDEX child.idx2
+- error: [50032, 'ERROR: Foreign key `fk2` requires a INDEX on `test`.`child` for columns [child.pid]']
+---
+- Statement: ALTER TABLE child DROP FOREIGN KEY fk2
+---
+- Statement: DROP INDEX child.idx2
+---
+- DropTable: child
+
+# Compatible index with same name as constraint
+---
+- CreateTable: child(cid INT PRIMARY KEY, pid INT, INDEX fk(pid), CONSTRAINT fk FOREIGN KEY(pid) REFERENCES parent(pid))
+---
+- Statement: SELECT index_name FROM information_schema.indexes WHERE table_schema = CURRENT_SCHEMA AND table_name = 'child'
+- output: [['fk'], ['PRIMARY']]
+---
+- DropTable: child
+
+# Incompatible index with same name as constraint
+---
+- CreateTable: child(cid INT PRIMARY KEY, pid INT, x INT, INDEX fk(x), CONSTRAINT fk FOREIGN KEY(pid) REFERENCES parent(pid))
+---
+- Statement: SELECT index_name FROM information_schema.indexes WHERE table_schema = CURRENT_SCHEMA AND table_name = 'child'
+- output: [['fk'], ['fk$1'], ['PRIMARY']]
+---
+- DropTable: child
+---
+- DropTable: parent
+
+# Compound FK index picking
+---
+- CreateTable: parent(pid INT PRIMARY KEY, p1 INT NOT NULL, p2 INT NOT NULL, UNIQUE(p1, p2))
+
+# Must be unique on exact columns
+---
+- CreateTable: child(cid INT PRIMARY KEY, a INT, CONSTRAINT fk FOREIGN KEY(a) REFERENCES parent(p1))
+- error: [50032, 'ERROR: Foreign key `fk` requires a UNIQUE on `test`.`parent` for columns [parent.p1]']
+
+# Same order as referenced
+---
+- CreateTable: child(cid INT PRIMARY KEY, a INT, b INT, INDEX idx(a,b), FOREIGN KEY(a,b) REFERENCES parent(p1,p2))
+---
+- Statement: SELECT index_name FROM information_schema.indexes WHERE table_schema = CURRENT_SCHEMA AND table_name = 'child'
+- output: [['idx'], ['PRIMARY']]
+---
+- DropTable: child
+
+# Different order as referenced
+---
+- CreateTable: child(cid INT PRIMARY KEY, a INT, b INT, INDEX idx(b,a), FOREIGN KEY(a,b) REFERENCES parent(p2,p1))
+---
+- Statement: SELECT index_name FROM information_schema.indexes WHERE table_schema = CURRENT_SCHEMA AND table_name = 'child'
+- output: [['idx'], ['PRIMARY']]
+---
+- DropTable: child
+
+# Compatible index, different order and trailing columns
+---
+- CreateTable: child(cid INT PRIMARY KEY, a INT, b INT, x INT, INDEX idx(b,a,x), FOREIGN KEY(a,b) REFERENCES parent(p2,p1))
+---
+- Statement: SELECT index_name FROM information_schema.indexes WHERE table_schema = CURRENT_SCHEMA AND table_name = 'child'
+- output: [['idx'], ['PRIMARY']]
+---
+- DropTable: child
+
+# Incompatible index
+---
+- CreateTable: child(cid INT PRIMARY KEY, a INT, b INT, x INT, INDEX idx(x,a,b), CONSTRAINT fk FOREIGN KEY(a,b) REFERENCES parent(p2,p1))
+---
+- Statement: SELECT index_name FROM information_schema.indexes WHERE table_schema = CURRENT_SCHEMA AND table_name = 'child'
+- output: [['fk'], ['idx'], ['PRIMARY']]
+---
+- DropTable: child
+---
+- DropTable: parent
