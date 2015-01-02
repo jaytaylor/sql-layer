@@ -81,8 +81,6 @@ public abstract class ServerJavaRoutine implements Explainable, ShieldedInvokabl
             setContextClassLoader(semp.getSafeClassLoader());
             try {
                 RoutineFirewall.callInvoke(this);
-            } catch (Exception e) {
-                throw e;
             }
             finally {
                 setContextClassLoader(origCl);

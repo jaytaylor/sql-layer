@@ -102,9 +102,6 @@ public class ScriptCache {
             entry = new CacheEntry(routine, engine);
             cache.put(routineName, entry);
         }
-        catch (Exception e){
-            throw e;
-        }
         finally {
             if (!routine.isSystemRoutine()) {
                 setContextClassLoader(origCL);
