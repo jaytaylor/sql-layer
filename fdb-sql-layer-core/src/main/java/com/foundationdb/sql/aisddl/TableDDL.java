@@ -191,27 +191,24 @@ public class TableDDL
                               builder.akibanInformationSchema(),
                               createTable.getTableElementList());
 
+        // First pass: Columns.
         int colpos = 0;
-        // first loop through table elements, add the columns
         for (TableElementNode tableElement : createTable.getTableElementList()) {
             if (tableElement instanceof ColumnDefinitionNode) {
                 addColumn (builder, typesTranslator,
                            (ColumnDefinitionNode)tableElement, schemaName, tableName, colpos++);
             }
         }
-        // second pass get the constraints (primary, FKs, and other keys)
-        // This needs to be done in two passes as the parser may put the
-        // constraint before the column definition. For example:
-        // CREATE TABLE t1 (c1 INT PRIMARY KEY) produces such a result.
-        // The Builder complains if you try to do such a thing.
+
+        // Second pass: GROUPING, PRIMARY, UNIQUE and INDEX.
+        // Requires the columns to have already been created.
         for (TableElementNode tableElement : createTable.getTableElementList()) {
             if (tableElement instanceof FKConstraintDefinitionNode) {
                 FKConstraintDefinitionNode fkdn = (FKConstraintDefinitionNode)tableElement;
                 if (fkdn.isGrouping()) {
                     addJoin (builder, fkdn, defaultSchemaName, schemaName, tableName);
-                } else {
-                    addForeignKey(builder, ddlFunctions.getAIS(session), fkdn, defaultSchemaName, schemaName, tableName);
                 }
+                // else: regular FK, done in third pass below
             }
             else if (tableElement instanceof ConstraintDefinitionNode) {
                 addIndex (namer, builder, (ConstraintDefinitionNode)tableElement, schemaName, tableName, context);
@@ -221,6 +218,18 @@ public class TableDDL
                 throw new UnsupportedSQLException("Unexpected TableElement", tableElement);
             }
         }
+
+        // Third pass: FOREIGN KEY.
+        // Separate pass as to not create extraneous indexes, if possible.
+        for (TableElementNode tableElement : createTable.getTableElementList()) {
+            if (tableElement instanceof FKConstraintDefinitionNode) {
+                FKConstraintDefinitionNode fkdn = (FKConstraintDefinitionNode)tableElement;
+                if (!fkdn.isGrouping()) {
+                    addForeignKey(builder, ddlFunctions.getAIS(session), fkdn, defaultSchemaName, schemaName, tableName);
+                }
+            }
+        }
+
         setTableStorage(ddlFunctions, createTable, builder, tableName, table, schemaName);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();

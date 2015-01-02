@@ -264,3 +264,16 @@
 - DropTable: child
 ---
 - DropTable: parent
+
+# INDEX after FOREIGN KEY should not create extra indexes
+---
+- CreateTable: parent(pid INT PRIMARY KEY)
+---
+- CreateTable: child(cid INT PRIMARY KEY, pid INT, CONSTRAINT fk FOREIGN KEY(pid) REFERENCES parent(pid), INDEX idx(pid))
+---
+- Statement: SELECT index_name FROM information_schema.indexes WHERE table_schema = CURRENT_SCHEMA AND table_name = 'child'
+- output: [['idx'], ['PRIMARY']]
+---
+- DropTable: child
+---
+- DropTable: parent
