@@ -89,7 +89,8 @@ public class FDBIndexRow extends IndexRow {
             if (indexToHKey.isOrdinal(i)) {
                 // Do nothing, the ValuesHKey should have the correct ordinals
                 // built from the metadata. 
-                assert indexToHKey.getOrdinal(i) == ancestor.ordinals()[segment++];
+                assert indexToHKey.getOrdinal(i) == ancestor.ordinals()[segment];
+                segment++;
             } else {
                 int indexField = indexToHKey.getIndexRowPosition(i);
                 if (index.isSpatial() && indexField > index.firstSpatialArgument()) {

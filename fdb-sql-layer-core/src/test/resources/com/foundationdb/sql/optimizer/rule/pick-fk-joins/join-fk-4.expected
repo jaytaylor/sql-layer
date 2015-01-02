@@ -4,7 +4,7 @@ SelectQuery@7944e589
       Select@662f4d8a[]
         JoinNode@51a6635b(LEFT/NESTED_LOOPS)
           JoinNode@2c5153e(LEFT/NESTED_LOOPS)
-            TableGroupJoinTree@b7d2830(TableGroup@58f59add(animal), animal - SingleIndexScan@648a50cb(Index(test.animal.fk_zoo[IndexColumn(zoo_id)]), NONE, =100, rows = 1, cost = 15.0558))
+            TableGroupJoinTree@b7d2830(TableGroup@58f59add(animal), animal - SingleIndexScan@648a50cb(Index(test.animal.zoo_id[IndexColumn(zoo_id)]), NONE, =100, rows = 1, cost = 15.0558))
               TableSource@19fa8e56(animal - TableGroup@58f59add(animal))
             TableGroupJoinTree@f9fce28(TableGroup@59b2b206(reptile), reptile - ExpressionsHKeyScan@62c5d5eb(TableSource@447bc5da(reptile - TableFKJoin@2a5f69f6(Foreign Key fk_animal_r: test.reptile REFERENCES test.animal)), animal.id, rows = 1, cost = 8.23020))
               TableSource@447bc5da(reptile - TableFKJoin@2a5f69f6(Foreign Key fk_animal_r: test.reptile REFERENCES test.animal))
