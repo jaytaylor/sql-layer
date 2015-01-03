@@ -38,6 +38,9 @@ public interface SessionMonitor {
     /** The number of queries executed. */
     int getStatementCount();
 
+    /** The number of queries that failed. */
+    int getFailedStatementCount();
+    
     /** The SQL of the current / last statement. */
     String getCurrentStatement();    
 

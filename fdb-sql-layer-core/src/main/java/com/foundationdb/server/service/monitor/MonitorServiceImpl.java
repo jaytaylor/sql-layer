@@ -20,7 +20,6 @@ package com.foundationdb.server.service.monitor;
 import com.foundationdb.server.error.QueryLogCloseException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
-import com.foundationdb.server.service.jmx.JmxManageable;
 import com.foundationdb.server.service.session.Session;
 
 import com.google.inject.Inject;
@@ -35,7 +34,6 @@ import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class MonitorServiceImpl implements Service, MonitorService
@@ -157,6 +155,8 @@ public class MonitorServiceImpl implements Service, MonitorService
         if (queryLogThresholdMillis > 0 && duration < queryLogThresholdMillis) {
             return;
         }
+        
+        
         /*
          * format of each query log entry is:
          * #

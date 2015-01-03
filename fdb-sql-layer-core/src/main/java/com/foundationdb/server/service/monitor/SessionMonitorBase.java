@@ -32,6 +32,7 @@ public abstract class SessionMonitorBase implements SessionMonitor {
     private long currentStatementEndTime = -1;
     private int rowsProcessed = 0;
     private int statementCount = 0;
+    private int failedStatementCount = 0;
     private UserMonitor user = null; 
 
     protected SessionMonitorBase(int sessionID) {
@@ -70,6 +71,11 @@ public abstract class SessionMonitorBase implements SessionMonitor {
             user.statementRun();
         }
     }
+    
+    public void failStatement() {
+        failedStatementCount++;
+        endStatement(-1);
+    }
 
     // Caller can sequence all stages and avoid any gaps at the cost of more complicated
     // exception handling, or just enter & leave and accept a tiny bit
@@ -105,6 +111,11 @@ public abstract class SessionMonitorBase implements SessionMonitor {
     @Override
     public int getStatementCount() {
         return statementCount;
+    }
+    
+    @Override
+    public int getFailedStatementCount() {
+        return failedStatementCount;
     }
 
     @Override

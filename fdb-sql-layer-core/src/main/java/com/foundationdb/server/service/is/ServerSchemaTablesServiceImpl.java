@@ -288,6 +288,7 @@ public class ServerSchemaTablesServiceImpl
                                               session.getRemoteAddress(),
                                               (stage == null) ? null : stage.name(),
                                               (long)session.getStatementCount(),
+                                              (long)session.getFailedStatementCount(),
                                               session.getCurrentStatement(),
                                               session.getCurrentStatementStartTimeMillis() > 0 ? (int)(session.getCurrentStatementStartTimeMillis() / 1000) : null,
                                               session.getCurrentStatementEndTimeMillis() > 0 ? (int)(session.getCurrentStatementEndTimeMillis()/1000) : null,
@@ -689,6 +690,7 @@ public class ServerSchemaTablesServiceImpl
             .colString("remote_address", DESCRIPTOR_MAX, true)
             .colString("session_status", DESCRIPTOR_MAX, true)
             .colBigInt("query_count", false)
+            .colBigInt("failed_query_count", false)
             .colString("last_query_executed", PATH_MAX, true)
             .colSystemTimestamp("query_start_time", true)
             .colSystemTimestamp("query_end_time", true)

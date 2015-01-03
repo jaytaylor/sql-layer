@@ -384,7 +384,7 @@ public class PostgresServerConnection extends ServerSessionBase
             // Current statement did not complete, include in error message.
             sql = sessionMonitor.getCurrentStatement();
             if (sql != null) {
-                sessionMonitor.endStatement(-1); // For system tables and for next time.
+                sessionMonitor.failStatement(); // For system tables and for next time.
                 if(reqs.monitor().isQueryLogEnabled() && ex instanceof InvalidOperationException){
                     for(ErrorCode slowError : slowErrors) {
                         if (((InvalidOperationException) ex).getCode() == slowError) {
