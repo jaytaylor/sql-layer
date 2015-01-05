@@ -514,4 +514,17 @@ public class OperatorITBase extends ITBase
             return false;
         }
     }
+
+    protected class TransactionContext implements AutoCloseable
+    {
+        public TransactionContext()
+        {
+            txnService().beginTransaction(session());
+        }
+
+        public void close()
+        {
+            txnService().commitTransaction(session());
+        }
+    }
 }
