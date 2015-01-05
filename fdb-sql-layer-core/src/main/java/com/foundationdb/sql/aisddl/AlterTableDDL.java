@@ -121,8 +121,8 @@ public class AlterTableDDL {
         }
 
         ChangeLevel level = null;
-        if((alterTable.tableElementList != null) && !alterTable.tableElementList.isEmpty()) {
-            level = processAlter(ddlFunctions, session, defaultSchemaName, table, alterTable.tableElementList, context);
+        if((alterTable.getTableElementList() != null) && !alterTable.getTableElementList().isEmpty()) {
+            level = processAlter(ddlFunctions, session, defaultSchemaName, table, alterTable.getTableElementList(), context);
         }
 
         if(level == null) {
