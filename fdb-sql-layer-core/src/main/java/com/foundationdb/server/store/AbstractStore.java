@@ -147,6 +147,13 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     /** Hook for tracking tables Session has written to. */
     protected abstract void trackTableWrite(Session session, Table table);
 
+    /** Handles actions for proper or storage of lobs */
+    abstract void storeLobs(Row row);
+    
+    /** Handles actions for clearing lobs*/
+    abstract void clearLobs(Row row);
+    
+    
     //
     // AbstractStore
     //
@@ -615,6 +622,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         final Key hKey = getKey(session, storeData);
         this.constructHKey(session, row, hKey);
 
+        storeLobs(row);
         packRow(session, storeData, row);
         store(session, storeData);
         
@@ -712,6 +720,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
             }
         }
 
+        clearLobs(row);
         // Remove the group row
         clear(session, storeData);
         rowTable.tableStatus().rowDeleted(session);
@@ -754,6 +763,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                 listener.onUpdatePre(session, oldRow.rowType().table(), hKey, oldRow, newRow);
             }
 
+//            storeLobs(newRow);
             store(session, storeData);
 
             for(RowListener listener : listenerService.getRowListeners()) {

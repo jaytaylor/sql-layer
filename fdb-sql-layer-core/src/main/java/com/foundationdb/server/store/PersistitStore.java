@@ -572,6 +572,17 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         return TableVersionChangedException.class;
     }
 
+    
+    @Override
+    protected void storeLobs(Row row){
+        // do nothing
+    }
+
+    @Override
+    protected void clearLobs(Row row){
+        // do nothing
+    }
+    
     private static final Callback CLEAR_SESSION_TABLES_CALLBACK = new Callback() {
         @Override
         public void run(Session session, long timestamp) {

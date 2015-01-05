@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.store;
 
-import com.foundationdb.KeyValue;
+import com.foundationdb.*;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
@@ -29,12 +29,14 @@ import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.util.TableChange.ChangeType;
 import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
+import com.foundationdb.blob.BlobBase;
 import com.foundationdb.directory.DirectorySubspace;
 import com.foundationdb.directory.PathUtil;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.WriteIndexRow;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.qp.storeadapter.indexrow.FDBIndexRow;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
@@ -44,6 +46,8 @@ import com.foundationdb.server.error.FDBNotCommittedException;
 import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
+import com.foundationdb.server.service.blob.LobService;
+import com.foundationdb.server.service.blob.LobRoutines;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.metrics.LongMetric;
@@ -54,10 +58,9 @@ import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 import com.foundationdb.server.store.TableChanges.Change;
 import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.FDBStorageDescription;
+import com.foundationdb.server.types.aksql.aktypes.*;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.util.ReadWriteMap;
-import com.foundationdb.Range;
-import com.foundationdb.Transaction;
 import com.foundationdb.async.Function;
 import com.foundationdb.tuple.Tuple2;
 import com.google.inject.Inject;
@@ -75,6 +78,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
 
 import static com.foundationdb.server.store.FDBStoreDataHelper.*;
 
@@ -606,6 +610,33 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         return FDBNotCommittedException.class;
     }
 
+    
+    @Override
+    protected void storeLobs(Row row) {
+        RowType rowType = row.rowType();
+        for( int i = 0; i < rowType.nFields(); i++ ) {
+            if (rowType.typeAt(i).equalsExcludingNullable(AkBlob.INSTANCE.instance(true))) {
+                int tableId = rowType.table().getTableId();
+                UUID blobId = (UUID)row.value(i).getObject();
+                LobRoutines.linkTable(serviceManager, tableId, blobId.toString());
+            }
+        }
+    }
+    
+    @Override
+    protected void clearLobs(Row row) {
+        RowType rowType = row.rowType();
+        for( int i = 0; i < rowType.nFields(); i++ ) {
+            if (rowType.typeAt(i).equalsExcludingNullable(AkBlob.INSTANCE.instance(true))) {
+                UUID blobId = (UUID)row.value(i).getObject();
+                LobService ls = serviceManager.getServiceByClass(LobService.class);
+                FDBHolder fdbHolder = serviceManager.getServiceByClass(FDBHolder.class);
+                TransactionContext tcx = fdbHolder.getTransactionContext();
+                ls.removeLob(tcx, Arrays.asList(blobId.toString()));
+            }
+        }        
+    }
+    
     //
     // KeyCreator
     //
