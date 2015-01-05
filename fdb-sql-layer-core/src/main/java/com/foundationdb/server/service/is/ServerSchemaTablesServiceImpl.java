@@ -69,6 +69,7 @@ public class ServerSchemaTablesServiceImpl
     static final TableName SERVER_INSTANCE_SUMMARY = new TableName (SCHEMA_NAME, "server_instance_summary");
     static final TableName SERVER_SERVERS = new TableName (SCHEMA_NAME, "server_servers");
     static final TableName SERVER_SESSIONS = new TableName (SCHEMA_NAME, "server_sessions");
+    static final TableName SERVER_STATISTICS = new TableName (SCHEMA_NAME, "server_statistics_summary");
     static final TableName SERVER_PARAMETERS = new TableName (SCHEMA_NAME, "server_parameters");
     static final TableName SERVER_MEMORY_POOLS = new TableName (SCHEMA_NAME, "server_memory_pools");
     static final TableName SERVER_GARBAGE_COLLECTORS = new TableName (SCHEMA_NAME, "server_garbage_collectors");
@@ -111,6 +112,8 @@ public class ServerSchemaTablesServiceImpl
         attach (ais, SERVER_SERVERS, Servers.class);
         //SERVER_SESSIONS
         attach (ais, SERVER_SESSIONS, Sessions.class);
+        //SERVER_STATISTICS
+        attach (ais, SERVER_STATISTICS, Statistics.class);
         //SERVER_PARAMETERS
         attach (ais, SERVER_PARAMETERS, ServerParameters.class);
         //SERVER_MEMORY_POOLS
@@ -178,7 +181,7 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public long rowCount(Session session) {
-            return 1;
+            return 1L;
         }
         
         private class Scan extends BaseScan {
@@ -247,6 +250,52 @@ public class ServerSchemaTablesServiceImpl
                                               server.getStartTimeMillis()/1000,
                                               Long.valueOf(server.getSessionCount()),
                                               ++rowCounter);
+            }
+        }
+    }
+    
+    private class Statistics extends BasicFactoryBase {
+
+        public Statistics(TableName sourceTable) {
+            super (sourceTable);
+        }
+        
+        @Override 
+        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+            return new Scan(adapter.getSession(), getRowType(group.getAIS()));
+        }
+        
+        @Override
+        public long rowCount(Session session) {
+            return 1L;
+        }
+        
+        private class Scan extends BaseScan {
+            
+            public Scan (Session session, RowType rowType) {
+                super(rowType);
+            }
+            
+            @Override
+            public Row next() {
+                if (rowCounter != 0) {
+                    return null;
+                }
+                return new ValuesHolderRow(rowType,
+                        monitor.getCount(StatementTypes.STATEMENT),
+                        monitor.getCount(StatementTypes.FAILED),
+                        monitor.getCount(StatementTypes.FROM_CACHE),
+                        monitor.getCount(StatementTypes.LOGGED),
+                        monitor.getCount(StatementTypes.CALL_STMT),
+                        monitor.getCount(StatementTypes.COPY_STMT),
+                        monitor.getCount(StatementTypes.DDL_STMT),
+                        monitor.getCount(StatementTypes.DML_STMT),
+                        monitor.getCount(StatementTypes.EXPLAIN),
+                        monitor.getCount(StatementTypes.METADATA),
+                        monitor.getCount(StatementTypes.SELECT),
+                        monitor.getCount(StatementTypes.SESSION),
+                        monitor.getCount(StatementTypes.SERVER),
+                        ++rowCounter);
             }
         }
     }
@@ -693,6 +742,22 @@ public class ServerSchemaTablesServiceImpl
             .colBigInt("local_port", true)
             .colSystemTimestamp("start_time", false)
             .colBigInt("session_count", true);
+        
+        builder.table(SERVER_STATISTICS)
+            .colBigInt("query_count", false)
+            .colBigInt("failed_query_count", false)
+            .colBigInt("query_from_cache", false)
+            .colBigInt("logged_statements", false)
+            .colBigInt("call_statement_count", false)
+            .colBigInt("copy_statement_count", false)
+            .colBigInt("ddl_statment_count", false)
+            .colBigInt("dml_statement_count", false)
+            .colBigInt("explain_statement_count", false)
+            .colBigInt("metadata_statement_count", false)
+            .colBigInt("select_statement_count", false)
+            .colBigInt("session_statement_count", false)
+            .colBigInt("server_statement_count", false)
+            ;
         
         builder.table(SERVER_SESSIONS)
             .colBigInt("session_id", false)

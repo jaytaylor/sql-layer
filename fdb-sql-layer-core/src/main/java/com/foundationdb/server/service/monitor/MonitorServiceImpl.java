@@ -36,8 +36,9 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
-public class MonitorServiceImpl implements Service, MonitorService
+public class MonitorServiceImpl implements Service, MonitorService, SessionEventListener
 {
     private static final String QUERY_LOG_PROPERTY = "fdbsql.querylog.enabled";
     private static final String QUERY_LOG_FILE_PROPERTY = "fdbsql.querylog.filename";
@@ -62,6 +63,8 @@ public class MonitorServiceImpl implements Service, MonitorService
     
     private Map<String, UserMonitor> users;
 
+    private ConcurrentHashMap<StatementTypes, AtomicLong> statementCounter;
+    
     @Inject
     public MonitorServiceImpl(ConfigurationService config) {
         this.config = config;
@@ -71,7 +74,9 @@ public class MonitorServiceImpl implements Service, MonitorService
 
     @Override
     public void start() {
+        logger.debug("Starting Monitor Service...");
         servers = new ConcurrentHashMap<>();
+        statementCounter = new ConcurrentHashMap<>();
 
         sessionAllocator = new AtomicInteger();
         sessions = new ConcurrentHashMap<>();
@@ -122,6 +127,7 @@ public class MonitorServiceImpl implements Service, MonitorService
         SessionMonitor old = sessions.put(sessionMonitor.getSessionId(), sessionMonitor);
         assert ((old == null) || (old == sessionMonitor));
         session.put(SESSION_KEY, sessionMonitor);
+        sessionMonitor.addSessionEventListener(this);
     }
 
     @Override
@@ -129,6 +135,7 @@ public class MonitorServiceImpl implements Service, MonitorService
         SessionMonitor old = sessions.remove(sessionMonitor.getSessionId());
         assert ((old == null) || (old == sessionMonitor));
         session.remove(SESSION_KEY);
+        sessionMonitor.removeSessionEventListener(this);
     }
 
     @Override
@@ -297,6 +304,25 @@ public class MonitorServiceImpl implements Service, MonitorService
         return queryLogThresholdMillis;
     }
 
+    @Override
+    public long getCount(StatementTypes type) {
+        if (statementCounter.containsKey(type)) {
+            return statementCounter.get(type).get();
+        } else {
+            return 0L;
+        }
+    }
+
+    
+    /* SessionEventListener */
+    
+    @Override
+    public void countEvent (StatementTypes type) {
+        AtomicLong value = statementCounter.putIfAbsent(type, new AtomicLong(1));
+        if (value != null)
+            value.incrementAndGet();
+    }
+    
     /* Internal */
 
     /**

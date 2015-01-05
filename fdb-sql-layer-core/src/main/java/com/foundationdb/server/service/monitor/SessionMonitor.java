@@ -86,13 +86,17 @@ public interface SessionMonitor {
     /** Get the user monitor for this session */
     UserMonitor getUserMonitor();
 
+    public void addSessionEventListener(SessionEventListener listener);
+    public void removeSessionEventListener (SessionEventListener listener);
+    
+    
     public enum StatementTypes {
-        STATEMENT  ("statement"),
-        FAILED     ("failed statement"),
+        STATEMENT  ("Statement"),
+        FAILED     ("Failed statement"),
         FROM_CACHE ("Statement from cache"),
         LOGGED     ("Statment logged"),
-        CALL_STMT  ("call statement"),
-        COPY_STMT  ("copy statement"),
+        CALL_STMT  ("Call statement"),
+        COPY_STMT  ("Copy statement"),
         DDL_STMT   ("DDL statement"),
         DML_STMT   ("DML statement"),
         EXPLAIN    ("Explain statement"),

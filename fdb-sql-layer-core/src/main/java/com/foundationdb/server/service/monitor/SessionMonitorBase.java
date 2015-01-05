@@ -20,6 +20,7 @@ package com.foundationdb.server.service.monitor;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public abstract class SessionMonitorBase implements SessionMonitor {
     private final int sessionID;
@@ -35,7 +36,9 @@ public abstract class SessionMonitorBase implements SessionMonitor {
     private UserMonitor user = null; 
     
     private StatementCounter<StatementTypes, Long> statementCounters = new StatementCounter<StatementTypes, Long>();
-
+    private List<SessionEventListener> events = new CopyOnWriteArrayList<>();
+    
+    
     protected SessionMonitorBase(int sessionID) {
         this.sessionID = sessionID;
         this.startTimeMillis = System.currentTimeMillis();
@@ -57,7 +60,7 @@ public abstract class SessionMonitorBase implements SessionMonitor {
     }
 
     public void startStatement(String statement, String preparedName, long startTime) {
-        statementCounters.countEvent(StatementTypes.STATEMENT);
+        countEvent(StatementTypes.STATEMENT);
         currentStatement = statement;
         currentStatementPreparedName = preparedName;
         currentStatementStartTime = startTime;
@@ -75,10 +78,13 @@ public abstract class SessionMonitorBase implements SessionMonitor {
     
     public void countEvent(StatementTypes type) {
         statementCounters.countEvent(type);
+        for (SessionEventListener listen : events) {
+            listen.countEvent(type);
+        }
     }
     
     public void failStatement() {
-        statementCounters.countEvent(StatementTypes.FAILED);
+        countEvent(StatementTypes.FAILED);
         endStatement(-1);
     }
 
@@ -180,6 +186,17 @@ public abstract class SessionMonitorBase implements SessionMonitor {
         return total;
     }
 
+    @Override
+    public void addSessionEventListener(SessionEventListener listener) {
+        events.add(listener);
+    }
+    
+    @Override
+    public void removeSessionEventListener (SessionEventListener listener) {
+        events.remove(listener);
+    }
+
+    
     public List<CursorMonitor> getCursors() {
         return Collections.emptyList();
     }
