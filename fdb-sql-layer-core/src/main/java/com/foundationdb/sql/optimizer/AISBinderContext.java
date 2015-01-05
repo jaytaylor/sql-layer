@@ -18,17 +18,20 @@
 package com.foundationdb.sql.optimizer;
 
 import com.foundationdb.sql.StandardException;
+import com.foundationdb.sql.optimizer.plan.PlanNode;
+import com.foundationdb.sql.optimizer.rule.PlanContext;
+import com.foundationdb.sql.optimizer.rule.TypeResolver;
+import com.foundationdb.sql.optimizer.rule.ConstantFolder.Folder;
 import com.foundationdb.sql.parser.CreateViewNode;
 import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.SQLParserFeature;
-
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.View;
-
 import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.error.ViewHasBadSubqueryException;
-
+import com.foundationdb.server.types.common.types.TypesTranslator;
+import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.types.service.TypesRegistryServiceImpl;
 
 import java.util.*;
@@ -231,15 +234,17 @@ public class AISBinderContext
     }
 
     /** Get view definition given the user's DDL. */
-    public AISViewDefinition getViewDefinition(CreateViewNode ddl) {
+    public AISViewDefinition getViewDefinition(CreateViewNode ddl, TypesTranslator typesTranslator) {
         try {
-            AISViewDefinition view = new AISViewDefinition(ddl, parser);
             // Just want the definition for result columns and table references.
             // If the view uses another view, the inner one is treated
             // like a table for those purposes.
+            AISViewDefinition view = new AISViewDefinition(ddl, parser);
             binder.bind(view.getSubquery(), false);
             if (typeComputer != null)
                 typeComputer.compute(view.getSubquery());
+            CreateViewCompiler compiler = new CreateViewCompiler(ais, defaultSchemaName, parser, typesTranslator);
+            compiler.compile(ddl, binder.getContext());
             return view;
         }
         catch (StandardException ex) {
