@@ -28,6 +28,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.script.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
@@ -86,23 +88,49 @@ public class ScriptCache {
         if ((entry != null) && (entry.version == currentVersion)) 
             return entry;
 
-        ClassLoader origCL = Thread.currentThread().getContextClassLoader();
+        ClassLoader origCL = getContextClassLoader();
+        
         if (!routine.isSystemRoutine()) {
-            Thread.currentThread().setContextClassLoader(engineProvider.getSafeClassLoader());
+            setContextClassLoader(engineProvider.getSafeClassLoader());
         }
         
-        ScriptEngine engine = getManager(session).getEngineByName(routine.getLanguage());
-        if (engine == null)
-            throw new ExternalRoutineInvocationException(routineName, "Cannot find " + routine.getLanguage()
-                    + " script engine");
-        entry = new CacheEntry(routine, engine);
-        cache.put(routineName, entry);
-        if (!routine.isSystemRoutine()) {
-            Thread.currentThread().setContextClassLoader(origCL);
+        try {
+            ScriptEngine engine = getManager(session).getEngineByName(routine.getLanguage());
+            if (engine == null)
+                throw new ExternalRoutineInvocationException(routineName, "Cannot find " + routine.getLanguage()
+                        + " script engine");
+            entry = new CacheEntry(routine, engine);
+            cache.put(routineName, entry);
+        }
+        finally {
+            if (!routine.isSystemRoutine()) {
+                setContextClassLoader(origCL);
+            }
         }
         return entry;
     }
-
+    
+    private ClassLoader getContextClassLoader() {
+        return AccessController.doPrivileged(
+            new PrivilegedAction<ClassLoader>() {
+                public ClassLoader run() {
+                    return Thread.currentThread().getContextClassLoader();
+                }
+            }
+        );        
+    }
+    
+    private void setContextClassLoader(final ClassLoader cl) {
+        AccessController.doPrivileged(
+                new PrivilegedAction<Void>() {
+                    public Void run() {
+                        Thread.currentThread().setContextClassLoader(cl);
+                        return null;
+                    }
+                }
+        );
+    }
+    
     class CacheEntry {
         private TableName routineName;
         private long version;

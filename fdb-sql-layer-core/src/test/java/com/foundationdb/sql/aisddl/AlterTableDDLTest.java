@@ -1212,7 +1212,8 @@ public class AlterTableDDLTest {
         builder.table(C_NAME).colBigInt("id", false).pk("id");
         builder.table(A_NAME).colBigInt("id", false).colBigInt("cid").pk("id").uniqueConstraint("cid_unique",
                                                                                                 "cid_unique",
-                                                                                                "cid");
+                                                                                                "cid")
+                                                                              .key("fk_cid", "cid");
         parseAndRun("ALTER TABLE a ADD CONSTRAINT fk_cid FOREIGN KEY (cid) REFERENCES c (id)");
         Table a = ddlFunctions.ais.getTable(A_NAME);
         assertEquals(a.getForeignKeys().size(), 1);

@@ -26,7 +26,13 @@ import java.util.List;
  */
 public class SpecialIndexExpression extends BaseExpression 
 {
-    public static enum Function { Z_ORDER_LAT_LON };
+    public static enum Function {
+        GEO_LAT_LON, GEO_WKB, GEO_WKT, GEO_JSON;
+
+        public String functionName() {
+            return name();
+        }
+    };
     private Function function;
     private List<ExpressionNode> operands;
 

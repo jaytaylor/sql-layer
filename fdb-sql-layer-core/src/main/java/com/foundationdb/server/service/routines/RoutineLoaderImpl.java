@@ -46,6 +46,8 @@ import java.io.IOException;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -105,7 +107,8 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
             VersionedItem<ClassLoader> entry = classLoaders.get(jarName);  
             if ((entry != null) && (entry.version == currentVersion))
                 return entry.item;
-            ClassLoader loader = new URLClassLoader(new URL[] { sqljJar.getURL() }, engineProvider.getSafeClassLoader() );
+            
+            ClassLoader loader = createClassLoader(sqljJar, engineProvider.getSafeClassLoader()) ;
             if (entry != null) {
                 entry.item = loader;
             }
@@ -115,6 +118,16 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
             }
             return loader;
         }
+    }
+
+    private ClassLoader createClassLoader(final SQLJJar jar, final ClassLoader parentClassloader) {
+        return AccessController.doPrivileged(
+                new PrivilegedAction<ClassLoader>() {
+                    public ClassLoader run() {
+                        return new URLClassLoader(new URL[] {jar.getURL()}, parentClassloader);
+                    }
+                }
+        );
     }
 
     @Override

@@ -19,6 +19,7 @@ package com.foundationdb.server.service.is;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Constraint;
 import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.FullTextIndex;
 import com.foundationdb.ais.model.Group;
@@ -545,7 +546,7 @@ public class BasicInfoSchemaTablesServiceImpl
                         return null;
                     }
                 } while (!it.isForeignKey());
-                ForeignKey fk = it.getTable().getReferencingForeignKey(it.getIndex().getIndexName().getName());
+                ForeignKey fk = (ForeignKey)it.getConstraint();
                 return new ValuesHolderRow(rowType,
                         null,   //constraint catalog
                          fk.getConstraintName().getSchemaName(),
@@ -718,8 +719,8 @@ public class BasicInfoSchemaTablesServiceImpl
             final TableConstraintsIteration it;
             Iterator<IndexColumn> indexColIt;
             Iterator<JoinColumn> joinColIt;
+            Iterator<JoinColumn> fkColIt;
             String colName;
-            String constraintName;
             int colPos;
             Long posInUnique;
 
@@ -740,29 +741,28 @@ public class BasicInfoSchemaTablesServiceImpl
             }
 
             public boolean advance() {
-                posInUnique = null;
                 if(joinColIt != null && joinColIt.hasNext()) {
                     JoinColumn joinColumn = joinColIt.next();
                     colName = joinColumn.getChild().getName();
                     posInUnique = findPosInIndex(joinColumn.getParent(), joinColumn.getParent().getTable().getPrimaryKey().getIndex()).longValue();
-                    constraintName = it.getName();
                 } else if(indexColIt != null && indexColIt.hasNext()) {
                     IndexColumn indexColumn = indexColIt.next();
                     colName = indexColumn.getColumn().getName();
-                    constraintName = indexColumn.getIndex().getConstraintName() == null ? null : indexColumn.getIndex().getConstraintName().getTableName();
-                    if (it.isForeignKey()) {
-                        ForeignKey fk = it.getTable().getReferencingForeignKey(it.getIndex().getIndexName().getName());
-                        posInUnique = findPosInIndex(fk.getReferencedColumns().get(indexColumn.getPosition()), fk.getReferencedIndex()).longValue();
-                        //this is the constructed referencing index, its IndexName is the foreign key constraint name
-                        constraintName = indexColumn.getIndex().getIndexName().getName();
-                    }
+                    posInUnique = null;
+                } else if(fkColIt != null && fkColIt.hasNext()) {
+                    ForeignKey fk = (ForeignKey)it.getConstraint();
+                    colName = fkColIt.next().getChild().getName();
+                    posInUnique = findPosInIndex(fk.getReferencedColumns().get(colPos+1), fk.getReferencedIndex()).longValue();
                 } else if(it.next()) {
                     joinColIt = null;
                     indexColIt = null;
+                    fkColIt = null;
                     if(it.isGrouping()) {
-                        joinColIt = it.getTable().getParentJoin().getJoinColumns().iterator();
-                    } else {
-                        indexColIt = it.getIndex().getKeyColumns().iterator();
+                        joinColIt = ((Join)it.getConstraint()).getJoinColumns().iterator();
+                    } else if(it.isIndex()) {
+                        indexColIt = ((Index)it.getConstraint()).getKeyColumns().iterator();
+                    } else if(it.isForeignKey()) {
+                        fkColIt = ((ForeignKey)it.getConstraint()).getJoinColumns().iterator();
                     }
                     colPos = -1;
                     return advance();
@@ -781,12 +781,12 @@ public class BasicInfoSchemaTablesServiceImpl
                 return new ValuesHolderRow(rowType,
                         null,       // constraint catalog, 
                         it.getTable().getName().getSchemaName(),
-                        constraintName,
+                        it.getName(),
                         null,       // table catalog
                         it.getTable().getName().getSchemaName(),
                         it.getTable().getName().getTableName(),
                         colName,
-                        new Long(colPos),
+                        colPos,
                         posInUnique,
                         ++rowCounter /*hidden pk*/);
             }
@@ -1155,10 +1155,12 @@ public class BasicInfoSchemaTablesServiceImpl
     private class TableConstraintsIteration {
         private final Session session;
         private final Iterator<Table> tableIt;
+        // For PRIMARY and UNIQUE
         private Iterator<? extends Index> indexIt;
+        // For FOREIGN KEY
+        private Iterator<ForeignKey> foreignKeyIt;
         private Table curTable;
-        private Index curIndex;
-        private String name;
+        private Constraint curConstraint;
         private String type;
         private boolean isDeferrable = false;
         private boolean isInitiallyDeferred = false;
@@ -1176,8 +1178,8 @@ public class BasicInfoSchemaTablesServiceImpl
                         curTable = null;
                         continue;
                     }
-                    if(curTable.getParentJoin() != null) {
-                        name = curTable.getParentJoin().getConstraintName().getTableName();
+                    curConstraint = curTable.getParentJoin();
+                    if(curConstraint != null) {
                         type = "GROUPING";
                         return true;
                     }
@@ -1186,33 +1188,36 @@ public class BasicInfoSchemaTablesServiceImpl
                     indexIt = curTable.getIndexes().iterator();
                 }
                 while(indexIt.hasNext()) {
-                    curIndex = indexIt.next();
+                    Index curIndex = indexIt.next();
                     if(curIndex.isUnique()) {
-                        name = curIndex.getConstraintName().getTableName();
+                        curConstraint = curIndex;
                         type = curIndex.isPrimaryKey() ? "PRIMARY KEY" : "UNIQUE";
                         isDeferrable = false;
                         isInitiallyDeferred = false;
                         return true;
-                    } else if(curIndex.isConnectedToFK()) {
-                        // this is the constructed referencing index, its IndexName is the foreign key constraint name
-                        name = curIndex.getIndexName().getName();
-                        type = "FOREIGN KEY";
-                        
-                        ForeignKey fk = curTable.getReferencingForeignKey(curIndex.getIndexName().getName());
-                        isDeferrable = fk.isDeferrable();
-                        isInitiallyDeferred = fk.isInitiallyDeferred();
-                        return true;
                     }
                 }
+                if(foreignKeyIt == null) {
+                    foreignKeyIt = curTable.getReferencingForeignKeys().iterator();
+                }
+                if(foreignKeyIt.hasNext()) {
+                    ForeignKey fk = foreignKeyIt.next();
+                    curConstraint = fk;
+                    type = "FOREIGN KEY";
+                    isDeferrable = fk.isDeferrable();
+                    isInitiallyDeferred = fk.isInitiallyDeferred();
+                    return true;
+                }
+                curConstraint = null;
+                foreignKeyIt = null;
                 indexIt = null;
-                curIndex = null;
                 curTable = null;
             }
             return false;
         }
 
         public String getName() {
-            return name;
+            return curConstraint.getConstraintName().getTableName();
         }
 
         public String getType() {
@@ -1223,12 +1228,16 @@ public class BasicInfoSchemaTablesServiceImpl
             return curTable;
         }
 
-        public Index getIndex() {
-            return curIndex;
+        public Constraint getConstraint() {
+            return curConstraint;
+        }
+
+        public boolean isIndex() {
+            return (curConstraint instanceof Index);
         }
 
         public boolean isGrouping() {
-            return indexIt == null;
+            return (curConstraint instanceof Join);
         }
 
         public boolean isDeferrable() {
@@ -1240,7 +1249,7 @@ public class BasicInfoSchemaTablesServiceImpl
         }
         
         public boolean isForeignKey() {
-            return !isGrouping() && curIndex.isConnectedToFK();
+            return (curConstraint instanceof ForeignKey);
         }
     }
 

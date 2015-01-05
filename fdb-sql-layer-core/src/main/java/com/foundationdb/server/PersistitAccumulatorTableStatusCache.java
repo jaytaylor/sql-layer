@@ -22,7 +22,6 @@ import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.server.error.PersistitAdapterException;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.TreeService;
 import com.foundationdb.server.store.format.PersistitStorageDescription;
@@ -48,6 +47,11 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     }
 
     @Override
+    public synchronized TableStatus createTableStatus (Table table) {
+        return new AccumulatorStatus(table);
+    }
+    
+    @Override
     public synchronized TableStatus createTableStatus(int tableID) {
         return new AccumulatorStatus(tableID);
     }
@@ -67,24 +71,15 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
 
     @Override
     public synchronized void detachAIS() {
-        for(MemoryTableStatus ts : memoryStatuses.values()) {
-            ts.setRowDef(null);
-        }
+        // TODO: Nothing
     }
 
     //
     // Internal
     //
 
-    private static void checkExpectedRowDefID(int expected, RowDef rowDef) {
-        if((rowDef != null) && (expected != rowDef.getRowDefId())) {
-            throw new IllegalArgumentException("RowDef ID " + rowDef.getRowDefId() +
-                                               " does not match expected ID " + expected);
-        }
-    }
-
-    private Tree getTreeForRowDef(RowDef rowDef) {
-        return getTreeForIndex(rowDef.getPKIndex());
+    private Tree getTreeForTable (Table table) {
+        return getTreeForIndex(table.getPrimaryKeyIncludingInternal().getIndex());
     }
     
     private Tree getTreeForIndex(TableIndex pkTableIndex) {
@@ -101,6 +96,12 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     private class AccumulatorStatus implements TableStatus {
         private final int expectedID;
         private volatile AccumulatorAdapter rowCount;
+
+        public AccumulatorStatus (Table table) {
+            this.expectedID = table.getTableId();
+            Tree tree = getTreeForTable(table);
+            rowCount = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, tree);
+        }
 
         public AccumulatorStatus(int expectedID) {
             this.expectedID = expectedID;
@@ -154,17 +155,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             }
         }
 
-        @Override
-        public void setRowDef(RowDef rowDef) {
-            if(rowDef == null) {
-                rowCount = null;
-            } else {
-                checkExpectedRowDefID(expectedID, rowDef);
-                Tree tree = getTreeForRowDef(rowDef);
-                rowCount = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, tree);
-            }
-        }
-        
         private void internalSetRowCount(long rowCountValue) throws PersistitInterruptedException {
             rowCount.set(rowCountValue);
         }

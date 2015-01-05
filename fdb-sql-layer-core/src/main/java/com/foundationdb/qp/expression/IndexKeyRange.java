@@ -165,6 +165,22 @@ public class IndexKeyRange
         return new IndexKeyRange(indexRowType, lo, true, null, false, IndexKind.SPATIAL_COORDS);
     }
 
+    /**
+     * Describes a range of keys starting at lo and expanding out,
+     *
+     * @param indexRowType The row type of index keys.
+     * @param lo           Lower bound of the range.
+     * @return IndexKeyRange covering the keys lying starting at lo.
+     */
+    public static IndexKeyRange aroundObject(IndexRowType indexRowType,
+                                             IndexBound lo)
+    {
+        if (lo == null) {
+            throw new IllegalArgumentException("IndexBound argument must not be null");
+        }
+        return new IndexKeyRange(indexRowType, lo, true, null, false, IndexKind.SPATIAL_OBJECT);
+    }
+
     public boolean spatialCoordsIndex()
     {
         return indexKind == IndexKind.SPATIAL_COORDS;

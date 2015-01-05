@@ -1,4 +1,7 @@
 ---
+- Statement: SELECT CAST( GEO_WKT('point(0 0)') AS VARCHAR(128) )
+- output: [['POINT (0 0)']]
+---
 - Statement: SELECT GEO_TYPE_STRING( GEO_WKT('point(0 0)') )
 - output: [['Point']]
 ---
@@ -9,6 +12,10 @@
 - output: [[null]]
 
 ---
+- Statement: SELECT CAST( GEO_WKT(?) AS VARCHAR(256) )
+- params: [['polygon((0 0, 10 0, 10 10, 0 10, 0 0))']]
+- output: [['POLYGON ((0 0, 10 0, 10 10, 0 10, 0 0))']]
+---
 - Statement: SELECT GEO_TYPE_STRING( GEO_WKT(?) )
 - params: [['polygon((0 0, 10 0, 10 10, 0 10, 0 0))']]
 - output: [['Polygon']]
@@ -16,6 +23,34 @@
 - Statement: SELECT GEO_TYPE_STRING( GEO_WKT(?) )
 - params: [[null]]
 - output: [[null]]
+
+---
+- Statement: SELECT CAST( GEO_LAT_LON(10, 0) AS VARCHAR(128) )
+- output: [['POINT (10 0)']]
+
+---
+- Statement: SELECT GEO_OVERLAPS( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(10, 20) ), GEO_COVERS( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(10, 20) ), GEO_CONTAINS( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(10, 20) )
+- output: [[false, true, true]]
+---
+- Statement: SELECT GEO_OVERLAPS( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(20, 30) ), GEO_COVERS( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(20, 30) ), GEO_CONTAINS( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(20, 30) )
+- output: [[false, false, false]]
+---
+- Statement: SELECT GEO_OVERLAPS( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(15, 25) ), GEO_COVERS( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(15, 25) ), GEO_CONTAINS( GEO_WKT('polygon((5 15, 5 25, 15 25, 15 15, 5 15))'), GEO_LAT_LON(15, 25) )
+- output: [[false, true, false]]
+
+---
+- Statement: SELECT CAST( GEO_EXPANDED_ENVELOPE( GEO_LAT_LON(10, 20), 5) AS VARCHAR(128) )
+- output: [['POLYGON ((5 15, 5 25, 15 25, 15 15, 5 15))']]
+---
+- Statement: SELECT GEO_CONTAINS(GEO_EXPANDED_ENVELOPE( GEO_LAT_LON(10, 20), 5) , GEO_LAT_LON(12, 22) )
+- output: [[true]]
+
+---
+- Statement: SELECT GEO_WITHIN_DISTANCE( GEO_LAT_LON(10, 20), GEO_LAT_LON(8, 18), 5)
+- output: [[true]]
+---
+- Statement: SELECT GEO_WITHIN_DISTANCE( GEO_LAT_LON(10, 20), GEO_LAT_LON(8, 18), 1)
+- output: [[false]]
 
 ---
 - Statement: CREATE TABLE t(g GEOMETRY)

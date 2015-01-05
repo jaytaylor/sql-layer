@@ -204,6 +204,11 @@ public final class SingleIndexScan extends IndexScan implements EqualityColumnsS
     }
 
     @Override
+    public boolean isSpatial() {
+        return index.isSpatial();
+    }
+
+    @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
         if (lowComparand != null)

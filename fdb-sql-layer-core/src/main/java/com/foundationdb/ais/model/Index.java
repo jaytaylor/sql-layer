@@ -113,14 +113,6 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
         return isPrimary;
     }
 
-    public boolean isConnectedToFK() {
-        Schema schema = getAIS().getSchema(this.getSchemaName());
-        if (schema.hasConstraint(indexName.getName()) && (schema.getConstraint(indexName.getName()) instanceof ForeignKey)) {
-            return true;
-        }
-        return false;
-    }
-
     public IndexName getIndexName()
     {
         return indexName;
@@ -422,6 +414,8 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
     }
 
     public enum IndexMethod {
+        // TODO: Replace Z_ORDER_LAT_LON with GEO_LAT_LON, GEO_WKB,
+        // GEO_WKT, GEO_JSON, etc.
         NORMAL, Z_ORDER_LAT_LON, FULL_TEXT
     }
 
