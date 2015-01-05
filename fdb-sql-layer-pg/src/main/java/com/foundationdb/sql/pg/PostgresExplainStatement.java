@@ -28,12 +28,11 @@ import com.foundationdb.sql.parser.ExplainStatementNode;
 import com.foundationdb.sql.parser.ParameterNode;
 import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.sql.server.ServerValueEncoder;
-
 import com.foundationdb.qp.operator.QueryBindings;
-
 import com.foundationdb.server.explain.Explainable;
 import com.foundationdb.server.explain.format.DefaultFormatter;
 import com.foundationdb.server.explain.format.JsonFormatter;
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.server.types.TClass;
 
 import java.util.Collections;
@@ -115,6 +114,7 @@ public class PostgresExplainStatement implements PostgresStatement
     @Override
     public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
+        server.getSessionMonitor().countEvent(StatementTypes.EXPLAIN);
         PostgresMessenger messenger = server.getMessenger();
         ServerValueEncoder encoder = server.getValueEncoder();
         int nrows = 0;

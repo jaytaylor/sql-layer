@@ -18,6 +18,7 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.sql.optimizer.plan.CostEstimate;
 import com.foundationdb.sql.parser.ParameterNode;
 import com.foundationdb.sql.parser.StatementNode;
@@ -89,6 +90,7 @@ public class PostgresEmulatedSessionStatement implements PostgresStatement
     @Override
     public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
+        server.getSessionMonitor().countEvent(StatementTypes.SESSION);
         doOperation(context, server);
         {        
             PostgresMessenger messenger = server.getMessenger();

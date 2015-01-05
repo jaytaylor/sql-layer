@@ -36,10 +36,13 @@ public interface SessionMonitor {
     long getStartTimeMillis();
     
     /** The number of queries executed. */
-    int getStatementCount();
+    long getStatementCount();
 
-    /** The number of queries that failed. */
-    int getFailedStatementCount();
+    /** Get number of statements executes of a given type */
+    long getCount(StatementTypes type);
+    
+    /** Count an statement execution */
+    void countEvent(StatementTypes type);
     
     /** The SQL of the current / last statement. */
     String getCurrentStatement();    
@@ -82,4 +85,31 @@ public interface SessionMonitor {
     
     /** Get the user monitor for this session */
     UserMonitor getUserMonitor();
+
+    public enum StatementTypes {
+        STATEMENT  ("statement"),
+        FAILED     ("failed statement"),
+        FROM_CACHE ("Statement from cache"),
+        LOGGED     ("Statment logged"),
+        CALL_STMT  ("call statement"),
+        COPY_STMT  ("copy statement"),
+        DDL_STMT   ("DDL statement"),
+        DML_STMT   ("DML statement"),
+        EXPLAIN    ("Explain statement"),
+        METADATA   ("Metadata statement"),
+        SELECT     ("Select statement"),
+        SESSION    ("Session statement"),
+        SERVER     ("Server statement");
+        
+        private StatementTypes (String name) {
+            this.name = name;
+        }
+        private String name; 
+        
+        public String toString() {
+            return name;
+        }
+    }
+
+
 }

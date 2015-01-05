@@ -20,9 +20,10 @@ package com.foundationdb.server.service.monitor;
 import com.foundationdb.server.error.QueryLogCloseException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.server.service.session.Session;
-
 import com.google.inject.Inject;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -156,7 +157,8 @@ public class MonitorServiceImpl implements Service, MonitorService
             return;
         }
         
-        
+        SessionMonitor monitor = sessions.get(sessionId);
+        monitor.countEvent(StatementTypes.LOGGED);
         /*
          * format of each query log entry is:
          * #

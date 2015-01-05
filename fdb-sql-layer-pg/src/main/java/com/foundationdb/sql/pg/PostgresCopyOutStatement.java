@@ -21,13 +21,13 @@ import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.parser.CopyStatementNode;
 import com.foundationdb.sql.parser.ParameterNode;
 import com.foundationdb.sql.parser.StatementNode;
-
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.error.SQLParserInternalException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.externaldata.CsvFormat;
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 
 import static com.foundationdb.sql.pg.PostgresCopyInStatement.csvFormat;
 import static com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
@@ -83,6 +83,7 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
             return super.execute(context, bindings, maxrows);
 
         PostgresServerSession server = context.getServer();
+        server.getSessionMonitor().countEvent(StatementTypes.COPY_STMT);
         int nrows = 0;
         Cursor cursor = null;
         OutputStream outputStream = null;

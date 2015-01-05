@@ -28,16 +28,17 @@ import javax.management.ObjectName;
 import com.foundationdb.sql.optimizer.plan.CostEstimate;
 import com.foundationdb.sql.parser.ParameterNode;
 import com.foundationdb.sql.parser.StatementNode;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.foundationdb.qp.operator.QueryBindings;
-
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.ConnectionTerminatedException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.SecurityException;
 import com.foundationdb.server.error.UnsupportedConfigurationException;
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.sql.parser.AlterServerNode;
 
 public class PostgresServerStatement implements PostgresStatement {
@@ -90,6 +91,7 @@ public class PostgresServerStatement implements PostgresStatement {
         
         context.checkQueryCancelation();
         PostgresServerSession server = context.getServer();
+        server.getSessionMonitor().countEvent(StatementTypes.SERVER);
         try {
             doOperation(server);
         } catch (Exception e) {

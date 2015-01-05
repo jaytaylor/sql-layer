@@ -50,6 +50,7 @@ import com.foundationdb.server.service.monitor.PreparedStatementMonitor;
 import com.foundationdb.server.service.monitor.ServerMonitor;
 import com.foundationdb.server.service.monitor.SessionMonitor;
 import com.foundationdb.server.service.monitor.UserMonitor;
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
@@ -288,12 +289,23 @@ public class ServerSchemaTablesServiceImpl
                                               session.getRemoteAddress(),
                                               (stage == null) ? null : stage.name(),
                                               (long)session.getStatementCount(),
-                                              (long)session.getFailedStatementCount(),
                                               session.getCurrentStatement(),
                                               session.getCurrentStatementStartTimeMillis() > 0 ? (int)(session.getCurrentStatementStartTimeMillis() / 1000) : null,
                                               session.getCurrentStatementEndTimeMillis() > 0 ? (int)(session.getCurrentStatementEndTimeMillis()/1000) : null,
                                               session.getRowsProcessed() < 0 ? null : (long)session.getRowsProcessed(),
                                               session.getCurrentStatementPreparedName(),
+                                              session.getCount(StatementTypes.FAILED),
+                                              session.getCount(StatementTypes.FROM_CACHE),
+                                              session.getCount(StatementTypes.LOGGED),
+                                              session.getCount(StatementTypes.CALL_STMT),
+                                              session.getCount(StatementTypes.COPY_STMT),
+                                              session.getCount(StatementTypes.DDL_STMT),
+                                              session.getCount(StatementTypes.DML_STMT),
+                                              session.getCount(StatementTypes.EXPLAIN),
+                                              session.getCount(StatementTypes.METADATA),
+                                              session.getCount(StatementTypes.SELECT),
+                                              session.getCount(StatementTypes.SESSION),
+                                              session.getCount(StatementTypes.SERVER),
                                               ++rowCounter);
             }
         }
@@ -690,12 +702,24 @@ public class ServerSchemaTablesServiceImpl
             .colString("remote_address", DESCRIPTOR_MAX, true)
             .colString("session_status", DESCRIPTOR_MAX, true)
             .colBigInt("query_count", false)
-            .colBigInt("failed_query_count", false)
             .colString("last_query_executed", PATH_MAX, true)
             .colSystemTimestamp("query_start_time", true)
             .colSystemTimestamp("query_end_time", true)
             .colBigInt("query_row_count", true)
-            .colString("prepared_name", IDENT_MAX, true);
+            .colString("prepared_name", IDENT_MAX, true)
+            .colBigInt("failed_query_count", false)
+            .colBigInt("query_from_cache", false)
+            .colBigInt("logged_statements", false)
+            .colBigInt("call_statement_count", false)
+            .colBigInt("copy_statement_count", false)
+            .colBigInt("ddl_statment_count", false)
+            .colBigInt("dml_statement_count", false)
+            .colBigInt("explain_statement_count", false)
+            .colBigInt("metadata_statement_count", false)
+            .colBigInt("select_statement_count", false)
+            .colBigInt("session_statement_count", false)
+            .colBigInt("server_statement_count", false)
+            ;
         
         builder.table(ERROR_CODES)
             .colString("code", 5, false)

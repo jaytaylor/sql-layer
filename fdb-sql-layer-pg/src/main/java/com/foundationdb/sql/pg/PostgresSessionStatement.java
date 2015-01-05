@@ -27,6 +27,7 @@ import com.foundationdb.server.error.NoSuchConstraintException;
 import com.foundationdb.server.error.NoSuchSchemaException;
 import com.foundationdb.server.error.UnsupportedConfigurationException;
 import com.foundationdb.server.error.UnsupportedSQLException;
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.sql.optimizer.plan.CostEstimate;
 import com.foundationdb.sql.parser.AccessMode;
 import com.foundationdb.sql.parser.IsolationLevel;
@@ -161,6 +162,7 @@ public class PostgresSessionStatement implements PostgresStatement
     @Override
     public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
+        server.getSessionMonitor().countEvent(StatementTypes.SESSION);
         doOperation(context, server);
         {        
             PostgresMessenger messenger = server.getMessenger();

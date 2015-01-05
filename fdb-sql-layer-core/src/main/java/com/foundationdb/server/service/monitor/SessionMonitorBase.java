@@ -18,6 +18,7 @@
 package com.foundationdb.server.service.monitor;
 
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.List;
 
 public abstract class SessionMonitorBase implements SessionMonitor {
@@ -31,9 +32,9 @@ public abstract class SessionMonitorBase implements SessionMonitor {
     private long currentStatementStartTime = -1;
     private long currentStatementEndTime = -1;
     private int rowsProcessed = 0;
-    private int statementCount = 0;
-    private int failedStatementCount = 0;
     private UserMonitor user = null; 
+    
+    private StatementCounter<StatementTypes, Long> statementCounters = new StatementCounter<StatementTypes, Long>();
 
     protected SessionMonitorBase(int sessionID) {
         this.sessionID = sessionID;
@@ -56,7 +57,7 @@ public abstract class SessionMonitorBase implements SessionMonitor {
     }
 
     public void startStatement(String statement, String preparedName, long startTime) {
-        statementCount++;
+        statementCounters.countEvent(StatementTypes.STATEMENT);
         currentStatement = statement;
         currentStatementPreparedName = preparedName;
         currentStatementStartTime = startTime;
@@ -72,8 +73,12 @@ public abstract class SessionMonitorBase implements SessionMonitor {
         }
     }
     
+    public void countEvent(StatementTypes type) {
+        statementCounters.countEvent(type);
+    }
+    
     public void failStatement() {
-        failedStatementCount++;
+        statementCounters.countEvent(StatementTypes.FAILED);
         endStatement(-1);
     }
 
@@ -109,15 +114,15 @@ public abstract class SessionMonitorBase implements SessionMonitor {
     }
 
     @Override
-    public int getStatementCount() {
-        return statementCount;
+    public long getStatementCount() {
+        return statementCounters.getCount(StatementTypes.STATEMENT);
     }
     
-    @Override
-    public int getFailedStatementCount() {
-        return failedStatementCount;
+    @Override 
+    public long getCount(StatementTypes type) {
+        return statementCounters.getCount(type);
     }
-
+    
     @Override
     public String getCurrentStatement() {
         return currentStatement;
@@ -191,4 +196,29 @@ public abstract class SessionMonitorBase implements SessionMonitor {
         return this.user;
     }
 
+    private class StatementCounter<K,V> extends EnumMap<StatementTypes,Long> {
+
+        private static final long serialVersionUID = 1L;
+
+        public StatementCounter() {
+            super(StatementTypes.class);
+        }
+
+        public final void countEvent(StatementTypes statement)
+        {
+            if (this.containsKey(statement)) {
+                this.put(statement,this.get(statement).longValue() + 1L);
+            } else {
+                put(statement, 1L);
+            }
+        }
+        
+        public final long getCount(StatementTypes type) {
+            if (this.containsKey(type)) {
+                return this.get(type).longValue();
+            } else {
+                return 0L;
+            }
+        }
+    }
 }
