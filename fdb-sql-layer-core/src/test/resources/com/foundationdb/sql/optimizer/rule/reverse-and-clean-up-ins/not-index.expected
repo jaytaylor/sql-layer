@@ -1,0 +1,10 @@
+SelectQuery@64f007ad
+  ResultSet@4a8822a0[order_date, sku, quan]
+    Project@2f995c9a[orders.order_date, items.sku, items.quan]
+      Select@7d8e9adf[]
+        Flatten@5fa6fb3e(orders INNER items)
+          Select@2cccbab7[IN(items.quan, [50, 51, 100])]
+            BranchLookup@4bb8d481(customers -> customers)
+              SingleIndexScan@538787fd(Index(test.customers.name[IndexColumn(name)]), NONE, =Smith, rows = 200, cost = 16450.6)
+              TableSource@246972f1(orders - TableGroupJoin@66f11de2(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+              TableSource@6f93ee4(items - TableGroupJoin@5fe1153a(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

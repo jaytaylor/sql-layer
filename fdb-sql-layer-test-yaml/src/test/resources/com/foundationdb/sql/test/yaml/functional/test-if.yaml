@@ -1,0 +1,94 @@
+# Test the IF function
+---
+- Include: all-types-schema.yaml
+---
+- CreateTable: t (bigint_field bigint)
+---
+- Statement: INSERT INTO t VALUES (1)
+---
+- Statement: SELECT IF(?, 'yup', 'nope') FROM t
+- params: [[1]]
+- output: [['yup']]
+---
+- Statement: SELECT IF() FROM all_types
+- error: [4250C]
+---
+- Statement: SELECT IF(bigint_field = 1) FROM all_types
+- error: [4250C]
+---
+- Statement: SELECT IF(bigint_field = 1, double_field) FROM all_types
+- error: [4250C]
+---
+- Statement: SELECT IF(bigint_field = 1, double_field,) FROM all_types
+- error: [42000]
+
+---
+- Statement: INSERT INTO t VALUES (null)
+---
+- Statement: SELECT IF(bigint_field, 1, 2) FROM t
+- output: [[1],[2]]
+---
+- Statement: SELECT IF(0, bigint_field, 2) FROM t
+- output: [[2],[2]]
+
+---
+- Statement: INSERT INTO all_types
+    (bigint_field, double_field, varchar_field) VALUES (null, null, null)
+---
+- Statement: INSERT INTO all_types
+    (bigint_field, double_field, varchar_field)
+    VALUES (1, 1.0, '111'), (2, 2.0, '222')
+---
+- Statement: SELECT IF(bigint_field = 1, double_field, varchar_field)
+    FROM all_types
+- output: [[null], [1.0], [222.0]]
+
+---
+- Statement: SELECT IF(1, double_field, varchar_field) FROM all_types
+- output: [[null], [1.0], [2.0]]
+---
+- Statement: SELECT IF(0, double_field, varchar_field) FROM all_types
+- output: [[null], [111.0], [222.0]]
+
+---
+- Statement: SELECT IF(?, double_field, varchar_field) FROM all_types
+- params: [[0]]
+- output: [[null], [111.0], [222.0]]
+
+---
+- Statement: SELECT IF(bigint_field, double_field, double_field) FROM all_types;
+- output_types: [DOUBLE]
+
+---
+- Statement: SELECT IF(bigint_field, varchar_field, varchar_field) FROM all_types;
+- output_types: [VARCHAR]
+
+---
+- Statement: SELECT IF(bigint_field, date_field, date_field) FROM all_types;
+- output_types: [DATE]
+
+---
+- Statement: SELECT IF(bigint_field, integer_field, date_field) FROM all_types;
+- output_types: [DOUBLE]
+
+---
+- Statement: SELECT IF(bigint_field, double_field, integer_field) FROM all_types;
+- output_types: [DOUBLE]
+
+---
+- Statement: SELECT IF(bigint_field, integer_field, decimal_field) FROM all_types;
+- output_types: [DECIMAL]
+
+---
+- Statement: SELECT IF(bigint_field, double_field, decimal_field) FROM all_types;
+- output_types: [DOUBLE]
+
+---
+- Statement: SELECT IF(bigint_field, double_field, varchar_field) FROM all_types;
+- output_types: [DOUBLE]
+
+---
+- Statement: SELECT IF(bigint_field, integer_field, smallint_field) FROM all_types;
+- output_types: [INTEGER]
+
+...

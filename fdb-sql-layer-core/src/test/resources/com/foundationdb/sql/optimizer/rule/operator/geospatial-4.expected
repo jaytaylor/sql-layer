@@ -1,0 +1,5 @@
+PhysicalSelect@2c832333[pid]
+  Project_Default(Field(5))
+    Sort_General(DISTANCE_LAT_LON(Field(3), Field(4), 42.3583, -71.0603) ASC)
+      Select_HKeyOrdered(DISTANCE_LAT_LON(Field(3), Field(4), 42.3583, -71.0603) <= 4.660000e-02)
+        IndexScan_Default(Index(test.places.name_geo), places.state = 'MA', food_vendors.name = 'starbucks', (lat, lon) OVERLAP('POLYGON ((42.3117 -71.1069, 42.3117 -71.0137, 42.4049 -71.0137, 42.4049 -71.1069, 42.3117 -71.1069))'))

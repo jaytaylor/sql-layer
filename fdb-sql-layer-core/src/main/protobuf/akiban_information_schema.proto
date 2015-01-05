@@ -1,0 +1,276 @@
+// Master akiban_information_schema protobuf description file
+
+package akiban_schema.protobuf;
+option java_package = "com.foundationdb.ais.protobuf";
+option java_outer_classname = "AISProtobuf";
+
+message UUID {
+    optional fixed64 mostSignificantBits  = 1;
+    optional fixed64 leastSignificantBits = 2;
+}
+
+message TableName {
+    optional string schemaName = 1;  // link to Schema.schemaName
+    optional string tableName  = 2;  // link to Table.tableName
+}
+
+message CharCollation {
+   optional string characterSetName = 1;
+   optional string collationOrderName = 2;
+}
+
+enum JoinType {
+   LEFT_OUTER_JOIN  = 0;
+   RIGHT_OUTER_JOIN = 1;
+   FULL_OUTER_JOIN  = 2;
+   INNER_JOIN       = 3;
+}
+
+// One of the column pairs which define the Join.
+message JoinColumn {
+   optional string parentColumn = 1; // link to Column.columnName
+   optional string childColumn  = 2; // link to Column.columnName
+   optional int32  position     = 3; // order of column list in join
+}
+
+message Join {
+    optional TableName parentTable  = 1;  // Parent table for this join. 
+                                          // Child table is the source table.
+                                          // link to Table.tableName
+    repeated JoinColumn columns     = 2;  // list of columns for this join
+    optional TableName constraintName = 3; // Name of constraint
+}	
+
+message Sequence {
+    optional string sequenceName    = 1;
+    // 2 Previously used
+    optional int32  accumulator     = 3; // storage system accumulator index
+    optional int64  start           = 4; // Starting value
+    optional int64  increment       = 5; // increment by value
+    optional int64  minValue        = 6; // minimum value
+    optional int64  maxValue        = 7; // maximum value
+    optional bool   isCycle         = 8; // cycle values
+    optional Storage storage        = 9; // storage description
+}
+
+enum IndexMethod {
+   NORMAL          = 0;                  // Regular column index.
+   Z_ORDER_LAT_LON = 1;                  // Spatial index on latitude, longitude.
+   FULL_TEXT       = 2;                  // Lucene full index text.
+}
+
+message IndexColumn {
+    optional string    columnName  = 1;  // links to Column.columnName 
+    optional bool      isAscending = 2;  // sort order of the column
+    optional int32     position    = 3;  // order of the column in the index
+    optional TableName tableName   = 4;  // can be set to override owner name (group index has columns from multiple)
+    optional int32     indexedLength = 5; // number of bytes from column used in index (null if entire column is used)
+}
+
+message Storage {
+    extensions 1000 to max;
+}
+
+message Index {
+    optional string   indexName   = 1;
+    // 2 Previously used
+    optional int32    indexId     = 3;  // id of index within table/group
+    optional bool     isPK        = 4;  // Is the primary key index
+    optional bool     isUnique    = 5;  // Is a unique index
+    // 6 Previously used
+    repeated IndexColumn columns  = 7;  // list of columns for this index
+    optional string   description = 8;  // index comment holder 
+    optional JoinType joinType    = 9;  // Type of join used for GroupIndex
+    optional IndexMethod indexMethod  = 10; // Kind of special index
+    optional int32 firstSpatialArg = 11;    // For a spatial index, the position in the index of the first spatial column
+    optional int32 dimensions = 12;         // For a spatial index, the number of dimensions of the space
+    optional Storage storage     = 13;  // storage description
+	optional TableName constraintName = 14; // name for constraint
+    optional int32 lastSpatialArg = 15;    // For a spatial index, the position in the index of the last spatial column
+}
+
+message Group {
+    optional string rootTableName = 1;  // Root Table for this group
+                                        // link to Table.tableName
+    // 2 Previously used
+    repeated Index  indexes       = 3;  // list of Group indexes 
+    optional Storage storage      = 4;  // storage description
+}
+
+// Column in a Table
+message Column {
+    optional string  columnName   = 1;
+    optional string  typeName     = 2;  // link to Types.typeName
+    optional bool    isNullable   = 3;  // Can column hold NULL values
+    optional int32   position     = 4;  // order of column in Table 
+    optional int64   typeParam1   = 5;  
+    optional int64   typeParam2   = 6;
+    optional int64   initAutoInc  = 7;   // initial auto increment value
+    optional CharCollation charColl = 8; // column defined character set
+                                         // and collation
+    optional string  description  = 9;   // column comment holder
+    optional bool    defaultIdentity = 10; // true if column is identity by default,
+                                            // false if column is identity always, 
+                                            // null if column is not an identity column
+    optional TableName sequence   = 11;  // Sequence used for identity generation. 
+                                         // links to Schema.schemaName & Sequence.sequenceName
+                                         // null if not an identity column
+    optional int64  maxStorageSize = 12; // maximum number of bytes needed to store this column
+    optional int32  prefixSize     = 13; // number of bytes to describe maxStorageSize
+    optional UUID   typeBundleUUID = 14; // bundle UUID of type
+    optional int32  typeVersion    = 15; // serialization version of type
+    optional string defaultValue   = 16; // default value for column (null if none specified)
+    optional UUID   uuid           = 17; // uuid unique to this group (including table uuids)
+    optional string defaultFunction = 18; // default function name for column (null if none specified)
+}
+
+enum ForeignKeyAction {
+    NO_ACTION   = 0;
+    RESTRICT    = 1;
+    CASCADE     = 2;
+    SET_NULL    = 3;
+    SET_DEFAULT = 4;
+}
+
+message ForeignKey {
+    optional string constraintName     = 1;     // name of this foreign key
+    repeated string referencingColumns = 2;     // column names from containing Table
+    optional TableName referencedTable = 3;
+    repeated string referencedColumns  = 4;     // column names from referencedTable
+    optional ForeignKeyAction onDelete = 5;
+    optional ForeignKeyAction onUpdate = 6;
+    optional bool deferrable           = 7;
+    optional bool initiallyDeferred    = 8;
+}
+
+message Table {
+    optional string  tableName    = 1;
+    optional int32   tableId      = 2;  // globally unique id for table
+    optional int32   ordinal      = 3;  // id of table within the group
+    repeated Column  columns      = 4;  // list of columns in the table
+    optional CharCollation charColl = 5; // table default character set & collation
+    repeated Index   indexes      = 6;  // list of indexes on the table
+    optional Join    parentTable  = 7;  // Join to parent table
+    optional string  description  = 8;  // Table comment holder
+    optional bool    protected    = 9;  // Table can not be altered or grouped to
+                                        // by user actions. For AIS tables.
+    optional int32   version      = 10; // Version this table was created with.
+                                        // For AIS tables.
+    optional PendingOSC pendingOSC = 11; // ALTER by pt-online-schema-change.
+    optional UUID    uuid         = 12; // uuid unique to this group (including column uuids)
+    repeated Index fullTextIndexes = 13; // list of full text indexes on the table
+    repeated ForeignKey foreignKeys = 14; // for which this table is referencing
+}
+
+message Property {
+    optional string key = 1;
+    optional string value = 2;
+}
+
+message ColumnReference {
+    optional TableName table      = 1;  // table containing references
+    repeated string columns       = 2;  // list of columns referenced
+}
+
+message View {
+    optional string  viewName     = 1;  // name of view
+    repeated Column  columns      = 2;  // list of columns in the view
+    optional string  definition   = 3;  // text of CREATE VIEW
+    repeated Property definitionProperties = 4; // environment in which that was parsed
+    repeated ColumnReference references = 5;  // tables & their columns used in view
+    optional string  description  = 6;  // View comment holder
+    optional bool    protected    = 7;  // View cannot be altered
+}
+
+enum ParameterDirection {
+    IN = 0;
+    OUT = 1;
+    INOUT = 2;
+    RETURN = 3;
+}
+
+message Parameter {
+    optional string  parameterName = 1;         // name if named
+    optional ParameterDirection direction = 2;  // IN / OUT
+    optional string  typeName      = 3;         // link to Types.typeName
+    optional int64   typeParam1    = 4;  
+    optional int64   typeParam2    = 5;
+    optional UUID    typeBundleUUID = 6; // bundle UUID of type
+    optional int32   typeVersion    = 7; // serialization version of type
+}
+
+enum RoutineCallingConvention {
+    JAVA = 0;
+    LOADABLE_PLAN = 1;
+    SQL_ROW = 2;
+    SCRIPT_FUNCTION_JAVA = 3;
+    SCRIPT_BINDINGS = 4;
+    SCRIPT_FUNCTION_JSON = 5;
+    SCRIPT_BINDINGS_JSON = 6;
+    SCRIPT_LIBRARY = 7;
+}
+
+enum RoutineSQLAllowed {
+    MODIFIES_SQL_DATA = 0;
+    READS_SQL_DATA = 1;
+    CONTAINS_SQL = 2;
+    NO_SQL = 3;
+}
+
+message Routine {
+    optional string    routineName = 1; // name of routine
+    repeated Parameter parameters    = 2; // list of columns in the view
+    optional string    language      = 3; // Java, ...
+    optional RoutineCallingConvention callingConvention = 4; // how invoked
+    optional TableName jarName       = 5; // location of .JAR file
+    optional string    className     = 6; // name of Java class
+    optional string    methodName    = 7; // name of Java method
+    optional string    definition    = 8; // inline definition
+    optional string    description   = 9; // Routine comment holder
+    optional bool      protected     = 10; // Routine cannot be altered
+    optional RoutineSQLAllowed sqlAllowed = 11; // whether database accessed
+    optional int32     dynamicResultSets = 12; // result set values
+    optional bool      deterministic = 13; // same value from same arguments
+    optional bool      calledOnNullInput = 14; // handles null argument specially
+    optional int64     version       = 15; // version of this routine
+}
+
+message SQLJJar {
+    optional string jarName = 1; // name of routine
+    optional string url     = 2; // location of JAR file
+    optional int64  version = 3; // version of this routine
+}
+
+message Schema {
+    optional string schemaName   = 1;
+    repeated Table  tables       = 2;  // list of user tables in the schema
+    repeated Group  groups       = 3;  // list of groups in the schema 
+    optional CharCollation charColl = 4; // schema default character set & collation
+    repeated View   views        = 5;  // list of views in the schema
+    repeated Sequence sequences  = 6;  // list of sequences
+    repeated Routine routines    = 7;  // list of routines
+    repeated SQLJJar sqljJars    = 8;  // list of SQLJ JAR files
+}
+
+message PendingOSC {
+    optional string originalName           = 1; // name of the original that this copied
+    repeated PendingOSChange columnChanges = 2; // column changes to be done
+    repeated PendingOSChange indexChanges  = 3; // index changes to be done
+    optional string currentName            = 4; // name original has been renamed to
+}
+
+enum PendingOSChangeType {
+    ADD    = 0;
+    DROP   = 1;
+    MODIFY = 2;
+}
+
+message PendingOSChange {
+    optional PendingOSChangeType type = 1; // type of change
+    optional string oldName = 2;           // old column / index name
+    optional string newName = 3;           // new column / index name
+}
+
+message AkibanInformationSchema {
+    repeated Schema schemas = 2;
+}

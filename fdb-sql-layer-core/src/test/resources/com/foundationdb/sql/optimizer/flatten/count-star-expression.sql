@@ -1,0 +1,1 @@
+SELECT COUNT(*) FROM (SELECT id+3 AS val1 FROM t1) AS anon1

@@ -1,0 +1,25 @@
+# Index stats cache is per-node
+---
+- Properties: random-context
+- suppressed: true
+
+---
+- CreateTable: t (id INT NOT NULL PRIMARY KEY, x INT)
+---
+- Statement: CREATE INDEX x ON t(x)
+---
+- Statement: INSERT INTO t VALUES (1,10), (2, 20), (3, 30)
+
+---
+- Statement: CALL sys.index_stats_dump_string(NULL)
+- output: [ [''] ]
+---
+- Statement: ALTER TABLE t ALL UPDATE STATISTICS
+---
+- Statement: CALL sys.index_stats_dump_string(NULL)
+- output: [ [!re '(?s).+'] ]
+---
+- Statement: CALL sys.index_stats_delete(NULL)
+---
+- Statement: CALL sys.index_stats_dump_string(NULL)
+- output: [ [''] ]

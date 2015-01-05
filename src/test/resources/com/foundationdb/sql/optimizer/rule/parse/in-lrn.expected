@@ -1,9 +1,0 @@
-SelectQuery@5e552a98
-  ResultSet@295f918a[cid, name, oid, cid, order_date, iid, oid, sku, quan, price]
-    Project@414c103e[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date, items.iid, items.oid, items.sku, items.quan, items.price]
-      Select@68be77ef[or(customers.name != Jones,items.sku != 4567), or(customers.name != Smith,items.sku != 1234)]
-        JoinNode@50f60379(INNER[orders.oid == items.oid])
-          JoinNode@475e2675(INNER[customers.cid == orders.cid])
-            TableSource@762eefed(customers)
-            TableSource@389ed39(orders)
-          TableSource@72b46689(items)

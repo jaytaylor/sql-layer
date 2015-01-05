@@ -1,4 +1,0 @@
-# Test the CURRENT_SETTING function
-- Statement: SELECT CURRENT_SETTING('server_encoding'), CURRENT_SETTING('server_version'), CURRENT_SETTING('session_authorization');
-- output: [[!re 'UTF-?8','8.4.7', !select-engine { all: 'auser', fdb-sql: 'test' } ]]
-...

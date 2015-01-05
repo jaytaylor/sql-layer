@@ -1,0 +1,99 @@
+# Test zero date functionality
+---
+- Include: all-types-schema.yaml
+---
+- Statement: Insert into all_types (bigint_field, date_field, time_field, timestamp_field, datetime_field) values
+    (1,'2011-01-01','13:45:12','2011-01-01 13:45:12','2011-01-01 13:45:12'),
+    (2,'0000-00-00','00:00:00','0000-00-00 00:00:00','0000-00-00 00:00:00'),
+    (3,'0000-00-00','00:00:00','2000-04-11 11:22:33','2000-04-11 11:22:33'),
+    (4,'2011-12-15','00:00:00','0000-00-00 00:00:00','0000-00-00 00:00:00'),
+    (5,'2011-12-15','04:12:56','0000-00-00 00:00:00','1988-02-12 23:48:12'),
+    (6,null,null,null,null)
+
+---
+- Statement: Select bigint_field from all_types where date_field = '0000-00-00'
+- output: [[2],[3]]
+---
+- Statement: Select bigint_field from all_types where time_field = '00:00:00'
+- output: [[2],[3],[4]]
+---
+- Statement: Select bigint_field from all_types where timestamp_field = '0000-00-00 00:00:00'
+- output: [[2],[4],[5]]
+---
+- Statement: Select bigint_field from all_types where datetime_field = '0000-00-00 00:00:00'
+- output: [[2],[4]]
+---
+- Statement: Select bigint_field from all_types where date_field is null
+- output: [[6]]
+---
+- Statement: Select bigint_field from all_types where time_field is null
+- output: [[6]]
+---
+- Statement: Select bigint_field from all_types where timestamp_field is null
+- output: [[6]]
+---
+- Statement: Select bigint_field from all_types where datetime_field is null
+- output: [[6]]
+
+# bug 913921
+---
+- Statement: update all_types set date_field = '0000-00-00' where bigint_field = 5 
+---
+- Statement: Select bigint_field from all_types where date_field = '0000-00-00'
+- output: [[2],[3],[5]]
+
+---
+- Statement: update all_types set time_field = '00:00:00' where bigint_field = 5 
+---
+- Statement: Select bigint_field from all_types where time_field = '00:00:00'
+- output: [[2],[3],[4],[5]]
+
+---
+- Statement: update all_types set timestamp_field = '0000-00-00 00:00:00' where bigint_field = 3
+---
+- Statement: Select bigint_field from all_types where timestamp_field = '0000-00-00 00:00:00'
+- output: [[2],[4],[5],[3]]
+
+---
+- Statement: update all_types set datetime_field = '0000-00-00 00:00:00' where bigint_field = 1
+---
+- Statement: Select bigint_field from all_types 
+- output: [[1],[2],[3],[4],[5],[6]]
+---
+- Statement: Select bigint_field from all_types where date_field = '0000-00-00'
+- output: [[2],[3],[5]]
+---
+- Statement: Delete from all_types where date_field = '0000-00-00'
+---
+- Statement: Select bigint_field from all_types where date_field = '0000-00-00'
+- row_count: 0
+---
+- Statement: Select bigint_field from all_types 
+- output: [[1],[4],[6]]
+---
+- Statement: Select bigint_field from all_types where datetime_field = '0000-00-00'
+- output: [[1],[4]]
+
+---
+- Statement: SELECT bigint_field,YEAR(datetime_field) FROM all_types
+- output: [[1,0],[4,0],[6,null]]
+
+---
+- Statement: DELETE FROM all_types
+
+---
+- Statement: INSERT INTO all_types (varchar_field) VALUES
+    ('0000-00-00'), ('0000-01-01'), ('0001-11-11'), ('0020-02-22'), ('0300-03-30'),
+    ('1961-01-11'), ('2001-09-11'), ('3210-04-04'), ('9999-01-01'), ('1234567-00-00'),
+    ('abc')
+---
+- Statement: SELECT YEAR(varchar_field) FROM all_types
+- output: [   [0],    [0],    [1],   [20], [300],
+           [1961], [2001], [3210], [9999], [null], [null]]
+
+# bug 913922
+---
+- Statement: SELECT varchar_field FROM all_types WHERE YEAR(varchar_field) > YEAR('0100-01-01')
+- output: [['0300-03-30'], ['1961-01-11'], ['2001-09-11'], ['3210-04-04'], ['9999-01-01']]
+
+...

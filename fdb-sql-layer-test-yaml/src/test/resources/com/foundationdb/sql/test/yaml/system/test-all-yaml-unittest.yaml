@@ -1,0 +1,78 @@
+--- # these tests are meant to test the test system and not the server
+- CreateTable: testA (c1 int)
+---
+- Statement: INSERT INTO testA values (1)
+---
+- CreateTable: test1 (c1 int)
+---
+- Statement: INSERT INTO test1 values (1)
+---
+- Statement: INSERT INTO test1 values (22)
+---
+- Statement: INSERT INTO test1 values (45)
+---
+- Statement: INSERT INTO test1 values (5)
+---
+- Statement: INSERT INTO test1 values (9)
+---
+- Statement: INSERT INTO test1 values (12)
+---
+- Statement: INSERT INTO test1 values (556)
+---
+- Statement: INSERT INTO test1 values (1024)
+--- # positive cases 
+- Statement: SELECT 1,5,7,8,9,1,2,6 FROM testA
+- output: [[1,5,7,8,9,1,2,6]]
+---
+- Statement: SELECT c1 FROM test1
+- output: [[1],[22],[45],[5],[9],[12],[556],[1024]]
+---
+- Statement: SELECT c1 FROM test1 order by c1 ASC
+- output_already_ordered: [[1],[5],[9],[12],[22],[45],[556],[1024]]
+---
+- CreateTable: test2 (c1 int, c2 varchar(25))
+---
+- Statement: INSERT INTO test2 values (1, 'A')
+---
+- Statement: INSERT INTO test2 values (-4, 'abc')
+---
+- Statement: INSERT INTO test2 values (234, 'Z')
+---
+- Statement: INSERT INTO test2 values (8, null)
+---
+- Statement: INSERT INTO test2 values (11, '')
+---
+- Statement: INSERT INTO test2 values (12, 'Abra')
+---
+- Statement: INSERT INTO test2 values (94, 'cadbra')
+---
+- Statement: INSERT INTO test2 values (654, 'a')
+---
+- Statement: SELECT c1, c2 FROM test2
+- output: [[1, 'A'],[-4, 'abc'],[234, 'Z'],[8, null],[11, ''],[12, 'Abra'],[94, 'cadbra'],[654, 'a']]
+- row_count: 8
+- output_types: ['INTEGER', 'VARCHAR']
+---
+- Statement: SELECT c1, c2 FROM test2 order by c1 ASC
+- output_already_ordered: [[-4, 'abc'],[1, 'A'],[8, null],[11, ''],[12, 'Abra'],[94, 'cadbra'],[234, 'Z'],[654, 'a']]
+- row_count: 8
+- output_types: ['INTEGER', 'VARCHAR']
+---
+- Statement: SELECT c1, c2 FROM test2 order by c1 DESC
+- output_already_ordered: [[654, 'a'],[234, 'Z'],[94, 'cadbra'],[12, 'Abra'],[11, ''],[8, null],[1, 'A'],[-4, 'abc']]
+---
+- Statement: SELECT c1, c2 FROM test2 order by c1, c2 ASC
+- output_already_ordered: [[-4, 'abc'],[1, 'A'],[8, null],[11, ''],[12, 'Abra'],[94, 'cadbra'],[234, 'Z'],[654, 'a']]
+---
+- Statement: SELECT c1, c2 FROM test2 order by c2, c1 ASC
+- output_already_ordered: [[8, null],[11, ''],[1, 'A'],[12, 'Abra'],[234, 'Z'],[654, 'a'],[-4, 'abc'],[94, 'cadbra']]
+---
+- Statement: SELECT c1, c2 FROM test2 order by c2 DESC, c1 ASC
+- output_already_ordered: [[94, 'cadbra'],[-4, 'abc'],[654, 'a'],[234, 'Z'],[12, 'Abra'],[1, 'A'],[11, ''],[8, null]]
+---
+- Statement: SELECT c1, c2 FROM test2 order by c1 DESC, c2 ASC
+- output_already_ordered: [[654, 'a'],[234, 'Z'],[94, 'cadbra'],[12, 'Abra'],[11, ''],[8, null],[1, 'A'],[-4, 'abc']]
+---
+- Statement: SELECT c1, c2 FROM test2 where c1 < ? order by c1 DESC, c2 ASC
+- params: [[5]]
+- output_already_ordered: [[1, 'A'],[-4, 'abc']]

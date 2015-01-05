@@ -1,0 +1,97 @@
+# Modifies connection state
+---
+- Properties: random-context
+- suppressed: true
+
+# Test procedures defined as scripts
+---
+- Statement: >
+    CREATE PROCEDURE test_f1(IN x INT, IN y INT, OUT s DOUBLE, OUT d DOUBLE) AS $$
+      function f1(x, y, s, d) { 
+        s[0] = x + y; 
+        d[0] = x - y;
+      } 
+    $$ LANGUAGE javascript PARAMETER STYLE java EXTERNAL NAME 'f1';
+---
+- Statement: CALL test_f1(100,99)
+- output: [[199.0, 1.0]]
+---
+- Statement: CREATE PROCEDURE test_b1(IN x INT, IN y INT, OUT s DOUBLE, OUT d DOUBLE) AS $$ s = x + y; d = x - y; $$ LANGUAGE javascript PARAMETER STYLE variables
+---
+- Statement: CALL test_b1(100,99)
+- output: [[199.0, 1.0]]
+---
+- Statement: CREATE PROCEDURE test_b2(IN x INT, IN y INT, OUT s DOUBLE, OUT d DOUBLE) AS '[x + y, x - y]' LANGUAGE javascript PARAMETER STYLE variables
+---
+- Statement: CALL test_b2(100,99)
+- output: [[199.0, 1.0]]
+---
+- Statement: >
+    CREATE PROCEDURE test_b3(IN x INT, IN y INT, OUT s DOUBLE, OUT d DOUBLE) AS $$ 
+      var obj = {};
+      obj.d = x - y;
+      obj.s = x + y;
+      obj
+    $$ LANGUAGE javascript PARAMETER STYLE variables
+---
+- Statement: CALL test_b3(100,99)
+- output: [[199.0, 1.0]]
+---
+- Statement: "CREATE OR REPLACE PROCEDURE test_b4(IN x INT, IN y INT, OUT z DOUBLE) AS 'x + y' LANGUAGE javascript PARAMETER STYLE variables"
+---
+- Statement: CALL test_b4(2,3)
+- output: [[5.0]]
+---
+- Statement: "CREATE OR REPLACE PROCEDURE test_b4(IN x INT, IN y INT, OUT z DOUBLE) AS 'x * y' LANGUAGE javascript PARAMETER STYLE variables"
+---
+- Statement: CALL test_b4(2,3)
+- output: [[6.0]]
+---
+- Statement: SET OutputFormat TO 'json_with_meta_data';
+---
+- Statement: CALL test_b1(100,99)
+- output_already_ordered: [['[{"name":"s","oid":701,"type":"double"},{"name":"d","oid":701,"type":"double"}]'],['{"s":199.0,"d":1.0}']]
+---
+- Statement: SET OutputFormat TO DEFAULT;
+---
+- Statement: >
+    CREATE PROCEDURE test_f2(OUT d TIMESTAMP, OUT b VARCHAR(1024) FOR BIT DATA) AS $$
+      function f2(d, b) { 
+        d[0] = '2010-04-01';
+        b[0] = 'hello';
+      } 
+    $$ LANGUAGE javascript PARAMETER STYLE java EXTERNAL NAME 'f2';
+---
+- Statement: CALL test_f2()
+- output: [[!re '2010-04-01 00:00:00([.]0)?', !!binary 'aGVsbG8=']]
+---
+- Statement: SET OutputFormat TO 'json';
+---
+- Statement: CALL test_f2()
+- output: [['{"d":"2010-04-01 00:00:00","b":"aGVsbG8="}']]
+---
+- Statement: SET OutputFormat TO DEFAULT;
+---
+- Statement: EXPLAIN CALL test_f1(100,?)
+- output: [[!re 'CALL test_f1\[SCRIPT_FUNCTION_JAVA, (Mozilla Rhino|Rhino|Oracle Nashorn), f1, compiled\]\(100, \$1\)']]
+---
+- Statement: EXPLAIN CALL test_b1(100,?)
+- output: [[!re 'CALL test_b1\[SCRIPT_BINDINGS, (Mozilla Rhino|Rhino|Oracle Nashorn), compiled\]\(100, \$1\)']]
+---
+# Procedure as function
+- Statement: SELECT test_f1(100,99)
+- error: [4251B]
+---
+- Statement: CALL no_such_proc()
+- error: [42519]
+---
+- Statement: DROP PROCEDURE test_f1;
+---
+- Statement: DROP PROCEDURE test_b1;
+---
+- Statement: DROP PROCEDURE test_b2;
+---
+- Statement: DROP PROCEDURE test_b3;
+---
+- Statement: DROP PROCEDURE test_b4;
+...

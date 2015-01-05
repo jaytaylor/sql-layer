@@ -1,0 +1,99 @@
+# There were some errors with setting the right types when doing multiple unions, and null literals
+# this makes sure that everything aligns
+---
+- CreateTable: table1 (id int PRIMARY KEY, T1 int, T12 int, T13 int)
+---
+- CreateTable: table2 (id int PRIMARY KEY, T2 int, T12 int, T23 int)
+---
+- CreateTable: table3 (id int PRIMARY KEY, T3 int, T23 int, T13 int)
+---
+- CreateTable: joinable (T1 int, T2 int, T3 int)
+---
+- Statement: INSERT INTO table1 VALUES (1, 2, 3, 4);
+---
+- Statement: INSERT INTO table2 VALUES (5, 6, 7, 8);
+---
+- Statement: INSERT INTO table3 VALUES (9, 10, 11, 12);
+---
+- Statement: INSERT INTO joinable VALUES (1, 5, 9);
+---
+- Statement: SELECT id, T1 FROM table1
+             UNION ALL SELECT id, NULL AS T1 FROM table2;
+- output: [[1, 2], [5, null]]
+---
+- Statement: SELECT id, NULL AS T2 FROM table1
+             UNION ALL SELECT id, T2 FROM table2;
+- output: [[1, null], [5, 6]]
+---
+- Statement: SELECT id, T1, NULL AS T2 FROM table1
+             UNION ALL SELECT id, NULL AS T1, T2 FROM table2;
+- output: [[1, 2, null], [5, null, 6]]
+---
+- Statement: SELECT id, T1, NULL AS T2, NULL AS T3 FROM table1
+             UNION ALL SELECT id, NULL AS T1, T2, NULL AS T3 FROM table2;
+- output: [[1, 2, null, null], [5, null, 6, null]]
+---
+- Statement: SELECT id, T1 FROM table1
+             UNION ALL SELECT id, NULL AS T1 FROM table2
+             UNION ALL SELECT id, NULL AS T1 FROM table3;
+- output: [[1, 2], [5, null], [9, null]]
+---
+- Statement: SELECT id, NULL AS T2 FROM table1
+             UNION ALL SELECT id, T2 FROM table2
+             UNION ALL SELECT id, NULL AS T2 FROM table3;
+- output: [[1, null], [5, 6], [9, null]]
+---
+- Statement: SELECT id, NULL AS T3 FROM table1
+             UNION ALL SELECT id, NULL AS T3 FROM table2
+             UNION ALL SELECT id, T3 FROM table3;
+- output: [[1, null], [5, null], [9, 10]]
+---
+- Statement: SELECT id, T1, NULL AS T2, NULL AS T3 FROM table1
+             UNION ALL SELECT id, NULL AS T1, T2, NULL AS T3 FROM table2
+             UNION ALL SELECT id, NULL AS T1, NULL AS T2, T3 FROM table3;
+- output: [[1, 2, null, null], [5, null, 6, null], [9, null, null, 10]]
+---
+- Statement: SELECT * FROM (
+               SELECT id, T1, NULL AS T2, NULL AS T3 FROM table1
+               UNION ALL SELECT id, NULL AS T1, T2, NULL AS T3 FROM table2) tables
+             LEFT OUTER JOIN joinable ON tables.id = joinable.T1;
+- output: [[1, 2, null, null, 1, 5, 9], [5, null, 6, null, null, null, null]]
+---
+- Statement: SELECT * FROM (
+               SELECT id, T1, NULL AS T2, NULL AS T3 FROM table1
+               UNION ALL SELECT id, NULL AS T1, T2, NULL AS T3 FROM table2) tables
+             LEFT OUTER JOIN joinable ON tables.id = joinable.T2;
+- output: [[1, 2, null, null, null, null, null], [5, null, 6, null, 1, 5, 9]]
+---
+- Statement: SELECT * FROM (
+               SELECT id, T1, NULL AS T2, NULL AS T3 FROM table1
+               UNION ALL SELECT id, NULL AS T1, T2, NULL AS T3 FROM table2
+               UNION ALL SELECT id, NULL AS T1, NULL AS T2, T3 FROM table3) tables
+             LEFT OUTER JOIN joinable ON tables.id = joinable.T1;
+- output: [[1, 2, null, null, 1, 5, 9], [5, null, 6, null, null, null, null], [9, null, null, 10, null, null, null]]
+---
+- Statement: SELECT * FROM (
+               SELECT id, T1, NULL AS T2, NULL AS T3 FROM table1
+               UNION ALL SELECT id, NULL AS T1, T2, NULL AS T3 FROM table2
+               UNION ALL SELECT id, NULL AS T1, NULL AS T2, T3 FROM table3) tables
+             LEFT OUTER JOIN joinable ON tables.id = joinable.T2;
+- output: [[1, 2, null, null, null, null, null], [5, null, 6, null, 1, 5, 9], [9, null, null, 10, null, null, null]]
+---
+- Statement: SELECT * FROM (
+               SELECT id, T1, NULL AS T2, NULL AS T3 FROM table1
+               UNION ALL SELECT id, NULL AS T1, T2, NULL AS T3 FROM table2
+               UNION ALL SELECT id, NULL AS T1, NULL AS T2, T3 FROM table3) tables
+             LEFT OUTER JOIN joinable ON tables.id = joinable.T3;
+- output: [[1, 2, null, null, null, null, null], [5, null, 6, null, null, null, null], [9, null, null, 10, 1, 5, 9]]
+---
+- Statement: SELECT NULL AS t1 UNION ALL SELECT NULL AS t1;
+- output: [[null], [null]]
+---
+# prepared statement
+- Statement: PREPARE s AS
+               SELECT id, $1 FROM table1
+                UNION SELECT id, $2 FROM table2
+                UNION SELECT id, t3 FROM table3;
+---
+- Statement: EXECUTE s('107','108');
+- output: [[1, 107],[5, 108], [9, 10]]

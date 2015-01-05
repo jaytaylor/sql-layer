@@ -33,6 +33,11 @@ case "$1" in
         fi
 
         chown -R $USER_NAME:$GROUP_NAME $ETC_DIR
+        invoke-rc.d fdb-sql-layer start
+
+        if [ "$2" = "" ]; then
+            update-rc.d fdb-sql-layer defaults
+        fi
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

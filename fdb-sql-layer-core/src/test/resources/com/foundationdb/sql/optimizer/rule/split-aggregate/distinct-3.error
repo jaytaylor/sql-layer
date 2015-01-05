@@ -1,0 +1,1 @@
+com.foundationdb.server.error.UnsupportedSQLException: UNSUPPORTED_SQL: Unsupported SQL: More than one DISTINCT : quan

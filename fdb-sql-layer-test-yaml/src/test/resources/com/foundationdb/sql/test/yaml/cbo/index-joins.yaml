@@ -1,0 +1,15 @@
+---
+- Statement: CREATE TABLE t1(id INT PRIMARY KEY, n1 INT, n2 INT)
+---
+- Statement: CREATE INDEX t1_n1 ON t1(n1)
+---
+- Statement: INSERT INTO t1 VALUES(1, 1, 1), (2, 2, 2), (3, 3, 3), (4, 4, 4), (5, 5, 5), (6, 6, 6), (7, 7, 7), (8, 8, 8), (9, 9, 9), (10, 10, 10)
+---
+- Statement: CREATE TABLE t2 AS SELECT * FROM t1 WITH DATA
+---
+- Statement: CREATE INDEX t2_n1 ON t2(n1)
+---
+- Statement: SELECT * FROM t1,t2 WHERE t1.n2 = t2.n2 AND t1.n1 > 3 AND t2.n1 < 6
+- output: [[4, 4, 4, 4, 4, 4],
+           [5, 5, 5, 5, 5, 5]]
+...

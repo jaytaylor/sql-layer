@@ -1,0 +1,51 @@
+# Project referencing re-used binding position
+---
+- CreateTable: authors (id int not null primary key, name varchar(255) NOT NULL, author_address_id integer)
+---
+- CreateTable: author_favorites (id int not null primary key, author_id integer, favorite_author_id integer)
+---
+- CreateTable: categorizations (id int not null primary key, category_id integer, post_id integer, author_id integer, special boolean)
+---
+- CreateTable: categories (id int not null primary key, name varchar(255) NOT NULL, categorizations_count integer)
+---
+- CreateTable: comments (id int not null primary key, post_id integer NOT NULL, body clob NOT NULL)
+---
+- CreateTable: posts (id int not null primary key, author_id integer, title varchar(255) NOT NULL, body clob NOT NULL)
+---
+- Statement: INSERT INTO authors (id, author_address_id, name) VALUES (1, NULL, 'Davey McDave')
+---
+- Statement: INSERT INTO posts (id, author_id, body, title) VALUES (1, 1, 'Expressive wordage', 'Davey Speaks')
+---
+- Statement: INSERT INTO comments (id, body, post_id) VALUES (1, 'Inflamatory doublespeak', 1)
+---
+- Statement: INSERT INTO categorizations (id, author_id, category_id, post_id, special) VALUES (1, 1, NULL, 1, NULL)
+---
+- Statement: >
+    SELECT authors.id AS t0_r0,
+           authors.name AS t0_r1,
+           author_favorites.id AS t1_r0,
+           author_favorites.author_id AS t1_r1,
+           author_favorites.favorite_author_id AS t1_r2,
+           favorite_authors_author_favorites.id AS t2_r0,
+           categorizations.id AS t3_r0,
+           categorizations.category_id AS t3_r1,
+           categorizations.post_id AS t3_r3,
+           categorizations.author_id AS t3_r4,
+           categories.id AS t4_r0,
+           categories.name AS t4_r1,
+           categories.categorizations_count AS t4_r3,
+           posts.id AS t5_r0,
+           posts.author_id AS t5_r1,
+           comments.id AS t6_r0,
+           comments.post_id AS t6_r1
+      FROM authors
+      LEFT OUTER JOIN author_favorites ON author_favorites.author_id = authors.id
+      LEFT OUTER JOIN authors favorite_authors_author_favorites ON favorite_authors_author_favorites.id = author_favorites.favorite_author_id
+      LEFT OUTER JOIN categorizations ON categorizations.author_id = authors.id
+      LEFT OUTER JOIN categories ON categories.id = categorizations.category_id
+      LEFT OUTER JOIN posts ON posts.author_id = authors.id
+      LEFT OUTER JOIN comments ON comments.post_id = posts.id
+      WHERE authors.name = 'Davey McDave'
+      ORDER BY categories.name
+- output_already_ordered: [[1, 'Davey McDave', null, null, null, null, 1, null, 1, 1, null, null, null, 1, 1, 1, 1]]
+...

@@ -1,0 +1,42 @@
+# Test the ADDDATE() function
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
+---
+- Statement: select ADDDATE(DATE('2008-01-02'), INTERVAL 31 DAY) from all_types;
+- output: [[ '2008-02-02' ]]
+- output_types: [DATE]
+---
+- Statement: select ADDDATE(DATE('2008-01-02'), 31.5) from all_types;
+- output: [['2008-02-03']]
+- output_types: [DATE]
+---
+- Statement: SELECT ADDDATE(DATE('2008-01-02'), 31) from all_types;
+- output: [['2008-02-02']]
+- output_types: [DATE]
+---
+- Statement: select ADDDATE(DATE('2008-01-30'), INTERVAL 1 MONTH) from all_types;
+- output: [['2008-02-29']]
+- output_types: [DATE]
+---
+# <DATE-like VARCHAR expr> + integral-value ==> result in DATE
+- Statement: SELECT ADDDATE('2008-02-29', 2) from all_types;
+- output: [['2008-03-02']]
+- output_types: [VARCHAR]
+---
+# <DATE-like VARCHAR expr> + floating point ===> result in DATETIME
+- Statement: SELECT ADDDATE('2007-02-28', 2.5) from all_types;
+- output: [['2007-03-03']]
+- output_types: [VARCHAR]
+---
+# <DATETIME-like VARCHAR expr>
+- Statement: SELECT ADDDATE('2008-02-29 12:30:00', 2) from all_types;
+- output: [[!re '2008-03-02 12:30:00([.]0)?']]
+- output_types: [VARCHAR]
+---
+# Even 30 minutes make it a new day!
+- Statement: SELECT ADDDATE('2008-02-29 12:30:00', 2.5) from all_types;
+- output: [['2008-03-03 12:30:00']]
+- output_types: [VARCHAR]
+...

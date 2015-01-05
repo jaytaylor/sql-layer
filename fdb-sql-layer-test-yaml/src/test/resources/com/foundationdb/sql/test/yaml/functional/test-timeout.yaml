@@ -1,0 +1,21 @@
+# Modifies connection state
+---
+- Properties: random-context
+- suppressed: true
+
+
+# Test query timeout
+---
+- CreateTable: t (i int not null)
+---
+- Statement: INSERT INTO t VALUES(0),(1),(2),(3),(4),(5),(6),(7),(8),(9)
+---
+- Statement: INSERT INTO t SELECT t1.i*10+t2.i FROM t t1, t t2 WHERE t1.i > 0
+---
+- Statement: SET queryTimeoutSec TO '1'
+---
+- Statement: SELECT COUNT(*) FROM t t1, t t2, t t3, t t4
+- error: [40000]
+---
+- Statement: SET queryTimeoutSec TO DEFAULT
+...

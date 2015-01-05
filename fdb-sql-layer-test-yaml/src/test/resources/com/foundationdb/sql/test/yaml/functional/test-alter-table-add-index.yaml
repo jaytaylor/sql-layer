@@ -1,0 +1,29 @@
+---
+- CreateTable: t1 (id INT)
+---
+- Statement: ALTER TABLE t1 ADD INDEX (id)
+---
+- Statement: ALTER TABLE t1 ADD INDEX index_name_1(id)
+---
+- Statement: SELECT index_name, constraint_name FROM information_schema.indexes WHERE index_name = 'index_name_1'
+- output: [['index_name_1', null]]
+---
+- Statement: ALTER TABLE t1 ADD UNIQUE INDEX index_name_2(id)
+---
+- Statement: SELECT index_name, constraint_name FROM information_schema.indexes WHERE index_name = 'index_name_2'
+- output: [['index_name_2', 'index_name_2_ukey']]
+---
+- Statement: ALTER TABLE t1 ADD CONSTRAINT constraint_name_1 UNIQUE(id)
+---
+- Statement: ALTER TABLE t1 ADD UNIQUE(id)
+---
+- Statement: SELECT constraint_name, index_name FROM information_schema.indexes WHERE table_name='t1'
+- output: [ ['constraint_name_1', 'constraint_name_1'], [null, 'id'],['t1_ukey', 'id_2'], [ null, 'index_name_1'], ['index_name_2_ukey', 'index_name_2']]
+---
+- CreateTable: o (id INT)
+---
+- Statement: ALTER TABLE o ADD INDEX id_index(id) STORAGE_FORMAT rowdata
+---
+- Statement: select storage_format from information_schema.indexes where table_name = 'o' and index_name = 'id_index';
+- output: [['rowdata']]
+...

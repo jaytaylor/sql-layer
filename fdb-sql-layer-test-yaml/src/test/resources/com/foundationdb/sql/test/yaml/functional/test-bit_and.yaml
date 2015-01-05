@@ -1,0 +1,29 @@
+# Test the bitwise AND function
+
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (bigint_field) VALUES (1),(2),(3);
+---
+- Statement: SELECT BIT_AND(bigint_field) FROM all_types
+- output: [[0]]
+---
+- Statement: SELECT BIT_AND(?)
+- params: [[100]]
+- output: [[100]]
+---
+- Include: all-classes-schema.yaml
+---  
+- Statement: SELECT Dept, Level, BIT_AND(ClassID) AS BitwiseAND FROM Classes GROUP BY Dept, Level ORDER BY DEPT, LEVEL;
+- output_already_ordered: [['ANTH','Lower',992],['ANTH','Upper',992],['ENGL','Lower',1011],['ENGL','Upper',1000],['MATH',Lower,992],['MATH','Upper',1003]]
+---
+- Statement: INSERT INTO Classes VALUES
+      (2002, 'ANTH', 'Upper', -25),
+      (2003, 'MATH', 'Upper', -18),
+      (2004, 'ANTH', 'Lower', -19),
+      (2005, 'ENGL', 'Upper', -28)
+---
+- Statement: SELECT Dept, Level, BIT_AND(ClassID) AS BitwiseAND FROM Classes GROUP BY Dept, Level ORDER BY DEPT, LEVEL;
+- output_already_ordered: [['ANTH','Lower',960],['ANTH','Upper',960],['ENGL','Lower',1011],['ENGL','Upper',960],['MATH',Lower,992],['MATH','Upper',963]]
+...
+

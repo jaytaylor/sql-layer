@@ -1,0 +1,6 @@
+DMLStatement@44232a40(items)
+  UpdateStatement@2e436470(items[items.price = times(items.price,0.95), items.sku = concatenate(items.sku,BULK), items.quan = divide(items.quan,1000)])
+    Select@4a770cca[orders.order_date > 2011-01-01, items.quan > 1000, items.sku == $0, items.oid == orders.oid]
+      JoinNode@4de8c7f7(INNER)
+        TableSource@6da05116(items)
+        TableSource@382bb394(orders)

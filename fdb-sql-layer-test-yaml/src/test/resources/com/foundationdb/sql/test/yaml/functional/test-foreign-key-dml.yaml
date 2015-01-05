@@ -1,0 +1,163 @@
+# Test DML related to foreign key constraints
+---
+- CreateTable: p (id INT PRIMARY KEY NOT NULL, n INT NOT NULL, UNIQUE(n))
+---
+- CreateTable: c (id INT PRIMARY KEY NOT NULL, m INT, FOREIGN KEY(m) REFERENCES p(n))
+---
+- Statement: INSERT INTO p VALUES(1, 100), (2, 200), (3, 300), (4, 400)
+---
+- Statement: INSERT INTO c VALUES(10, 100), (40, 400)
+---
+- Statement: INSERT INTO c VALUES(50, 500)
+- error: [23503, 'ERROR: Cannot insert into table `test`.`c` with m = 500 due to foreign key constraint `c_fkey` since no matching row exists in `test`.`p`']
+---
+- Statement: TRUNCATE TABLE p
+- error: [23504, 'ERROR: Cannot truncate table `test`.`p` with n = 100 due to foreign key constraint `c_fkey` on `test`.`c`']
+---
+- Statement: DELETE FROM p WHERE id = 3
+---
+- Statement: DELETE FROM p WHERE id = 4
+- error: [23504, 'ERROR: Cannot delete from table `test`.`p` with n = 400 due to foreign key constraint `c_fkey` on `test`.`c`']
+---
+- Statement: UPDATE p SET n = 500 WHERE id = 4
+- error: [23504, 'ERROR: Cannot update table `test`.`p` with n = 400 due to foreign key constraint `c_fkey` on `test`.`c`']
+---
+- Statement: UPDATE c SET m = 500 WHERE id = 40
+- error: [23503, 'ERROR: Cannot update table `test`.`c` with m = 500 due to foreign key constraint `c_fkey` since no matching row exists in `test`.`p`']
+---
+- Statement: UPDATE c SET m = 200 WHERE id = 40
+---
+- Statement: INSERT INTO c VALUES(20, 400),(30,NULL)
+---
+- Statement: SELECT * FROM c
+- output: [[10, 100],[20,400],[30,null],[40,200]]
+---
+- Statement: ALTER TABLE c DROP FOREIGN KEY
+---
+- Statement: ALTER TABLE c ADD FOREIGN KEY(m) REFERENCES p(n) ON DELETE SET NULL
+---
+- Statement: DELETE FROM p WHERE id = 1
+---
+- Statement: SELECT * FROM c
+- output: [[10, null],[20,400],[30,null],[40,200]]
+---
+- Statement: ALTER TABLE c DROP FOREIGN KEY
+---
+- Statement: ALTER TABLE c ADD FOREIGN KEY(m) REFERENCES p(n) ON DELETE CASCADE
+---
+- Statement: DELETE FROM p WHERE id = 2
+---
+- Statement: SELECT * FROM c
+- output: [[10, null],[20,400],[30,null]]
+---
+- Statement: TRUNCATE TABLE p
+---
+- Statement: SELECT * FROM c
+- output: [[10, null],[30,null]]
+---
+- Statement: DROP TABLE c
+---
+- Statement: INSERT INTO p VALUES(1, 100), (2, 200), (3, 300), (4, 400)
+---
+- Statement: CREATE TABLE c (id INT PRIMARY KEY NOT NULL, m INT DEFAULT 100, FOREIGN KEY(m) REFERENCES p(n) ON DELETE SET DEFAULT)
+---
+- Statement: INSERT INTO c VALUES(20, 100), (30, 300), (40, 400)
+---
+- Statement: INSERT INTO c(id) VALUES(10)
+---
+- Statement: SELECT * FROM c
+- output: [[10, 100],[20,100],[30,300],[40,400]]
+---
+- Statement: DELETE FROM p WHERE id = 3
+---
+- Statement: SELECT * FROM c
+- output: [[10, 100],[20,100],[30,100],[40,400]]
+---
+- Statement: DELETE FROM c WHERE m = 100
+---
+- Statement: DELETE FROM p WHERE id = 1
+---
+- Statement: SELECT * FROM c
+- output: [[40,400]]
+---
+- Statement: DELETE FROM p WHERE id = 4
+- error: [23503, 'ERROR: Cannot update table `test`.`c` with m = 100 due to foreign key constraint `c_fkey` since no matching row exists in `test`.`p`']
+---
+- Statement: DROP TABLE c
+---
+- Statement: TRUNCATE TABLE p
+---
+- Statement: INSERT INTO p VALUES(1, 100), (2, 200), (3, 300), (4, 400)
+---
+- Statement: CREATE TABLE c (id INT PRIMARY KEY NOT NULL, m INT, FOREIGN KEY(m) REFERENCES p(n) ON UPDATE SET NULL)
+---
+- Statement: INSERT INTO c VALUES(10, 100), (30, 300), (40, 400)
+---
+- Statement: UPDATE p SET n = 301 WHERE id = 3
+---
+- Statement: SELECT * FROM c
+- output: [[10, 100],[30,null],[40,400]]
+---
+- Statement: ALTER TABLE c DROP FOREIGN KEY
+---
+- Statement: ALTER TABLE c ADD FOREIGN KEY(m) REFERENCES p(n) ON UPDATE CASCADE
+---
+- Statement: UPDATE p SET n = 401 WHERE id = 4
+---
+- Statement: SELECT * FROM c
+- output: [[10, 100],[30,null],[40,401]]
+---
+- DropTable: c
+---
+- DropTable: p
+
+# Conflated key
+---
+- CreateTable: p(pid INT NOT NULL PRIMARY KEY)
+---
+- CreateTable: c(cid INT NOT NULL PRIMARY KEY, FOREIGN KEY(cid) REFERENCES p(pid))
+---
+- Statement: INSERT INTO p VALUES (1)
+---
+- Statement: INSERT INTO c VALUES (1)
+---
+- Statement: UPDATE p SET pid=10 WHERE pid=1
+- error: [23504, 'ERROR: Cannot update table `test`.`p` with pid = 1 due to foreign key constraint `c_fkey` on `test`.`c`']
+---
+- Statement: DELETE FROM p WHERE pid=1
+- error: [23504, 'ERROR: Cannot delete from table `test`.`p` with pid = 1 due to foreign key constraint `c_fkey` on `test`.`c`']
+---
+- Statement: TRUNCATE TABLE p
+- error: [23504, 'ERROR: Cannot truncate table `test`.`p` with pid = 1 due to foreign key constraint `c_fkey` on `test`.`c`']
+---
+- DropTable: c
+---
+- DropTable: p
+
+# Multiple referencing with mixed ON UPDATE
+---
+- CreateTable: a(aid INT NOT NULL PRIMARY KEY);
+---
+- CreateTable: c1(c1id INT NOT NULL PRIMARY KEY, aid INT REFERENCES a ON UPDATE CASCADE);
+---
+- CreateTable: c2(c2id INT NOT NULL PRIMARY KEY, aid INT REFERENCES a ON UPDATE SET NULL);
+---
+- Statement: INSERT INTO a VALUES (1);
+---
+- Statement: INSERT INTO c1 VALUES (10, 1);
+---
+- Statement: INSERT INTO c2 VALUES (20, 1);
+---
+- Statement: UPDATE a SET aid=100 WHERE aid=1;
+---
+- Statement: SELECT * FROM c1
+- output: [[10, 100]]
+---
+- Statement: SELECT * FROM c2
+- output: [[20, null]]
+---
+- DropTable: c2
+---
+- DropTable: c1
+---
+- DropTable: a

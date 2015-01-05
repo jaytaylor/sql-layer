@@ -1,0 +1,4 @@
+{
+"code": "42000",
+"message": "SQL_PARSE_EXCEPTION: Encountered \" \"delete\" \"DELETE \"\" at line 1, column 8.\nWas expecting one of:\n    \"all\" ...\n    \"distinct\" ...\n    \"*\" ...\n    \"**\" ...\n    "
+}

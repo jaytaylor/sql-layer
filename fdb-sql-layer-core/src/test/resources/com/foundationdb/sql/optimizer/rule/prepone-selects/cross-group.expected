@@ -1,0 +1,14 @@
+SelectQuery@7a5d5033
+  ResultSet@43c8308[cid]
+    Project@20be8464[customers.cid]
+      Select@3be5d207[]
+        MapJoin@655538e5(INNER)
+          Select@7addc524[parent.id > 1]
+            SingleIndexScan@75b9fd80(Index(test.parent.name[IndexColumn(name)]), covering/NONE, rows = 85, cost = 188.270)
+          Select@6dafab2a[]
+            Flatten@5692900d(customers INNER items)
+              Select@5b21ae2[items.quan > 100]
+                AncestorLookup@7002ee59(items -> [customers, items])
+                  SingleIndexScan@506e4e82(Index(test.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), NONE, =parent.name, =1234, rows = 1, cost = 111.095)
+                  TableSource@1298a7eb(customers - TableGroup@28a58701(customers))
+                  TableSource@7df36af6(items - TableGroupJoin@79e4620e(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

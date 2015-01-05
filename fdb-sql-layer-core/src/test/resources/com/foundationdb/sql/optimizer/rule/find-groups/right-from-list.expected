@@ -1,0 +1,8 @@
+SelectQuery@7e0c6692
+  ResultSet@60223be4[name, order_date, sku, quan]
+    Project@678a270a[customers.name, orders.order_date, items.sku, items.quan]
+      Select@1f0936a1[orders.order_date > 2011-01-01]
+        TableGroupJoinTree@15e193f2(TableGroup@cb80017(customers), customers RIGHT orders INNER items)
+          TableSource@2f87d27e(customers - TableGroup@cb80017(customers))
+            TableSource@50908faf(orders - TableGroupJoin@40dec87(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+              TableSource@42c9537b(items - TableGroupJoin@2e239525(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

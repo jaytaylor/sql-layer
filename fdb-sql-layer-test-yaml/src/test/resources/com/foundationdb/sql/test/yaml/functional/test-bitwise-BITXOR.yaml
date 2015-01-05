@@ -1,0 +1,50 @@
+# Test the bitwise XOR function
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
+---
+- Statement: SELECT BITXOR(?, ?) from all_types;
+- params: [[11,3]]
+- output: [[8]]  
+---
+- Statement: SELECT 2 from all_types where BITXOR(?, ?) = 8;
+- params: [[11,3]]
+- output: [[2]]  
+---
+- Statement: SELECT BITXOR(null, 15) from all_types;
+- output: [[null]]  
+---
+- Statement: SELECT BITXOR(29, null) from all_types;
+- output: [[null]]  
+---  
+- Statement: SELECT BITXOR(1,1) from all_types;
+- output: [[0]] 
+---
+- Statement: SELECT BITXOR(1,0) from all_types;
+- output: [[1]] 
+---
+- Statement: SELECT BITXOR(11,3) from all_types;
+- output: [[8]] 
+---
+- Statement: SELECT BITXOR(0,5) from all_types;
+- output: [[5]] 
+---
+- Statement: SELECT BITXOR(1,5) from all_types;
+- output: [[4]] 
+---
+- Statement: SELECT BITXOR(2,5) from all_types;
+- output: [[7]] 
+---
+- Statement: SELECT BITXOR(4,5) from all_types;
+- output: [[1]] 
+---
+- Statement: SELECT BITXOR(8,5) from all_types;
+- output: [[13]]
+---
+- Statement: SELECT BITXOR(-4,5) from all_types;
+- output: [['18446744073709551609']] 
+---
+- Statement: SELECT BITXOR(8,-5) from all_types;
+- output: [[18446744073709551603]]
+...

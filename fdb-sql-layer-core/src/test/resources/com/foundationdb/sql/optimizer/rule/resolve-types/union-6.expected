@@ -1,0 +1,11 @@
+SelectQuery@238f1ffe
+  ResultSet@97d6eef[cid, name]
+    Union@9fe11c7
+      ResultSet@74124f1[cid, name]
+        Project@45e04def[customers.cid, Cast(NULL AS MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NULL)]
+          Select@91ca9c0[]
+            TableSource@38cc80ec(customers)
+      ResultSet@7a242315[cid, name]
+        Project@5a7b7658[orders.cid, Cast(orders.order_date AS MCOMPAT_ VARCHAR(32, UTF8, UCS_BINARY) NULL)]
+          Select@5f96b9d0[]
+            TableSource@208137b7(orders)

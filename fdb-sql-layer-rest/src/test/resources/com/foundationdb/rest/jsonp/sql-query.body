@@ -1,0 +1,1 @@
+{ "q": "SELECT COUNT(*) t_cnt FROM test.t" }

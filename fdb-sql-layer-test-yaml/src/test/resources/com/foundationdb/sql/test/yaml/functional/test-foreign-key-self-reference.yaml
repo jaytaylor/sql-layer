@@ -1,0 +1,98 @@
+# Test Foreign Key with a self reference
+---
+- CreateTable: Master ( master_key_column bigint not null, 
+      otherMaster bigint,
+      primary key (master_key_column),
+      foreign key (otherMaster) references Master (master_key_column))
+---
+- Statement: insert into master (master_key_column, otherMaster) values (24, 24);      
+---
+- Statement: select * from master;
+- output: [[24,24]]
+---
+- Statement: insert into master (master_key_column, otherMaster) values (10, 11);
+- error: [23503, "ERROR: Cannot insert into table `test`.`master` with othermaster = 11 due to foreign key constraint `master_fkey` since no matching row exists in `test`.`master`"]
+---
+- Statement: insert into master (master_key_column, otherMaster) values (21,24);
+---
+- Statement: select master_key_column, otherMaster from master order by master_key_column;
+- output_already_ordered: [[21,24], [24,24]]
+---
+- Statement: DELETE FROM master where master_key_column = 24;
+- error:  [23504, "ERROR: Cannot delete from table `test`.`master` with master_key_column = 24 due to foreign key constraint `master_fkey` on `test`.`master`"]
+---
+- Statement: DELETE FROM master where master_key_column = 21;
+---
+- Statement: delete from master;
+---
+- Statement: Insert into master (master_key_column, otherMaster) values (7,7), (5,7), (3, 7);
+---
+- Statement: Delete from master where master_key_column IN (7,5);
+- error:  [23504, "ERROR: Cannot delete from table `test`.`master` with master_key_column = 7 due to foreign key constraint `master_fkey` on `test`.`master`"]
+---
+- CreateTable: t1 (c1 integer not null, c2 varchar(1) not null,
+      p2 varchar(1) not null, p1 integer not null, 
+      primary key (c1, c2),
+      foreign key (p2, p1) references t1 (c2, c1));
+---
+- Statement: INSERT INTO t1 (c1, c2, p2, p1) values (1, 'a', 'a', 1), (2, 'b', 'a', 1), (3, 'c', 'a', 1);
+---
+- Statement: delete from t1 where p2 = 'a' and p1 = 1;
+---
+- Statement: INSERT INTO t1 (c1, c2, p2, p1) values (2, 'b', 'b', 2), (1, 'a', 'b', 2), (3, 'c', 'b', 2);
+---
+- Statement: delete from t1 where p2 = 'b' and p1 = 2;
+---
+- Statement: INSERT INTO t1 (c1, c2, p2, p1) values (3, 'c', 'c', 3), (2, 'b', 'c', 3), (1, 'a', 'c', 3);
+---
+- Statement: delete from t1 where p2 = 'c' and p1 = 3;
+---
+- Statement: INSERT INTO t1 (c1, c2, p2, p1) values (1, 'a', 'a', 1), (2, 'b', 'b', 2), (3, 'c', 'c', 3);
+---
+- Statement: Update t1 set p2='d', p1 ='4' where p1 = 1;
+- error: [23503, "ERROR: Cannot update table `test`.`t1` with p2 = d and p1 = 4 due to foreign key constraint `t1_fkey` since no matching row exists in `test`.`t1`"]
+---
+- Statement: select c1, c2, p2, p1 from t1 order by c1;
+- output_already_ordered: [[1,'a','a',1], [2, 'b','b',2], [3,'c','c',3]]
+---
+- Statement: UPDATE t1 set p2 = 'c', p1 = 3 where c1 <= 2;
+---
+- Statement: delete from t1 where p2 = 'c' and p1 = 3;
+---
+- Statement: INSERT INTO t1 (c1, c2, p2, p1) values (4, 'd', 'd', 4);
+---
+- Statement: DELETE FROM t1 where c1 = 4;
+---
+- Statement: INSERT INTO t1 (c1, c2, p2, p1) values (1, 'a', 'a', 1),(2, 'b', 'a', 1);
+---
+- Statement: Truncate table t1;
+---
+- CreateTable: p(pid INT NOT NULL PRIMARY KEY)
+---
+- CreateTable: c(cid INT NOT NULL PRIMARY KEY, FOREIGN KEY(cid) REFERENCES p(pid))
+---
+- Statement: INSERT INTO p VALUES (1)
+---
+- Statement: INSERT INTO c VALUES (1)
+---
+- Statement: UPDATE p SET pid=10 WHERE pid=1
+- error: [23504, 'ERROR: Cannot update table `test`.`p` with pid = 1 due to foreign key constraint `c_fkey` on `test`.`c`']
+---
+- Statement: DELETE FROM p WHERE pid=1
+- error: [23504, 'ERROR: Cannot delete from table `test`.`p` with pid = 1 due to foreign key constraint `c_fkey` on `test`.`c`']
+---
+- Statement: TRUNCATE TABLE p
+- error: [23504, 'ERROR: Cannot truncate table `test`.`p` with pid = 1 due to foreign key constraint `c_fkey` on `test`.`c`']
+---
+- DropTable: c
+---
+- DropTable: p
+---
+- CreateTable: t (id INT NOT NULL PRIMARY KEY, 
+                y INT,
+                FOREIGN KEY (y) REFERENCES t (id));
+---
+- Statement: INSERT INTO t VALUES (1,1), (2,2), (3,3);
+---
+- Statement: DELETE FROM t WHERE id=2;
+...

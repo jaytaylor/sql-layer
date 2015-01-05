@@ -12,10 +12,13 @@ JVM_OPTS="$JVM_OPTS -ea"
 # Set min and max at the same time to avoid resizing the heap while running.
 JVM_OPTS="$JVM_OPTS -Xms$MAX_HEAP_SIZE"
 JVM_OPTS="$JVM_OPTS -Xmx$MAX_HEAP_SIZE"
-JVM_OPTS="$JVM_OPTS -XX:+HeapDumpOnOutOfMemoryError" 
 
 # Prefer IPv4 even if IPv6 is available.
 JVM_OPTS="$JVM_OPTS -Djava.net.preferIPv4Stack=true"
+
+# Heap dumps
+#JVM_OPTS="$JVM_OPTS -XX:+HeapDumpOnOutOfMemoryError"
+#JVM_OPTS="$JVM_OPTS -XX:HeapDumpPath=/tmp/"
 
 # JMX
 #JVM_OPTS="$JVM_OPTS -Dcom.sun.management.jmxremote.port=8082"
@@ -25,3 +28,5 @@ JVM_OPTS="$JVM_OPTS -Djava.net.preferIPv4Stack=true"
 # Debugging
 #JVM_OPTS="$JVM_OPTS -Xrunjdwp:transport=dt_socket,address=8000,suspend=n,server=y"
 
+# Completely disable preallocated exceptions, which don't have stack traces
+JVM_OPTS="$JVM_OPTS -XX:-OmitStackTraceInFastThrow"

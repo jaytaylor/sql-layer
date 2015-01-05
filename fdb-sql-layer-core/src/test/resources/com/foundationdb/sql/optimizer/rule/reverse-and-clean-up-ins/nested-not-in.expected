@@ -1,0 +1,15 @@
+SelectQuery@6ed618e8
+  ResultSet@29fd6031[name]
+    MapJoin@421060d0()
+      SingleIndexScan@41441992(Index(test.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 74.1740)
+      Project@39b64680[customers.name]
+        Select@6dce9b19[]
+          OnlyIfEmpty@5deae1b7
+            UsingHashTable@6788e58c(HashTable@4c967f6e, [items.oid])
+              SingleIndexScan@2c88360a(Index(test.items.sku[IndexColumn(sku)]), covering/NONE, =1234, rows = 97, cost = 79.4406)
+              MapJoin@6d3175fc()
+                SingleIndexScan@4a392b65(Index(test.orders.PRIMARY[IndexColumn(oid)]), covering/NONE, rows = 1000, cost = 688.942)
+                Select@6f5019f4[customers.cid == orders.cid]
+                  OnlyIfEmpty@73d81b43
+                    HashTableLookup@70e6071f(HashTable@4c967f6e, [orders.oid])
+                      TableSource@261db982(items - TableGroup@13dbed9e(customers))

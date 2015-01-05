@@ -1,8 +1,0 @@
-SelectQuery@32554189
-  ResultSet@7b41a32f[name, order_date, sku, quan]
-    Project@1240a1e1[customers.name, orders.order_date, items.sku, items.quan]
-      Select@5143c423[orders.order_date > Cast(2011-01-01 AS MCOMPAT_ DATE)]
-        TableGroupJoinTree@3801ff83(TableGroup@b2e0e2f(customers), customers RIGHT orders INNER items)
-          TableSource@4dc6bbd3(customers - TableGroup@b2e0e2f(customers))
-            TableSource@380b4f9(orders - TableGroupJoin@7ca53564(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
-              TableSource@76e9493a(items - TableGroupJoin@4254782a(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

@@ -1,0 +1,46 @@
+- bind:
+    com.foundationdb.sql.LayerInfoInterface : com.foundationdb.sql.Main
+    com.foundationdb.server.service.config.ConfigurationService : com.foundationdb.server.service.config.ConfigurationServiceImpl
+    com.foundationdb.server.service.dxl.DXLService : com.foundationdb.server.service.dxl.DXLServiceImpl
+    com.foundationdb.server.service.jmx.JmxRegistryService : com.foundationdb.server.service.jmx.JmxRegistryServiceImpl
+    com.foundationdb.server.service.log4jconfig.Log4JConfigurationService : com.foundationdb.server.service.log4jconfig.Log4JConfigurationServiceImpl
+    com.foundationdb.server.service.session.SessionService : com.foundationdb.server.service.session.SessionServiceImpl
+    com.foundationdb.server.service.stats.StatisticsService : com.foundationdb.server.service.stats.StatisticsServiceImpl
+    com.foundationdb.server.service.monitor.MonitorService : com.foundationdb.server.service.monitor.MonitorServiceImpl
+    com.foundationdb.server.service.is.BasicInfoSchemaTablesService : com.foundationdb.server.service.is.BasicInfoSchemaTablesServiceImpl
+    com.foundationdb.sql.ui.SwingConsoleService : com.foundationdb.sql.ui.SwingConsoleServiceImpl
+    com.foundationdb.server.service.is.ServerSchemaTablesService    : com.foundationdb.server.service.is.ServerSchemaTablesServiceImpl
+    com.foundationdb.server.types.service.TypesRegistryService : com.foundationdb.server.types.service.TypesRegistryServiceImpl
+    com.foundationdb.server.types.service.TypesRegistrySchemaTablesService: com.foundationdb.server.types.service.TypesRegistrySchemaTablesServiceImpl
+    com.foundationdb.server.service.routines.RoutineLoader : com.foundationdb.server.service.routines.RoutineLoaderImpl
+    com.foundationdb.server.service.routines.ScriptEngineManagerProvider : com.foundationdb.server.service.routines.ScriptEngineManagerProviderImpl
+    com.foundationdb.sql.embedded.EmbeddedJDBCService : com.foundationdb.sql.embedded.EmbeddedJDBCServiceImpl
+    com.foundationdb.server.service.externaldata.ExternalDataService : com.foundationdb.server.service.externaldata.ExternalDataServiceImpl
+    com.foundationdb.server.service.security.SecurityService : com.foundationdb.server.service.security.SecurityServiceImpl
+    com.foundationdb.server.service.listener.ListenerService : com.foundationdb.server.service.listener.ListenerServiceImpl
+    ##
+    ##
+    ## Persistit
+    ##
+    #com.foundationdb.server.service.tree.TreeService : com.foundationdb.server.service.tree.TreeServiceImpl
+    #com.foundationdb.server.store.SchemaManager : com.foundationdb.server.store.PersistitStoreSchemaManager
+    #com.foundationdb.server.store.Store : com.foundationdb.server.store.PersistitStore
+    #com.foundationdb.server.store.statistics.IndexStatisticsService : com.foundationdb.server.store.statistics.PersistitIndexStatisticsService
+    #com.foundationdb.server.service.transaction.TransactionService : com.foundationdb.server.store.PersistitTransactionService
+    #com.foundationdb.server.service.is.StorageSchemaTablesService   : com.foundationdb.server.service.is.StorageSchemaTablesServiceImpl
+    #com.foundationdb.server.service.metrics.MetricsService : com.foundationdb.server.service.metrics.DummyMetricsService
+    #com.foundationdb.sql.optimizer.rule.cost.CostModelFactory : com.foundationdb.sql.optimizer.rule.cost.PersistitCostModelService
+    #com.foundationdb.server.service.text.FullTextIndexService: com.foundationdb.server.service.text.FullTextIndexServiceImpl
+    ##
+    ##
+    ## FoundationDB
+    ##
+    com.foundationdb.server.store.FDBHolder : com.foundationdb.server.store.FDBHolderImpl
+    com.foundationdb.server.store.SchemaManager : com.foundationdb.server.store.FDBSchemaManager
+    com.foundationdb.server.store.Store : com.foundationdb.server.store.FDBStore
+    com.foundationdb.server.store.statistics.IndexStatisticsService : com.foundationdb.server.store.statistics.FDBIndexStatisticsService
+    com.foundationdb.server.service.transaction.TransactionService : com.foundationdb.server.store.FDBTransactionService
+    #com.foundationdb.server.service.metrics.MetricsService : com.foundationdb.server.service.metrics.FDBMetricsService
+    com.foundationdb.server.service.metrics.MetricsService : com.foundationdb.server.service.metrics.DummyMetricsService
+    com.foundationdb.sql.optimizer.rule.cost.CostModelFactory : com.foundationdb.sql.optimizer.rule.cost.PersistitCostModelService
+    com.foundationdb.server.service.text.FullTextIndexService: com.foundationdb.server.service.text.ThrowingFullTextService

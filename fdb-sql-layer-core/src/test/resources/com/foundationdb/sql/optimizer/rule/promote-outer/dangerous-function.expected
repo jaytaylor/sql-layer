@@ -1,0 +1,7 @@
+SelectQuery@3a51127a
+  ResultSet@57922f46[cid, name, oid, cid, order_date]
+    Project@3e5dc994[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date]
+      Select@5e29c58e[COALESCE(orders.order_date,current_date()) > 2011-01-01]
+        JoinNode@8691dee(LEFT[customers.cid == orders.cid])
+          TableSource@2d2bf892(customers)
+          TableSource@21cc5069(orders)

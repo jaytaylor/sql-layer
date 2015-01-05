@@ -1,0 +1,1 @@
+SELECT * FROM (VALUES(1,2)) AS x(col1,col2)

@@ -1,9 +1,0 @@
-SelectQuery@107cf039
-  ResultSet@7a7f36a3[cid, name, id, name, state]
-    Project@35dc4629[customers.cid, customers.name, parent.id, parent.name, parent.state]
-      Select@1082495f[parent.name == X]
-        JoinNode@56dc8307(INNER/NESTED_LOOPS)
-          TableGroupJoinTree@1ddcdda2(TableGroup@271e6d1e(customers), customers - FullTextScan@3e8de0a2(customers - PARSE(customers.name, john)))
-            TableSource@947249e(customers - TableGroup@271e6d1e(customers))
-          TableGroupJoinTree@f5ac5ff(TableGroup@5496cbc3(parent), parent - ExpressionsHKeyScan@34b7e156(TableSource@3c46cbe(parent - TableGroup@f383b38(parent)), customers.cid, rows = 1, cost = 9.82040))
-            TableSource@1db505d4(parent - TableGroup@5496cbc3(parent))

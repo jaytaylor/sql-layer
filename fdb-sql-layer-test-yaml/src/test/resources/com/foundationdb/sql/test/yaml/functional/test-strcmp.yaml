@@ -1,0 +1,61 @@
+# Test the ADDDATE() function
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (varchar_field) VALUES ('Test')
+---
+- Statement: SELECT STRCMP() FROM all_types
+- error: [4250C]
+---
+- Statement: SELECT STRCMP('foo') FROM all_types
+- error: [4250C]
+--- # Literals
+- Statement: SELECT STRCMP('foo', 'foo') FROM all_types
+- output: [[0]]
+---
+- Statement: SELECT STRCMP('foo', 'afoo') FROM all_types
+- output: [[1]]
+---
+- Statement: SELECT STRCMP('bfoo', 'foo') FROM all_types
+- output: [[-1]]
+---
+- Statement: SELECT STRCMP('THIS IS A $$FULL !!SENTENCE@@', 'THIS IS A $$FULL !!SENTENCE@@') FROM all_types
+- output: [[0]]
+---
+- Statement: SELECT STRCMP('this is a full sentence', 'this is a full sentence!') FROM all_types
+- output: [[-1]]
+--- # Params
+- Statement: SELECT STRCMP(?, ?) FROM all_types
+- params: [['test', 'atest']]
+- output: [[1]]
+---
+- Statement: SELECT STRCMP(?, 'test') FROM all_types
+- params: [['atest']]
+- output: [[-1]]
+---
+- Statement: SELECT STRCMP('equals', ?) FROM all_types
+- params: [['equals']]
+- output: [[0]]
+--- # From table
+- Statement: SELECT STRCMP(varchar_field, 'Test') FROM all_types
+- output: [[0]]
+---
+- Statement: SELECT STRCMP(varchar_field, 'test') FROM all_types
+- output: [[-1]]
+---
+- Statement: SELECT STRCMP(varchar_field, 'TEST') FROM all_types
+- output: [[1]]
+--- # Null
+- Statement: SELECT varchar_field FROM all_types WHERE STRCMP(null, 'foo') IS NULL
+- output: [['Test']]
+---
+- Statement: SELECT varchar_field FROM all_types WHERE STRCMP('foo', null) IS NULL
+- output: [['Test']]
+---
+- Statement: SELECT varchar_field from all_types WHERE STRCMP(null, null) IS NULL
+- output: [['Test']]
+---
+- Statement: explain VERBOSE select STRCMP( CAST(? AS CHAR(1)), 'abc' )
+- output: [['Project_Default(STRCMP(CAST($1 AS VARCHAR(3)), ''abc''))'],
+          ['  ValuesScan_Default([])']]
+...

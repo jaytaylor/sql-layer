@@ -1,0 +1,198 @@
+# Test time intervals -- miscellaneous
+---
+- CreateTable: t (ind int, time_field time, date_field date,
+    datetime_field datetime)
+
+---
+- Statement: INSERT INTO t VALUES
+    (1, '00:00:00', '2000-01-01', '2000-01-01 00:00:00'),
+    (2, '00:00:01', '2000-01-02', '2000-01-01 00:00:01')
+
+# Bad syntax
+---
+- Statement: SELECT time_field + INTERVAL FROM t
+- error: [42000]
+---
+- Statement: SELECT time_field + INTERVAL '1-2' MINUTE TO t FROM t
+- error: [42000]
+---
+- Statement: SELECT datetime_field + INTERVAL '1-2 3' MONTH TO HOUR FROM t
+- error: [42515]
+---
+- Message: Removed tests for failures
+#---
+#- Statement: SELECT time_field + INTERVAL 'abc' SECOND FROM t
+#- error: [22006]
+#---
+#- Statement: SELECT time_field + INTERVAL '1' MINUTE TO SECOND FROM t
+#- error: [22006]
+
+# Support for non-MySQL interval units
+---
+- Statement: SELECT time_field + interval '0' MICROSECOND FROM t
+    WHERE ind = 1
+- output: [[NULL]]
+---
+- Statement: SELECT datetime_field + interval '0' MICROSECOND FROM t
+    WHERE ind = 1
+- output: [[!re '2000-01-01 00:00:00([.]0)?']]
+---
+- Statement: SELECT time_field + interval '2000000' MICROSECOND FROM t
+    WHERE ind = 1
+- output: [[NULL]]
+---
+- Statement: SELECT time_field + interval '1.0' SECOND_MICROSECOND FROM t
+    WHERE ind = 1
+- output: [[NULL]]
+---
+- Statement: SELECT datetime_field + interval '1.0' SECOND_MICROSECOND FROM t
+    WHERE ind = 1
+- output: [[!re '2000-01-01 00:00:01([.]0)?']]
+---
+- Statement: SELECT time_field + interval '02:03.0' MINUTE_MICROSECOND FROM t
+    WHERE ind = 1
+- output: [[NULL]]
+---
+- Statement: SELECT datetime_field + interval '02:03.0' MINUTE_MICROSECOND
+    FROM t WHERE ind = 1
+- output: [[!re '2000-01-01 00:02:03([.]0)?']]
+---
+- Statement: SELECT time_field + interval '01:02:03.0' HOUR_MICROSECOND
+    FROM t WHERE ind = 1
+- output: [[NULL]]
+---
+- Statement: SELECT time_field + interval '01:02:03.0' HOUR_MICROSECOND
+    FROM t WHERE ind = 1
+- output: [[NULL]]
+---
+- Statement: SELECT datetime_field + interval '5 01:02:03.0' DAY_MICROSECOND
+    FROM t WHERE ind = 1
+- output: [[!re '2000-01-06 01:02:03([.]0)?']]
+---
+- Statement: SELECT datetime_field + interval '5 01:02:03.0' DAY_MICROSECOND
+    FROM t WHERE ind = 1
+- output: [[!re '2000-01-06 01:02:03([.]0)?']]
+---
+- Statement: SELECT time_field + interval '01:02' MINUTE_SECOND
+    FROM t WHERE ind = 1
+- output: [[NULL]]
+---
+- Statement: SELECT datetime_field + interval '01:02' MINUTE_SECOND
+    FROM t WHERE ind = 1
+- output: [[!re '2000-01-01 00:01:02([.]0)?']]
+---
+- Statement: SELECT time_field + interval '01:02:03' HOUR_SECOND
+    FROM t WHERE ind = 1
+- output: [[NULL]]
+---
+- Statement: SELECT datetime_field + interval '01:02:03' HOUR_SECOND
+    FROM t WHERE ind = 1
+- output: [[!re '2000-01-01 01:02:03([.]0)?']]
+---
+- Statement: SELECT datetime_field + interval '5 01:02:03' DAY_SECOND
+    FROM t WHERE ind = 1
+- output: [[!re '2000-01-06 01:02:03([.]0)?']]
+---
+- Statement: SELECT time_field + interval '01:02' HOUR_MINUTE
+    FROM t WHERE ind = 1
+- output: [[NULL]]
+---
+- Statement: SELECT datetime_field + interval '01:02' HOUR_MINUTE
+    FROM t WHERE ind = 1
+- output: [[!re '2000-01-01 01:02:00([.]0)?']]
+---
+- Statement: SELECT datetime_field + interval '5 01:02' DAY_MINUTE
+    FROM t WHERE ind = 1
+- output: [[!re '2000-01-06 01:02:00([.]0)?']]
+---
+- Statement: SELECT datetime_field + interval '5 1' DAY_HOUR
+    FROM t WHERE ind = 1
+- output: [[!re '2000-01-06 01:00:00([.]0)?']]
+---
+- Statement: SELECT date_field + interval '1' WEEK FROM t WHERE ind = 1
+- output: [['2000-01-08']]
+---
+- Statement: SELECT datetime_field + interval '1' WEEK FROM t
+    WHERE ind = 1
+- output: [[!re '2000-01-08 00:00:00([.]0)?']]
+---
+- Statement: SELECT date_field + interval '1' QUARTER FROM t WHERE ind = 1
+- output: [['2000-04-01']]
+---
+- Statement: SELECT datetime_field + interval '1' QUARTER FROM t
+    WHERE ind = 1
+- output: [[!re '2000-04-01 00:00:00([.]0)?']]
+---
+- Statement: SELECT date_field + interval '1-2' YEAR_MONTH FROM t WHERE ind = 1
+- output: [['2001-03-01']]
+---
+- Statement: SELECT datetime_field + interval '1-2' YEAR_MONTH FROM t
+    WHERE ind = 1
+- output: [[!re '2001-03-01 00:00:00([.]0)?']]
+
+# Null value
+---
+- Statement: SELECT time_field + INTERVAL null MINUTE FROM t
+- output: [[null], [null]]
+# Case insensitivity
+---
+- Statement: SELECT time_field + INTERVAL '1' MiNuTe FROM t WHERE ind = 1
+- output: [[NULL]]
+---
+- Statement: SELECT time_field + INTERVAL '03:05' minute to SECOND FROM t
+    WHERE ind = 1
+- output: [[NULL]]
+---
+- Statement: SELECT date_field + INTERVAL '1-2' yEaR tO mOnTh FROM t
+    WHERE ind = 1
+- output: [['2001-03-01']]
+
+# DAY TO HOUR
+---
+- Statement: SELECT datetime_field + INTERVAL '3 7' DAY TO HOUR FROM t
+    WHERE ind=1
+- output: [[!re '2000-01-04 07:00:00([.]0)?']]
+---
+- Statement: SELECT date_field FROM t
+    WHERE date_field + INTERVAL '4' MONTH = DATE('2000-05-02')
+- output: [['2000-01-02']]
+---
+- Statement: SELECT datetime_field FROM t
+    WHERE datetime_field + INTERVAL '12-8' YEAR TO MONTH =
+    DATETIME('2012-09-01 00:00:00')
+- output: [[!re '2000-01-01 00:00:00([.]0)?']]
+
+# End of year rollover
+---
+- Statement: DELETE FROM t
+---
+- Statement: INSERT INTO t (date_field) VALUES (null)
+---
+- Statement: SELECT DATE('2000-12-31') + INTERVAL '1' DAY FROM t
+- output: [['2001-01-01']]
+---
+- Statement: SELECT DATE('1492-12-31') + INTERVAL '1' DAY FROM t
+- output: [['1493-01-01']]
+
+# Leap year 2/28 rollover
+# Not multiple of 4 -- not leap year
+---
+- Statement: SELECT DATE('1995-02-28') + INTERVAL '1' DAY FROM t
+- output: [['1995-03-01']]
+---
+- Statement: SELECT DATE('1998-02-28') + INTERVAL '1' DAY FROM t
+- output: [['1998-03-01']]
+# Multiple of 4, not multiple of 100 -- leap year
+---
+- Statement: SELECT DATE('1996-02-28') + INTERVAL '1' DAY FROM t
+- output: [['1996-02-29']]
+# Multiple of 100, not multiple of 400 -- not leap year
+---
+- Statement: SELECT DATE('1900-02-28') + INTERVAL '1' DAY FROM t
+- output: [['1900-03-01']]
+# Multiple of 400 -- leap year
+---
+- Statement: SELECT DATE('2000-02-28') + INTERVAL '1' DAY FROM t
+- output: [['2000-02-29']]
+
+...

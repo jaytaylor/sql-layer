@@ -1,0 +1,1 @@
+SELECT ((test.t1.x + test.t1.y) + test.t1.z) AS col1 FROM test.t1 WHERE (test.t1.x > 0) AND (test.t1.y > 'foo')

@@ -1,0 +1,1 @@
+com.foundationdb.server.error.CorruptedPlanException: CORRUPTED_PLAN: Plan has become corrupted during optimization: RIGHT OUTER JOIN was not converted to LEFT OUTER JOIN before dphyp

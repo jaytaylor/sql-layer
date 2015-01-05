@@ -1,0 +1,7 @@
+SelectQuery@508aeb74
+  ResultSet@27b4c1d7[cid, name, oid, cid, order_date]
+    Project@4c221e9e[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date]
+      Select@69b01afa[orders.order_date > 2011-01-01]
+        JoinNode@28bb494b(INNER[customers.cid == orders.cid])
+          TableSource@1fc8efd1(customers)
+          TableSource@40f892a4(orders)

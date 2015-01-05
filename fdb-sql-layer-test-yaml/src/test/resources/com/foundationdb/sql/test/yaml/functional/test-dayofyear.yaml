@@ -1,0 +1,45 @@
+## Test DAYOFYEAR function
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types(bigint_field, double_field, date_field, datetime_field)
+              VALUES (19001231, 19001231.5, '2000-02-29', '1999-12-31 23:59:59');
+## Test with literals
+---
+- Statement: SELECT DAYOFYEAR(20081231) from all_types;
+- output_types: [INTEGER]
+- output: [[366]]
+--- 
+- Statement: SELECT DAYOFYEAR(20081231.5) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT DAYOFYEAR(NULL) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT bigint_field from all_types WHERE DAYOFYEAR(bigint_field) = 365;
+- output: [[19001231]]
+---
+- Statement: SELECT double_field from all_types WHERE DAYOFYEAR(double_field) IS NULL;
+- output: [[19001231.5]]
+---
+- Statement: SELECT bigint_field from all_types WHERE DAYOFYEAR(null) IS NULL;
+- output: [[19001231]]
+---
+- Statement: SELECT DAYOFYEAR(datetime_field) from all_types;
+- output: [[365]]
+---
+- Statement: SELECT DAYOFYEAR(date_field) from all_types;
+- output: [[60]]
+---
+- Statement: SELECT DAYOFYEAR() from all_types;
+- error: [4250C]
+---
+- Statement: SELECT DAYOFYEAR('2009-12-12', 23) FROM all_types;
+- error: [4250C]
+---
+- Statement: SELECT bigint_field from all_types WHERE DAYOFYEAR(19960228.5) = 60;
+- row_count: 0
+---
+- Statement: SELECT bigint_field from all_types WHERE DAYOFYEAR(19960228.5) IS NULL;
+- output: [[19001231]]
+...

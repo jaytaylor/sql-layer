@@ -1,0 +1,56 @@
+---
+- CreateTable: t(s SERIAL PRIMARY KEY, x INT)
+---
+- Statement: SELECT SERIAL_SEQUENCE('t.s')
+- output: [['"test"."t_s_seq"']]
+---
+- Statement: SELECT SERIAL_SEQUENCE('test.t.s')
+- output: [['"test"."t_s_seq"']]
+---
+- Statement: SELECT SERIAL_SEQUENCE('t', 's')
+- output: [['"test"."t_s_seq"']]
+---
+- Statement: SELECT SERIAL_SEQUENCE('test', 't', 's')
+- output: [['"test"."t_s_seq"']]
+
+# Alias
+---
+- Statement: SELECT IDENTITY_SEQUENCE('t.s')
+- output: [['"test"."t_s_seq"']]
+
+# And the real usage
+---
+- Statement: SELECT NEXTVAL( SERIAL_SEQUENCE('t.s') )
+- output: [[1]]
+
+# No associated sequence
+---
+- Statement: SELECT SERIAL_SEQUENCE('t.x')
+- output: [[null]]
+
+# NULL contaminates
+---
+- Statement: SELECT SERIAL_SEQUENCE(NULL, 't', 's')
+- output: [[null]]
+
+# No such column
+---
+- Statement: SELECT SERIAL_SEQUENCE('test', 't', 'y')
+- error: ['50018']
+
+# No such table
+---
+- Statement: SELECT SERIAL_SEQUENCE('test', 'x', 'y')
+- error: ['42501']
+
+---
+- Statement: EXPLAIN SELECT SERIAL_SEQUENCE('t.s')
+- row_count: 2
+---
+- Statement: select describe_expression(SERIAL_SEQUENCE('t.s'))
+- output: [['const MCOMPAT_ VARCHAR(261, UTF8, UCS_BINARY) NOT NULL']]
+---
+- Statement: explain verbose select serial_sequence('test', cast(? as char(3)), cast(? as char(2)))
+- output: [['Project_Default(SERIAL_SEQUENCE(''test'', CAST($1 AS VARCHAR(4)), CAST($2 AS VARCHAR(4))))'],
+          ['  ValuesScan_Default([])']]
+...

@@ -1,0 +1,25 @@
+---
+- CreateTable: t(id INT NOT NULL PRIMARY KEY)
+---
+- Statement: INSERT INTO t VALUES (1), (2), (3)
+
+# Plain default
+---
+- Statement: ALTER TABLE t ADD COLUMN c1 INT DEFAULT 5
+---
+- Statement: SELECT id,c1 FROM t
+- output: [ [1, 5], [2, 5], [3, 5] ]
+
+# Special function
+---
+- Statement: ALTER TABLE t ADD COLUMN c2 VARCHAR(128) DEFAULT CURRENT_USER
+---
+- Statement: SELECT id FROM t WHERE c2 IS NOT NULL
+- output: [ [1], [2], [3] ]
+
+# SERIAL (sequence)
+---
+- Statement: ALTER TABLE t ADD COLUMN s SERIAL
+---
+- Statement: SELECT id,s FROM t
+- output: [ [1, 1], [2, 2], [3, 3] ]

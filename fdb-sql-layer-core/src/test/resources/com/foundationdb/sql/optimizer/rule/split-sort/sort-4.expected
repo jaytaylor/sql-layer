@@ -1,0 +1,19 @@
+SelectQuery@3219a1f6
+  ResultSet@30d8372c[order_date, name]
+    Project@3c904f1e[PROJECT[0], PROJECT[1]]
+      Sort@280f5f01[PROJECT[2], PROJECT[1]]
+        UsingHashTable@433136aa(HashTable@53fbf55c, [customers.name])
+          Flatten@36922c9a(customers INNER orders)
+            GroupScan@42a99617(Group(test.customers), rows = 1000, cost = 59725.0)
+              TableSource@10b68e16(customers - TableGroup@30901ec7(customers))
+              TableSource@616c5ab2(orders - TableGroupJoin@bbce232(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+          MapJoin@1da646a3()
+            Flatten@36ae4e73(parent INNER child)
+              GroupScan@f67868a(Group(test.parent), rows = 1000, cost = 42273.0)
+                TableSource@40a38960(parent - TableGroup@45d4b3b9(parent))
+                TableSource@412a4eec(child - TableGroupJoin@55b1d5ec(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(test.parent))))
+            Project@430e42c1[orders.order_date, child.name, customers.name]
+              Select@5d40af4b[]
+                HashTableLookup@e53a4e8(HashTable@53fbf55c, [parent.name])
+                  TableSource@10b68e16(customers - TableGroup@30901ec7(customers))
+                  TableSource@616c5ab2(orders - TableGroupJoin@bbce232(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

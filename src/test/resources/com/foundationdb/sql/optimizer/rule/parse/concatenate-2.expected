@@ -1,8 +1,0 @@
-SelectQuery@6d386751
-  ResultSet@12072edc[_SQL_COL_1, order_date]
-    Project@159576c3[concatenate(concatenate([[[,customers.name),]]]), orders.order_date]
-      Sort@7a80747[concatenate(concatenate([[[,customers.name),]]])]
-        Select@2875ca3e[orders.order_date > Cast(2011-01-01 AS MCOMPAT_ DATE)]
-          JoinNode@4d30c132(INNER[customers.cid == orders.cid])
-            TableSource@3bdbe135(customers)
-            TableSource@609e7d46(orders)

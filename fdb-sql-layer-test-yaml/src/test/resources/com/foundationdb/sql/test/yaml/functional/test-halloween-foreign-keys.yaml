@@ -1,0 +1,40 @@
+---
+- CreateTable: c(cid INT NOT NULL PRIMARY KEY, name VARCHAR(32))
+---
+- CreateTable: o(oid INT NOT NULL PRIMARY KEY, cid INT, odate DATE, FOREIGN KEY(cid) REFERENCES c(cid))
+---
+- CreateTable: i(iid INT NOT NULL PRIMARY KEY, oid INT, sku INT, FOREIGN KEY(oid) REFERENCES o(oid))
+
+---
+- Statement: INSERT INTO c VALUES (1, 'foo'), (2, 'bar')
+---
+- Statement: INSERT INTO o VALUES (10, 1, '2014-01-20'), (20, 2, '2014-01-01')
+---
+- Statement: INSERT INTO i VALUES (100, 10, 42), (200, 20, 24)
+
+# No actual change
+---
+- Statement: UPDATE o SET oid=10 WHERE cid=1 AND oid=10
+---
+- Statement: UPDATE o SET oid=? WHERE cid=? AND oid=?
+- params: [ [10,1,10] ]
+
+# And a real change
+---
+- Statement: UPDATE o SET cid=2 WHERE oid=10 AND cid=1
+---
+- Statement: SELECT * FROM o
+- output: [ [10, 2, '2014-01-20'], [20, 2, '2014-01-01'] ]
+---
+- Statement: UPDATE o SET cid=? WHERE oid=? AND cid=?
+- params: [ [1, 10, 2] ]
+---
+- Statement: SELECT * FROM o
+- output: [ [10, 1, '2014-01-20'], [20, 2, '2014-01-01'] ]
+
+---
+- DropTable: i
+---
+- DropTable: o
+---
+- DropTable: c

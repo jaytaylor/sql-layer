@@ -1,0 +1,52 @@
+---
+- CreateTable: people (cid int NOT NULL,
+    PRIMARY KEY(cid),
+    age int,
+    name varchar(32) NOT NULL)
+---
+- Statement: Create INDEX name ON people(name)
+---
+- Statement: INSERT INTO people (cid, age, name) VALUES (1, 55, 'Jones'), (2, 24, 'Collins'), (3, 33, 'Brennen')
+---
+- Statement: CREATE TABLE people2 (cid, newAge, newName) AS (SELECT * FROM people) WITH NO DATA
+---
+- Statement: INSERT INTO people2 (cid, newAge, newName) VALUES (1, 55, 'Jones'), (2, 24, 'Collins')
+---
+- Statement: SELECT * FROM people2
+- output: [ [1,55,'Jones'], [2,24,'Collins'] ]
+---
+- Statement: CREATE TABLE people3 AS (SELECT cid, name FROM people) WITH NO DATA
+---
+- Statement: INSERT INTO people3 (cid, name) VALUES (1, 'Jones'), (2, 'Collins')
+---
+- Statement: SELECT * FROM people3
+- output: [ [1,'Jones'], [2,'Collins'] ]
+---
+- Statement: CREATE TABLE people4 AS (SELECT * FROM people2) WITH NO DATA
+---
+- Statement: INSERT INTO people4 (cid, newName) VALUES (1, 'Jones'), (2, 'Collins')
+---
+- Statement: SELECT * FROM people4
+- output: [  [2, null, 'Collins'], [1, null, 'Jones'] ]
+---
+- Statement: CREATE TABLE people5 (age, cid, name) AS (SELECT * FROM people) WITH NO DATA
+---
+- Statement: INSERT INTO people5 (age, cid, name) VALUES (55, 1, 'Jones'), (22, 2, 'Collins')
+---
+- Statement: SELECT cid, age, name FROM people5
+- output: [ [1,55,'Jones'], [2,22,'Collins'] ]
+---
+- Statement: CREATE TABLE people6 (age, cid, name) AS (SELECT cid, age, name FROM people) WITH NO DATA
+---
+- Statement: INSERT INTO people6 (age, cid, name) VALUES (55, 1, 'Jones'), (22, 2, 'Collins')
+---
+- Statement: SELECT cid, age, name FROM people6
+- output: [ [1,55,'Jones'], [2,22,'Collins'] ]
+---
+- Statement: CREATE TABLE people7 AS (SELECT CAST(cid AS DOUBLE), ABS(age), name IS NOT NULL FROM people) WITH NO DATA
+---
+- Statement: INSERT INTO people7 VALUES (1, 55, TRUE), (2, 24, FALSE), (3, 33, TRUE)
+---
+- Statement: SELECT * FROM people7
+- output: [ [1.0, 55,  TRUE ], [2.0, 24, FALSE], [3.0, 33, TRUE] ]
+...

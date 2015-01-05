@@ -1,9 +1,0 @@
-SelectQuery@77d433c1
-  ResultSet@c92015d[id, name, state, id, pid, name]
-    Project@4597871d[parent.id, parent.name, parent.state, child.id, child.pid, child.name]
-      Select@5f27a49c[child.name == parent.name]
-        JoinNode@23a82e92(INNER)
-          TableGroupJoinTree@76898587(TableGroup@3e9d9edd(parent), parent)
-            TableSource@4b2478a9(parent - TableGroup@3e9d9edd(parent))
-          TableGroupJoinTree@5e28df48(TableGroup@4d5b2043(parent), child)
-            TableSource@476dc5c9(child - TableGroup@4d5b2043(parent))

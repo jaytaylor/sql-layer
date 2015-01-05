@@ -1,9 +1,0 @@
-SelectQuery@6f08346b
-  ResultSet@3a995c0[cid, name, oid, cid, order_date, iid, oid, sku, quan, aid, cid, state, city]
-    Project@72a67220[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date, items.iid, items.oid, items.sku, items.quan, addresses.aid, addresses.cid, addresses.state, addresses.city]
-      Select@d8ecdae[]
-        TableGroupJoinTree@1a616176(TableGroup@27fb7a06(customers), customers INNER addresses INNER orders INNER items - FullTextScan@72c5655f(customers - [MUST(MATCH(addresses.state, MA)), MUST(MATCH(items.sku, 1234))]))
-          TableSource@145b7da1(customers - TableGroup@27fb7a06(customers))
-            TableSource@776e7dfc(addresses - TableGroupJoin@7d827ad6(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))
-            TableSource@294df78(orders - TableGroupJoin@14eb7fa(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
-              TableSource@7bdb409a(items - TableGroupJoin@57107ec1(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

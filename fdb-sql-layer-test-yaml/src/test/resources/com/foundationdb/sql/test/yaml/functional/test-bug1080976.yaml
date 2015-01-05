@@ -1,0 +1,9 @@
+---
+- CreateTable: t1 ( id serial primary key, parent_id int not null, type varchar(128));
+---
+- Statement: select distinct t1.id
+             from t1 left outer join t1 child
+             on child.parent_id = t1.id
+             where (0 = 1)
+- row_count: 0
+...

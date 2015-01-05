@@ -1,0 +1,1 @@
+SELECT ((test.t1.id * 5) + 3) AS "_SQL_COL_1" FROM test.t1

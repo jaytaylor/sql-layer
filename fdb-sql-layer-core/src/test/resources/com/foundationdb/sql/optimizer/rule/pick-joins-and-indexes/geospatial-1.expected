@@ -1,0 +1,14 @@
+SelectQuery@134d36b9
+  ResultSet@3243b595[_SQL_COL_1]
+    Project@7b4662fa[MAX(distance_lat_lon(zp[0],zp[1],42.3583,-71.0603))]
+      Select@4a0c4a50[]
+        AggregateSource@6ce2f02a(UNGROUPED,[])
+          Select@27058d3f[]
+            SubquerySource@41d24c6f(zp)
+              Subquery@f5894fb
+                ResultSet@9cf29c[lat, lon]
+                  Limit@3ffbe014(LIMIT 10)
+                    Project@67166e50[places.lat, places.lon]
+                      Select@313461dd[]
+                        TableGroupJoinTree@66050d67(TableGroup@5d7c371c(places), places - SingleIndexScan@6063f37(Index(test.places.places_geo[IndexColumn(lat), IndexColumn(lon)])application space: (-90.0:90.0, -180.0:180.0)  gBits: 28, 29, SORTED, @@geo_lat_lon(42.3583,-71.0603), rows = 1, cost = 12.6986))
+                          TableSource@5fa5a49e(places - TableGroup@5d7c371c(places))

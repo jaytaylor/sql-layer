@@ -1,0 +1,2150 @@
+Index: cname_and_sku
+RowCount: 20000
+SampledCount: 20000
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 2
+    eq: 310
+    key: [Arxcmepmle]
+    lt: 360
+  - distinct: 1
+    eq: 243
+    key: [Awwyqrezr]
+    lt: 198
+  - distinct: 0
+    eq: 255
+    key: [Bkeztg]
+    lt: 0
+  - distinct: 2
+    eq: 254
+    key: [Chadxlqsyb]
+    lt: 315
+  - distinct: 6
+    eq: 298
+    key: [Emrreq]
+    lt: 895
+  - distinct: 0
+    eq: 300
+    key: [Etgtdvoz]
+    lt: 0
+  - distinct: 0
+    eq: 335
+    key: [Etimvya]
+    lt: 0
+  - distinct: 3
+    eq: 335
+    key: [Fxspdouncz]
+    lt: 564
+  - distinct: 3
+    eq: 249
+    key: [Ghmsolgjg]
+    lt: 489
+  - distinct: 0
+    eq: 237
+    key: [Gnnmd]
+    lt: 0
+  - distinct: 2
+    eq: 237
+    key: [Hmufmjeuuic]
+    lt: 287
+  - distinct: 3
+    eq: 257
+    key: [Ilnkzpud]
+    lt: 549
+  - distinct: 0
+    eq: 230
+    key: [Ioeusfd]
+    lt: 0
+  - distinct: 0
+    eq: 253
+    key: [Ipqdutqptl]
+    lt: 0
+  - distinct: 2
+    eq: 346
+    key: [Iziiyyjd]
+    lt: 302
+  - distinct: 7
+    eq: 237
+    key: [Mcotdhafutz]
+    lt: 1222
+  - distinct: 0
+    eq: 265
+    key: [Mhknzfnz]
+    lt: 0
+  - distinct: 1
+    eq: 248
+    key: [Mwwjhhsfvro]
+    lt: 118
+  - distinct: 0
+    eq: 278
+    key: [Ndcvneamgcg]
+    lt: 0
+  - distinct: 0
+    eq: 366
+    key: [Ndsljpnqiav]
+    lt: 0
+  - distinct: 2
+    eq: 319
+    key: [Onhnhkni]
+    lt: 393
+  - distinct: 3
+    eq: 240
+    key: [Ppklwvzhjw]
+    lt: 446
+  - distinct: 4
+    eq: 239
+    key: [Qiwhhhy]
+    lt: 677
+  - distinct: 0
+    eq: 326
+    key: [Qjhjkw]
+    lt: 0
+  - distinct: 0
+    eq: 242
+    key: [Qvdmtbfyg]
+    lt: 0
+  - distinct: 6
+    eq: 241
+    key: [Sewyawbe]
+    lt: 757
+  - distinct: 6
+    eq: 274
+    key: [Txrnsnumoj]
+    lt: 1062
+  - distinct: 3
+    eq: 271
+    key: [Vtqee]
+    lt: 490
+  - distinct: 1
+    eq: 355
+    key: [Wgwdws]
+    lt: 213
+  - distinct: 1
+    eq: 281
+    key: [Wqxaybw]
+    lt: 115
+  - distinct: 3
+    eq: 269
+    key: [Yewbcdixdg]
+    lt: 493
+  - distinct: 7
+    eq: 218
+    key: [Zxguhcguka]
+    lt: 1247
+- Columns: 2
+  Histogram:
+  - distinct: 326
+    eq: 6
+    key: [Arxcmepmle, '0224']
+    lt: 545
+  - distinct: 391
+    eq: 6
+    key: [Bkeztg, '0194']
+    lt: 674
+  - distinct: 736
+    eq: 6
+    key: [Djesb, '0124']
+    lt: 1117
+  - distinct: 436
+    eq: 6
+    key: [Emrreq, '0260']
+    lt: 710
+  - distinct: 196
+    eq: 6
+    key: [Etimvya, '0109']
+    lt: 375
+  - distinct: 124
+    eq: 7
+    key: [Etimvya, '0270']
+    lt: 258
+  - distinct: 271
+    eq: 6
+    key: [Foqgsvcymm, '0292']
+    lt: 439
+  - distinct: 151
+    eq: 6
+    key: [Fxspdouncz, '0153']
+    lt: 255
+  - distinct: 43
+    eq: 6
+    key: [Fxspdouncz, '0207']
+    lt: 87
+  - distinct: 179
+    eq: 6
+    key: [Gaiyxszbbv, '0143']
+    lt: 287
+  - distinct: 248
+    eq: 7
+    key: [Ghmsolgjg, '0139']
+    lt: 394
+  - distinct: 814
+    eq: 6
+    key: [Hzynet, '0266']
+    lt: 1271
+  - distinct: 82
+    eq: 7
+    key: [Ieafzojfvn, '0207']
+    lt: 128
+  - distinct: 86
+    eq: 6
+    key: [Ilnkzpud, '0144']
+    lt: 139
+  - distinct: 654
+    eq: 6
+    key: [Iziiyyjd, '0155']
+    lt: 1089
+  - distinct: 216
+    eq: 6
+    key: [Joihkofizs, '0247']
+    lt: 387
+  - distinct: 1125
+    eq: 7
+    key: [Mwwjhhsfvro, '0150']
+    lt: 1745
+  - distinct: 114
+    eq: 6
+    key: [Ndcvneamgcg, '0114']
+    lt: 196
+  - distinct: 97
+    eq: 6
+    key: [Ndcvneamgcg, '0245']
+    lt: 171
+  - distinct: 72
+    eq: 6
+    key: [Ndsljpnqiav, '0143']
+    lt: 159
+  - distinct: 58
+    eq: 6
+    key: [Ndsljpnqiav, '0214']
+    lt: 136
+  - distinct: 201
+    eq: 6
+    key: [Obuhbrr, '0111']
+    lt: 352
+  - distinct: 163
+    eq: 6
+    key: [Onhnhkni, '0164']
+    lt: 269
+  - distinct: 677
+    eq: 6
+    key: [Pzzmvnhz, '0114']
+    lt: 1087
+  - distinct: 532
+    eq: 6
+    key: [Qjhjkw, '0185']
+    lt: 873
+  - distinct: 11
+    eq: 6
+    key: [Qjhjkw, '0199']
+    lt: 24
+  - distinct: 71
+    eq: 6
+    key: [Qjhjkw, '0297']
+    lt: 134
+  - distinct: 1730
+    eq: 6
+    key: [Ucfvytfrmc, '0227']
+    lt: 2705
+  - distinct: 564
+    eq: 6
+    key: [Wgwdws, '0152']
+    lt: 930
+  - distinct: 49
+    eq: 6
+    key: [Wgwdws, '0214']
+    lt: 105
+  - distinct: 1476
+    eq: 7
+    key: [Zrdyplkirct, '0280']
+    lt: 2349
+  - distinct: 258
+    eq: 2
+    key: [Zxguhcguka, '0299']
+    lt: 417
+Table: customers
+Timestamp: 2012-01-18T00:24:08.679Z
+---
+Index: sku_and_date
+RowCount: 20000
+SampledCount: 20000
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 5
+    eq: 110
+    key: ['0105']
+    lt: 497
+  - distinct: 0
+    eq: 114
+    key: ['0106']
+    lt: 0
+  - distinct: 0
+    eq: 110
+    key: ['0107']
+    lt: 0
+  - distinct: 6
+    eq: 113
+    key: ['0114']
+    lt: 570
+  - distinct: 2
+    eq: 111
+    key: ['0117']
+    lt: 213
+  - distinct: 3
+    eq: 113
+    key: ['0121']
+    lt: 293
+  - distinct: 6
+    eq: 114
+    key: ['0128']
+    lt: 615
+  - distinct: 18
+    eq: 112
+    key: ['0147']
+    lt: 1743
+  - distinct: 0
+    eq: 110
+    key: ['0148']
+    lt: 0
+  - distinct: 3
+    eq: 117
+    key: ['0152']
+    lt: 303
+  - distinct: 0
+    eq: 118
+    key: ['0153']
+    lt: 0
+  - distinct: 1
+    eq: 116
+    key: ['0155']
+    lt: 95
+  - distinct: 0
+    eq: 110
+    key: ['0156']
+    lt: 0
+  - distinct: 5
+    eq: 111
+    key: ['0162']
+    lt: 482
+  - distinct: 32
+    eq: 120
+    key: ['0195']
+    lt: 3078
+  - distinct: 5
+    eq: 112
+    key: ['0201']
+    lt: 489
+  - distinct: 8
+    eq: 113
+    key: ['0210']
+    lt: 794
+  - distinct: 12
+    eq: 110
+    key: ['0223']
+    lt: 1144
+  - distinct: 2
+    eq: 114
+    key: ['0226']
+    lt: 198
+  - distinct: 0
+    eq: 120
+    key: ['0227']
+    lt: 0
+  - distinct: 6
+    eq: 119
+    key: ['0234']
+    lt: 539
+  - distinct: 7
+    eq: 111
+    key: ['0242']
+    lt: 698
+  - distinct: 4
+    eq: 110
+    key: ['0247']
+    lt: 427
+  - distinct: 6
+    eq: 110
+    key: ['0254']
+    lt: 589
+  - distinct: 0
+    eq: 120
+    key: ['0255']
+    lt: 0
+  - distinct: 2
+    eq: 112
+    key: ['0258']
+    lt: 191
+  - distinct: 0
+    eq: 120
+    key: ['0259']
+    lt: 0
+  - distinct: 1
+    eq: 115
+    key: ['0261']
+    lt: 98
+  - distinct: 13
+    eq: 117
+    key: ['0275']
+    lt: 1273
+  - distinct: 16
+    eq: 120
+    key: ['0292']
+    lt: 1538
+  - distinct: 0
+    eq: 112
+    key: ['0293']
+    lt: 0
+  - distinct: 5
+    eq: 116
+    key: ['0299']
+    lt: 483
+- Columns: 2
+  Histogram:
+  - distinct: 315
+    eq: 3
+    key: ['0103', '2014-08-19']
+    lt: 339
+  - distinct: 2564
+    eq: 3
+    key: ['0130', '2015-06-16']
+    lt: 2792
+  - distinct: 554
+    eq: 3
+    key: ['0136', '2019-09-12']
+    lt: 596
+  - distinct: 168
+    eq: 3
+    key: ['0138', '2018-07-23']
+    lt: 179
+  - distinct: 1338
+    eq: 3
+    key: ['0152', '2019-09-12']
+    lt: 1435
+  - distinct: 875
+    eq: 3
+    key: ['0162', '2012-02-14']
+    lt: 949
+  - distinct: 40
+    eq: 5
+    key: ['0162', '2016-07-14']
+    lt: 43
+  - distinct: 456
+    eq: 3
+    key: ['0167', '2016-05-21']
+    lt: 484
+  - distinct: 184
+    eq: 3
+    key: ['0169', '2016-01-28']
+    lt: 199
+  - distinct: 103
+    eq: 3
+    key: ['0170', '2018-06-23']
+    lt: 117
+  - distinct: 1477
+    eq: 3
+    key: ['0187', '2012-01-19']
+    lt: 1587
+  - distinct: 372
+    eq: 3
+    key: ['0191', '2014-04-19']
+    lt: 392
+  - distinct: 759
+    eq: 3
+    key: ['0199', '2019-02-18']
+    lt: 811
+  - distinct: 307
+    eq: 3
+    key: ['0203', '2010-06-27']
+    lt: 328
+  - distinct: 59
+    eq: 3
+    key: ['0203', '2016-08-24']
+    lt: 61
+  - distinct: 58
+    eq: 4
+    key: ['0204', '2012-08-11']
+    lt: 61
+  - distinct: 98
+    eq: 3
+    key: ['0205', '2014-03-23']
+    lt: 110
+  - distinct: 189
+    eq: 3
+    key: ['0207', '2014-05-18']
+    lt: 207
+  - distinct: 724
+    eq: 3
+    key: ['0215', '2014-07-24']
+    lt: 784
+  - distinct: 142
+    eq: 3
+    key: ['0217', '2011-06-10']
+    lt: 151
+  - distinct: 269
+    eq: 3
+    key: ['0220', '2012-06-14']
+    lt: 287
+  - distinct: 1405
+    eq: 3
+    key: ['0235', '2015-06-18']
+    lt: 1519
+  - distinct: 785
+    eq: 3
+    key: ['0243', '2018-06-21']
+    lt: 839
+  - distinct: 330
+    eq: 3
+    key: ['0247', '2011-09-20']
+    lt: 354
+  - distinct: 749
+    eq: 3
+    key: ['0255', '2011-06-10']
+    lt: 804
+  - distinct: 76
+    eq: 4
+    key: ['0255', '2018-06-23']
+    lt: 81
+  - distinct: 1645
+    eq: 3
+    key: ['0273', '2017-04-23']
+    lt: 1793
+  - distinct: 504
+    eq: 3
+    key: ['0279', '2012-05-19']
+    lt: 553
+  - distinct: 358
+    eq: 3
+    key: ['0283', '2012-08-11']
+    lt: 380
+  - distinct: 457
+    eq: 3
+    key: ['0288', '2012-08-11']
+    lt: 489
+  - distinct: 356
+    eq: 3
+    key: ['0292', '2012-08-11']
+    lt: 385
+  - distinct: 724
+    eq: 1
+    key: ['0299', '2019-09-27']
+    lt: 793
+Table: customers
+Timestamp: 2012-01-18T00:24:05.300Z
+---
+Index: PRIMARY
+RowCount: 100
+SampledCount: 100
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 1
+    eq: 1
+    key: [2]
+    lt: 1
+  - distinct: 2
+    eq: 1
+    key: [5]
+    lt: 2
+  - distinct: 0
+    eq: 1
+    key: [6]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [7]
+    lt: 0
+  - distinct: 2
+    eq: 1
+    key: [10]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [13]
+    lt: 2
+  - distinct: 6
+    eq: 1
+    key: [20]
+    lt: 6
+  - distinct: 0
+    eq: 1
+    key: [21]
+    lt: 0
+  - distinct: 5
+    eq: 1
+    key: [27]
+    lt: 5
+  - distinct: 5
+    eq: 1
+    key: [33]
+    lt: 5
+  - distinct: 2
+    eq: 1
+    key: [36]
+    lt: 2
+  - distinct: 1
+    eq: 1
+    key: [38]
+    lt: 1
+  - distinct: 2
+    eq: 1
+    key: [41]
+    lt: 2
+  - distinct: 5
+    eq: 1
+    key: [47]
+    lt: 5
+  - distinct: 0
+    eq: 1
+    key: [48]
+    lt: 0
+  - distinct: 12
+    eq: 1
+    key: [61]
+    lt: 12
+  - distinct: 1
+    eq: 1
+    key: [63]
+    lt: 1
+  - distinct: 3
+    eq: 1
+    key: [67]
+    lt: 3
+  - distinct: 0
+    eq: 1
+    key: [68]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [69]
+    lt: 0
+  - distinct: 3
+    eq: 1
+    key: [73]
+    lt: 3
+  - distinct: 2
+    eq: 1
+    key: [76]
+    lt: 2
+  - distinct: 0
+    eq: 1
+    key: [77]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [78]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [79]
+    lt: 0
+  - distinct: 5
+    eq: 1
+    key: [85]
+    lt: 5
+  - distinct: 4
+    eq: 1
+    key: [90]
+    lt: 4
+  - distinct: 3
+    eq: 1
+    key: [94]
+    lt: 3
+  - distinct: 2
+    eq: 1
+    key: [97]
+    lt: 2
+  - distinct: 0
+    eq: 1
+    key: [98]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [99]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [100]
+    lt: 0
+Table: addresses
+Timestamp: 2012-01-18T00:23:59.528Z
+---
+Index: __akiban_fk_2
+RowCount: 100
+SampledCount: 100
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 2
+    key: [5]
+    lt: 0
+  - distinct: 4
+    eq: 2
+    key: [13]
+    lt: 4
+  - distinct: 7
+    eq: 3
+    key: [22]
+    lt: 7
+  - distinct: 0
+    eq: 2
+    key: [24]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [25]
+    lt: 0
+  - distinct: 3
+    eq: 3
+    key: [36]
+    lt: 3
+  - distinct: 0
+    eq: 1
+    key: [37]
+    lt: 0
+  - distinct: 2
+    eq: 2
+    key: [41]
+    lt: 2
+  - distinct: 0
+    eq: 1
+    key: [44]
+    lt: 0
+  - distinct: 1
+    eq: 3
+    key: [49]
+    lt: 1
+  - distinct: 0
+    eq: 2
+    key: [50]
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: [51]
+    lt: 0
+  - distinct: 0
+    eq: 3
+    key: [52]
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: [54]
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: [56]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [57]
+    lt: 0
+  - distinct: 0
+    eq: 3
+    key: [61]
+    lt: 0
+  - distinct: 0
+    eq: 3
+    key: [62]
+    lt: 0
+  - distinct: 1
+    eq: 1
+    key: [67]
+    lt: 1
+  - distinct: 0
+    eq: 1
+    key: [70]
+    lt: 0
+  - distinct: 3
+    eq: 2
+    key: [76]
+    lt: 3
+  - distinct: 3
+    eq: 1
+    key: [81]
+    lt: 3
+  - distinct: 0
+    eq: 4
+    key: [82]
+    lt: 0
+  - distinct: 2
+    eq: 3
+    key: [85]
+    lt: 2
+  - distinct: 0
+    eq: 2
+    key: [86]
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: [88]
+    lt: 0
+  - distinct: 1
+    eq: 4
+    key: [91]
+    lt: 1
+  - distinct: 0
+    eq: 3
+    key: [93]
+    lt: 0
+  - distinct: 1
+    eq: 3
+    key: [95]
+    lt: 1
+  - distinct: 0
+    eq: 3
+    key: [97]
+    lt: 0
+  - distinct: 1
+    eq: 2
+    key: [99]
+    lt: 1
+  - distinct: 0
+    eq: 2
+    key: [100]
+    lt: 0
+Table: addresses
+Timestamp: 2012-01-18T00:23:59.509Z
+---
+Index: state
+RowCount: 100
+SampledCount: 100
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 13
+    key: [null]
+    lt: 0
+  - distinct: 0
+    eq: 5
+    key: [CA]
+    lt: 0
+  - distinct: 0
+    eq: 8
+    key: [CT]
+    lt: 0
+  - distinct: 0
+    eq: 10
+    key: [IL]
+    lt: 0
+  - distinct: 0
+    eq: 15
+    key: [MA]
+    lt: 0
+  - distinct: 0
+    eq: 14
+    key: [ME]
+    lt: 0
+  - distinct: 0
+    eq: 10
+    key: [MO]
+    lt: 0
+  - distinct: 0
+    eq: 15
+    key: [NH]
+    lt: 0
+  - distinct: 0
+    eq: 10
+    key: [NY]
+    lt: 0
+Table: addresses
+Timestamp: 2012-01-18T00:23:59.547Z
+---
+Index: PRIMARY
+RowCount: 100
+SampledCount: 100
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 1
+    eq: 1
+    key: [2]
+    lt: 1
+  - distinct: 10
+    eq: 1
+    key: [13]
+    lt: 10
+  - distinct: 0
+    eq: 1
+    key: [14]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [15]
+    lt: 0
+  - distinct: 1
+    eq: 1
+    key: [17]
+    lt: 1
+  - distinct: 0
+    eq: 1
+    key: [18]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [19]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [20]
+    lt: 0
+  - distinct: 6
+    eq: 1
+    key: [27]
+    lt: 6
+  - distinct: 1
+    eq: 1
+    key: [29]
+    lt: 1
+  - distinct: 0
+    eq: 1
+    key: [30]
+    lt: 0
+  - distinct: 3
+    eq: 1
+    key: [34]
+    lt: 3
+  - distinct: 3
+    eq: 1
+    key: [38]
+    lt: 3
+  - distinct: 3
+    eq: 1
+    key: [42]
+    lt: 3
+  - distinct: 0
+    eq: 1
+    key: [43]
+    lt: 0
+  - distinct: 2
+    eq: 1
+    key: [46]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [49]
+    lt: 2
+  - distinct: 1
+    eq: 1
+    key: [51]
+    lt: 1
+  - distinct: 0
+    eq: 1
+    key: [52]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [53]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [54]
+    lt: 0
+  - distinct: 10
+    eq: 1
+    key: [65]
+    lt: 10
+  - distinct: 7
+    eq: 1
+    key: [73]
+    lt: 7
+  - distinct: 0
+    eq: 1
+    key: [74]
+    lt: 0
+  - distinct: 2
+    eq: 1
+    key: [77]
+    lt: 2
+  - distinct: 0
+    eq: 1
+    key: [78]
+    lt: 0
+  - distinct: 1
+    eq: 1
+    key: [80]
+    lt: 1
+  - distinct: 4
+    eq: 1
+    key: [85]
+    lt: 4
+  - distinct: 1
+    eq: 1
+    key: [87]
+    lt: 1
+  - distinct: 7
+    eq: 1
+    key: [95]
+    lt: 7
+  - distinct: 3
+    eq: 1
+    key: [99]
+    lt: 3
+  - distinct: 0
+    eq: 1
+    key: [100]
+    lt: 0
+Table: customers
+Timestamp: 2012-01-18T00:23:14.602Z
+---
+Index: name
+RowCount: 100
+SampledCount: 100
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 2
+    eq: 1
+    key: [Arxcmepmle]
+    lt: 2
+  - distinct: 0
+    eq: 1
+    key: [Atzdz]
+    lt: 0
+  - distinct: 5
+    eq: 1
+    key: [Ctewy]
+    lt: 5
+  - distinct: 0
+    eq: 1
+    key: [Dbxgtiacba]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [Dcpelnimky]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [Djesb]
+    lt: 0
+  - distinct: 1
+    eq: 1
+    key: [Dxhngw]
+    lt: 1
+  - distinct: 5
+    eq: 1
+    key: [Fwjbisnmdu]
+    lt: 5
+  - distinct: 0
+    eq: 1
+    key: [Fxspdouncz]
+    lt: 0
+  - distinct: 8
+    eq: 1
+    key: [Hsmoir]
+    lt: 8
+  - distinct: 1
+    eq: 1
+    key: [Ieafzojfvn]
+    lt: 1
+  - distinct: 2
+    eq: 1
+    key: [Ipqdutqptl]
+    lt: 2
+  - distinct: 1
+    eq: 1
+    key: [Isdrbut]
+    lt: 1
+  - distinct: 0
+    eq: 1
+    key: [Iziiyyjd]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [Joihkofizs]
+    lt: 0
+  - distinct: 8
+    eq: 1
+    key: [Mmadcubxsni]
+    lt: 8
+  - distinct: 7
+    eq: 1
+    key: [Ookaleqmd]
+    lt: 7
+  - distinct: 3
+    eq: 1
+    key: [Pzzmvnhz]
+    lt: 3
+  - distinct: 0
+    eq: 1
+    key: [Qawwbt]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [Qhoazaqpalf]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [Qiwhhhy]
+    lt: 0
+  - distinct: 1
+    eq: 1
+    key: [Qvdmtbfyg]
+    lt: 1
+  - distinct: 0
+    eq: 1
+    key: [Qyolyxigw]
+    lt: 0
+  - distinct: 3
+    eq: 1
+    key: [Rtywkgcefup]
+    lt: 3
+  - distinct: 4
+    eq: 1
+    key: [Tcdeabdx]
+    lt: 4
+  - distinct: 3
+    eq: 1
+    key: [Txrnsnumoj]
+    lt: 3
+  - distinct: 5
+    eq: 1
+    key: [Wgwdws]
+    lt: 5
+  - distinct: 0
+    eq: 1
+    key: [Wplbnasvh]
+    lt: 0
+  - distinct: 5
+    eq: 1
+    key: [Yxtyufmxtz]
+    lt: 5
+  - distinct: 1
+    eq: 1
+    key: [Zeixqbgxj]
+    lt: 1
+  - distinct: 2
+    eq: 1
+    key: [Zrdyplkirct]
+    lt: 2
+  - distinct: 1
+    eq: 1
+    key: [Zxguhcguka]
+    lt: 1
+Table: customers
+Timestamp: 2012-01-18T00:23:14.406Z
+---
+Index: PRIMARY
+RowCount: 20000
+SampledCount: 20000
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 115
+    eq: 1
+    key: [116]
+    lt: 115
+  - distinct: 129
+    eq: 1
+    key: [246]
+    lt: 129
+  - distinct: 467
+    eq: 1
+    key: [714]
+    lt: 467
+  - distinct: 847
+    eq: 1
+    key: [1562]
+    lt: 847
+  - distinct: 285
+    eq: 1
+    key: [1848]
+    lt: 285
+  - distinct: 707
+    eq: 1
+    key: [2556]
+    lt: 707
+  - distinct: 431
+    eq: 1
+    key: [2988]
+    lt: 431
+  - distinct: 271
+    eq: 1
+    key: [3260]
+    lt: 271
+  - distinct: 179
+    eq: 1
+    key: [3440]
+    lt: 179
+  - distinct: 801
+    eq: 1
+    key: [4242]
+    lt: 801
+  - distinct: 1703
+    eq: 1
+    key: [5946]
+    lt: 1703
+  - distinct: 253
+    eq: 1
+    key: [6200]
+    lt: 253
+  - distinct: 902
+    eq: 1
+    key: [7103]
+    lt: 902
+  - distinct: 595
+    eq: 1
+    key: [7699]
+    lt: 595
+  - distinct: 166
+    eq: 1
+    key: [7866]
+    lt: 166
+  - distinct: 1128
+    eq: 1
+    key: [8995]
+    lt: 1128
+  - distinct: 27
+    eq: 1
+    key: [9023]
+    lt: 27
+  - distinct: 1680
+    eq: 1
+    key: [10704]
+    lt: 1680
+  - distinct: 1377
+    eq: 1
+    key: [12082]
+    lt: 1377
+  - distinct: 1241
+    eq: 1
+    key: [13324]
+    lt: 1241
+  - distinct: 391
+    eq: 1
+    key: [13716]
+    lt: 391
+  - distinct: 517
+    eq: 1
+    key: [14234]
+    lt: 517
+  - distinct: 133
+    eq: 1
+    key: [14368]
+    lt: 133
+  - distinct: 385
+    eq: 1
+    key: [14754]
+    lt: 385
+  - distinct: 544
+    eq: 1
+    key: [15299]
+    lt: 544
+  - distinct: 19
+    eq: 1
+    key: [15319]
+    lt: 19
+  - distinct: 2783
+    eq: 1
+    key: [18103]
+    lt: 2783
+  - distinct: 526
+    eq: 1
+    key: [18630]
+    lt: 526
+  - distinct: 48
+    eq: 1
+    key: [18679]
+    lt: 48
+  - distinct: 187
+    eq: 1
+    key: [18867]
+    lt: 187
+  - distinct: 175
+    eq: 1
+    key: [19043]
+    lt: 175
+  - distinct: 956
+    eq: 1
+    key: [20000]
+    lt: 956
+Table: items
+Timestamp: 2012-01-18T00:23:43.288Z
+---
+Index: __akiban_fk_1
+RowCount: 20000
+SampledCount: 20000
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 34
+    eq: 30
+    key: [35]
+    lt: 642
+  - distinct: 21
+    eq: 29
+    key: [57]
+    lt: 408
+  - distinct: 39
+    eq: 30
+    key: [97]
+    lt: 741
+  - distinct: 32
+    eq: 29
+    key: [130]
+    lt: 616
+  - distinct: 24
+    eq: 33
+    key: [155]
+    lt: 463
+  - distinct: 24
+    eq: 30
+    key: [180]
+    lt: 482
+  - distinct: 2
+    eq: 29
+    key: [183]
+    lt: 36
+  - distinct: 42
+    eq: 34
+    key: [226]
+    lt: 785
+  - distinct: 49
+    eq: 29
+    key: [276]
+    lt: 999
+  - distinct: 29
+    eq: 30
+    key: [306]
+    lt: 573
+  - distinct: 58
+    eq: 30
+    key: [365]
+    lt: 1183
+  - distinct: 106
+    eq: 29
+    key: [472]
+    lt: 2111
+  - distinct: 1
+    eq: 30
+    key: [474]
+    lt: 14
+  - distinct: 37
+    eq: 30
+    key: [512]
+    lt: 715
+  - distinct: 70
+    eq: 33
+    key: [583]
+    lt: 1403
+  - distinct: 38
+    eq: 29
+    key: [622]
+    lt: 745
+  - distinct: 41
+    eq: 36
+    key: [664]
+    lt: 774
+  - distinct: 21
+    eq: 28
+    key: [686]
+    lt: 393
+  - distinct: 3
+    eq: 33
+    key: [690]
+    lt: 50
+  - distinct: 78
+    eq: 30
+    key: [769]
+    lt: 1542
+  - distinct: 19
+    eq: 29
+    key: [789]
+    lt: 372
+  - distinct: 20
+    eq: 33
+    key: [810]
+    lt: 385
+  - distinct: 5
+    eq: 30
+    key: [816]
+    lt: 93
+  - distinct: 42
+    eq: 29
+    key: [859]
+    lt: 862
+  - distinct: 7
+    eq: 29
+    key: [867]
+    lt: 149
+  - distinct: 9
+    eq: 29
+    key: [877]
+    lt: 167
+  - distinct: 38
+    eq: 29
+    key: [916]
+    lt: 755
+  - distinct: 8
+    eq: 33
+    key: [925]
+    lt: 172
+  - distinct: 7
+    eq: 29
+    key: [933]
+    lt: 136
+  - distinct: 8
+    eq: 31
+    key: [942]
+    lt: 156
+  - distinct: 41
+    eq: 30
+    key: [984]
+    lt: 826
+  - distinct: 15
+    eq: 19
+    key: [1000]
+    lt: 291
+Table: items
+Timestamp: 2012-01-18T00:23:43.069Z
+---
+Index: sku
+RowCount: 20000
+SampledCount: 20000
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 5
+    eq: 110
+    key: ['0105']
+    lt: 497
+  - distinct: 0
+    eq: 114
+    key: ['0106']
+    lt: 0
+  - distinct: 0
+    eq: 110
+    key: ['0107']
+    lt: 0
+  - distinct: 6
+    eq: 113
+    key: ['0114']
+    lt: 570
+  - distinct: 2
+    eq: 111
+    key: ['0117']
+    lt: 213
+  - distinct: 3
+    eq: 113
+    key: ['0121']
+    lt: 293
+  - distinct: 6
+    eq: 114
+    key: ['0128']
+    lt: 615
+  - distinct: 18
+    eq: 112
+    key: ['0147']
+    lt: 1743
+  - distinct: 0
+    eq: 110
+    key: ['0148']
+    lt: 0
+  - distinct: 3
+    eq: 117
+    key: ['0152']
+    lt: 303
+  - distinct: 0
+    eq: 118
+    key: ['0153']
+    lt: 0
+  - distinct: 1
+    eq: 116
+    key: ['0155']
+    lt: 95
+  - distinct: 0
+    eq: 110
+    key: ['0156']
+    lt: 0
+  - distinct: 5
+    eq: 111
+    key: ['0162']
+    lt: 482
+  - distinct: 32
+    eq: 120
+    key: ['0195']
+    lt: 3078
+  - distinct: 5
+    eq: 112
+    key: ['0201']
+    lt: 489
+  - distinct: 8
+    eq: 113
+    key: ['0210']
+    lt: 794
+  - distinct: 12
+    eq: 110
+    key: ['0223']
+    lt: 1144
+  - distinct: 2
+    eq: 114
+    key: ['0226']
+    lt: 198
+  - distinct: 0
+    eq: 120
+    key: ['0227']
+    lt: 0
+  - distinct: 6
+    eq: 119
+    key: ['0234']
+    lt: 539
+  - distinct: 7
+    eq: 111
+    key: ['0242']
+    lt: 698
+  - distinct: 4
+    eq: 110
+    key: ['0247']
+    lt: 427
+  - distinct: 6
+    eq: 110
+    key: ['0254']
+    lt: 589
+  - distinct: 0
+    eq: 120
+    key: ['0255']
+    lt: 0
+  - distinct: 2
+    eq: 112
+    key: ['0258']
+    lt: 191
+  - distinct: 0
+    eq: 120
+    key: ['0259']
+    lt: 0
+  - distinct: 1
+    eq: 115
+    key: ['0261']
+    lt: 98
+  - distinct: 13
+    eq: 117
+    key: ['0275']
+    lt: 1273
+  - distinct: 16
+    eq: 120
+    key: ['0292']
+    lt: 1538
+  - distinct: 0
+    eq: 112
+    key: ['0293']
+    lt: 0
+  - distinct: 5
+    eq: 116
+    key: ['0299']
+    lt: 483
+Table: items
+Timestamp: 2012-01-18T00:23:43.431Z
+---
+Index: PRIMARY
+RowCount: 1000
+SampledCount: 1000
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 21
+    eq: 1
+    key: [22]
+    lt: 21
+  - distinct: 15
+    eq: 1
+    key: [38]
+    lt: 15
+  - distinct: 1
+    eq: 1
+    key: [40]
+    lt: 1
+  - distinct: 24
+    eq: 1
+    key: [65]
+    lt: 24
+  - distinct: 31
+    eq: 1
+    key: [97]
+    lt: 31
+  - distinct: 10
+    eq: 1
+    key: [108]
+    lt: 10
+  - distinct: 115
+    eq: 1
+    key: [224]
+    lt: 115
+  - distinct: 37
+    eq: 1
+    key: [262]
+    lt: 37
+  - distinct: 34
+    eq: 1
+    key: [297]
+    lt: 34
+  - distinct: 4
+    eq: 1
+    key: [302]
+    lt: 4
+  - distinct: 17
+    eq: 1
+    key: [320]
+    lt: 17
+  - distinct: 1
+    eq: 1
+    key: [322]
+    lt: 1
+  - distinct: 27
+    eq: 1
+    key: [350]
+    lt: 27
+  - distinct: 16
+    eq: 1
+    key: [367]
+    lt: 16
+  - distinct: 91
+    eq: 1
+    key: [459]
+    lt: 91
+  - distinct: 33
+    eq: 1
+    key: [493]
+    lt: 33
+  - distinct: 51
+    eq: 1
+    key: [545]
+    lt: 51
+  - distinct: 8
+    eq: 1
+    key: [554]
+    lt: 8
+  - distinct: 13
+    eq: 1
+    key: [568]
+    lt: 13
+  - distinct: 12
+    eq: 1
+    key: [581]
+    lt: 12
+  - distinct: 13
+    eq: 1
+    key: [595]
+    lt: 13
+  - distinct: 3
+    eq: 1
+    key: [599]
+    lt: 3
+  - distinct: 54
+    eq: 1
+    key: [654]
+    lt: 54
+  - distinct: 30
+    eq: 1
+    key: [685]
+    lt: 30
+  - distinct: 64
+    eq: 1
+    key: [750]
+    lt: 64
+  - distinct: 21
+    eq: 1
+    key: [772]
+    lt: 21
+  - distinct: 81
+    eq: 1
+    key: [854]
+    lt: 81
+  - distinct: 36
+    eq: 1
+    key: [891]
+    lt: 36
+  - distinct: 33
+    eq: 1
+    key: [925]
+    lt: 33
+  - distinct: 19
+    eq: 1
+    key: [945]
+    lt: 19
+  - distinct: 49
+    eq: 1
+    key: [995]
+    lt: 49
+  - distinct: 4
+    eq: 1
+    key: [1000]
+    lt: 4
+Table: orders
+Timestamp: 2012-01-18T00:23:28.324Z
+---
+Index: __akiban_fk_0
+RowCount: 1000
+SampledCount: 1000
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 12
+    key: [1]
+    lt: 0
+  - distinct: 3
+    eq: 12
+    key: [5]
+    lt: 22
+  - distinct: 5
+    eq: 17
+    key: [11]
+    lt: 40
+  - distinct: 2
+    eq: 14
+    key: [14]
+    lt: 10
+  - distinct: 1
+    eq: 16
+    key: [16]
+    lt: 9
+  - distinct: 0
+    eq: 14
+    key: [17]
+    lt: 0
+  - distinct: 0
+    eq: 12
+    key: [18]
+    lt: 0
+  - distinct: 1
+    eq: 12
+    key: [20]
+    lt: 10
+  - distinct: 5
+    eq: 17
+    key: [26]
+    lt: 48
+  - distinct: 0
+    eq: 17
+    key: [27]
+    lt: 0
+  - distinct: 7
+    eq: 13
+    key: [35]
+    lt: 63
+  - distinct: 0
+    eq: 12
+    key: [36]
+    lt: 0
+  - distinct: 0
+    eq: 16
+    key: [37]
+    lt: 0
+  - distinct: 0
+    eq: 15
+    key: [38]
+    lt: 0
+  - distinct: 6
+    eq: 14
+    key: [45]
+    lt: 49
+  - distinct: 3
+    eq: 16
+    key: [49]
+    lt: 23
+  - distinct: 1
+    eq: 12
+    key: [51]
+    lt: 8
+  - distinct: 1
+    eq: 12
+    key: [53]
+    lt: 10
+  - distinct: 1
+    eq: 12
+    key: [55]
+    lt: 10
+  - distinct: 0
+    eq: 13
+    key: [56]
+    lt: 0
+  - distinct: 4
+    eq: 12
+    key: [61]
+    lt: 34
+  - distinct: 4
+    eq: 17
+    key: [66]
+    lt: 33
+  - distinct: 0
+    eq: 13
+    key: [67]
+    lt: 0
+  - distinct: 2
+    eq: 12
+    key: [70]
+    lt: 13
+  - distinct: 6
+    eq: 13
+    key: [77]
+    lt: 49
+  - distinct: 1
+    eq: 13
+    key: [79]
+    lt: 8
+  - distinct: 5
+    eq: 13
+    key: [85]
+    lt: 39
+  - distinct: 4
+    eq: 14
+    key: [90]
+    lt: 39
+  - distinct: 4
+    eq: 14
+    key: [95]
+    lt: 32
+  - distinct: 0
+    eq: 13
+    key: [96]
+    lt: 0
+  - distinct: 2
+    eq: 13
+    key: [99]
+    lt: 20
+  - distinct: 0
+    eq: 6
+    key: [100]
+    lt: 0
+Table: orders
+Timestamp: 2012-01-18T00:23:28.229Z
+---
+Index: order_date
+RowCount: 1000
+SampledCount: 1000
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 26
+    eq: 3
+    key: ['2010-04-15']
+    lt: 34
+  - distinct: 3
+    eq: 4
+    key: ['2010-04-22']
+    lt: 4
+  - distinct: 8
+    eq: 3
+    key: ['2010-05-18']
+    lt: 10
+  - distinct: 108
+    eq: 3
+    key: ['2011-09-17']
+    lt: 140
+  - distinct: 2
+    eq: 3
+    key: ['2011-09-20']
+    lt: 3
+  - distinct: 8
+    eq: 3
+    key: ['2012-01-19']
+    lt: 8
+  - distinct: 35
+    eq: 3
+    key: ['2012-05-19']
+    lt: 48
+  - distinct: 6
+    eq: 3
+    key: ['2012-06-14']
+    lt: 6
+  - distinct: 17
+    eq: 4
+    key: ['2012-08-11']
+    lt: 21
+  - distinct: 16
+    eq: 3
+    key: ['2012-09-24']
+    lt: 22
+  - distinct: 32
+    eq: 3
+    key: ['2013-04-25']
+    lt: 37
+  - distinct: 30
+    eq: 3
+    key: ['2013-08-21']
+    lt: 35
+  - distinct: 13
+    eq: 3
+    key: ['2014-01-14']
+    lt: 18
+  - distinct: 17
+    eq: 3
+    key: ['2014-04-11']
+    lt: 20
+  - distinct: 26
+    eq: 4
+    key: ['2014-07-24']
+    lt: 33
+  - distinct: 8
+    eq: 3
+    key: ['2014-08-21']
+    lt: 10
+  - distinct: 2
+    eq: 3
+    key: ['2014-09-10']
+    lt: 2
+  - distinct: 31
+    eq: 4
+    key: ['2015-05-10']
+    lt: 40
+  - distinct: 5
+    eq: 3
+    key: ['2015-05-28']
+    lt: 8
+  - distinct: 5
+    eq: 3
+    key: ['2015-06-18']
+    lt: 7
+  - distinct: 43
+    eq: 3
+    key: ['2016-02-19']
+    lt: 59
+  - distinct: 6
+    eq: 3
+    key: ['2016-03-15']
+    lt: 10
+  - distinct: 24
+    eq: 3
+    key: ['2016-05-23']
+    lt: 28
+  - distinct: 10
+    eq: 3
+    key: ['2016-07-14']
+    lt: 12
+  - distinct: 22
+    eq: 4
+    key: ['2016-09-19']
+    lt: 29
+  - distinct: 13
+    eq: 3
+    key: ['2017-02-19']
+    lt: 15
+  - distinct: 99
+    eq: 5
+    key: ['2018-06-23']
+    lt: 127
+  - distinct: 25
+    eq: 3
+    key: ['2018-09-27']
+    lt: 30
+  - distinct: 43
+    eq: 3
+    key: ['2019-06-25']
+    lt: 53
+  - distinct: 15
+    eq: 3
+    key: ['2019-09-12']
+    lt: 19
+  - distinct: 8
+    eq: 4
+    key: ['2019-09-27']
+    lt: 10
+  - distinct: 0
+    eq: 1
+    key: ['2019-09-28']
+    lt: 0
+Table: orders
+Timestamp: 2012-01-18T00:23:28.275Z
+---
+Index: PRIMARY
+RowCount: 100
+SampledCount: 100
+Statistics: []
+Table: parent
+Timestamp: 2012-03-12T23:56:19.252Z
+---
+Index: PRIMARY
+RowCount: 1000
+SampledCount: 1000
+Statistics: []
+Table: child
+Timestamp: 2012-03-12T23:56:26.043Z
+---
+Index: cat_sku
+RowCount: 10000
+SampledCount: 10000
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 100
+    key: [1]
+    lt: 0
+  - distinct: 0
+    eq: 9900
+    key: [2]
+    lt: 0
+Table: categories
+Timestamp: 2012-06-07T00:00:00.000Z
+---
+Index: source_country
+RowCount: 10000
+SampledCount: 10000
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: ['BRA']
+    lt: 0
+  - distinct: 0
+    eq: 9900
+    key: ['CHN']
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: ['DEU']
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: ['ESP']
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: ['FRA']
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: ['GBR']
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: ['IRL']
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: ['ITA']
+    lt: 0
+  - distinct: 0
+    eq: 90
+    key: ['MEX']
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: ['USA']
+    lt: 0
+Table: sources
+Timestamp: 2013-01-08T00:00:00.000Z
+---
+Index: PRIMARY
+RowCount: 2
+SampledCount: 2
+Statistics:
+- Columns: 1
+  FirstColumn: 0
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [1]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [2]
+    lt: 0
+Table: a
+Timestamp: 2014-12-09T22:05:33.845Z
+---
+Index: PRIMARY
+RowCount: 4
+SampledCount: 4
+Statistics:
+- Columns: 1
+  FirstColumn: 0
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [1]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [2]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [3]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [4]
+    lt: 0
+Table: b
+Timestamp: 2014-12-09T22:05:41.255Z
+---
+Index: PRIMARY
+RowCount: 6
+SampledCount: 6
+Statistics:
+- Columns: 1
+  FirstColumn: 0
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [1]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [2]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [3]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [4]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [5]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [6]
+    lt: 0
+Table: m2m
+Timestamp: 2014-12-09T21:53:27Z
+---
+Index: m2m_fkey
+RowCount: 6
+SampledCount: 6
+Statistics:
+- Columns: 1
+  FirstColumn: 0
+  Histogram:
+  - distinct: 0
+    eq: 3
+    key: [1]
+    lt: 0
+  - distinct: 0
+    eq: 3
+    key: [2]
+    lt: 0
+Table: m2m
+Timestamp: 2014-12-09T21:53:27Z
+---
+Index: m2m_fkey$1
+RowCount: 6
+SampledCount: 6
+Statistics:
+- Columns: 1
+  FirstColumn: 0
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [1]
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: [2]
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: [3]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [4]
+    lt: 0
+Table: m2m
+Timestamp: 2014-12-09T21:53:27Z

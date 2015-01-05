@@ -1,0 +1,11 @@
+---
+- CreateTable: t (biu_field bigint unsigned)
+---
+- Statement: CREATE INDEX idx_biu ON t(biu_field)
+---
+- Statement: INSERT INTO t VALUES (50), (1), (0), (9223372036854775807), (9223372036854775808),
+                                   (9223372036854775809), (18446744073709551615)
+---
+- Statement: SELECT biu_field FROM t ORDER BY biu_field
+- output_already_ordered: [[0], [1], [50], [9223372036854775807], [9223372036854775808], [9223372036854775809], [18446744073709551615]]
+...

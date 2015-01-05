@@ -1,0 +1,1 @@
+SELECT COUNT(anon1.val) AS "_SQL_COL_1" FROM (SELECT (test.t1.id + 3) AS val FROM test.t1) AS anon1(val)

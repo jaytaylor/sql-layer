@@ -1,0 +1,1 @@
+com.foundationdb.server.error.UnsupportedSQLException: UNSUPPORTED_SQL: Unsupported SQL: DML includes both referenced and referencing table test.y with FOREIGN KEY action CASCADE

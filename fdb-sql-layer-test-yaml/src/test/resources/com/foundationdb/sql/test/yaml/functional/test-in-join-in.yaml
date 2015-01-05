@@ -1,0 +1,38 @@
+---
+- CreateTable: artists (id INT PRIMARY KEY, name varchar(255));
+---
+- CreateTable: albums (id INT PRIMARY KEY, name varchar(255), artist_id integer REFERENCES artists);
+---
+- CreateTable: tags (id INT PRIMARY KEY, name varchar(255));
+---
+- CreateTable: albums_tags (album_id integer REFERENCES albums, tag_id integer REFERENCES tags);
+---
+- Statement: INSERT INTO albums (id,name) VALUES (1,'Al')
+---
+- Statement: INSERT INTO artists (id,name) VALUES (1,'Ar')
+---
+- Statement: INSERT INTO tags (id,name) VALUES (1,'T')
+---
+- Statement: INSERT INTO albums (id,name) VALUES (2,'Al2')
+---
+- Statement: INSERT INTO artists (id,name) VALUES (2,'Ar2')
+---
+- Statement: INSERT INTO tags (id,name) VALUES (2,'T2')
+---
+# This is a simple reduction of a bug found with the Sequel gem. That specific
+# bug can be reduced more to the test-in-subselect-with-and test, so if that one
+# is failing, fix it first.
+- Statement: SELECT * FROM artists WHERE ((artists.id NOT IN (SELECT albums.artist_id FROM albums INNER JOIN albums_tags ON (albums_tags.album_id = albums.id) WHERE ((albums_tags.tag_id IN (1, 2))))));
+- output: [[1, 'Ar'],[2, 'Ar2']]
+---
+- Statement: SELECT * FROM artists WHERE ((artists.id IN (SELECT albums.artist_id FROM albums INNER JOIN albums_tags ON (albums_tags.album_id = albums.id) WHERE ((albums_tags.tag_id IN (1, 2))))));
+- row_count: 0
+---
+- Statement: INSERT INTO albums_tags VALUES (1,1),(2,2);
+---
+- Statement: SELECT * FROM "albums" WHERE (("albums"."id" NOT IN
+                (SELECT "albums_tags"."album_id" FROM "tags" INNER JOIN "albums_tags" ON ("albums_tags"."tag_id" = "tags"."id") WHERE
+                (("name" = 'T') AND ("albums_tags"."album_id" IS NOT NULL) AND ("tags"."id" IN (SELECT "tags"."id" FROM "tags")))
+             )) OR ("albums"."id" IS NULL));
+- output: [[2, 'Al2', null]]
+...

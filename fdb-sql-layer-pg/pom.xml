@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.foundationdb</groupId>
+    <artifactId>fdb-sql-layer-pg</artifactId>
+    <version>2.1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <parent>
+        <groupId>com.foundationdb</groupId>
+        <artifactId>fdb-sql-layer</artifactId>
+        <version>2.1.0-SNAPSHOT</version>
+    </parent>
+    <name>FoundationDB SQL Layer Postgres protocol plugin</name>
+    
+    <properties>
+        <fdbsql.release>0</fdbsql.release>
+        <fdbsql.test.extraJvmArgs></fdbsql.test.extraJvmArgs>
+        <fdbsql.test.JmxJvmArgs>-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=8082 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false</fdbsql.test.JmxJvmArgs>
+        <main.basedir>${project.parent.basedir}</main.basedir>
+        <plugins.path>../plugins</plugins.path>
+        <surefireJacocoArg></surefireJacocoArg>
+        <failsafeJacocoArg></failsafeJacocoArg>
+    </properties>
+    
+    <dependencies>
+        <dependency>
+            <groupId>com.foundationdb</groupId>
+            <artifactId>fdb-sql-layer-core</artifactId>
+            <version>2.1.0-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.foundationdb</groupId>
+            <artifactId>fdb-sql-layer-core</artifactId>
+            <version>2.1.0-SNAPSHOT</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+	<dependency>
+            <groupId>com.foundationdb</groupId>
+            <artifactId>fdb-sql-layer-routinefw</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+	<dependency>
+            <groupId>com.foundationdb</groupId>
+            <artifactId>fdb-sql-layer-jdbc-proxy</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.foundationdb</groupId>
+            <artifactId>fdb-sql-parser</artifactId>
+            <version>1.6.0-SNAPSHOT</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.foundationdb</groupId>
+            <artifactId>fdb-sql-layer-jdbc</artifactId>
+            <version>2.1-0-jdbc41-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.postgresql</groupId>
+          <artifactId>postgresql</artifactId>
+          <version>9.3-1102-jdbc41</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.foundationdb</groupId>
+            <artifactId>fdb-sql-layer-test-yaml</artifactId>
+            <version>2.1.0-SNAPSHOT</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.11</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+        </resources>
+	<plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.7</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <property name="plugins.dir" location="${plugins.path}"/>
+                                <mkdir dir="${plugins.dir}"/>
+                                <delete includeEmptyDirs="true">
+                                  <fileset dir="${plugins.dir}" includes="${project.artifactId}*/**"/>
+                                </delete>
+                                <copy todir="${plugins.dir}" file="${project.build.directory}/${project.build.finalName}.jar"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

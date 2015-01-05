@@ -1,0 +1,64 @@
+# Test STORAGE_FORMAT column_keys
+---
+- CreateTable: t1 (id INT PRIMARY KEY NOT NULL, name VARCHAR(16)) STORAGE_FORMAT column_keys
+---
+- Statement: INSERT INTO t1 VALUES(1,'Fred'),(2,'Wilma'),(3,'Barney'),(4,null)
+---
+- Statement: SELECT * FROM t1
+- output: [[1,'Fred'],[2,'Wilma'],[3,'Barney'],[4,null]]
+---
+- Statement: SELECT * FROM t1 WHERE id = 2
+- output: [[2,'Wilma']]
+---
+- Statement: UPDATE t1 SET name = 'Betty' WHERE id = 4
+---
+- Statement: SELECT * FROM t1
+- output: [[1,'Fred'],[2,'Wilma'],[3,'Barney'],[4,'Betty']]
+---
+- Statement: DELETE FROM t1 WHERE id = 3
+---
+- Statement: SELECT * FROM t1
+- output: [[1,'Fred'],[2,'Wilma'],[4,'Betty']]
+---
+- CreateTable: t2 (cid INT PRIMARY KEY NOT NULL, pid INT, GROUPING FOREIGN KEY(pid) REFERENCES t1(id), name VARCHAR(16))
+---
+- Statement: INSERT INTO t2 VALUES(101,2,'Pebbles'),(401,4,'Bam-bam'),(102,2,'Dino')
+---
+- Statement: SELECT * FROM t2
+- output: [[101,2,'Pebbles'],[102,2,'Dino'],[401,4,'Bam-bam']]
+---
+- Statement: SELECT t1.name,t2.name FROM t1 LEFT JOIN t2 ON t1.id = t2.pid
+- output: [['Fred',null],['Wilma','Pebbles'],['Wilma','Dino'],['Betty','Bam-bam']]
+---
+- Statement: SELECT t1.name,t2.name FROM t1 INNER JOIN t2 ON t1.id = t2.pid WHERE t1.id = 2
+- output: [['Wilma','Pebbles'],['Wilma','Dino']]
+---
+- Statement: SELECT t1.name,t2.name FROM t1 INNER JOIN t2 ON t1.id = t2.pid WHERE t2.cid = 102
+- output: [['Wilma','Dino']]
+---
+- Statement: SELECT * FROM t2 WHERE cid >= 102 ORDER BY cid ASC
+- output_already_ordered: [[102,2,'Dino'],[401,4,'Bam-bam']]
+---
+- Statement: SELECT * FROM t2 WHERE cid >= 102 ORDER BY cid DESC
+- output_already_ordered: [[401,4,'Bam-bam'], [102,2,'Dino']]
+---
+- Statement: SELECT * FROM t2 WHERE cid >= 102 ORDER BY cid ASC, pid ASC
+- output_already_ordered: [[102,2,'Dino'],[401,4,'Bam-bam']]
+# BUG: Disabled due to mixed order bound issue
+#---
+#- Statement: SELECT * FROM t2 WHERE cid >= 102 ORDER BY cid ASC, pid DESC
+#- output_already_ordered: [[401,4,'Bam-bam'],[102,2,'Dino']]
+#---
+#- Statement: SELECT * FROM t2 WHERE cid >= 102 ORDER BY cid DESC, pid ASC
+#- output_already_ordered: [[401,4,'Bam-bam'],[102,2,'Dino']]
+---
+- Statement: SELECT * FROM t2 WHERE cid >= 102 ORDER BY cid DESC, pid DESC
+- output_already_ordered: [[401,4,'Bam-bam'],[102,2,'Dino']]
+---
+- CreateTable: t3 (id INT PRIMARY KEY, b INT) STORAGE_FORMAT column_keys
+---
+- Statement: INSERT INTO t3 VALUES (1,1), (2,2), (3,3), (4,4), (5,5)
+---
+- Statement: SELECT id FROM t3 WHERE id > 3
+- output: [[4], [5]]
+...

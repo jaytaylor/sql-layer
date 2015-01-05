@@ -1,7 +1,0 @@
-SelectQuery@7ba51bd0
-  ResultSet@14c5341b[pid]
-    Project@1edfe344[places.pid]
-      Sort@268f14e6[distance_lat_lon(places.lat,places.lon,42.3583,-71.0603)]
-        Select@7cc19531[places.city == Boston, distance_lat_lon(places.lat,places.lon,42.3583,-71.0603) <= 0.0466]
-          TableGroupJoinTree@92a03f4(TableGroup@349f97a9(places), places - SingleIndexScan@599df33c(Index(test.places.places_geo_1[IndexColumn(state), IndexColumn(lat), IndexColumn(lon), IndexColumn(lat), IndexColumn(lon)])[-90000000:90000000, -180000000:180000000], NONE, =MA, >=_center_radius(42.3583,-71.0603,Cast(0.0466 AS MCOMPAT_ DECIMAL(10, 6) NULL)), rows = 3, cost = 152.414))
-            TableSource@165ccce2(places - TableGroup@349f97a9(places))

@@ -1,0 +1,13 @@
+# INSERT with parameters
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (varchar_field, integer_field, smallint_field, boolean_field) VALUES(?,?,?,?)
+- params: [['xyz',2,2,false]]
+---
+- Statement: INSERT INTO all_types (varchar_field, integer_field, smallint_field, boolean_field) VALUES(?,?,?,?)
+- params: [['abc',1,1,true]]
+---
+- Statement: SELECT varchar_field, integer_field, smallint_field, boolean_field from all_types
+- output: [['abc',1,1,true],['xyz',2,2,false]]
+...

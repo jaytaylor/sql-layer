@@ -1,0 +1,148 @@
+# Test DDL related to foreign keys, particularly error checking.
+---
+- CreateTable: t1 (id INT PRIMARY KEY NOT NULL, n1 INT, n2 INT)
+---
+- CreateTable: t2 (id INT PRIMARY KEY NOT NULL, pid INT, n INT)
+---
+- Statement: SELECT * FROM information_schema.table_constraints WHERE table_schema = 'test'
+- output: [[null, 'test', 't1_pkey', null, 'test', 't1', 'PRIMARY KEY', 'NO', 'NO', 'YES'],
+           [null, 'test', 't2_pkey', null, 'test', 't2', 'PRIMARY KEY', 'NO', 'NO', 'YES']]
+---
+- Statement: SELECT rc.constraint_name, rc.update_rule, rc.delete_rule, kcu1.table_name, kcu1.column_name, kcu2.table_name, kcu2.column_name FROM information_schema.referential_constraints rc INNER JOIN information_schema.key_column_usage kcu1 USING (constraint_schema, constraint_name) INNER JOIN information_schema.key_column_usage kcu2 ON rc.unique_constraint_schema = kcu2.constraint_schema AND rc.unique_constraint_name = kcu2.constraint_name AND kcu1.position_in_unique_constraint = kcu2.ordinal_position
+- row_count: 0
+---
+- Statement: ALTER TABLE t2 ADD CONSTRAINT fk_t FOREIGN KEY(pid) REFERENCES t1(id)
+---
+- Statement: SELECT * FROM information_schema.table_constraints WHERE table_schema = 'test'
+- output: [[null, 'test', 't1_pkey', null, 'test', 't1', 'PRIMARY KEY', 'NO', 'NO', 'YES'],
+           [null, 'test', 't2_pkey', null, 'test', 't2', 'PRIMARY KEY', 'NO', 'NO', 'YES'],
+           [null, 'test', 'fk_t', null, 'test', 't2', 'FOREIGN KEY', 'NO', 'NO', 'YES']]
+---
+- Statement: SELECT rc.constraint_name, rc.update_rule, rc.delete_rule, kcu1.table_name, kcu1.column_name, kcu2.table_name, kcu2.column_name FROM information_schema.referential_constraints rc INNER JOIN information_schema.key_column_usage kcu1 USING (constraint_schema, constraint_name) INNER JOIN information_schema.key_column_usage kcu2 ON rc.unique_constraint_schema = kcu2.constraint_schema AND rc.unique_constraint_name = kcu2.constraint_name AND kcu1.position_in_unique_constraint = kcu2.ordinal_position
+- output: [['fk_t', 'NO ACTION', 'NO ACTION', 't2', 'pid', 't1', 'id']]
+---
+- Statement: ALTER TABLE t2 DROP FOREIGN KEY fk_t
+---
+- Statement: SELECT rc.constraint_name, rc.update_rule, rc.delete_rule, kcu1.table_name, kcu1.column_name, kcu2.table_name, kcu2.column_name FROM information_schema.referential_constraints rc INNER JOIN information_schema.key_column_usage kcu1 USING (constraint_schema, constraint_name) INNER JOIN information_schema.key_column_usage kcu2 ON rc.unique_constraint_schema = kcu2.constraint_schema AND rc.unique_constraint_name = kcu2.constraint_name AND kcu1.position_in_unique_constraint = kcu2.ordinal_position
+- row_count: 0
+---
+- DropTable: t2
+---
+- Statement: SELECT rc.constraint_name, rc.update_rule, rc.delete_rule, kcu1.table_name, kcu1.column_name, kcu2.table_name, kcu2.column_name FROM information_schema.referential_constraints rc INNER JOIN information_schema.key_column_usage kcu1 USING (constraint_schema, constraint_name) INNER JOIN information_schema.key_column_usage kcu2 ON rc.unique_constraint_schema = kcu2.constraint_schema AND rc.unique_constraint_name = kcu2.constraint_name AND kcu1.position_in_unique_constraint = kcu2.ordinal_position
+- row_count: 0
+---
+- CreateTable: t2 (id INT PRIMARY KEY NOT NULL, pid INT, n INT, FOREIGN KEY(pid) REFERENCES t1(id))
+---
+- Statement: SELECT rc.constraint_name, rc.update_rule, rc.delete_rule, kcu1.table_name, kcu1.column_name, kcu2.table_name, kcu2.column_name FROM information_schema.referential_constraints rc INNER JOIN information_schema.key_column_usage kcu1 USING (constraint_schema, constraint_name) INNER JOIN information_schema.key_column_usage kcu2 ON rc.unique_constraint_schema = kcu2.constraint_schema AND rc.unique_constraint_name = kcu2.constraint_name AND kcu1.position_in_unique_constraint = kcu2.ordinal_position
+- output: [['t2_fkey', 'NO ACTION', 'NO ACTION', 't2', 'pid', 't1', 'id']]
+---
+- Statement: DROP TABLE t1
+- error: [2B001, 'ERROR: Cannot drop table `test`.`t1` due for foreign key constraint `t2_fkey` on `test`.`t2`']
+---
+- Statement: DROP INDEX t2.`t2_fkey`
+- error: [5000H, 'ERROR: Index `t2_fkey` can not be added or removed from table `test`.`t2`']
+---
+- Statement: ALTER TABLE t1 ALTER COLUMN id SET DATA TYPE BIGINT
+- error: [2B002, 'ERROR: Cannot alter column `id` on `test`.`t1` due for foreign key constraint `t2_fkey`']
+---
+- Statement: ALTER TABLE t2 DROP COLUMN pid
+- error: [2B002, 'ERROR: Cannot alter column `pid` on `test`.`t2` due for foreign key constraint `t2_fkey`']
+---
+- DropTable: t2
+---
+- CreateTable: t2 (id INT PRIMARY KEY NOT NULL, pid INT, m1 INT, m2 INT)
+---
+- Statement: ALTER TABLE t2 ADD FOREIGN KEY(m2,m1) REFERENCES t1(n1,n2)
+- error: [50032, 'ERROR: Foreign key `t2_fkey` requires a unique index on `test`.`t1` for columns [n1, n2]']
+---
+- Statement: CREATE UNIQUE INDEX t1_n ON t1(n1, n2);
+---
+- Statement: ALTER TABLE t2 ADD FOREIGN KEY(m2,m1) REFERENCES t1(n2,n1)
+---
+- Statement: SELECT rc.constraint_name, rc.update_rule, rc.delete_rule, kcu1.table_name, kcu1.column_name, kcu2.table_name, kcu2.column_name FROM information_schema.referential_constraints rc INNER JOIN information_schema.key_column_usage kcu1 USING (constraint_schema, constraint_name) INNER JOIN information_schema.key_column_usage kcu2 ON rc.unique_constraint_schema = kcu2.constraint_schema AND rc.unique_constraint_name = kcu2.constraint_name AND kcu1.position_in_unique_constraint = kcu2.ordinal_position
+- output: [['t2_fkey', 'NO ACTION', 'NO ACTION', 't2', 'm2', 't1', 'n2'],
+           ['t2_fkey', 'NO ACTION', 'NO ACTION', 't2', 'm1', 't1', 'n1']]
+---
+- Statement: ALTER TABLE t2 DROP FOREIGN KEY
+---
+- Statement: ALTER TABLE t2 ADD CONSTRAINT fk_t FOREIGN KEY(pid) REFERENCES t1(id) MATCH FULL
+- error: ['0A50E', 'ERROR: Unsupported FOREIGN KEY MATCH type: FULL']
+---
+- Statement: ALTER TABLE t2 ADD CONSTRAINT fk_t FOREIGN KEY(pid) REFERENCES t1(id)
+---
+- DropTable: t2
+---
+- DropTable: t1
+---
+- CreateTable: t (id INT NOT NULL PRIMARY KEY, pid INT, FOREIGN KEY(pid) REFERENCES t(id))
+---
+- Statement: SELECT rc.constraint_name, rc.update_rule, rc.delete_rule, kcu1.table_name, kcu1.column_name, kcu2.table_name, kcu2.column_name FROM information_schema.referential_constraints rc INNER JOIN information_schema.key_column_usage kcu1 USING (constraint_schema, constraint_name) INNER JOIN information_schema.key_column_usage kcu2 ON rc.unique_constraint_schema = kcu2.constraint_schema AND rc.unique_constraint_name = kcu2.constraint_name AND kcu1.position_in_unique_constraint = kcu2.ordinal_position
+- output: [['t_fkey', 'NO ACTION', 'NO ACTION', 't', 'pid', 't', 'id']]
+---
+- DropTable: t
+---
+- CreateTable: c (id bigint not null primary key)
+---
+- CreateTable: a (id bigint not null primary key, cid bigint not null)
+---
+- Statement: ALTER TABLE a ADD CONSTRAINT fk_cid FOREIGN KEY (cid) REFERENCES c (id)
+---
+- Statement: SELECT rc.constraint_name, rc.update_rule, rc.delete_rule, kcu1.table_name, kcu1.column_name, kcu2.table_name, kcu2.column_name 
+          FROM information_schema.referential_constraints rc INNER JOIN information_schema.key_column_usage kcu1 
+            USING (constraint_schema, constraint_name) 
+            INNER JOIN information_schema.key_column_usage kcu2 
+            ON rc.unique_constraint_schema = kcu2.constraint_schema AND rc.unique_constraint_name = kcu2.constraint_name AND kcu1.position_in_unique_constraint = kcu2.ordinal_position
+- output: [['fk_cid', 'NO ACTION', 'NO ACTION', 'a', 'cid', 'c', 'id']]
+---
+- Statement: ALTER TABLE a DROP CONSTRAINT fk_cid
+---
+- Statement: SELECT rc.constraint_name, rc.update_rule, rc.delete_rule, kcu1.table_name, kcu1.column_name, kcu2.table_name, kcu2.column_name 
+          FROM information_schema.referential_constraints rc INNER JOIN information_schema.key_column_usage kcu1 
+            USING (constraint_schema, constraint_name) 
+            INNER JOIN information_schema.key_column_usage kcu2 
+            ON rc.unique_constraint_schema = kcu2.constraint_schema AND rc.unique_constraint_name = kcu2.constraint_name AND kcu1.position_in_unique_constraint = kcu2.ordinal_position
+- row_count: 0
+---
+- Statement: CREATE TABLE test2.a(aid INT NOT NULL PRIMARY KEY)
+---
+- Statement: CREATE TABLE test2.b(bid INT NOT NULL PRIMARY KEY, aid INT, FOREIGN KEY(aid) REFERENCES test2.a(aid))
+---
+- Statement: CREATE TABLE test2.c(cid INT NOT NULL PRIMARY KEY, bid INT, FOREIGN KEY(bid) REFERENCES test2.b(bid))
+---
+- Statement: DROP SCHEMA test2 CASCADE
+---
+- Statement: CREATE TABLE test2.a(aid INT NOT NULL PRIMARY KEY)
+---
+- Statement: CREATE TABLE test3.b(bid INT NOT NULL PRIMARY KEY, aid INT, FOREIGN KEY(aid) REFERENCES test2.a(aid))
+---
+- Statement: DROP SCHEMA test2 CASCADE
+- error: [2B001, 'ERROR: Cannot drop table `test2`.`a` due for foreign key constraint `b_fkey` on `test3`.`b`']
+
+# Clean up
+---
+- Statement: DROP SCHEMA test3 CASCADE
+---
+- Statement: DROP SCHEMA test2 CASCADE
+---
+- DropTable: a
+---
+- DropTable: c
+
+# Adding an FK with existing rows
+---
+- CreateTable: p(pid INT NOT NULL PRIMARY KEY)
+---
+- CreateTable: c(cid INT NOT NULL PRIMARY KEY, pid INT)
+---
+- Statement: INSERT INTO c VALUES (10, 1)
+---
+- Statement: ALTER TABLE c ADD FOREIGN KEY(pid) REFERENCES p(pid)
+- error: [23503]
+---
+- Statement: INSERT INTO p VALUES (1)
+---
+- Statement: ALTER TABLE c ADD FOREIGN KEY(pid) REFERENCES p(pid)
+---
+- DropTable: c
+---
+- DropTable: p

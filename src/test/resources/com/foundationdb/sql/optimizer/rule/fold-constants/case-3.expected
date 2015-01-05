@@ -1,5 +1,0 @@
-SelectQuery@1eeafb34
-  ResultSet@551222c7[_SQL_COL_1]
-    Project@19a96273[IF([customers.cid >= 1, customers.cid <= 10], customers.name, n/a)]
-      Select@3f7e792e[]
-        TableSource@7224152f(customers)

@@ -1,0 +1,13 @@
+PhysicalSelect@2ffd46cc[name, order_date, name]
+  Map_NestedLoops(0)
+    Select_HKeyOrdered(Field(2) != 'Smith')
+      Filter_Default(test.child)
+        GroupScan_Default(test.parent)
+    Map_NestedLoops(1)
+      IndexScan_Default(Index(test.parent.name), name = Bound(0, 2), id ASC)
+      Project_Default(Field(1), Field(4), Bound(0, 2))
+        Select_HKeyOrdered(Field(4) > DATE '2011-01-01')
+          Filter_Default(test.customers - test.orders)
+            Flatten_HKeyOrdered(test.customers INNER test.orders)
+              GroupLookup_Default(Index(test.customers.name) -> test.customers, test.orders)
+                IndexScan_Default(Index(test.customers.name), name = Bound(1, 0), cid ASC)

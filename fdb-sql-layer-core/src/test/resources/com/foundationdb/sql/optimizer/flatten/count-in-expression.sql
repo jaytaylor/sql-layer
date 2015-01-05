@@ -1,0 +1,1 @@
+SELECT COUNT(name) FROM child WHERE pid+5 IN (SELECT parent.id FROM parent WHERE parent.name = 'foo')

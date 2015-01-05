@@ -1,0 +1,72 @@
+# Test cursor-related statements
+---
+- CreateTable: t1 (id INT NOT NULL PRIMARY KEY, s VARCHAR(15) NOT NULL)
+---
+- Statement: INSERT INTO t1 VALUES(1, 'abc'),(2, 'def'),(3, 'ghi'),(4,'jkl'),(5,'mno');
+---
+- Statement: SELECT * FROM t1
+- output: [[1,'abc'],[2,'def'],[3,'ghi'],[4,'jkl'],[5,'mno']]
+---
+- Statement: BEGIN
+---
+- Statement: DECLARE c CURSOR FOR SELECT * FROM t1
+---
+- Statement: FETCH c
+- output: [[1,'abc']]
+---
+- Statement: FETCH 2 c
+- output: [[2,'def'],[3,'ghi']]
+---
+- Statement: FETCH ALL c
+- output: [[4,'jkl'],[5,'mno']]
+---
+- Statement: CLOSE c
+---
+- Statement: COMMIT
+---
+# The commit above turns the fixed back off again. 
+- UseContext: default
+- fixed: true
+---
+- Statement: PREPARE p AS SELECT * FROM t1
+---
+- Statement: EXECUTE p
+- output: [[1,'abc'],[2,'def'],[3,'ghi'],[4,'jkl'],[5,'mno']]
+---
+- Statement: PREPARE p AS SELECT * FROM t1 WHERE id <> $1
+---
+- Statement: EXECUTE p(3)
+- output: [[1,'abc'],[2,'def'],[4,'jkl'],[5,'mno']]
+---
+- Statement: EXECUTE p(null)
+- row_count: 0
+---
+- Statement: BEGIN
+---
+- Statement: DECLARE c CURSOR FOR EXECUTE p(2)
+---
+- Statement: FETCH c
+- output: [[1,'abc']]
+---
+- Statement: FETCH ALL c
+- output: [[3,'ghi'],[4,'jkl'],[5,'mno']]
+---
+- Statement: CLOSE c
+---
+- Statement: COMMIT
+---
+# The commit above turns the fixed back off again. 
+- UseContext: default
+- fixed: true
+---
+- Statement: DEALLOCATE p
+---
+- Statement: EXECUTE no_such_stmt
+- error: [4251D]
+---
+- Statement: FETCH no_such_curs
+- error: [4251C]
+---
+- UseContext: default
+- fixed: false
+...

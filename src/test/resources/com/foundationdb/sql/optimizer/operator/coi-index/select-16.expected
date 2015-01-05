@@ -1,8 +1,0 @@
-PhysicalSelect[sku:varchar(32)]
-  Project_Default(items.sku)
-    Using_BloomFilter(sku)
-      Project_Default(categories.sku)
-        IndexScan_Default(Index(categories.cat_sku), cat = 1, sku ASC)
-      Select_BloomFilter(items.sku)
-        IndexScan_Default(Index(items.sku), sku ASC)
-        IndexScan_Default(Index(categories.cat_sku), cat = 1, sku = items.sku)

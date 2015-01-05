@@ -1,0 +1,12 @@
+PhysicalSelect@18d47e06[cid, oid, name, order_date, iid, sku, quan, price, aid, state, city]
+  Project_Default(Field(0), Field(6), Field(1), Field(8), Field(9), Field(11), Field(12), Field(13), Field(2), Field(4), Field(5))
+    Map_NestedLoops(0)
+      Filter_Default(test.customers - test.addresses)
+        Flatten_HKeyOrdered(test.customers INNER test.addresses)
+          GroupLookup_Default(test.customers -> test.customers, test.addresses)
+            IndexScan_FullText(test.customers.cust_ft, +state:MA +sku:1234)
+      Product_Nested(test.customers - test.addresses x test.customers - test.orders - test.items)
+        Filter_Default(test.customers - test.orders - test.items)
+          Flatten_HKeyOrdered(test.customers - test.orders INNER test.items)
+            Flatten_HKeyOrdered(test.customers INNER test.orders)
+              BranchLookup_Nested(test.customers -> test.orders, test.items)

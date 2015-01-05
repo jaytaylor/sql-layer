@@ -1,5 +1,0 @@
-SelectQuery@4dc1c92b
-  ResultSet@3d89acb5[_SQL_COL_1]
-    Project@19a9bea3[IF([items.sku == 1234], 666, IF([items.quan >= 10, items.quan <= 100], 777, -1))]
-      Select@7f2e7c6a[]
-        TableSource@44ea5461(items)

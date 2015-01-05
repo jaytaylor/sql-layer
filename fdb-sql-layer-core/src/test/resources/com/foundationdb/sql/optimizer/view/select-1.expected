@@ -1,0 +1,121 @@
+com.foundationdb.sql.parser.CursorNode@5f70bea5
+name: null
+updateMode: UNSPECIFIED
+statementType: SELECT
+resultSet: 	
+	com.foundationdb.sql.parser.SelectNode@62f47396
+	isDistinct: false
+	resultColumns: 		
+		com.foundationdb.sql.parser.ResultColumnList@388ee016
+
+		[0]:		
+		com.foundationdb.sql.parser.ResultColumn@2c19e15c
+		exposedName: x
+		name: x
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.foundationdb.sql.parser.ColumnReference@571a75a2
+			columnName: x
+			tableName: null
+			type: null
+			userData: com.foundationdb.sql.parser.ResultColumn@fcfa52 from com.foundationdb.sql.parser.FromSubquery@6bffc686
+	fromList: 		
+		com.foundationdb.sql.parser.FromList@a210b5b
+
+		[0]:		
+		com.foundationdb.sql.parser.FromSubquery@6bffc686
+		correlation Name: v1
+		null
+		resultColumns: 			
+			com.foundationdb.sql.parser.ResultColumnList@6542bece
+
+			[0]:			
+			com.foundationdb.sql.parser.ResultColumn@fcfa52
+			exposedName: x
+			name: x
+			tableName: null
+			isDefaultColumn: false
+			type: VARCHAR(7) CHARACTER SET UTF8 COLLATE UCS_BINARY
+			[1]:			
+			com.foundationdb.sql.parser.ResultColumn@60961dff
+			exposedName: y
+			name: y
+			tableName: null
+			isDefaultColumn: false
+			type: DECIMAL(5,0)
+		subquery: 			
+			com.foundationdb.sql.parser.SelectNode@1f8b81e3
+			isDistinct: false
+			resultColumns: 				
+				com.foundationdb.sql.parser.ResultColumnList@7ffc6e42
+
+				[0]:				
+				com.foundationdb.sql.parser.ResultColumn@15aaf0b3
+				exposedName: y
+				name: y
+				tableName: null
+				isDefaultColumn: false
+				type: VARCHAR(7) CHARACTER SET UTF8 COLLATE UCS_BINARY
+				expression: 					
+					com.foundationdb.sql.parser.ColumnReference@9a082e2
+					columnName: y
+					tableName: null
+					type: VARCHAR(7) CHARACTER SET UTF8 COLLATE UCS_BINARY
+					userData: t1.y from com.foundationdb.sql.parser.FromBaseTable@5cac6a45
+				[1]:				
+				com.foundationdb.sql.parser.ResultColumn@8f0c85e
+				exposedName: z
+				name: z
+				tableName: null
+				isDefaultColumn: false
+				type: DECIMAL(5,0)
+				expression: 					
+					com.foundationdb.sql.parser.ColumnReference@77f297e7
+					columnName: z
+					tableName: null
+					type: DECIMAL(5,0)
+					userData: t1.z from com.foundationdb.sql.parser.FromBaseTable@5cac6a45
+			fromList: 				
+				com.foundationdb.sql.parser.FromList@57d2fc36
+
+				[0]:				
+				com.foundationdb.sql.parser.FromBaseTable@5cac6a45
+				tableName: t1
+				updateOrDelete: null
+				null
+				correlation Name: null
+				null
+				userData: test.t1
+			whereClause: 				
+				com.foundationdb.sql.parser.NotNode@3b75078b
+				operator: not
+				methodName: not
+				type: null
+				operand: 					
+					com.foundationdb.sql.parser.IsNullNode@42552c
+					operator: is null
+					methodName: isNull
+					type: null
+					operand: 						
+						com.foundationdb.sql.parser.ColumnReference@2e5bbd6
+						columnName: y
+						tableName: null
+						type: VARCHAR(7) CHARACTER SET UTF8 COLLATE UCS_BINARY
+						userData: t1.y from com.foundationdb.sql.parser.FromBaseTable@5cac6a45
+	whereClause: 		
+		com.foundationdb.sql.parser.BinaryRelationalOperatorNode@7f70888e
+		operator: >
+		methodName: greaterThan
+		type: null
+		leftOperand: 			
+			com.foundationdb.sql.parser.ColumnReference@351563ff
+			columnName: y
+			tableName: null
+			type: null
+			userData: com.foundationdb.sql.parser.ResultColumn@60961dff from com.foundationdb.sql.parser.FromSubquery@6bffc686
+		rightOperand: 			
+			com.foundationdb.sql.parser.CharConstantNode@f581593
+			value: foo
+			type: CHAR(3) NOT NULL

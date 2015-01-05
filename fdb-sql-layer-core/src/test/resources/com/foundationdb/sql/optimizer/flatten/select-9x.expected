@@ -1,0 +1,1 @@
+SELECT x.col1 AS col1, x.col2 AS col2 FROM (VALUES(1, 2), (3, 4)) AS x(col1, col2)

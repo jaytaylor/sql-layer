@@ -1,0 +1,1 @@
+SELECT (COUNT(test.t1.id) + 10) AS "_SQL_COL_1" FROM test.t1

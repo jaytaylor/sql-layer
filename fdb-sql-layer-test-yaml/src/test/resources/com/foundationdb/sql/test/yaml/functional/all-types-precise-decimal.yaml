@@ -1,0 +1,24 @@
+# Similar to all-types.yaml, but with a specified scale and precision for numeric and decimal types
+---
+- CreateTable: all_types (
+      year_field year,
+      bigint_field bigint,
+      bigint_unsigned_field bigint unsigned,
+      blob_field blob,
+      boolean_field boolean,
+      char_field char,
+      char_multi_field char(32),
+      clob_field clob,
+      date_field date,
+      decimal_field decimal(5,2),
+      double_field double,
+      float_field float,
+      integer_field integer,
+      numeric_field numeric(5,2),
+      real_field real,
+      smallint_field smallint,
+      time_field time,
+      timestamp_field timestamp,
+      varchar_field varchar(32),
+      datetime_field datetime)
+...

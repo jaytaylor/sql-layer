@@ -1,0 +1,78 @@
+#
+# Single table group
+#
+---
+- CreateTable: t1 (id INT NOT NULL PRIMARY KEY)
+---
+- Statement: INSERT INTO t1 VALUES (1), (10), (100), (5), (33), (42);
+---
+- Statement: SELECT * FROM t1
+- output: [[1], [5], [10], [33], [42], [100]]
+---
+- Statement: TRUNCATE TABLE t1
+---
+- Statement: SELECT * FROM t1
+- row_count: 0
+
+#
+# COI, truncate each individually
+#
+---
+- CreateTable: c (id INT NOT NULL PRIMARY KEY)
+---
+- CreateTable: o (id INT NOT NULL PRIMARY KEY, cid INT, GROUPING FOREIGN KEY(cid) REFERENCES c(id))
+---
+- CreateTable: i (id INT NOT NULL PRIMARY KEY, oid INT, GROUPING FOREIGN KEY(oid) REFERENCES o(id))
+---
+- Statement: INSERT INTO c VALUES (1), (5), (100), (1337)
+---
+- Statement: INSERT INTO o VALUES (10,1), (11,1), (50,5), (1000,100), (5000,500)
+---
+- Statement: INSERT INTO i VALUES (100,10), (101,10), (102,10), (200,20), (250,25), (50000,5000), (50005,5000)
+---
+- Statement: SELECT * FROM c
+- output: [[1], [5], [100], [1337]]
+---
+- Statement: SELECT * FROM o
+- output: [[10,1], [11,1], [50,5], [1000,100], [5000,500]]
+---
+- Statement: SELECT * FROM i
+- output: [[100,10], [101,10], [102,10], [200,20], [250,25], [50000,5000], [50005,5000]]
+
+---
+- Statement: TRUNCATE TABLE c
+---
+- Statement: SELECT * FROM c
+- row_count: 0
+---
+- Statement: SELECT * FROM o
+- output: [[10,1], [11,1], [50,5], [1000,100], [5000,500]]
+---
+- Statement: SELECT * FROM i
+- output: [[100,10], [101,10], [102,10], [200,20], [250,25], [50000,5000], [50005,5000]]
+
+---
+- Statement: TRUNCATE TABLE o
+---
+- Statement: SELECT * FROM c
+- row_count: 0
+---
+- Statement: SELECT * FROM o
+- row_count: 0
+---
+- Statement: SELECT * FROM i
+- output: [[100,10], [101,10], [102,10], [200,20], [250,25], [50000,5000], [50005,5000]]
+
+---
+- Statement: TRUNCATE TABLE i
+---
+- Statement: SELECT * FROM c
+- row_count: 0
+---
+- Statement: SELECT * FROM o
+- row_count: 0
+---
+- Statement: SELECT * FROM i
+- row_count: 0
+
+...

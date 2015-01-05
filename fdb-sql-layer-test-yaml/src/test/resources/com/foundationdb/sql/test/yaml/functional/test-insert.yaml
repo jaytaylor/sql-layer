@@ -1,0 +1,246 @@
+# Test inserting into tables
+---
+- Include: all-types-schema.yaml
+
+# Test insert with wrong number of values
+---
+- Statement: INSERT INTO all_types (bigint_field) VALUES (1, 2)
+- error: [42512]
+
+# bug889280
+---
+- Statement: INSERT INTO all_types (bigint_field) VALUES (0), (1), (-1),
+    (9223372036854775807), (-9223372036854775808)
+---
+- Statement: INSERT INTO all_types (bigint_field) VALUES (9223372036854775808),
+    (-9223372036854775809)
+---
+- Statement: SELECT (bigint_field) from all_types
+- output: [[0], [1], [-1],
+          [9223372036854775807], [-9223372036854775808], [9223372036854775807], [-9223372036854775808]]
+- output_types: [BIGINT]
+---
+- Statement: DELETE from all_types
+
+---
+- Statement: INSERT INTO all_types (bigint_unsigned_field)
+    VALUES (0), (1), (9223372036854775807)
+---
+- Statement: SELECT (bigint_unsigned_field) from all_types
+- output: [[0], [1], [9223372036854775807]]
+- output_types: [DECIMAL]
+---
+- Statement: DELETE from all_types
+
+---
+- Statement: INSERT INTO all_types (blob_field) VALUES ('deadbeef')
+---
+- Statement: SELECT (blob_field) from all_types
+- output: [[!utf8-bytes 'deadbeef']]
+---
+- Statement: DELETE from all_types
+
+---
+- Statement: INSERT INTO all_types (boolean_field) VALUES (true)
+---
+- Statement: SELECT (boolean_field) from all_types
+- output: [[true]]
+- output_types: [BOOLEAN]
+---
+- Statement: DELETE from all_types
+
+---
+- Statement: INSERT INTO all_types (char_field) VALUES ('d')
+---
+- Statement: SELECT (char_field) from all_types
+- output: [[d]]
+- output_types: [VARCHAR]
+---
+- Statement: DELETE from all_types
+
+---
+- Statement: INSERT INTO all_types (char_multi_field) VALUES ('apple')
+---
+- Statement: SELECT (char_multi_field) from all_types
+- output: [[apple]]
+- output_types: [VARCHAR]
+---
+- Statement: DELETE from all_types
+
+---
+- Statement: INSERT INTO all_types (clob_field) VALUES ('deadbeef')
+---
+- Statement: SELECT (clob_field) from all_types
+- output: [[deadbeef]]
+---
+- Statement: DELETE from all_types
+
+---
+- Statement: INSERT INTO all_types (date_field) VALUES ('2011-11-08')
+---
+- Statement: SELECT (date_field) from all_types
+- output: [['2011-11-08']]
+---
+- Statement: DELETE from all_types
+
+---
+- Statement: INSERT INTO all_types (decimal_field) VALUES (1.0), (123456.0),
+    (-123456.0), (1234567.0), (-1234567.0), (1234567890123.0), (-11234567890123.0)
+---
+- Statement: SELECT (decimal_field) from all_types
+- output: [[1], [123456], [-123456], [1234567], [-1234567], [9999999999], [-9999999999]]
+- output_types: [DECIMAL]
+---
+- Statement: DELETE from all_types
+
+---
+- Statement: INSERT INTO all_types (double_field) VALUES (0.0), (1.0), (-1.0)
+---
+- Statement: INSERT INTO all_types (double_field) VALUES
+    (1.7976931348623157E308), (4.9E-324)
+# ---
+# Overflow -- wrong error code
+# - Statement: INSERT INTO all_types (double_field) VALUES
+#     (1.7976931348623157E309)
+# - error: [55004]
+#---
+# Underflow -- not sure what error code this should be
+# - Statement: INSERT INTO all_types (double_field) VALUES (4.9E-325)
+# - error: [42000]
+---
+- Statement: INSERT INTO all_types (double_field) VALUES
+    ('Infinity'), ('-Infinity'), ('NaN')
+---
+- Statement: SELECT (double_field) from all_types
+- output: [[0.0], [1.0], [-1.0], [1.7976931348623157E308], [4.9E-324], [0.0], [0.0], [0.0]]
+
+- output_types: [DOUBLE]
+---
+- Statement: DELETE from all_types
+
+---
+- Statement: INSERT INTO all_types (float_field) VALUES (0.0), (1.0), (-1.0)
+---
+- Statement: INSERT INTO all_types (float_field) VALUES
+    (3.4028234663852886E38), (1.401298464324817E-45)
+---
+- Statement: INSERT INTO all_types (float_field) VALUES
+    ('Infinity'), ('-Infinity'), ('NaN')
+---
+- Statement: SELECT (float_field) from all_types
+- output: [[0.0], [1.0], [-1.0], [3.4028234663852886E38], [1.401298464324817E-45], [0.0], [0.0], [0.0]]
+- output_types: [DOUBLE]
+---
+- Statement: DELETE from all_types
+
+---
+- Statement: INSERT INTO all_types (integer_field) VALUES (0), (1), (-1),
+    (2147483647), (-2147483648), (2147483648), (-2147483649)
+---
+- Statement: SELECT (integer_field) from all_types
+- output: [[0], [1], [-1], [2147483647], [-2147483648], [2147483647], [-2147483648]]
+- output_types: [INTEGER]
+---
+- Statement: DELETE from all_types
+
+---
+- Statement: INSERT INTO all_types (numeric_field) VALUES (1.0)
+---
+- Statement: SELECT (numeric_field) from all_types
+- output: [[1]]
+- output_types: [DECIMAL]
+---
+- Statement: DELETE from all_types
+
+---
+- Statement: INSERT INTO all_types (real_field) VALUES (1.0)
+---
+- Statement: SELECT (real_field) from all_types
+- output: [[1.0]]
+- output_types: [FLOAT] 
+---
+- Statement: DELETE from all_types
+
+---
+- Statement: INSERT INTO all_types (smallint_field) VALUES (1)
+---
+- Statement: SELECT (smallint_field) from all_types
+- output: [[1]]
+- output_types: [SMALLINT]
+---
+- Statement: DELETE from all_types
+
+---
+- Statement: INSERT INTO all_types (time_field) VALUES ('03:00:00')
+---
+- Statement: SELECT (time_field) from all_types
+- output: [['03:00:00']]
+- output_types: [TIME]
+---
+- Statement: DELETE from all_types
+
+---
+- Statement: INSERT INTO all_types (timestamp_field)
+    VALUES ('2000-01-02 04:00:00')
+---
+- Statement: SELECT (timestamp_field) from all_types
+- output: [[!re '2000-01-02 04:00:00([.]0)?']]
+- output_types: [DATETIME]
+---
+- Statement: DELETE from all_types
+
+---
+- Statement: INSERT INTO all_types (varchar_field) VALUES ('You bet!')
+---
+- Statement: SELECT (varchar_field) from all_types
+- output: [['You bet!']]
+- output_types: [VARCHAR]
+---
+- Statement: DELETE from all_types
+
+---
+- Statement: INSERT INTO all_types (year_field, bigint_field) VALUES (null, 1234)
+---
+- Statement: SELECT * from all_types
+- output: [[null, 1234, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]]
+---
+- Statement: DELETE from all_types
+
+---
+- CreateTable: t1 (c1 char(2))
+---
+- Statement: INSERT INTO t1 VALUES ('m', 'f')
+- error: [42512]
+---
+- Statement: INSERT INTO t1 VALUES ('a')
+---
+- Statement: select * from t1;
+- output: [['a']]
+---
+- Statement: INSERT INTO t1 VALUES ((SELECT 'b' AS anon1))
+---
+- Statement: select * from t1;
+- output: [['a'], ['b']]
+---
+- Statement: INSERT INTO t1 (SELECT 'c' AS anon1)
+---
+- Statement: select * from t1;
+- output: [['a'], ['b'], ['c']]
+---
+- CreateTable: t2 (c1 char(2), c2 char(2))
+---
+- Statement: INSERT INTO t2 VALUES ('a', (SELECT 'b' AS anon1))
+---
+- Statement: select * from t2;
+- output: [['a', 'b']]
+---
+- Statement: INSERT INTO t2 VALUES ((SELECT 'c' AS anon1), 'd')
+---
+- Statement: SELECT * FROM t2
+- output: [['a', 'b'], ['c', 'd']]
+---
+- Statement: INSERT INTO t2 VALUES ((SELECT CONCAT('x',c1) FROM t2 ORDER BY c1 LIMIT 1), (SELECT CONCAT('x',c2) FROM t2 ORDER BY c2 DESC LIMIT 1))
+---
+- Statement: SELECT * FROM t2
+- output: [['a', 'b'], ['c', 'd'], ['xa', 'xd']]
+...

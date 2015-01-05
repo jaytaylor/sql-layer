@@ -1,0 +1,11 @@
+SelectQuery@21a95d71
+  ResultSet@7635b6fa[name, iid]
+    Project@408013b7[child.name, items.iid]
+      Select@188e7476[]
+        HashJoinNode@225d471e(INNER/HASH_TABLE[items.quan] = [child.id])
+          TableGroupJoinTree@19e81432(TableGroup@5385ebe7(customers), items - SingleIndexScan@7d42b587(Index(test.items.sku[IndexColumn(sku)]), NONE, =1234, rows = 97, cost = 734.773))
+            TableSource@540e4427(items - TableGroup@5385ebe7(customers))
+          TableGroupJoinTree@6d464a13(TableGroup@269bf250(parent), child - GroupScan@484175fd(Group(test.parent), rows = 1, cost = 1224.00))
+            TableSource@749c878d(child - TableGroup@269bf250(parent))
+          HashTableLookup@508775ca(HashTable@41a95a1a, [child.id])
+            TableSource@540e4427(items - TableGroup@5385ebe7(customers))

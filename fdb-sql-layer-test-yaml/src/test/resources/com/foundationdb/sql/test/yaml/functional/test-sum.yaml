@@ -1,0 +1,321 @@
+# Test the SUM aggregate function
+
+---
+- Include: all-types-precise-decimal.yaml
+---
+- CreateTable: t (real_field real)
+---
+- Statement: INSERT INTO t VALUES (1.7976931348623157E308), (1.0E0)
+---
+- Statement: SELECT SUM(real_field) FROM t
+- output: [[!re '3.402823[0-9]*[eE][+]?38']]
+
+# Test sum with no rows => null
+---
+- Statement: SELECT sum(bigint_field), sum(bigint_unsigned_field),
+    sum(decimal_field), sum(double_field), sum(float_field),
+    sum(integer_field), sum(numeric_field), sum(real_field),
+    sum(smallint_field) FROM all_types
+- output: [[null, null, null, null, null, null, null, null, null]]
+
+# Test sum with incompatible data types
+---
+- Statement: SELECT sum(blob_field) FROM all_types
+- output: [[NULL]]
+# Test sum with inserted rows
+---
+- Statement: INSERT INTO all_types
+    (bigint_field, bigint_unsigned_field, decimal_field, double_field,
+     float_field, integer_field, numeric_field, real_field,
+     smallint_field)
+    VALUES (1, 2, 3.14, 4.0, 5.0, 6, 7.01, 8.0, 9)
+---
+- Statement: SELECT bigint_field, bigint_unsigned_field, decimal_field,
+     double_field, float_field, integer_field, numeric_field,
+     real_field, smallint_field FROM all_types
+- output: [[1, 2, 3.14, 4.0, 5.0, 6, 7.01, 8.0, 9]]
+
+---
+- Statement: SELECT sum(bigint_field), sum(bigint_unsigned_field),
+    sum(decimal_field), sum(double_field), sum(float_field),
+    sum(integer_field), sum(numeric_field), sum(real_field),
+    sum(smallint_field) FROM all_types
+- output: [[1, 2, 3.14, 4.0, 5.0, 6, 7.01, 8.0, 9]]
+
+# Insert a row of nulls
+---
+- Statement: INSERT INTO all_types
+    (bigint_field, bigint_unsigned_field, decimal_field, double_field,
+     float_field, integer_field, numeric_field, real_field,
+     smallint_field)
+    VALUES
+    (null, null, null, null, null, null, null, null, null)
+---
+- Statement: SELECT sum(bigint_field), sum(bigint_unsigned_field),
+    sum(decimal_field), sum(double_field), sum(float_field),
+    sum(integer_field), sum(numeric_field), sum(real_field),
+    sum(smallint_field) FROM all_types
+- output: [[1, 2, 3.14, 4.0, 5.0, 6, 7.01, 8.0, 9]]
+
+---
+- Statement: INSERT INTO all_types
+    (bigint_field, bigint_unsigned_field, decimal_field, double_field,
+     float_field, integer_field, numeric_field, real_field,
+     smallint_field)
+    VALUES
+    (1, 2, 3.14, 4.0, 5.0, 6, 7.01, 8.0, 9)
+---
+- Statement: SELECT sum(bigint_field), sum(bigint_unsigned_field),
+    sum(decimal_field), sum(double_field), sum(float_field),
+    sum(integer_field), sum(numeric_field), sum(real_field),
+    sum(smallint_field) FROM all_types
+- output: [[2, 4, 6.28, 8.0, 10.0, 12, 14.02, 16.0, 18]]
+
+---
+- Statement: INSERT INTO all_types
+    (bigint_field, decimal_field, double_field, float_field,
+     integer_field, numeric_field, real_field, smallint_field)
+    VALUES
+    (-4, -12.56, -16.0, -20.0, -24, -28.04, -32.0, -36)
+---
+- Statement: SELECT sum(bigint_field), sum(decimal_field),
+    sum(double_field), sum(float_field), sum(integer_field),
+    sum(numeric_field), sum(real_field), sum(smallint_field) FROM
+    all_types
+- output: [[-2, -6.28, -8.0, -10.0, -12, -14.02, -16.0, -18]]
+
+---
+- Statement: INSERT INTO all_types
+    (bigint_field, decimal_field, double_field, float_field,
+     integer_field, numeric_field, real_field, smallint_field)
+    VALUES
+    (2, 6.29, 8.0, 10.0, 12, 14.03, 16.0, 18)
+---
+- Statement: SELECT sum(bigint_field), sum(decimal_field), sum(double_field),
+    sum(float_field), sum(integer_field), sum(numeric_field),
+    sum(real_field), sum(smallint_field) FROM all_types
+- output: [[0, 0.01, 0.0, 0.0, 0, 0.01, 0.0, 0]]
+
+---
+- Statement: DELETE from all_types
+
+
+## Test integer overflow and underflow
+# smallint, bug 890227
+---
+- Statement: INSERT INTO all_types (smallint_field) VALUES (32767)
+---
+- Statement: SELECT sum(smallint_field) FROM all_types
+- output: [[32767]]
+---
+- Statement: INSERT INTO all_types (smallint_field) VALUES (1)
+---
+- Statement: SELECT sum(smallint_field) FROM all_types
+- output: [[32768]]
+---
+- Statement: INSERT INTO all_types (smallint_field) VALUES (-1)
+---
+- Statement: SELECT sum(smallint_field) FROM all_types
+- output: [[32767]]
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (smallint_field) VALUES (2147483647)
+---
+- Statement: SELECT sum(smallint_field) FROM all_types
+- output: [[32767]]
+---
+- Statement: INSERT INTO all_types (smallint_field) VALUES (1)
+---
+- Statement: SELECT sum(smallint_field) FROM all_types
+- output: [[32768]]
+---
+- Statement: INSERT INTO all_types (smallint_field) VALUES (-1)
+---
+- Statement: SELECT sum(smallint_field) FROM all_types
+- output: [[32767]]
+---
+- Statement: DELETE FROM all_types
+
+# int
+---
+- Statement: INSERT INTO all_types (integer_field) VALUES (2147483647)
+---
+- Statement: SELECT sum(integer_field) FROM all_types
+- output: [[2147483647]]
+---
+- Statement: INSERT INTO all_types (integer_field) VALUES (1)
+---
+- Statement: SELECT bigint(sum(integer_field)) FROM all_types
+- output: [[2147483648]]
+---
+- Statement: INSERT INTO all_types (integer_field) VALUES (-1)
+---
+- Statement: SELECT sum(integer_field) FROM all_types
+- output: [[2147483647]]
+---
+- Statement: DELETE FROM all_types
+
+# bigint
+---
+- Statement: INSERT INTO all_types (bigint_field) VALUES (9223372036854775807)
+---
+- Statement: SELECT sum(bigint_field) FROM all_types
+- output: [[9223372036854775807]]
+---
+- Statement: INSERT INTO all_types (bigint_field) VALUES (1)
+---
+- Statement: SELECT sum(bigint_field) FROM all_types
+- error: [55004]
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (bigint_field) VALUES (-9223372036854775808)
+---
+- Statement: SELECT sum(bigint_field) FROM all_types
+- output: [[-9223372036854775808]]
+---
+- Statement: INSERT INTO all_types (bigint_field) VALUES (-1)
+---
+- Statement: SELECT sum(bigint_field) FROM all_types
+- error: [55004]
+
+# Test unsigned integer overflow
+---
+- Statement: INSERT INTO all_types (bigint_unsigned_field) VALUES (9223372036854775807), (1)
+---
+- Statement: SELECT sum(bigint_unsigned_field) FROM all_types
+- output: [[9223372036854775808]]
+---
+- Statement: DELETE FROM all_types
+
+# Test double overflow
+---
+- Statement: INSERT INTO all_types (double_field) VALUES (1.7976931348623157E308)
+---
+- Statement: SELECT sum(double_field) FROM all_types
+- output: [[1.7976931348623157E308]]
+---
+- Statement: INSERT INTO all_types (double_field) VALUES (1.7976931348623157E308)
+---
+- Statement: SELECT sum(double_field) FROM all_types
+- error: [55004]
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (double_field) VALUES
+    (-1.7976931348623157E308)
+---
+- Statement: SELECT sum(double_field) FROM all_types
+- output: [[-1.7976931348623157E308]]
+---
+- Statement: INSERT INTO all_types (double_field) VALUES
+    (-1.7976931348623157E308)
+---
+- Statement: SELECT sum(double_field) FROM all_types
+- error: [55004]
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (double_field) VALUES ('Infinity')
+---
+- Statement: SELECT sum(double_field) FROM all_types
+- output: [[0.0]]
+---
+- Statement: INSERT INTO all_types (double_field) VALUES ('33')
+---
+- Statement: SELECT sum(double_field) FROM all_types
+- output: [[33.0]]
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (double_field) VALUES ('-Infinity')
+---
+- Statement: SELECT sum(double_field) FROM all_types
+- output: [[0.0]]
+---
+- Statement: INSERT INTO all_types (double_field) VALUES ('-33')
+---
+- Statement: SELECT sum(double_field) FROM all_types
+- output: [[-33.0]]
+
+# Test float overflow
+---
+- Statement: INSERT INTO all_types (float_field) VALUES (3.4028234663852886E38)
+---
+- Statement: SELECT sum(float_field) FROM all_types
+- output: [[3.4028234663852886E38]]
+---
+- Statement: INSERT INTO all_types (float_field) VALUES (3.4028234663852886E38)
+---
+- Statement: SELECT sum(float_field) FROM all_types
+- output: [[6.805646932770577E38]]
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (float_field) VALUES (-3.4028234663852886E38)
+---
+- Statement: SELECT sum(float_field) FROM all_types
+- output: [[-3.4028234663852886E38]]
+---
+- Statement: INSERT INTO all_types (float_field) VALUES (-3.4028234663852886E38)
+---
+- Statement: SELECT sum(float_field) FROM all_types
+- output: [[-6.805646932770577E38]]
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (float_field) VALUES ('Infinity')
+---
+- Statement: SELECT sum(float_field) FROM all_types
+- output: [[0.0]]
+---
+- Statement: INSERT INTO all_types (float_field) VALUES ('33')
+---
+- Statement: SELECT sum(float_field) FROM all_types
+- output: [[33.0]]
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (float_field) VALUES ('-Infinity')
+---
+- Statement: SELECT sum(float_field) FROM all_types
+- output: [[0.0]]
+---
+- Statement: INSERT INTO all_types (float_field) VALUES ('-33')
+---
+- Statement: SELECT sum(float_field) FROM all_types
+- output: [[-33.0]]
+
+---
+- Statement: DELETE FROM all_types
+
+# Test NaN
+---
+- Statement: INSERT INTO all_types (double_field, float_field, real_field)
+    VALUES (1.0, 1.0, 1.0)
+---
+- Statement: INSERT INTO all_types (double_field, float_field, real_field)
+    VALUES ('Infinity', 'Infinity', 'Infinity')
+---
+- Statement: SELECT sum(double_field), sum(float_field), sum(real_field)
+    FROM all_types
+- output: [[1.0, 1.0, 1.0]]
+---
+- Statement: INSERT INTO all_types (double_field, float_field, real_field)
+    VALUES ('-Infinity', '-Infinity', '-Infinity')
+---
+- Statement: SELECT sum(double_field), sum(float_field), sum(real_field)
+    FROM all_types
+- output: [[1.0, 1.0, 1.0]]
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (double_field, float_field, real_field)
+    VALUES ('Infinity', 'Infinity', 'Infinity'), ('NaN', 'NaN', 'NaN')
+---
+- Statement: SELECT sum(double_field), sum(float_field), sum(real_field)
+    FROM all_types
+- output: [[0.0, 0.0, 0.0]]
+
+...

@@ -1,0 +1,1743 @@
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types(numeric_field, double_field, bigint_field, integer_field, date_field, time_field, timestamp_field, varchar_field) VALUES ('1','1','1','1','2012-01-20', '04:30:10', '2012-01-20 04:30:10', '1');
+---
+- Statement: SELECT numeric_field + numeric_field FROM all_types;
+- output_types: [DECIMAL]
+---
+- Statement: SELECT numeric_field + double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT numeric_field + bigint_field FROM all_types;
+- output_types:  [DECIMAL]
+---
+- Statement: SELECT numeric_field + integer_field FROM all_types;
+- output_types: [DECIMAL]
+---
+- Statement: SELECT numeric_field + varchar_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT varchar_field + numeric_field FROM all_types;
+- output_types:  [DOUBLE]
+---
+- Statement: SELECT numeric_field - numeric_field FROM all_types;
+- output_types:  [DECIMAL]
+---
+- Statement: SELECT numeric_field - double_field FROM all_types;
+- output_types:  [DOUBLE]
+---
+- Statement: SELECT numeric_field - bigint_field FROM all_types;
+- output_types:  [DECIMAL]
+---
+- Statement: SELECT numeric_field - integer_field FROM all_types;
+- output_types:  [DECIMAL]
+---
+- Statement: SELECT numeric_field - varchar_field FROM all_types;
+- output_types:  [DOUBLE]
+---
+- Statement: SELECT varchar_field - numeric_field FROM all_types;
+- output_types:  [DOUBLE]
+---
+- Statement: SELECT numeric_field * numeric_field FROM all_types;
+- output_types:  [DECIMAL]
+---
+- Statement: SELECT numeric_field * double_field FROM all_types;
+- output_types:  [DOUBLE]
+---
+- Statement: SELECT numeric_field * bigint_field FROM all_types;
+- output_types:  [DECIMAL]
+---
+- Statement: SELECT numeric_field * integer_field FROM all_types;
+- output_types:  [DECIMAL]
+---
+- Statement: SELECT numeric_field * varchar_field FROM all_types;
+- output_types:  [DOUBLE]
+---
+- Statement: SELECT varchar_field * numeric_field FROM all_types;
+- output_types:  [DOUBLE]
+---
+- Statement: SELECT numeric_field % numeric_field FROM all_types;
+- output_types:  [DECIMAL]
+---
+- Statement: SELECT numeric_field % double_field FROM all_types;
+- output_types:  [DOUBLE]
+---
+- Statement: SELECT numeric_field % bigint_field FROM all_types;
+- output_types: [DECIMAL]
+---
+- Statement: SELECT numeric_field % integer_field FROM all_types;
+- output_types: [DECIMAL]
+---
+- Statement: SELECT numeric_field % varchar_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT varchar_field % numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT numeric_field mod numeric_field FROM all_types;
+- output_types: [DECIMAL]
+---
+- Statement: SELECT numeric_field mod double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT numeric_field mod bigint_field FROM all_types;
+- output_types: [DECIMAL]
+---
+- Statement: SELECT numeric_field mod integer_field FROM all_types;
+- output_types: [DECIMAL]
+---
+- Statement: SELECT numeric_field mod varchar_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT varchar_field mod numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT numeric_field / numeric_field FROM all_types;
+- output_types: [DECIMAL]
+---
+- Statement: SELECT numeric_field / double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT numeric_field / bigint_field FROM all_types;
+- output_types: [DECIMAL]
+---
+- Statement: SELECT numeric_field / integer_field FROM all_types;
+- output_types: [DECIMAL]
+---
+- Statement: SELECT numeric_field / varchar_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT varchar_field / numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field + numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field + double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field + bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field + integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field + varchar_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT varchar_field + double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field - numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field - double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field - bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field - integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field - varchar_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT varchar_field - double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field * numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field * double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field * bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field * integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field * varchar_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT varchar_field * double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field % numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field % double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field % bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field % integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field % varchar_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT varchar_field % double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field mod numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field mod double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field mod bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field mod integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field mod varchar_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT varchar_field mod double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field / numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field / double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field / bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field / integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field / varchar_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT varchar_field / double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field + numeric_field FROM all_types;
+- output_types: [DECIMAL]
+---
+- Statement: SELECT bigint_field + double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field + bigint_field FROM all_types;
+- output_types: [BIGINT]
+---
+- Statement: SELECT bigint_field + integer_field FROM all_types;
+- output_types: [BIGINT]
+---
+- Statement: SELECT bigint_field + varchar_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT varchar_field + bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field - numeric_field FROM all_types;
+- output_types: [DECIMAL]
+---
+- Statement: SELECT bigint_field - double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field - bigint_field FROM all_types;
+- output_types: [BIGINT]
+---
+- Statement: SELECT bigint_field - integer_field FROM all_types;
+- output_types: [BIGINT]
+---
+- Statement: SELECT bigint_field - varchar_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT varchar_field - bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field * numeric_field FROM all_types;
+- output_types: [DECIMAL]
+---
+- Statement: SELECT bigint_field * double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field * bigint_field FROM all_types;
+- output_types: [BIGINT]
+---
+- Statement: SELECT bigint_field * integer_field FROM all_types;
+- output_types: [BIGINT]
+---
+- Statement: SELECT bigint_field * varchar_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT varchar_field * bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field % numeric_field FROM all_types;
+- output_types: [DECIMAL]
+---
+- Statement: SELECT bigint_field % double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field % bigint_field FROM all_types;
+- output_types: [BIGINT]
+---
+- Statement: SELECT bigint_field % integer_field FROM all_types;
+- output_types: [BIGINT]
+---
+- Statement: SELECT bigint_field % varchar_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT varchar_field % bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field mod numeric_field FROM all_types;
+- output_types: [DECIMAL]
+---
+- Statement: SELECT bigint_field mod double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field mod bigint_field FROM all_types;
+- output_types: [BIGINT]
+---
+- Statement: SELECT bigint_field mod integer_field FROM all_types;
+- output_types: [BIGINT]
+---
+- Statement: SELECT bigint_field mod varchar_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT varchar_field mod bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field / numeric_field FROM all_types;
+- output_types: [DECIMAL]
+---
+- Statement: SELECT bigint_field / double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field / bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field / integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field / varchar_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT varchar_field / bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field + numeric_field FROM all_types;
+- output_types: [DECIMAL]
+---
+- Statement: SELECT integer_field + double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field + bigint_field FROM all_types;
+- output_types: [BIGINT]
+---
+- Statement: SELECT integer_field + integer_field FROM all_types;
+- output_types: [BIGINT]
+---
+- Statement: SELECT integer_field + varchar_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT varchar_field + integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field - numeric_field FROM all_types;
+- output_types: [DECIMAL]
+---
+- Statement: SELECT integer_field - double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field - bigint_field FROM all_types;
+- output_types: [BIGINT]
+---
+- Statement: SELECT integer_field - integer_field FROM all_types;
+- output_types: [BIGINT]
+---
+- Statement: SELECT integer_field - varchar_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT varchar_field - integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field * numeric_field FROM all_types;
+- output_types: [DECIMAL]
+---
+- Statement: SELECT integer_field * double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field * bigint_field FROM all_types;
+- output_types: [BIGINT]
+---
+- Statement: SELECT integer_field * integer_field FROM all_types;
+- output_types: [BIGINT]
+---
+- Statement: SELECT integer_field * varchar_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT varchar_field * integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field % numeric_field FROM all_types;
+- output_types: [DECIMAL]
+---
+- Statement: SELECT integer_field % double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field % bigint_field FROM all_types;
+- output_types: [BIGINT]
+---
+- Statement: SELECT integer_field % integer_field FROM all_types;
+- output_types: [INTEGER]
+---
+- Statement: SELECT integer_field % varchar_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT varchar_field % integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field mod numeric_field FROM all_types;
+- output_types: [DECIMAL]
+---
+- Statement: SELECT integer_field mod double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field mod bigint_field FROM all_types;
+- output_types: [BIGINT]
+---
+- Statement: SELECT integer_field mod integer_field FROM all_types;
+- output_types: [INTEGER]
+---
+- Statement: SELECT integer_field mod varchar_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT varchar_field mod integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field / numeric_field FROM all_types;
+- output_types: [DECIMAL]
+---
+- Statement: SELECT integer_field / double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field / bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field / integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field / varchar_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT varchar_field / integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field + INTERVAL 1 YEAR FROM all_types;
+- output_types: [DATE]
+---
+- Statement: SELECT time_field + INTERVAL 1 YEAR FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT timestamp_field + INTERVAL 1 YEAR FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT '2012-01-23' + INTERVAL 1 YEAR FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT '2012-01-23 12:30:10' + INTERVAL 1 YEAR FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT date_field + INTERVAL 1 MONTH FROM all_types;
+- output_types: [DATE]
+---
+- Statement: SELECT time_field + INTERVAL 1 MONTH FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT timestamp_field + INTERVAL 1 MONTH FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT '2012-01-23' + INTERVAL 1 MONTH FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT '2012-01-23 12:30:10' + INTERVAL 1 MONTH FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT date_field + INTERVAL 1 QUARTER FROM all_types;
+- output_types: [DATE]
+---
+- Statement: SELECT time_field + INTERVAL 1 QUARTER FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT timestamp_field + INTERVAL 1 QUARTER FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT '2012-01-23' + INTERVAL 1 QUARTER FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT '2012-01-23 12:30:10' + INTERVAL 1 QUARTER FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT date_field + INTERVAL 1 WEEK FROM all_types;
+- output_types: [DATE]
+---
+- Statement: SELECT time_field + INTERVAL 1 WEEK FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT timestamp_field + INTERVAL 1 WEEK FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT '2012-01-23' + INTERVAL 1 WEEK FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT '2012-01-23 12:30:10' + INTERVAL 1 WEEK FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT date_field + INTERVAL 1 DAY FROM all_types;
+- output_types: [DATE]
+---
+- Statement: SELECT time_field + INTERVAL 1 DAY FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT timestamp_field + INTERVAL 1 DAY FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT '2012-01-23' + INTERVAL 1 DAY FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT '2012-01-23 12:30:10' + INTERVAL 1 DAY FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT date_field + INTERVAL 1 HOUR FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT time_field + INTERVAL 1 HOUR FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT timestamp_field + INTERVAL 1 HOUR FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT '2012-01-23' + INTERVAL 1 HOUR FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT '2012-01-23 12:30:10' + INTERVAL 1 HOUR FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT date_field + INTERVAL 1 MINUTE FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT time_field + INTERVAL 1 MINUTE FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT timestamp_field + INTERVAL 1 MINUTE FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT '2012-01-23' + INTERVAL 1 MINUTE FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT '2012-01-23 12:30:10' + INTERVAL 1 MINUTE FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT date_field + INTERVAL 1 SECOND FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT time_field + INTERVAL 1 SECOND FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT timestamp_field + INTERVAL 1 SECOND FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT '2012-01-23' + INTERVAL 1 SECOND FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT '2012-01-23 12:30:10' + INTERVAL 1 SECOND FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT date_field - INTERVAL 1 YEAR FROM all_types;
+- output_types: [DATE]
+---
+- Statement: SELECT time_field - INTERVAL 1 YEAR FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT timestamp_field - INTERVAL 1 YEAR FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT '2012-01-23' - INTERVAL 1 YEAR FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT '2012-01-23 12:30:10' - INTERVAL 1 YEAR FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT date_field - INTERVAL 1 MONTH FROM all_types;
+- output_types: [DATE]
+---
+- Statement: SELECT time_field - INTERVAL 1 MONTH FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT timestamp_field - INTERVAL 1 MONTH FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT '2012-01-23' - INTERVAL 1 MONTH FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT '2012-01-23 12:30:10' - INTERVAL 1 MONTH FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT date_field - INTERVAL 1 QUARTER FROM all_types;
+- output_types: [DATE]
+---
+- Statement: SELECT time_field - INTERVAL 1 QUARTER FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT timestamp_field - INTERVAL 1 QUARTER FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT '2012-01-23' - INTERVAL 1 QUARTER FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT '2012-01-23 12:30:10' - INTERVAL 1 QUARTER FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT date_field - INTERVAL 1 WEEK FROM all_types;
+- output_types: [DATE]
+---
+- Statement: SELECT time_field - INTERVAL 1 WEEK FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT timestamp_field - INTERVAL 1 WEEK FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT '2012-01-23' - INTERVAL 1 WEEK FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT '2012-01-23 12:30:10' - INTERVAL 1 WEEK FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT date_field - INTERVAL 1 DAY FROM all_types;
+- output_types: [DATE]
+---
+- Statement: SELECT time_field - INTERVAL 1 DAY FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT timestamp_field - INTERVAL 1 DAY FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT '2012-01-23' - INTERVAL 1 DAY FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT '2012-01-23 12:30:10' - INTERVAL 1 DAY FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT date_field - INTERVAL 1 HOUR FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT time_field - INTERVAL 1 HOUR FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT timestamp_field - INTERVAL 1 HOUR FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT '2012-01-23' - INTERVAL 1 HOUR FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT '2012-01-23 12:30:10' - INTERVAL 1 HOUR FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT date_field - INTERVAL 1 MINUTE FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT time_field - INTERVAL 1 MINUTE FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT timestamp_field - INTERVAL 1 MINUTE FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT '2012-01-23' - INTERVAL 1 MINUTE FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT '2012-01-23 12:30:10' - INTERVAL 1 MINUTE FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT date_field - INTERVAL 1 SECOND FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT time_field - INTERVAL 1 SECOND FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT timestamp_field - INTERVAL 1 SECOND FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT '2012-01-23' - INTERVAL 1 SECOND FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT '2012-01-23 12:30:10' - INTERVAL 1 SECOND FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT INTERVAL 1 YEAR + '2012-01-23' FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT INTERVAL 1 YEAR + '2012-01-23 12:30:10' FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT INTERVAL 1 YEAR - '2012-01-23' FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 YEAR - '2012-01-23 12:30:10' FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 YEAR + date_field FROM all_types;
+- output_types: [DATE]
+---
+- Statement: SELECT INTERVAL 1 YEAR - date_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 YEAR + time_field FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT INTERVAL 1 YEAR - time_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 YEAR + timestamp_field FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT INTERVAL 1 YEAR - timestamp_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 MONTH + '2012-01-23' FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT INTERVAL 1 MONTH + '2012-01-23 12:30:10' FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT INTERVAL 1 MONTH - '2012-01-23' FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 MONTH - '2012-01-23 12:30:10' FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 MONTH + date_field FROM all_types;
+- output_types: [DATE]
+---
+- Statement: SELECT INTERVAL 1 MONTH - date_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 MONTH + time_field FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT INTERVAL 1 MONTH - time_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 MONTH + timestamp_field FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT INTERVAL 1 MONTH - timestamp_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 QUARTER + '2012-01-23' FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT INTERVAL 1 QUARTER + '2012-01-23 12:30:10' FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT INTERVAL 1 QUARTER - '2012-01-23' FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 QUARTER - '2012-01-23 12:30:10' FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 QUARTER + date_field FROM all_types;
+- output_types: [DATE]
+---
+- Statement: SELECT INTERVAL 1 QUARTER - date_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 QUARTER + time_field FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT INTERVAL 1 QUARTER - time_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 QUARTER + timestamp_field FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT INTERVAL 1 QUARTER - timestamp_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 WEEK + '2012-01-23' FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT INTERVAL 1 WEEK + '2012-01-23 12:30:10' FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT INTERVAL 1 WEEK - '2012-01-23' FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 WEEK - '2012-01-23 12:30:10' FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 WEEK + date_field FROM all_types;
+- output_types: [DATE]
+---
+- Statement: SELECT INTERVAL 1 WEEK - date_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 WEEK + time_field FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT INTERVAL 1 WEEK - time_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 WEEK + timestamp_field FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT INTERVAL 1 WEEK - timestamp_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 DAY + '2012-01-23' FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT INTERVAL 1 DAY + '2012-01-23 12:30:10' FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT INTERVAL 1 DAY - '2012-01-23' FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 DAY - '2012-01-23 12:30:10' FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 DAY + date_field FROM all_types;
+- output_types: [DATE]
+---
+- Statement: SELECT INTERVAL 1 DAY - date_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 DAY + time_field FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT INTERVAL 1 DAY - time_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 DAY + timestamp_field FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT INTERVAL 1 DAY - timestamp_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 HOUR + '2012-01-23' FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT INTERVAL 1 HOUR + '2012-01-23 12:30:10' FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT INTERVAL 1 HOUR - '2012-01-23' FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 HOUR - '2012-01-23 12:30:10' FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 HOUR + date_field FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT INTERVAL 1 HOUR - date_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 HOUR + time_field FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT INTERVAL 1 HOUR - time_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 HOUR + timestamp_field FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT INTERVAL 1 HOUR - timestamp_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 MINUTE + '2012-01-23' FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT INTERVAL 1 MINUTE + '2012-01-23 12:30:10' FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT INTERVAL 1 MINUTE - '2012-01-23' FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 MINUTE - '2012-01-23 12:30:10' FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 MINUTE + date_field FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT INTERVAL 1 MINUTE - date_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 MINUTE + time_field FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT INTERVAL 1 MINUTE - time_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 MINUTE + timestamp_field FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT INTERVAL 1 MINUTE - timestamp_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 SECOND + '2012-01-23' FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT INTERVAL 1 SECOND + '2012-01-23 12:30:10' FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT INTERVAL 1 SECOND - '2012-01-23' FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 SECOND - '2012-01-23 12:30:10' FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 SECOND + date_field FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT INTERVAL 1 SECOND - date_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 SECOND + time_field FROM all_types;
+- output_types: [VARCHAR]
+---
+- Statement: SELECT INTERVAL 1 SECOND - time_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 SECOND + timestamp_field FROM all_types;
+- output_types: [DATETIME]
+---
+- Statement: SELECT INTERVAL 1 SECOND - timestamp_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 YEAR * date_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT date_field * INTERVAL 1 YEAR FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 YEAR / date_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT date_field / INTERVAL 1 YEAR FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 YEAR * time_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT time_field * INTERVAL 1 YEAR FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 YEAR / time_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT time_field / INTERVAL 1 YEAR FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 YEAR * timestamp_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT timestamp_field * INTERVAL 1 YEAR FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 YEAR / timestamp_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT timestamp_field / INTERVAL 1 YEAR FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 MONTH * date_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT date_field * INTERVAL 1 MONTH FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 MONTH / date_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT date_field / INTERVAL 1 MONTH FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 MONTH * time_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT time_field * INTERVAL 1 MONTH FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 MONTH / time_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT time_field / INTERVAL 1 MONTH FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 MONTH * timestamp_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT timestamp_field * INTERVAL 1 MONTH FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 MONTH / timestamp_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT timestamp_field / INTERVAL 1 MONTH FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 QUARTER * date_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT date_field * INTERVAL 1 QUARTER FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 QUARTER / date_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT date_field / INTERVAL 1 QUARTER FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 QUARTER * time_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT time_field * INTERVAL 1 QUARTER FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 QUARTER / time_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT time_field / INTERVAL 1 QUARTER FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 QUARTER * timestamp_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT timestamp_field * INTERVAL 1 QUARTER FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 QUARTER / timestamp_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT timestamp_field / INTERVAL 1 QUARTER FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 WEEK * date_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT date_field * INTERVAL 1 WEEK FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 WEEK / date_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT date_field / INTERVAL 1 WEEK FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 WEEK * time_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT time_field * INTERVAL 1 WEEK FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 WEEK / time_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT time_field / INTERVAL 1 WEEK FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 WEEK * timestamp_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT timestamp_field * INTERVAL 1 WEEK FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 WEEK / timestamp_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT timestamp_field / INTERVAL 1 WEEK FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 DAY * date_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT date_field * INTERVAL 1 DAY FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 DAY / date_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT date_field / INTERVAL 1 DAY FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 DAY * time_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT time_field * INTERVAL 1 DAY FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 DAY / time_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT time_field / INTERVAL 1 DAY FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 DAY * timestamp_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT timestamp_field * INTERVAL 1 DAY FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 DAY / timestamp_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT timestamp_field / INTERVAL 1 DAY FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 HOUR * date_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT date_field * INTERVAL 1 HOUR FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 HOUR / date_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT date_field / INTERVAL 1 HOUR FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 HOUR * time_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT time_field * INTERVAL 1 HOUR FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 HOUR / time_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT time_field / INTERVAL 1 HOUR FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 HOUR * timestamp_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT timestamp_field * INTERVAL 1 HOUR FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 HOUR / timestamp_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT timestamp_field / INTERVAL 1 HOUR FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 MINUTE * date_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT date_field * INTERVAL 1 MINUTE FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 MINUTE / date_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT date_field / INTERVAL 1 MINUTE FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 MINUTE * time_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT time_field * INTERVAL 1 MINUTE FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 MINUTE / time_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT time_field / INTERVAL 1 MINUTE FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 MINUTE * timestamp_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT timestamp_field * INTERVAL 1 MINUTE FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 MINUTE / timestamp_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT timestamp_field / INTERVAL 1 MINUTE FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 SECOND * date_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT date_field * INTERVAL 1 SECOND FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 SECOND / date_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT date_field / INTERVAL 1 SECOND FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 SECOND * time_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT time_field * INTERVAL 1 SECOND FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 SECOND / time_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT time_field / INTERVAL 1 SECOND FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 SECOND * timestamp_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT timestamp_field * INTERVAL 1 SECOND FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT INTERVAL 1 SECOND / timestamp_field FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT timestamp_field / INTERVAL 1 SECOND FROM all_types;
+- error: [22503]
+---
+- Statement: SELECT date_field + numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT numeric_field - date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field - numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT numeric_field * date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field * numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT numeric_field % date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field % numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT numeric_field mod date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field mod numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT numeric_field / date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field / numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT numeric_field + time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field + numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT numeric_field - time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field - numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT numeric_field * time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field * numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT numeric_field % time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field % numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT numeric_field mod time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field mod numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT numeric_field / time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field / numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT numeric_field + timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field + numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT numeric_field - timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field - numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT numeric_field * timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field * numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT numeric_field % timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field % numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT numeric_field mod timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field mod numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT numeric_field / timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field / numeric_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field + date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field + double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field - date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field - double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field * date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field * double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field % date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field % double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field mod date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field mod double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field / date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field / double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field + time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field + double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field - time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field - double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field * time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field * double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field % time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field % double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field mod time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field mod double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field / time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field / double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field + timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field + double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field - timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field - double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field * timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field * double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field % timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field % double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field mod timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field mod double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT double_field / timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field / double_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field + date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field + bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field - date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field - bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field * date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field * bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field % date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field % bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field mod date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field mod bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field / date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field / bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field + time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field + bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field - time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field - bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field * time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field * bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field % time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field % bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field mod time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field mod bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field / time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field / bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field + timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field + bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field - timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field - bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field * timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field * bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field % timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field % bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field mod timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field mod bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT bigint_field / timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field / bigint_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field + date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field + integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field - date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field - integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field * date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field * integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field % date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field % integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field mod date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field mod integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field / date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field / integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field + time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field + integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field - time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field - integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field * time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field * integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field % time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field % integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field mod time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field mod integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field / time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field / integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field + timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field + integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field - timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field - integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field * timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field * integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field % timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field % integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field mod timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field mod integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT integer_field / timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field / integer_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field + date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field * date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field / date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field + time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field * time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field / time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field - time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field + timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field * timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field / timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field - timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT date_field - date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field + date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field * date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field / date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field - date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field + time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field * time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field / time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field + timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field * timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field / timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field - timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT time_field - time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field + date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field * date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field / date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field - date_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field + time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field * time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field / time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field - time_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field + timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field * timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field / timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+---
+- Statement: SELECT timestamp_field - timestamp_field FROM all_types;
+- output_types: [DOUBLE]
+...
+

@@ -77,19 +77,24 @@ build_sql_layer() {
         echo "Missing argument" >&2
         exit 1
     fi
-
-    LAYER_MVN_VERSION=$(cd "${TOP_DIR}" ; mvn -B org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version |grep '^[0-9]')
+    LAYER_MVN_VERSION=$(cd "${TOP_DIR}/fdb-sql-layer-core" ; mvn -B org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version |grep '^[0-9]')
     LAYER_VERSION=${LAYER_MVN_VERSION%-SNAPSHOT}
-    LAYER_JAR_NAME="fdb-sql-layer-${LAYER_MVN_VERSION}.jar"
-    
+    LAYER_JAR_NAME="fdb-sql-layer-core-${LAYER_MVN_VERSION}.jar"
+    RF_MVN_VERSION=$(cd "${TOP_DIR}/fdb-sql-layer-routinefw" ; mvn -B org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version |grep '^[0-9]')
+    RF_VERSION=${RF_MVN_VERSION%-SNAPSHOT}
+    RF_JAR_NAME="fdb-sql-layer-routinefw-${RF_MVN_VERSION}.jar"    
+
+
     echo "Building FoundationDB SQL Layer ${LAYER_VERSION} Release ${RELEASE}"
     pushd .
     cd "${TOP_DIR}"
     mvn_package
-    mkdir -p "${1}" "${2}"/{server,plugins}
-    cp "${TOP_DIR}/bin/fdbsqllayer" "${1}/"
-    cp "target/${LAYER_JAR_NAME}" "${2}/"
-    cp target/dependency/* "${2}/server/"
+    mkdir -p "${1}" "${2}"/{server,fdb-sql-layer-routinefw}
+    cp "bin/fdbsqllayer" "${1}/"
+    cp "fdb-sql-layer-core/target/${LAYER_JAR_NAME}" "${2}/"
+    cp fdb-sql-layer-core/target/dependency/* "${2}/server/"
+    cp -R plugins "${2}/"
+    cp "fdb-sql-layer-routinefw/target/${RF_JAR_NAME}" "${2}/fdb-sql-layer-routinefw/"
     popd
 }
 
@@ -136,33 +141,49 @@ filter_config_files() {
     pushd .
     cd "${PACKAGING_DIR}/conf"
     for f in $(ls); do
-        sed -e "s|\\\${datadir}|${2}|g" \
-            -e "s|\\\${logdir}|${3}|g" \
-            -e "s|\\\${tempdir}|${4}|g" \
-            "${f}" > "${1}/${f}${5}"
+         sed -e "s|\\\${datadir}|${2}|g" \
+             -e "s|\\\${logdir}|${3}|g" \
+             -e "s|\\\${tempdir}|${4}|g" \
+             "${f}" > "${1}/${f}${5}"
     done
     popd
 }
 
 case "${1}" in
     "deb")
+        umask 0022
         build_sql_layer "${STAGE_DIR}/usr/sbin"  "${STAGE_DIR}/usr/share/foundationdb/sql"
-        filter_config_files "${STAGE_DIR}/etc/foundationdb/sql" "/var/lib/foundationdb/sql" "/var/log/foundationdb/sql" "/tmp"
 
-        cp -r "${PACKAGING_DIR}/deb" "${STAGE_DIR}/debian"
-        mkdir -p "${STAGE_DIR}/usr/share/doc/fdb-sql-layer/"
-        cp "${PACKAGING_DIR}/deb/copyright" "${STAGE_DIR}/usr/share/doc/fdb-sql-layer/"
+        cd "${STAGE_DIR}"
+        mkdir -p -m 0755 DEBIAN
+        mkdir -p -m 0755 etc/foundationdb/sql
+        mkdir -p -m 0755 etc/init.d
+        mkdir -p -m 0755 usr/share/doc/fdb-sql-layer
+        mkdir -p -m 0755 usr/share/foundationdb/sql/{plugins,server,fdb-sql-layer-routinefw}
+        mkdir -p -m 0755 var/{lib,log}/foundationdb/sql
 
-        cd "${STAGE_DIR}/debian"
-        sed -e "s/VERSION/${LAYER_VERSION}/g" -e "s/RELEASE/${RELEASE}/g" changelog.in > changelog
-        sed -e "s/LAYER_JAR_NAME/${LAYER_JAR_NAME}/g" links.in > links
+        install -m 0644 "${TOP_DIR}/packaging/deb/conffiles" "${STAGE_DIR}/DEBIAN/"
+        install -m 0755 "${TOP_DIR}/packaging/deb/"{pre,post}* "${STAGE_DIR}/DEBIAN/"
+        install -m 0755 "${TOP_DIR}/packaging/deb/fdb-sql-layer.init" "${STAGE_DIR}/etc/init.d/fdb-sql-layer"
 
-        echo "Installed-Size:" $(du -sx --exclude debian $STAGE_DIR | awk '{print $1}') >> $STAGE_DIR/debian/control
-        cd ..
+        filter_config_files "${STAGE_DIR}/etc/foundationdb/sql" \
+              "/var/lib/foundationdb/sql" "/var/log/foundationdb/sql" "/tmp"
 
-        # No sign source, no sign changes, binary only
-        debuild -us -uc -b
-    ;;
+        install -m 0644 "${PACKAGING_DIR}/deb/copyright" "usr/share/doc/fdb-sql-layer/"
+
+        sed -e "s/VERSION/${LAYER_VERSION}/g" -e "s/RELEASE/${RELEASE}/g" \
+              "${PACKAGING_DIR}/deb/fdb-sql-layer.control.in"  > DEBIAN/control
+
+        cd usr/share/foundationdb/sql
+        ln -s "${LAYER_JAR_NAME}" "fdb-sql-layer.jar"
+        cd fdb-sql-layer-routinefw/
+        ln -s "${RF_JAR_NAME}" "fdb-sql-layer-routinefw.jar"     
+
+        cd "${STAGE_DIR}"
+        echo "Installed-Size:" $(du -sx --exclude DEBIAN $STAGE_DIR | awk '{print $1}') >> "${STAGE_DIR}/DEBIAN/control"
+        
+        fakeroot dpkg-deb --build . "${TOP_DIR}/target"
+    ;;    
 
     "rpm")
         if [ -z "${EPOCH}" ]; then
@@ -172,12 +193,10 @@ case "${1}" in
         if [ ${RELEASE} -gt 0 ]; then
             EPOCH="0"
         fi
-
         STAGE_ROOT="${STAGE_DIR}/rpmbuild"
         BUILD_DIR="${STAGE_ROOT}/BUILD"
         build_sql_layer "${BUILD_DIR}/usr/sbin" "${BUILD_DIR}/usr/share/foundationdb/sql"
         filter_config_files "${BUILD_DIR}/etc/foundationdb/sql" "/var/lib/foundationdb/sql" "/var/log/foundationdb/sql" "/tmp"
-
         mkdir -p "${BUILD_DIR}/etc/rc.d/init.d/"
         cp "${PACKAGING_DIR}/rpm/fdb-sql-layer.init" "${BUILD_DIR}/etc/rc.d/init.d/fdb-sql-layer"
         
@@ -194,7 +213,9 @@ case "${1}" in
             --define "_fdb_sql_version ${LAYER_VERSION}" \
             --define "_fdb_sql_release ${RELEASE}" \
             --define "_fdb_sql_layer_jar ${LAYER_JAR_NAME}" \
+            --define "_fdb_sql_layer_rf_jar ${RF_JAR_NAME}" \
             --define "_fdb_sql_epoch ${EPOCH}"
+            
 
         mv "${STAGE_ROOT}"/RPMS/noarch/* "${TOP_DIR}/target/"
     ;;
@@ -236,6 +257,8 @@ case "${1}" in
         cp "${TOP_DIR}/LICENSE.txt" "${STAGE_DIR}/resources/"
         cd "${LAYER_ULOCAL}/foundationdb/sql/"
         ln -s /usr/local/foundationdb/sql/${LAYER_JAR_NAME} fdb-sql-layer.jar
+        cd fdb-sql-layer-routinefw
+        ln -s /usr/local/foundationdb/sql/fdb-sql-layer-routinefw/${RF_JAR_NAME} fdb-sql-layer-routinefw.jar
         #
         # Client Tools
         #

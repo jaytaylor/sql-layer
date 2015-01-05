@@ -1,1 +1,0 @@
-SELECT DISTINCT 1 AS _SQL_COL_1 FROM test.parent, test.child WHERE (test.parent.id = test.child.id) AND TRUE

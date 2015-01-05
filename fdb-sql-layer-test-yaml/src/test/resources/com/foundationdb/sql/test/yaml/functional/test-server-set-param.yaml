@@ -1,0 +1,29 @@
+# Modifies connection state
+---
+- Properties: random-context
+- suppressed: true
+
+# Test SERVER (GLOBAL) SET command
+---
+- Statement: ALTER SERVER SET no_such_var TO 'yes'
+- error: [42513]
+
+---
+- Statement: SET OutputFormat TO 'json'
+---
+- Statement: SELECT 1 AS c1
+- output: [['{"c1":1}']]
+---
+- Statement: SET OutputFormat TO DEFAULT
+---
+- Statement: SELECT 1 AS c1
+- output: [[1]]
+
+# Should affect this session as well
+---
+- Statement: ALTER SERVER SET OutputFormat TO 'json'
+---
+- Statement: SELECT 1 AS c1
+- output: [['{"c1":1}']]
+---
+- Statement: ALTER SERVER SET OutputFormat TO DEFAULT

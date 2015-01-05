@@ -1,0 +1,12 @@
+CREATE TABLE t1(x INT NOT NULL, y VARCHAR(7), z DECIMAL);
+CREATE TABLE t2(w CHAR(1) NOT NULL, z DECIMAL);
+CREATE TABLE parent(id INT NOT NULL, PRIMARY KEY(id), name VARCHAR(256) NOT NULL, UNIQUE(name), state CHAR(2));
+CREATE TABLE child(id INT NOT NULL, PRIMARY KEY(id), pid INT, GROUPING FOREIGN KEY(pid) REFERENCES parent(id), name VARCHAR(256) NOT NULL);
+
+CREATE TABLE foo.a(aid INT NOT NULL PRIMARY KEY);
+CREATE TABLE bar.b(bid INT NOT NULL PRIMARY KEY, aid INT, GROUPING FOREIGN KEY(aid) REFERENCES foo.a(aid));
+
+
+CREATE TABLE department (filler INT DEFAULT 3, departmentid INT, departmentname VARCHAR(20));
+CREATE TABLE employee (lastname VARCHAR(20), departmentid INT, filler INT DEFAULT 3);
+CREATE TABLE desk (title VARCHAR(20), departmentid INT, filler int DEFAULT 3);

@@ -1,0 +1,31 @@
+---
+- CreateTable: customers (cid int NOT NULL, name varchar(32) NOT NULL, PRIMARY KEY(cid));
+---
+- Statement: CREATE INDEX customer_name ON customers (name);
+---
+- Statement: insert into customers (cid, name) values ('1','Smith');
+--- 
+- Statement: insert into customers (cid, name) values ('2', 'Jones');
+---
+- CreateTable: orders (oid int NOT NULL, PRIMARY KEY(oid), cid int NOT NULL, order_date date NOT NULL, GROUPING FOREIGN KEY (cid) REFERENCES customers);
+---
+- Statement: CREATE INDEX orders_order_date ON orders (order_date);
+---
+- Statement: Insert into orders (oid,cid,order_date) values (101, 1, '2011-03-01');
+---
+- Statement: Insert into orders (oid,cid,order_date) values (102, 1, '2011-03-02');
+---
+- Statement: Insert into orders (oid,cid,order_date) values (201, 2, '2011-03-03');
+---
+- CreateTable: items (iid int NOT NULL, PRIMARY KEY(iid), oid int NOT NULL, sku varchar(32) NOT NULL, quan int NOT NULL, GROUPING FOREIGN KEY (oid) REFERENCES orders);
+---
+- Statement: CREATE INDEX sku ON items (sku);
+---
+- Statement: Insert into items (iid, oid, sku, quan) values (1011,  101, 1234,  100);
+---
+- Statement: Insert into items (iid, oid, sku, quan) values (1012,  101, 4567,  50);
+---
+- Statement: Insert into items (iid, oid, sku, quan) values (2011,  201, 9876,  1);
+---
+- CreateTable: log (cid int NOT NULL, event_date int NOT NULL, what varchar(20) NOT NULL, GROUPING FOREIGN KEY (cid) REFERENCES customers);
+...

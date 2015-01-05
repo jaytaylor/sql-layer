@@ -1,0 +1,15 @@
+SelectQuery@5cb8b925
+  ResultSet@72c068d0[cid, name]
+    Project@7ace9738[customers.cid, customers.name]
+      Select@27f5d439[]
+        TableGroupJoinTree@3e9d3073(TableGroup@61029d98(customers), customers - ExpressionsHKeyScan@42589f80(TableSource@7bc8b775(customers - TableGroup@61029d98(customers)), Subquery@70b5ba72, rows = 1, cost = 7.05160))
+          TableSource@7bc8b775(customers - TableGroup@61029d98(customers))
+
+Subquery@70b5ba72
+  ResultSet@4193600a[_SQL_COL_1]
+    Project@25316cfe[MAX(orders.cid)]
+      Select@484e301d[]
+        AggregateSource@4e78dfd7(UNGROUPED,[])
+          Select@1f878fcf[]
+            TableGroupJoinTree@23c233e(TableGroup@219e7126(customers), orders - SingleIndexScan@559d1ace(Index(test.orders.PRIMARY[IndexColumn(oid)]), covering/NONE, rows = 1000, cost = 688.942))
+              TableSource@3a82d47d(orders - TableGroup@219e7126(customers))

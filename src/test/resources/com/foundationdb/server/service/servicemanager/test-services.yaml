@@ -1,3 +1,0 @@
-- bind:
-    com.foundationdb.server.service.config.ConfigurationService : com.foundationdb.server.service.config.TestConfigService
-    com.foundationdb.server.service.plugins.PluginsFinder : com.foundationdb.server.service.plugins.NoPluginsFinder

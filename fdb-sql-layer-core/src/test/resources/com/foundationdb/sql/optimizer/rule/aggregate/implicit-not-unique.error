@@ -1,0 +1,1 @@
+com.foundationdb.server.error.NoAggregateWithGroupByException: NO_AGGREGATE_WITH_GROUP_BY: Column `cid` is invalid in the select list or condition because it is not contained in either an aggregate function or the GROUP BY clause

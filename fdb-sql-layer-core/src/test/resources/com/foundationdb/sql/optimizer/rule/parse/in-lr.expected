@@ -1,0 +1,13 @@
+SelectQuery@5284a2fb
+  ResultSet@1e83710[oid, cid, name, order_date, iid, sku, quan, price]
+    Project@3476fc6a[orders.oid, customers.cid, customers.name, orders.order_date, items.iid, items.sku, items.quan, items.price]
+      Select@6fb5ae0e[ANY(Subquery@b6526e)]
+        JoinNode@41ddb41f(INNER[orders.oid == items.oid])
+          JoinNode@425c8101(INNER[customers.cid == orders.cid])
+            TableSource@47198ab0(customers)
+            TableSource@5de04d47(orders)
+          TableSource@30f1a077(items)
+
+Subquery@b6526e
+  Project@475dfdbb[and(customers.name == VALUES[0],items.sku == VALUES[1])]
+    ExpressionsSource@6bbd2497([[Smith, 1234], [Jones, 4567]])

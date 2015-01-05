@@ -1,0 +1,81 @@
+---
+- CreateTable: customers1 ( cid int NOT NULL,
+    PRIMARY KEY(cid),
+    name varchar(32) NOT NULL)
+---
+- Statement: CREATE INDEX name ON customers1(name);
+---
+- CreateTable: customers2 ( cid int NOT NULL,
+    PRIMARY KEY(cid),
+    name varchar(32) NOT NULL)
+---
+- Statement: CREATE INDEX name ON customers2(name);
+---
+- CreateTable: people (cid int NOT NULL,
+    PRIMARY KEY(cid),
+    age int NOT NULL,
+    name varchar(32) NOT NULL)
+---
+- Statement: Create INDEX name ON people(name);
+---
+- Statement: INSERT INTO customers1 (cid, name) VALUES (1, 'Smith'), (2, 'Jones'), (3, 'Smithson'), (4, 'Smith')
+---
+- Statement: INSERT INTO customers2 (cid, name) VALUES (1, 'Smith'), (2, 'Smithson'), (3, 'Brennen'), (4, 'Smith')
+---
+- Statement: INSERT INTO people (cid, age,  name) VALUES (1, 55, 'Jones'), (2, 24, 'Collins'), (3, 33, 'Brennen')
+---
+- Statement: SELECT cid, name FROM customers1 INTERSECT SELECT cid, name FROM customers2 UNION SELECT cid, name FROM people
+- output: [[1, 'Jones'], [1, 'Smith'], [2, 'Collins'], [3, 'Brennen'], [4, 'Smith']]
+---
+- Statement: SELECT cid, name FROM customers1 INTERSECT SELECT cid, name FROM customers2 UNION ALL SELECT cid, name FROM people
+- output: [[1, 'Smith'], [4, 'Smith'], [3, 'Brennen'],  [2, 'Collins'], [1, 'Jones']]
+---
+- Statement: SELECT cid, name FROM customers1 INTERSECT SELECT cid, name FROM customers1 EXCEPT SELECT cid, name FROM customers2
+- output: [[2, 'Jones'], [3, 'Smithson']]
+---
+- Statement: SELECT cid FROM customers1 EXCEPT SELECT cid FROM customers2 UNION SELECT cid from people
+- output: [[1], [2], [3]]
+---
+- Statement: SELECT name FROM customers1 INTERSECT ALL SELECT name FROM customers2 EXCEPT ALL SELECT name FROM people
+- output: [['Smith'], ['Smith'], ['Smithson']]
+---
+- Statement: SELECT name FROM customers1 INTERSECT ALL SELECT name FROM customers2 EXCEPT SELECT name FROM people
+- output: [['Smith'], ['Smithson']]
+---
+- Statement: (SELECT name FROM customers2 INTERSECT SELECT name FROM people)
+             UNION
+             (SELECT name FROM customers1 EXCEPT SELECT name FROM customers2)
+- output: [['Brennen'], ['Jones']]
+---
+- Statement: ((SELECT name FROM customers1 UNION ALL SELECT name FROM customers2)
+             EXCEPT ALL
+             (SELECT name FROM customers2 UNION ALL SELECT name FROM customers1))
+             INTERSECT ALL
+             ((SELECT name FROM customers1 UNION ALL SELECT name FROM customers2)
+             EXCEPT ALL
+             (SELECT name FROM customers2 UNION ALL SELECT name FROM customers1))
+             UNION ALL
+             (SELECT name FROM people)
+- output: [['Brennen'], ['Collins'],['Jones']]
+---
+- Statement: (SELECT cid, name FROM customers1 INTERSECT SELECT cid, name FROM customers2) LIMIT 1
+- output: [[1, 'Smith']]
+---
+- Statement: (SELECT cid, name FROM customers1 INTERSECT SELECT cid, name FROM customers2) LIMIT 2
+- output: [[1, 'Smith'], [4, 'Smith']]
+---
+- Statement: (SELECT cid, name FROM customers1 INTERSECT SELECT cid, name FROM customers2) OFFSET 1
+- output: [[4, 'Smith']]
+---
+- Statement: SELECT cid, name FROM customers1 INTERSECT SELECT cid, name FROM customers1 ORDER BY cid DESC
+- output_already_ordered: [[4, 'Smith'], [3, 'Smithson'], [2, 'Jones'], [1, 'Smith'] ]
+---
+- Statement: SELECT cid, name FROM customers1 INTERSECT SELECT cid, name FROM customers1 ORDER BY name
+- output_already_ordered: [[2, 'Jones'],[1, 'Smith'], [4, 'Smith'],  [3, 'Smithson']]
+---
+- Statement: SELECT cid, name FROM customers1 INTERSECT SELECT cid, name FROM customers1 ORDER BY name DESC
+- output_already_ordered: [[3, 'Smithson'], [4, 'Smith'],[1, 'Smith'],[2, 'Jones']]
+---
+- Statement: SELECT cid, name FROM customers1 INTERSECT SELECT cid, name FROM customers1 LIMIT 2 OFFSET 1
+- output: [[2, 'Jones'], [3, 'Smithson']]
+...

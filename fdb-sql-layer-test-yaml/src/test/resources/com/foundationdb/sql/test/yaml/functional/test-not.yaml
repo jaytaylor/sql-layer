@@ -1,0 +1,29 @@
+# Test the NOT function
+---
+- Include: all-types-schema.yaml
+---
+- Statement: SELECT bigint_field FROM all_types WHERE NOT (bigint_field > 0)
+- row_count: 0
+
+---
+- Statement: INSERT INTO all_types (bigint_field) VALUES (1), (-1)
+---
+- Statement: INSERT INTO all_types (bigint_field) VALUES (null)
+---
+- Statement: SELECT bigint_field FROM all_types WHERE NOT (bigint_field > 0)
+- output: [[-1]]
+---
+- Statement: SELECT bigint_field FROM all_types WHERE NOT (bigint_field < 0)
+- output: [[1]]
+---
+- Statement: SELECT bigint_field FROM all_types WHERE NOT false
+- output: [[1], [-1], [null]]
+---
+- Statement: SELECT bigint_field FROM all_types WHERE NOT (bigint_field > ?)
+- params: [[1]]
+- output: [[1],[-1]]
+---
+- Statement: SELECT bigint_field FROM all_types WHERE NOT (bigint_field > ?)
+- params: [[-1]]
+- output: [[-1]]
+...

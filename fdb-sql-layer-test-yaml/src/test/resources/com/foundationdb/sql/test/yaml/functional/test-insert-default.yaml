@@ -1,0 +1,24 @@
+# Sequence cache is per-node
+---
+- Properties: random-context
+- suppressed: true
+
+# Test inserting with DEFAULT
+---
+- CreateTable: t (id SERIAL PRIMARY KEY, n1 INT, n2 INT DEFAULT 1, t TIMESTAMP DEFAULT CURRENT TIMESTAMP)
+---
+- Statement: INSERT INTO t VALUES(NULL)
+- error: [23502]
+---
+- Statement: INSERT INTO t VALUES(DEFAULT)
+---
+- Statement: INSERT INTO t VALUES(DEFAULT)
+---
+- Statement: INSERT INTO t(n1,n2,t) VALUES(3,NULL,NULL),(4,DEFAULT,DEFAULT),(5,100,'2001-01-01 13:05:59')
+---
+- Statement: SELECT * FROM t
+- output: [[1, null, 1, !datetime ], [2, null, 1, !datetime ], [3, 3, null, null ], [4, 4, 1, !datetime ], [5, 5, 100, !re '2001-01-01 13:05:59([.]0)?' ]]
+---
+- Statement: VALUES(DEFAULT)
+- error: ['42521', 'ERROR: DEFAULT in VALUES must be used with INSERT']
+...

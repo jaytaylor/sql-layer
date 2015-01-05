@@ -1,0 +1,44 @@
+# Test the shiftright or >> function
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
+---
+- Statement: SELECT 6 from all_types where RIGHTSHIFT(?,?) = 1;
+- params: [[4,2]]
+- output: [[6]]
+---
+- Statement: SELECT RIGHTSHIFT(?,?) from all_types;
+- params: [[4,2]]
+- output: [[1]]
+---
+- Statement: SELECT RIGHTSHIFT(1,null) from all_types;
+- output: [[null]] 
+---
+- Statement: SELECT RIGHTSHIFT(null,2) from all_types;
+- output: [[null]] 
+---
+- Statement: SELECT RIGHTSHIFT(4,2) from all_types;
+- output: [[1]]
+---
+- Statement: SELECT RIGHTSHIFT(4,1) from all_types;
+- output: [[2]]
+---
+- Statement: SELECT RIGHTSHIFT(4,3) from all_types;
+- output: [[0]]
+---
+- Statement: SELECT RIGHTSHIFT(4,4) from all_types;
+- output: [[0]]
+#--- BUG: issues with sign-extension shifting
+#- Statement: SELECT RIGHTSHIFT(-4,1) from all_types;
+#- output: [[9223372036854775806]]
+#---
+#- Statement: SELECT RIGHTSHIFT(-4,2) from all_types;
+#- output: [[4611686018427387903]]
+---
+- Statement: SELECT RIGHTSHIFT(4,-2) from all_types;
+- output: [[0]]
+---
+- Statement: SELECT RIGHTSHIFT(4,-3) from all_types;
+- output: [[0]]
+... 

@@ -1,0 +1,159 @@
+/**
+ * Copyright (C) 2009-2013 FoundationDB, LLC
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package com.foundationdb.sql.server;
+
+import com.foundationdb.server.error.TransactionInProgressException;
+import com.foundationdb.server.error.TransactionReadOnlyException;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.sql.parser.IsolationLevel;
+
+import java.util.Date;
+
+public class ServerTransaction
+{
+    public static enum PeriodicallyCommit {
+        /** The system commits when you call commit **/
+        OFF,
+        /** The system commits periodically maintaining the same transaction **/
+        ON,
+        /**
+         *  The system commits and closes the user-level transaction requiring the client to begin a new transaction.
+         *  For jdbc, and probably other drivers, it will create the new transaction automatically for the user.
+         */
+        USERLEVEL;
+
+        public static PeriodicallyCommit fromProperty(String name) {
+            if (name == null) return OFF;
+            return valueOf(PeriodicallyCommit.class, name.toUpperCase());
+        }
+    }
+
+    private final Session session;
+    private final TransactionService txnService;
+    private boolean readOnly, anyWrites;
+    private IsolationLevel isolationLevel;
+    private PeriodicallyCommit periodicallyCommit;
+    private Date transactionTime;
+    
+    /** Begin a new transaction or signal an exception. */
+    public ServerTransaction(ServerSession server, 
+                             boolean readOnly, IsolationLevel isolationLevel,
+                             PeriodicallyCommit periodicallyCommit) {
+        this.session = server.getSession();
+        this.txnService = server.getTransactionService();
+        txnService.beginTransaction(session);
+        this.isolationLevel = txnService.setIsolationLevel(session, isolationLevel);
+        this.readOnly = readOnly || txnService.isolationLevelRequiresReadOnly(session, false);
+        this.periodicallyCommit = periodicallyCommit;
+    }
+
+    public boolean isReadOnly() {
+        return readOnly;
+    }
+
+    public void setReadOnly(boolean readOnly) {
+        this.readOnly = readOnly;
+    }
+
+    public IsolationLevel getIsolationLevel() {
+        return isolationLevel;
+    }
+
+    public IsolationLevel setIsolationLevel(IsolationLevel level) {
+        level = txnService.setIsolationLevel(session, level);
+        this.isolationLevel = level;
+        // Selecting snapshot after update commits right away, like DDL.
+        if (txnService.isolationLevelRequiresReadOnly(session, anyWrites)) {
+            this.readOnly = true;
+            this.anyWrites = false;
+        }
+        return level;
+    }
+
+    public PeriodicallyCommit getPeriodicallyCommit() {
+        return periodicallyCommit;
+    }
+
+    public void setPeriodicallyCommit(PeriodicallyCommit periodicallyCommit) {
+        this.periodicallyCommit = periodicallyCommit;
+    }
+
+    public void checkTransactionMode(ServerStatement.TransactionMode transactionMode) {
+        switch (transactionMode) {
+        case NONE:
+        case NEW:
+        case NEW_WRITE:
+            throw new TransactionInProgressException();
+        case WRITE:
+            if (readOnly)
+                throw new TransactionReadOnlyException();
+            beforeUpdate();
+        break;
+        case IMPLICIT_COMMIT:
+            throw new IllegalArgumentException(transactionMode + " must be handled externally");
+        }
+    }
+
+    public void beforeUpdate() {
+        anyWrites = true;
+    }
+
+    public void afterUpdate() {
+        txnService.checkStatementConstraints(session);
+    }
+
+    /** Commit transaction. */
+    public void commit() {
+        txnService.commitTransaction(session);
+    }
+
+    /** Rollback transaction. */
+    public void rollback() {
+        txnService.rollbackTransaction(session);
+    }
+
+    /** Abort transaction that still exists on exit. */
+    public void abort() {
+        txnService.rollbackTransactionIfOpen(session);
+    }
+    
+    public boolean isRollbackPending() {
+        return txnService.isRollbackPending(session);
+    }
+
+    public boolean shouldPeriodicallyCommit() {
+        return txnService.shouldPeriodicallyCommit(session);
+    }
+
+    public void checkPeriodicallyCommit() {
+        // USER_LEVEL is handled higher up
+        if (periodicallyCommit == PeriodicallyCommit.ON) {
+            txnService.periodicallyCommit(session);
+        }
+    }
+
+    /** Return the transaction's time, which is fixed the first time
+     * something asks for it. */
+    public Date getTime(ServerSession server) {
+        if (transactionTime == null)
+            transactionTime = server.currentTime();
+        return transactionTime;
+    }
+
+}

@@ -1,0 +1,5 @@
+SelectQuery@1144823
+  ResultSet@8c02cc[cid, name]
+    Project@bbd1b[customers.cid, customers.name]
+      Select@ac576f[or(and(Cast(1 AS AKSQL_ BOOLEAN),Cast(foo AS AKSQL_ BOOLEAN)),customers.name == true)]
+        TableSource@a07440(customers)

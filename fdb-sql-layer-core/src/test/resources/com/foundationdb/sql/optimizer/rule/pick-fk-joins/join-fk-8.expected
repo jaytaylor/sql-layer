@@ -1,0 +1,12 @@
+SelectQuery@2c3e866
+  ResultSet@bce81f5[name]
+    Project@22b601e1[mammal.name]
+      Select@5b356c94[]
+        JoinNode@155d2584(INNER/NESTED_LOOPS[mammal.animal == dog.mammal])
+          TableGroupJoinTree@30aadc4(TableGroup@41cee08e(dog), dog - SingleIndexScan@164a0811(Index(test.dog.PRIMARY[IndexColumn(mammal)]), covering/NONE, rows = 1, cost = 5.89280))
+            TableSource@5001ac39(dog - TableFKJoin@11e9c5a7(Foreign Key dog_fkey: test.dog REFERENCES test.domesticanimal))
+          JoinNode@aaf6021(INNER/NESTED_LOOPS[mammal.pregnant == 1])
+            TableGroupJoinTree@44ded648(TableGroup@777387a6(domesticanimal), domesticanimal - SingleIndexScan@7fd01c01(Index(test.domesticanimal.PRIMARY[IndexColumn(mammal)]), covering/NONE, rows = 1, cost = 5.89280))
+              TableSource@e2e30ea(domesticanimal - TableFKJoin@37dec735(Foreign Key fk_mammal_d: test.domesticanimal REFERENCES test.mammal))
+            TableGroupJoinTree@1c6344b(TableGroup@11fcf9cb(mammal), mammal - ExpressionsHKeyScan@2e8853b(TableSource@7a8d59eb(mammal - TableFKJoin@6f82e5fa(Foreign Key fk_animal_m: test.mammal REFERENCES test.animal)), domesticanimal.mammal, rows = 1, cost = 9.29920))
+              TableSource@7a8d59eb(mammal - TableFKJoin@6f82e5fa(Foreign Key fk_animal_m: test.mammal REFERENCES test.animal))

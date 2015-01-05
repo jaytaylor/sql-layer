@@ -1,2 +1,4 @@
 target/
 plugins/
+/nohup.out
+/bin/nohup.out

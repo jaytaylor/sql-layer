@@ -1,0 +1,3 @@
+SELECT first_name AS given, last_name AS surname,
+       (SELECT odate AS day FROM test.orders WHERE test.orders.cid = test.customers.cid) as the_orders
+FROM test.customers

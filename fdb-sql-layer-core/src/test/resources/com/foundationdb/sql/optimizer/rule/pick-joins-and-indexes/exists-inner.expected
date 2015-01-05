@@ -1,0 +1,15 @@
+SelectQuery@5bf736c0
+  ResultSet@432ba66b[c1, c2]
+    Project@66badd40[t1.c1, t1.c2]
+      Sort@7613c970[t1.c2]
+        Select@d0e14a0[]
+          JoinNode@6d1fc86a(SEMI/NESTED_LOOPS[t2.c1 == t1.c1])
+            TableGroupJoinTree@75cf0e1(TableGroup@66ca478d(t1), t1 - GroupScan@555d7e8e(Group(test.t1), rows = 1, cost = 0.00000))
+              TableSource@3a6546c1(t1 - TableGroup@66ca478d(t1))
+            HashJoinNode@419edf1e(INNER/HASH_TABLE[t3.c2 == 7][t2.c2] = [t3.c1])
+              TableGroupJoinTree@254a4c3a(TableGroup@4606a033(t2), t2 - GroupScan@3ec5b8fb(Group(test.t2), rows = 1, cost = 0.00000))
+                TableSource@2b796650(t2 - TableGroup@4606a033(t2))
+              TableGroupJoinTree@5cff982f(TableGroup@1060655c(t3), t3 - GroupScan@3e1fc8e3(Group(test.t3), rows = 1, cost = 0.820000))
+                TableSource@2f2c247c(t3 - TableGroup@1060655c(t3))
+              HashTableLookup@30d286f6(HashTable@4d9a9984, [t3.c1])
+                TableSource@2b796650(t2 - TableGroup@4606a033(t2))

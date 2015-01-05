@@ -1,0 +1,11 @@
+PhysicalSelect[order_date:date]
+  Using_HashTable(0, items.oid)
+    IndexScan_Default(Index(items.sku), sku = '1234', orders.cid, oid, iid)
+    Map_NestedLoops(1)
+      Filter_Default(orders)
+        GroupLookup_Default(Index(customers.name) -> orders)
+          IndexScan_Default(Index(customers.name), name = 'Smith')
+      Project_Default(orders.order_date)
+        IfEmpty_Default(NULL, NULL, NULL, NULL, DISCARD_INPUT)
+          Limit_Default(1)
+            HashTableLookup_Default(0, orders.oid)

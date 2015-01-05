@@ -1,4 +1,0 @@
-PhysicalSelect[varchar(255)][cid:int, name:varchar(32)]
-  Project_Default(customers.cid, customers.name)
-    GroupLookup_Default(customers -> customers)
-      IndexScan_FullText(test.customers.cust_ft, $1)

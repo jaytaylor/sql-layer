@@ -1,0 +1,1 @@
+com.foundationdb.sql.jdbc.util.PSQLException: ERROR: Write operation in read-only transaction

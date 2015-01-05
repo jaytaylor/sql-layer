@@ -1,0 +1,9 @@
+SelectQuery@782667f3
+  ResultSet@2172c025[sku]
+    Project@74a4ce4a[items.sku]
+      Sort@32f6507e[items.sku, customers.name]
+        Select@6fe39819[]
+          TableGroupJoinTree@22389da7(TableGroup@53404bec(customers), customers INNER orders INNER items - SingleIndexScan@3086f9bf(Index(test.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), covering/NONE, UNIONs of [% = Adams, % = Jones, % = Smith], rows = 3, cost = 128.372))
+            TableSource@1bedb2d0(customers - TableGroup@53404bec(customers))
+              TableSource@10798c5b(orders - TableGroupJoin@6d76837c(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+                TableSource@74999aab(items - TableGroupJoin@7fb27a08(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

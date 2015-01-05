@@ -16,10 +16,13 @@ SET JVM_OPTS=%JVM_OPTS% -ea
 REM Set min and max at the same time to avoid resizing the heap while running.
 SET JVM_OPTS=%JVM_OPTS% -Xms%MAX_HEAP_SIZE%
 SET JVM_OPTS=%JVM_OPTS% -Xmx%MAX_HEAP_SIZE%
-SET JVM_OPTS=%JVM_OPTS% -XX:+HeapDumpOnOutOfMemoryError
 
 REM Prefer IPv4 even if IPv6 is available.
 SET JVM_OPTS=%JVM_OPTS% -Djava.net.preferIPv4Stack=true
+
+REM Heap dumps
+REM SET JVM_OPTS=%JVM_OPTS% -XX:+HeapDumpOnOutOfMemoryError
+REM SET JVM_OPTS=%JVM_OPTS% -XX:HeapDumpPath=%TEMP%
 
 REM JMX
 REM SET JVM_OPTS=%JVM_OPTS% -Dcom.sun.management.jmxremote.port=8082
@@ -29,3 +32,5 @@ REM SET JVM_OPTS=%JVM_OPTS% -Dcom.sun.management.jmxremote.authenticate=false
 REM Debugging
 REM SET JVM_OPTS=%JVM_OPTS% -Xrunjdwp:transport=dt_socket,address=8000,suspend=n,server=y
 
+REM Completely disable preallocated exceptions, which don't have stack traces
+SET JVM_OPTS=%JVM_OPTS% -XX:-OmitStackTraceInFastThrow

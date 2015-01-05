@@ -1,0 +1,29 @@
+/* Policy file limiting the permissions for routines
+   Testing version */
+
+grant codeBase "file:${mvn.main.basedir}/fdb-sql-layer-core/target/-" {
+  permission java.security.AllPermission;
+};
+grant codeBase "file:${mvn.main.basedir}/fdb-sql-layer-pg/target/-" {
+  permission java.security.AllPermission;
+};
+grant codeBase "file:${mvn.main.basedir}/fdb-sql-layer-rest/target/-" {
+  permission java.security.AllPermission;
+};
+grant codeBase "file:${mvn.main.basedir}/fdb-sql-layer-routinefw/target/*" {
+};
+grant codeBase "file:${mvn.main.basedir}/fdb-sql-layer-jdbc-proxy/target/-" {
+  permission java.security.AllPermission;
+};
+
+grant codeBase "file:${mvn.settings.localRepository}/-" {
+  permission java.security.AllPermission;
+  permission java.util.PropertyPermission "*", "read";
+};
+
+grant {
+  permission java.io.FilePermission "${java.io.tmpdir}${/}-", "read,write,delete";
+  permission java.io.FilePermission "${mvn.main.basedir}/*/target/surefire/-", "read,write";
+  permission java.util.PropertyPermission "taps_default_on", "read";
+};
+

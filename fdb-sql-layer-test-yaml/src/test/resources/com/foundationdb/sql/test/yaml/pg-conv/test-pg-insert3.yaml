@@ -1,0 +1,14 @@
+---
+- Include: all-update-schema.yaml
+---
+- Statement: insert into CUSTOMERS (name, cid) values ('Brown', 4), ('Williams', 5) 
+---
+- Statement: select * from customers;
+- output: [[1,Smith],[2,Jones],[4,Brown],[5,Williams]]
+---
+- Statement: select * from orders 
+- output: [[101,1,'2011-03-01'],[102,1,'2011-03-02'],[201,2,'2011-03-03']]
+---
+- Statement: select * from items 
+- output: [[1011,101,1234,100],[1012,101,4567,50],[2011,201,9876,1]]
+...

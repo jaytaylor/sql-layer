@@ -1,0 +1,38 @@
+## Test CONCAT_WS
+---
+- Statement: SELECT CONCAT_WS('a', '1');
+- output: [['1']]
+---
+- Statement: SELECT CONCAT_WS('a', '1', '2', '3');
+- output: [['1a2a3']]
+---
+- Statement: SELECT concat_ws(null, 'a', 'b', 'c');
+- output: [[null]]
+---
+- Statement: SELECT CONCAT_WS(',', 'a', 'b', null, 'c');
+- output: [['a,b,c']]
+---
+- Statement: SELECT concat_ws('', null, null, null);
+- output: [['']]
+--- # nulls should be skipped
+- Statement: SELECT concat_ws('abc', null, null, null);
+- output: [['']]
+--- # empty strings are NOT skipped
+- Statement: SELECT concat_ws('abc', '', '', '');
+- output: [['abcabc']]
+---
+- Statement: SELECT CONCAT_WS();
+- error: [4250C]
+---
+- Statement: SELECT CONCAT_WS('a');
+- error: [4250C]
+---
+- Statement: explain VERBOSE select CONCAT_WS( CAST(? AS CHAR(1)), 'abc%' )
+- output: [['Project_Default(CONCAT_WS(CAST($1 AS VARCHAR(4)), ''abc%''))'],
+          ['  ValuesScan_Default([])']]
+---
+- Statement: explain VERBOSE select CONCAT_WS('abcd1234', cast(? as CHAR(3)))
+- output: [['Project_Default(CONCAT_WS(''abcd1234'', CAST($1 AS VARCHAR(8))))'],
+          ['  ValuesScan_Default([])']]
+
+...

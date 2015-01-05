@@ -1,0 +1,15 @@
+SelectQuery@1f31cd12
+  ResultSet@7e8e68bd[cid, name]
+    MapJoin@34d704f0()
+      SubquerySource@74a138(ANY)
+        Subquery@14ca1a93
+          Distinct@3df3bec
+            Project@6096b38e[c2.name]
+              Select@45e6612c[]
+                Flatten@3f8f6434(c2)
+                  AncestorLookup@911a011(orders -> [customers])
+                    SingleIndexScan@6423c0bd(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >2011-03-02, rows = 853, cost = 6581.16)
+                    TableSource@6c22fde7(c2 - TableGroup@1ff19e50(customers))
+      Project@377e9134[customers.cid, customers.name]
+        Select@566f0962[]
+          SingleIndexScan@2b125a40(Index(test.customers.name[IndexColumn(name)]), covering/NONE, =ANY[0], rows = 1, cost = 6.04220)

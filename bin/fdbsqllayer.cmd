@@ -32,9 +32,12 @@ FOR %%P IN ("%~dp0..") DO SET FDBSQL_HOME=%%~fP
 CALL:findJarFile "%FDBSQL_HOME%\sql\lib"
 SET DEP_DIR=%FDBSQL_HOME%\sql\lib\server
 SET FDBSQL_HOME_DIR=%FDBSQL_HOME%\sql
+SET FDBSQL_RFDIR=%FDBSQL_HOME%\sql\lib\fdb-sql-layer-routinefw
+SET FDBSQL_PLUGINS=%FDBSQL_HOME%\sql\lib\plugins
 @REM Replaced during install
 SET FDBSQL_CONF=${confdir}
 SET FDBSQL_LOGDIR=${logdir}
+SET FDBSQL_POLICY=%FDBSQL_CONF%\sql-layer.policy
 
 FOR %%P IN (prunsrv.exe) DO SET PRUNSRV=%%~$PATH:P
 FOR %%P IN (prunmgr.exe) DO SET PRUNMGR=%%~$PATH:P
@@ -57,11 +60,14 @@ REM Build Configuration
 
 FOR %%P IN ("%~dp0..") DO SET BUILD_HOME=%%~fP
 
-CALL:findJarFile "%BUILD_HOME%\target"
-SET DEP_DIR=%BUILD_HOME%\target\dependency
+CALL:findJarFile "%BUILD_HOME%\fdb-sql-layer-core\target"
+SET DEP_DIR=%BUILD_HOME%\fdb-sql-layer-core\target\dependency
 SET FDBSQL_CONF=%BUILD_HOME%\conf
 SET FDBSQL_LOGDIR=\tmp\fdbsqllayer
-SET FDBSQL_HOME_DIR=%BUILD_HOME%\target
+SET FDBSQL_HOME_DIR=%BUILD_HOME%\fdb-sql-layer-core\target
+SET FDBSQL_RFDIR=%BUILD_HOME%\fdb-sql-layer-routinefw\target
+SET FDBSQL_PLUGINS=%BUILD_HOME%\plugins
+SET FDBSQL_POLICY_LOC=%FDBSQL_CONF%\sql-layer.policy
 SET PRUNSRV=prunsrv
 SET PRUNMGR=prunmgr
 SET SERVICE_MODE=manual
@@ -124,7 +130,12 @@ IF NOT EXIST "%DEP_DIR%" (
   GOTO EOF
 )
 
-SET CLASSPATH=%JAR_FILE%;%DEP_DIR%\*
+SET CLASSPATH=%JAR_FILE%;%DEP_DIR%\*;%FDBSQL_RFDIR%\*
+
+FOR %%J IN ("%FDBSQL_PLUGINS%\*.jar") DO (
+  SET CLASSPATH=!CLASSPATH!;%%J
+  IF EXIST %%~dpnJ\ SET CLASSPATH=!CLASSPATH!;%%~dpnJ\*
+)
 
 IF "%VERB%"=="version" GOTO VERSION
 
@@ -165,7 +176,9 @@ SET PRUNSRV_ARGS=--StartMode=jvm ++StartParams="jvm" --StartClass com.foundation
                  --Description="%SERVICE_DESC%" --Startup=%SERVICE_MODE% --Classpath="%CLASSPATH%"
 REM Each value that might have a space needs a separate ++JvmOptions.
 SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmOptions="%JVM_OPTS: =#%" ++JvmOptions=-Xrs ++JvmOptions="-Dfdbsql.config_dir=%FDBSQL_CONF%" ^
-                 ++JvmOptions="-Dlog4j.configuration=file:%FDBSQL_LOGCONF%" ++JvmOptions="-Dfdbsql.home=%FDBSQL_HOME_DIR%"
+                 ++JvmOptions="-Dlog4j.configuration=file:%FDBSQL_LOGCONF%" ++JvmOptions="-Dfdbsql.home=%FDBSQL_HOME_DIR%" ^
+                 ++JvmOptions="-Djava.security.manager" ++JvmOptions="-Djava.security.policy=%FDBSQL_POLICY%"
+
 IF DEFINED SERVICE_USER SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --ServiceUser=%SERVICE_USER% --ServicePassword=%SERVICE_PASSWORD%
 REM Important: JvmMs and JvmMx are in MB and do not accept unit suffix
 IF DEFINED MAX_HEAP_MB SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmMs=%MAX_HEAP_MB% --JvmMx=%MAX_HEAP_MB%
@@ -200,7 +213,8 @@ GOTO EOF
 SET JVM_OPTS=%JVM_OPTS% -Dfdbsql.config_dir="%FDBSQL_CONF%"
 SET JVM_OPTS=%JVM_OPTS% -Dlog4j.configuration="file:%FDBSQL_LOGCONF%"
 SET JVM_OPTS=%JVM_OPTS% -ea
-SET JVM_OPTS=%JVM_OPTS% -Dfdbsql.home="%FDBSQL_HOME_DIR%"
+SET JVM_OPTS=%JVM_OPTS% -Dfdbsql.home="%BUILD_HOME%"
+SET JVM_OPTS=%JVM_OPTS% -Djava.security.manager -Djava.security.policy="%FDBSQL_POLICY_LOC%"
 IF DEFINED MAX_HEAP_MB SET JVM_OPTS=%JVM_OPTS% -Xms%MAX_HEAP_MB%M -Xmx%MAX_HEAP_MB%M
 IF "%VERB%"=="window" GOTO WINDOW_CMD
 java %JVM_OPTS% -cp "%CLASSPATH%" com.foundationdb.sql.Main

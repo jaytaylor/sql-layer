@@ -1,0 +1,12 @@
+#
+# Error inserting VARBINARY into VARCHAR
+#
+---
+- CreateTable: t(a int not null primary key, b varchar(200) character set latin1 collate en_us)
+---
+- Statement: insert into t values (0, x'414243')
+---
+- Statement: select * from t
+- output: [ [0, "ABC"] ]
+...
+

@@ -1,0 +1,37 @@
+
+===== types.proto =====
+
+package test;
+import "sql_custom_options.proto";
+option (fdbsql).name = "types";
+option (fdbsql).schema = "test";
+option (fdbsql).version = 1;
+message Types {
+    option (fdbsql).name = "types";
+    option (fdbsql).schema = "test";
+    option (fdbsql).uuid = "c134b44f-5c3a-4240-93c1-3b616becbe64";
+    optional sint64 bigint_field = 1 [(fdbsql).uuid = "0d464dc4-c889-4d98-8bfd-35100b970cc9", (fdbsql).sql_type = "BIGINT"];
+    optional uint64 bigint_unsigned_field = 2 [(fdbsql).uuid = "430ef437-c6d0-422d-8628-f10341c628ce", (fdbsql).sql_type = "BIGINT UNSIGNED"];
+    optional bytes blob_field = 3 [(fdbsql).uuid = "643d314b-a403-4b97-b7bc-2877524c9139", (fdbsql).sql_type = "BLOB"];
+    optional bool boolean_field = 4 [(fdbsql).uuid = "42b72334-2017-4d72-9a76-6831a9a859b3", (fdbsql).sql_type = "BOOLEAN"];
+    optional string char_field = 5 [(fdbsql).uuid = "f3aed1e3-a82b-4525-b327-67808b1d85db", (fdbsql).sql_type = "CHAR(32)"];
+    optional string clob_field = 6 [(fdbsql).uuid = "fa5cf831-e0c6-41a2-99f7-37a6fe68d6be", (fdbsql).sql_type = "LONGTEXT"];
+    optional string date_field = 7 [(fdbsql).uuid = "fcba232c-134a-43f0-b5c8-25331c9ab506", (fdbsql).sql_type = "DATE"];
+    optional string datetime_field = 8 [(fdbsql).uuid = "24799461-f635-4bf9-94e7-cfd2fb73110a", (fdbsql).sql_type = "DATETIME"];
+    optional sint64 decimal_field = 9 [(fdbsql).uuid = "c87a76df-32b3-4415-a08a-398b3788a5a4", (fdbsql).sql_type = "DECIMAL(10, 2)", (fdbsql).decimal_scale = 2];
+    optional bytes decimal_big_field = 10 [(fdbsql).uuid = "59a89924-bee1-4e02-86af-c4cad92f3ad7", (fdbsql).sql_type = "DECIMAL(20, 6)", (fdbsql).decimal_scale = 6];
+    optional double double_field = 11 [(fdbsql).uuid = "fef18652-7d9b-42d5-8d47-477500bcf0c0", (fdbsql).sql_type = "DOUBLE"];
+    optional double float_field = 12 [(fdbsql).uuid = "52969ff3-1c31-4020-bde6-a7d9384bd929", (fdbsql).sql_type = "DOUBLE"];
+    optional sint32 integer_field = 13 [(fdbsql).uuid = "a48f3dbf-2c3b-4368-bec9-4c9bdd6e4f01", (fdbsql).sql_type = "INT"];
+    optional sint32 smallint_field = 14 [(fdbsql).uuid = "cae66b42-096e-4632-b8d9-a56927530217", (fdbsql).sql_type = "SMALLINT"];
+    optional sint32 time_field = 15 [(fdbsql).uuid = "9dae6ce4-9ae0-4943-a407-4dab5f5a90a9", (fdbsql).sql_type = "TIME"];
+    optional string timestamp_field = 16 [(fdbsql).uuid = "50a5c283-4138-4168-9e55-150d1a5f8164", (fdbsql).sql_type = "DATETIME"];
+    optional sint32 tinyint_field = 17 [(fdbsql).uuid = "5af221fb-85f4-492a-b063-be6406925433", (fdbsql).sql_type = "TINYINT"];
+    optional string varchar_field = 18 [(fdbsql).uuid = "da7518a7-cf55-4bc5-8edb-9d5b725730b4", (fdbsql).sql_type = "VARCHAR(32)"];
+    optional sint32 year_field = 19 [(fdbsql).uuid = "fb398a90-c84e-4890-8049-fa71bd1fc0af", (fdbsql).sql_type = "YEAR"];
+    optional sint64 __row_id = 20 [(fdbsql).uuid = "a0cea800-ce49-4843-88e9-7ff0ffee1047", (fdbsql).sql_type = "BIGINT"];
+}
+message _Group {
+    option (fdbsql).is_group = true;
+    optional Types types = 1 [(fdbsql).uuid = "c134b44f-5c3a-4240-93c1-3b616becbe64"];
+}

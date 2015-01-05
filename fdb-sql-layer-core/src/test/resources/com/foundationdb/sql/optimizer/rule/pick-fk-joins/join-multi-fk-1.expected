@@ -1,0 +1,9 @@
+SelectQuery@643114f
+  ResultSet@1d255cbf[c1, c2, id, c1, c2]
+    Project@7fec0e8b[t1.c1, t1.c2, t2.id, t2.c1, t2.c2]
+      Select@62af0949[]
+        JoinNode@3d3fcfdf(INNER/NESTED_LOOPS)
+          TableGroupJoinTree@6a44931d(TableGroup@286858e3(t1), t1 - SingleIndexScan@5aa3b3ce(Index(test.t1.PRIMARY[IndexColumn(c1), IndexColumn(c2)]), covering/NONE, rows = 1, cost = 6.02560))
+            TableSource@f495efe(t1 - TableGroup@286858e3(t1))
+          TableGroupJoinTree@6c63e07c(TableGroup@4c37d30d(t2), t2 - SingleIndexScan@65012192(Index(test.t2.t2_fkey[IndexColumn(c1), IndexColumn(c2)]), covering/NONE, =t1.c1, =t1.c2, rows = 1, cost = 6.15840))
+            TableSource@19fb7d89(t2 - TableFKJoin@2d432c0c(Foreign Key t2_fkey: test.t2 REFERENCES test.t1))

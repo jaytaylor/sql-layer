@@ -11,7 +11,7 @@
     <script>
     <![CDATA[
         var gMinJavaVersion = "1.7.0";
-        var gMinFDBCVersion = "2.0.0";
+        var gMinFDBCVersion = "3.0.0";
 
         function findJava() {
             try {
@@ -80,7 +80,7 @@
         visible="true"
         enabled="findFDBClient();"
         title="SQL Layer"
-        description="FoundationDB SQL Layer is a full, SQL RDMS built on top of the FoundationDB storage substrate. This package contains the SQL Layer. If this is disabled, please go back and check the Read Me section."
+        description="The FoundationDB SQL Layer is a fault-tolerant and scalable open source RDBMS, best suited for applications with high concurrency and short transactional workloads. If this is disabled, please go back and check the Read Me section."
         selected="findFDBClient();">
             <pkg-ref id="com.foundationdb.layer.sql">SQL_Layer.pkg</pkg-ref>
     </choice>
@@ -90,7 +90,7 @@
         visible="true"
         enabled="true"
         title="SQL Layer Client Tools"
-        description="FoundationDB SQL Layer is a full, SQL RDMS built on top of the FoundationDB storage substrate. This package contains client utilities for the SQL Layer."
+        description="This package contains client utilities for the SQL Layer."
         selected="true">
             <pkg-ref id="com.foundationdb.layer.sql.client.tools">SQL_Layer_Client_Tools.pkg</pkg-ref>
     </choice>

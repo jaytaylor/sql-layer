@@ -1,0 +1,16 @@
+SelectQuery@6165ba50
+  ResultSet@5dab0c24[oid, cid, name, order_date, iid, sku, quan, price]
+    Project@8aa3f87[orders.oid, customers.cid, customers.name, orders.order_date, items.iid, items.sku, items.quan, items.price]
+      Select@6130bc82[ANY(Subquery@46a82ca7)]
+        JoinNode@4b0bac2e(INNER[orders.oid == items.oid])
+          JoinNode@6b55267f(INNER[customers.cid == orders.cid])
+            TableSource@235292e6(customers)
+            TableSource@22a4c28(orders)
+          TableSource@26edd734(items)
+
+Subquery@46a82ca7
+  Project@48cbaae3[and(customers.name == parent.name,items.sku == child.name)]
+    Select@3340426b[]
+      JoinNode@3fc89916(INNER[parent.id == child.pid])
+        TableSource@aba9411(parent)
+        TableSource@5f4eed97(child)

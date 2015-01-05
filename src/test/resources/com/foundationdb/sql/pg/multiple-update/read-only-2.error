@@ -1,1 +1,0 @@
-org.postgresql.util.PSQLException: ERROR: Write operation in read-only transaction

@@ -1,0 +1,29 @@
+#
+# test bug 1097506 - No preptime value for internal index min/max
+#
+---
+- Properties: random-cost
+- suppressed: true
+---
+- CreateTable: t1 (i INT)
+---
+- CreateTable: t2 (i INT)
+---
+- Statement: CREATE INDEX t1_i on t1(i);
+---
+- Statement: CREATE INDEX t2_i on t2(i);
+---
+- Statement: SELECT * FROM t1, t2 WHERE t1.i = t2.i AND t1.i > 3 and t2.i > 2;
+---
+- Statement: SELECT * FROM t1, t2 WHERE t1.i = t2.i AND t1.i < 3 and t2.i < 2;
+---
+- Statement: INSERT INTO t1 (i) values (1), (2), (3), (4), (5)
+---
+- Statement: INSERT INTO t2 (i) values (1), (2), (3), (4), (5)
+---
+- Statement: SELECT * FROM t1, t2 WHERE t1.i = t2.i AND t1.i > 3 and t2.i > 2;
+- output: [[4,4],[5,5]]
+---
+- Statement: SELECT * FROM t1, t2 WHERE t1.i = t2.i AND t1.i < 3 and t2.i < 2;
+- output: [[1,1]]
+...

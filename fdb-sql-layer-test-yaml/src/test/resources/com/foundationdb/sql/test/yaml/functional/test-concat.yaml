@@ -1,0 +1,39 @@
+# Test the CONCAT function
+---
+- CreateTable: t (x varchar(32), y integer, z double)
+---
+- Statement: INSERT INTO t (x) VALUES ('a0')
+---
+- Statement: INSERT INTO t (y) VALUES (0)
+---
+- Statement: INSERT INTO t (z) VALUES (0.0)
+---
+- Statement: INSERT INTO t VALUES ('a1', 1, 1.0), ('a2', 2, 2.0)
+
+#--- not a valid test. Types2 happens to allow this, but types3 doeesn't
+#- Statement: SELECT CONCAT() FROM t
+#- output: [[''], [''], [''], [''], ['']]
+
+---
+- Statement: SELECT CONCAT(x, y), CONCAT(x, '-foo'), CONCAT(3, z) FROM t
+- output: [[null, a0-foo, null], [null, null, null], [null, null, 30.0],
+           [a11, a1-foo, 31.0], [a22, a2-foo, 32.0]]
+
+---
+- Statement: SELECT CONCAT(x, ?, y) FROM t
+- params: [[cat]]
+- output: [[null], [null], [null], [a1cat1], [a2cat2]]
+---
+- Statement: SELECT CONCAT(x, ?, y) FROM t
+- params: [[dog]]
+- output: [[null], [null], [null], [a1dog1], [a2dog2]]
+---
+- Statement: explain VERBOSE select CONCAT( CAST(? AS CHAR(1)), 'abc%' )
+- output: [['Project_Default(CAST($1 AS VARCHAR(1)) || ''abc%'')'],
+          ['  ValuesScan_Default([])']]
+---
+- Statement: explain VERBOSE select CONCAT('abcd1234', cast(? as CHAR(3)))
+- output: [['Project_Default(''abcd1234'' || CAST($1 AS VARCHAR(3)))'],
+          ['  ValuesScan_Default([])']]
+
+...

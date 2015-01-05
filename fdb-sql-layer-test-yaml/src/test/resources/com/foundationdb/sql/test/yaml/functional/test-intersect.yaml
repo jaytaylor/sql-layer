@@ -1,0 +1,67 @@
+---
+- CreateTable: customers1 ( cid int NOT NULL,
+    PRIMARY KEY(cid),
+    name varchar(32) NOT NULL)
+---
+- Statement: CREATE INDEX name ON customers1(name);
+---
+- CreateTable: customers2 ( cid int NOT NULL,
+    PRIMARY KEY(cid),
+    name varchar(32) NOT NULL)
+---
+- Statement: CREATE INDEX name ON customers2(name);
+---
+- CreateTable: people (cid int NOT NULL,
+    PRIMARY KEY(cid),
+    age int NOT NULL,
+    name varchar(32) NOT NULL)
+---
+- Statement: Create INDEX name ON people(name);
+---
+- Statement: INSERT INTO customers1 (cid, name) VALUES (1, 'Smith'), (2, 'Jones'), (3, 'Smithson'), (4, 'Smith')
+---
+- Statement: INSERT INTO customers2 (cid, name) VALUES (1, 'Smith'), (2, 'Smithson'), (3, 'Brennen'), (4, 'Smith')
+---
+- Statement: INSERT INTO people (cid, age,  name) VALUES (1, 55, 'Jones'), (2, 24, 'Collins'), (3, 33, 'Brennen')
+---
+- Statement: SELECT cid, name FROM customers1 INTERSECT SELECT cid, name FROM customers2
+- output: [[1, 'Smith'], [4, 'Smith']]
+---
+- Statement: SELECT cid, name FROM customers1 INTERSECT SELECT cid, name FROM customers1
+- output: [[1, 'Smith'], [2, 'Jones'], [3, 'Smithson'], [4, 'Smith']]
+---
+- Statement: SELECT cid FROM customers1 INTERSECT SELECT cid FROM customers2
+- output: [[1], [2], [3], [4]]
+---
+- Statement: SELECT name FROM customers1 INTERSECT SELECT name FROM customers2
+- output: [['Smith'], ['Smithson']]
+---
+- Statement: SELECT name FROM customers1 INTERSECT ALL SELECT name FROM customers2
+- output: [['Smith'], ['Smith'], ['Smithson']]
+---
+- Statement: SELECT name FROM customers2 INTERSECT SELECT name FROM people
+- output: [['Brennen']]
+---
+- Statement: SELECT 2,2 INTERSECT SELECT 2,2
+- output: [[2,2]]
+---
+- Statement: select cid, name FROM customers1  INTERSECT SELECT cid FROM customers2
+- error: [4251E, 'ERROR: Set operation has mis-matched number of columns: `2` vs. `1`']
+---
+- CreateTable: t1(n1 tinyint, n2 bigint)
+---
+- Statement: insert into t1 values (1,1), (2,2), (3,3)
+---
+- Statement: SELECT n1 FROM t1 INTERSECT SELECT n2 FROM t1
+- output: [[1], [2], [3]]
+---
+- Statement: SELECT n1 + 1 FROM t1 INTERSECT SELECT n2 + 0 FROM t1
+- output: [[2],[3]]
+---
+- Statement: Select * from t1 order by n1 DESC
+- output_already_ordered: [[3,3],[2,2],[1,1]]
+---
+- CreateTable: t2(n1 tinyint, n2 bigint)
+---
+- Statement: insert into t1 values (1,3), (2,2), (3,1)
+...

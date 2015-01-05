@@ -1,0 +1,1 @@
+com.foundationdb.server.error.UnsupportedSQLException: UNSUPPORTED_SQL: Unsupported SQL: SELECT DISTINCT requires that ORDER BY expressions be in the select list : order_date

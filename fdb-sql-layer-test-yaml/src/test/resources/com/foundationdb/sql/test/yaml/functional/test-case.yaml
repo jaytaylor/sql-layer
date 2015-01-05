@@ -1,0 +1,17 @@
+# Test the CASE statement
+---
+- Include: all-types-schema.yaml
+
+---
+- Statement: INSERT INTO all_types
+    (integer_field, varchar_field)
+    VALUES (1, 'one'), (2, 'two'), (0, null), (-1, 'minus one')
+---
+- Statement: SELECT CASE WHEN integer_field > 0 THEN varchar_field WHEN varchar_field IS NULL THEN 'N/A' ELSE 'dunno' END FROM all_types
+- output: [[dunno], [N/A], [one], [two]]
+---
+- Statement: SELECT CASE integer_field WHEN 1 THEN varchar_field WHEN 2 THEN varchar_field||'!'  END FROM all_types
+- output: [[null], [null], ['one'], ['two!']]
+---
+- Statement: SELECT CASE WHEN varchar_field LIKE '%one' THEN integer_field ELSE 0 END FROM all_types
+- output: [[-1], [0], [1], [0]]

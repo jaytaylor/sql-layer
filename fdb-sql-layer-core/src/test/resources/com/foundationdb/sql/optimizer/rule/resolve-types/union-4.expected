@@ -1,0 +1,11 @@
+SelectQuery@61686422
+  ResultSet@c862624[n1]
+    Union@3b320be8
+      ResultSet@52abcab4[n1]
+        Project@c8919d3[Cast(t1.n1 AS MCOMPAT_ BIGINT(21) NULL)]
+          Select@7cfe7212[]
+            TableSource@24f33bda(t1)
+      ResultSet@5cde7829[n2]
+        Project@11a2fb61[t1.n2]
+          Select@6325a652[]
+            TableSource@3cca8458(t1)
