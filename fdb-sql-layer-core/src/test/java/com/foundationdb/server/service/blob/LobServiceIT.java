@@ -33,6 +33,8 @@ public class LobServiceIT extends ITBase {
     private String schemaName = "test";
     private String tableName = "table";
     private String columnName = "name";
+    private String idA;
+    private String idB;
     private final byte[] data = "foo".getBytes();
     
     @Test
@@ -54,7 +56,7 @@ public class LobServiceIT extends ITBase {
         List<String> newPath = Arrays.asList("newTestLob");
         ls.moveLob(tcx, ds, newPath).get();
         DirectorySubspace  ds3 = ls.getLobSubspace(tcx, newPath).get();
-        BlobAsync blob2 = ls.getBlob(ds3);
+        BlobBase blob2 = ls.getBlob(ds3);
         
         // data retrieval
         byte[] output = blob2.read(tcx).get();
@@ -64,5 +66,40 @@ public class LobServiceIT extends ITBase {
         ls.removeLob(tcx, newPath).get();
         Assert.assertEquals(blob2.getSize(tcx).get().longValue(), 0L);
         Assert.assertFalse(ds3.exists(tcx).get());
+        Assert.assertFalse(ls.existsLob(tcx, newPath).get());
+    }
+
+    @Before
+    public void setUp(){
+        // registration
+        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        Assert.assertNotNull(ls);
+        FDBHolder fdbHolder = serviceManager().getServiceByClass(FDBHolder.class);
+        TransactionContext tcx = fdbHolder.getTransactionContext();
+
+        idA = UUID.randomUUID().toString();
+        idB = UUID.randomUUID().toString();
+        ls.createLobSubspace(fdbHolder.getTransactionContext(), Arrays.asList(idA)).get();
+        ls.createLobSubspace(fdbHolder.getTransactionContext(), Arrays.asList(idB)).get();
+
+        LobRoutines.linkTable(serviceManager(), 1, idA);
+
+    }
+    
+    @Test
+    public void blobGarbageCollector() {
+        // registration
+        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        Assert.assertNotNull(ls);
+        FDBHolder fdbHolder = serviceManager().getServiceByClass(FDBHolder.class);
+        TransactionContext tcx = fdbHolder.getTransactionContext();
+        
+        // run collector
+        ls.runLobGarbageCollector(tcx);
+        
+        // check cleaning
+        Assert.assertTrue(ls.existsLob(tcx, Arrays.asList(idA)).get());
+        Assert.assertFalse(ls.existsLob(tcx, Arrays.asList(idB)).get());
+        
     }
 }

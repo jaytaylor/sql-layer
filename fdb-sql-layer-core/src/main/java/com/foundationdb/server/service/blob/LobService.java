@@ -34,6 +34,8 @@ public interface LobService {
     public BlobBase getBlob(Subspace subspace);
     public Future<DirectorySubspace> moveLob(TransactionContext tcx, DirectorySubspace sourceSubspace, List<String> targetPath);
     public Future<Void> removeLob(TransactionContext tcx, List<String> path);
+    public Future<Boolean> existsLob(TransactionContext tcx, List<String> path);
+    public void runLobGarbageCollector(TransactionContext tcx);
 }
 
 

@@ -58,7 +58,6 @@ public class LobServiceImpl implements Service, LobService {
 
     @Override
     public Future<Void> removeLob(TransactionContext tcx, List<String> path) {
-        // leakage of directories (?) perhaps delete parent directory if exists, and empty after removal of this child?
         return lobDirectory.remove(tcx, path); 
     }
 
@@ -71,6 +70,28 @@ public class LobServiceImpl implements Service, LobService {
         // ensure presence of parent directory for target path
         lobDirectory.createOrOpen(tcx, targetPath.subList(0, targetPath.size()-1)).get();
         return sourceSubspace.moveTo(tcx, newPath);
+    }
+    
+    @Override
+    public Future<Boolean> existsLob(TransactionContext tcx, final List<String> path){
+        return lobDirectory.exists(tcx, path);
+    }
+    
+    @Override
+    public void runLobGarbageCollector(TransactionContext tcx) {
+        List<String> lobs = lobDirectory.list(tcx).get();
+        DirectorySubspace ds;
+        BlobBase blob;
+        if (lobs.size() > 0 ) {
+            for (int i = 0; i < lobs.size(); i++) {
+                String lob = lobs.get(i);
+                ds = lobDirectory.open(tcx, Arrays.asList(lob)).get();
+                blob = getBlob(ds);
+                if (!blob.isLinked(tcx).get()) {
+                    removeLob(tcx, Arrays.asList(lob)).get();
+                }
+            }
+        }
     }
     
     
