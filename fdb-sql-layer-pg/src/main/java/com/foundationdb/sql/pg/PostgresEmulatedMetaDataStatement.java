@@ -1053,7 +1053,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         Table table = (Table)columnar;
         Map<String,Index> indexes = new TreeMap<>();
         for (Index index : table.getIndexesIncludingInternal()) {
-            if (isAkibanPKIndex(index) || index.isConnectedToFK())
+            if (isAkibanPKIndex(index) || isConnectedToFK(index))
                 continue;
             indexes.put(index.getIndexName().getName(), index);
         }
@@ -1204,7 +1204,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         if (!table.isTable())
             return false;
         for (Index index : ((Table)table).getIndexes()) {
-            if (isAkibanPKIndex(index) || index.isConnectedToFK())
+            if (isAkibanPKIndex(index) || isConnectedToFK(index))
                 continue;
             return true;
         }
@@ -1228,6 +1228,15 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         List<IndexColumn> indexColumns = index.getKeyColumns();
         return ((indexColumns.size() == 1) && 
                 indexColumns.get(0).getColumn().isAkibanPKColumn());
+    }
+
+    public boolean isConnectedToFK(Index index) {
+        for(ForeignKey fkey : index.leafMostTable().getReferencingForeignKeys()) {
+            if(fkey.getReferencingIndex() == index) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean isTableReferenced(Table table, Index groupIndex) {

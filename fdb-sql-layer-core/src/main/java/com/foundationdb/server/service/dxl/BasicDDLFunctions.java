@@ -729,8 +729,8 @@ public class BasicDDLFunctions implements DDLFunctions {
                 else {
                     throw new NoSuchIndexException(indexName);
                 }
-                // no primary key nor connected to a FK
-                if(index.isPrimaryKey() || index.isConnectedToFK()) {
+                // PRIMARY is special (affects grouping). FOREIGN KEY referenced handled in validations.
+                if(index.isPrimaryKey()) {
                     throw new ProtectedIndexException(indexName, table.getName());
                 }
                 if (allIndexes != tableIndexes) {

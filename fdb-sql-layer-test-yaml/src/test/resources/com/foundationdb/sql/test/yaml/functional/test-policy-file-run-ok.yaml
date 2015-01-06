@@ -1,0 +1,12 @@
+--- 
+- Statement: CREATE OR REPLACE FUNCTION js_function ()
+    RETURNS INT LANGUAGE javascript PARAMETER STYLE variables    AS $$
+       java.lang.Runtime.getRuntime().exec("ls /");
+       java.lang.Runtime.getRuntime().exec("cat /etc/passwd");
+       var result = 1;
+       result
+    $$;
+--- # Should not have "java.io.FilePermission" "ALL FILES", succeeds when no security manager is present
+- Statement: CALL js_function();
+- error: [39000]
+...

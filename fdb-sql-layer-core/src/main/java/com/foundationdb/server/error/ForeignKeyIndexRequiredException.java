@@ -20,7 +20,12 @@ package com.foundationdb.server.error;
 import com.foundationdb.ais.model.TableName;
 
 public class ForeignKeyIndexRequiredException extends InvalidOperationException {
-    public ForeignKeyIndexRequiredException(String constraintName, TableName tableName, String columnNames) {
-        super(ErrorCode.FOREIGN_KEY_INDEX_REQUIRED, constraintName, tableName.getSchemaName(), tableName.getTableName(), columnNames);
+    public ForeignKeyIndexRequiredException(String constraintName, boolean unique, TableName tableName, String columnNames) {
+        super(ErrorCode.FOREIGN_KEY_INDEX_REQUIRED,
+              constraintName,
+              unique ? "UNIQUE" : "INDEX",
+              tableName.getSchemaName(),
+              tableName.getTableName(),
+              columnNames);
     }
 }
