@@ -15,10 +15,8 @@ import com.foundationdb.sql.optimizer.plan.ResultSet;
 import com.foundationdb.sql.optimizer.plan.SelectQuery;
 import com.foundationdb.sql.optimizer.rule.ASTStatementLoader;
 import com.foundationdb.sql.optimizer.rule.BaseRule;
-import com.foundationdb.sql.optimizer.rule.OperatorAssembler;
 import com.foundationdb.sql.optimizer.rule.PlanContext;
 import com.foundationdb.sql.optimizer.rule.TypeResolver;
-import com.foundationdb.sql.optimizer.rule.ConstantFolder.Folder;
 import com.foundationdb.sql.parser.CreateViewNode;
 import com.foundationdb.sql.parser.CursorNode;
 import com.foundationdb.sql.parser.NodeTypes;
@@ -26,6 +24,7 @@ import com.foundationdb.sql.parser.ParameterNode;
 import com.foundationdb.sql.parser.CursorNode.UpdateMode;
 import com.foundationdb.sql.parser.DMLStatementNode;
 import com.foundationdb.sql.parser.ResultColumn;
+import com.foundationdb.sql.parser.ResultSetNode;
 import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.server.ServerOperatorCompiler;
 
@@ -80,7 +79,7 @@ public class CreateViewCompiler extends ServerOperatorCompiler {
         cursorNode.setNodeType(NodeTypes.CURSOR_NODE);
         
         PlanContext plan = new PlanContext(this);
-        binder.setContext(context);
+        //binder.setContext(context);
         bindAndTransform(cursorNode);
         plan.setPlan(new AST(cursorNode, null));
         
@@ -109,7 +108,7 @@ public class CreateViewCompiler extends ServerOperatorCompiler {
     @Override
     protected DMLStatementNode bindAndTransform(DMLStatementNode stmt)  {
         try {
-            binder.bind(stmt);
+            //binder.bind(stmt);
             stmt = (DMLStatementNode)booleanNormalizer.normalize(stmt);
             typeComputer.compute(stmt);
             stmt = subqueryFlattener.flatten(stmt);
