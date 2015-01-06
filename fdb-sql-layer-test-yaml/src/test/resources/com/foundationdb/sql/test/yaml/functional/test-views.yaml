@@ -50,8 +50,8 @@
 - Statement: DROP VIEW s
 ---
 - Statement: DROP VIEW v0
-#---
-#- Statement: DROP VIEW v3
+---
+- Statement: DROP VIEW v3
 ---
 - Statement: DROP VIEW v2
 ---
