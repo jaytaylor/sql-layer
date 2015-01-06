@@ -61,18 +61,15 @@ public class LobRoutines {
         return id;
     }
     
-    public static void linkTable(String schema, String table, String blobId) {
-        linkTable(schema, table, Arrays.asList(blobId));
+    public static void linkTable(ServiceManager serviceManager, int tableId, String blobId) {
+        linkTable(serviceManager, tableId, Arrays.asList(blobId));
     }
 
-    private static void linkTable(String schema, String table, List<String> pathElements) {
-        ServerQueryContext context = ServerCallContextStack.getCallingContext();
-        ServiceManager serviceManager = context.getServer().getServiceManager();
+    private static void linkTable(ServiceManager serviceManager, int tableId, List<String> pathElements) {
         LobService ls = serviceManager.getServiceByClass(LobService.class);
         FDBHolder fdbHolder = serviceManager.getServiceByClass(FDBHolder.class);
         TransactionContext tcx = fdbHolder.getTransactionContext();
         DirectorySubspace ds = ls.getLobSubspace(tcx, pathElements).get();
-        int tableId = context.getAIS().getTable(schema, table).getTableId();;
         BlobBase blob = ls.getBlob(ds);
         if (blob.isLinked(tcx).get())
             throw new LobException("lob is already linked to table");
@@ -108,7 +105,7 @@ public class LobRoutines {
         DirectorySubspace ds = ls.getLobSubspace(tcx, pathElements).get();
         BlobBase blob = ls.getBlob(ds);
         Future<byte[]> result = blob.read(tcx, offset, length);
-        checkSchemaPermission(blob, context, serviceManager, tcx);
+        //checkSchemaPermission(blob, context, serviceManager, tcx);
         byte[] res = result.get();
         return res != null ? res : new byte[]{};
     }
@@ -127,7 +124,7 @@ public class LobRoutines {
         BlobBase blob = ls.getBlob(ds);
         Future<Void> res = blob.write(tcx, offset, data); 
 
-        checkSchemaPermission(blob, context, serviceManager, tcx);
+        //checkSchemaPermission(blob, context, serviceManager, tcx);
         res.get();
     }
 
@@ -145,7 +142,7 @@ public class LobRoutines {
         BlobBase blob = ls.getBlob(ds);    
 
         Future<Void> res = blob.append(tcx, data);
-        checkSchemaPermission(blob, context, serviceManager, tcx);
+        //checkSchemaPermission(blob, context, serviceManager, tcx);
         res.get();
     }
 
@@ -163,7 +160,7 @@ public class LobRoutines {
         BlobBase blob = ls.getBlob(ds);
 
         Future<Void> res = blob.truncate(tcx, newLength);
-        checkSchemaPermission(blob, context, serviceManager, tcx);
+        //checkSchemaPermission(blob, context, serviceManager, tcx);
         res.get();        
     }
 
@@ -179,7 +176,7 @@ public class LobRoutines {
         TransactionContext tcx = fdbHolder.getTransactionContext();
         DirectorySubspace ds = ls.getLobSubspace(tcx, pathElements).get();
         BlobBase blob = ls.getBlob(ds);
-        checkSchemaPermission(blob, context, serviceManager, tcx);
+        //checkSchemaPermission(blob, context, serviceManager, tcx);
         ls.removeLob(tcx, pathElements).get();
     }
     
@@ -190,7 +187,8 @@ public class LobRoutines {
         if (tableId == -1){
             return;
         }
-        String schemaName = context.getAIS().getTable(tableId).getName().getSchemaName();
+        //String schemaName = context.getAIS().getTable(tableId).getName().getSchemaName();
+        String schemaName = serviceManager.getSchemaManager().getAis(context.getSession()).getTable(tableId).getName().getSchemaName();
         if ( !ss.isAccessible(context.getSession(), schemaName)) {
             throw new LobException("Cannot find lob");
         }

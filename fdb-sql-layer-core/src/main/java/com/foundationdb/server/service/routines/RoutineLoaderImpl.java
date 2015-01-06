@@ -388,12 +388,6 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
                 .paramStringIn("lob_id", PATH_MAX)
                 .returnString("lob_id", 36)
                 .externalName(LobRoutines.class.getCanonicalName(), "createNewSpecificLob");
-        aisb.procedure("link_blob")
-                .language("java", Routine.CallingConvention.JAVA)
-                .paramStringIn("schema", PATH_MAX)
-                .paramStringIn("table", PATH_MAX)
-                .paramStringIn("blob_id", PATH_MAX)
-                .externalName(LobRoutines.class.getCanonicalName(), "linkTable");
 
         aisb.procedure("size_blob")
                 .language("java", Routine.CallingConvention.JAVA)
