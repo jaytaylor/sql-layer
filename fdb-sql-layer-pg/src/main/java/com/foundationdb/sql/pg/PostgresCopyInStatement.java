@@ -139,7 +139,7 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
     @Override
     public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
-        server.getSessionMonitor().countEvent(StatementTypes.COPY_STMT);
+        server.getSessionMonitor().countEvent(StatementTypes.OTHER_STMT);
         Session session = server.getSession();
         ExternalDataService externalData = server.getExternalDataService();
         InputStream istr;

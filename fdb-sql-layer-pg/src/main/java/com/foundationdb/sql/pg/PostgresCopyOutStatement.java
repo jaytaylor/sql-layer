@@ -83,7 +83,7 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
             return super.execute(context, bindings, maxrows);
 
         PostgresServerSession server = context.getServer();
-        server.getSessionMonitor().countEvent(StatementTypes.COPY_STMT);
+        server.getSessionMonitor().countEvent(StatementTypes.OTHER_STMT);
         int nrows = 0;
         Cursor cursor = null;
         OutputStream outputStream = null;

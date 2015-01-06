@@ -91,29 +91,15 @@ public interface SessionMonitor {
     
     
     public enum StatementTypes {
-        STATEMENT  ("Statement"),
-        FAILED     ("Failed statement"),
-        FROM_CACHE ("Statement from cache"),
-        LOGGED     ("Statment logged"),
-        CALL_STMT  ("Call statement"),
-        COPY_STMT  ("Copy statement"),
-        DDL_STMT   ("DDL statement"),
-        DML_STMT   ("DML statement"),
-        EXPLAIN    ("Explain statement"),
-        METADATA   ("Metadata statement"),
-        SELECT     ("Select statement"),
-        SESSION    ("Session statement"),
-        SERVER     ("Server statement");
+        STATEMENT,
+        FAILED ,
+        FROM_CACHE,
+        LOGGED,
         
-        private StatementTypes (String name) {
-            this.name = name;
-        }
-        private String name; 
-        
-        public String toString() {
-            return name;
-        }
+        CALL_STMT,
+        DDL_STMT,
+        DML_STMT,
+        SELECT,
+        OTHER_STMT;
     }
-
-
 }

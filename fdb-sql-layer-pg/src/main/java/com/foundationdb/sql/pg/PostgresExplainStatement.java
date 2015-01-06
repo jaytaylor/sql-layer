@@ -114,7 +114,7 @@ public class PostgresExplainStatement implements PostgresStatement
     @Override
     public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
-        server.getSessionMonitor().countEvent(StatementTypes.EXPLAIN);
+        server.getSessionMonitor().countEvent(StatementTypes.OTHER_STMT);
         PostgresMessenger messenger = server.getMessenger();
         ServerValueEncoder encoder = server.getValueEncoder();
         int nrows = 0;

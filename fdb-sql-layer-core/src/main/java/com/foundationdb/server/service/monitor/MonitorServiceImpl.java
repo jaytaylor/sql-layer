@@ -63,7 +63,8 @@ public class MonitorServiceImpl implements Service, MonitorService, SessionEvent
     
     private Map<String, UserMonitor> users;
 
-    private ConcurrentHashMap<StatementTypes, AtomicLong> statementCounter;
+    private AtomicLong[] statementCounter;
+    //private ConcurrentHashMap<StatementTypes, AtomicLong> statementCounter;
     
     @Inject
     public MonitorServiceImpl(ConfigurationService config) {
@@ -76,7 +77,11 @@ public class MonitorServiceImpl implements Service, MonitorService, SessionEvent
     public void start() {
         logger.debug("Starting Monitor Service...");
         servers = new ConcurrentHashMap<>();
-        statementCounter = new ConcurrentHashMap<>();
+        
+        statementCounter = new AtomicLong[StatementTypes.values().length];
+        for (int i = 0; i < statementCounter.length; i++) {
+            statementCounter[i] = new AtomicLong(0);
+        }
 
         sessionAllocator = new AtomicInteger();
         sessions = new ConcurrentHashMap<>();
@@ -306,11 +311,7 @@ public class MonitorServiceImpl implements Service, MonitorService, SessionEvent
 
     @Override
     public long getCount(StatementTypes type) {
-        if (statementCounter.containsKey(type)) {
-            return statementCounter.get(type).get();
-        } else {
-            return 0L;
-        }
+        return statementCounter[type.ordinal()].get();
     }
 
     
@@ -318,9 +319,7 @@ public class MonitorServiceImpl implements Service, MonitorService, SessionEvent
     
     @Override
     public void countEvent (StatementTypes type) {
-        AtomicLong value = statementCounter.putIfAbsent(type, new AtomicLong(1));
-        if (value != null)
-            value.incrementAndGet();
+        statementCounter[type.ordinal()].incrementAndGet();
     }
     
     /* Internal */

@@ -18,7 +18,6 @@ package com.foundationdb.sql.pg;
 
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -91,7 +90,7 @@ public class PostgresServerStatement implements PostgresStatement {
         
         context.checkQueryCancelation();
         PostgresServerSession server = context.getServer();
-        server.getSessionMonitor().countEvent(StatementTypes.SERVER);
+        server.getSessionMonitor().countEvent(StatementTypes.OTHER_STMT);
         try {
             doOperation(server);
         } catch (Exception e) {

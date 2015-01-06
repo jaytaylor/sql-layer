@@ -287,14 +287,10 @@ public class ServerSchemaTablesServiceImpl
                         monitor.getCount(StatementTypes.FROM_CACHE),
                         monitor.getCount(StatementTypes.LOGGED),
                         monitor.getCount(StatementTypes.CALL_STMT),
-                        monitor.getCount(StatementTypes.COPY_STMT),
                         monitor.getCount(StatementTypes.DDL_STMT),
                         monitor.getCount(StatementTypes.DML_STMT),
-                        monitor.getCount(StatementTypes.EXPLAIN),
-                        monitor.getCount(StatementTypes.METADATA),
                         monitor.getCount(StatementTypes.SELECT),
-                        monitor.getCount(StatementTypes.SESSION),
-                        monitor.getCount(StatementTypes.SERVER),
+                        monitor.getCount(StatementTypes.OTHER_STMT),
                         ++rowCounter);
             }
         }
@@ -347,14 +343,10 @@ public class ServerSchemaTablesServiceImpl
                                               session.getCount(StatementTypes.FROM_CACHE),
                                               session.getCount(StatementTypes.LOGGED),
                                               session.getCount(StatementTypes.CALL_STMT),
-                                              session.getCount(StatementTypes.COPY_STMT),
                                               session.getCount(StatementTypes.DDL_STMT),
                                               session.getCount(StatementTypes.DML_STMT),
-                                              session.getCount(StatementTypes.EXPLAIN),
-                                              session.getCount(StatementTypes.METADATA),
                                               session.getCount(StatementTypes.SELECT),
-                                              session.getCount(StatementTypes.SESSION),
-                                              session.getCount(StatementTypes.SERVER),
+                                              session.getCount(StatementTypes.OTHER_STMT),
                                               ++rowCounter);
             }
         }
@@ -749,14 +741,10 @@ public class ServerSchemaTablesServiceImpl
             .colBigInt("query_from_cache", false)
             .colBigInt("logged_statements", false)
             .colBigInt("call_statement_count", false)
-            .colBigInt("copy_statement_count", false)
             .colBigInt("ddl_statment_count", false)
             .colBigInt("dml_statement_count", false)
-            .colBigInt("explain_statement_count", false)
-            .colBigInt("metadata_statement_count", false)
             .colBigInt("select_statement_count", false)
-            .colBigInt("session_statement_count", false)
-            .colBigInt("server_statement_count", false)
+            .colBigInt("other_statement_count", false)
             ;
         
         builder.table(SERVER_SESSIONS)
@@ -775,15 +763,12 @@ public class ServerSchemaTablesServiceImpl
             .colBigInt("failed_query_count", false)
             .colBigInt("query_from_cache", false)
             .colBigInt("logged_statements", false)
+
             .colBigInt("call_statement_count", false)
-            .colBigInt("copy_statement_count", false)
             .colBigInt("ddl_statment_count", false)
             .colBigInt("dml_statement_count", false)
-            .colBigInt("explain_statement_count", false)
-            .colBigInt("metadata_statement_count", false)
             .colBigInt("select_statement_count", false)
-            .colBigInt("session_statement_count", false)
-            .colBigInt("server_statement_count", false)
+            .colBigInt("other_statement_count", false)
             ;
         
         builder.table(ERROR_CODES)

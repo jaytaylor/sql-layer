@@ -17,10 +17,9 @@
 
 package com.foundationdb.server.service.monitor;
 
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumMap;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public abstract class SessionMonitorBase implements SessionMonitor {
     private final int sessionID;
@@ -35,8 +34,10 @@ public abstract class SessionMonitorBase implements SessionMonitor {
     private int rowsProcessed = 0;
     private UserMonitor user = null; 
     
-    private StatementCounter<StatementTypes, Long> statementCounters = new StatementCounter<StatementTypes, Long>();
-    private List<SessionEventListener> events = new CopyOnWriteArrayList<>();
+    private long[] statementCounters = new long[StatementTypes.values().length];
+    // TODO: In theory this needs to be a thread-safe data structure for adding/removing listeners
+    // In practice, this is only executed in one thread.
+    private List<SessionEventListener> eventListeners = new ArrayList<>();
     
     
     protected SessionMonitorBase(int sessionID) {
@@ -77,8 +78,8 @@ public abstract class SessionMonitorBase implements SessionMonitor {
     }
     
     public void countEvent(StatementTypes type) {
-        statementCounters.countEvent(type);
-        for (SessionEventListener listen : events) {
+        statementCounters[type.ordinal()]++;
+        for (SessionEventListener listen : eventListeners) {
             listen.countEvent(type);
         }
     }
@@ -121,12 +122,12 @@ public abstract class SessionMonitorBase implements SessionMonitor {
 
     @Override
     public long getStatementCount() {
-        return statementCounters.getCount(StatementTypes.STATEMENT);
+        return statementCounters[StatementTypes.STATEMENT.ordinal()];
     }
     
     @Override 
     public long getCount(StatementTypes type) {
-        return statementCounters.getCount(type);
+        return statementCounters[type.ordinal()];
     }
     
     @Override
@@ -188,12 +189,12 @@ public abstract class SessionMonitorBase implements SessionMonitor {
 
     @Override
     public void addSessionEventListener(SessionEventListener listener) {
-        events.add(listener);
+        eventListeners.add(listener);
     }
     
     @Override
     public void removeSessionEventListener (SessionEventListener listener) {
-        events.remove(listener);
+        eventListeners.remove(listener);
     }
 
     
@@ -211,31 +212,5 @@ public abstract class SessionMonitorBase implements SessionMonitor {
     
     public UserMonitor getUserMonitor() {
         return this.user;
-    }
-
-    private class StatementCounter<K,V> extends EnumMap<StatementTypes,Long> {
-
-        private static final long serialVersionUID = 1L;
-
-        public StatementCounter() {
-            super(StatementTypes.class);
-        }
-
-        public final void countEvent(StatementTypes statement)
-        {
-            if (this.containsKey(statement)) {
-                this.put(statement,this.get(statement).longValue() + 1L);
-            } else {
-                put(statement, 1L);
-            }
-        }
-        
-        public final long getCount(StatementTypes type) {
-            if (this.containsKey(type)) {
-                return this.get(type).longValue();
-            } else {
-                return 0L;
-            }
-        }
     }
 }

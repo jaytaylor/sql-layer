@@ -516,7 +516,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     @Override
     public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
-        server.getSessionMonitor().countEvent(StatementTypes.METADATA);
+        server.getSessionMonitor().countEvent(StatementTypes.OTHER_STMT);
         PostgresMessenger messenger = server.getMessenger();
         int nrows = 0;
         switch (query) {

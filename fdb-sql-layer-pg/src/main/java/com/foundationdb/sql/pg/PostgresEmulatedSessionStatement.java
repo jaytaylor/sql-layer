@@ -90,7 +90,7 @@ public class PostgresEmulatedSessionStatement implements PostgresStatement
     @Override
     public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
-        server.getSessionMonitor().countEvent(StatementTypes.SESSION);
+        server.getSessionMonitor().countEvent(StatementTypes.OTHER_STMT);
         doOperation(context, server);
         {        
             PostgresMessenger messenger = server.getMessenger();
