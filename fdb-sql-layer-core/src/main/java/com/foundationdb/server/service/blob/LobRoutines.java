@@ -58,6 +58,7 @@ public class LobRoutines {
         }
         List<String> path = Arrays.asList(id);
         DirectorySubspace ds = ls.createLobSubspace(tcx, path).get();
+        context.getServer().addCreatedLob(id);
         return id;
     }
     
@@ -178,6 +179,15 @@ public class LobRoutines {
         BlobBase blob = ls.getBlob(ds);
         //checkSchemaPermission(blob, context, serviceManager, tcx);
         ls.removeLob(tcx, pathElements).get();
+    }
+
+    public static void runLobGarbageCollector() {
+        ServerQueryContext context = ServerCallContextStack.getCallingContext();
+        ServiceManager serviceManager = context.getServer().getServiceManager();
+        LobService ls = serviceManager.getServiceByClass(LobService.class);
+        FDBHolder fdbHolder = serviceManager.getServiceByClass(FDBHolder.class);
+        TransactionContext tcx = fdbHolder.getTransactionContext();
+        ls.runLobGarbageCollector(tcx);
     }
     
     private static void checkSchemaPermission(BlobBase blob, ServerQueryContext context, ServiceManager serviceManager, TransactionContext tcx){

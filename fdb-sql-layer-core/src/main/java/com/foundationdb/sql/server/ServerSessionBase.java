@@ -17,6 +17,7 @@
 
 package com.foundationdb.sql.server;
 
+import com.foundationdb.*;
 import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.StoreAdapterHolder;
@@ -28,6 +29,8 @@ import com.foundationdb.server.error.NoTransactionInProgressException;
 import com.foundationdb.server.error.TransactionAbortedException;
 import com.foundationdb.server.error.TransactionInProgressException;
 import com.foundationdb.server.error.TransactionReadOnlyException;
+import com.foundationdb.server.service.blob.LobService;
+import com.foundationdb.server.store.*;
 import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.ServiceManager;
@@ -71,9 +74,12 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     protected ServerValueEncoder.ZeroDateTimeBehavior zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.NONE;
     protected FormatOptions options = new FormatOptions();    
     protected QueryContext.NotificationLevel maxNotificationLevel = QueryContext.NotificationLevel.INFO;
-
+    private List<String> lobsCreated = new LinkedList<>();
+    private LobService lobService;
+    
     public ServerSessionBase(ServerServiceRequirements reqs) {
         this.reqs = reqs;
+        lobService = getServiceManager().getServiceByClass(LobService.class);
     }
 
     @Override
@@ -158,7 +164,19 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         super.setDefaultSchemaName(defaultSchemaName);
         sessionChanged();
     }
+    
+    @Override
+    public void addCreatedLob(String lobId) {
+        lobsCreated.add(lobId);
+    }
 
+    protected void cleanUpLobs() {
+        LobService ls = getServiceManager().getServiceByClass(LobService.class);
+        FDBHolder fdbHolder = getServiceManager().getServiceByClass(FDBHolder.class);
+        TransactionContext tcx = fdbHolder.getTransactionContext();
+        lobService.checkAndCleanLobs(tcx, lobsCreated);
+    }
+    
     @Override
     public String getSessionSetting(String key) {
         return getProperty(key);

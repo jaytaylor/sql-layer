@@ -80,6 +80,11 @@ public class LobServiceImpl implements Service, LobService {
     @Override
     public void runLobGarbageCollector(TransactionContext tcx) {
         List<String> lobs = lobDirectory.list(tcx).get();
+        checkAndCleanLobs(tcx, lobs);
+    }
+    
+    @Override
+    public void checkAndCleanLobs(TransactionContext tcx, List<String> lobs) {
         DirectorySubspace ds;
         BlobBase blob;
         if (lobs.size() > 0 ) {
@@ -91,8 +96,9 @@ public class LobServiceImpl implements Service, LobService {
                     removeLob(tcx, Arrays.asList(lob)).get();
                 }
             }
-        }
+        }        
     }
+    
     
     
     @Override

@@ -23,7 +23,6 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
-import com.foundationdb.ais.protobuf.*;
 import com.foundationdb.qp.loadableplan.LoadablePlan;
 import com.foundationdb.qp.loadableplan.std.DumpGroupLoadablePlan;
 import com.foundationdb.qp.loadableplan.std.GroupProtobufLoadablePlan;
@@ -388,6 +387,9 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
                 .paramStringIn("lob_id", PATH_MAX)
                 .returnString("lob_id", 36)
                 .externalName(LobRoutines.class.getCanonicalName(), "createNewSpecificLob");
+        aisb.procedure("run_lob_garbage_collector")
+                .language("java", Routine.CallingConvention.JAVA)
+                .externalName(LobRoutines.class.getCanonicalName(), "runLobGarbageCollector");
 
         aisb.procedure("size_blob")
                 .language("java", Routine.CallingConvention.JAVA)

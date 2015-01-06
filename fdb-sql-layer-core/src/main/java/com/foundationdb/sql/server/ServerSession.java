@@ -191,4 +191,8 @@ public interface ServerSession
 
     /** Defer some foreign key constraints. */
     public void setDeferredForeignKey(ForeignKey foreignKey, boolean deferred);
+    
+    /** Register lob for possible garbage collection */
+    public void addCreatedLob(String lobId);
+    
 }

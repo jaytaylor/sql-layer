@@ -36,6 +36,7 @@ public interface LobService {
     public Future<Void> removeLob(TransactionContext tcx, List<String> path);
     public Future<Boolean> existsLob(TransactionContext tcx, List<String> path);
     public void runLobGarbageCollector(TransactionContext tcx);
+    public void checkAndCleanLobs(TransactionContext tcx, List<String> lobs);
 }
 
 
