@@ -240,6 +240,8 @@ public class AISBinderContext
             // If the view uses another view, the inner one is treated
             // like a table for those purposes.
             AISViewDefinition view = new AISViewDefinition(ddl, parser);
+            binder.bind(view.getSubquery(), false);
+            view.getTableColumnReferences(); // get the references BEFORE expanding views
             binder.bind(view.getSubquery(), true);
             if (typeComputer != null)
                 typeComputer.compute(view.getSubquery());
