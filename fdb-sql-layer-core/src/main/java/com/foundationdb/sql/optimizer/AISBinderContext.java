@@ -245,8 +245,8 @@ public class AISBinderContext
             binder.bind(view.getSubquery(), true);
             if (typeComputer != null)
                 typeComputer.compute(view.getSubquery());
-            CreateViewCompiler compiler = new CreateViewCompiler(ais, defaultSchemaName, parser, typesTranslator);
-            compiler.compile(ddl, binder.getContext());
+            ViewCompiler compiler = new ViewCompiler(ais, defaultSchemaName, parser, typesTranslator);
+            compiler.compile(ddl);
             return view;
         }
         catch (StandardException ex) {

@@ -1,7 +1,21 @@
-package com.foundationdb.sql.optimizer;
+/**
+ * Copyright (C) 2009-2014 FoundationDB, LLC
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
-import java.util.Arrays;
-import java.util.List;
+package com.foundationdb.sql.optimizer;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.server.error.SQLParserInternalException;
@@ -10,37 +24,25 @@ import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistryServiceImpl;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.optimizer.plan.AST;
-import com.foundationdb.sql.optimizer.plan.BasePlannable;
 import com.foundationdb.sql.optimizer.plan.ResultSet;
 import com.foundationdb.sql.optimizer.plan.SelectQuery;
 import com.foundationdb.sql.optimizer.rule.ASTStatementLoader;
-import com.foundationdb.sql.optimizer.rule.BaseRule;
 import com.foundationdb.sql.optimizer.rule.PlanContext;
 import com.foundationdb.sql.optimizer.rule.TypeResolver;
 import com.foundationdb.sql.parser.CreateViewNode;
 import com.foundationdb.sql.parser.CursorNode;
 import com.foundationdb.sql.parser.NodeTypes;
-import com.foundationdb.sql.parser.ParameterNode;
 import com.foundationdb.sql.parser.CursorNode.UpdateMode;
 import com.foundationdb.sql.parser.DMLStatementNode;
 import com.foundationdb.sql.parser.ResultColumn;
-import com.foundationdb.sql.parser.ResultSetNode;
 import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.server.ServerOperatorCompiler;
 
-public class CreateViewCompiler extends ServerOperatorCompiler {
+public class ViewCompiler extends ServerOperatorCompiler {
 
-    /** These are the rules that get run for view compilation. */
-    public static final List<BaseRule> VIEW_RULES = Arrays.asList(
-            // These aren't singletons because someday they will have options.
-            new ASTStatementLoader(),
-            new TypeResolver()
-    );
-
-    public CreateViewCompiler(AkibanInformationSchema ais, String defaultSchemaName, SQLParser parser,
+    public ViewCompiler(AkibanInformationSchema ais, String defaultSchemaName, SQLParser parser,
                               TypesTranslator typesTranslator) {
         initAIS(ais, defaultSchemaName);
-        initRules(VIEW_RULES);
         initParser(parser);
         initTypesTranslator(typesTranslator);
         initTypesRegistry(TypesRegistryServiceImpl.createRegistryService());
@@ -53,20 +55,7 @@ public class CreateViewCompiler extends ServerOperatorCompiler {
     }
 
     /** Compile a statement into an operator tree. */
-    public BasePlannable compile(DMLStatementNode stmt, List<ParameterNode> params) {
-        return compile(stmt, params, new PlanContext(this));
-    }
-
-    public BasePlannable compile(DMLStatementNode stmt, List<ParameterNode> params,
-                                 PlanContext plan) {
-        stmt = bindAndTransform(stmt); // Get into standard form.
-        plan.setPlan(new AST(stmt, params));
-        applyRules(plan);
-        return (BasePlannable)plan.getPlan();
-    }
-
-    /** Compile a statement into an operator tree. */
-    protected void compile(CreateViewNode createViewNode, AISBinderContext context) {
+    protected void compile(CreateViewNode createViewNode) {
         CursorNode cursorNode = new CursorNode();
         cursorNode.init("SELECT",
                 createViewNode.getParsedQueryExpression(),
@@ -77,9 +66,8 @@ public class CreateViewCompiler extends ServerOperatorCompiler {
                 UpdateMode.UNSPECIFIED,
                 null);
         cursorNode.setNodeType(NodeTypes.CURSOR_NODE);
-        
         PlanContext plan = new PlanContext(this);
-        //binder.setContext(context);
+
         bindAndTransform(cursorNode);
         plan.setPlan(new AST(cursorNode, null));
         
@@ -96,9 +84,8 @@ public class CreateViewCompiler extends ServerOperatorCompiler {
                 TInstance fieldType = resultSet.getFields().get(i).getType();
                 if (fieldType != null)
                     column.setType(resultSet.getFields().get(i).getType().dataTypeDescriptor());
-            } catch (Exception e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+            } catch (StandardException e) {
+                throw new SQLParserInternalException(e);
             }
             i++;
         }
@@ -108,14 +95,12 @@ public class CreateViewCompiler extends ServerOperatorCompiler {
     @Override
     protected DMLStatementNode bindAndTransform(DMLStatementNode stmt)  {
         try {
-            //binder.bind(stmt);
             stmt = (DMLStatementNode)booleanNormalizer.normalize(stmt);
-            typeComputer.compute(stmt);
             stmt = subqueryFlattener.flatten(stmt);
             return stmt;
-        } 
-        catch (StandardException ex) {
-            throw new SQLParserInternalException(ex);
+        }
+        catch (StandardException e) {
+            throw new SQLParserInternalException(e);
         }
     }
 }

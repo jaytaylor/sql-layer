@@ -666,11 +666,10 @@ public class AISBinder implements Visitor
     protected void columnReference(ColumnReference columnReference) {
         ColumnBinding columnBinding = (ColumnBinding)columnReference.getUserData();
         if (columnBinding != null) {
-            if (columnReferencesView(columnBinding) && expandViews) {
-                columnBinding = null;
-            } else {
+            if (!expandViews || !columnReferencesView(columnBinding)) {
                 return;
             }
+            columnBinding = null;
         }
 
         String columnName = columnReference.getColumnName();
