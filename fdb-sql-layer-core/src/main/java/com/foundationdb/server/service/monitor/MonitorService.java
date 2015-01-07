@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.service.monitor;
 
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.server.service.session.Session;
 
 import java.util.Collection;
@@ -73,6 +74,10 @@ public interface MonitorService {
     
     /** Get all the user monitors. */
     Collection<UserMonitor> getUserMonitors();
+
+    /** Get statisics counter for statement types */
+    long getCount(StatementTypes type);
+    
 
     //
     // Query Log Control

@@ -25,12 +25,10 @@ import com.foundationdb.sql.server.ServerStatement;
 import com.foundationdb.sql.server.ServerStatementCache;
 import com.foundationdb.sql.server.ServerValueDecoder;
 import com.foundationdb.sql.server.ServerValueEncoder;
-
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.parser.ParameterNode;
 import com.foundationdb.sql.parser.SQLParserException;
 import com.foundationdb.sql.parser.StatementNode;
-
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.api.DDLFunctions;
@@ -39,22 +37,24 @@ import com.foundationdb.server.service.metrics.LongMetric;
 import com.foundationdb.server.service.monitor.CursorMonitor;
 import com.foundationdb.server.service.monitor.MonitorStage;
 import com.foundationdb.server.service.monitor.PreparedStatementMonitor;
-
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.util.MultipleCauseException;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.Tap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.ietf.jgss.*;
+
 import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.security.SecureRandom;
+
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 
 import java.net.*;
+
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
@@ -384,7 +384,7 @@ public class PostgresServerConnection extends ServerSessionBase
             // Current statement did not complete, include in error message.
             sql = sessionMonitor.getCurrentStatement();
             if (sql != null) {
-                sessionMonitor.endStatement(-1); // For system tables and for next time.
+                sessionMonitor.failStatement(); // For system tables and for next time.
                 if(reqs.monitor().isQueryLogEnabled() && ex instanceof InvalidOperationException){
                     for(ErrorCode slowError : slowErrors) {
                         if (((InvalidOperationException) ex).getCode() == slowError) {
@@ -695,9 +695,11 @@ public class PostgresServerConnection extends ServerSessionBase
         updateAIS(context);
         
         PostgresStatement pstmt = null;
-        if (statementCache != null)
+        if (statementCache != null) 
             pstmt = statementCache.get(sql);
-        if (pstmt == null) {
+        if (pstmt != null) {
+            sessionMonitor.countEvent(StatementTypes.FROM_CACHE);
+        } else {
             for (PostgresStatementParser parser : unparsedGenerators) {
                 // Try special recognition first; only allowed to turn
                 // into one statement.
@@ -1284,6 +1286,7 @@ public class PostgresServerConnection extends ServerSessionBase
         PostgresBoundQueryContext bound = boundPortals.get(name);
         if (bound == null)
             throw new NoSuchCursorException(name);
+        sessionMonitor.countEvent(StatementTypes.FROM_CACHE);
         QueryBindings bindings = bound.getBindings();
         PostgresPreparedStatement pstmt = bound.getStatement();
         sessionMonitor.startStatement(pstmt.getSQL(), pstmt.getName());
