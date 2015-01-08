@@ -17,6 +17,8 @@
 
 package com.foundationdb.sql.optimizer;
 
+import java.util.Properties;
+
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.server.error.SQLParserInternalException;
 import com.foundationdb.server.types.TInstance;
@@ -29,78 +31,87 @@ import com.foundationdb.sql.optimizer.plan.SelectQuery;
 import com.foundationdb.sql.optimizer.rule.ASTStatementLoader;
 import com.foundationdb.sql.optimizer.rule.PlanContext;
 import com.foundationdb.sql.optimizer.rule.TypeResolver;
-import com.foundationdb.sql.parser.CreateViewNode;
 import com.foundationdb.sql.parser.CursorNode;
+import com.foundationdb.sql.parser.FromSubquery;
 import com.foundationdb.sql.parser.NodeTypes;
 import com.foundationdb.sql.parser.CursorNode.UpdateMode;
-import com.foundationdb.sql.parser.DMLStatementNode;
 import com.foundationdb.sql.parser.ResultColumn;
+import com.foundationdb.sql.parser.ResultColumnList;
 import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.server.ServerOperatorCompiler;
 
 public class ViewCompiler extends ServerOperatorCompiler {
 
     public ViewCompiler(AkibanInformationSchema ais, String defaultSchemaName, SQLParser parser,
-                              TypesTranslator typesTranslator) {
-        initAIS(ais, defaultSchemaName);
+                              TypesTranslator typesTranslator, AISBinderContext context) {
+        // just enough initialization so this can be used in PlanContext
+        // without the statement loader/type resolver failing
+        initAIS(ais, context, defaultSchemaName);
         initParser(parser);
         initTypesTranslator(typesTranslator);
         initTypesRegistry(TypesRegistryServiceImpl.createRegistryService());
+        initProperties(new Properties());
     }
 
-    @Override
-    protected void initAIS(AkibanInformationSchema ais, String defaultSchemaName) {
+    protected void initAIS(AkibanInformationSchema ais, AISBinderContext context, String defaultSchemaName) {
         super.initAIS(ais, defaultSchemaName);
-        binder.setAllowSubqueryMultipleColumns(true);
+        binder.setContext(context);
     }
 
-    /** Compile a statement into an operator tree. */
-    protected void compile(CreateViewNode createViewNode) {
+    /** Run just enough rules to get to TypeResolver, then set types. */
+    protected void findAndSetTypes(AISViewDefinition view) {
+        FromSubquery fromSubquery = view.getSubquery();
+
+        // put the SELECT in a cursorNode to enable bindAndTransform/statementLoader/etc on it.
         CursorNode cursorNode = new CursorNode();
         cursorNode.init("SELECT",
-                createViewNode.getParsedQueryExpression(),
-                createViewNode.getFullName(),
-                createViewNode.getOrderByList(),
-                createViewNode.getOffset(),
-                createViewNode.getFetchFirst(),
+                fromSubquery.getSubquery(),
+                view.getName().getFullTableName(),
+                fromSubquery.getOrderByList(),
+                fromSubquery.getOffset(),
+                fromSubquery.getFetchFirst(),
                 UpdateMode.UNSPECIFIED,
                 null);
         cursorNode.setNodeType(NodeTypes.CURSOR_NODE);
-        PlanContext plan = new PlanContext(this);
-
         bindAndTransform(cursorNode);
+        copyExposedNames(fromSubquery.getResultColumns(), fromSubquery.getSubquery().getResultColumns());
+        fromSubquery.setResultColumns(fromSubquery.getSubquery().getResultColumns());
+
+        PlanContext plan = new PlanContext(this);
         plan.setPlan(new AST(cursorNode, null));
-        
+
+        // can't user OperatorCompiler.compile, because it expects to return BasePlannable
         ASTStatementLoader stmtLoader = new ASTStatementLoader();
         stmtLoader.apply(plan);
-        
+
         TypeResolver typeResolver = new TypeResolver();
         typeResolver.apply(plan);
+
+        copyTypes((ResultSet) ((SelectQuery)plan.getPlan()).getInput(), fromSubquery.getResultColumns());
         
-        ResultSet resultSet = (ResultSet) ((SelectQuery)plan.getPlan()).getInput();
+    }
+
+    protected void copyExposedNames(ResultColumnList fromList, ResultColumnList toList) {
         int i = 0;
-        for (ResultColumn column : createViewNode.getParsedQueryExpression().getResultColumns()) {
+        if (fromList != null) {
+            for (ResultColumn column : toList) {
+                column.setName(fromList.get(i).getName());
+                i++;
+            }
+        }
+    }
+
+    protected void copyTypes(ResultSet fromList, ResultColumnList toList) {
+        int i = 0;
+        for (ResultColumn column : toList) {
             try {
-                TInstance fieldType = resultSet.getFields().get(i).getType();
+                TInstance fieldType = fromList.getFields().get(i).getType();
                 if (fieldType != null)
-                    column.setType(resultSet.getFields().get(i).getType().dataTypeDescriptor());
+                    column.setType(fromList.getFields().get(i).getType().dataTypeDescriptor());
             } catch (StandardException e) {
                 throw new SQLParserInternalException(e);
             }
             i++;
-        }
-    }
-
-    /** Apply AST-level transformations before rules. */
-    @Override
-    protected DMLStatementNode bindAndTransform(DMLStatementNode stmt)  {
-        try {
-            stmt = (DMLStatementNode)booleanNormalizer.normalize(stmt);
-            stmt = subqueryFlattener.flatten(stmt);
-            return stmt;
-        }
-        catch (StandardException e) {
-            throw new SQLParserInternalException(e);
         }
     }
 }

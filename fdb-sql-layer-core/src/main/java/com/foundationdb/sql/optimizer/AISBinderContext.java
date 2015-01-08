@@ -18,10 +18,6 @@
 package com.foundationdb.sql.optimizer;
 
 import com.foundationdb.sql.StandardException;
-import com.foundationdb.sql.optimizer.plan.PlanNode;
-import com.foundationdb.sql.optimizer.rule.PlanContext;
-import com.foundationdb.sql.optimizer.rule.TypeResolver;
-import com.foundationdb.sql.optimizer.rule.ConstantFolder.Folder;
 import com.foundationdb.sql.parser.CreateViewNode;
 import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.SQLParserFeature;
@@ -31,7 +27,6 @@ import com.foundationdb.ais.model.View;
 import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.error.ViewHasBadSubqueryException;
 import com.foundationdb.server.types.common.types.TypesTranslator;
-import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.types.service.TypesRegistryServiceImpl;
 
 import java.util.*;
@@ -241,12 +236,9 @@ public class AISBinderContext
             // like a table for those purposes.
             AISViewDefinition view = new AISViewDefinition(ddl, parser);
             binder.bind(view.getSubquery(), false);
-            view.getTableColumnReferences(); // get the references BEFORE expanding views
-            binder.bind(view.getSubquery(), true);
-            if (typeComputer != null)
-                typeComputer.compute(view.getSubquery());
-            ViewCompiler compiler = new ViewCompiler(ais, defaultSchemaName, parser, typesTranslator);
-            compiler.compile(ddl);
+            view.getTableColumnReferences(); // get the references before expanding views
+            ViewCompiler compiler = new ViewCompiler(ais, defaultSchemaName, parser, typesTranslator, binder.getContext());
+            compiler.findAndSetTypes(view);
             return view;
         }
         catch (StandardException ex) {
