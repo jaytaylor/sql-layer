@@ -46,27 +46,27 @@ public class LobServiceIT extends ITBase {
         TransactionContext tcx = fdbHolder.getTransactionContext();
 
         // blob creation
-        DirectorySubspace ds = ls.createLobSubspace(fdbHolder.getTransactionContext(), Arrays.asList(schemaName, tableName, columnName, UUID.randomUUID().toString())).get();
+        String id = UUID.randomUUID().toString();
+        ls.createNewLob(id);
 
-        BlobAsync blob = ls.getBlob(ds);
-        blob.append(tcx, data).get();
-        Assert.assertEquals(blob.getSize(tcx).get().longValue(), new Long(data.length).longValue());
+        ls.appendBlob(id, data);
+        Assert.assertEquals(ls.sizeBlob(id), new Long(data.length).longValue());
         
         // blob transfer to new address
-        List<String> newPath = Arrays.asList("newTestLob");
-        ls.moveLob(tcx, ds, newPath).get();
-        DirectorySubspace  ds3 = ls.getLobSubspace(tcx, newPath).get();
-        BlobBase blob2 = ls.getBlob(ds3);
+        String newPath = "newTestLob";
+        ls.moveLob(id, newPath);
         
         // data retrieval
-        byte[] output = blob2.read(tcx).get();
+        byte[] output = ls.readBlob(newPath, 0, data.length);
+        Assert.assertArrayEquals(data, output);
+        output = ls.readBlob(newPath);
         Assert.assertArrayEquals(data, output);
         
+        
         // lob removal
-        ls.removeLob(tcx, newPath).get();
-        Assert.assertEquals(blob2.getSize(tcx).get().longValue(), 0L);
-        Assert.assertFalse(ds3.exists(tcx).get());
-        Assert.assertFalse(ls.existsLob(tcx, newPath).get());
+        ls.deleteLob(newPath);
+        Assert.assertEquals(ls.sizeBlob(newPath), 0L);
+        Assert.assertFalse(ls.existsLob(newPath));
     }
 
     @Before
@@ -79,8 +79,8 @@ public class LobServiceIT extends ITBase {
 
         idA = UUID.randomUUID().toString();
         idB = UUID.randomUUID().toString();
-        ls.createLobSubspace(fdbHolder.getTransactionContext(), Arrays.asList(idA)).get();
-        ls.createLobSubspace(fdbHolder.getTransactionContext(), Arrays.asList(idB)).get();
+        ls.createNewLob(idA);
+        ls.createNewLob(idB);
 
         LobRoutines.linkTable(serviceManager(), 1, idA);
 
@@ -95,11 +95,11 @@ public class LobServiceIT extends ITBase {
         TransactionContext tcx = fdbHolder.getTransactionContext();
         
         // run collector
-        ls.runLobGarbageCollector(tcx);
+        ls.runLobGarbageCollector();
         
         // check cleaning
-        Assert.assertTrue(ls.existsLob(tcx, Arrays.asList(idA)).get());
-        Assert.assertFalse(ls.existsLob(tcx, Arrays.asList(idB)).get());
+        Assert.assertTrue(ls.existsLob(idA));
+        Assert.assertFalse(ls.existsLob(idB));
         
     }
 }

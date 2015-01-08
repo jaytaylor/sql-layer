@@ -29,14 +29,25 @@ import com.foundationdb.blob.BlobBase;
 import java.util.*;
 
 public interface LobService {
-    public Future<DirectorySubspace> createLobSubspace(TransactionContext tcx, List<String> path);
-    public Future<DirectorySubspace> getLobSubspace(TransactionContext tcx, List<String> path);
-    public BlobBase getBlob(Subspace subspace);
-    public Future<DirectorySubspace> moveLob(TransactionContext tcx, DirectorySubspace sourceSubspace, List<String> targetPath);
-    public Future<Void> removeLob(TransactionContext tcx, List<String> path);
-    public Future<Boolean> existsLob(TransactionContext tcx, List<String> path);
-    public void runLobGarbageCollector(TransactionContext tcx);
-    public void checkAndCleanLobs(TransactionContext tcx, List<String> lobs);
+
+    public void createNewLob(String lobId);
+    public boolean existsLob(String lobId);
+    public void deleteLob(String lobId);
+    public void deleteLobs(String[] lobIds);
+    public void moveLob(String oldId, String newId);
+
+    public void checkAndCleanBlobs(List<String> lobIds);
+    public void runLobGarbageCollector();
+    
+    public void linkTableBlob(String lobId, int tableId);
+    public long sizeBlob(String lobId);
+    public byte[] readBlob(String lobId, long offset, int length);
+    public byte[] readBlob(String lobId);
+    public void writeBlob(String lobId, long offset, byte[] data);
+    public void appendBlob(String lobId, byte[] data);
+    public void truncateBlob(String lobId, long size);
+
 }
+
 
 
