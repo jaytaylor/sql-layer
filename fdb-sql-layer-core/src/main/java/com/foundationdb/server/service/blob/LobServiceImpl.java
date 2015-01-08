@@ -17,14 +17,14 @@
 
 package com.foundationdb.server.service.blob;
 
-import com.foundationdb.*;
-import com.foundationdb.async.*;
+import com.foundationdb.async.Future;
 import com.foundationdb.blob.BlobBase;
-import com.foundationdb.directory.*;
-import com.foundationdb.server.error.*;
+import com.foundationdb.directory.DirectorySubspace;
+import com.foundationdb.server.error.LobException;
+import com.foundationdb.TransactionContext;
+import com.foundationdb.directory.NoSuchDirectoryException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.store.FDBHolder;
-import com.foundationdb.subspace.Subspace;
 import com.google.inject.*;
 
 import java.util.*;
@@ -148,8 +148,14 @@ public class LobServiceImpl implements Service, LobService {
     }
 
     private BlobBase openBlob(String lobId) {
-        DirectorySubspace ds = lobDirectory.open(getTcx(), Arrays.asList(lobId)).get();
-        return new BlobBase(ds);        
+        try {
+            DirectorySubspace ds = lobDirectory.open(getTcx(), Arrays.asList(lobId)).get();
+            return new BlobBase(ds);
+        }
+        catch (NoSuchDirectoryException nsde) {
+            throw new LobException("lob with id: "+ lobId +" does not exist");
+        }
+    
     }
     
     private TransactionContext getTcx(){
