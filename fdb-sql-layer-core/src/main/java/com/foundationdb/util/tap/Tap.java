@@ -179,7 +179,10 @@ public abstract class Tap
 
     public static void defaultToOn(boolean defaultIsOn)
     {
-        System.getProperties().setProperty(DEFAULT_ON_PROPERTY, Boolean.toString(defaultIsOn));
+        if (defaultIsOn)
+            initiallyEnabledPattern = Pattern.compile(".*");
+        else
+            initiallyEnabledPattern = null;
     }
 
     /**
@@ -327,8 +330,7 @@ public abstract class Tap
 
     private static boolean defaultOn(String name)
     {
-        return Boolean.getBoolean(DEFAULT_ON_PROPERTY) ||
-               initiallyEnabledPattern != null && initiallyEnabledPattern.matcher(name).find();
+        return initiallyEnabledPattern != null && initiallyEnabledPattern.matcher(name).find();
     }
 
     private static Collection<Dispatch> dispatchesCopy()
@@ -342,7 +344,6 @@ public abstract class Tap
 
     static final Logger LOG = LoggerFactory.getLogger(Tap.class.getName());
     static final String NEW_LINE = System.getProperty("line.separator");
-    private static final String DEFAULT_ON_PROPERTY = "taps_default_on";
     private static final Comparator<TapReport> TAPS_BY_NAME_COMPARATOR = new Comparator<TapReport>()
     {
         @Override
