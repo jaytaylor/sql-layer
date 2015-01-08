@@ -82,7 +82,7 @@ public class LobServiceIT extends ITBase {
         ls.createNewLob(idA);
         ls.createNewLob(idB);
 
-        LobRoutines.linkTable(serviceManager(), 1, idA);
+        ls.linkTableBlob(idA, 1);
 
     }
     

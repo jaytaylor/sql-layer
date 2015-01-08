@@ -19,13 +19,6 @@
 package com.foundationdb.server.service.blob;
 
 
-import com.foundationdb.TransactionContext;
-import com.foundationdb.subspace.Subspace;
-import com.foundationdb.directory.DirectorySubspace;
-import com.foundationdb.async.Future;
-
-import com.foundationdb.blob.BlobBase;
-
 import java.util.*;
 
 public interface LobService {

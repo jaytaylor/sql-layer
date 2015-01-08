@@ -93,7 +93,7 @@ public class LobServiceImpl implements Service, LobService {
                     }
                 }
             }
-            deleteLobs((String[])toDo.toArray());
+            deleteLobs(toDo.toArray(new String[toDo.size()]));
         }
     }
 

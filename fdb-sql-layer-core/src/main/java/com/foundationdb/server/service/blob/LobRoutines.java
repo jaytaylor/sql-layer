@@ -56,58 +56,38 @@ public class LobRoutines {
         return lobId;
     }
     
-    public static void linkTable(ServiceManager serviceManager, int tableId, String blobId) {
-        LobService ls = serviceManager.getServiceByClass(LobService.class);
-        ls.linkTableBlob(blobId, tableId);
-    }
-    
     public static long sizeBlob(String blobId) {
-        ServerQueryContext context = ServerCallContextStack.getCallingContext();
-        ServiceManager serviceManager = context.getServer().getServiceManager();
-        LobService ls = serviceManager.getServiceByClass(LobService.class);
-        return ls.sizeBlob(blobId);
+        return lobService().sizeBlob(blobId);
     }
     
     public static byte[] readBlob(long offset, int length, String blobId) {
-        ServerQueryContext context = ServerCallContextStack.getCallingContext();
-        ServiceManager serviceManager = context.getServer().getServiceManager();
-        LobService ls = serviceManager.getServiceByClass(LobService.class);
-        return ls.readBlob(blobId, offset, length);
+        return lobService().readBlob(blobId, offset, length);
     }
     
     public static void writeBlob(long offset, byte[] data, String blobId){
-        QueryContext context = ServerCallContextStack.getCallingContext();
-        ServiceManager serviceManager = context.getServiceManager();
-        LobService ls = serviceManager.getServiceByClass(LobService.class);
-        ls.writeBlob(blobId, offset, data);
+        lobService().writeBlob(blobId, offset, data);
     }
 
     public static void appendBlob(byte[] data, String blobId) {
-        QueryContext context = ServerCallContextStack.getCallingContext();
-        ServiceManager serviceManager = context.getServiceManager();
-        LobService ls = serviceManager.getServiceByClass(LobService.class);
-        ls.appendBlob(blobId, data); 
+        lobService().appendBlob(blobId, data); 
     }
 
     public static void truncateBlob(long newLength, String blobId) {
-        QueryContext context = ServerCallContextStack.getCallingContext();
-        ServiceManager serviceManager = context.getServiceManager();
-        LobService ls = serviceManager.getServiceByClass(LobService.class);
-        ls.truncateBlob(blobId, newLength);
+        lobService().truncateBlob(blobId, newLength);
     }
 
     public static void deleteBlob(String blobId){
-        QueryContext context = ServerCallContextStack.getCallingContext();
-        ServiceManager serviceManager = context.getServiceManager();
-        LobService ls = serviceManager.getServiceByClass(LobService.class);
-        ls.deleteLob(blobId);
+        lobService().deleteLob(blobId);
     }
 
     public static void runLobGarbageCollector() {
+        lobService().runLobGarbageCollector();
+    }
+    
+    private static LobService lobService() {
         QueryContext context = ServerCallContextStack.getCallingContext();
         ServiceManager serviceManager = context.getServiceManager();
-        LobService ls = serviceManager.getServiceByClass(LobService.class);
-        ls.runLobGarbageCollector();
+        return serviceManager.getServiceByClass(LobService.class);        
     }
     
     /*
