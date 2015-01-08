@@ -250,7 +250,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         boolean sslOn = Boolean.parseBoolean(sslProperty);
 
         boolean crossOriginOn = Boolean.parseBoolean(configurationService.getProperty(CONFIG_XORIGIN_ENABLED));
-        logger.info("Starting {} service on {}:{} with authentication {} and CORS {}",
+        logger.info("Starting {} server listening on {}:{} with authentication {} and CORS {}",
                     new Object[] { sslOn ? "HTTPS" : "HTTP", hostLocal, portLocal, login, crossOriginOn ? "on" : "off"});
                     
         Server localServer = new Server();

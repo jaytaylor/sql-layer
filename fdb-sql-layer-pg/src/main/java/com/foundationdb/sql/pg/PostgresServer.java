@@ -174,7 +174,8 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
 
     @Override
     public void run() {
-        logger.info("Postgres server listening on {}:{}", host, port);
+        computeAuthenticationType();
+        logger.info("Starting Postgres server listening on {}:{} with authentication {}", host, port, authenticationType);
         Random rand = new Random();
         LongMetric bytesInMetric = null, bytesOutMetric = null;
         try {
@@ -390,34 +391,36 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
         return overrideCurrentTime;
     }
 
-    public synchronized AuthenticationType getAuthenticationType() {
-        if (authenticationType == null) {
-            if (properties.getProperty("gssConfigName") != null) {
-                authenticationType = AuthenticationType.GSS;
-            }
-            else {
-                String login = properties.getProperty("login", "none");
-                if (login.equals("none")) {
-                    authenticationType = AuthenticationType.NONE;
-                }
-                else if (login.equals("password")) {
-                    authenticationType = AuthenticationType.CLEAR_TEXT;
-                }
-                else if (login.equals("md5")) {
-                    authenticationType = AuthenticationType.MD5;
-                }
-                else {
-                    throw new IllegalArgumentException("Invalid login property: " +
-                                                       login);
-                }
-            }
-            if (authenticationType != AuthenticationType.NONE) {
-                logger.info("Authentication required {}", authenticationType);
-            }
-        }
+    public AuthenticationType getAuthenticationType() {
         return authenticationType;
     }
 
+    protected void computeAuthenticationType() {
+        if (properties.getProperty("gssConfigName") != null) {
+            authenticationType = AuthenticationType.GSS;
+        }
+        else {
+            String login = properties.getProperty("login", "none");
+            if (login.equals("none")) {
+                authenticationType = AuthenticationType.NONE;
+            }
+            else if (login.equals("password")) {
+                authenticationType = AuthenticationType.CLEAR_TEXT;
+            }
+            else if (login.equals("md5")) {
+                authenticationType = AuthenticationType.MD5;
+            }
+            else {
+                throw new IllegalArgumentException("Invalid login property: " +
+                                                   login);
+            }
+        }
+    }
+
+    /** Login to the KDC as the service for this server (using a keytab)
+     * and return the <code>Subject</code> that can then be used to
+     * authenticate a client.
+     */
     public synchronized Subject getGSSLogin() throws LoginException {
         if (gssLogin == null) {
             LoginContext lc = new LoginContext(properties.getProperty("gssConfigName"));
