@@ -105,4 +105,11 @@ public class ViewDDLIT extends AISDDLITBase {
         executeDDL("DROP VIEW v1");
     }
 
+    @Test
+    public void testViewColumnNames() throws Exception {
+        executeDDL("CREATE VIEW v(x,y) AS SELECT id, s FROM t");
+        View v = ais().getView(SCHEMA_NAME, "v");
+        assertEquals("x", v.getColumns().get(0).getName());
+        assertEquals("y", v.getColumns().get(1).getName());
+    }
 }
