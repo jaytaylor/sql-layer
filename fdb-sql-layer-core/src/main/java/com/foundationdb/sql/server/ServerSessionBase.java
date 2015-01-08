@@ -171,10 +171,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     protected void cleanUpLobs() {
-        LobService ls = getServiceManager().getServiceByClass(LobService.class);
-        FDBHolder fdbHolder = getServiceManager().getServiceByClass(FDBHolder.class);
-        TransactionContext tcx = fdbHolder.getTransactionContext();
-        lobService.checkAndCleanLobs(tcx, lobsCreated);
+        lobService.checkAndCleanBlobs(lobsCreated);
     }
     
     @Override

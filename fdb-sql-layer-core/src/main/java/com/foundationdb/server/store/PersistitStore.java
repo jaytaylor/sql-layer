@@ -579,7 +579,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     }
 
     @Override
-    protected void clearLobs(Row row){
+    protected void deleteLobs(Row row){
         // do nothing
     }
     

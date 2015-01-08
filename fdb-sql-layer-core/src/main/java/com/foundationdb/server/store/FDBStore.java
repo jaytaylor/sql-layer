@@ -18,18 +18,9 @@
 package com.foundationdb.server.store;
 
 import com.foundationdb.*;
-import com.foundationdb.ais.model.Column;
-import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.HasStorage;
-import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.Sequence;
-import com.foundationdb.ais.model.StorageDescription;
-import com.foundationdb.ais.model.Table;
-import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.util.TableChange.ChangeType;
 import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
-import com.foundationdb.blob.BlobBase;
 import com.foundationdb.directory.DirectorySubspace;
 import com.foundationdb.directory.PathUtil;
 import com.foundationdb.qp.row.IndexRow;
@@ -43,11 +34,9 @@ import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.FDBNotCommittedException;
-import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.blob.LobService;
-import com.foundationdb.server.service.blob.LobRoutines;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.metrics.LongMetric;
@@ -92,6 +81,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     private final FDBTransactionService txnService;
     private final MetricsService metricsService;
     private final ReadWriteMap<Object, SequenceCache> sequenceCache;
+    private LobService lobService;
 
     private static final String ROWS_FETCHED_METRIC = "SQLLayerRowsFetched";
     private static final String ROWS_STORED_METRIC = "SQLLayerRowsStored";
@@ -368,6 +358,17 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
 
     @Override
+    public void dropGroup(final Session session, Group group) {
+        deleteLobs(session, group);
+        group.getRoot().visit(new AbstractVisitor() {
+            @Override
+            public void visit(Table table) {
+                removeTrees(session, table);
+            }
+        });
+    }
+
+    @Override
     public void removeTrees(Session session, Table table) {
         // Table and indexes (and group and group indexes if root table)
         removeIfExists(session, rootDir, FDBNameGenerator.dataPath(table.getName()));
@@ -385,9 +386,30 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     @Override
     public void removeTree(Session session, HasStorage object) {
+        deleteLobs(session, object);
         truncateTree(session, object);
     }
 
+    private void deleteLobs(Session session, HasStorage object) {
+        if (object instanceof com.foundationdb.ais.model.Group) {
+            Group group = (Group)object;
+            GroupsContainsLobsVisitor visitor = new GroupsContainsLobsVisitor();
+            group.visit(visitor);
+            if (visitor.containsLob()) {
+                deleteLobsChecked(session, group);
+            }
+        }
+    }
+    
+    private void deleteLobsChecked(Session session, Group group) {
+        FDBStoreData storeData = createStoreData(session, group);
+        groupIterator(session, storeData);
+        while (storeData.next()) {
+            Row row = expandGroupData(session, storeData, SchemaCache.globalSchema(group.getAIS()));
+            deleteLobs(row);
+        }
+    }
+    
     @Override
     public void truncateIndexes(Session session, Collection<? extends Index> indexes) {
         for(Index index : indexes) {
@@ -618,23 +640,26 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             if (rowType.typeAt(i).equalsExcludingNullable(AkBlob.INSTANCE.instance(true))) {
                 int tableId = rowType.table().getTableId();
                 UUID blobId = (UUID)row.value(i).getObject();
-                LobRoutines.linkTable(serviceManager, tableId, blobId.toString());
+                getLobService().linkTableBlob(blobId.toString(), tableId);
             }
         }
     }
     
     @Override
-    protected void clearLobs(Row row) {
+    protected void deleteLobs(Row row) {
         RowType rowType = row.rowType();
         for( int i = 0; i < rowType.nFields(); i++ ) {
             if (rowType.typeAt(i).equalsExcludingNullable(AkBlob.INSTANCE.instance(true))) {
                 UUID blobId = (UUID)row.value(i).getObject();
-                LobService ls = serviceManager.getServiceByClass(LobService.class);
-                FDBHolder fdbHolder = serviceManager.getServiceByClass(FDBHolder.class);
-                TransactionContext tcx = fdbHolder.getTransactionContext();
-                ls.removeLob(tcx, Arrays.asList(blobId.toString()));
+                getLobService().deleteLob(blobId.toString());
             }
         }        
+    }
+    
+    private LobService getLobService() {
+        if (lobService == null)
+            lobService = serviceManager.getServiceByClass(LobService.class);
+        return lobService;
     }
     
     //

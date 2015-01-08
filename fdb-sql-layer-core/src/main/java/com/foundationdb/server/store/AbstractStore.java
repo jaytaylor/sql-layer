@@ -151,7 +151,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     abstract void storeLobs(Row row);
     
     /** Handles actions for clearing lobs*/
-    abstract void clearLobs(Row row);
+    abstract void deleteLobs(Row row);
     
     
     //
@@ -720,7 +720,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
             }
         }
 
-        clearLobs(row);
+        deleteLobs(row);
         // Remove the group row
         clear(session, storeData);
         rowTable.tableStatus().rowDeleted(session);

@@ -89,6 +89,7 @@ import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.TableChanges;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
+import com.foundationdb.server.types.aksql.aktypes.AkBlob;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.sql.StandardException;
@@ -284,7 +285,7 @@ public class BasicDDLFunctions implements DDLFunctions {
         }
 
         DMLFunctions dml = new BasicDMLFunctions(schemaManager(), store(), listenerService);
-        if(table.isRoot()) {
+        if(table.isRoot() && !containsLob(table)) {
             // Root table and no child tables, can delete all associated trees
             store().removeTrees(session, table);
         } else {
@@ -304,6 +305,14 @@ public class BasicDDLFunctions implements DDLFunctions {
                 SchemaManager.DropBehavior.RESTRICT);
     }
 
+    private boolean containsLob(Table table) {
+        for (Column column : table.getColumns()) {
+            if (column.getType().equalsExcludingNullable(AkBlob.INSTANCE.instance(true)))
+                return true;
+        }
+        return false;
+    }
+    
     @Override
     public ChangeLevel alterTable(final Session session,
                                   final TableName tableName,
@@ -438,22 +447,24 @@ public class BasicDDLFunctions implements DDLFunctions {
         }
 
         // Find all groups and tables in the schema
-        Set<Group> groupsToDrop = new HashSet<>();
         List<Table> explicitlyDroppedTables = new ArrayList<>();
         List<Table> implicitlyDroppedTables = new ArrayList<>();
 
         for(Table table : schema.getTables().values()) {
-            groupsToDrop.add(table.getGroup());
             // Cannot drop entire group if parent is not in the same schema
             final Join parentJoin = table.getParentJoin();
-            if(parentJoin != null) {
+            
+            if (containsLob(table)) {
+                explicitlyDroppedTables.add(table);
+            } else if(parentJoin != null) {
                 final Table parentTable = parentJoin.getParent();
-                if(!parentTable.getName().getSchemaName().equals(schemaName)) {
+                if (!parentTable.getName().getSchemaName().equals(schemaName)) {
                     explicitlyDroppedTables.add(table);
                 } else {
                     implicitlyDroppedTables.add(table);
                 }
-            } else {
+            }
+            else {
                 implicitlyDroppedTables.add(table);
             }
             // All children must be in the same schema
