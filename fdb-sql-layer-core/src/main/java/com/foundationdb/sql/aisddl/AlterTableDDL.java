@@ -528,19 +528,17 @@ public class AlterTableDDL {
             break;
             case NodeTypes.MODIFY_COLUMN_TYPE_NODE: // All but [NOT] NULL comes from type
                 {
-                    TInstance type = typesTranslator
-                        .typeForSQLType(modNode.getType())
-                        .withNullable(column.getNullable());
-                    if (false) {
-                        // TODO: Determine whether compatible, does affect sequence, etc.
-                        column.setType(type);
-                    }
-                    else {
-                        tableCopy.dropColumn(modNode.getColumnName());
-                        builder.column(tableCopy.getName().getSchemaName(), tableCopy.getName().getTableName(), column.getName(),
-                                       column.getPosition(), type, false, // column.getInitialAutoIncrementValue() != null
-                                       column.getDefaultValue(), column.getDefaultFunction());
-                    }
+                    TInstance type = typesTranslator.typeForSQLType(modNode.getType())
+                                                    .withNullable(column.getNullable());
+                    tableCopy.dropColumn(modNode.getColumnName());
+                    builder.column(tableCopy.getName().getSchemaName(),
+                                   tableCopy.getName().getTableName(),
+                                   column.getName(),
+                                   column.getPosition(),
+                                   type,
+                                   false,
+                                   column.getDefaultValue(),
+                                   column.getDefaultFunction());
                 }
             break;
             default:
