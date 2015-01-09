@@ -101,6 +101,11 @@ public class ForeignKey implements Constraint
         return findIndex(referencingTable, referencingColumns, false);
     }
 
+    @Override
+    public Table getConstraintTable() {
+        return getReferencingTable();
+    }
+
     public TableName getConstraintName() {
         return constraintName;
     }

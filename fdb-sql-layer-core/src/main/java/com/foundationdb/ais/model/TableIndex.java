@@ -180,6 +180,15 @@ public class TableIndex extends Index
         return hKey;
     }
 
+    //
+    // Constraint
+    //
+
+    @Override
+    public Table getConstraintTable() {
+        return table;
+    }
+
     private final Table table;
     private HKey hKey;
     private IndexToHKey indexToHKey;
