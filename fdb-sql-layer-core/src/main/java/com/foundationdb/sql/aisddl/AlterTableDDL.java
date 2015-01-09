@@ -17,6 +17,8 @@
 
 package com.foundationdb.sql.aisddl;
 
+import com.foundationdb.ais.model.Constraint;
+import com.foundationdb.ais.model.Schema;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.server.error.ColumnAlreadyGeneratedException;
 import com.foundationdb.server.error.ColumnNotGeneratedException;
@@ -34,7 +36,6 @@ import com.foundationdb.ais.model.DefaultIndexNameGenerator;
 import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.ais.model.IndexName;
 import com.foundationdb.ais.model.IndexNameGenerator;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.Routine;
@@ -82,8 +83,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import org.slf4j.LoggerFactory;
 
 import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 import static com.foundationdb.sql.aisddl.DDLHelper.convertName;
@@ -242,55 +241,59 @@ public class AlterTableDDL {
                 case NodeTypes.CONSTRAINT_DEFINITION_NODE: {
                     ConstraintDefinitionNode cdn = (ConstraintDefinitionNode) node;
                     if(cdn.getConstraintType() == ConstraintType.DROP) {
-                        String name = cdn.getName();
+                        String constraintName = cdn.getName();
+                        Constraint constraint = null;
+                        if(constraintName != null) {
+                            Schema schema = origTable.getAIS().getSchema(origTable.getName().getSchemaName());
+                            constraint = schema.getConstraint(constraintName);
+                            if((constraint != null) && (constraint.getConstraintTable() != origTable)) {
+                                // Not associated with this table, handled below
+                                constraint = null;
+                            }
+                        }
                         switch(cdn.getVerifyType()) {
                             case PRIMARY_KEY:
                                 if(origTable.getPrimaryKey() == null) {
                                     skipOrThrow(context, cdn.getExistenceCheck(),
                                                 null,
                                                 new NoSuchConstraintException(origTable.getName(), Index.PRIMARY));
-                                    name = null;
                                 } else {
-                                    name = origTable.getPrimaryKey().getIndex().getIndexName().getName();
+                                    Index idx = origTable.getPrimaryKey().getIndex();
+                                    indexChanges.add(TableChange.createDrop(idx.getIndexName().getName()));
                                 }
                             break;
                             case DROP:
-                                boolean found = false;
-                                String indexName = indexNameForConstrainName(origTable, name);
-                                if (indexName != null) {
-                                    found = true;
-                                    name = indexName;
-                                } else if (origTable.getReferencingForeignKey(name) != null) {
-                                    fkDefNodes.add(newFKDropNode(node, name, Boolean.FALSE));
-                                    found = true;
-                                } else if (origTable.getParentJoin() != null && origTable.getParentJoin().getName().equals(name)) {
-                                    fkDefNodes.add(newFKDropNode(node, name, Boolean.TRUE));
-                                    found = true;
-                                    name = null;
-                                }
-                                if(!found) {
-                                   skipOrThrow(context,
-                                               cdn.getExistenceCheck(),
-                                               null,
-                                               new NoSuchConstraintException(origTable.getName(), name));
-                                    name = null;
+                                if(constraint == null) {
+                                    skipOrThrow(context,
+                                                cdn.getExistenceCheck(),
+                                                null,
+                                                new NoSuchConstraintException(origTable.getName(), constraintName));
+                                } else if(constraint instanceof ForeignKey) {
+                                    fkDefNodes.add(newFKDropNode(node, constraintName, Boolean.FALSE));
+                                } else if(constraint instanceof Join) {
+                                    fkDefNodes.add(newFKDropNode(node, constraintName, Boolean.TRUE));
+                                } else if(constraint instanceof Index) {
+                                    Index idx = (Index)constraint;
+                                    indexChanges.add(TableChange.createDrop(idx.getIndexName().getName()));
+                                } else {
+                                    throw new IllegalStateException("Unexpected constraint type: " + constraint);
                                 }
                                 break;
                             case UNIQUE:
-                                Index index = origTable.getIndex(name);
-                                if(index == null || !index.isUnique()) {
+                                if((constraint instanceof Index) &&
+                                    ((Index)constraint).isUnique() &&
+                                    !((Index)constraint).isPrimaryKey()) {
+                                    Index idx = (Index)constraint;
+                                    indexChanges.add(TableChange.createDrop(idx.getIndexName().getName()));
+                                } else {
                                     skipOrThrow(context,
                                                 cdn.getExistenceCheck(),
                                                 null,
                                                 new NoSuchUniqueException(origTable.getName(), cdn.getName()));
-                                    name = null;
                                 }
                             break;
                             case CHECK:
                                 throw new UnsupportedCheckConstraintException();
-                        }
-                        if (name != null) {
-                            indexChanges.add(TableChange.createDrop(name));
                         }
                     } else if (cdn.getConstraintType() == ConstraintType.PRIMARY_KEY) {
                         if (origTable.getPrimaryKeyIncludingInternal().isAkibanPK())
@@ -635,15 +638,6 @@ public class AlterTableDDL {
                 tableCopy.removeIndexes(Collections.singleton(indexCopy));
             }
         }
-    }
-    
-    private static String indexNameForConstrainName(Table origTable, String name) {
-        for(TableIndex ti : origTable.getIndexes()) {
-            if ((ti.getConstraintName() != null) && (ti.getConstraintName().getTableName().equals(name))) {
-                return ti.getIndexName().getName();
-            }
-        }
-        return null;
     }
 
     private static boolean isRestartWithNode(ModifyColumnNode modNode) {

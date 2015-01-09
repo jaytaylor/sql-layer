@@ -443,8 +443,13 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
 
     // constraint
 
+    @Override
+    public Table getConstraintTable() {
+        return null;
+    }
+
+    @Override
     public TableName getConstraintName() {
         return constraintName;
     }
-
 }
