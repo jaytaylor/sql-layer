@@ -38,10 +38,19 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
+import javax.security.auth.Subject;
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.NameCallback;
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.callback.UnsupportedCallbackException;
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -52,8 +61,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 public class SecurityServiceImpl implements SecurityService, Service {
     public static final String SCHEMA = TableName.SECURITY_SCHEMA;
@@ -490,6 +501,63 @@ public class SecurityServiceImpl implements SecurityService, Service {
             roles = Collections.emptyList();
         session.put(SESSION_PRINCIPAL_KEY, user);
         session.put(SESSION_ROLES_KEY, roles);
+    }
+
+    @Override
+    public Principal authenticateJaas(Session session, final String name, final String password,
+                                      String configName, Class<? extends Principal> userClass, Collection<Class<? extends Principal>> roleClasses) {
+        Subject subject;
+        try {
+            LoginContext login = new LoginContext(configName, new CallbackHandler() {
+                    @Override
+                    public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
+                        for (Callback callback : callbacks) {
+                            if (callback instanceof NameCallback) {
+                                ((NameCallback)callback).setName(name);
+                            }
+                            else if (callback instanceof PasswordCallback) {
+                                ((PasswordCallback)callback).setPassword(password.toCharArray());
+                            }
+                            else {
+                                throw new UnsupportedCallbackException(callback);
+                            }
+                        }
+                    }
+                });
+            login.login();
+            subject = login.getSubject();
+        }
+        catch (LoginException ex) {
+            throw new AuthenticationFailedException(ex);
+        }
+        Set<? extends Principal> allPrincs = (userClass == null) ?
+            new HashSet<>(subject.getPrincipals()) :
+            subject.getPrincipals(userClass);
+        Collection<String> roles = null;
+        if (roleClasses != null) {
+            roles = new HashSet<>();
+            for (Class<? extends Principal> clazz : roleClasses) {
+                Set<? extends Principal> rolePrincs = subject.getPrincipals(clazz);
+                allPrincs.removeAll(rolePrincs);
+                for (Principal role : rolePrincs) {
+                    roles.add(role.getName());
+                }
+            }
+        }
+        Principal user;
+        if (allPrincs.isEmpty())
+            throw new AuthenticationFailedException("Authentication successful but no Principals returned");
+        user = allPrincs.iterator().next();
+        if (roleClasses == null) {
+            User localUser = getUser(user.getName());
+            if (localUser != null) {
+                roles = localUser.getRoles();
+            }
+        }
+        logger.debug("For user {}:\n{}\n  Chose principal {}, roles {}", name, subject, user, roles);
+        session.put(SESSION_PRINCIPAL_KEY, user);
+        session.put(SESSION_ROLES_KEY, roles);
+        return user;
     }
 
     /* Service */

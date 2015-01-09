@@ -73,6 +73,13 @@ public interface SecurityService
     /** Set {@link Session}'s authentication directly. */
     public void setAuthenticated(Session session, Principal user, boolean inAdminRole);
 
+    /** Authenticate user using given JAAS configuration and set in {@link Session}.
+     * @param configName name of the JAAS configuration to use
+     * @param roleClasses list of {@link Principal} classes that represent roles or <code>null</code> to get from corresponding user in local database.
+     */
+    public Principal authenticateJaas(Session session, String name, String password,
+                                      String configName, Class<? extends Principal> userClass, Collection<Class<? extends Principal>> roleClasses);
+
     public void addRole(String name);
     public void deleteRole(String name);
     public User getUser(String name);

@@ -34,6 +34,12 @@ public class DummySecurityService implements SecurityService {
     }
 
     @Override
+    public Principal authenticateJaas(Session session, String name, String password,
+                                      String configName, Class<? extends Principal> userClass, Collection<Class<? extends Principal>> roleClasses) {
+        return null;
+    }
+
+    @Override
     public boolean isAccessible(Session session, String schema) {
         return true;
     }
