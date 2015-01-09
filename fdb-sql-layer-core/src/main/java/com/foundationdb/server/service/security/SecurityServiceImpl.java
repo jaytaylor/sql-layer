@@ -51,6 +51,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
@@ -313,42 +314,13 @@ public class SecurityServiceImpl implements SecurityService, Service {
     }
 
     @Override
-    public User authenticate(Session session, String name, String password) {
-        String expected = md5Password(name, password);
-        User user = null;
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        try {
-            conn = openConnection();
-            stmt = conn.prepareStatement(GET_USER_SQL);
-            stmt.setString(1, name);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next() && expected.equals(rs.getString(5))) {
-                user = getUser(rs);
-            }
-            rs.close();
-            conn.commit();
-        }
-        catch (SQLException ex) {
-            throw new SecurityException("Error adding role", ex);
-        }
-        finally {
-            cleanup(conn, stmt);
-        }
-        if (user == null) {
-            throw new AuthenticationFailedException("invalid username or password");
-        }
-        if (session != null) {
-            session.put(SESSION_KEY, user);
-        }
-        if (monitor.getUserMonitor(user.getName()) == null) {
-            monitor.registerUserMonitor(new UserMonitorImpl(user.getName()));
-        }
-        return user;
+    public Principal authenticateLocal(Session session, String name, String password) {
+        return authenticateLocal(session, name, password, null);
     }
 
     @Override
-    public User authenticate(Session session, String name, String password, byte[] salt) {
+    public Principal authenticateLocal(Session session, String name, String password,
+                                       byte[] salt) {
         User user = null;
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -357,8 +329,13 @@ public class SecurityServiceImpl implements SecurityService, Service {
             stmt = conn.prepareStatement(GET_USER_SQL);
             stmt.setString(1, name);
             ResultSet rs = stmt.executeQuery();
-            if (rs.next() && password.equals(salted(rs.getString(5), salt))) {
-                user = getUser(rs);
+            if (rs.next()) {
+                String md5 = rs.getString(5);
+                if ((salt == null) ?
+                    md5Password(name, password).equals(md5) :
+                    password.equals(salted(md5, salt))) {
+                    user = getUser(rs);
+                }
             }
             rs.close();
             conn.commit();
@@ -373,7 +350,8 @@ public class SecurityServiceImpl implements SecurityService, Service {
             throw new AuthenticationFailedException("invalid username or password");
         }
         if (session != null) {
-            session.put(SESSION_KEY, user);
+            session.put(SESSION_PRINCIPAL_KEY, user);
+            session.put(SESSION_ROLES_KEY, user.getRoles());
         }
         if (monitor.getUserMonitor(user.getName()) == null) {
             monitor.registerUserMonitor(new UserMonitorImpl(user.getName()));
@@ -467,33 +445,20 @@ public class SecurityServiceImpl implements SecurityService, Service {
         finally {
             cleanup(conn, stmt);
         }
-        session.remove(SESSION_KEY);
+        session.remove(SESSION_PRINCIPAL_KEY);
+        session.remove(SESSION_ROLES_KEY);
     }
 
     @Override
-    /** If this session is authenticated, does it have access to the given schema?
-     *
-     * NOTE: If authentication is enabled, caller must not call this (that is, allow
-     * any queries) without authentication, since that is indistinguishable from
-     * authentication disabled.
-     *
-     * @see com.foundationdb.sql.pg.PostgresServerConnection#authenticationOkay
-     */
     public boolean isAccessible(Session session, String schema) {
-        User user = session.get(SESSION_KEY);
+        Principal user = session.get(SESSION_PRINCIPAL_KEY);
         if (user == null) return true; // Authentication disabled.
-        return isAccessible(user.getName(), schema) || user.hasRole(ADMIN_ROLE);
+        if (isAccessible(user.getName(), schema)) return true;
+        Collection<String> roles = session.get(SESSION_ROLES_KEY);
+        return ((roles != null) && roles.contains(ADMIN_ROLE));
     }
 
     @Override
-    /** If this request user is authenticated, does it have access to the given schema?
-     *
-     * NOTE: If authentication is enabled, caller must not call this (that is, allow
-     * any queries) without authentication, since that is indistinguishable from
-     * authentication disabled.
-     *
-     * @see com.foundationdb.http.HttpConductorImpl.AuthenticationType
-     */
     public boolean isAccessible(Principal user, boolean inAdminRole, String schema) {
         if (user == null) return true; // Authentication disabled.
         if (inAdminRole) return true;
@@ -509,12 +474,22 @@ public class SecurityServiceImpl implements SecurityService, Service {
     }
 
     @Override
-    /** If this session is authenticated, does it administrative access?
-     */
     public boolean hasRestrictedAccess(Session session) {
-        User user = session.get(SESSION_KEY);
+        Principal user = session.get(SESSION_PRINCIPAL_KEY);
         if (user == null) return true; // Authentication disabled.
-        return user.hasRole(ADMIN_ROLE);
+        Collection<String> roles = session.get(SESSION_ROLES_KEY);
+        return ((roles != null) && roles.contains(ADMIN_ROLE));
+    }
+
+    @Override
+    public void setAuthenticated(Session session, Principal user, boolean inAdminRole) {
+        Collection<String> roles;
+        if (inAdminRole)
+            roles = Collections.singleton(ADMIN_ROLE);
+        else
+            roles = Collections.emptyList();
+        session.put(SESSION_PRINCIPAL_KEY, user);
+        session.put(SESSION_ROLES_KEY, roles);
     }
 
     /* Service */

@@ -26,5 +26,5 @@ import java.util.Properties;
 public interface EmbeddedJDBCService
 {
     public Driver getDriver();
-    public Connection newConnection(Properties properties, Principal principal) throws SQLException;
+    public Connection newConnection(Properties properties, Principal principal, boolean isAdminRole) throws SQLException;
 }

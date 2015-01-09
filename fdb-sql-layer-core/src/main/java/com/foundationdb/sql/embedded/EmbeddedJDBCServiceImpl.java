@@ -29,6 +29,7 @@ import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.metrics.MetricsService;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.security.User;
+import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.Store;
@@ -89,17 +90,7 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
     }
 
     @Override
-    public Connection newConnection(Properties properties, Principal principal) throws SQLException {
-        User user = null;
-        if (principal != null) {
-            if (principal instanceof User) {
-                user = (User)principal;
-            }
-            else {
-                // Translate from Java security realm (e.g., Jetty) to SQL Layer.
-                user = reqs.securityService().getUser(principal.getName());
-            }
-        }
+    public Connection newConnection(Properties properties, Principal user, boolean isAdminRole) throws SQLException {
         if (user != null) {
             properties.put("user", user.getName());
             properties.put("database", user.getName());
@@ -109,7 +100,8 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
         }
         Connection conn = driver.connect(JDBCDriver.URL, properties);
         if (user != null) {
-            ((JDBCConnection)conn).getSession().put(SecurityService.SESSION_KEY, user);
+            reqs.securityService().setAuthenticated(((JDBCConnection)conn).getSession(),
+                                                    user, isAdminRole);
         }
         return conn;
     }
