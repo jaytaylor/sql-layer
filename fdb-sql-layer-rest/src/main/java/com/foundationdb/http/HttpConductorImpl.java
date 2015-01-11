@@ -281,7 +281,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         localServer.addBean(new JsonErrorHandler());
 
         try {
-            if(login != AuthenticationType.NONE) {
+            if (login != AuthenticationType.NONE) {
                 Authenticator authenticator = login.createAuthenticator();
                 Constraint constraint = new Constraint(authenticator.getAuthMethod(), REST_ROLE);
                 constraint.setAuthenticate(true);
@@ -290,14 +290,16 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                 cm.setPathSpec("/*");
                 cm.setConstraint(constraint);
 
+                String realm = configurationService.getProperty(CONFIG_REALM);
+
                 ConstraintSecurityHandler sh =
                         crossOriginOn ? new CrossOriginConstraintSecurityHandler() : new ConstraintSecurityHandler();
                 sh.setAuthenticator(authenticator);
                 sh.setConstraintMappings(Collections.singletonList(cm));
+                sh.setRealmName(realm);
 
                 LoginService loginService =
-                        new SecurityServiceLoginService(securityService, login.getCredentialType(), loginCacheSeconds,
-                                configurationService.getProperty(CONFIG_REALM));
+                        new SecurityServiceLoginService(securityService, login.getCredentialType(), loginCacheSeconds, realm);
                 sh.setLoginService(loginService);
 
                 localRootContextHandler.setSecurityHandler(sh);
