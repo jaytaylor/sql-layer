@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Method;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
@@ -504,26 +505,11 @@ public class SecurityServiceImpl implements SecurityService, Service {
     }
 
     @Override
-    public Principal authenticateJaas(Session session, final String name, final String password,
+    public Principal authenticateJaas(Session session, String name, String password,
                                       String configName, Class<? extends Principal> userClass, Collection<Class<? extends Principal>> roleClasses) {
         Subject subject;
         try {
-            LoginContext login = new LoginContext(configName, new CallbackHandler() {
-                    @Override
-                    public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
-                        for (Callback callback : callbacks) {
-                            if (callback instanceof NameCallback) {
-                                ((NameCallback)callback).setName(name);
-                            }
-                            else if (callback instanceof PasswordCallback) {
-                                ((PasswordCallback)callback).setPassword(password.toCharArray());
-                            }
-                            else {
-                                throw new UnsupportedCallbackException(callback);
-                            }
-                        }
-                    }
-                });
+            LoginContext login = new LoginContext(configName, new NamePasswordCallbackHandler(name, password));
             login.login();
             subject = login.getSubject();
         }
@@ -558,6 +544,63 @@ public class SecurityServiceImpl implements SecurityService, Service {
         session.put(SESSION_PRINCIPAL_KEY, user);
         session.put(SESSION_ROLES_KEY, roles);
         return user;
+    }
+
+    protected static class NamePasswordCallbackHandler implements CallbackHandler {
+        private final String name, password;
+
+        public NamePasswordCallbackHandler(String name, String password) {
+            this.name = name;
+            this.password = password;
+        }
+
+        @Override
+        public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
+            for (Callback callback : callbacks) {
+                if (callback instanceof NameCallback) {
+                    ((NameCallback)callback).setName(name);
+                }
+                else if (callback instanceof PasswordCallback) {
+                    ((PasswordCallback)callback).setPassword(password.toCharArray());
+                }
+                else if (jettyCallback(callback)) {
+                    try {
+                        jettySetObjectMethod.invoke(callback, password);
+                    }
+                    catch (ReflectiveOperationException ex) {
+                        throw new IOException(ex);
+                    }
+                }
+                else {
+                    throw new UnsupportedCallbackException(callback);
+                }
+            }
+        }
+
+        // Avoid a dependency on all of jetty-plus just to get a one
+        // line method that might be used.
+
+        static Class<?> jettyObjectCallbackClass;
+        static Method jettySetObjectMethod;
+
+        static boolean jettyCallback(Callback callback) {
+            if (jettyObjectCallbackClass != null) {
+                return jettyObjectCallbackClass.isInstance(callback);
+            }
+            else if ("org.eclipse.jetty.plus.jaas.callback.ObjectCallback".equals(callback.getClass().getName())) {
+                try {
+                    jettySetObjectMethod = callback.getClass().getMethod("setObject", Object.class);
+                }
+                catch (ReflectiveOperationException ex) {
+                    return false;
+                }
+                jettyObjectCallbackClass = callback.getClass();
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
     }
 
     /* Service */
