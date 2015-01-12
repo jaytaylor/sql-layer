@@ -312,8 +312,11 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                     jaasLoginService.setLoginModuleName(jaasProps.getProperty("configName"));
                     if (jaasProps.getProperty("roleClasses") != null) {
                         jaasLoginService.setRoleClassNames(jaasProps.getProperty("roleClasses").split(",\\s+"));
+                        loginService = jaasLoginService;
                     }
-                    loginService = jaasLoginService;
+                    else {
+                        loginService = new HybridLoginService(jaasLoginService, securityService);
+                    }
                 }
                 else {
                     loginService = new SecurityServiceLoginService(securityService, login.getCredentialType(), loginCacheSeconds, realm);
