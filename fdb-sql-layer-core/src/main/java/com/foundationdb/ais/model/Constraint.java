@@ -18,5 +18,6 @@
 package com.foundationdb.ais.model;
 
 public interface Constraint {
+    public Table getConstraintTable();
     public TableName getConstraintName();
 }

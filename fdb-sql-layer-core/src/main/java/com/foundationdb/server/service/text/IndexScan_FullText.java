@@ -110,9 +110,10 @@ public class IndexScan_FullText extends Operator
         @Override
         public void close()
         {
-            if (cursor != null) {
-                cursor.close();
-                cursor = null;
+            try {
+                if (cursor != null) {
+                    cursor.close();
+                    cursor = null;
                 /*
                 if (queryExpression.needsBindings()) {
                     cursor = null;
@@ -121,8 +122,10 @@ public class IndexScan_FullText extends Operator
                     cursor.close();
                 }
                 */
+                }
+            } finally {
+                super.close();
             }
-            super.close();
         }
 
         @Override

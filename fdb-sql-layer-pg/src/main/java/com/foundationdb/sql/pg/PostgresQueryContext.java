@@ -32,10 +32,22 @@ public class PostgresQueryContext extends ServerQueryContext<PostgresServerSessi
         return false;
     }
 
+    /**
+     * Returns an open cursor.
+     * finishCursor must be called with the returned cursor in a finally block.
+     * Do not call close() on the returned cursor, call finishCursor.
+     * If finish cursor was previously called with suspended=true, that cursor may be returned here.
+     */
     public <T extends CursorBase> T startCursor(PostgresCursorGenerator<T> generator, QueryBindings bindings) {
         return generator.openCursor(this, bindings);
     }
 
+    /**
+     *
+     * @param cursor a cursor as returned by startCursor
+     * @param nrows the number of rows processed since the last call to startCursor
+     * @param suspended if true the cursor is just suspended, call startCursor again to resume processing
+     */
     public <T extends CursorBase> boolean finishCursor(PostgresCursorGenerator<T> generator, T cursor, int nrows, boolean suspended) {
         generator.closeCursor(cursor);
         return false;

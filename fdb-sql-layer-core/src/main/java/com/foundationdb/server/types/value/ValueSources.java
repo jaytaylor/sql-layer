@@ -25,6 +25,7 @@ import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
+import com.foundationdb.server.types.aksql.aktypes.AkGeometry;
 import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
@@ -37,6 +38,7 @@ import com.foundationdb.util.ByteSource;
 import com.foundationdb.util.WrappingByteSource;
 import com.geophile.z.SpatialObject;
 import com.geophile.z.spatialobject.jts.JTSSpatialObject;
+import com.vividsolutions.jts.geom.Geometry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -349,6 +351,13 @@ public final class ValueSources {
             logger.error("GUID with underlying object of : {}", source.getObject().getClass());
         }
         
+        if (source.getType().typeClass() == AkGeometry.INSTANCE.widestComparable()) {
+            if (source.getObject() instanceof Geometry) {
+                return (Geometry) source.getObject();
+            }
+            logger.error("Geometry with underlying object of : {}", source.getObject().getClass());
+        }
+
         if (source.getType().typeClass() == MBinary.LONGBLOB ||
              source.getType().typeClass() == MBinary.BLOB ||
              source.getType().typeClass() == MBinary.MEDIUMBLOB ||

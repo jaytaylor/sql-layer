@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 FoundationDB, LLC
+ * Copyright (C) 2009-2015 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,24 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.types;
+package com.foundationdb.server.service.monitor;
 
-import java.util.Collection;
-import java.util.Collections;
+import java.util.EventListener;
 
-public final class TCommutativeOverloads {
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 
-    public static TCommutativeOverloads createFrom(TOverload... overloads) {
-        return new TCommutativeOverloads(overloads);
-    }
+public interface SessionEventListener extends EventListener{
 
-    public void addTo(Collection<? super TOverload> overloadsSet) {
-        Collections.addAll(overloadsSet, origins);
-    }
-
-    private TCommutativeOverloads(TOverload[] origins) {
-        this.origins = origins;
-    }
-
-    private final TOverload[] origins;
+    public void countEvent (StatementTypes type);
 }

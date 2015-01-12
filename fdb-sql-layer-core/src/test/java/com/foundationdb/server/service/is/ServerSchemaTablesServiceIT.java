@@ -71,12 +71,13 @@ public class ServerSchemaTablesServiceIT extends ITBase
     @Test
     public void examine() {
         AkibanInformationSchema ais = ais();
-        assertEquals ("Table count", 12, ServerSchemaTablesServiceImpl.createTablesToRegister(ddl().getTypesTranslator()).getTables().size());
+        assertEquals ("Table count", 13, ServerSchemaTablesServiceImpl.createTablesToRegister(ddl().getTypesTranslator()).getTables().size());
         assertNotNull (ais.getTable(ServerSchemaTablesServiceImpl.ERROR_CODES));
         assertNotNull (ais.getTable(ServerSchemaTablesServiceImpl.ERROR_CODE_CLASSES));
         assertNotNull (ais.getTable(ServerSchemaTablesServiceImpl.SERVER_INSTANCE_SUMMARY));
         assertNotNull (ais.getTable(ServerSchemaTablesServiceImpl.SERVER_SERVERS));
         assertNotNull (ais.getTable(ServerSchemaTablesServiceImpl.SERVER_SESSIONS));
+        assertNotNull (ais.getTable(ServerSchemaTablesServiceImpl.SERVER_STATISTICS));
         assertNotNull (ais.getTable(ServerSchemaTablesServiceImpl.SERVER_PARAMETERS));
         assertNotNull (ais.getTable(ServerSchemaTablesServiceImpl.SERVER_MEMORY_POOLS));
         assertNotNull (ais.getTable(ServerSchemaTablesServiceImpl.SERVER_GARBAGE_COLLECTORS));
@@ -144,6 +145,13 @@ public class ServerSchemaTablesServiceIT extends ITBase
         final Object[][] expected = {
         };
         checkLimitTable (expected, ServerSchemaTablesServiceImpl.SERVER_SESSIONS, 0);
+    }
+    
+    @Test
+    public void testServerStatistics() {
+        final Object[][] expected = {
+        };
+        checkLimitTable (expected, ServerSchemaTablesServiceImpl.SERVER_STATISTICS, 0);
     }
     
     @Test

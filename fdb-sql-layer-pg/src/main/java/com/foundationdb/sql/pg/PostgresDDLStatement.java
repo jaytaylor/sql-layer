@@ -18,13 +18,12 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.server.api.DDLFunctions;
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.sql.aisddl.AISDDL;
 import com.foundationdb.sql.aisddl.TableDDL;
 import com.foundationdb.sql.parser.*;
-
 import com.foundationdb.qp.operator.QueryBindings;
-
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.Tap;
@@ -122,6 +121,7 @@ public class PostgresDDLStatement extends PostgresBaseStatement
     @Override
     public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
+        server.getSessionMonitor().countEvent(StatementTypes.DDL_STMT);
         PostgresMessenger messenger = server.getMessenger();
         //if this is a create table node with a query expression use special case
         if(ddl.getNodeType() == NodeTypes.CREATE_TABLE_NODE && ((CreateTableNode)ddl).getQueryExpression() != null){

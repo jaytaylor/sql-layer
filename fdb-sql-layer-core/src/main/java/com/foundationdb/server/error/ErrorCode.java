@@ -194,6 +194,7 @@ public enum ErrorCode {
 
         // SubClass 6xx - Spatial objects
     INVALID_SPATIAL_OBJECT("22", "601", Importance.DEBUG, InvalidSpatialObjectException.class),
+    UNSUPPORTED_SPATIAL_CAST("22", "602", Importance.DEBUG, UnsupportedSpatialCast.class),
 
     // Class 23 - integrity constraint violation
     DUPLICATE_KEY           ("23", "501", Importance.DEBUG, DuplicateKeyException.class),
@@ -493,7 +494,7 @@ public enum ErrorCode {
     FK_VALUE_MISMATCH       ("57", "008", Importance.DEBUG, FKValueMismatchException.class),
 
     // Class 58 - Query canceled by user
-    QUERY_CANCELED          ("58", "000", Importance.ERROR, QueryCanceledException.class),
+    QUERY_CANCELED          ("58", "000", Importance.DEBUG, QueryCanceledException.class),
 
     // Class 70 - Unknown errors 
     UNKNOWN                 ("70", "000", Importance.ERROR, null),

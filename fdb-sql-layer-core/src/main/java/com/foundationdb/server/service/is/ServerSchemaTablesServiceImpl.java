@@ -50,6 +50,7 @@ import com.foundationdb.server.service.monitor.PreparedStatementMonitor;
 import com.foundationdb.server.service.monitor.ServerMonitor;
 import com.foundationdb.server.service.monitor.SessionMonitor;
 import com.foundationdb.server.service.monitor.UserMonitor;
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
@@ -68,6 +69,7 @@ public class ServerSchemaTablesServiceImpl
     static final TableName SERVER_INSTANCE_SUMMARY = new TableName (SCHEMA_NAME, "server_instance_summary");
     static final TableName SERVER_SERVERS = new TableName (SCHEMA_NAME, "server_servers");
     static final TableName SERVER_SESSIONS = new TableName (SCHEMA_NAME, "server_sessions");
+    static final TableName SERVER_STATISTICS = new TableName (SCHEMA_NAME, "server_statistics_summary");
     static final TableName SERVER_PARAMETERS = new TableName (SCHEMA_NAME, "server_parameters");
     static final TableName SERVER_MEMORY_POOLS = new TableName (SCHEMA_NAME, "server_memory_pools");
     static final TableName SERVER_GARBAGE_COLLECTORS = new TableName (SCHEMA_NAME, "server_garbage_collectors");
@@ -110,6 +112,8 @@ public class ServerSchemaTablesServiceImpl
         attach (ais, SERVER_SERVERS, Servers.class);
         //SERVER_SESSIONS
         attach (ais, SERVER_SESSIONS, Sessions.class);
+        //SERVER_STATISTICS
+        attach (ais, SERVER_STATISTICS, Statistics.class);
         //SERVER_PARAMETERS
         attach (ais, SERVER_PARAMETERS, ServerParameters.class);
         //SERVER_MEMORY_POOLS
@@ -177,7 +181,7 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public long rowCount(Session session) {
-            return 1;
+            return 1L;
         }
         
         private class Scan extends BaseScan {
@@ -249,6 +253,48 @@ public class ServerSchemaTablesServiceImpl
             }
         }
     }
+    
+    private class Statistics extends BasicFactoryBase {
+
+        public Statistics(TableName sourceTable) {
+            super (sourceTable);
+        }
+        
+        @Override 
+        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+            return new Scan(adapter.getSession(), getRowType(group.getAIS()));
+        }
+        
+        @Override
+        public long rowCount(Session session) {
+            return 1L;
+        }
+        
+        private class Scan extends BaseScan {
+            
+            public Scan (Session session, RowType rowType) {
+                super(rowType);
+            }
+            
+            @Override
+            public Row next() {
+                if (rowCounter != 0) {
+                    return null;
+                }
+                return new ValuesHolderRow(rowType,
+                        monitor.getCount(StatementTypes.STATEMENT),
+                        monitor.getCount(StatementTypes.FAILED),
+                        monitor.getCount(StatementTypes.FROM_CACHE),
+                        monitor.getCount(StatementTypes.LOGGED),
+                        monitor.getCount(StatementTypes.CALL_STMT),
+                        monitor.getCount(StatementTypes.DDL_STMT),
+                        monitor.getCount(StatementTypes.DML_STMT),
+                        monitor.getCount(StatementTypes.SELECT),
+                        monitor.getCount(StatementTypes.OTHER_STMT),
+                        ++rowCounter);
+            }
+        }
+    }
 
     private class Sessions extends BasicFactoryBase {
 
@@ -293,6 +339,14 @@ public class ServerSchemaTablesServiceImpl
                                               session.getCurrentStatementEndTimeMillis() > 0 ? (int)(session.getCurrentStatementEndTimeMillis()/1000) : null,
                                               session.getRowsProcessed() < 0 ? null : (long)session.getRowsProcessed(),
                                               session.getCurrentStatementPreparedName(),
+                                              session.getCount(StatementTypes.FAILED),
+                                              session.getCount(StatementTypes.FROM_CACHE),
+                                              session.getCount(StatementTypes.LOGGED),
+                                              session.getCount(StatementTypes.CALL_STMT),
+                                              session.getCount(StatementTypes.DDL_STMT),
+                                              session.getCount(StatementTypes.DML_STMT),
+                                              session.getCount(StatementTypes.SELECT),
+                                              session.getCount(StatementTypes.OTHER_STMT),
                                               ++rowCounter);
             }
         }
@@ -681,6 +735,18 @@ public class ServerSchemaTablesServiceImpl
             .colSystemTimestamp("start_time", false)
             .colBigInt("session_count", true);
         
+        builder.table(SERVER_STATISTICS)
+            .colBigInt("query_count", false)
+            .colBigInt("failed_query_count", false)
+            .colBigInt("query_from_cache", false)
+            .colBigInt("logged_statements", false)
+            .colBigInt("call_statement_count", false)
+            .colBigInt("ddl_statment_count", false)
+            .colBigInt("dml_statement_count", false)
+            .colBigInt("select_statement_count", false)
+            .colBigInt("other_statement_count", false)
+            ;
+        
         builder.table(SERVER_SESSIONS)
             .colBigInt("session_id", false)
             .colBigInt("caller_session_id", true)
@@ -693,7 +759,17 @@ public class ServerSchemaTablesServiceImpl
             .colSystemTimestamp("query_start_time", true)
             .colSystemTimestamp("query_end_time", true)
             .colBigInt("query_row_count", true)
-            .colString("prepared_name", IDENT_MAX, true);
+            .colString("prepared_name", IDENT_MAX, true)
+            .colBigInt("failed_query_count", false)
+            .colBigInt("query_from_cache", false)
+            .colBigInt("logged_statements", false)
+
+            .colBigInt("call_statement_count", false)
+            .colBigInt("ddl_statment_count", false)
+            .colBigInt("dml_statement_count", false)
+            .colBigInt("select_statement_count", false)
+            .colBigInt("other_statement_count", false)
+            ;
         
         builder.table(ERROR_CODES)
             .colString("code", 5, false)

@@ -28,6 +28,8 @@ import com.foundationdb.server.service.routines.*;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.sql.routinefw.ShieldedInvokable;
 import com.foundationdb.sql.routinefw.RoutineFirewall;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /** A Routine that uses Java native data types in its invocation API. */
 public abstract class ServerJavaRoutine implements Explainable, ShieldedInvokable
@@ -75,11 +77,36 @@ public abstract class ServerJavaRoutine implements Explainable, ShieldedInvokabl
         }
         else {
             ScriptEngineManagerProvider semp = context.getServiceManager().getServiceByClass(ScriptEngineManagerProvider.class);
-            ClassLoader origCl = Thread.currentThread().getContextClassLoader();
-            Thread.currentThread().setContextClassLoader(semp.getSafeClassLoader());
-            RoutineFirewall.callInvoke(this);
-            Thread.currentThread().setContextClassLoader(origCl);
+            ClassLoader origCl = getContextClassLoader();
+            setContextClassLoader(semp.getSafeClassLoader());
+            try {
+                RoutineFirewall.callInvoke(this);
+            }
+            finally {
+                setContextClassLoader(origCl);
+            }
         }
+    }
+
+    private ClassLoader getContextClassLoader() {
+        return AccessController.doPrivileged(
+                new PrivilegedAction<ClassLoader>() {
+                    public ClassLoader run() {
+                        return Thread.currentThread().getContextClassLoader();
+                    }
+                }
+        );
+    }
+    
+    private void setContextClassLoader(final ClassLoader cl) {
+        AccessController.doPrivileged(
+                new PrivilegedAction<Void>() {
+                    public Void run() {
+                        Thread.currentThread().setContextClassLoader(cl);
+                        return null;
+                    }
+                }
+        );
     }
     
     public void setInputs() {

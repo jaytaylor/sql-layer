@@ -134,6 +134,7 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
     public abstract boolean isLowInclusive();
     public abstract ExpressionNode getHighComparand();
     public abstract boolean isHighInclusive();
+    public abstract boolean isSpatial();
 
     /**
      * The index of the first column that may have more than one result
@@ -216,15 +217,25 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
             }
         }
         describeEqualityComparands(str);
-        if (getLowComparand() != null) {
-            str.append(", ");
-            str.append((isLowInclusive()) ? ">=" : ">");
-            str.append(getLowComparand());
+        if (isSpatial()) {
+            if (getLowComparand() != null) {
+                str.append(", @");
+                if (getHighComparand() == null)
+                    str.append("@");
+                str.append(getLowComparand());
+            }
         }
-        if (getHighComparand() != null) {
-            str.append(", ");
-            str.append((isHighInclusive()) ? "<=" : "<");
-            str.append(getHighComparand());
+        else {
+            if (getLowComparand() != null) {
+                str.append(", ");
+                str.append((isLowInclusive()) ? ">=" : ">");
+                str.append(getLowComparand());
+            }
+            if (getHighComparand() != null) {
+                str.append(", ");
+                str.append((isHighInclusive()) ? "<=" : "<");
+                str.append(getHighComparand());
+            }
         }
         describeConditionRange(str);
         if (full && getCostEstimate() != null) {

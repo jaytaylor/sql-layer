@@ -174,10 +174,13 @@ class Using_HashTable extends Operator
         @Override
         public void close()
         {
-            if (bindings != null) {
-                bindings.setHashTable(tableBindingPosition, null);
+            try {
+                if (bindings != null) {
+                    bindings.setHashTable(tableBindingPosition, null);
+                }
+            } finally {
+                super.close();
             }
-            super.close();
         }
 
         // Execution interface

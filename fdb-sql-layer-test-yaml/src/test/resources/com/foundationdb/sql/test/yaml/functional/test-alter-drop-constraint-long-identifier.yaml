@@ -1,0 +1,13 @@
+# Originally caught by Django test suite
+# Dropping a constraint by name was picking up the backing instead
+---
+- CreateTable: test_rmwsrf_pony (id INT NOT NULL PRIMARY KEY)
+---
+- CreateTable: test_rmwsrf_rider (id INT NOT NULL PRIMARY KEY, pony_id integer NOT NULL, friend_id integer NOT NULL)
+---
+- Statement: ALTER TABLE test_rmwsrf_rider
+             ADD CONSTRAINT test_rmwsrf_rider_friend_id_65b09aa1a82028b6_fk_test_rmwsrf_rider_id
+             FOREIGN KEY (friend_id) REFERENCES test_rmwsrf_rider (id)
+---
+- Statement: ALTER TABLE test_rmwsrf_rider
+             DROP CONSTRAINT test_rmwsrf_rider_friend_id_65b09aa1a82028b6_fk_test_rmwsrf_rider_id

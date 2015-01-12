@@ -49,6 +49,8 @@ import org.slf4j.LoggerFactory;
 import com.google.inject.Inject;
 
 public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
+    public static final String COMMON_PROPERTIES_PREFIX = "fdbsql.sql.";
+    public static final String EMBEDDED_PROPERTIES_PREFIX = "fdbsql.embedded_jdbc.";
     private final ServerServiceRequirements reqs;
     private ScriptEngineManagerProvider scriptEngineManagerProvider;
     private JDBCDriver driver;
@@ -114,12 +116,12 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
 
     @Override
     public void start() {
-        Class<?> proxyDriverClazz;
-        Constructor<?> proxyConstructor;
-        driver = new JDBCDriver(reqs);
+        Properties properties = reqs.config().deriveProperties(COMMON_PROPERTIES_PREFIX);
+        properties.putAll(reqs.config().deriveProperties(EMBEDDED_PROPERTIES_PREFIX));
+        driver = new JDBCDriver(reqs, properties);
         try {
-            proxyDriverClazz = Class.forName(ProxyDriverImpl.class.getName(), true, this.scriptEngineManagerProvider.getSafeClassLoader());
-            proxyConstructor = proxyDriverClazz.getConstructor(Driver.class);
+            Class<?> proxyDriverClazz = Class.forName(ProxyDriverImpl.class.getName(), true, this.scriptEngineManagerProvider.getSafeClassLoader());
+            Constructor<?> proxyConstructor = proxyDriverClazz.getConstructor(Driver.class);
             Object proxyDriverInstanceObject = proxyConstructor.newInstance(driver);
             proxyDriver = (Driver) proxyDriverInstanceObject;
             driver.register();

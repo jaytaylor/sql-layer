@@ -28,6 +28,11 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
     private final Map<Integer,MemoryTableStatus> tableStatusMap = new HashMap<>();
             
     @Override
+    public synchronized TableStatus createTableStatus (Table table) {
+        return new MemoryTableStatus (table.getTableId(), null);
+    }
+    
+    @Override
     public synchronized TableStatus createTableStatus(int tableID) {
         return new MemoryTableStatus(tableID, null);
     }
@@ -39,9 +44,7 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
 
     @Override
     public synchronized void detachAIS() {
-        for(MemoryTableStatus status : tableStatusMap.values()) {
-            status.setRowDef(null);
-        }
+        //TODO: Nothing
     }
 
     @Override

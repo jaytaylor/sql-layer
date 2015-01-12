@@ -17,8 +17,6 @@
 
 package com.foundationdb.server.types;
 
-import com.google.common.base.Predicate;
-
 import java.util.List;
 
 public interface TOverload {
@@ -47,5 +45,4 @@ public interface TOverload {
     List<TInputSet> inputSets();
     InputSetFlags exactInputs();
     int[] getPriorities();
-    Predicate<List<? extends TPreptimeValue>> isCandidate();
 }

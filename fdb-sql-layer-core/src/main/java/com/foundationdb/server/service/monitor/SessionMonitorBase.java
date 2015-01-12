@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.service.monitor;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -31,9 +32,14 @@ public abstract class SessionMonitorBase implements SessionMonitor {
     private long currentStatementStartTime = -1;
     private long currentStatementEndTime = -1;
     private int rowsProcessed = 0;
-    private int statementCount = 0;
     private UserMonitor user = null; 
-
+    
+    private long[] statementCounters = new long[StatementTypes.values().length];
+    // TODO: In theory this needs to be a thread-safe data structure for adding/removing listeners
+    // In practice, this is only executed in one thread.
+    private List<SessionEventListener> eventListeners = new ArrayList<>();
+    
+    
     protected SessionMonitorBase(int sessionID) {
         this.sessionID = sessionID;
         this.startTimeMillis = System.currentTimeMillis();
@@ -55,7 +61,7 @@ public abstract class SessionMonitorBase implements SessionMonitor {
     }
 
     public void startStatement(String statement, String preparedName, long startTime) {
-        statementCount++;
+        countEvent(StatementTypes.STATEMENT);
         currentStatement = statement;
         currentStatementPreparedName = preparedName;
         currentStatementStartTime = startTime;
@@ -69,6 +75,18 @@ public abstract class SessionMonitorBase implements SessionMonitor {
         if (user != null) {
             user.statementRun();
         }
+    }
+    
+    public void countEvent(StatementTypes type) {
+        statementCounters[type.ordinal()]++;
+        for (SessionEventListener listen : eventListeners) {
+            listen.countEvent(type);
+        }
+    }
+    
+    public void failStatement() {
+        countEvent(StatementTypes.FAILED);
+        endStatement(-1);
     }
 
     // Caller can sequence all stages and avoid any gaps at the cost of more complicated
@@ -103,10 +121,15 @@ public abstract class SessionMonitorBase implements SessionMonitor {
     }
 
     @Override
-    public int getStatementCount() {
-        return statementCount;
+    public long getStatementCount() {
+        return statementCounters[StatementTypes.STATEMENT.ordinal()];
     }
-
+    
+    @Override 
+    public long getCount(StatementTypes type) {
+        return statementCounters[type.ordinal()];
+    }
+    
     @Override
     public String getCurrentStatement() {
         return currentStatement;
@@ -164,6 +187,17 @@ public abstract class SessionMonitorBase implements SessionMonitor {
         return total;
     }
 
+    @Override
+    public void addSessionEventListener(SessionEventListener listener) {
+        eventListeners.add(listener);
+    }
+    
+    @Override
+    public void removeSessionEventListener (SessionEventListener listener) {
+        eventListeners.remove(listener);
+    }
+
+    
     public List<CursorMonitor> getCursors() {
         return Collections.emptyList();
     }
@@ -179,5 +213,4 @@ public abstract class SessionMonitorBase implements SessionMonitor {
     public UserMonitor getUserMonitor() {
         return this.user;
     }
-
 }

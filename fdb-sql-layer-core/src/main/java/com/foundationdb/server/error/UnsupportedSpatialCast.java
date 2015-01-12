@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 FoundationDB, LLC
+ * Copyright (C) 2009-2014 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,10 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.qp.operator;
+package com.foundationdb.server.error;
 
-public final class IncompatibleRowException extends RuntimeException {
-    public IncompatibleRowException(String message) {
-        super(message);
+public class UnsupportedSpatialCast extends InvalidOperationException
+{
+    public UnsupportedSpatialCast() {
+        super(ErrorCode.UNSUPPORTED_SPATIAL_CAST);
     }
 }

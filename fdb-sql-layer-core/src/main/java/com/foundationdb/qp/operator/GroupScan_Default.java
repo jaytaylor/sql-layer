@@ -171,8 +171,11 @@ class GroupScan_Default extends Operator
         @Override
         public void close()
         {
-            cursor.close();
-            super.close();
+            try {
+                cursor.close();
+            } finally {
+                super.close();
+            }
         }
 
         @Override
@@ -367,12 +370,13 @@ class GroupScan_Default extends Operator
                 return null;
             }
             // Close the input, shorten our hkey, re-open and try again
-            close();
+            input.close();
             assert atTable.getParentTable() != null : atTable;
             atTable = atTable.getParentTable();
             HKey hkey = getHKeyFromBindings();
             hkey.useSegments(atTable.getDepth() + 1);
-            open();
+            input.rebind(hkey, deep);
+            input.open();
             return next();
         }
 
@@ -385,8 +389,14 @@ class GroupScan_Default extends Operator
 
         @Override
         public void close() {
-            input.close();
-            super.close();
+            try {
+                // input is closed before hopefully reopening in next()
+                if (!input.isClosed()) {
+                    input.close();
+                }
+            } finally {
+                super.close();
+            }
         }
 
         @Override

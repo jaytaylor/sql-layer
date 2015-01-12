@@ -113,6 +113,11 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
+    public boolean isSpatial() {
+        return outputScan.isSpatial();
+    }
+
+    @Override
     public List<ConditionExpression> getConditions() {
         return conditions;
     }

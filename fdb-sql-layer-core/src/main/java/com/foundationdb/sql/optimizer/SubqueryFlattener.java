@@ -107,7 +107,7 @@ public class SubqueryFlattener
         }
         flattenFromList(selectNode, parentNode);
 
-        // After CFN, only possibilities are AND and nothing.
+        // After CNF, only possibilities are AND and nothing.
         if (selectNode.getWhereClause() != null) {
             AndNode andNode = (AndNode)selectNode.getWhereClause();
             andNode(andNode);
@@ -663,12 +663,10 @@ public class SubqueryFlattener
             if (subqueries.contains(bft)) {
                 ResultColumn rc = binding.getResultColumn();
                 ValueNode expression = rc.getExpression();
-                if (expression instanceof VirtualColumnNode) {
-                    VirtualColumnNode virtualColumnNode = (VirtualColumnNode) expression;
-                    return virtualColumnNode.getSourceColumn().getExpression();
-                } else {
-                    return expression;
+                while (expression.getSourceResultColumn() != null) {
+                    expression = expression.getSourceResultColumn().getExpression();
                 }
+                return expression;
             }
         }
         return null;

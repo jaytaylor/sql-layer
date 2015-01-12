@@ -74,6 +74,7 @@ public enum Label
     JOIN_OPTION(Category.OPTION), // INNER, LEFT, etc
     ORDERING(Category.OPTION), // ASC or DESC
     INDEX_KIND(Category.OPTION),
+    INDEX_SPATIAL_DIMENSIONS(Category.OPTION),
     ORDER_EFFECTIVENESS(Category.OPTION),
     USED_COLUMNS(Category.OPTION),
     NUM_SKIP(Category.OPTION),

@@ -61,11 +61,6 @@ public abstract class TAggregatorBase implements TAggregator {
         return displayName();
     }
 
-    @Override
-    public Predicate<List<? extends TPreptimeValue>> isCandidate() {
-        return null;
-    }
-
     protected TClass inputClass() {
         return inputClass;
     }

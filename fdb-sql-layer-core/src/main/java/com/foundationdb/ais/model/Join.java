@@ -152,6 +152,12 @@ public class Join implements HasGroup, Constraint
         joinName = newName;
     }
 
+    @Override
+    public Table getConstraintTable() {
+        return child;
+    }
+
+    @Override
     public TableName getConstraintName(){
         return constraintName;
     }

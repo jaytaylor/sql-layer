@@ -3,5 +3,5 @@ SelectQuery@7ba51bd0
     Project@1edfe344[places.pid]
       Sort@268f14e6[distance_lat_lon(places.lat,places.lon,42.3583,-71.0603)]
         Select@7cc19531[places.city == Boston, distance_lat_lon(places.lat,places.lon,42.3583,-71.0603) <= 0.0466]
-          TableGroupJoinTree@92a03f4(TableGroup@349f97a9(places), places - SingleIndexScan@599df33c(Index(test.places.places_geo_1[IndexColumn(state), IndexColumn(lat), IndexColumn(lon), IndexColumn(lat), IndexColumn(lon)])application space: (-90.0:90.0, -180.0:180.0)  gBits: 28, 29, NONE, =MA, >=_center_radius(42.3583,-71.0603,Cast(0.0466 AS MCOMPAT_ DECIMAL(10, 6) NULL)), rows = 7, cost = 270.300))
+          TableGroupJoinTree@92a03f4(TableGroup@349f97a9(places), places - SingleIndexScan@599df33c(Index(test.places.places_geo_1[IndexColumn(state), IndexColumn(lat), IndexColumn(lon), IndexColumn(lat), IndexColumn(lon)])application space: (-90.0:90.0, -180.0:180.0)  gBits: 28, 29, NONE, =MA, @geo_expanded_envelope(geo_lat_lon(42.3583,-71.0603),0.0466), rows = 1, cost = 93.4714))
             TableSource@165ccce2(places - TableGroup@349f97a9(places))

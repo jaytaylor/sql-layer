@@ -20,10 +20,10 @@ package com.foundationdb.server.service.monitor;
 import com.foundationdb.server.error.QueryLogCloseException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
-import com.foundationdb.server.service.jmx.JmxManageable;
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.server.service.session.Session;
-
 import com.google.inject.Inject;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,10 +35,10 @@ import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
-public class MonitorServiceImpl implements Service, MonitorService
+public class MonitorServiceImpl implements Service, MonitorService, SessionEventListener
 {
     private static final String QUERY_LOG_PROPERTY = "fdbsql.querylog.enabled";
     private static final String QUERY_LOG_FILE_PROPERTY = "fdbsql.querylog.filename";
@@ -63,6 +63,9 @@ public class MonitorServiceImpl implements Service, MonitorService
     
     private Map<String, UserMonitor> users;
 
+    private AtomicLong[] statementCounter;
+    //private ConcurrentHashMap<StatementTypes, AtomicLong> statementCounter;
+    
     @Inject
     public MonitorServiceImpl(ConfigurationService config) {
         this.config = config;
@@ -72,7 +75,13 @@ public class MonitorServiceImpl implements Service, MonitorService
 
     @Override
     public void start() {
+        logger.debug("Starting Monitor Service...");
         servers = new ConcurrentHashMap<>();
+        
+        statementCounter = new AtomicLong[StatementTypes.values().length];
+        for (int i = 0; i < statementCounter.length; i++) {
+            statementCounter[i] = new AtomicLong(0);
+        }
 
         sessionAllocator = new AtomicInteger();
         sessions = new ConcurrentHashMap<>();
@@ -123,6 +132,7 @@ public class MonitorServiceImpl implements Service, MonitorService
         SessionMonitor old = sessions.put(sessionMonitor.getSessionId(), sessionMonitor);
         assert ((old == null) || (old == sessionMonitor));
         session.put(SESSION_KEY, sessionMonitor);
+        sessionMonitor.addSessionEventListener(this);
     }
 
     @Override
@@ -130,6 +140,7 @@ public class MonitorServiceImpl implements Service, MonitorService
         SessionMonitor old = sessions.remove(sessionMonitor.getSessionId());
         assert ((old == null) || (old == sessionMonitor));
         session.remove(SESSION_KEY);
+        sessionMonitor.removeSessionEventListener(this);
     }
 
     @Override
@@ -157,6 +168,9 @@ public class MonitorServiceImpl implements Service, MonitorService
         if (queryLogThresholdMillis > 0 && duration < queryLogThresholdMillis) {
             return;
         }
+        
+        SessionMonitor monitor = sessions.get(sessionId);
+        monitor.countEvent(StatementTypes.LOGGED);
         /*
          * format of each query log entry is:
          * #
@@ -295,6 +309,19 @@ public class MonitorServiceImpl implements Service, MonitorService
         return queryLogThresholdMillis;
     }
 
+    @Override
+    public long getCount(StatementTypes type) {
+        return statementCounter[type.ordinal()].get();
+    }
+
+    
+    /* SessionEventListener */
+    
+    @Override
+    public void countEvent (StatementTypes type) {
+        statementCounter[type.ordinal()].incrementAndGet();
+    }
+    
     /* Internal */
 
     /**

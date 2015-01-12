@@ -282,6 +282,23 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     @Override
+    public void setTransactionPeriodicallyCommit(ServerTransaction.PeriodicallyCommit periodicallyCommit) {
+        this.transactionPeriodicallyCommit = periodicallyCommit;
+    }
+
+    @Override
+    public IsolationLevel getTransactionIsolationLevel() {
+        IsolationLevel level;
+        if (transaction == null)
+            level = transactionDefaultIsolationLevel;
+        else
+            level = transaction.getIsolationLevel();
+        if (level == IsolationLevel.UNSPECIFIED_ISOLATION_LEVEL)
+            level = getTransactionService().actualIsolationLevel(level);
+        return level;
+    }
+
+    @Override
     public IsolationLevel setTransactionIsolationLevel(IsolationLevel level) {
         if (transaction == null)
             throw new NoTransactionInProgressException();
@@ -292,11 +309,6 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     public IsolationLevel setTransactionDefaultIsolationLevel(IsolationLevel level) {
         this.transactionDefaultIsolationLevel = getTransactionService().actualIsolationLevel(level);
         return this.transactionDefaultIsolationLevel;
-    }
-
-    @Override
-    public void setTransactionPeriodicallyCommit(ServerTransaction.PeriodicallyCommit periodicallyCommit) {
-        this.transactionPeriodicallyCommit = periodicallyCommit;
     }
 
     @Override

@@ -131,6 +131,9 @@ public interface ServerSession
     /** Set following transaction to read-only / read-write. */
     public void setTransactionDefaultReadOnly(boolean readOnly);
 
+    /** Get the current (or default) transaction isolation level. */
+    public IsolationLevel getTransactionIsolationLevel();
+
     /** Set current transaction isolation level. */
     public IsolationLevel setTransactionIsolationLevel(IsolationLevel level);
 

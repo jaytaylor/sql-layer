@@ -30,7 +30,6 @@ import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
-import com.foundationdb.server.TableStatus;
 import com.foundationdb.server.TableStatusCache;
 import com.foundationdb.server.service.session.Session;
 import org.slf4j.Logger;
@@ -49,14 +48,10 @@ public class RowDefBuilder
     /** Should <b>only</b> be used for debugging (e.g. friendly toString). This view is not transaction safe. **/
     public static volatile AkibanInformationSchema LATEST_FOR_DEBUGGING;
 
-    private final Session session;
     private final AkibanInformationSchema ais;
-    private final TableStatusCache tableStatusCache;
 
     public RowDefBuilder(Session session, AkibanInformationSchema ais, TableStatusCache tableStatusCache) {
-        this.session = session;
         this.ais = ais;
-        this.tableStatusCache = tableStatusCache;
         LATEST_FOR_DEBUGGING = ais;
     }
 
@@ -80,14 +75,7 @@ public class RowDefBuilder
     }
 
     private RowDef createRowDefCommon(Table table, MemoryTableFactory factory) {
-        final TableStatus status;
-        if(factory == null) {
-            status = tableStatusCache.createTableStatus(table.getTableId());
-        } else {
-            status = tableStatusCache.getOrCreateMemoryTableStatus(table.getTableId(), factory);
-        }
-        table.tableStatus(status);
-        return new RowDef(table, status); // Hooks up table's rowDef too
+        return new RowDef(table); // Hooks up table's rowDef too
     }
 
     /**  @return Map of Table->Ordinal for all Tables/RowDefs in the AIS */
@@ -147,8 +135,6 @@ public class RowDefBuilder
         rowDef.setParentJoinFields(parentJoinFields);
         rowDef.setIndexes(indexList);
         rowDef.setGroupIndexes(groupIndexList.toArray(new GroupIndex[groupIndexList.size()]));
-
-        rowDef.getTableStatus().setRowDef(rowDef);
         return rowDef;
     }
 

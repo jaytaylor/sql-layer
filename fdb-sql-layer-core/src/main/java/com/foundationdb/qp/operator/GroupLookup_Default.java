@@ -387,11 +387,15 @@ class GroupLookup_Default extends Operator
         @Override
         public void close()
         {
-            if (!lookupCursor.isClosed())
-                lookupCursor.close();
-            lookupRow = null;
-            pending.clear();
-            super.close();
+            try {
+                // lookupCursor is closed between input rows
+                if (!lookupCursor.isClosed())
+                    lookupCursor.close();
+                lookupRow = null;
+                pending.clear();
+            } finally {
+                super.close();
+            }
         }
         // Execution interface
 
@@ -460,9 +464,9 @@ class GroupLookup_Default extends Operator
 
         private Row readAncestorRow(HKey hKey)
         {
+            lookupCursor.rebind(hKey, false);
+            lookupCursor.open();
             try {
-                lookupCursor.rebind(hKey, false);
-                lookupCursor.open();
                 Row retrievedRow = lookupCursor.next();
                 if (retrievedRow != null) {
                     // Retrieved row might not actually be what we were looking for -- not all ancestors are present,
@@ -605,16 +609,19 @@ class GroupLookup_Default extends Operator
 
         @Override
         public void close() {
+            try {
                 // Any rows for the current bindings being closed need to be discarded.
-            while (currentBindings == inputs[currentIndex].queryBindings) {
-                inputs[currentIndex].clearState();
-                currentIndex = (currentIndex + 1) % quantum;
+                while (currentBindings == inputs[currentIndex].queryBindings) {
+                    inputs[currentIndex].clearState();
+                    currentIndex = (currentIndex + 1) % quantum;
+                }
+                if (inputs[nextIndex].inputRow == null && !input.isClosed()) {
+                    input.close();
+                    nextBindings = null;
+                }
+            } finally {
+                super.close();
             }
-            if (inputs[nextIndex].inputRow == null && !input.isClosed()) {
-                input.close();
-                nextBindings = null;
-            }
-            super.close();
         }
 
         @Override
@@ -662,8 +669,11 @@ class GroupLookup_Default extends Operator
             }
             currentBindings = null;
             newBindings = false;
-            input.cancelBindings(bindings);
             if ((nextBindings != null) && nextBindings.isAncestor(bindings)) {
+                if (!input.isClosed()){
+                    input.close();
+                }
+                input.cancelBindings(nextBindings);
                 nextBindings = null;
             }
         }

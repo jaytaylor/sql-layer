@@ -576,19 +576,19 @@ public class AlterTableDDLTest {
 
     @Test
       public void dropUniqueSingleColumnSingleTableGroup() throws StandardException {
-        builder.table(C_NAME).colBigInt("c1", false).uniqueKey("c1", "c1");
+        builder.table(C_NAME).colBigInt("c1", false).uniqueConstraint("c1", "c1_idx", "c1");
         parseAndRun("ALTER TABLE c DROP UNIQUE c1");
         expectColumnChanges();
-        expectIndexChanges("DROP:c1");
+        expectIndexChanges("DROP:c1_idx");
         expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NOT NULL");
     }
 
     @Test
     public void dropUniqueMultiColumnSingleTableGroup() throws StandardException {
-        builder.table(C_NAME).colBigInt("c1", false).colBigInt("c2", false).uniqueKey("x", "c2", "c1");
+        builder.table(C_NAME).colBigInt("c1", false).colBigInt("c2", false).uniqueConstraint("x", "x_idx", "c2", "c1");
         parseAndRun("ALTER TABLE c DROP UNIQUE x");
         expectColumnChanges();
-        expectIndexChanges("DROP:x");
+        expectIndexChanges("DROP:x_idx");
         expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NOT NULL", "c2 MCOMPAT_ BIGINT(21) NOT NULL");
     }
 
@@ -596,11 +596,11 @@ public class AlterTableDDLTest {
     public void dropUniqueMiddleOfGroup() throws StandardException {
         buildCOIJoinedAUnJoined();
         AISBuilder builder2 = new AISBuilder(builder.unvalidatedAIS());
-        builder2.unique(SCHEMA, "o", "x");
-        builder2.indexColumn(SCHEMA, "o", "x", "o_o", 0, true, null);
+        builder2.uniqueConstraint(SCHEMA, "o", "x_idx", new TableName(SCHEMA, "x"));
+        builder2.indexColumn(SCHEMA, "o", "x_idx", "o_o", 0, true, null);
         parseAndRun("ALTER TABLE o DROP UNIQUE x");
         expectColumnChanges();
-        expectIndexChanges("DROP:x");
+        expectIndexChanges("DROP:x_idx");
         expectFinalTable(O_NAME, "id MCOMPAT_ BIGINT(21) NOT NULL", "cid MCOMPAT_ BIGINT(21) NULL", "o_o MCOMPAT_ BIGINT(21) NULL",
                          "fk1(cid)", "PRIMARY(id)", "join(cid->id)");
         expectUnchangedTables(C_NAME, I_NAME, A_NAME);
@@ -771,6 +771,13 @@ public class AlterTableDDLTest {
     public void cannotDropConstraintRegularIndex() throws StandardException {
         builder.table(C_NAME).colBigInt("c1", false).key("c1", "c1");
         parseAndRun("ALTER TABLE c DROP CONSTRAINT c1");
+    }
+
+    @Test(expected=NoSuchConstraintException.class)
+    public void cannotDropConstraintOnDifferentTable() throws StandardException {
+        builder.table(C_NAME).colBigInt("c1", false).uniqueConstraint("c1", "c1_idx", "c1");
+        builder.table(A_NAME).colBigInt("a1", false).uniqueConstraint("a1", "a1_idx", "a1");
+        parseAndRun("ALTER TABLE a DROP CONSTRAINT c1");
     }
 
     @Test
@@ -1212,7 +1219,8 @@ public class AlterTableDDLTest {
         builder.table(C_NAME).colBigInt("id", false).pk("id");
         builder.table(A_NAME).colBigInt("id", false).colBigInt("cid").pk("id").uniqueConstraint("cid_unique",
                                                                                                 "cid_unique",
-                                                                                                "cid");
+                                                                                                "cid")
+                                                                              .key("fk_cid", "cid");
         parseAndRun("ALTER TABLE a ADD CONSTRAINT fk_cid FOREIGN KEY (cid) REFERENCES c (id)");
         Table a = ddlFunctions.ais.getTable(A_NAME);
         assertEquals(a.getForeignKeys().size(), 1);
