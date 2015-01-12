@@ -17,13 +17,10 @@
 
 package com.foundationdb.sql.optimizer;
 
-import java.util.Properties;
-
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.server.error.SQLParserInternalException;
+import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.common.types.TypesTranslator;
-import com.foundationdb.server.types.service.TypesRegistryServiceImpl;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.optimizer.plan.AST;
 import com.foundationdb.sql.optimizer.plan.ResultSet;
@@ -37,20 +34,13 @@ import com.foundationdb.sql.parser.NodeTypes;
 import com.foundationdb.sql.parser.CursorNode.UpdateMode;
 import com.foundationdb.sql.parser.ResultColumn;
 import com.foundationdb.sql.parser.ResultColumnList;
-import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.server.ServerOperatorCompiler;
+import com.foundationdb.sql.server.ServerSession;
 
 public class ViewCompiler extends ServerOperatorCompiler {
 
-    public ViewCompiler(AkibanInformationSchema ais, String defaultSchemaName, SQLParser parser,
-                              TypesTranslator typesTranslator, AISBinderContext context) {
-        // just enough initialization so this can be used in PlanContext
-        // without the statement loader/type resolver failing
-        initAIS(ais, context, defaultSchemaName);
-        initParser(parser);
-        initTypesTranslator(typesTranslator);
-        initTypesRegistry(TypesRegistryServiceImpl.createRegistryService());
-        initProperties(new Properties());
+    public ViewCompiler(ServerSession server, KeyCreator keyCreator) {
+        initServer(server, keyCreator);
     }
 
     protected void initAIS(AkibanInformationSchema ais, AISBinderContext context, String defaultSchemaName) {

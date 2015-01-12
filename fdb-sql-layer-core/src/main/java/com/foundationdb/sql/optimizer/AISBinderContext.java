@@ -21,12 +21,12 @@ import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.parser.CreateViewNode;
 import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.SQLParserFeature;
+import com.foundationdb.sql.server.ServerSession;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.error.ViewHasBadSubqueryException;
-import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistryServiceImpl;
 
 import java.util.*;
@@ -229,7 +229,7 @@ public class AISBinderContext
     }
 
     /** Get view definition given the user's DDL. */
-    public AISViewDefinition getViewDefinition(CreateViewNode ddl, TypesTranslator typesTranslator) {
+    public AISViewDefinition getViewDefinition(CreateViewNode ddl, ServerSession server) {
         try {
             // Just want the definition for result columns and table references.
             // If the view uses another view, the inner one is treated
@@ -237,7 +237,7 @@ public class AISBinderContext
             AISViewDefinition view = new AISViewDefinition(ddl, parser);
             binder.bind(view.getSubquery(), false);
             view.getTableColumnReferences(); // get the references before expanding views
-            ViewCompiler compiler = new ViewCompiler(ais, defaultSchemaName, parser, typesTranslator, binder.getContext());
+            ViewCompiler compiler = new ViewCompiler(server, server.getServiceManager().getStore());
             compiler.findAndSetTypes(view);
             return view;
         }

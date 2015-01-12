@@ -26,14 +26,14 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.api.dml.scan.NewRow;
 import com.foundationdb.server.error.ForeignKeyPreventsDropTableException;
 import com.foundationdb.server.error.ForeignConstraintDDLException;
 import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.ReferencedSQLJJarException;
 import com.foundationdb.server.error.ViewReferencesExist;
-import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.server.types.value.ValueSources;
+import com.foundationdb.sql.aisddl.AISDDLITBase;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
@@ -46,7 +46,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
-public final class DropSchemaIT extends ITBase {
+public final class DropSchemaIT extends AISDDLITBase {
     private void expectTables(String schemaName, String... tableNames) {
         final AkibanInformationSchema ais = ddl().getAIS(session());
         for (String name : tableNames) {
@@ -303,14 +303,10 @@ public final class DropSchemaIT extends ITBase {
 
     @Test
     public void dropViewValidInSchema() throws Exception {
-        createTable("one", "t1",
-                    "id int not null primary key", "name varchar(128)");
-        createTable("two", "t2",
-                    "id int not null primary key", "name varchar(128)");
-        createView("one", "v1",
-                   "SELECT * FROM t1");
-        createView("two", "v2",
-                   "SELECT * FROM t2");
+        executeDDL("create table one.t1(id int not null primary key, name varchar(128))");
+        executeDDL("create table two.t2(id int not null primary key, name varchar(128))");
+        executeDDL("create view one.v1 AS select * from one.t1");
+        executeDDL("create view two.v2 AS select * from two.t2");
         ddl().dropSchema(session(), "one");
         expectNotTables("one", "t1");
         expectNotViews("one", "v1");
@@ -320,12 +316,10 @@ public final class DropSchemaIT extends ITBase {
 
     @Test
     public void dropViewInvalidOutsideSchema() throws Exception {
-        createTable("one", "t1",
-                    "id int not null primary key", "name varchar(128)");
-        createTable("two", "t2",
-                "id int not null primary key", "name varchar(128)");
-        createView("one", "crossview",
-                   "SELECT t1.id,t1.name,t2.name AS name2 FROM one.t1 t1, two.t2 t2 WHERE t1.id = t2.id");
+        executeDDL("create table one.t1(id int not null primary key, name varchar(128))");
+        executeDDL("create table two.t2(id int not null primary key, name varchar(128))");
+        executeDDL("create view one.crossview AS select t1.id,t1.name,t2.name "
+                + "AS name2 FROM one.t1 t1, two.t2 t2 WHERE t1.id = t2.id");
         try {
             ddl().dropSchema(session(), "one");
         } catch (ViewReferencesExist ex) {
@@ -338,14 +332,9 @@ public final class DropSchemaIT extends ITBase {
 
     @Test
     public void dropViewsInOrder() throws Exception {
-        createTable("test", "t1",
-                "id int not null primary key", "name varchar(128)");
-        createView("test", "v1",
-                "SELECT * FROM t1");
-        createView("test", "v3",
-                "SELECT * FROM v1");
-        createView("test", "v2",
-                "SELECT * FROM v3");
+        executeDDL("create table test.t1(id int not null primary key, name varchar(128))");
+        executeDDL("create view test.v1 AS SELECT * FROM t1");
+        executeDDL("create view test.v2 AS SELECT * FROM v1");
         ddl().dropSchema(session(), "test");
         expectNotViews("test", "v1", "v2", "v3");
     }

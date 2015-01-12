@@ -27,6 +27,7 @@ import com.foundationdb.sql.parser.CreateViewNode;
 import com.foundationdb.sql.parser.DropViewNode;
 import com.foundationdb.sql.parser.NodeTypes;
 import com.foundationdb.sql.parser.ResultColumn;
+import com.foundationdb.sql.server.ServerSession;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.ais.model.AISBuilder;
@@ -53,7 +54,7 @@ public class ViewDDL
                                   String defaultSchemaName,
                                   CreateViewNode createView,
                                   AISBinderContext binderContext,
-                                  QueryContext context) {
+                                  QueryContext context, ServerSession server) {
         TableName fullName = convertName(defaultSchemaName, createView.getObjectName());
         String schemaName = fullName.getSchemaName();
         String viewName = fullName.getTableName();
@@ -63,9 +64,9 @@ public class ViewDDL
            skipOrThrow(context, createView.getExistenceCheck(), curView, new DuplicateViewException(schemaName, viewName))) {
             return;
         }
-        
+
         TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
-        AISViewDefinition viewdef = binderContext.getViewDefinition(createView, typesTranslator);
+        AISViewDefinition viewdef = binderContext.getViewDefinition(createView, server);
         Map<TableName,Collection<String>> tableColumnReferences = viewdef.getTableColumnReferences();
         AISBuilder builder = new AISBuilder();
         builder.view(schemaName, viewName, viewdef.getQueryExpression(), 
