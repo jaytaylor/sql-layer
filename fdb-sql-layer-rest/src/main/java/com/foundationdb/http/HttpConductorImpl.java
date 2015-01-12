@@ -17,6 +17,7 @@
 
 package com.foundationdb.http;
 
+import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.monitor.MonitorService;
@@ -39,8 +40,10 @@ import org.eclipse.jetty.security.Authenticator;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.LoginService;
+import org.eclipse.jetty.security.SpnegoLoginService;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.security.authentication.DigestAuthenticator;
+import org.eclipse.jetty.security.authentication.SpnegoAuthenticator;
 import org.eclipse.jetty.server.AsyncHttpConnection;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
@@ -58,7 +61,11 @@ import org.slf4j.LoggerFactory;
 import javax.servlet.FilterRegistration;
 import javax.servlet.ServletException;
 
+import java.net.MalformedURLException;
 import java.nio.channels.SocketChannel;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -95,6 +102,8 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     private static final String CONFIG_COMMON_PREFIX = "fdbsql.sql.";
     private static final String CONFIG_COMMON_JAAS_PREFIX = CONFIG_COMMON_PREFIX + "jaas.";
     private static final String CONFIG_JAAS_PREFIX = CONFIG_HTTP_PREFIX + "jaas.";
+    private static final String CONFIG_COMMON_SPNEGO_PREFIX = CONFIG_COMMON_PREFIX + "spnego.";
+    private static final String CONFIG_SPNEGO_PREFIX = CONFIG_HTTP_PREFIX + "spnego.";
 
     private static final String REST_ROLE = "rest-user";
     public  static final String SERVER_TYPE = "REST";
@@ -197,7 +206,8 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     private static enum AuthenticationType {
         NONE(null, null),
         BASIC(CredentialType.BASIC, BasicAuthenticator.class),
-        DIGEST(CredentialType.DIGEST, DigestAuthenticator.class);
+        DIGEST(CredentialType.DIGEST, DigestAuthenticator.class),
+        SPNEGO(null, SpnegoAuthenticator.class);
 
         public CredentialType getCredentialType() {
             return credentialType;
@@ -304,24 +314,45 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                 sh.setRealmName(realm);
 
                 LoginService loginService;
-
-                Properties jaasProps = configurationService.deriveProperties(CONFIG_COMMON_JAAS_PREFIX);
-                jaasProps.putAll(configurationService.deriveProperties(CONFIG_JAAS_PREFIX));
-                if (jaasProps.getProperty("configName") != null) {
-                    JAASLoginService jaasLoginService = new JAASLoginService(realm);
-                    jaasLoginService.setLoginModuleName(jaasProps.getProperty("configName"));
-                    if (jaasProps.getProperty("roleClasses") != null) {
-                        jaasLoginService.setRoleClassNames(jaasProps.getProperty("roleClasses").split(",\\s+"));
-                        loginService = jaasLoginService;
+                if (login == AuthenticationType.SPNEGO) {
+                    Properties spnegoProps = configurationService.deriveProperties(CONFIG_COMMON_SPNEGO_PREFIX);
+                    spnegoProps.putAll(configurationService.deriveProperties(CONFIG_SPNEGO_PREFIX));
+                    File propFile = File.createTempFile("spnego", ".properties");
+                    try (FileOutputStream ostr = new FileOutputStream(propFile)) {
+                        spnegoProps.store(ostr, "SPNEGO config subset");
                     }
-                    else {
-                        loginService = new HybridLoginService(jaasLoginService, securityService);
+                    catch (IOException ex) {
+                        throw new AkibanInternalException("Error writing temp file", ex);
                     }
+                    String spnegoConfig;
+                    try {
+                        spnegoConfig = propFile.toURI().toURL().toString();
+                    }
+                    catch (MalformedURLException ex) {
+                        throw new AkibanInternalException("Error getting temp URL", ex);
+                    }
+                    SpnegoLoginService spnegoLoginService = new SpnegoLoginService(realm, spnegoConfig);
+                    spnegoLoginService.start(); // Since wrapper will not implement life cycle.
+                    loginService = new HybridLoginService(spnegoLoginService, securityService);
                 }
                 else {
-                    loginService = new SecurityServiceLoginService(securityService, login.getCredentialType(), loginCacheSeconds, realm);
+                    Properties jaasProps = configurationService.deriveProperties(CONFIG_COMMON_JAAS_PREFIX);
+                    jaasProps.putAll(configurationService.deriveProperties(CONFIG_JAAS_PREFIX));
+                    if (jaasProps.getProperty("configName") != null) {
+                        JAASLoginService jaasLoginService = new JAASLoginService(realm);
+                        jaasLoginService.setLoginModuleName(jaasProps.getProperty("configName"));
+                        if (jaasProps.getProperty("roleClasses") != null) {
+                            jaasLoginService.setRoleClassNames(jaasProps.getProperty("roleClasses").split(",\\s+"));
+                            loginService = jaasLoginService;
+                        }
+                        else {
+                            loginService = new HybridLoginService(jaasLoginService, securityService);
+                        }
+                    }
+                    else {
+                        loginService = new SecurityServiceLoginService(securityService, login.getCredentialType(), loginCacheSeconds, realm);
+                    }
                 }
-
                 sh.setLoginService(loginService);
                 localRootContextHandler.setSecurityHandler(sh);
             }

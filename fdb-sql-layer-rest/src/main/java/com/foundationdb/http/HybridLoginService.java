@@ -45,7 +45,10 @@ public class HybridLoginService implements LoginService
         UserIdentity inner = delegate.login(username, credentials);
         if (inner == null)
             return null;
-        User user = securityService.getUser(inner.getUserPrincipal().getName());
+        String userName = inner.getUserPrincipal().getName();
+        int at = userName.indexOf('@');
+        if (at >= 0) userName = userName.substring(0, at);
+        User user = securityService.getUser(userName);
         if (user == null)
             return inner;
         else
