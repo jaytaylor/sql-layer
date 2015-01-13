@@ -72,9 +72,15 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         super(reqs);
         sessionMonitor = new ServerSessionMonitor(SERVER_TYPE, reqs.monitor().allocateSessionId());
         inheritFromCall();
-        if ((defaultSchemaName != null) &&
-            (info.getProperty("database") == null))
-            info.put("database", defaultSchemaName);
+        if (info.getProperty("database") == null) {
+            if (defaultSchemaName != null)
+                // From caller into properties.
+                info.put("database", defaultSchemaName);
+        }
+        else {
+            // From properties, overwriting caller.
+            defaultSchemaName = info.getProperty("database");
+        }
         if (session == null)
             session = reqs.sessionService().createSession();
         setProperties(info);
