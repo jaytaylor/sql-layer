@@ -207,7 +207,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         NONE(null, null),
         BASIC(CredentialType.BASIC, BasicAuthenticator.class),
         DIGEST(CredentialType.DIGEST, DigestAuthenticator.class),
-        SPNEGO(null, SpnegoAuthenticator.class);
+        SPNEGO(null, SpnegoAuthenticatorEx.class);
 
         public CredentialType getCredentialType() {
             return credentialType;
