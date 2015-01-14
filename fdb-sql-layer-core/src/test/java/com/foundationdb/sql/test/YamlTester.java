@@ -1433,6 +1433,7 @@ public class YamlTester
             @Override
             public Object construct(Node node) {
                 Date today = new Date();
+                LOG.warn("Constructed: {}", today);
                 return DEFAULT_DATE_FORMAT.format(today);
             }
 
