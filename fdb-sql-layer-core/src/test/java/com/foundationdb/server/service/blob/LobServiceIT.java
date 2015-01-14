@@ -53,7 +53,7 @@ public class LobServiceIT extends ITBase {
         Assert.assertEquals(ls.sizeBlob(id), new Long(data.length).longValue());
         
         // blob transfer to new address
-        String newPath = "newTestLob";
+        String newPath = UUID.randomUUID().toString();
         ls.moveLob(id, newPath);
         
         // data retrieval
@@ -62,10 +62,16 @@ public class LobServiceIT extends ITBase {
         output = ls.readBlob(newPath);
         Assert.assertArrayEquals(data, output);
         
-        
-        // lob removal
-        ls.deleteLob(newPath);
+        ls.truncateBlob(newPath, 2L);
+        Assert.assertEquals(ls.sizeBlob(newPath), 2L);
+
+        ls.truncateBlob(newPath, 0L);
         Assert.assertEquals(ls.sizeBlob(newPath), 0L);
+        ls.appendBlob(newPath, data);
+        output = ls.readBlob(newPath);
+        Assert.assertArrayEquals(data, output);        
+        
+        ls.deleteLob(newPath);
         Assert.assertFalse(ls.existsLob(newPath));
     }
 

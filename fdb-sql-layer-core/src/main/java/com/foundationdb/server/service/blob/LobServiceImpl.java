@@ -27,7 +27,9 @@ import com.foundationdb.server.service.Service;
 import com.foundationdb.server.store.FDBHolder;
 import com.google.inject.*;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.ArrayList;
 
 public class LobServiceImpl implements Service, LobService {
     private final DirectorySubspace lobDirectory;
@@ -69,7 +71,8 @@ public class LobServiceImpl implements Service, LobService {
 
     @Override
     public void moveLob(String oldId, String newId) {
-        List<String> newPath = Arrays.asList(newId);
+        List<String> newPath = new ArrayList<>(lobDirectory.getPath());
+        newPath.add(newId);
         DirectorySubspace ds = lobDirectory.open(getTcx(), Arrays.asList(oldId)).get();
         ds.moveTo(getTcx(), newPath).get();
     }
