@@ -332,7 +332,6 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                         throw new AkibanInternalException("Error getting temp URL", ex);
                     }
                     SpnegoLoginService spnegoLoginService = new SpnegoLoginService(realm, spnegoConfig);
-                    spnegoLoginService.start(); // Since wrapper will not implement life cycle.
                     loginService = new HybridLoginService(spnegoLoginService, securityService);
                 }
                 else {

@@ -22,10 +22,12 @@ import com.foundationdb.server.service.security.User;
 import org.eclipse.jetty.security.IdentityService;
 import org.eclipse.jetty.security.LoginService;
 import org.eclipse.jetty.server.UserIdentity;
+import org.eclipse.jetty.util.component.AbstractLifeCycle;
+import org.eclipse.jetty.util.component.LifeCycle;
 import java.security.Principal;
 import javax.security.auth.Subject;
 
-public class HybridLoginService implements LoginService
+public class HybridLoginService extends AbstractLifeCycle implements LoginService
 {
     private final LoginService delegate;
     private final SecurityService securityService;
@@ -34,6 +36,22 @@ public class HybridLoginService implements LoginService
         this.delegate = delegate;
         this.securityService = securityService;
     }
+
+    /* AbstractLifeCycle */
+
+    @Override
+    protected void doStart() throws Exception {
+        if (delegate instanceof LifeCycle)
+            ((LifeCycle)delegate).start();
+    }
+
+    @Override
+    protected void doStop() throws Exception {
+        if (delegate instanceof LifeCycle)
+            ((LifeCycle)delegate).stop();
+    }
+
+    /* LoginService */
 
     @Override
     public String getName() {
