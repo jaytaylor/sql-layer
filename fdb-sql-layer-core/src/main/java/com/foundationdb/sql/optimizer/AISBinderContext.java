@@ -19,6 +19,7 @@ package com.foundationdb.sql.optimizer;
 
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.parser.CreateViewNode;
+import com.foundationdb.sql.parser.ResultColumn;
 import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.SQLParserFeature;
 import com.foundationdb.sql.server.ServerSession;
@@ -237,14 +238,26 @@ public class AISBinderContext
             AISViewDefinition view = new AISViewDefinition(ddl, parser);
             binder.bind(view.getSubquery(), false);
             view.getTableColumnReferences(); // get the references before expanding views
-            ViewCompiler compiler = new ViewCompiler(server, server.getServiceManager().getStore());
-            compiler.findAndSetTypes(view);
+            if (typeComputer != null) {
+                typeComputer.compute(view.getSubquery());
+            }
+            if (!hasTypes(view)) {
+                ViewCompiler compiler = new ViewCompiler(server, server.getServiceManager().getStore());
+                compiler.findAndSetTypes(view);
+            }
             return view;
         }
         catch (StandardException ex) {
             throw new ViewHasBadSubqueryException(ddl.getObjectName().toString(), 
                                                   ex.getMessage());
         }
+    }
+
+    public boolean hasTypes(AISViewDefinition view) {
+        for (ResultColumn col : view.getResultColumns()) {
+            if (col.getType() == null) return false;
+        }
+        return true;
     }
 
     /** Get view definition using stored copy of original DDL. */
