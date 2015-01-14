@@ -33,6 +33,7 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import com.foundationdb.server.types.texpressions.std.NoArgExpression;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class NoArgFuncs
