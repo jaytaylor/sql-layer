@@ -129,7 +129,7 @@ public class NoArgFuncs
         @Override
         public void evaluate(TExecutionContext context, ValueTarget target)
         {
-            System.out.println("evaluate " + context.getCurrentDate() + " " + context.getCurrentTimezone() + " " + MDateAndTime.encodeDate(context.getCurrentDate(), context.getCurrentTimezone()));
+            System.out.println("evaluate " + context.getCurrentDate() + " = " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S z").format(context.getCurrentDate()) + " -- " + context.getCurrentTimezone() + " " + MDateAndTime.encodeDate(context.getCurrentDate(), context.getCurrentTimezone()));
             target.putInt32(MDateAndTime.encodeDate(context.getCurrentDate(), context.getCurrentTimezone()));
         }
     };
