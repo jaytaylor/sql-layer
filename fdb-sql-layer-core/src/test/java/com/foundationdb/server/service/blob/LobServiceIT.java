@@ -18,12 +18,9 @@
 package com.foundationdb.server.service.blob;
 
 import com.foundationdb.*;
-import com.foundationdb.blob.*;
-import com.foundationdb.directory.*;
 import com.foundationdb.server.store.*;
 import com.foundationdb.server.test.it.ITBase;
 
-import java.sql.*;
 import java.util.*;
 
 import org.junit.*;

@@ -437,7 +437,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     @Override
     public boolean treeExists(Session session, StorageDescription storageDescription) {
         TransactionState txn = txnService.getTransaction(session);
-        return txn.getRangeExists(Range.startsWith(prefixBytes((FDBStorageDescription)storageDescription)), 1);
+        return txn.getRangeExists(Range.startsWith(prefixBytes((FDBStorageDescription) storageDescription)), 1);
     }
 
     @Override
@@ -644,7 +644,9 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             if (rowType.typeAt(i).equalsExcludingNullable(AkBlob.INSTANCE.instance(true))) {
                 int tableId = rowType.table().getTableId();
                 UUID blobId = (UUID)row.value(i).getObject();
-                getLobService().linkTableBlob(blobId.toString(), tableId);
+                if (blobId != null) {
+                    getLobService().linkTableBlob(blobId.toString(), tableId);
+                }
             }
         }
     }
@@ -655,7 +657,9 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         for( int i = 0; i < rowType.nFields(); i++ ) {
             if (rowType.typeAt(i).equalsExcludingNullable(AkBlob.INSTANCE.instance(true))) {
                 UUID blobId = (UUID)row.value(i).getObject();
-                getLobService().deleteLob(blobId.toString());
+                if (blobId != null) {
+                    getLobService().deleteLob(blobId.toString());
+                }
             }
         }        
     }
