@@ -18,6 +18,8 @@ failing-inner-join: false inner join conditions kill the whole SELECT as well.
 
 failing-outer-join: false outer join conditions only kill the optional side.
 
+function-condition: a condition implemented as an ordinary function
+
 having-1: HAVING condition unmolested.
 
 having-2: MAX precomputed if empty.
