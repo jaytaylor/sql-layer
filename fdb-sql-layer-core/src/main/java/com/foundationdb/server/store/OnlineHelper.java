@@ -833,8 +833,6 @@ public class OnlineHelper implements RowListener
                     cursor.openTopLevel();
                 }
             }
-        } catch (Exception e) {
-            throw e;
         } finally {
             cursor.closeTopLevel();
         }
