@@ -88,7 +88,7 @@ public class FDBNameGenerator implements NameGenerator
     static final String ONLINE_PATH_NAME = "dataOnline";
     static final String TABLE_PATH_NAME = "table";
     static final String SEQUENCE_PATH_NAME = "sequence";
-
+    static final String ONLINE_LOB_PATH_NAME = "lobOnline";
 
     private final TransactionState txn;
     private final DirectorySubspace directory;
@@ -170,6 +170,10 @@ public class FDBNameGenerator implements NameGenerator
 
     public static List<String> onlinePathSequence(String schemaName, String sequenceName) {
         return makeSequencePath(ONLINE_PATH_NAME, schemaName, sequenceName);
+    }
+    
+    public static List<String> onlineLobPath( String schemaName, String tableName) {
+        return makeLobPath(schemaName, tableName);
     }
 
 
@@ -295,5 +299,9 @@ public class FDBNameGenerator implements NameGenerator
 
     public static List<String> makeSequencePath(String pathPrefix, String schemaName, String sequenceName) {
         return Arrays.asList(pathPrefix, SEQUENCE_PATH_NAME, schemaName, sequenceName);
+    }
+    
+    private static List<String> makeLobPath( String schemaName, String tableName) {
+        return Arrays.asList(ONLINE_LOB_PATH_NAME, schemaName, tableName);
     }
 }

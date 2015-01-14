@@ -69,11 +69,7 @@ import com.persistit.Key;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.BitSet;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType extends StoreStorageDescription<SType,SDType>> implements Store {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractStore.class);
@@ -152,7 +148,11 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     
     /** Handles actions for clearing lobs*/
     abstract void deleteLobs(Row row);
-    
+
+    protected abstract void registerLobForOnlineDelete(Session session, String schemaName, String tableName, UUID uuid);
+
+    protected abstract void executeLobOnlineDelete(Session session, String schemaName, String tableName);
+
     
     //
     // AbstractStore

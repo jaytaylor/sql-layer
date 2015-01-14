@@ -29,8 +29,8 @@ public interface LobService {
     public void deleteLobs(String[] lobIds);
     public void moveLob(String oldId, String newId);
 
-    public void checkAndCleanBlobs(List<String> lobIds);
-    public void runLobGarbageCollector();
+    public void checkAndCleanBlobs(List<String> lobIds); // return lon with number of blobs deleted
+    public void runLobGarbageCollector(); // return long with number of blobs deleted?
     
     public void linkTableBlob(String lobId, int tableId);
     public long sizeBlob(String lobId);
@@ -39,7 +39,8 @@ public interface LobService {
     public void writeBlob(String lobId, long offset, byte[] data);
     public void appendBlob(String lobId, byte[] data);
     public void truncateBlob(String lobId, long size);
-
+    // copyBlob(String lobIdA, String LobIdB)
+    
 }
 
 

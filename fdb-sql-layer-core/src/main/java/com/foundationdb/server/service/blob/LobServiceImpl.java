@@ -58,9 +58,9 @@ public class LobServiceImpl implements Service, LobService {
 
     @Override
     public void deleteLobs(String[] lobIds) {
-        Future<Boolean>[] done = new Future[lobIds.length];
+        List<Future<Boolean>> done = new ArrayList<Future<Boolean>>();
         for (int i = 0; i < lobIds.length; i++) {
-            done[i] = lobDirectory.removeIfExists(getTcx(), Arrays.asList(lobIds[i]));
+            done.add(lobDirectory.removeIfExists(getTcx(), Arrays.asList(lobIds[i])));
         }
         for (Future<Boolean> item : done) {
             item.get();
@@ -79,7 +79,7 @@ public class LobServiceImpl implements Service, LobService {
         DirectorySubspace ds;
         BlobBase blob;
         TransactionContext tcx = getTcx();
-        List<String> toDo = new ArrayList();        
+        List<String> toDo = new ArrayList<String>();        
         if (lobIds.size() > 0 ) {
             for (int i = 0; i < lobIds.size(); i++) {
                 String lob = lobIds.get(i);
@@ -106,8 +106,11 @@ public class LobServiceImpl implements Service, LobService {
     @Override
     public void linkTableBlob(String lobId, int tableId) {
         BlobBase blob = openBlob(lobId);
-        if (blob.isLinked(getTcx()).get())
-            throw new LobException("lob is already linked to table");
+        if (blob.isLinked(getTcx()).get()) {
+            if (blob.getLinkedTable(getTcx()).get() != tableId) {
+                throw new LobException("lob is already linked to table");
+            }
+        }
         blob.setLinkedTable(getTcx(), tableId).get();
     }
 

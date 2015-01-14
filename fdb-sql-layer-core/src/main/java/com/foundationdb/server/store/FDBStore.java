@@ -21,6 +21,7 @@ import com.foundationdb.*;
 import com.foundationdb.ais.model.*;
 import com.foundationdb.ais.util.TableChange.ChangeType;
 import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
+import com.foundationdb.async.*;
 import com.foundationdb.directory.DirectorySubspace;
 import com.foundationdb.directory.PathUtil;
 import com.foundationdb.qp.row.IndexRow;
@@ -50,8 +51,7 @@ import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.server.types.aksql.aktypes.*;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.util.ReadWriteMap;
-import com.foundationdb.async.Function;
-import com.foundationdb.tuple.Tuple2;
+import com.foundationdb.tuple.*;
 import com.google.inject.Inject;
 import com.persistit.Key;
 import com.persistit.Persistit;
@@ -532,6 +532,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                     // - move dataOnline/foo to data/foo/
                     try {
                         if (rootDir.exists(txn, dataPath).get()) {
+                            executeLobOnlineDelete(session, oldName.getSchemaName(), oldName.getTableName());
                             for(String subPath : rootDir.list(txn, dataPath).get()) {
                                 List<String> subDataPath = PathUtil.extend(dataPath, subPath);
                                 List<String> subOnlinePath = PathUtil.extend(onlinePath, subPath);
@@ -660,6 +661,31 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         if (lobService == null)
             lobService = serviceManager.getServiceByClass(LobService.class);
         return lobService;
+    }
+    
+    @Override
+    protected void registerLobForOnlineDelete(Session session, String schemaName, String tableRootName, UUID lobId) {
+        List<String> path = FDBNameGenerator.onlineLobPath(schemaName, tableRootName);
+        TransactionState tr = txnService.getTransaction(session);
+        DirectorySubspace dir = rootDir.createOrOpen(tr.getTransaction(), path).get();
+        byte[] key = dir.pack(AkGUID.uuidToBytes(lobId));
+        tr.setBytes(key, EMPTY_BYTE_ARRAY);
+    }
+    
+    @Override
+    protected void executeLobOnlineDelete(Session session, String schemaName, String tableName) {
+        List<String> onlineLobPath = FDBNameGenerator.onlineLobPath(schemaName, tableName);
+        TransactionState tr = txnService.getTransaction(session);
+        if (rootDir.exists(tr.getTransaction(), onlineLobPath).get()) {
+            DirectorySubspace dir = rootDir.createOrOpen(tr.getTransaction(), onlineLobPath).get();
+            AsyncIterator<KeyValue> it = tr.getRangeIterator(dir.range(), Integer.MAX_VALUE).iterator();
+            while(it.hasNext()) {
+                KeyValue kv = it.next();
+                Tuple t = dir.unpack(kv.getKey());
+                getLobService().deleteLob(AkGUID.bytesToUUID(t.getBytes(0), 0).toString());
+            }
+            rootDir.removeIfExists(tr.getTransaction(), onlineLobPath).get();
+        }
     }
     
     //

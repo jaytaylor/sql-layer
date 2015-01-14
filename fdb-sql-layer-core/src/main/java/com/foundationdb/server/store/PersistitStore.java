@@ -583,6 +583,17 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         // do nothing
     }
     
+    @Override
+    protected void executeLobOnlineDelete(Session session, String schemaName, String tableName) {
+        // do nothing
+    }
+    
+    @Override
+    protected void registerLobForOnlineDelete(Session session, String schemaName, String tableName, UUID lobId) {
+        // do nothing
+    }
+    
+    
     private static final Callback CLEAR_SESSION_TABLES_CALLBACK = new Callback() {
         @Override
         public void run(Session session, long timestamp) {
