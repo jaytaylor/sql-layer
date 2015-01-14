@@ -1,0 +1,22 @@
+---
+- Statement: >
+    CREATE PROCEDURE embedded_schema(OUT schema1 VARCHAR(128), OUT schema2 VARCHAR(128), OUT schema3 VARCHAR(128)) AS $$
+      function fun(schema1, schema2, schema3) { 
+        var conn = java.sql.DriverManager.getConnection('jdbc:default:connection');
+        schema1[0] = conn.getSchema();
+        conn.close();
+        conn = java.sql.DriverManager.getConnection('jdbc:default:connection', 'test3', '');
+        schema2[0] = conn.getSchema();
+        conn.close();
+        var props = new java.util.Properties();
+        props.setProperty('user', 'test4');
+        props.setProperty('database', 'test5');
+        conn = java.sql.DriverManager.getConnection('jdbc:default:connection', props);
+        schema3[0] = conn.getSchema();
+        conn.close();
+      }
+    $$ LANGUAGE javascript PARAMETER STYLE java EXTERNAL NAME 'fun';
+---
+- Statement: CALL embedded_schema()
+- output: [['test', 'test', 'test5']]
+...
