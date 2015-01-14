@@ -241,7 +241,7 @@ public class AISBinderContext
             if (typeComputer != null) {
                 typeComputer.compute(view.getSubquery());
             }
-            if (!hasTypes(view)) {
+            if (!viewHasTypes(view)) {
                 ViewCompiler compiler = new ViewCompiler(server, server.getServiceManager().getStore());
                 compiler.findAndSetTypes(view);
             }
@@ -253,7 +253,7 @@ public class AISBinderContext
         }
     }
 
-    public boolean hasTypes(AISViewDefinition view) {
+    public boolean viewHasTypes(AISViewDefinition view) {
         for (ResultColumn col : view.getResultColumns()) {
             if (col.getType() == null) return false;
         }
