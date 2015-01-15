@@ -33,6 +33,7 @@ import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.externaldata.ExternalDataService;
 import com.foundationdb.server.service.externaldata.JsonRowWriter;
+import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.service.text.FullTextIndexService;
@@ -552,7 +553,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     private JDBCConnection jdbcConnection(HttpServletRequest request) throws SQLException {
-        return (JDBCConnection) jdbcService.newConnection(new Properties(), request.getUserPrincipal());
+        return (JDBCConnection) jdbcService.newConnection(new Properties(), request.getUserPrincipal(), request.isUserInRole(SecurityService.ADMIN_ROLE));
     }
 
     private JDBCConnection jdbcConnection(HttpServletRequest request, String schemaName) throws SQLException {
@@ -563,7 +564,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
             (schemaName != null)) {
             properties.put("user", schemaName);
         }
-        return (JDBCConnection) jdbcService.newConnection(properties, request.getUserPrincipal());
+        return (JDBCConnection) jdbcService.newConnection(properties, request.getUserPrincipal(), request.isUserInRole(SecurityService.ADMIN_ROLE));
     }
 
     private static enum OutputType {

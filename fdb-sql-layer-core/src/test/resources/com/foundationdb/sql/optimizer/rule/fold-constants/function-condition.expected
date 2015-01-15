@@ -1,0 +1,5 @@
+SelectQuery@1c6804cd
+  ResultSet@655f7ea[name]
+    Project@549949be[customers.name]
+      Select@4b3a45f1[]
+        TableSource@476b0ae6(customers)

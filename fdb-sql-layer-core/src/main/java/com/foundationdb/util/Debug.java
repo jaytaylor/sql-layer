@@ -17,6 +17,9 @@
 
 package com.foundationdb.util;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 public class Debug
 {
     public static final String DEBUG_PROPERTY = "fdbsql.debug";
@@ -25,8 +28,14 @@ public class Debug
         return Boolean.getBoolean(DEBUG_PROPERTY);
     }
 
-    public static boolean isOn(String subProperty) {
-        String subValue = System.getProperty(DEBUG_PROPERTY + "." + subProperty);
+    public static boolean isOn(final String subProperty) {
+        String subValue = AccessController.doPrivileged(
+                new PrivilegedAction<String>() {
+                    public String run() {
+                        return System.getProperty(DEBUG_PROPERTY + "." + subProperty);
+                    }
+                }
+            );
         if(subValue != null) {
             return Boolean.parseBoolean(subValue);
         }

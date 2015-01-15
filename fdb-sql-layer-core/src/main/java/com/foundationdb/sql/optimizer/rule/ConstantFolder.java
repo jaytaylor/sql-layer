@@ -820,13 +820,22 @@ public class ConstantFolder extends BaseRule
 
         protected ExpressionNode genericFunctionExpression(FunctionExpression fun) {
             TPreptimeValue preptimeValue = fun.getPreptimeValue();
-            return (preptimeValue.value() == null)
-                    ? fun
-                    : new ConstantExpression(preptimeValue);
+            if (preptimeValue.value() == null)
+                return fun;
+
+            if (fun instanceof FunctionCondition) {
+                return newBooleanConstant(getBooleanObject(preptimeValue), fun);
+            }
+
+            return new ConstantExpression(preptimeValue);
         }
 
         protected Boolean getBooleanObject(ConstantExpression expression) {
-            ValueSource value = expression.getPreptimeValue().value();
+            return getBooleanObject(expression.getPreptimeValue());
+        }
+
+        protected Boolean getBooleanObject(TPreptimeValue preptimeValue) {
+            ValueSource value = preptimeValue.value();
             return value == null || value.isNull()
                     ? null
                     : value.getBoolean();

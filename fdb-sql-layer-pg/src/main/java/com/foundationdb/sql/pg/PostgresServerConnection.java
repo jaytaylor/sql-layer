@@ -510,6 +510,7 @@ public class PostgresServerConnection extends ServerSessionBase
             }
             break;
         case CLEAR_TEXT:
+        case JAAS:
             {
                 messenger.beginMessage(PostgresMessages.AUTHENTICATION_TYPE.code());
                 messenger.writeInt(PostgresMessenger.AUTHENTICATION_CLEAR_TEXT);
@@ -576,11 +577,17 @@ public class PostgresServerConnection extends ServerSessionBase
             break;
         case CLEAR_TEXT:
             principal = reqs.securityService()
-                .authenticate(session, user, pass);
+                .authenticateLocal(session, user, pass);
             break;
         case MD5:
             principal = reqs.securityService()
-                .authenticate(session, user, pass, (byte[])attributes.remove(MD5_SALT));
+                .authenticateLocal(session, user, pass,
+                                   (byte[])attributes.remove(MD5_SALT));
+            break;
+        case JAAS:
+            principal = reqs.securityService()
+                .authenticateJaas(session, user, pass,
+                                  server.getJaasConfigName(), server.getJaasUserClass(), server.getJaasRoleClasses());
             break;
         }
         logger.debug("Login {}", (principal != null) ? principal : user);

@@ -24,17 +24,61 @@ import java.util.Collection;
 
 public interface SecurityService
 {
+    /** This role allows access to all data. */
     public static final String ADMIN_ROLE = "admin";
 
-    public static final Session.Key<User> SESSION_KEY = 
-        Session.Key.named("SECURITY_USER");
+    /** The current {@link Principal} for the {@link Session}. */
+    public static final Session.Key<Principal> SESSION_PRINCIPAL_KEY = 
+        Session.Key.named("SECURITY_PRINCIPAL");
 
-    public User authenticate(Session session, String name, String password);
-    public User authenticate(Session session, String name, String password, byte[] salt);
+    /** The current roles for the {@link Session}. */
+    public static final Session.Key<Collection<String>> SESSION_ROLES_KEY = 
+        Session.Key.named("SECURITY_ROLES");
 
+    /** Authenticate user using local security database and set into {@link Session}.
+     * @return the logged in {@link Principal}.
+     * Throws an error if authentication fails.
+     */
+    public Principal authenticateLocal(Session session, String name, String password);
+
+    /** Authenticate user using local security database and set in {@link Session}.
+     * @param salt a salt to use when hashing the password
+     */
+    public Principal authenticateLocal(Session session, String name, String password,
+                                       byte[] salt);
+
+    /** If this {@link Session} is authenticated, does it have access to the given schema?
+     *
+     * NOTE: If authentication is enabled, caller must not call this (that is, allow
+     * any queries) without authentication, since that is indistinguishable from
+     * authentication disabled.
+     *
+     * @see com.foundationdb.sql.pg.PostgresServerConnection#authenticationOkay
+     */
     public boolean isAccessible(Session session, String schema);
+    
+    /** Does the given {@link Principal} have access to the given scheam?
+     * NOTE: If authentication is enabled, caller must not call this (that is, allow
+     * any queries) with <code>null</code>, since that is indistinguishable from
+     * authentication disabled.
+     *
+     * @see com.foundationdb.http.HttpConductorImpl.AuthenticationType
+     */
     public boolean isAccessible(Principal user, boolean inAdminRole, String schema);
+
+    /** If this {@link Session} is authenticated, does it administrative access?
+     */
     public boolean hasRestrictedAccess(Session session);
+
+    /** Set {@link Session}'s authentication directly. */
+    public void setAuthenticated(Session session, Principal user, boolean inAdminRole);
+
+    /** Authenticate user using given JAAS configuration and set in {@link Session}.
+     * @param configName name of the JAAS configuration to use
+     * @param roleClasses list of {@link Principal} classes that represent roles or <code>null</code> to get from corresponding user in local database.
+     */
+    public Principal authenticateJaas(Session session, String name, String password,
+                                      String configName, Class<? extends Principal> userClass, Collection<Class<? extends Principal>> roleClasses);
 
     public void addRole(String name);
     public void deleteRole(String name);
