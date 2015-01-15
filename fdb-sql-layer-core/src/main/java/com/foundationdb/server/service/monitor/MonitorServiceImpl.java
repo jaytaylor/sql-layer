@@ -17,6 +17,8 @@
 
 package com.foundationdb.server.service.monitor;
 
+import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.QueryLogCloseException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -43,6 +45,10 @@ public class MonitorServiceImpl implements Service, MonitorService, SessionEvent
     private static final String QUERY_LOG_PROPERTY = "fdbsql.querylog.enabled";
     private static final String QUERY_LOG_FILE_PROPERTY = "fdbsql.querylog.filename";
     private static final String QUERY_LOG_THRESHOLD = "fdbsql.querylog.exec_threshold_ms";
+
+    private static final ErrorCode[] SLOW_ERRORS = {
+        ErrorCode.FDB_PAST_VERSION, ErrorCode.QUERY_TIMEOUT
+    };
     
     private static final Logger logger = LoggerFactory.getLogger(MonitorServiceImpl.class);
 
@@ -159,14 +165,25 @@ public class MonitorServiceImpl implements Service, MonitorService, SessionEvent
     }
 
     @Override
-    public void logQuery(int sessionId, String sql, long duration, int rowsProcessed) {
+    public void logQuery(int sessionId, String sql,
+                         long duration, int rowsProcessed, Throwable failure) {
         /*
          * If an execution time threshold has been specified but the query
          * to be logged is not larger than that execution time threshold
-         * than we don't log anything.
+         * than we don't log anything, except when the exception intrinsically
+         * indicates a "slow" query.
          */
         if (queryLogThresholdMillis > 0 && duration < queryLogThresholdMillis) {
-            return;
+            boolean slow = false;
+            if (failure instanceof InvalidOperationException){
+                for (ErrorCode slowError : SLOW_ERRORS) {
+                    if (((InvalidOperationException)failure).getCode() == slowError) {
+                        slow = true;
+                        break;
+                    }
+                }
+            }
+            if (!slow) return;
         }
         
         SessionMonitor monitor = sessions.get(sessionId);
@@ -176,21 +193,24 @@ public class MonitorServiceImpl implements Service, MonitorService, SessionEvent
          * #
          * # timestamp
          * # session_id=sessionID
-         * # execution_time=xxxx
+         * # execution_time=millis
+         * (optional) # error_msg=class: CODE: text
+         * (optional) # rows_processed=count
          * SQL text
          * #
          * For example:
          * # 2011-08-18 15:08:11.071
          * # session_id=2
          * # execution_time=69824520
+         * # rows_processed=100
          * select * from tables;
          * #
          * # 2011-08-18 15:08:18.224
          * # session_id=2
          * # execution_time=3132589
+         * # rows_processed=10
          * select * from groups;
          * #
-         * Execution time is output in milliseconds
          */
         StringBuilder buffer = new StringBuilder();
         buffer.append("# ");
@@ -202,6 +222,16 @@ public class MonitorServiceImpl implements Service, MonitorService, SessionEvent
         buffer.append("# execution_time=");
         buffer.append(duration);
         buffer.append("\n");
+        if (failure != null) {
+            buffer.append("# error_msg=");
+            buffer.append(failure.toString().replace('\n', ' '));
+            buffer.append("\n");
+        }
+        else if (rowsProcessed >= 0) {
+            buffer.append("# rows_processed=");
+            buffer.append(rowsProcessed);
+            buffer.append("\n");
+        }
         buffer.append(sql);
         buffer.append("\n#\n");
         try {
@@ -218,11 +248,12 @@ public class MonitorServiceImpl implements Service, MonitorService, SessionEvent
     }
     
     @Override
-    public void logQuery(SessionMonitor sessionMonitor) {
+    public void logQuery(SessionMonitor sessionMonitor, Throwable failure) {
         logQuery(sessionMonitor.getSessionId(), 
                  sessionMonitor.getCurrentStatement(),
                  sessionMonitor.getCurrentStatementDurationMillis(),
-                 sessionMonitor.getRowsProcessed());
+                 sessionMonitor.getRowsProcessed(),
+                 failure);
     }
 
     /** Register the given User monitor. */

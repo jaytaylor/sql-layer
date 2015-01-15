@@ -63,8 +63,8 @@ public class JDBCStatement implements Statement
             bindings = context.createBindings();
         }
         boolean hasResultSet = false;
-        connection.beforeExecuteStatement(stmt);
-        boolean success = false;
+        connection.beforeExecuteStatement(sql, stmt);
+        Throwable failure = null;
         try {
             ExecuteResults results = stmt.execute(context, bindings);
             currentUpdateCount = results.getUpdateCount();
@@ -90,23 +90,29 @@ public class JDBCStatement implements Statement
                 pendingResultSets = results.getAdditionalResultSets();
                 hasResultSet = getMoreResults();
             }
-            success = true;
         }
         catch (RuntimeException ex) {
-            Throwable throwable = ex;
-            if (throwable instanceof Wrapper) {
-                throwable = (SQLException)ex.getCause();
+            failure = ex;
+            if (failure instanceof Wrapper) {
+                failure = (SQLException)failure.getCause();
             }
 
-            final ErrorCode code = ErrorCode.getCodeForRESTException(throwable);
+            final ErrorCode code = ErrorCode.getCodeForRESTException(failure);
             code.logAtImportance(
-                    LOG, "Statement execution for query {} failed with exception {}", sql, throwable
-            );
+                    LOG, "Statement execution for query {} failed with exception {}", sql, failure);
 
             throw JDBCException.throwUnwrapped(ex);
         }
+        catch (SQLException ex) {
+            failure = ex;
+            throw ex;
+        }
+        catch (Error err) {
+            failure = err;
+            throw err;
+        }
         finally {
-            connection.afterExecuteStatement(stmt, success);
+            connection.afterExecuteStatement(stmt, failure);
         }
         return hasResultSet;
     }

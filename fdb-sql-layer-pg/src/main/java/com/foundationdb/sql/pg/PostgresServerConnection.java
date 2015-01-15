@@ -74,7 +74,6 @@ public class PostgresServerConnection extends ServerSessionBase
     private static final InOutTap PROCESS_MESSAGE = Tap.createTimer("PostgresServerConnection: process message");
     private static final String THREAD_NAME_PREFIX = "PostgresServer_Session-"; // Session ID appended
     private static final String MD5_SALT = "MD5_SALT";
-    private static final ErrorCode[] slowErrors = {ErrorCode.FDB_PAST_VERSION, ErrorCode.QUERY_TIMEOUT};
 
     private final PostgresServer server;
     private boolean running = false, ignoreUntilSync = false;
@@ -384,14 +383,9 @@ public class PostgresServerConnection extends ServerSessionBase
             // Current statement did not complete, include in error message.
             sql = sessionMonitor.getCurrentStatement();
             if (sql != null) {
-                sessionMonitor.failStatement(); // For system tables and for next time.
-                if(reqs.monitor().isQueryLogEnabled() && ex instanceof InvalidOperationException){
-                    for(ErrorCode slowError : slowErrors) {
-                        if (((InvalidOperationException) ex).getCode() == slowError) {
-                            reqs.monitor().logQuery(sessionMonitor);
-                        }
-                    }
-                }
+                sessionMonitor.failStatement(ex); // For system tables and for next time.
+                if (reqs.monitor().isQueryLogEnabled())
+                    reqs.monitor().logQuery(sessionMonitor, ex);
             }
         }
         if (sql == null)
@@ -765,7 +759,7 @@ public class PostgresServerConnection extends ServerSessionBase
         sessionMonitor.endStatement(rowsProcessed);
         logger.debug("Query complete: {} rows", rowsProcessed);
         if (reqs.monitor().isQueryLogEnabled()) {
-            reqs.monitor().logQuery(sessionMonitor);
+            reqs.monitor().logQuery(sessionMonitor, null);
         }
     }
 
@@ -977,7 +971,7 @@ public class PostgresServerConnection extends ServerSessionBase
         sessionMonitor.endStatement(rowsProcessed);
         logger.debug("Execute complete: {} rows", rowsProcessed);
         if (reqs.monitor().isQueryLogEnabled()) {
-            reqs.monitor().logQuery(sessionMonitor);
+            reqs.monitor().logQuery(sessionMonitor, null);
         }
     }
 
