@@ -612,7 +612,7 @@ public class JoinAndIndexPicker extends BaseRule
 
         @Override
         public Plan bestPlan(Collection<JoinOperator> condJoins, Collection<JoinOperator> outsideJoins, boolean sortAllowed) {
-            return bestPlan(JoinableBitSet.empty(), Collections.<JoinOperator>emptyList(), condJoins, outsideJoins, sortAllowed);
+            return bestPlan(JoinableBitSet.empty(), condJoins, outsideJoins, sortAllowed);
         }
 
         protected ConditionList getExtraConditions() {
