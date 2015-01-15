@@ -79,7 +79,7 @@ public class AISDDL
             return;
         case NodeTypes.CREATE_VIEW_NODE:
             ViewDDL.createView(ddlFunctions, session, schema, (CreateViewNode)ddl,
-                               server.getBinderContext(), context);
+                               server.getBinderContext(), context, server);
             return;
         case NodeTypes.DROP_VIEW_NODE:
             ViewDDL.dropView(ddlFunctions, session, schema, (DropViewNode)ddl,

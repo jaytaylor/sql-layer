@@ -69,6 +69,10 @@ public abstract class SessionMonitorBase implements SessionMonitor {
         rowsProcessed = -1;
     }
 
+    public void endStatement() {
+        endStatement(-1);
+    }
+
     public void endStatement(int rowsProcessed) {
         currentStatementEndTime = System.currentTimeMillis();
         this.rowsProcessed = rowsProcessed;
@@ -84,9 +88,9 @@ public abstract class SessionMonitorBase implements SessionMonitor {
         }
     }
     
-    public void failStatement() {
+    public void failStatement(Throwable failure) {
         countEvent(StatementTypes.FAILED);
-        endStatement(-1);
+        endStatement();
     }
 
     // Caller can sequence all stages and avoid any gaps at the cost of more complicated

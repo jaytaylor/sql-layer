@@ -72,9 +72,15 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         super(reqs);
         sessionMonitor = new ServerSessionMonitor(SERVER_TYPE, reqs.monitor().allocateSessionId());
         inheritFromCall();
-        if ((defaultSchemaName != null) &&
-            (info.getProperty("database") == null))
-            info.put("database", defaultSchemaName);
+        if (info.getProperty("database") == null) {
+            if (defaultSchemaName != null)
+                // From caller into properties.
+                info.put("database", defaultSchemaName);
+        }
+        else {
+            // From properties, overwriting caller.
+            defaultSchemaName = info.getProperty("database");
+        }
         if (session == null)
             session = reqs.sessionService().createSession();
         setProperties(info);
@@ -262,7 +268,8 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     // Slightly different contract than ServerSessionBase, since a transaction
     // remains open when a until its read result set is closed.
-    protected void beforeExecuteStatement(ExecutableStatement stmt) throws SQLException {
+    protected void beforeExecuteStatement(String sql, ExecutableStatement stmt) throws SQLException {
+        sessionMonitor.startStatement(sql);
         sessionMonitor.enterStage(MonitorStage.EXECUTE);
         boolean localTransaction;
         try {
@@ -281,8 +288,15 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         }
     }
 
-    protected void afterExecuteStatement(ExecutableStatement stmt, boolean success) throws SQLException {
+    protected void afterExecuteStatement(ExecutableStatement stmt, Throwable failure) throws SQLException {
         sessionMonitor.leaveStage();
+        if (failure == null)
+            sessionMonitor.endStatement();
+        else
+            sessionMonitor.failStatement(failure);
+        if (reqs.monitor().isQueryLogEnabled()) {
+            reqs.monitor().logQuery(sessionMonitor, failure);
+        }
         boolean localTransaction = false;
         if (checkAutoCommit()) {
             // An update statement without any open cursors, or a
@@ -291,10 +305,10 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
             // now.
             localTransaction = true;
             deregisterSessionMonitor();
-            logger.debug(success ? "Auto COMMIT TRANSACTION" : "Auto ROLLBACK TRANSACTION");
+            logger.debug((failure == null) ? "Auto COMMIT TRANSACTION" : "Auto ROLLBACK TRANSACTION");
         }
         try {
-            super.afterExecute(stmt, localTransaction, success, true);
+            super.afterExecute(stmt, localTransaction, (failure == null), true);
         }
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
