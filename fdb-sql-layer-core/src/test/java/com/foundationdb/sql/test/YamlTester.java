@@ -227,10 +227,10 @@ public class YamlTester
     /** Test the input specified in the constructor. */
     public void test() {
         try {
-            if (sourceFilename().contains("current-date-time"))
+            if (sourceURL != null && sourceFilename().contains("current-date-time"))
                 System.out.println("Starting " + sourceFilename() + " @ " + DEFAULT_DATETIME_FORMAT.format(new Date()));
             test(in);
-            if (sourceFilename().contains("current-date-time"))
+            if (sourceURL != null sourceFilename().contains("current-date-time"))
                 System.out.println("Done " + sourceFilename() + " @ " + DEFAULT_DATETIME_FORMAT.format(new Date()));
         } catch (Throwable e) {
             if (sourceURL != null) {
