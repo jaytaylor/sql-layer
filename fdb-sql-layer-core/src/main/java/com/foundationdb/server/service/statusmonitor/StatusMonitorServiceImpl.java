@@ -91,7 +91,6 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
         instanceKey = ByteArrayUtil.join(rootDirectory.pack(),
                 Tuple2.from(STATUS_MONITOR_LAYER_NAME, address).pack());
 
-        logger.debug("InstanceKey {}", bytesToHexString(rootDirectory.pack()));
         backgroundThread = new Thread() {
             @Override
             public void run() {
@@ -221,16 +220,4 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
         
         return str.toString();
     }
-    
-    public static String bytesToHexString(byte[] bytes) {  
-        StringBuilder sb = new StringBuilder(bytes.length * 2);  
-      
-        Formatter formatter = new Formatter(sb);  
-        for (byte b : bytes) {  
-            formatter.format("%02x ", b);  
-        }  
-        formatter.flush();
-        formatter.close();
-        return sb.toString();  
-    }      
 }
