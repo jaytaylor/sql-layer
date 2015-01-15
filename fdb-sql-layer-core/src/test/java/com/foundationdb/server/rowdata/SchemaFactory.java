@@ -112,7 +112,7 @@ public class SchemaFactory {
                 IndexDDL.createIndex(ddlFunctions, session, defaultSchema, (CreateIndexNode) stmt, null);
             } else if (stmt instanceof CreateViewNode) {
                 ViewDDL.createView(ddlFunctions, session, defaultSchema, (CreateViewNode) stmt,
-                                   new AISBinderContext(ddlFunctions.getAIS(session), defaultSchema), null);
+                                   new AISBinderContext(ddlFunctions.getAIS(session), defaultSchema), null, server);
             } else if (stmt instanceof CreateSequenceNode) {
                 SequenceDDL.createSequence(ddlFunctions, session, defaultSchema, (CreateSequenceNode)stmt);
             } else if (stmt instanceof CreateAliasNode) {

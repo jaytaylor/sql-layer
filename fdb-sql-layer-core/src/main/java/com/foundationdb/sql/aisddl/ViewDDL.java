@@ -21,23 +21,22 @@ import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.error.*;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.types.common.types.TypesTranslator;
-
 import com.foundationdb.sql.optimizer.AISBinderContext;
 import com.foundationdb.sql.optimizer.AISViewDefinition;
 import com.foundationdb.sql.parser.CreateViewNode;
 import com.foundationdb.sql.parser.DropViewNode;
 import com.foundationdb.sql.parser.NodeTypes;
 import com.foundationdb.sql.parser.ResultColumn;
+import com.foundationdb.sql.server.ServerSession;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
-
 import com.foundationdb.ais.model.AISBuilder;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Columnar;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.View;
-
 import com.foundationdb.qp.operator.QueryContext;
+
 import java.util.Collection;
 import java.util.Map;
 
@@ -55,7 +54,7 @@ public class ViewDDL
                                   String defaultSchemaName,
                                   CreateViewNode createView,
                                   AISBinderContext binderContext,
-                                  QueryContext context) {
+                                  QueryContext context, ServerSession server) {
         TableName fullName = convertName(defaultSchemaName, createView.getObjectName());
         String schemaName = fullName.getSchemaName();
         String viewName = fullName.getTableName();
@@ -65,9 +64,9 @@ public class ViewDDL
            skipOrThrow(context, createView.getExistenceCheck(), curView, new DuplicateViewException(schemaName, viewName))) {
             return;
         }
-        
+
         TypesTranslator typesTranslator = ddlFunctions.getTypesTranslator();
-        AISViewDefinition viewdef = binderContext.getViewDefinition(createView);
+        AISViewDefinition viewdef = binderContext.getViewDefinition(createView, server);
         Map<TableName,Collection<String>> tableColumnReferences = viewdef.getTableColumnReferences();
         AISBuilder builder = new AISBuilder();
         builder.view(schemaName, viewName, viewdef.getQueryExpression(), 
