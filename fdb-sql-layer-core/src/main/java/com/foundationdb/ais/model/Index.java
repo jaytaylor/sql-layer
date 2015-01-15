@@ -60,7 +60,8 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
         this.isPrimary = isPrimary;
         this.joinType = joinType;
         this.constraintName = constraintName;
-        keyColumns = new ArrayList<>();
+        this.keyColumns = new ArrayList<>();
+        this.indexMethod = IndexMethod.NORMAL;
     }
 
     public boolean isGroupIndex()
@@ -143,13 +144,15 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
 
     public IndexMethod getIndexMethod()
     {
-        if (space != null)
-            return IndexMethod.Z_ORDER_LAT_LON;
-        else
-            return IndexMethod.NORMAL;
+        return indexMethod;
     }
 
-    public void markSpatial(int firstSpatialArgument, int spatialColumns)
+    public String functionName()
+    {
+        return functionName;
+    }
+
+    public void markSpatial(int firstSpatialArgument, int spatialColumns, String functionName)
     {
         checkMutability();
         if (spatialColumns != Spatial.LAT_LON_DIMENSIONS && spatialColumns != 1) {
@@ -159,6 +162,8 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
         this.firstSpatialArgument = firstSpatialArgument;
         this.lastSpatialArgument = firstSpatialArgument + spatialColumns - 1;
         this.space = Spatial.createLatLonSpace();
+        this.functionName = functionName;
+        this.indexMethod = IndexMethod.valueOf(functionName.trim().toUpperCase());
     }
 
     public int firstSpatialArgument()
@@ -193,12 +198,7 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
 
     public final boolean isSpatial()
     {
-        switch (getIndexMethod()) {
-        case Z_ORDER_LAT_LON:
-            return true;
-        default:
-            return false;
-        }
+        return indexMethod.isSpatial();
     }
 
     private void sortColumnsIfNeeded() {
@@ -386,6 +386,8 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
     protected List<IndexColumn> allColumns;
     private volatile TInstance[] types;
     private TableName constraintName;
+    private IndexMethod indexMethod;
+    private String functionName;
     // For a spatial index
     private Space space;
     private int firstSpatialArgument;
@@ -414,9 +416,23 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
     }
 
     public enum IndexMethod {
-        // TODO: Replace Z_ORDER_LAT_LON with GEO_LAT_LON, GEO_WKB,
+        // TODO: Replace GEO_LAT_LON with GEO_LAT_LON, GEO_WKB,
         // GEO_WKT, GEO_JSON, etc.
-        NORMAL, Z_ORDER_LAT_LON, FULL_TEXT
+        NORMAL(false),
+        GEO_LAT_LON(true),
+        FULL_TEXT(false);
+
+        public boolean isSpatial()
+        {
+            return isSpatial;
+        }
+
+        private IndexMethod(boolean isSpatial)
+        {
+            this.isSpatial = isSpatial;
+        }
+
+        private final boolean isSpatial;
     }
 
     // HasStorage

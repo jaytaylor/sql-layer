@@ -373,6 +373,7 @@ public enum ErrorCode {
     DUPLICATE_PARAMETER     ("50", "00X", Importance.DEBUG, DuplicateParameterNameException.class),
     SET_STORAGE_NOT_ROOT    ("50", "00Y", Importance.DEBUG, SetStorageNotRootException.class),
     INVALID_CREATE_AS       ("50", "00Z", Importance.DEBUG, InvalidCreateAsException.class),
+    UNSUPPORTED_FUNCTION_IN_INDEX("50", "040", Importance.DEBUG, UnsupportedFunctionInIndexException.class),
 
     // AIS Validation errors, Attempts to modify and build an AIS failed
     // due to missing or invalid information.

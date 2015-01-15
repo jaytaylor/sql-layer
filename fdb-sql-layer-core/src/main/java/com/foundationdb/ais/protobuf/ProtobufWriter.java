@@ -522,11 +522,12 @@ public class ProtobufWriter {
             index.getStorageDescription().writeProtobuf(storageBuilder);
             indexBuilder.setStorage(storageBuilder.build());
         }
-        if (index.getIndexMethod() == Index.IndexMethod.Z_ORDER_LAT_LON) {
+        if (index.getIndexMethod() == Index.IndexMethod.GEO_LAT_LON) {
             indexBuilder.
                     setFirstSpatialArg(index.firstSpatialArgument()).
                     setLastSpatialArg(index.lastSpatialArgument()).
-                    setDimensions(index.dimensions());
+                    setDimensions(index.dimensions()).
+                    setFunctionName(index.functionName());
 
         }
 
@@ -604,8 +605,8 @@ public class ProtobufWriter {
         case NORMAL: 
         default:
             return AISProtobuf.IndexMethod.NORMAL;
-        case Z_ORDER_LAT_LON: 
-            return AISProtobuf.IndexMethod.Z_ORDER_LAT_LON;
+        case GEO_LAT_LON:
+            return AISProtobuf.IndexMethod.GEO_LAT_LON;
         case FULL_TEXT: 
             return AISProtobuf.IndexMethod.FULL_TEXT;
         }

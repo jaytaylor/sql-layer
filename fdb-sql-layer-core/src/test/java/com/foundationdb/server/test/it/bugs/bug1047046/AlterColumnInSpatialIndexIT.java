@@ -37,7 +37,7 @@ public class AlterColumnInSpatialIndexIT extends AlterTableITBase {
                 row(tid, "32.456", "99.543"),
                 row(tid, "53.00", "80.00")
         );
-        createIndex(SCHEMA, TABLE, INDEX_NAME, "z_order_lat_lon(c1, c2)");
+        createIndex(SCHEMA, TABLE, INDEX_NAME, "geo_lat_lon(c1, c2)");
         TableIndex index = getTable(tid).getIndex("idx1");
         assertNotNull("Found index", index);
         assertEquals("Is spatial", true, index.isSpatial());

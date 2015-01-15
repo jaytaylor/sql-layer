@@ -46,7 +46,6 @@ import com.google.common.base.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Types;
 import java.util.*;
 
 /** The goal of a indexes within a group. */
@@ -407,7 +406,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         int firstSpatialColumn, spatialColumns;
         SpecialIndexExpression.Function spatialFunction;
         switch (aisIndex.getIndexMethod()) {
-        case Z_ORDER_LAT_LON:
+        case GEO_LAT_LON:
             firstSpatialColumn = aisIndex.firstSpatialArgument();
             spatialColumns = aisIndex.spatialColumns();
             if (spatialColumns == Spatial.LAT_LON_DIMENSIONS)

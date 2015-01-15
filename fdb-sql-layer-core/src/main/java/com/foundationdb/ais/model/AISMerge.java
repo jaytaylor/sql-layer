@@ -381,9 +381,10 @@ public class AISMerge {
                 throw new IllegalArgumentException("Unknown index type: " + index);
         }
 
-        if(index.getIndexMethod() == Index.IndexMethod.Z_ORDER_LAT_LON) {
+        if(index.isSpatial()) {
             newIndex.markSpatial(index.firstSpatialArgument(),
-                                 index.lastSpatialArgument() - index.firstSpatialArgument() + 1);
+                                 index.lastSpatialArgument() - index.firstSpatialArgument() + 1,
+                                 index.functionName());
         }
 
         if(curIndex != null) {

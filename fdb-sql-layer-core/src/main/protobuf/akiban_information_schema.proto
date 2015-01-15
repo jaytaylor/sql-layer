@@ -55,7 +55,7 @@ message Sequence {
 
 enum IndexMethod {
    NORMAL          = 0;                  // Regular column index.
-   Z_ORDER_LAT_LON = 1;                  // Spatial index on latitude, longitude.
+   GEO_LAT_LON     = 1;                  // Spatial index on latitude, longitude.
    FULL_TEXT       = 2;                  // Lucene full index text.
 }
 
@@ -87,6 +87,7 @@ message Index {
     optional Storage storage     = 13;  // storage description
 	optional TableName constraintName = 14; // name for constraint
     optional int32 lastSpatialArg = 15;    // For a spatial index, the position in the index of the last spatial column
+    optional string functionName = 16;  // The name of a function used in an index declaration
 }
 
 message Group {

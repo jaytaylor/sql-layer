@@ -486,22 +486,20 @@ public class ProtobufReader {
     private void handleSpatial(Index index, AISProtobuf.Index pbIndex) {
         if (pbIndex.hasIndexMethod()) {
             switch (pbIndex.getIndexMethod()) {
-                case Z_ORDER_LAT_LON:
+                case GEO_LAT_LON:
                     assert pbIndex.hasFirstSpatialArg() == pbIndex.hasDimensions();
                     int firstSpatialArg = 0;
                     int lastSpatialArg = 0;
-                    int dimensions = Spatial.LAT_LON_DIMENSIONS;
                     if (pbIndex.hasFirstSpatialArg()) {
                         firstSpatialArg = pbIndex.getFirstSpatialArg();
-                        dimensions = pbIndex.getDimensions();
                         if (pbIndex.hasLastSpatialArg()) {
                             lastSpatialArg = pbIndex.getLastSpatialArg();
                         } else {
                             // Schema created before spatial object support, when spatial meant just lat/lon.
-                            lastSpatialArg = firstSpatialArg + dimensions - 1;
+                            lastSpatialArg = firstSpatialArg + pbIndex.getDimensions() - 1;
                         }
                     }
-                    index.markSpatial(firstSpatialArg, lastSpatialArg - firstSpatialArg + 1);
+                    index.markSpatial(firstSpatialArg, lastSpatialArg - firstSpatialArg + 1, pbIndex.getFunctionName());
                     break;
             }
         }
@@ -832,7 +830,8 @@ public class ProtobufReader {
                 AISProtobuf.Index.LASTSPATIALARG_FIELD_NUMBER,
                 AISProtobuf.Index.DIMENSIONS_FIELD_NUMBER,
                 AISProtobuf.Index.STORAGE_FIELD_NUMBER,
-                AISProtobuf.Index.CONSTRAINTNAME_FIELD_NUMBER
+                AISProtobuf.Index.CONSTRAINTNAME_FIELD_NUMBER,
+                AISProtobuf.Index.FUNCTIONNAME_FIELD_NUMBER
         );
     }
 
@@ -845,7 +844,8 @@ public class ProtobufReader {
                 AISProtobuf.Index.LASTSPATIALARG_FIELD_NUMBER,
                 AISProtobuf.Index.DIMENSIONS_FIELD_NUMBER,
                 AISProtobuf.Index.STORAGE_FIELD_NUMBER,
-                AISProtobuf.Index.CONSTRAINTNAME_FIELD_NUMBER
+                AISProtobuf.Index.CONSTRAINTNAME_FIELD_NUMBER,
+                AISProtobuf.Index.FUNCTIONNAME_FIELD_NUMBER
         );
     }
 
