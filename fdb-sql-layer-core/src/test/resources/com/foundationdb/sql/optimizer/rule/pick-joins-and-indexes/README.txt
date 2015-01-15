@@ -201,3 +201,4 @@ order-by-subquery: order by in a subquery clause joined with another table
 order-by-subquery2: same as order-by-subquery, but with an order-by on the outside too
 order-by-subquery-provides-order-by: The subquery here is sorted the same as the order by, but the other table doesn't help
 
+outer-is-null: IS NULL on nullable side of outer join
