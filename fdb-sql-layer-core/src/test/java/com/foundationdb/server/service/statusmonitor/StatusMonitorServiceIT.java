@@ -20,7 +20,6 @@ import org.junit.Test;
 
 import com.foundationdb.Transaction;
 import com.foundationdb.async.Function;
-import com.foundationdb.server.service.metrics.FDBMetricsService;
 import com.foundationdb.server.service.metrics.MetricsService;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager.BindingsConfigurationProvider;
 import com.foundationdb.server.test.it.FDBITBase;
@@ -32,7 +31,7 @@ public class StatusMonitorServiceIT extends FDBITBase {
 
     /** For use by classes that cannot extend this class directly */
     public static BindingsConfigurationProvider doBind(BindingsConfigurationProvider provider) {
-        return provider.bind(StatusMonitorService.class, StatusMonitorServiceImpl.class);
+        return provider.require(StatusMonitorService.class);
     }
 
     @Override
