@@ -51,16 +51,16 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
     private final EmbeddedJDBCService jdbcService;
     private static final Logger logger = LoggerFactory.getLogger(StatusMonitorServiceImpl.class);
 
-    public static final List<String> STATUS_MON_DIR = Arrays.asList("Status Monitor","Layers");
-    public static final String STATUS_MON_LAYER_NAME = "SQL Layer";
+    public static final List<String> STATUS_MONITOR_DIR = Arrays.asList("Status Monitor","Layers");
+    public static final String STATUS_MONITOR_LAYER_NAME = "SQL Layer";
     
     public static final String CONFIG_FLUSH_INTERVAL = "fdbsql.fdb.status.flush_interval";
 
-    private byte[] instanceKey;
+    protected byte[] instanceKey;
     private String host;
     private String port;
     protected Thread backgroundThread;
-    protected volatile boolean running;
+    protected volatile boolean running, backgroundIdle;
     private long flushInterval;
     private Future<Void> instanceWatch;
     
@@ -87,9 +87,9 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
         port = configService.getProperty("fdbsql.postgres.port");
         String address = host + ":" + port;
 
-        DirectorySubspace rootDirectory = new DirectoryLayer().createOrOpen(fdbService.getTransactionContext(), STATUS_MON_DIR).get();
+        DirectorySubspace rootDirectory = new DirectoryLayer().createOrOpen(fdbService.getTransactionContext(), STATUS_MONITOR_DIR).get();
         instanceKey = ByteArrayUtil.join(rootDirectory.pack(),
-                Tuple2.from(STATUS_MON_LAYER_NAME, address).pack());
+                Tuple2.from(STATUS_MONITOR_LAYER_NAME, address).pack());
 
         logger.debug("InstanceKey {}", bytesToHexString(rootDirectory.pack()));
         backgroundThread = new Thread() {
@@ -120,6 +120,17 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
     public void crash() {
         stop();
     }
+
+    public void completeBackgroundWork() {
+        do {
+            notifyBackground();
+            try {
+                Thread.sleep(100);
+            }
+            catch (InterruptedException ex) {
+            }
+        } while (!backgroundIdle);
+    }
     
     protected void notifyBackground() {
         if (Thread.currentThread() != backgroundThread) {
@@ -133,13 +144,21 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
         try {
             while (running) {
                 writeStatus();
-                backgroundThread.wait(flushInterval);
+                try {
+                    synchronized(backgroundThread) {
+                        backgroundIdle=false;
+                        backgroundThread.wait(flushInterval);
+                        backgroundIdle=true;
+                    }
+                } catch (InterruptedException ex) {
+                    break;
+                }
             }
         } catch (Exception ex) {
             logger.error("Error in metrics background thread", ex);
         }
     }
-    
+  
     private void setWatch(Transaction tr) {
         // Initiate a watch (from this same transaction) for changes to the key
         // used to signal configuration changes.
@@ -210,7 +229,8 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
         for (byte b : bytes) {  
             formatter.format("%02x ", b);  
         }  
-      
+        formatter.flush();
+        formatter.close();
         return sb.toString();  
     }      
 }
