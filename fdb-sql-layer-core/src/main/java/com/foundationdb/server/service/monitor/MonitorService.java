@@ -52,10 +52,11 @@ public interface MonitorService {
     Collection<SessionMonitor> getSessionMonitors();
 
     /** Log the given SQL to the query log. */
-    void logQuery(int sessionId, String sqlText, long duration, int rowsProcessed);
+    void logQuery(int sessionId, String sqlText,
+                  long duration, int rowsProcessed, Throwable failure);
 
     /** Log last statement from given monitor. */
-    void logQuery(SessionMonitor sessionMonitor);
+    void logQuery(SessionMonitor sessionMonitor, Throwable failure);
     
     /** Register the given User monitor. */
     void registerUserMonitor (UserMonitor userMonitor);
