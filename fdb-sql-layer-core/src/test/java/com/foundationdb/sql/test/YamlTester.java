@@ -1437,8 +1437,10 @@ public class YamlTester
             @Override
             public Object construct(Node node) {
                 Date today = new Date();
-                System.out.println("Constructed: " + today + " = " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S z").format(today));
-                return DEFAULT_DATE_FORMAT.format(today);
+                String str = DEFAULT_DATE_FORMAT.format(today);
+                System.out.println("Constructed: " + today + " = " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S z").format(today) +
+                                   "; formatted as: " + str);
+                return str;
             }
 
         }
