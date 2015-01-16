@@ -9,6 +9,7 @@
     - com.foundationdb.server.service.is.BasicInfoSchemaTablesService
     - com.foundationdb.server.service.is.ServerSchemaTablesService
     - com.foundationdb.server.types.service.TypesRegistrySchemaTablesService
+    - com.foundationdb.server.service.statusmonitor.StatusMonitorService
 # Plugins
     - com.foundationdb.sql.pg.PostgresService
     - com.foundationdb.rest.RestService
