@@ -140,6 +140,13 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
                 queryTimeoutMilli = (long)(Double.parseDouble(value) * 1000);
             return true;
         }
+        if ("statement_timeout".equals(key)) {
+            if (value == null)
+                queryTimeoutMilli = null;
+            else
+                queryTimeoutMilli = Long.parseLong(value);
+            return true;
+        }
         if ("transactionPeriodicallyCommit".equals(key)) {
             transactionPeriodicallyCommit = ServerTransaction.PeriodicallyCommit.fromProperty(value);
             return true;

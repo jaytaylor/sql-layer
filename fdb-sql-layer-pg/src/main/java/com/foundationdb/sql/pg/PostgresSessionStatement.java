@@ -70,6 +70,8 @@ public class PostgresSessionStatement implements PostgresStatement
         "optimizerDummySetting",
         // Execution.
         "constraintCheckTime", "queryTimeoutSec", "transactionPeriodicallyCommit",
+        // Compatible and translated.
+        "statement_timeout",
         // Compatible that actually does something.
         "client_encoding",
         // Compatible but ignored.
