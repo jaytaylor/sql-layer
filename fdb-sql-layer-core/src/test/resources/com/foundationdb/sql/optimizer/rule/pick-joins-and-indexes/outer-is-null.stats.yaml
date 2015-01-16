@@ -1,0 +1,45 @@
+Index: t22_m
+RowCount: 17
+SampledCount: 17
+Statistics:
+- Columns: 1
+  FirstColumn: 0
+  Histogram:
+  - distinct: 0
+    eq: 2
+    key: [1]
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: [2]
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: [3]
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: [4]
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: [5]
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: [6]
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: [7]
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: [8]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [9]
+    lt: 0
+Table: t22
+Timestamp: 2015-01-15T01:34:20Z

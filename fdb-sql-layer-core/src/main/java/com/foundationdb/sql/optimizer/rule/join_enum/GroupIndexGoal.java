@@ -123,21 +123,38 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     }
 
     /**
-     * @param boundTables Tables already bound by the outside
-     * @param queryJoins Joins that come from the query, or part of the query, that an index is being searched for.
-     *                   Will generally, but not in the case of a sub-query, match <code>joins</code>.
-     * @param joins Joins that apply to this part of the query.
-     * @param outsideJoins All joins for this query.
-     * @param requiredJoins The joins that must be covered by the resulting join, either in the scans,
-     *                      or an outer select node
-     * @param sortAllowed <code>true</code> if sorting is allowed
-     *  @return Full list of all usable condition sources.
+     * @param boundTables Tables already bound by the outside. Columns of these tables
+     *                    are like constants for the sake of this index selection.
+     * @param queryJoins Joins that come from the query, or part of the query,
+     *                   that an index is being searched for.
+     *                   The type of these joins determines whether a column in a
+     *                   condition is nullable.
+     *                   Will generally match <code>joins</code>, except in the case
+     *                   of a subquery with only one table group, where it is empty,
+     *                   because it is the derived table that is nullable, not the inside
+     *                   of the subquery.
+     * @param joins Joins that apply to this part of the query. The conditions of these
+     *              are ones that might be indexed.
+     * @param outsideJoins All joins for this query. A column used in one of these must
+     *                     be supplied by its index source in determining whether that
+     *                     is covering.
+     * @param requiredJoins The joins that must be performed by the resulting join,
+     *                      either in the index scan conditions or an outer
+     *                      <code>Select</code> node, whose cost is then added.
+     * @param sortAllowed <code>true</code> if sorting from this index selection might
+     *                    accomplish sorting for the whole query.
+     * @param extraConditions Conditions that can be indexed but were invented solely for
+     *                        this index selection. For instance, a semi-join to
+     *                        <code>VALUES</code> appears here as equality with a column.
+     *  @return Full list of all usable condition sources. If this index is chosen, its
+     *          conditions should each come, and be removed from, from one of these.
      */
     public List<ConditionList> updateContext(Set<ColumnSource> boundTables,
                                              Collection<JoinOperator> queryJoins,
                                              Collection<JoinOperator> joins,
                                              Collection<JoinOperator> outsideJoins,
-                                             Collection<JoinOperator> requiredJoins, boolean sortAllowed,
+                                             Collection<JoinOperator> requiredJoins,
+                                             boolean sortAllowed,
                                              ConditionList extraConditions) {
         setBoundTables(boundTables);
         this.sortAllowed = sortAllowed;
