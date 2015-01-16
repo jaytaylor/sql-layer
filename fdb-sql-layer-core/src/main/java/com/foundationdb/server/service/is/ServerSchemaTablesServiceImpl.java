@@ -35,7 +35,6 @@ import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
-import com.foundationdb.qp.memoryadapter.SimpleMemoryGroupScan;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
@@ -225,26 +224,33 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
-            final Iterator<ServerMonitor> servers = monitor.getServerMonitors().values().iterator(); 
-            
-            return new SimpleMemoryGroupScan<ServerMonitor> (group.getAIS(), getName(), servers) {
-                @Override
-                protected Object[] createRow(ServerMonitor data, int hiddenPk) {
-                    return new Object[] {
-                            data.getServerType(),
-                            (data.getLocalPort() < 0) ? null : Long.valueOf(data.getLocalPort()),
-                            data.getStartTimeMillis()/1000,
-                            Long.valueOf(data.getSessionCount()),
-                            hiddenPk
-                    };
-                }
-            };
-            
+            return new Scan(adapter.getSession(), getRowType(group.getAIS()));
         }
 
         @Override
         public long rowCount(Session session) {
             return monitor.getServerMonitors().size();
+        }
+        
+        private class Scan extends BaseScan {
+            final Iterator<ServerMonitor> servers = monitor.getServerMonitors().values().iterator(); 
+            public Scan(Session session, RowType rowType) {
+                super(rowType);
+            }
+
+            @Override
+            public Row next() {
+                if (!servers.hasNext()) {
+                    return null;
+                }
+                ServerMonitor server = servers.next();
+                return new ValuesHolderRow(rowType,
+                                              server.getServerType(),
+                                              (server.getLocalPort() < 0) ? null : Long.valueOf(server.getLocalPort()),
+                                              server.getStartTimeMillis()/1000,
+                                              Long.valueOf(server.getSessionCount()),
+                                              ++rowCounter);
+            }
         }
     }
     
