@@ -57,7 +57,7 @@
 ---
 - Statement: EXPLAIN SELECT 1 EXCEPT SELECT 2
 - output: [
-  ['Except_Ordered()'],
+  ['Except_Ordered(all, skip 0, compare 1)'],
   ['  Sort_General(Field(0) ASC, SUPPRESS DUPLICATES)'],
   ['    Project_Default(1)'],
   ['      ValuesScan_Default([])'],
@@ -65,13 +65,13 @@
   ['    Project_Default(2)'],
   ['      ValuesScan_Default([])']]
 ---
-- Statement: EXPLAIN VERBOSE SELECT 1 EXCEPT SELECT 2
+- Statement: EXPLAIN VERBOSE SELECT 1,'a' EXCEPT SELECT 2,'b'
 - output: [
-  ['Except_Ordered()'],
-  ['  Sort_General(Field(0) ASC, SUPPRESS DUPLICATES)'],
-  ['    Project_Default(1)'],
+  ['Except_Ordered(all, skip 0, compare 2)'],
+  ['  Sort_General(Field(0) ASC, Field(1) ASC, SUPPRESS DUPLICATES)'],
+  ['    Project_Default(1, ''a'')'],
   ['      ValuesScan_Default([])'],
-  ['  Sort_General(Field(0) ASC, SUPPRESS DUPLICATES)'],
-  ['    Project_Default(2)'],
+  ['  Sort_General(Field(0) ASC, Field(1) ASC, SUPPRESS DUPLICATES)'],
+  ['    Project_Default(2, ''b'')'],
   ['      ValuesScan_Default([])']]
 ...
