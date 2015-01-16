@@ -17,7 +17,7 @@ CREATE TABLE food_vendors(
 CREATE INDEX name_geo ON food_vendors(
     places.state,
     food_vendors.name,
-    z_order_lat_lon(places.lat, places.lon),
+    geo_lat_lon(places.lat, places.lon),
     places.lat,
     places.lon
 ) using left join;

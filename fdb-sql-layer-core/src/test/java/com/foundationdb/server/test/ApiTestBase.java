@@ -630,7 +630,7 @@ public class ApiTestBase {
         StringBuilder cols = new StringBuilder();
         for (int i = 0; i < indexCols.length; i++) {
             if (i > 0) cols.append(",");
-            if (i == firstSpatialArgument) cols.append("Z_ORDER_LAT_LON(");
+            if (i == firstSpatialArgument) cols.append("GEO_LAT_LON(");
             cols.append(indexCols[i]);
             if (i == firstSpatialArgument + spatialColumns - 1) cols.append(")");
         }
@@ -688,7 +688,7 @@ public class ApiTestBase {
                 ddl.append(",");
             }
             if(i == firstSpatialIndex) {
-                ddl.append("Z_ORDER_LAT_LON(");
+                ddl.append("GEO_LAT_LON(");
             }
             ddl.append(columnNames[i]);
             if(i == lastSpatialIndex) {

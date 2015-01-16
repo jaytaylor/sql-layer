@@ -23,6 +23,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.foundationdb.server.error.UnsupportedFunctionInIndexException;
 import org.junit.Test;
 
 import com.foundationdb.ais.model.FullTextIndex;
@@ -365,12 +366,18 @@ public class IndexDDLIT extends AISDDLITBase {
     public void createSpatialIndex() throws Exception {
         String sql = "CREATE TABLE test.t16 (c1 decimal(11,7), c2 decimal(11,7))";
         executeDDL(sql);
-        sql = "CREATE INDEX t16_space on test.t16(z_order_lat_lon(c1, c2))";
+        sql = "CREATE INDEX t16_space on test.t16(geo_lat_lon(c1, c2))";
         executeDDL(sql);
         TableIndex index = ais().getTable("test", "t16").getIndex("t16_space");
         assertNotNull(index);
         assertTrue(index.isSpatial());
         
+    }
+
+    @Test (expected=UnsupportedFunctionInIndexException.class)
+    public void createIndexWithUnsupportedFunction() throws Exception {
+        executeDDL("create table t(x decimal(10, 5), y decimal(10, 5))");
+        executeDDL("create index t_z_order_lat_lon_is_oldspeak on t(z_order_lat_lon(x, y))");
     }
     
     @Test

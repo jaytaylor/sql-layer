@@ -17,9 +17,7 @@
 
 package com.foundationdb.sql.aisddl;
 
-import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 
 import com.foundationdb.ais.AISCloner;
@@ -162,18 +160,23 @@ public class IndexDDL
         if (createIndex.isUnique()) {
             constraintName = builder.getNameGenerator().generateUniqueConstraintName(schemaName, indexName);
         }
-        if (createIndex.getIndexColumnList().functionType() == IndexColumnList.FunctionType.FULL_TEXT) {
+        IndexColumnList indexColumnList = createIndex.getIndexColumnList();
+        String functionName = indexColumnList.functionName();
+        checkFunctionNameValidity(functionName);
+        if (isFullText(functionName)) {
             logger.debug ("Building Full text index on table {}", tableName) ;
-            index = buildFullTextIndex (builder, tableName, indexName, createIndex, createIndex.getExistenceCheck(), context);
+            index = buildFullTextIndex(builder, tableName, indexName, createIndex, createIndex
+                .getExistenceCheck(), context);
         } else if (checkIndexType (createIndex, tableName) == Index.IndexType.TABLE) {
             logger.debug ("Building Table index on table {}", tableName) ;
-            index = buildTableIndex (builder, tableName, indexName, createIndex, constraintName, createIndex.getExistenceCheck(), context);
+            index = buildTableIndex(builder, tableName, indexName, createIndex, constraintName, createIndex
+                .getExistenceCheck(), context);
         } else {
             logger.debug ("Building Group index on table {}", tableName);
             index = buildGroupIndex (builder, tableName, indexName, createIndex, createIndex.getExistenceCheck(), context);
         }
         if(index != null) {
-            boolean indexIsSpatial = createIndex.getIndexColumnList().functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON;
+            boolean indexIsSpatial = isSpatial(functionName);
             // Can't check isSpatialCompatible before the index columns have been added.
             if(indexIsSpatial && !Index.isSpatialCompatible(index)) {
                 throw new BadSpatialIndexException(index.getIndexName().getTableName(), createIndex);
@@ -243,9 +246,11 @@ public class IndexDDL
                       false, constraintName);
         TableIndex tableIndex = builder.akibanInformationSchema().getTable(tableName).getIndex(indexName);
         IndexColumnList indexColumns = index.getIndexColumnList();
-        if (indexColumns.functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON) {
+        String functionName = indexColumns.functionName();
+        if (isSpatial(functionName)) {
             tableIndex.markSpatial(indexColumns.firstFunctionArg(),
-                                   indexColumns.lastFunctionArg() + 1 - indexColumns.firstFunctionArg());
+                                   indexColumns.lastFunctionArg() + 1 - indexColumns.firstFunctionArg(),
+                                   Index.IndexMethod.valueOf(functionName.trim().toUpperCase()));
         }
         int i = 0;
         for (IndexColumn col : indexColumns) {
@@ -311,10 +316,11 @@ public class IndexDDL
         builder.groupIndex(groupName, indexName, index.isUnique(), joinType);
         GroupIndex groupIndex = builder.akibanInformationSchema().getGroup(groupName).getIndex(indexName);
         IndexColumnList indexColumns = index.getIndexColumnList();
-        boolean indexIsSpatial = indexColumns.functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON;
+        boolean indexIsSpatial = isSpatial(indexColumns.functionName());
         if (indexIsSpatial) {
             groupIndex.markSpatial(indexColumns.firstFunctionArg(),
-                                   indexColumns.lastFunctionArg() + 1 - indexColumns.firstFunctionArg());
+                                   indexColumns.lastFunctionArg() + 1 - indexColumns.firstFunctionArg(),
+                                   Index.IndexMethod.valueOf(indexColumns.functionName().trim().toUpperCase()));
         }
         int i = 0;
         String schemaName;
@@ -404,6 +410,23 @@ public class IndexDDL
             i++;
         }
         return builder.akibanInformationSchema().getTable(tableName).getFullTextIndex(indexName);
+    }
+
+    static boolean isSpatial(String functionName)
+    {
+        return functionName != null && functionName.equalsIgnoreCase(Index.IndexMethod.GEO_LAT_LON.name());
+    }
+
+    static boolean isFullText(String functionName)
+    {
+        return functionName != null && functionName.equalsIgnoreCase(Index.IndexMethod.FULL_TEXT.name());
+    }
+
+    static void checkFunctionNameValidity(String functionName)
+    {
+        if (functionName != null && !isSpatial(functionName) && !isFullText(functionName)) {
+            throw new UnsupportedFunctionInIndexException(functionName);
+        }
     }
 
     private static void clone(AISCloner aisCloner, AISBuilder builder, AkibanInformationSchema ais) {

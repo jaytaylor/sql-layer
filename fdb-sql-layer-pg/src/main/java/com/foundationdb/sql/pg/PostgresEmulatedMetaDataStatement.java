@@ -1262,7 +1262,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         switch (index.getIndexMethod()) {
         case NORMAL:
             break;
-        case Z_ORDER_LAT_LON:
+        case GEO_LAT_LON:
             firstFunctionColumn = index.firstSpatialArgument();
             lastFunctionColumn = firstFunctionColumn + index.spatialColumns() - 1;
             break;

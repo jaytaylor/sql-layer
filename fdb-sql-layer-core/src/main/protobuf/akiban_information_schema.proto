@@ -55,7 +55,7 @@ message Sequence {
 
 enum IndexMethod {
    NORMAL          = 0;                  // Regular column index.
-   Z_ORDER_LAT_LON = 1;                  // Spatial index on latitude, longitude.
+   GEO_LAT_LON     = 1;                  // Spatial index on latitude, longitude.
    FULL_TEXT       = 2;                  // Lucene full index text.
 }
 

@@ -646,7 +646,9 @@ public class TableDDL
         if(id.isUnique()) {
             constraintName = builder.getNameGenerator().generateUniqueConstraintName(table.getName().getSchemaName(), indexName);
         }
-        if (columnList.functionType() == IndexColumnList.FunctionType.FULL_TEXT) {
+        String functionName = columnList.functionName();
+        IndexDDL.checkFunctionNameValidity(functionName);
+        if (IndexDDL.isFullText(functionName)) {
             logger.debug ("Building Full text index on table {}", table.getName()) ;
             tableIndex = IndexDDL.buildFullTextIndex(builder, table.getName(), indexName, id, null, null);
         } else if (IndexDDL.checkIndexType (id, table.getName()) == Index.IndexType.TABLE) {
@@ -657,7 +659,7 @@ public class TableDDL
             tableIndex = IndexDDL.buildGroupIndex(builder, table.getName(), indexName, id, null, null);
         }
 
-        boolean indexIsSpatial = columnList.functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON;
+        boolean indexIsSpatial = IndexDDL.isSpatial(functionName);
         // Can't check isSpatialCompatible before the index columns have been added.
         if (indexIsSpatial && !Index.isSpatialCompatible(tableIndex)) {
             throw new BadSpatialIndexException(tableIndex.getIndexName().getTableName(), null);
