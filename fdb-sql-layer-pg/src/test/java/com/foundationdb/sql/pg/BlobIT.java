@@ -339,6 +339,58 @@ public class BlobIT extends PostgresServerITBase {
             Assert.assertFalse(ls.existsLob(ids_t2[k]));
         }
     }
+
+    @Test
+    public void testDeleteLobsWithGroupE() throws Exception {
+        int n = 5;
+        Connection conn = getConnection();
+        Statement stmt = conn.createStatement();
+        stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
+        stmt.execute("CREATE TABLE t2 (id_t2 INT PRIMARY KEY, id_t1 INT, bl_t2 BLOB)");
+        stmt.execute("ALTER TABLE t2 ADD GROUPING FOREIGN KEY (id_t1) REFERENCES t1(id)");
+
+        PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        for (int i = 0; i < n; i++ ) {
+            pstmt.setInt(1, i);
+            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(1000)));
+            pstmt.execute();
+        }
+        pstmt = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
+        for (int ii = 0; ii < n; ii++ ) {
+            pstmt.setInt(1, ii*10);
+            pstmt.setInt(2, ii);
+            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(1000)));
+            pstmt.execute();
+        }
+        String[] ids_t1 = new String[n];
+        stmt.execute("SELECT bl FROM t1");
+        ResultSet rs = stmt.getResultSet();
+        for (int j = 0; j < n; j++) {
+            rs.next();
+            ids_t1[j] = rs.getString(1);
+        }
+        rs.close();
+
+        String[] ids_t2 = new String[n];
+        stmt.execute("SELECT bl_t2 FROM t2");
+        rs = stmt.getResultSet();
+        for (int jj = 0; jj < n; jj++) {
+            rs.next();
+            ids_t2[jj] = rs.getString(1);
+        }
+
+        stmt.execute(("ALTER TABLE t2 DROP GROUPING FOREIGN KEY"));
+        stmt.close();
+        pstmt.close();
+        conn.close();
+
+        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        TransactionContext tcx = serviceManager().getServiceByClass(FDBHolder.class).getTransactionContext();
+        for (int k = 0; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(ids_t1[k]));
+            Assert.assertTrue(ls.existsLob(ids_t2[k]));
+        }
+    }
     
     @Test
     public void testDeleteLobsWithSchema() throws Exception {
