@@ -176,7 +176,7 @@ public class MDateAddSub extends TScalarBase
                     dt = MDateAndTime.toJodaDateTime(ymd, "UTC");
                     helper.compute(dt, millis);
                     
-                    if (FirstType.DATE.adjustFirstArg(context.inputTypeAt(1)) == FirstType.DATE)
+                    if (FirstType.DATE.adjustFirstArg(inputs.get(1).getType()) == FirstType.DATE)
                         output.putString(dt.toString("YYYY-MM-dd"), null);
                     else
                         output.putString(dt.toString("YYYY-MM-dd HH:mm:ss"), null);
@@ -524,7 +524,7 @@ public class MDateAddSub extends TScalarBase
         {
             MutableDateTime dt = MDateAndTime.toJodaDateTime(ymd, "UTC");    // calculations should be done
             helper.compute(dt, secondArg.toMillis(inputs.get(pos1)));      // in UTC (to avoid daylight-saving side effects)
-            firstArg.adjustFirstArg(context.inputTypeAt(pos1)).putResult(output, dt, context);
+            firstArg.adjustFirstArg(inputs.get(pos1).getType()).putResult(output, dt, context);
         }
     }
 

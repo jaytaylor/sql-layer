@@ -70,11 +70,11 @@ public final class MField extends TScalarBase {
         ValueSource needle = inputs.get(0);
         int result = 0;
         if (!needle.isNull()) {
-            TInstance needleInstance = context.inputTypeAt(0);
+            TInstance needleInstance = needle.getType();
             for (int i = 1, size = inputs.size(); i < size; ++i) {
                 ValueSource arg = inputs.get(i);
                 if (!arg.isNull()) {
-                    TInstance argInstance = context.inputTypeAt(i);
+                    TInstance argInstance = arg.getType();
                     int cmp = TClass.compare(needleInstance, needle, argInstance, arg);
                     if (cmp == 0) {
                         result = i;

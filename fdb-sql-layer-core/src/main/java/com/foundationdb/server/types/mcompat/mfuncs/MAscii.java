@@ -70,7 +70,7 @@ public class MAscii extends TScalarBase
             output.putInt32(0);
         }
         else {
-            String charset = StringFactory.Charset.of(context.inputTypeAt(0).attribute(StringAttribute.CHARSET));
+            String charset = StringFactory.Charset.of(sval.getType().attribute(StringAttribute.CHARSET));
             try {
                 byte[] bytes = str.substring(0, 1).getBytes(charset);
                 output.putInt32(bytes[0] & 0xFF);

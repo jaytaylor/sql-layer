@@ -64,7 +64,7 @@ public class TBigDecimal extends TClassBase {
     public static void adjustAttrsAsNeeded(TExecutionContext context, ValueSource source,
                                            TInstance targetInstance, ValueTarget target)
     {
-        TInstance inputInstance = context.inputTypeAt(0);
+        TInstance inputInstance = source.getType();
         int inputPrecision = inputInstance.attribute(DecimalAttribute.PRECISION);
         int targetPrecision = targetInstance.attribute(DecimalAttribute.PRECISION);
         int inputScale = inputInstance.attribute(DecimalAttribute.SCALE);

@@ -63,8 +63,9 @@ public class Hex
             protected void doEvaluate(TExecutionContext context,
                                       LazyList<? extends ValueSource> inputs,
                                       ValueTarget output) {
-                Charset charset = getCharset(context.inputTypeAt(0));
-                String s = inputs.get(0).getString();
+                ValueSource input = inputs.get(0);
+                Charset charset = getCharset(input.getType());
+                String s = input.getString();
                 byte[] bytes = s.getBytes(charset);
                 output.putString(Strings.hex(bytes), null);
             }

@@ -115,7 +115,7 @@ public final class MUnaryMinus extends TScalarBase {
             @Override
             protected void apply(ValueSource in, ValueTarget out, TExecutionContext context) {
                 BigDecimalWrapper wrapped = TBigDecimal.getWrapper(context, DEC_INDEX);
-                wrapped.set(TBigDecimal.getWrapper(in, context.inputTypeAt(0)));
+                wrapped.set(TBigDecimal.getWrapper(in, in.getType()));
                 wrapped.negate();
                 out.putObject(wrapped);
             }

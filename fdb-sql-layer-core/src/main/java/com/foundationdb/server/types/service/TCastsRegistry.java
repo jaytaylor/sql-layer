@@ -313,7 +313,7 @@ public final class TCastsRegistry {
                 target.putNull();
                 return;
             }
-            TInstance srcInst = context.inputTypeAt(0);
+            TInstance srcInst = source.getType();
             TInstance dstInst = context.outputType();
             tClass.selfCast(context, srcInst, source,  dstInst, target);
         }
@@ -382,7 +382,7 @@ public final class TCastsRegistry {
             }
             // TODO cache
             TExecutionContext firstContext = context.deriveContext(
-                    Collections.singletonList(context.inputTypeAt(0)),
+                    Collections.singletonList(source.getType()),
                     intermediateType
             );
             TExecutionContext secondContext = context.deriveContext(

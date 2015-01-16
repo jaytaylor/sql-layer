@@ -41,7 +41,8 @@ public class MSign extends TScalarBase {
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
-        BigDecimalWrapper num = TBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0));
+        ValueSource input = inputs.get(0);
+        BigDecimalWrapper num = TBigDecimal.getWrapper(input, input.getType());
         
         output.putInt64(num.getSign());      
     }

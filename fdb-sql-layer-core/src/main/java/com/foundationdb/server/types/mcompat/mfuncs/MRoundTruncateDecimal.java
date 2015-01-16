@@ -57,7 +57,8 @@ public class MRoundTruncateDecimal extends TScalarBase {
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
         BigDecimalWrapper result = TBigDecimal.getWrapper(context, DEC_INDEX);
-        result.set(TBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0)));
+        ValueSource input = inputs.get(0);
+        result.set(TBigDecimal.getWrapper(input, input.getType()));
         int scale = signatureStrategy.roundToScale(inputs);
         roundingStrategy.apply(result, scale);
         output.putObject(result);
