@@ -154,7 +154,7 @@ public class GroupIndex extends Index
         GroupIndex copy = create(ais, group, index.getIndexName().getName(), index.getIndexId(),
                                  index.isUnique(), index.isPrimaryKey(), index.getJoinType());
         if (index.isSpatial()) {
-            copy.markSpatial(index.firstSpatialArgument(), index.spatialColumns(), index.functionName());
+            copy.markSpatial(index.firstSpatialArgument(), index.spatialColumns(), index.getIndexMethod());
         }
         return copy;
     }

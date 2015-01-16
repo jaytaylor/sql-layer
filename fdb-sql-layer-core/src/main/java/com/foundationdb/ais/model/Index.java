@@ -147,12 +147,7 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
         return indexMethod;
     }
 
-    public String functionName()
-    {
-        return functionName;
-    }
-
-    public void markSpatial(int firstSpatialArgument, int spatialColumns, String functionName)
+    public void markSpatial(int firstSpatialArgument, int spatialColumns, IndexMethod indexMethod)
     {
         checkMutability();
         if (spatialColumns != Spatial.LAT_LON_DIMENSIONS && spatialColumns != 1) {
@@ -162,8 +157,7 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
         this.firstSpatialArgument = firstSpatialArgument;
         this.lastSpatialArgument = firstSpatialArgument + spatialColumns - 1;
         this.space = Spatial.createLatLonSpace();
-        this.functionName = functionName;
-        this.indexMethod = IndexMethod.valueOf(functionName.trim().toUpperCase());
+        this.indexMethod = indexMethod;
     }
 
     public int firstSpatialArgument()
@@ -387,7 +381,6 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
     private volatile TInstance[] types;
     private TableName constraintName;
     private IndexMethod indexMethod;
-    private String functionName;
     // For a spatial index
     private Space space;
     private int firstSpatialArgument;

@@ -526,8 +526,7 @@ public class ProtobufWriter {
             indexBuilder.
                     setFirstSpatialArg(index.firstSpatialArgument()).
                     setLastSpatialArg(index.lastSpatialArgument()).
-                    setDimensions(index.dimensions()).
-                    setFunctionName(index.functionName());
+                    setDimensions(index.dimensions());
 
         }
 

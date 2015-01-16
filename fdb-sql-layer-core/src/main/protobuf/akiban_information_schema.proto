@@ -87,7 +87,6 @@ message Index {
     optional Storage storage     = 13;  // storage description
 	optional TableName constraintName = 14; // name for constraint
     optional int32 lastSpatialArg = 15;    // For a spatial index, the position in the index of the last spatial column
-    optional string functionName = 16;  // The name of a function used in an index declaration
 }
 
 message Group {

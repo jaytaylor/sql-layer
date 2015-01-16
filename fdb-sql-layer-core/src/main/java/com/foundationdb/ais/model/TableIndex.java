@@ -68,7 +68,7 @@ public class TableIndex extends Index
                                   index.isUnique(),
                                   index.isPrimaryKey(), index.getConstraintName());
         if (index.isSpatial()) {
-            copy.markSpatial(index.firstSpatialArgument(), index.spatialColumns(), index.functionName());
+            copy.markSpatial(index.firstSpatialArgument(), index.spatialColumns(), index.getIndexMethod());
         }
         return copy;
     }

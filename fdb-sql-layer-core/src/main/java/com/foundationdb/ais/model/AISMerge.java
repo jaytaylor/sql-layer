@@ -384,7 +384,7 @@ public class AISMerge {
         if(index.isSpatial()) {
             newIndex.markSpatial(index.firstSpatialArgument(),
                                  index.lastSpatialArgument() - index.firstSpatialArgument() + 1,
-                                 index.functionName());
+                                 index.getIndexMethod());
         }
 
         if(curIndex != null) {

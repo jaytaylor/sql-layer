@@ -250,7 +250,7 @@ public class IndexDDL
         if (isSpatial(functionName)) {
             tableIndex.markSpatial(indexColumns.firstFunctionArg(),
                                    indexColumns.lastFunctionArg() + 1 - indexColumns.firstFunctionArg(),
-                                   functionName);
+                                   Index.IndexMethod.valueOf(functionName.trim().toUpperCase()));
         }
         int i = 0;
         for (IndexColumn col : indexColumns) {
@@ -320,7 +320,7 @@ public class IndexDDL
         if (indexIsSpatial) {
             groupIndex.markSpatial(indexColumns.firstFunctionArg(),
                                    indexColumns.lastFunctionArg() + 1 - indexColumns.firstFunctionArg(),
-                                   indexColumns.functionName());
+                                   Index.IndexMethod.valueOf(indexColumns.functionName().trim().toUpperCase()));
         }
         int i = 0;
         String schemaName;

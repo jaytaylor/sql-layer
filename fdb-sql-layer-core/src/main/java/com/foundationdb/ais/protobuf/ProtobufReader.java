@@ -499,7 +499,8 @@ public class ProtobufReader {
                             lastSpatialArg = firstSpatialArg + pbIndex.getDimensions() - 1;
                         }
                     }
-                    index.markSpatial(firstSpatialArg, lastSpatialArg - firstSpatialArg + 1, pbIndex.getFunctionName());
+                    index.markSpatial(firstSpatialArg, lastSpatialArg - firstSpatialArg + 1,
+                                      Index.IndexMethod.valueOf(pbIndex.getIndexMethod().name()));
                     break;
             }
         }
@@ -830,8 +831,7 @@ public class ProtobufReader {
                 AISProtobuf.Index.LASTSPATIALARG_FIELD_NUMBER,
                 AISProtobuf.Index.DIMENSIONS_FIELD_NUMBER,
                 AISProtobuf.Index.STORAGE_FIELD_NUMBER,
-                AISProtobuf.Index.CONSTRAINTNAME_FIELD_NUMBER,
-                AISProtobuf.Index.FUNCTIONNAME_FIELD_NUMBER
+                AISProtobuf.Index.CONSTRAINTNAME_FIELD_NUMBER
         );
     }
 
@@ -844,8 +844,7 @@ public class ProtobufReader {
                 AISProtobuf.Index.LASTSPATIALARG_FIELD_NUMBER,
                 AISProtobuf.Index.DIMENSIONS_FIELD_NUMBER,
                 AISProtobuf.Index.STORAGE_FIELD_NUMBER,
-                AISProtobuf.Index.CONSTRAINTNAME_FIELD_NUMBER,
-                AISProtobuf.Index.FUNCTIONNAME_FIELD_NUMBER
+                AISProtobuf.Index.CONSTRAINTNAME_FIELD_NUMBER
         );
     }
 
