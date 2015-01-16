@@ -24,7 +24,6 @@ import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
@@ -35,6 +34,7 @@ import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
 import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
+import com.foundationdb.qp.memoryadapter.SimpleMemoryGroupScan;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
@@ -58,6 +58,7 @@ import com.foundationdb.server.store.Store;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.util.tap.Tap;
 import com.foundationdb.util.tap.TapReport;
+import com.google.common.collect.Iterators;
 import com.google.inject.Inject;
 
 public class ServerSchemaTablesServiceImpl
@@ -178,7 +179,7 @@ public class ServerSchemaTablesServiceImpl
         public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
             return new Scan(adapter.getSession(), getRowType(group.getAIS()));
         }
-
+        
         @Override
         public long rowCount(Session session) {
             return 1L;
@@ -224,36 +225,27 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
-            return new Scan(adapter.getSession(), getRowType(group.getAIS()));
+            Iterator<ServerMonitor> servers = monitor.getServerMonitors().values().iterator(); 
+            return new SimpleMemoryGroupScan<ServerMonitor> (group.getAIS(), getName(), servers) {
+                @Override
+                protected Object[] createRow(ServerMonitor data, int hiddenPk) {
+                    return new Object[] {
+                            data.getServerType(),
+                            (data.getLocalPort() < 0) ? null : Long.valueOf(data.getLocalPort()),
+                            data.getStartTimeMillis() / 1000,
+                            Long.valueOf(data.getSessionCount()),
+                            hiddenPk
+                    };
+                }
+            };
         }
 
         @Override
         public long rowCount(Session session) {
             return monitor.getServerMonitors().size();
         }
-        
-        private class Scan extends BaseScan {
-            final Iterator<ServerMonitor> servers = monitor.getServerMonitors().values().iterator(); 
-            public Scan(Session session, RowType rowType) {
-                super(rowType);
-            }
 
-            @Override
-            public Row next() {
-                if (!servers.hasNext()) {
-                    return null;
-                }
-                ServerMonitor server = servers.next();
-                return new ValuesHolderRow(rowType,
-                                              server.getServerType(),
-                                              (server.getLocalPort() < 0) ? null : Long.valueOf(server.getLocalPort()),
-                                              server.getStartTimeMillis()/1000,
-                                              Long.valueOf(server.getSessionCount()),
-                                              ++rowCounter);
-            }
-        }
     }
-    
     private class Statistics extends BasicFactoryBase {
 
         public Statistics(TableName sourceTable) {
@@ -304,51 +296,41 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
-            return new Scan(adapter.getSession(), getRowType(group.getAIS()));
+            Iterator<SessionMonitor> sessions = getAccessibleSessions(adapter.getSession()).iterator();
+            return new SimpleMemoryGroupScan<SessionMonitor> (group.getAIS(), getName(), sessions) {
+                @Override
+                protected Object[] createRow(SessionMonitor data, int hiddenPk) {
+                    MonitorStage stage = data.getCurrentStage();
+                    return new Object[] {
+                            (long)data.getSessionId(),
+                            data.getCallerSessionId() < 0 ? null : (long)data.getCallerSessionId(),
+                            data.getStartTimeMillis() / 1000,
+                            data.getServerType(),
+                            data.getRemoteAddress(),
+                            stage == null ? null : stage.name(),
+                            data.getStatementCount(),
+                            data.getCurrentStatement(),
+                            data.getCurrentStatementStartTimeMillis() > 0 ? data.getCurrentStatementStartTimeMillis() / 1000 : null,
+                            data.getCurrentStatementEndTimeMillis()  > 0  ? data.getCurrentStatementEndTimeMillis() / 1000 : null,
+                            data.getRowsProcessed() < 0 ? null : (long)data.getRowsProcessed(),
+                            data.getCurrentStatementPreparedName(),
+                            data.getCount(StatementTypes.FAILED),
+                            data.getCount(StatementTypes.FROM_CACHE),
+                            data.getCount(StatementTypes.LOGGED),
+                            data.getCount(StatementTypes.CALL_STMT),
+                            data.getCount(StatementTypes.DDL_STMT),
+                            data.getCount(StatementTypes.DML_STMT),
+                            data.getCount(StatementTypes.SELECT),
+                            data.getCount(StatementTypes.OTHER_STMT),
+                      hiddenPk      
+                    };
+                }
+            };
         }
 
         @Override
         public long rowCount(Session session) {
             return monitor.getSessionMonitors().size();
-        }
-        
-        private class Scan extends BaseScan {
-            final Iterator<SessionMonitor> sessions;
-            public Scan(Session session, RowType rowType) {
-                super(rowType);
-                sessions = getAccessibleSessions(session).iterator();
-            }
-
-            @Override
-            public Row next() {
-                if (!sessions.hasNext()) {
-                    return null;
-                }
-                SessionMonitor session = sessions.next();
-                MonitorStage stage = session.getCurrentStage();
-                return new ValuesHolderRow(rowType,
-                                              (long)session.getSessionId(),
-                                              session.getCallerSessionId() < 0 ? null : (long)session.getCallerSessionId(),
-                                              (int)(session.getStartTimeMillis()/1000),
-                                              session.getServerType(),
-                                              session.getRemoteAddress(),
-                                              (stage == null) ? null : stage.name(),
-                                              (long)session.getStatementCount(),
-                                              session.getCurrentStatement(),
-                                              session.getCurrentStatementStartTimeMillis() > 0 ? (int)(session.getCurrentStatementStartTimeMillis() / 1000) : null,
-                                              session.getCurrentStatementEndTimeMillis() > 0 ? (int)(session.getCurrentStatementEndTimeMillis()/1000) : null,
-                                              session.getRowsProcessed() < 0 ? null : (long)session.getRowsProcessed(),
-                                              session.getCurrentStatementPreparedName(),
-                                              session.getCount(StatementTypes.FAILED),
-                                              session.getCount(StatementTypes.FROM_CACHE),
-                                              session.getCount(StatementTypes.LOGGED),
-                                              session.getCount(StatementTypes.CALL_STMT),
-                                              session.getCount(StatementTypes.DDL_STMT),
-                                              session.getCount(StatementTypes.DML_STMT),
-                                              session.getCount(StatementTypes.SELECT),
-                                              session.getCount(StatementTypes.OTHER_STMT),
-                                              ++rowCounter);
-            }
         }
     }
     
@@ -360,32 +342,24 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
-            return new Scan(adapter.getSession(), getRowType(group.getAIS()));
+            Iterator<ErrorCode> errorCodes = Iterators.forArray(ErrorCode.values());
+            return new SimpleMemoryGroupScan<ErrorCode> (group.getAIS(), getName(), errorCodes) {
+                @Override
+                protected Object[] createRow(ErrorCode data, int hiddenPk) {
+                    return new Object[] {
+                            data.getFormattedValue(),
+                            data.name(),
+                            data.getMessage(),
+                            null,
+                            hiddenPk
+                    };
+                }
+            };
         }
 
         @Override
         public long rowCount(Session session) {
             return ErrorCode.values().length;
-        }
-        
-        private class Scan extends BaseScan {
-
-            private final ErrorCode[] codes = ErrorCode.values();
-            public Scan(Session session, RowType rowType) {
-                super(rowType);
-            }
-
-            @Override
-            public Row next() {
-                if (rowCounter >= codes.length)
-                    return null;
-                return new ValuesHolderRow(rowType,
-                        codes[(int)rowCounter].getFormattedValue(),
-                        codes[(int)rowCounter].name(),
-                        codes[(int)rowCounter].getMessage(),
-                        null,
-                        ++rowCounter);
-            }
         }
     }
 
@@ -397,30 +371,22 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
-            return new Scan(adapter.getSession(), getRowType(group.getAIS()));
+            Iterator<ErrorCodeClass> errorCodes = ErrorCodeClass.getClasses().iterator();
+            return new SimpleMemoryGroupScan<ErrorCodeClass> (group.getAIS(), getName(), errorCodes) {
+                @Override
+                protected Object[] createRow(ErrorCodeClass data, int hiddenPk) {
+                    return new Object[] {
+                            data.getKey(),
+                            data.getDescription(),
+                            hiddenPk
+                    };
+                }
+            };
         }
 
         @Override
         public long rowCount(Session session) {
             return ErrorCodeClass.getClasses().size();
-        }
-
-        private class Scan extends BaseScan {
-
-            private final List<ErrorCodeClass> classes = ErrorCodeClass.getClasses();
-            public Scan(Session session, RowType rowType) {
-                super(rowType);
-            }
-
-            @Override
-            public Row next() {
-                if (rowCounter >= classes.size())
-                    return null;
-                return new ValuesHolderRow(rowType,
-                        classes.get((int)rowCounter).getKey(),
-                        classes.get((int)rowCounter).getDescription(),
-                        ++rowCounter);
-            }
         }
     }
 
@@ -431,32 +397,22 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
-            return new Scan(adapter.getSession(), getRowType(group.getAIS()));
+            Iterator<Map.Entry<String,String>> properties = configService.getProperties().entrySet().iterator();
+            return new SimpleMemoryGroupScan<Map.Entry<String,String>> (group.getAIS(), getName(), properties) {
+                @Override
+                protected Object[] createRow(Map.Entry<String,String> data, int hiddenPk) {
+                    return new Object[] {
+                            data.getKey(),
+                            data.getValue(),
+                            hiddenPk
+                    };
+                }
+            };
         }
 
         @Override
         public long rowCount(Session session) {
             return configService.getProperties().size();
-        }
-
-        private class Scan extends BaseScan {
-            private Iterator<Map.Entry<String,String>> propertyIt;
-
-            public Scan(Session session, RowType rowType) {
-                super(rowType);
-                propertyIt = configService.getProperties().entrySet().iterator();
-            }
-
-            @Override
-            public Row next() {
-                if (!propertyIt.hasNext())
-                    return null;
-                Map.Entry<String,String> prop = propertyIt.next();
-                return new ValuesHolderRow(rowType,
-                                      prop.getKey(),
-                                      prop.getValue(),
-                                      ++rowCounter);
-            }
         }
     }
     
@@ -467,36 +423,25 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
-            return new Scan(adapter.getSession(), getRowType(group.getAIS()));
+            Iterator<MemoryPoolMXBean> memoryPools = ManagementFactory.getMemoryPoolMXBeans().iterator();
+            return new SimpleMemoryGroupScan<MemoryPoolMXBean> (group.getAIS(), getName(), memoryPools) {
+                @Override
+                protected Object[] createRow(MemoryPoolMXBean data, int hiddenPk) {
+                    return new Object[] {
+                            data.getName(),
+                            data.getType().name(),
+                            data.getUsage().getUsed(),
+                            data.getUsage().getMax(),
+                            data.getPeakUsage().getUsed(),
+                            hiddenPk
+                    };
+                }
+            };
         }
 
         @Override
         public long rowCount(Session session) {
             return ManagementFactory.getMemoryPoolMXBeans().size();
-        }
-
-        private class Scan extends BaseScan {
-            private final Iterator<MemoryPoolMXBean> it;
-
-            public Scan(Session session, RowType rowType) {
-                super(rowType);
-                it = ManagementFactory.getMemoryPoolMXBeans().iterator();
-            }
-
-            @Override
-            public Row next() {
-                if(!it.hasNext()) {
-                    return null;
-                }
-                MemoryPoolMXBean pool = it.next();
-                return new ValuesHolderRow(rowType,
-                                      pool.getName(),
-                                      pool.getType().name(),
-                                      pool.getUsage().getUsed(),
-                                      pool.getUsage().getMax(),
-                                      pool.getPeakUsage().getUsed(),
-                                      ++rowCounter);
-            }
         }
     }
     
@@ -507,34 +452,23 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
-            return new Scan(adapter.getSession(), getRowType(group.getAIS()));
+            Iterator<GarbageCollectorMXBean> collectors = ManagementFactory.getGarbageCollectorMXBeans().iterator();
+            return new SimpleMemoryGroupScan<GarbageCollectorMXBean> (group.getAIS(), getName(), collectors) {
+                @Override
+                protected Object[] createRow(GarbageCollectorMXBean data, int hiddenPk) {
+                    return new Object[] {
+                            data.getName(),
+                            data.getCollectionCount(),
+                            data.getCollectionTime(),
+                            hiddenPk
+                    };
+                }
+            };
         }
 
         @Override
         public long rowCount(Session session) {
             return ManagementFactory.getGarbageCollectorMXBeans().size();
-        }
-
-        private class Scan extends BaseScan {
-            private final Iterator<GarbageCollectorMXBean> it;
-
-            public Scan(Session session, RowType rowType) {
-                super(rowType);
-                it = ManagementFactory.getGarbageCollectorMXBeans().iterator();
-            }
-
-            @Override
-            public Row next() {
-                if(!it.hasNext()) {
-                    return null;
-                }
-                GarbageCollectorMXBean pool = it.next();
-                return new ValuesHolderRow(rowType,
-                                      pool.getName(),
-                                      pool.getCollectionCount(),
-                                      pool.getCollectionTime(),
-                                      ++rowCounter);
-            }
         }
     }
 
@@ -549,36 +483,24 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
-            return new Scan(adapter.getSession(), getRowType(group.getAIS()));
+            Iterator<TapReport> taps = Iterators.forArray(Tap.getReport(".*"));
+            return new SimpleMemoryGroupScan<TapReport> (group.getAIS(), getName(), taps) {
+                @Override
+                protected Object[] createRow(TapReport data, int hiddenPk) {
+                    return new Object[] {
+                            data.getName(),
+                            data.getInCount(),
+                            data.getOutCount(),
+                            data.getCumulativeTime(),
+                            hiddenPk
+                    };
+                }
+            };
         }
 
         @Override
         public long rowCount(Session session) {
             return getAllReports().length;
-        }
-
-        private class Scan extends BaseScan {
-            private final TapReport[] reports;
-            private int it = 0;
-
-            public Scan(Session session, RowType rowType) {
-                super(rowType);
-                reports = getAllReports();
-            }
-
-            @Override
-            public Row next() {
-                if(it >= reports.length) {
-                    return null;
-                }
-                TapReport report = reports[it++];
-                return new ValuesHolderRow(rowType,
-                                      report.getName(),
-                                      report.getInCount(),
-                                      report.getOutCount(),
-                                      report.getCumulativeTime(),
-                                      ++rowCounter);
-            }
         }
     }
 
@@ -688,36 +610,24 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
-            return new Scan(adapter.getSession(), getRowType(group.getAIS()));
+            Iterator<UserMonitor> users = getAccessibleUsers(adapter.getSession()).iterator();
+            return new SimpleMemoryGroupScan<UserMonitor> (group.getAIS(), getName(), users) {
+                @Override
+                protected Object[] createRow(UserMonitor data, int hiddenPk) {
+                    return new Object[] {
+                            data.getUserName(),
+                            data.getStatementCount(),
+                            hiddenPk
+                    };
+                }
+            };
         }
 
         @Override
         public long rowCount(Session session) {
             return monitor.getUserMonitors().size();
         }
-        
-        private class Scan extends BaseScan {
-            final Iterator<UserMonitor> users;
-
-            public Scan(Session session, RowType rowType) {
-                super(rowType);
-                users = getAccessibleUsers(session).iterator();
-            }
-
-            @Override
-            public Row next() {
-                if (!users.hasNext()) {
-                    return null;
-                }
-                UserMonitor user = users.next();
-                return new ValuesHolderRow(rowType,
-                                            user.getUserName(),
-                                            user.getStatementCount(),
-                                            ++rowCounter);
-            }
-        }
     }
-
     
     static AkibanInformationSchema createTablesToRegister(TypesTranslator typesTranslator) {
         NewAISBuilder builder = AISBBasedBuilder.create(typesTranslator);
