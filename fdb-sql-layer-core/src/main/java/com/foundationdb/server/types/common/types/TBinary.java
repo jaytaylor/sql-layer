@@ -180,7 +180,7 @@ public abstract class TBinary extends TClassBase {
         @Override
         public void parse(TExecutionContext context, ValueSource in, ValueTarget out) {
             String string = in.getString();
-            int charsetId = context.inputTypeAt(0).attribute(StringAttribute.CHARSET);
+            int charsetId = in.getType().attribute(StringAttribute.CHARSET);
             String charsetName = StringFactory.Charset.values()[charsetId].name();
             byte[] bytes;
             try {

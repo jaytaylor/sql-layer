@@ -77,7 +77,7 @@ public abstract class TClassBase extends TClass
                     sb = (StringBuilder) appender.getAppendable();
                     sb.setLength(0);
                 }
-                format(context.inputTypeAt(0), source, appender);
+                format(source.getType(), source, appender);
                 String string = sb.toString();
                 int maxlen = context.outputType().attribute(StringAttribute.MAX_LENGTH);
                 String trunc = Strings.truncateIfNecessary(string, maxlen);

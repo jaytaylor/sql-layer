@@ -159,14 +159,14 @@ public class Cast_From_Boolean {
     public static final TCast DECIMAL_TO_BOOLEAN = new TCastBase(MNumeric.DECIMAL, AkBool.INSTANCE) {
         @Override
         protected void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
-            BigDecimalWrapper decimal = TBigDecimal.getWrapper(source, context.inputTypeAt(0));
+            BigDecimalWrapper decimal = TBigDecimal.getWrapper(source, source.getType());
             target.putBool(!decimal.isZero());
         }
     };
     public static final TCast DECIMAL_UNSIGNED_TO_BOOLEAN = new TCastBase(MNumeric.DECIMAL_UNSIGNED, AkBool.INSTANCE) {
         @Override
         protected void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
-            BigDecimalWrapper decimal = TBigDecimal.getWrapper(source, context.inputTypeAt(0));
+            BigDecimalWrapper decimal = TBigDecimal.getWrapper(source, source.getType());
             target.putBool(!decimal.isZero());
         }
     };

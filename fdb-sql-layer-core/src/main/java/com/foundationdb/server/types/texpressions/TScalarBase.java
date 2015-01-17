@@ -143,6 +143,12 @@ public abstract class TScalarBase implements TScalar {
             public ValueSource get(int i) {
                 TPreptimeValue ptValue = inputs.get(i);
                 ValueSource source = ptValue.value();
+                if (source == null) {
+                    source = ValueSources.getNullSource(ptValue.type());
+                }
+                else if (source.getType().typeClass() instanceof TString) {
+                    source = ValueSources.valuefromObject(source.getObject(), ptValue.type());
+                }
                 assert allowNonConstsInEvaluation() || source != null
                         : "non-constant value where constant value expected";
                 return source;

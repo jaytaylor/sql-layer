@@ -73,11 +73,12 @@ public abstract class MLength extends TScalarBase
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
-            int charsetId = context.inputTypeAt(0).attribute(StringAttribute.CHARSET);
+            ValueSource input = inputs.get(0);
+            int charsetId = input.getType().attribute(StringAttribute.CHARSET);
             String charset = (StringFactory.Charset.values())[charsetId].name();
             try
             {
-                int length = (inputs.get(0).getString()).getBytes(charset).length;
+                int length = (input.getString()).getBytes(charset).length;
                 length *= multiplier;
                 output.putInt32(length);
             }

@@ -142,9 +142,11 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar ADD_DECIMAL = new DecimalArithmetic("plus", "+", true) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
+            ValueSource input0 = inputs.get(0);
+            ValueSource input1 = inputs.get(1);
             output.putObject(TBigDecimal.getWrapper(context, DEC_INDEX)
-                        .set(TBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0)))
-                        .add(TBigDecimal.getWrapper(inputs.get(1), context.inputTypeAt(1))));
+                        .set(TBigDecimal.getWrapper(input0, input0.getType()))
+                        .add(TBigDecimal.getWrapper(input1, input1.getType())));
         }
 
         @Override
@@ -226,9 +228,11 @@ public abstract class MArithmetic extends TArithmetic {
     public static final TScalar SUBTRACT_DECIMAL = new DecimalArithmetic("minus", "-", false) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
+            ValueSource input0 = inputs.get(0);
+            ValueSource input1 = inputs.get(1);
             output.putObject(TBigDecimal.getWrapper(context, DEC_INDEX)
-                        .set(TBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0)))
-                        .subtract(TBigDecimal.getWrapper(inputs.get(1), context.inputTypeAt(1))));
+                        .set(TBigDecimal.getWrapper(input0, input0.getType()))
+                        .subtract(TBigDecimal.getWrapper(input1, input1.getType())));
         }
 
         @Override
@@ -350,13 +354,16 @@ public abstract class MArithmetic extends TArithmetic {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
-            BigDecimalWrapper divisor = TBigDecimal.getWrapper(inputs.get(1), context.inputTypeAt(1));
+            ValueSource input0 = inputs.get(0);
+            ValueSource input1 = inputs.get(1);
+
+            BigDecimalWrapper divisor = TBigDecimal.getWrapper(input1, input1.getType());
 
             if (divisor.isZero()) {
                 output.putNull();
             }
             else {
-                BigDecimalWrapper numerator = TBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0));
+                BigDecimalWrapper numerator = TBigDecimal.getWrapper(input0, input0.getType());
                 BigDecimalWrapper result = TBigDecimal.getWrapper(context, DEC_INDEX);
                 result.set(numerator);
                 result.divide(divisor, context.outputType().attribute(DecimalAttribute.SCALE));
@@ -485,9 +492,12 @@ public abstract class MArithmetic extends TArithmetic {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs,
                                   ValueTarget output) {
+            ValueSource input0 = inputs.get(0);
+            ValueSource input1 = inputs.get(1);
+
             BigDecimalWrapper wrapper = TBigDecimal.getWrapper(context, DEC_INDEX);
-            BigDecimalWrapper numerator = TBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0));
-            BigDecimalWrapper divisor = TBigDecimal.getWrapper(inputs.get(1), context.inputTypeAt(1));
+            BigDecimalWrapper numerator = TBigDecimal.getWrapper(input0, input0.getType());
+            BigDecimalWrapper divisor = TBigDecimal.getWrapper(input1, input1.getType());
             long rounded = wrapper.set(numerator).divide(divisor).round(0).asBigDecimal().longValue();
             output.putInt64(rounded);
         }
@@ -592,9 +602,12 @@ public abstract class MArithmetic extends TArithmetic {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
         {
+            ValueSource input0 = inputs.get(0);
+            ValueSource input1 = inputs.get(1);
+
             BigDecimalWrapper wrapper = TBigDecimal.getWrapper(context, DEC_INDEX);
-            BigDecimalWrapper arg0 = TBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0));
-            BigDecimalWrapper arg1 = TBigDecimal.getWrapper(inputs.get(1), context.inputTypeAt(1));
+            BigDecimalWrapper arg0 = TBigDecimal.getWrapper(input0, input0.getType());
+            BigDecimalWrapper arg1 = TBigDecimal.getWrapper(input1, input1.getType());
             
             output.putObject(wrapper.set(arg0).multiply(arg1));
         }
@@ -709,14 +722,17 @@ public abstract class MArithmetic extends TArithmetic {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output)
-        {            
-             BigDecimalWrapper divisor = TBigDecimal.getWrapper(inputs.get(1), context.inputTypeAt(1));
+        {
+            ValueSource input0 = inputs.get(0);
+            ValueSource input1 = inputs.get(1);
+
+             BigDecimalWrapper divisor = TBigDecimal.getWrapper(input1, input1.getType());
 
              if (divisor.isZero())
                  output.putNull();
              else
                  output.putObject(TBigDecimal.getWrapper(context, DEC_INDEX)
-                                     .set(TBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0)))
+                                     .set(TBigDecimal.getWrapper(input0, input0.getType()))
                                      .mod(divisor));
         }
     };

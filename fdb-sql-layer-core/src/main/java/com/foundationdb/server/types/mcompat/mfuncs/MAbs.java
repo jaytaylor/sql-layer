@@ -72,9 +72,10 @@ public class MAbs {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
+            ValueSource input = inputs.get(0);
             BigDecimalWrapper wrapper =
                 TBigDecimal.getWrapper(context, DEC_INDEX)
-                .set(TBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0)));
+                .set(TBigDecimal.getWrapper(input, input.getType()));
             output.putObject(wrapper.abs());
         }
 
