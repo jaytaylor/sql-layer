@@ -741,7 +741,7 @@ public class ServerSchemaTablesServiceImpl
             .colBigInt("query_from_cache", false)
             .colBigInt("logged_statements", false)
             .colBigInt("call_statement_count", false)
-            .colBigInt("ddl_statment_count", false)
+            .colBigInt("ddl_statement_count", false)
             .colBigInt("dml_statement_count", false)
             .colBigInt("select_statement_count", false)
             .colBigInt("other_statement_count", false)
@@ -765,7 +765,7 @@ public class ServerSchemaTablesServiceImpl
             .colBigInt("logged_statements", false)
 
             .colBigInt("call_statement_count", false)
-            .colBigInt("ddl_statment_count", false)
+            .colBigInt("ddl_statement_count", false)
             .colBigInt("dml_statement_count", false)
             .colBigInt("select_statement_count", false)
             .colBigInt("other_statement_count", false)
