@@ -1,0 +1,6 @@
+---
+- Statement: CREATE TABLE t (id BIGINT PRIMARY KEY, s VARCHAR(50) DEFAULT NULL, i BigInt);
+---
+- Statement: SELECT t1.i FROM t as t1 JOIN (SELECT t2.i FROM t as t2 UNION SELECT t3.i FROM t as t3  WHERE t3.s=null) j on j.i=t1.i;
+- row_count: 0
+...
