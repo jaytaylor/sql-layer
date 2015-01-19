@@ -502,6 +502,28 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         }
     }
 
+    private ExpressionNode targetExpression(OrderByExpression targetColumn) {
+        ExpressionNode targetExpression = targetColumn.getExpression();
+        if (targetExpression.isColumn()) {
+            ColumnExpression column = (ColumnExpression)targetExpression;
+            ColumnSource table = column.getTable();
+            if (table == queryGoal.getGrouping()) {
+                targetExpression = queryGoal.getGrouping()
+                    .getField(column.getPosition());
+            }
+            else if (table instanceof Project) {
+                // Cf. ASTStatementLoader.sortsForDistinct().
+                Project project = (Project)table;
+                if ((project.getOutput() == queryGoal.getOrdering()) &&
+                    (queryGoal.getOrdering().getOutput() instanceof Distinct)) {
+                    targetExpression = project.getFields()
+                        .get(column.getPosition());
+                }
+            }
+        }
+        return targetExpression;
+    }
+    
     // Determine how well this index does against the target.
     // Also, correct traversal order to match sort if possible.
     protected IndexScan.OrderEffectiveness determineOrderEffectiveness(SingleIndexScan index) {
@@ -522,24 +544,8 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             for (OrderByExpression targetColumn : queryGoal.getOrdering().getOrderBy()) {
                 // Get the expression by which this is ordering, recognizing the
                 // special cases where the Sort is fed by GROUP BY or feeds DISTINCT.
-                ExpressionNode targetExpression = targetColumn.getExpression();
-                if (targetExpression.isColumn()) {
-                    ColumnExpression column = (ColumnExpression)targetExpression;
-                    ColumnSource table = column.getTable();
-                    if (table == queryGoal.getGrouping()) {
-                        targetExpression = queryGoal.getGrouping()
-                            .getField(column.getPosition());
-                    }
-                    else if (table instanceof Project) {
-                        // Cf. ASTStatementLoader.sortsForDistinct().
-                        Project project = (Project)table;
-                        if ((project.getOutput() == queryGoal.getOrdering()) &&
-                            (queryGoal.getOrdering().getOutput() instanceof Distinct)) {
-                            targetExpression = project.getFields()
-                                .get(column.getPosition());
-                        }
-                    }
-                }
+                ExpressionNode targetExpression = targetExpression(targetColumn); 
+
                 OrderByExpression indexColumn = getIndexColumn(indexOrdering, idx);
                 if (indexColumn == null && idx < nequals) {
                     throw new CorruptedPlanException("No index column expression for union comparison");
