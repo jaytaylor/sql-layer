@@ -243,12 +243,12 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
             gen.writeStringField("version", Main.VERSION_INFO.versionLong);
             gen.writeStringField("host", host);
             gen.writeStringField("port", port);
-            summary(INSTANCE, INSTANCE_SQL, gen);
-            summary(SERVERS, SERVERS_SQL, gen);
-            summary(SESSIONS, SESSIONS_SQL, gen);
-            summary(STATISTICS, STATISTICS_SQL, gen);
-            summary(GARBAGE_COLLECTORS, GARBAGE_COLLECTORS_SQL, gen);
-            summary(MEMORY_POOLS, MEMORY_POOLS_SQL, gen);
+            summary(INSTANCE, INSTANCE_SQL, gen, false);
+            summary(SERVERS, SERVERS_SQL, gen, true);
+            summary(SESSIONS, SESSIONS_SQL, gen, true);
+            summary(STATISTICS, STATISTICS_SQL, gen, false);
+            summary(GARBAGE_COLLECTORS, GARBAGE_COLLECTORS_SQL, gen, true);
+            summary(MEMORY_POOLS, MEMORY_POOLS_SQL, gen, true);
             gen.writeEndObject();
             gen.flush();
         } catch (JsonGenerationException ex) {
@@ -258,12 +258,14 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
             logger.error ("Unable to generate status due to IOException: {}", e);
             return null;
         }
-        logger.trace("status: {}", str.toString());
+        if (logger.isTraceEnabled()) {
+            logger.trace("status: {}", str.toString());
+        }
         return str.toString();
     }
     
     private static final String INSTANCE = "instance";
-    private static final String INSTANCE_SQL =  "select server_host, server_store, server_jit_compiler_time from information_schema.server_instance_summary";
+    private static final String INSTANCE_SQL =  "select server_host as host, server_store as store, server_jit_compiler_time as jit_compiler_time from information_schema.server_instance_summary";
     
     private static final String SERVERS = "servers";
     private static final String SERVERS_SQL = "select * from information_schema.server_servers";
@@ -283,19 +285,25 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
     private static final String MEMORY_POOLS = "memory pools";
     private static final String MEMORY_POOLS_SQL = "select * from information_schema.server_memory_pools";
     
-    protected void summary  (String name, String sql, JsonGenerator gen) throws JsonGenerationException, IOException {
+    protected void summary (String name, String sql, JsonGenerator gen, boolean arrayWrapper) throws JsonGenerationException, IOException {
        Properties props = new Properties();
        props.setProperty("database", TableName.INFORMATION_SCHEMA);
        try (Connection conn = jdbcService.getDriver().connect(JDBCDriver.URL, props);
                Statement s = conn.createStatement()) {
 
-           gen.writeArrayFieldStart(name);
+           if (arrayWrapper) {
+               gen.writeArrayFieldStart(name);
+           } else {
+               gen.writeFieldName(name);
+           }
            JDBCResultSet rs = (JDBCResultSet)s.executeQuery(sql);
            StringWriter strings = new StringWriter();
            PrintWriter writer = new PrintWriter(strings);
            collectResults(rs, writer, options);
            gen.writeRawValue(strings.toString());
-           gen.writeEndArray();
+           if (arrayWrapper) {
+               gen.writeEndArray();
+           }
        } catch (SQLException e) {
            logger.error("unable to generate summary for {}, inserting no data", name);
        }

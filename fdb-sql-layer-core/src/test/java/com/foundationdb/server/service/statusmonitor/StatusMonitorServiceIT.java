@@ -85,7 +85,7 @@ public class StatusMonitorServiceIT extends FDBITBase {
             assertEquals("port", parser.getCurrentName());
             assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
             assertEquals("instance", parser.getText());
-            assertEquals(JsonToken.START_ARRAY, parser.nextToken());
+            assertEquals(JsonToken.START_OBJECT, parser.nextToken());
             parser.skipChildren();
             assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
             assertEquals("servers", parser.getText());
@@ -97,7 +97,7 @@ public class StatusMonitorServiceIT extends FDBITBase {
             parser.skipChildren();
             assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
             assertEquals("statistics", parser.getText());
-            assertEquals(JsonToken.START_ARRAY, parser.nextToken());
+            assertEquals(JsonToken.START_OBJECT, parser.nextToken());
             parser.skipChildren();
             assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
             assertEquals("garbage collectors", parser.getText());
