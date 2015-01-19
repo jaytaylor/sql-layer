@@ -1573,7 +1573,7 @@ public class JoinAndIndexPicker extends BaseRule
         @Override
         public boolean visit(PlanNode n) {
             super.visit(n);
-            if ((n instanceof Joinable) && !(n instanceof TableSource)) {
+            if ((n instanceof Joinable) && !(n instanceof TableSource) && !(n instanceof NullSource)) {
                 Joinable j = (Joinable)n;
                 while (j.getOutput() instanceof Joinable)
                     j = (Joinable)j.getOutput();
