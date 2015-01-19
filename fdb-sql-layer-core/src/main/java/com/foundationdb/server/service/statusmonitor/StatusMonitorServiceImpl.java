@@ -71,6 +71,7 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
     public static final String STATUS_MONITOR_LAYER_NAME = "SQL Layer";
     
     public static final String CONFIG_FLUSH_INTERVAL = "fdbsql.fdb.status.flush_interval";
+    public static final String CONFIG_STATUS_ENABLE = "fdbsql.fdb.status.enabled";
 
     protected byte[] instanceKey;
     private String host;
@@ -80,6 +81,8 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
     private long flushInterval;
     private Future<Void> instanceWatch;
     FormatOptions options;
+    
+    
     @Inject
     public StatusMonitorServiceImpl (ConfigurationService configService, 
             FDBHolder fdbService,
@@ -93,6 +96,10 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
     
     @Override
     public void start() {
+        // If not enabled (e.g. during testing), turn off the service. 
+        if (!Boolean.parseBoolean(configService.getProperty(CONFIG_STATUS_ENABLE))) {
+            return;
+        }
         flushInterval = Long.parseLong(configService.getProperty(CONFIG_FLUSH_INTERVAL));
         options.set(FormatOptions.JsonBinaryFormatOption.fromProperty(configService.getProperty("fdbsql.sql.jsonbinary_output")));
 
@@ -123,15 +130,19 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
     @Override
     public void stop() {
         running = false;
-        instanceWatch.cancel();
-        notifyBackground();
-        try {
-            backgroundThread.join(1000);
+        if (instanceWatch != null) {
+            instanceWatch.cancel();
+            instanceWatch = null;
         }
-        catch (InterruptedException ex) {
-            backgroundThread.interrupt();
+        if (backgroundThread != null) {
+            notifyBackground();
+            try {
+                backgroundThread.join(1000);
+            }
+            catch (InterruptedException ex) {
+                backgroundThread.interrupt();
+            }
         }
-        clearStatus();
     }
 
     @Override
@@ -177,23 +188,14 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
         }
     }
   
-    private void setWatch(Transaction tr) {
-        // Initiate a watch (from this same transaction) for changes to the key
-        // used to signal configuration changes.
-        instanceWatch = tr.watch(instanceKey);
-        
-        instanceWatch.onReady(new Runnable() {
-                @Override
-                public void run() {
-                    notifyBackground();
-                }
-            });
-    }
 
     protected Database getDatabase() {
         return fdbService.getDatabase();
     }
 
+    // TODO: This should be used to remove the status when the service
+    // shuts down, but can't currently be called in stop() due
+    // to shutdown order. 
     private void clearStatus() {
         getDatabase()
         .run(new Function<Transaction,Void>() {
@@ -218,6 +220,18 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
                  }
              });
     }
+
+    private void setWatch(Transaction tr) {
+        // Initiate a watch (from this same transaction) for changes to the key
+        // used to signal configuration changes.
+        instanceWatch = tr.watch(instanceKey);
+        instanceWatch.onReady(new Runnable() {
+                @Override
+                public void run() {
+                    notifyBackground();
+                }
+            });
+    }
     
     private String generateStatus() {
         StringWriter str = new StringWriter();
@@ -238,11 +252,13 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
             gen.writeEndObject();
             gen.flush();
         } catch (JsonGenerationException ex) {
+            logger.error("Unable to generate status due to JSON error: {}", ex);
             return null;
         } catch (IOException e) {
+            logger.error ("Unable to generate status due to IOException: {}", e);
             return null;
         }
-        logger.debug("status: {}", str.toString());
+        logger.trace("status: {}", str.toString());
         return str.toString();
     }
     
@@ -281,8 +297,7 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
            gen.writeRawValue(strings.toString());
            gen.writeEndArray();
        } catch (SQLException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+           logger.error("unable to generate summary for {}, inserting no data", name);
        }
     }
 
