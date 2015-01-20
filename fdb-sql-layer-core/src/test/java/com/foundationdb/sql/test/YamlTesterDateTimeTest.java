@@ -37,17 +37,6 @@ public class YamlTesterDateTimeTest {
     private static final Logger LOG = LoggerFactory.getLogger(YamlTesterDateTimeTest.class);
 
     private static final DateTimeZone UTC = DateTimeZone.getProvider().getZone("UTC");
-
-    static
-    {
-        String timezone="UTC";
-        DateTimeZone dateTimeZone = DateTimeZone.forID(timezone);
-        assert dateTimeZone != null;
-        DateTimeZone.setDefault(dateTimeZone);
-        // We still have usages of java.util.Date, but thanks to the ConfigurationServiceImpl.validateTimezone
-        // These should always be the same in production, so leaving this here until we cleanup remaining usages
-        TimeZone.setDefault(TimeZone.getTimeZone(timezone));
-    }
     
     @Test
     public void testTimeTag() {
