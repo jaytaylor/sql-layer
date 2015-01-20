@@ -33,7 +33,6 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import com.foundationdb.server.types.texpressions.std.NoArgExpression;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class NoArgFuncs
@@ -130,7 +129,6 @@ public class NoArgFuncs
         @Override
         public void evaluate(TExecutionContext context, ValueTarget target)
         {
-            System.out.println("evaluate " + context.getCurrentDate() + " = " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S z").format(context.getCurrentDate()) + " -- " + context.getCurrentTimezone() + " " + MDateAndTime.encodeDate(context.getCurrentDate(), context.getCurrentTimezone()));
             target.putInt32(MDateAndTime.encodeDate(context.getCurrentDate(), context.getCurrentTimezone()));
         }
     };

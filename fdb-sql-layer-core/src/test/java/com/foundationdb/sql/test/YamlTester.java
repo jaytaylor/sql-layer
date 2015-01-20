@@ -227,11 +227,7 @@ public class YamlTester
     /** Test the input specified in the constructor. */
     public void test() {
         try {
-            if (sourceURL != null && sourceFilename().contains("current-date-time"))
-                System.out.println("Starting " + sourceFilename() + " @ " + DEFAULT_DATETIME_FORMAT.format(new Date()));
             test(in);
-            if (sourceURL != null && sourceFilename().contains("current-date-time"))
-                System.out.println("Done " + sourceFilename() + " @ " + DEFAULT_DATETIME_FORMAT.format(new Date()));
         } catch (Throwable e) {
             if (sourceURL != null) {
                 System.err.println("Failed Yaml test (note: line number points to start of document)");
@@ -1437,10 +1433,7 @@ public class YamlTester
             @Override
             public Object construct(Node node) {
                 Date today = new Date();
-                String str = DEFAULT_DATE_FORMAT.format(today);
-                System.out.println("Constructed: " + today + " = " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S z").format(today) +
-                                   "; formatted as: " + str);
-                return str;
+                return DEFAULT_DATE_FORMAT.format(today);
             }
 
         }

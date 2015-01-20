@@ -203,12 +203,6 @@ public class MDateAndTime
 
     public static String dateToString(int encodedDate) {
         long[] dt = decodeDate(encodedDate);
-        System.out.println(String.format("Returning: %d-%d-%d %d:%d:%d",dt[YEAR_INDEX],
-                                         dt[MONTH_INDEX],
-                                         dt[DAY_INDEX],
-                                         dt[HOUR_INDEX],
-                                         dt[MIN_INDEX],
-                                         dt[SEC_INDEX]));
         return String.format("%04d-%02d-%02d", dt[YEAR_INDEX], dt[MONTH_INDEX], dt[DAY_INDEX]);
     }
 
