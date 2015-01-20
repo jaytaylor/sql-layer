@@ -105,7 +105,7 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
 
         host = "127.0.0.1";
         try {
-            host = InetAddress.getLocalHost().getHostAddress();
+            host = InetAddress.getLocalHost().getHostName();
         }
         catch (IOException ex) {
             // Ignore
@@ -265,7 +265,7 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
     }
     
     private static final String INSTANCE = "instance";
-    private static final String INSTANCE_SQL =  "select server_host as host, server_store as store, server_jit_compiler_time as jit_compiler_time from information_schema.server_instance_summary";
+    private static final String INSTANCE_SQL =  "select server_store as store, server_jit_compiler_time as jit_compiler_time from information_schema.server_instance_summary";
     
     private static final String SERVERS = "servers";
     private static final String SERVERS_SQL = "select * from information_schema.server_servers";
