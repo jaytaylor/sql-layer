@@ -3,7 +3,7 @@ PhysicalSelect[order_date:date, sku:varchar(32), quan:int]
     Flatten_HKeyOrdered(customers - orders INNER items)
       Flatten_HKeyOrdered(customers INNER orders)
         GroupLookup_Default(Index(items.sku) -> customers, orders, items)
-          Intersect_Ordered(skip 1 left, skip 1 right, compare 1)
+          Intersect_Ordered(all, skip 1 left, skip 1 right, compare 1)
             Union_Ordered(all, skip 1, compare 3)
               Union_Ordered(all, skip 1, compare 3)
                 IndexScan_Default(Index(items.sku), sku = '1234', orders.cid ASC, oid, iid)
