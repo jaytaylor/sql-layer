@@ -76,7 +76,7 @@ public class LobServiceIT extends ITBase {
     public void setUp(){
         // registration
         LobService ls = serviceManager().getServiceByClass(LobService.class);
-        Assert.assertNotNull(ls);
+        Assert.assertNotNull(ls);   
         FDBHolder fdbHolder = serviceManager().getServiceByClass(FDBHolder.class);
         TransactionContext tcx = fdbHolder.getTransactionContext();
 

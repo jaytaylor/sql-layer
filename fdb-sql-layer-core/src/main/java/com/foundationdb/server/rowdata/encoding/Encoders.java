@@ -68,7 +68,7 @@ public final class Encoders
         case Types.BIT:
         case Types.LONGVARBINARY:
         case Types.VARBINARY:
-        //case Types.BLOB:
+        case Types.BLOB:
             return VarBinaryEncoder.INSTANCE;
 
         case Types.CHAR:
@@ -81,7 +81,7 @@ public final class Encoders
             return charEncoding(StringAttribute.charsetName(type));
 
         default:
-            if (tclass == AkGUID.INSTANCE || jdbcType == Types.BLOB) {
+            if (tclass == AkGUID.INSTANCE) {
                 return GuidEncoder.INSTANCE;
             }
             return null;

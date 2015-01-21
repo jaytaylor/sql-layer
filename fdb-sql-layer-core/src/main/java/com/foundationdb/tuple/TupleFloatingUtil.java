@@ -30,6 +30,7 @@ import java.nio.charset.Charset;
 
 import com.foundationdb.tuple.TupleUtil.DecodeResult;
 import com.foundationdb.util.WrappingByteSource;
+import com.foundationdb.server.service.blob.BlobRef;
 
 /**
  * 
@@ -105,6 +106,8 @@ class TupleFloatingUtil {
             return new byte[] {nil};
         if (t instanceof UUID)
              return encode((UUID) t);
+        if (t instanceof BlobRef)
+            return TupleUtil.encode(((BlobRef)t).getValue());
         if(t instanceof byte[])
             return TupleUtil.encode((byte[]) t);
         if(t instanceof WrappingByteSource)

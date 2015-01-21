@@ -55,6 +55,7 @@ import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchRowException;
 import com.foundationdb.server.error.NotAllowedByConfigException;
 import com.foundationdb.server.error.SQLParserInternalException;
+import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.types.aksql.aktypes.AkBlob;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistryService;
@@ -464,11 +465,14 @@ public class OnlineHelper implements RowListener
     private void registerLob(Session session, Row oldRow, int tableId, int dropField) {
         if (oldRow.rowType().typeId() == tableId) {
             ValueSource val = oldRow.value(dropField);
-            if (val.getObject() instanceof UUID) {
-                UUID blobId = (UUID) val.getObject();
-                if (store instanceof FDBStore) {
-                    TableName rootTable = oldRow.rowType().table().getGroup().getName();
-                    ((FDBStore) store).registerLobForOnlineDelete(session, rootTable.getSchemaName(), rootTable.getTableName(), blobId);
+            Object blob = val.getObject();
+            if (blob instanceof BlobRef) {
+                if (((BlobRef) blob).isLongLob()) {
+                    UUID blobId = ((BlobRef) blob).getId();
+                    if (store instanceof FDBStore) {
+                        TableName rootTable = oldRow.rowType().table().getGroup().getName();
+                        ((FDBStore) store).registerLobForOnlineDelete(session, rootTable.getSchemaName(), rootTable.getTableName(), blobId);
+                    }
                 }
             }
         }

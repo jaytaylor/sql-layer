@@ -17,13 +17,16 @@
 
 package com.foundationdb.server.types.aksql;
 
-import com.foundationdb.server.error.InvalidGuidFormatException;
+import com.foundationdb.server.error.*;
+import com.foundationdb.server.service.blob.*;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TParser;
 import com.foundationdb.server.types.aksql.aktypes.*;
+import com.foundationdb.server.types.common.types.*;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 
+import java.io.*;
 import java.util.UUID;
 
 public class AkParsers
@@ -92,21 +95,23 @@ public class AkParsers
     {
         @Override
         public void parse(TExecutionContext context, ValueSource source, ValueTarget target) {
+            // first case may not be needed anymore (store --> cache)
             if (source.getType().typeClass() == AkGUID.INSTANCE) {
                 UUID id = (UUID) source.getObject();
                 target.putObject(id);
             }
             else {
                 String s = source.getString();
-                if (s.startsWith("{") && s.endsWith("}")) {
-                    s = s.substring(1, s.length() - 1);
-                }
+                int charsetId = context.inputTypeAt(0).attribute(StringAttribute.CHARSET);
+                String charsetName = StringFactory.Charset.values()[charsetId].name();
+                byte[] bytes;
                 try {
-                    UUID uuid = UUID.fromString(s);
-                    target.putObject(uuid);
-                } catch (IllegalArgumentException e) {
-                    throw new InvalidGuidFormatException(s);
+                    bytes = s.getBytes(charsetName);
+                } catch (UnsupportedEncodingException e) {
+                    throw new AkibanInternalException("while decoding string using " + charsetName, e);
                 }
+                BlobRef blob = new BlobRef(bytes); 
+                target.putObject(blob);  
             }
         }
     };

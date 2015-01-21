@@ -20,6 +20,7 @@ package com.foundationdb.server.types.value;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.spatial.Spatial;
+import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
@@ -279,11 +280,16 @@ public final class ValueSources {
         else if (object instanceof SpatialObject) {
             type = MBinary.VARBINARY.instance(65535, false);
             value = new Value(type, Spatial.serialize((JTSSpatialObject) object));
-        }
+        } 
         else if (object instanceof UUID) {
             type = AkGUID.INSTANCE.instance(false);
             value = new Value(type);
             value.putObject(object);
+        }
+        else if (object instanceof BlobRef) {
+            type = AkBlob.INSTANCE.instance(false);
+            value = new Value(type);
+            value.putObject(type);
         }
         else {
             throw new UnsupportedOperationException("can't convert " + object + " of type " + object.getClass());
@@ -351,8 +357,8 @@ public final class ValueSources {
         }
 
         if (source.getType().typeClass() == AkBlob.INSTANCE.widestComparable()) {
-            if (source.getObject() instanceof UUID) {
-                return (UUID) source.getObject();
+            if (source.getObject() instanceof BlobRef) {
+                return (BlobRef) source.getObject();
             }
             logger.error("Blob with underlying object of : {}", source.getObject().getClass());
         }

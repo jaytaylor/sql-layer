@@ -21,10 +21,14 @@ import com.foundationdb.server.error.*;
 import com.foundationdb.server.types.*;
 import com.foundationdb.server.types.aksql.*;
 import com.foundationdb.server.types.common.*;
-import com.foundationdb.server.types.common.types.NoAttrTClass;
+import com.foundationdb.server.types.common.types.*;
+import com.foundationdb.server.types.mcompat.mtypes.*;
 import com.foundationdb.server.types.value.*;
 import com.foundationdb.sql.types.*;
+import com.foundationdb.server.service.blob.BlobRef;
+import com.foundationdb.util.*;
 
+import java.io.*;
 import java.util.*;
 
 
@@ -33,10 +37,11 @@ public class AkBlob extends NoAttrTClass {
     public final static TypeId BLOBTYPE = TypeId.BLOB_ID;
     public final static NoAttrTClass INSTANCE = new AkBlob();
     public final static ValueCacher CACHER = new BlobCacher();
+    public final static int LOB_SWITCH_SIZE = 50000;
     
     private AkBlob(){
         super(AkBundle.INSTANCE.id(), BLOBTYPE.getSQLTypeName(), AkCategory.STRING_BINARY, TFormatter.FORMAT.BLOB, 1,
-                1, 16, UnderlyingType.BYTES,
+                1, -1, UnderlyingType.BYTES,
                 AkParsers.BLOB, BLOBTYPE.getMaximumMaximumWidth(), BLOBTYPE);
     }
 
@@ -45,13 +50,19 @@ public class AkBlob extends NoAttrTClass {
     public ValueCacher cacher() {
         return CACHER;
     }
+    
+    @Override
+    public int variableSerializationSize(TInstance type, boolean average) {
+        return LOB_SWITCH_SIZE;
+    }
+
 
     private static class BlobCacher implements ValueCacher {
 
         @Override
         public void cacheToValue(Object bdw, TInstance type, BasicValueTarget target) {
-            if (bdw instanceof UUID) {
-                byte[] bb = AkGUID.uuidToBytes((UUID) bdw);
+            if (bdw instanceof BlobRef) {
+                byte[] bb = ((BlobRef) bdw).getValue();
                 target.putBytes(bb);
             } else {
                 throw new InvalidParameterValueException("cannot perform Blob-id cast on Object");
@@ -61,7 +72,7 @@ public class AkBlob extends NoAttrTClass {
         @Override
         public Object valueToCache(BasicValueSource value, TInstance type) {
             byte[] bb = value.getBytes();
-            return AkGUID.bytesToUUID(bb, 0);
+            return new BlobRef(bb);
         }
 
         @Override
@@ -88,14 +99,14 @@ public class AkBlob extends NoAttrTClass {
 
         @Override
         public void writeCollating(ValueSource in, TInstance typeInstance, ValueTarget out) {
-            UUID guid = (UUID)in.getObject();
-            out.putBytes(AkGUID.uuidToBytes(guid));
+            BlobRef blob = (BlobRef)in.getObject();
+            out.putBytes(blob.getValue());
         }
 
         @Override
         public void readCollating(ValueSource in, TInstance typeInstance, ValueTarget out) {
             byte[] bb = in.getBytes();
-            out.putObject(AkGUID.bytesToUUID(bb, 0));
+            out.putObject(new BlobRef(bb));
         }
 
         @Override

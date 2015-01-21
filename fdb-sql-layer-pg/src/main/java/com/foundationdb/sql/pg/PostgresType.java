@@ -328,7 +328,7 @@ public class PostgresType extends ServerType
         case Types.BIT:
         case Types.LONGVARBINARY:
         case Types.VARBINARY:
-//        case Types.BLOB:
+        case Types.BLOB:
             oid = TypeOid.BYTEA_TYPE_OID;
             break;
         case Types.LONGNVARCHAR:
@@ -336,9 +336,8 @@ public class PostgresType extends ServerType
         case Types.CLOB:
             oid = TypeOid.TEXT_TYPE_OID;
             break;
-        case Types.BLOB:
         case Types.OTHER:
-            if (tClass == AkGUID.INSTANCE || tClass == AkBlob.INSTANCE){
+            if (tClass == AkGUID.INSTANCE){
                 oid = TypeOid.UUID_TYPE_OID;
                 break;
             }
@@ -448,7 +447,7 @@ public class PostgresType extends ServerType
             oid = TypeOid.BYTEA_TYPE_OID;
             break;
         case TypeId.FormatIds.BLOB_TYPE_ID: // may need update
-            oid = TypeOid.UUID_TYPE_OID;
+            oid = TypeOid.BYTEA_TYPE_OID;
             break;
         case TypeId.FormatIds.VARCHAR_TYPE_ID:
             oid = TypeOid.VARCHAR_TYPE_OID;

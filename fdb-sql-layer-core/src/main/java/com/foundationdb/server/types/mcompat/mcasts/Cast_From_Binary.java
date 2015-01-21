@@ -16,20 +16,19 @@
  */
 package com.foundationdb.server.types.mcompat.mcasts;
 
-import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TCastBase;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
-import com.foundationdb.server.types.common.types.StringAttribute;
-import com.foundationdb.server.types.common.types.TBinary;
+import com.foundationdb.server.types.aksql.aktypes.AkBlob;
+import com.foundationdb.server.types.common.types.*;
 import com.foundationdb.server.types.common.types.TBinary.Attrs;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 
-import java.io.UnsupportedEncodingException;
 
 public final class Cast_From_Binary {
 
@@ -37,7 +36,9 @@ public final class Cast_From_Binary {
 
     public static final TCast BINARY_TO_VARBINARY = new BinaryToBinary(MBinary.BINARY, MBinary.VARBINARY);
     public static final TCast VARBINARY_TO_BINARY = new BinaryToBinary(MBinary.VARBINARY, MBinary.BINARY);
-
+    public static final TCast VARBINARY_TO_AKBLOB = new BinaryToAkBlob(MBinary.VARBINARY, AkBlob.INSTANCE);
+    public static final TCast BINARY_TO_AKBLOB = new BinaryToAkBlob(MBinary.BINARY, AkBlob.INSTANCE);
+    
     private static class BinaryToBinary extends TCastBase {
         private BinaryToBinary(TBinary sourceClass, TBinary targetClass) {
             super(sourceClass, targetClass);
@@ -55,6 +56,31 @@ public final class Cast_From_Binary {
                 context.reportTruncate("bytes of length " + in.length,  "bytes of length " + maxLen);
             }
             TBinary.putBytes(context, target, out);
+        }
+
+        @Override
+        public TInstance preferredTarget(TPreptimeValue source) {
+            TInstance sourceType =  source.type();
+            return targetClass().instance(sourceType.attribute(Attrs.LENGTH),
+                    source.isNullable());
+        }
+    }
+    
+    private static class  BinaryToAkBlob extends TCastBase {
+        private BinaryToAkBlob(TBinary sourceClass, NoAttrTClass targetClass) {
+            super(sourceClass, targetClass);
+        }
+
+        @Override
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
+            byte[] in = source.getBytes();
+            BlobRef blob = new BlobRef(in);
+            TInstance outputType = context.outputType();
+            int maxLen = 100000; // update with parameter
+            if (in.length > maxLen) {
+                // switch to large lob
+            }
+            target.putObject(blob);
         }
 
         @Override

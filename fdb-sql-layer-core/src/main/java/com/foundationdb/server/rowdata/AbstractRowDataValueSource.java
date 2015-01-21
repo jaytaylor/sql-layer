@@ -31,7 +31,7 @@ import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.AkibanAppender;
-
+import com.foundationdb.server.service.blob.BlobRef;
 
 abstract class AbstractRowDataValueSource implements ValueSource {
 
@@ -112,7 +112,6 @@ abstract class AbstractRowDataValueSource implements ValueSource {
 
     @Override
     public byte[] getBytes() {
-
         long offsetAndWidth = getRawOffsetAndWidth();
         if (offsetAndWidth == 0) {
             return null;
@@ -154,8 +153,16 @@ abstract class AbstractRowDataValueSource implements ValueSource {
     protected abstract FieldDef fieldDef();
 
     
-    private UUID getBlob() {
-        return getGUID();
+    private BlobRef getBlob() {
+        long offsetAndWidth = getRawOffsetAndWidth();
+        if (offsetAndWidth == 0) {
+            return null;
+        }
+        int offset = (int) offsetAndWidth + fieldDef().getPrefixSize();
+        int size = (int) (offsetAndWidth >>> 32) - fieldDef().getPrefixSize();
+        byte[] bytes = new byte[size];
+        System.arraycopy(bytes(), offset, bytes, 0, size);
+        return new BlobRef(bytes);
     }
     
     // for use within this class

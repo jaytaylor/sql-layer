@@ -20,6 +20,7 @@ package com.foundationdb.sql.pg;
 import com.foundationdb.*;
 import com.foundationdb.server.service.blob.LobRoutines;
 import com.foundationdb.server.service.blob.LobService;
+import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 
 import com.foundationdb.server.store.*;
 import org.junit.*;
@@ -29,6 +30,7 @@ import java.sql.*;
 import java.util.*;
 
 public class BlobIT extends PostgresServerITBase {
+    int dataSize = 100000;
     
     @Test
     public void testCleanUpLobs() throws Exception {
@@ -56,7 +58,7 @@ public class BlobIT extends PostgresServerITBase {
         PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
         for (int i = 0; i < n; i++ ) {
             pstmt.setInt(1, i);
-            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(1000)));
+            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
             pstmt.execute();
         }
         String[] ids = new String[n];
@@ -65,7 +67,7 @@ public class BlobIT extends PostgresServerITBase {
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
-            ids[j] = rs.getString(1);
+            ids[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
         }
         rs.close();
         stmt.execute(("DROP TABLE t1"));
@@ -90,9 +92,9 @@ public class BlobIT extends PostgresServerITBase {
         PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES (?,?,?,?)");
         for (int i = 0; i < n; i++ ) {
             pstmt.setInt(1, i);
-            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(1000)));
-            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(1000)));
-            pstmt.setBlob(4, new ByteArrayInputStream(generateBytes(1000)));
+            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            pstmt.setBlob(4, new ByteArrayInputStream(generateBytes(dataSize)));
             pstmt.execute();
         }
         String[] idsA = new String[n];
@@ -104,9 +106,9 @@ public class BlobIT extends PostgresServerITBase {
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
-            idsA[j] = rs.getString(1);
-            idsB[j] = rs.getString(1);
-            idsC[j] = rs.getString(1);
+            idsA[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
+            idsB[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
+            idsC[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
         }
         rs.close();
         stmt.execute(("DROP TABLE t1"));
@@ -133,8 +135,8 @@ public class BlobIT extends PostgresServerITBase {
         PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES (?,?,?)");
         for (int i = 0; i < n; i++ ) {
             pstmt.setInt(1, i);
-            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(1000)));
-            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(1000)));
+            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
             pstmt.execute();
         }
         String[] idsA = new String[n];
@@ -144,7 +146,7 @@ public class BlobIT extends PostgresServerITBase {
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
-            idsA[j] = rs.getString(1);
+            idsA[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
             idsB[j] = rs.getString(2);
         }
         rs.close();
@@ -173,14 +175,14 @@ public class BlobIT extends PostgresServerITBase {
         PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
         for (int i = 0; i < n; i++ ) {
             pstmt.setInt(1, i);
-            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(1000)));
+            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
             pstmt.execute();
         }
         pstmt = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
         for (int ii = 0; ii < n; ii++ ) {
             pstmt.setInt(1, ii*10);
             pstmt.setInt(2, ii);
-            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(1000)));
+            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
             pstmt.execute();
         }
         String[] ids_t1 = new String[n];
@@ -188,7 +190,7 @@ public class BlobIT extends PostgresServerITBase {
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
-            ids_t1[j] = rs.getString(1);
+            ids_t1[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
         }
         rs.close();
 
@@ -197,7 +199,7 @@ public class BlobIT extends PostgresServerITBase {
         rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
-            ids_t2[jj] = rs.getString(1);
+            ids_t2[jj] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
         }
         
         stmt.execute(("DROP GROUP t1"));
@@ -231,7 +233,7 @@ public class BlobIT extends PostgresServerITBase {
         for (int ii = 0; ii < n; ii++ ) {
             pstmt.setInt(1, ii*10);
             pstmt.setInt(2, ii);
-            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(1000)));
+            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
             pstmt.execute();
         }
 
@@ -240,7 +242,7 @@ public class BlobIT extends PostgresServerITBase {
         ResultSet rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
-            ids_t2[jj] = rs.getString(1);
+            ids_t2[jj] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
         }
 
         stmt.execute(("DROP GROUP t1"));
@@ -264,7 +266,7 @@ public class BlobIT extends PostgresServerITBase {
         PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
         for (int i = 0; i < n; i++ ) {
             pstmt.setInt(1, i);
-            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(1000)));
+            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
             pstmt.execute();
         }
         String[] ids = new String[n];
@@ -273,7 +275,7 @@ public class BlobIT extends PostgresServerITBase {
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
-            ids[j] = rs.getString(1);
+            ids[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
         }
         rs.close();
         stmt.execute(("DROP GROUP t1"));
@@ -300,14 +302,14 @@ public class BlobIT extends PostgresServerITBase {
         PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
         for (int i = 0; i < n; i++ ) {
             pstmt.setInt(1, i);
-            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(1000)));
+            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
             pstmt.execute();
         }
         pstmt = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
         for (int ii = 0; ii < n; ii++ ) {
             pstmt.setInt(1, ii*10);
             pstmt.setInt(2, ii);
-            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(1000)));
+            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
             pstmt.execute();
         }
         String[] ids_t1 = new String[n];
@@ -315,7 +317,7 @@ public class BlobIT extends PostgresServerITBase {
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
-            ids_t1[j] = rs.getString(1);
+            ids_t1[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
         }
         rs.close();
 
@@ -324,7 +326,7 @@ public class BlobIT extends PostgresServerITBase {
         rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
-            ids_t2[jj] = rs.getString(1);
+            ids_t2[jj] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
         }
 
         stmt.execute(("DROP TABLE t2"));
@@ -352,14 +354,14 @@ public class BlobIT extends PostgresServerITBase {
         PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
         for (int i = 0; i < n; i++ ) {
             pstmt.setInt(1, i);
-            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(1000)));
+            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
             pstmt.execute();
         }
         pstmt = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
         for (int ii = 0; ii < n; ii++ ) {
             pstmt.setInt(1, ii*10);
             pstmt.setInt(2, ii);
-            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(1000)));
+            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
             pstmt.execute();
         }
         String[] ids_t1 = new String[n];
@@ -367,7 +369,7 @@ public class BlobIT extends PostgresServerITBase {
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
-            ids_t1[j] = rs.getString(1);
+            ids_t1[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();;
         }
         rs.close();
 
@@ -376,7 +378,7 @@ public class BlobIT extends PostgresServerITBase {
         rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
-            ids_t2[jj] = rs.getString(1);
+            ids_t2[jj] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();;
         }
 
         stmt.execute(("ALTER TABLE t2 DROP GROUPING FOREIGN KEY"));
@@ -402,7 +404,7 @@ public class BlobIT extends PostgresServerITBase {
         PreparedStatement pstmt = conn.prepareCall("INSERT INTO testx.t1 VALUES (?,?)");
         for (int i = 0; i < n; i++ ) {
             pstmt.setInt(1, i);
-            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(1000)));
+            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
             pstmt.execute();
         }
         pstmt.close();
@@ -412,7 +414,7 @@ public class BlobIT extends PostgresServerITBase {
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
-            ids[j] = rs.getString(1);
+            ids[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
         }
         rs.close();
         stmt.execute(("DROP SCHEMA testx CASCADE"));
@@ -444,7 +446,7 @@ public class BlobIT extends PostgresServerITBase {
         for (int ii = 0; ii < n; ii++ ) {
             pstmt.setInt(1, ii*10);
             pstmt.setInt(2, ii);
-            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(1000)));
+            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
             pstmt.execute();
         }
 
@@ -453,7 +455,7 @@ public class BlobIT extends PostgresServerITBase {
         ResultSet rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
-            ids_t2[jj] = rs.getString(1);
+            ids_t2[jj] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
         }
 
         stmt.execute(("DROP SCHEMA t CASCADE"));
@@ -477,7 +479,7 @@ public class BlobIT extends PostgresServerITBase {
         PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
         for (int i = 0; i < n; i++ ) {
             pstmt.setInt(1, i);
-            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(1000)));
+            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
             pstmt.execute();
         }
         pstmt.close();
@@ -487,7 +489,7 @@ public class BlobIT extends PostgresServerITBase {
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
-            ids[j] = rs.getString(1);
+            ids[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
         }
         rs.close();
         stmt.execute(("ALTER TABLE t1 DROP COLUMN bl"));
@@ -511,7 +513,7 @@ public class BlobIT extends PostgresServerITBase {
         PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES (?,?, 1)");
         for (int i = 0; i < n; i++ ) {
             pstmt.setInt(1, i);
-            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(1000)));
+            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
             pstmt.execute();
         }
         pstmt.close();
@@ -521,7 +523,7 @@ public class BlobIT extends PostgresServerITBase {
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
-            ids[j] = rs.getString(1);
+            ids[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
         }
         rs.close();
         stmt.execute(("ALTER TABLE t1 DROP COLUMN col3"));
@@ -554,7 +556,7 @@ public class BlobIT extends PostgresServerITBase {
         for (int ii = 0; ii < n; ii++ ) {
             pstmt.setInt(1, ii*10);
             pstmt.setInt(2, ii);
-            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(1000)));
+            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
             pstmt.execute();
         }
 
@@ -563,7 +565,7 @@ public class BlobIT extends PostgresServerITBase {
         ResultSet rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
-            ids_t2[jj] = rs.getString(1);
+            ids_t2[jj] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
         }
 
         stmt.execute(("ALTER TABLE t.t2 DROP COLUMN bl_t2"));
@@ -595,7 +597,7 @@ public class BlobIT extends PostgresServerITBase {
         for (int ii = 0; ii < n; ii++) {
             pstmt.setInt(1, ii * 10);
             pstmt.setInt(2, ii);
-            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(1000)));
+            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
             pstmt.execute();
         }
 
@@ -604,7 +606,7 @@ public class BlobIT extends PostgresServerITBase {
         ResultSet rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
-            ids_t2[jj] = rs.getString(1);
+            ids_t2[jj] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
         }
 
         stmt.execute(("ALTER TABLE t.t2 DROP COLUMN col4"));
@@ -630,14 +632,14 @@ public class BlobIT extends PostgresServerITBase {
         PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
         for (int i = 0; i < n; i++ ) {
             pstmt.setInt(1, i);
-            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(1000)));
+            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
             pstmt.execute();
         }
         pstmt = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
         for (int ii = 0; ii < n; ii++ ) {
             pstmt.setInt(1, ii*10);
             pstmt.setInt(2, ii);
-            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(1000)));
+            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
             pstmt.execute();
         }
         String[] ids_t1 = new String[n];
@@ -645,7 +647,7 @@ public class BlobIT extends PostgresServerITBase {
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
-            ids_t1[j] = rs.getString(1);
+            ids_t1[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
         }
         rs.close();
 
@@ -654,7 +656,7 @@ public class BlobIT extends PostgresServerITBase {
         rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
-            ids_t2[jj] = rs.getString(1);
+            ids_t2[jj] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
         }
 
         stmt.execute(("ALTER TABLE t1 DROP COLUMN bl"));

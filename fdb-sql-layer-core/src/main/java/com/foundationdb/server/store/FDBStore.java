@@ -38,7 +38,7 @@ import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.FDBNotCommittedException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
-import com.foundationdb.server.service.blob.LobService;
+import com.foundationdb.server.service.blob.*;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.metrics.LongMetric;
@@ -643,9 +643,10 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         for( int i = 0; i < rowType.nFields(); i++ ) {
             if (rowType.typeAt(i).equalsExcludingNullable(AkBlob.INSTANCE.instance(true))) {
                 int tableId = rowType.table().getTableId();
-                UUID blobId = (UUID)row.value(i).getObject();
-                if (blobId != null) {
-                    getLobService().linkTableBlob(blobId.toString(), tableId);
+                BlobRef blobRef = (BlobRef)row.value(i).getObject();
+                if (blobRef.isLongLob()) {
+                    getLobService().linkTableBlob(blobRef.getId().toString(), tableId);
+                    
                 }
             }
         }
@@ -656,9 +657,9 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         RowType rowType = row.rowType();
         for( int i = 0; i < rowType.nFields(); i++ ) {
             if (rowType.typeAt(i).equalsExcludingNullable(AkBlob.INSTANCE.instance(true))) {
-                UUID blobId = (UUID)row.value(i).getObject();
-                if (blobId != null) {
-                    getLobService().deleteLob(blobId.toString());
+                BlobRef blobRef = (BlobRef)row.value(i).getObject();
+                if (blobRef.isLongLob()) {
+                    getLobService().deleteLob(blobRef.getId().toString());
                 }
             }
         }        
