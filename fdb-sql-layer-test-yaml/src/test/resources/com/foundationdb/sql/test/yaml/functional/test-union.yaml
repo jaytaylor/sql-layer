@@ -81,4 +81,24 @@
 ---
 - Statement: Select * from t1 order by n1
 - output_already_ordered: [[1,1],[2,2],[3,3]]
+---
+- Statement: EXPLAIN SELECT 1 UNION SELECT 2
+- output: [
+  ['Union_Ordered(skip 0, compare 1)'],
+  ['  Sort_General(Field(0) ASC, SUPPRESS DUPLICATES)'],
+  ['    Project_Default(1)'],
+  ['      ValuesScan_Default([])'],
+  ['  Sort_General(Field(0) ASC, SUPPRESS DUPLICATES)'],
+  ['    Project_Default(2)'],
+  ['      ValuesScan_Default([])']]
+---
+- Statement: EXPLAIN VERBOSE SELECT 1 UNION SELECT 2
+- output: [
+  ['Union_Ordered(skip 0, compare 1)'],
+  ['  Sort_General(Field(0) ASC, SUPPRESS DUPLICATES)'],
+  ['    Project_Default(1)'],
+  ['      ValuesScan_Default([])'],
+  ['  Sort_General(Field(0) ASC, SUPPRESS DUPLICATES)'],
+  ['    Project_Default(2)'],
+  ['      ValuesScan_Default([])']]
 ...
