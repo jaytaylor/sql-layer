@@ -49,13 +49,13 @@ public final class NamedParameterizedRunnerTest
         System.setProperties(oldProperties);
     }
 
-    public final static class RunEverythingTest
+    public final static class RunEverythingTestExample
     {
         @NamedParameterizedRunner.TestParameters
         @SuppressWarnings("unused")
         public static List<Parameterization> params() { return builderList; }
 
-        public RunEverythingTest(char unused)
+        public RunEverythingTestExample(char unused)
         {
             assert unused != 'a'; // just to shut it up about it not being used
         }
@@ -67,13 +67,13 @@ public final class NamedParameterizedRunnerTest
         public void two() {}
     }
 
-    public final static class OneFailingTest
+    public final static class OneFailingTestExample
     {
         @NamedParameterizedRunner.TestParameters
         @SuppressWarnings("unused")
         public static List<Parameterization> params() { return builderList; }
 
-        public OneFailingTest(char unused)
+        public OneFailingTestExample(char unused)
         {
             assert unused != 'a'; // just to shut it up about it not being used
         }
@@ -85,7 +85,7 @@ public final class NamedParameterizedRunnerTest
         public void failing() {}
     }
 
-    public final static class OnlyIfTest
+    public final static class OnlyIfTestExample
     {
         @NamedParameterizedRunner.TestParameters
         @SuppressWarnings("unused")
@@ -94,7 +94,7 @@ public final class NamedParameterizedRunnerTest
         private final int number;
         @SuppressWarnings("unused") public final boolean numberIs1; // used by @OnlyIf
 
-        public OnlyIfTest(int number) {
+        public OnlyIfTestExample(int number) {
             this.number = number;
             this.numberIs1 = is1();
         }
@@ -139,7 +139,7 @@ public final class NamedParameterizedRunnerTest
         builder.add("alpha", 'a');
         builder.add("beta", 'b');
 
-        NamedParameterizedRunner runner = new NamedParameterizedRunner(RunEverythingTest.class);
+        NamedParameterizedRunner runner = new NamedParameterizedRunner(RunEverythingTestExample.class);
 
         Map<String,ReifiedParamRunner> map = testParameterizations(runner,
                 "Parameterization[PASSING alpha: [a] ]",
@@ -147,10 +147,10 @@ public final class NamedParameterizedRunnerTest
 
         testOverrides(map.values(), false);
 
-        testFrameworkMethod(map.get("Parameterization[PASSING alpha: [a] ]"), RunEverythingTest.class, "one", true);
-        testFrameworkMethod(map.get("Parameterization[PASSING alpha: [a] ]"), RunEverythingTest.class, "two", true);
-        testFrameworkMethod(map.get("Parameterization[PASSING beta: [b] ]"), RunEverythingTest.class, "one", true);
-        testFrameworkMethod(map.get("Parameterization[PASSING beta: [b] ]"), RunEverythingTest.class, "two", true);
+        testFrameworkMethod(map.get("Parameterization[PASSING alpha: [a] ]"), RunEverythingTestExample.class, "one", true);
+        testFrameworkMethod(map.get("Parameterization[PASSING alpha: [a] ]"), RunEverythingTestExample.class, "two", true);
+        testFrameworkMethod(map.get("Parameterization[PASSING beta: [b] ]"), RunEverythingTestExample.class, "one", true);
+        testFrameworkMethod(map.get("Parameterization[PASSING beta: [b] ]"), RunEverythingTestExample.class, "two", true);
     }
 
     @Test
@@ -160,7 +160,7 @@ public final class NamedParameterizedRunnerTest
         builder.add("alpha", 'a');
         builder.addFailing("beta", 'b');
 
-        NamedParameterizedRunner runner = new NamedParameterizedRunner(RunEverythingTest.class);
+        NamedParameterizedRunner runner = new NamedParameterizedRunner(RunEverythingTestExample.class);
 
         Map<String,ReifiedParamRunner> map = testParameterizations(runner,
                 "Parameterization[PASSING alpha: [a] ]",
@@ -168,10 +168,10 @@ public final class NamedParameterizedRunnerTest
 
         testOverrides(map.values(), false);
 
-        testFrameworkMethod(map.get("Parameterization[PASSING alpha: [a] ]"), RunEverythingTest.class, "one", true);
-        testFrameworkMethod(map.get("Parameterization[PASSING alpha: [a] ]"), RunEverythingTest.class, "two", true);
-        testFrameworkMethod(map.get("Parameterization[FAILING beta: [b] ]"), RunEverythingTest.class, "one", false);
-        testFrameworkMethod(map.get("Parameterization[FAILING beta: [b] ]"), RunEverythingTest.class, "two", false);
+        testFrameworkMethod(map.get("Parameterization[PASSING alpha: [a] ]"), RunEverythingTestExample.class, "one", true);
+        testFrameworkMethod(map.get("Parameterization[PASSING alpha: [a] ]"), RunEverythingTestExample.class, "two", true);
+        testFrameworkMethod(map.get("Parameterization[FAILING beta: [b] ]"), RunEverythingTestExample.class, "one", false);
+        testFrameworkMethod(map.get("Parameterization[FAILING beta: [b] ]"), RunEverythingTestExample.class, "two", false);
     }
 
     @Test
@@ -181,7 +181,7 @@ public final class NamedParameterizedRunnerTest
         builder.add("alpha", 'a');
         builder.add("beta", 'b');
 
-        NamedParameterizedRunner runner = new NamedParameterizedRunner(OneFailingTest.class);
+        NamedParameterizedRunner runner = new NamedParameterizedRunner(OneFailingTestExample.class);
 
         Map<String,ReifiedParamRunner> map = testParameterizations(runner,
                 "Parameterization[PASSING alpha: [a] ]",
@@ -189,10 +189,10 @@ public final class NamedParameterizedRunnerTest
 
         testOverrides(map.values(), false);
 
-        testFrameworkMethod(map.get("Parameterization[PASSING alpha: [a] ]"), OneFailingTest.class, "passing", true);
-        testFrameworkMethod(map.get("Parameterization[PASSING alpha: [a] ]"), OneFailingTest.class, "failing", false);
-        testFrameworkMethod(map.get("Parameterization[PASSING beta: [b] ]"), OneFailingTest.class, "passing", true);
-        testFrameworkMethod(map.get("Parameterization[PASSING beta: [b] ]"), OneFailingTest.class, "failing", false);
+        testFrameworkMethod(map.get("Parameterization[PASSING alpha: [a] ]"), OneFailingTestExample.class, "passing", true);
+        testFrameworkMethod(map.get("Parameterization[PASSING alpha: [a] ]"), OneFailingTestExample.class, "failing", false);
+        testFrameworkMethod(map.get("Parameterization[PASSING beta: [b] ]"), OneFailingTestExample.class, "passing", true);
+        testFrameworkMethod(map.get("Parameterization[PASSING beta: [b] ]"), OneFailingTestExample.class, "failing", false);
     }
 
     @Test
@@ -203,15 +203,15 @@ public final class NamedParameterizedRunnerTest
         builder.add("alpha", 'a');
         builder.add("beta", 'b');
 
-        NamedParameterizedRunner runner = new NamedParameterizedRunner(OneFailingTest.class);
+        NamedParameterizedRunner runner = new NamedParameterizedRunner(OneFailingTestExample.class);
 
         Map<String,ReifiedParamRunner> map = testParameterizations(runner,
                 "Parameterization[PASSING beta: [b] ]");
 
         testOverrides(map.values(), true);
         
-        testFrameworkMethod(map.get("Parameterization[PASSING beta: [b] ]"), OneFailingTest.class, "passing", true);
-        testFrameworkMethod(map.get("Parameterization[PASSING beta: [b] ]"), OneFailingTest.class, "failing", true);
+        testFrameworkMethod(map.get("Parameterization[PASSING beta: [b] ]"), OneFailingTestExample.class, "passing", true);
+        testFrameworkMethod(map.get("Parameterization[PASSING beta: [b] ]"), OneFailingTestExample.class, "failing", true);
     }
 
     @Test
@@ -222,15 +222,15 @@ public final class NamedParameterizedRunnerTest
         builder.add("alpha", 'a');
         builder.addFailing("beta", 'b');
 
-        NamedParameterizedRunner runner = new NamedParameterizedRunner(OneFailingTest.class);
+        NamedParameterizedRunner runner = new NamedParameterizedRunner(OneFailingTestExample.class);
 
         Map<String,ReifiedParamRunner> map = testParameterizations(runner,
                 "Parameterization[FAILING beta: [b] ]");
 
         testOverrides(map.values(), true);
 
-        testFrameworkMethod(map.get("Parameterization[FAILING beta: [b] ]"), OneFailingTest.class, "passing", true);
-        testFrameworkMethod(map.get("Parameterization[FAILING beta: [b] ]"), OneFailingTest.class, "failing", true);
+        testFrameworkMethod(map.get("Parameterization[FAILING beta: [b] ]"), OneFailingTestExample.class, "passing", true);
+        testFrameworkMethod(map.get("Parameterization[FAILING beta: [b] ]"), OneFailingTestExample.class, "failing", true);
     }
 
     @Test
@@ -241,7 +241,7 @@ public final class NamedParameterizedRunnerTest
         builder.add("alpha", 'a');
         builder.addFailing("beta", 'b');
 
-        NamedParameterizedRunner runner = new NamedParameterizedRunner(OneFailingTest.class);
+        NamedParameterizedRunner runner = new NamedParameterizedRunner(OneFailingTestExample.class);
 
         Map<String,ReifiedParamRunner> map = testParameterizations(runner,
                 "Parameterization[PASSING alpha: [a] ]",
@@ -249,10 +249,10 @@ public final class NamedParameterizedRunnerTest
 
         testOverrides(map.values(), true);
 
-        testFrameworkMethod(map.get("Parameterization[PASSING alpha: [a] ]"), OneFailingTest.class, "passing", true);
-        testFrameworkMethod(map.get("Parameterization[PASSING alpha: [a] ]"), OneFailingTest.class, "failing", true);
-        testFrameworkMethod(map.get("Parameterization[FAILING beta: [b] ]"), OneFailingTest.class, "passing", true);
-        testFrameworkMethod(map.get("Parameterization[FAILING beta: [b] ]"), OneFailingTest.class, "failing", true);
+        testFrameworkMethod(map.get("Parameterization[PASSING alpha: [a] ]"), OneFailingTestExample.class, "passing", true);
+        testFrameworkMethod(map.get("Parameterization[PASSING alpha: [a] ]"), OneFailingTestExample.class, "failing", true);
+        testFrameworkMethod(map.get("Parameterization[FAILING beta: [b] ]"), OneFailingTestExample.class, "passing", true);
+        testFrameworkMethod(map.get("Parameterization[FAILING beta: [b] ]"), OneFailingTestExample.class, "failing", true);
     }
 
     @Test
@@ -261,7 +261,7 @@ public final class NamedParameterizedRunnerTest
         builder.add("one", 1);
         builder.add("two", 2);
 
-        NamedParameterizedRunner runner = new NamedParameterizedRunner(OnlyIfTest.class);
+        NamedParameterizedRunner runner = new NamedParameterizedRunner(OnlyIfTestExample.class);
 
         Map<String,ReifiedParamRunner> map = testParameterizations(runner,
                 "Parameterization[PASSING one: [1] ]",
@@ -270,14 +270,14 @@ public final class NamedParameterizedRunnerTest
         {
             ReifiedParamRunner forOne = map.get("Parameterization[PASSING one: [1] ]");
             assertEquals("param one: " + forOne.describeChildren(), 3, forOne.getChildrenCount());
-            testFrameworkMethod(forOne, OnlyIfTest.class, "testIs1Method", true);
-            testFrameworkMethod(forOne, OnlyIfTest.class, "testIs1Field", true);
-            testFrameworkMethod(forOne, OnlyIfTest.class, "alwaysRun", true);
+            testFrameworkMethod(forOne, OnlyIfTestExample.class, "testIs1Method", true);
+            testFrameworkMethod(forOne, OnlyIfTestExample.class, "testIs1Field", true);
+            testFrameworkMethod(forOne, OnlyIfTestExample.class, "alwaysRun", true);
         }
         {
             ReifiedParamRunner forTwo = map.get("Parameterization[PASSING two: [2] ]");
             assertEquals("param two: " + forTwo.describeChildren(), 1, forTwo.getChildrenCount());
-            testFrameworkMethod(forTwo, OnlyIfTest.class, "alwaysRun", true);
+            testFrameworkMethod(forTwo, OnlyIfTestExample.class, "alwaysRun", true);
         }
     }
 
