@@ -226,8 +226,13 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
     }
 
     private void insertRows(Random random, int tableIndex) {
-        int row_count = random.nextInt(MAX_ROW_COUNT);
-        for (int j=0; j<row_count; j++) {
+        // only 5 numbers count, 0,1,2,3 and a bunch, but 0 and a bunch are more important
+        int rowCount = (int)Math.floor(Math.abs(random.nextGaussian() * 5))-1;
+        if (rowCount < 0) {
+            rowCount = random.nextInt(MAX_ROW_COUNT);
+        }
+        LOG.debug("table{} has {} rows", tableIndex, rowCount);
+        for (int j=0; j<rowCount; j++) {
             StringBuilder sb = new StringBuilder();
             sb.append("INSERT INTO ");
             sb.append(table(tableIndex));
