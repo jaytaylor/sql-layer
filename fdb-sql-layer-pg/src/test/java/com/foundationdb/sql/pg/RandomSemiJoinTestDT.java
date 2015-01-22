@@ -77,6 +77,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
     private static final int MAX_OUTER_LIMIT = 10;
 
     private static final int TABLE_LIKELYHOOD = 10;
+    private static final int NESTING_LIKELYHOOD = 10;
 
     @ClassRule
     public static final RandomRule randomRule = new RandomRule();
@@ -492,6 +493,9 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
         private static String buildQuery(Random random, boolean useExists, boolean firstQuery, TableAliasGenerator tag) {
             if (firstQuery && random.nextInt(TABLE_LIKELYHOOD) == 0) {
                 return randomTable(random);
+            }
+            if (random.nextInt(NESTING_LIKELYHOOD) == 0) {
+                return new QuerySet(random, tag).finalQuery;
             }
             StringBuilder stringBuilder = new StringBuilder();
             int firstTable = tag.createNew();
