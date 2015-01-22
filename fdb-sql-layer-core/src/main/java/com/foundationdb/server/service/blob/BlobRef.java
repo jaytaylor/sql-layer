@@ -24,17 +24,17 @@ import java.util.UUID;
 import java.util.Arrays;
 
 public class BlobRef {
-    public static final byte SHORTLOB = 0x01;
-    public static final byte LONGLOB = 0x02;
+    public static final byte SHORT_LOB = 0x01;
+    public static final byte LONG_LOB = 0x02;
     private UUID id;
     private byte[] data;
     private byte storeType;
     
     public BlobRef(byte[] value){
         storeType = value[0];
-        if (storeType == SHORTLOB) {
+        if (storeType == SHORT_LOB) {
             data = Arrays.copyOfRange(value, 1, value.length);
-        } else if (storeType == LONGLOB) {
+        } else if (storeType == LONG_LOB) {
             id = AkGUID.bytesToUUID(value, 1);
         } else {
             throw new LobException("Invalid store type");
@@ -43,7 +43,7 @@ public class BlobRef {
     
     public BlobRef(UUID id){
         this.id = id;
-        this.storeType = LONGLOB;
+        this.storeType = LONG_LOB;
     }
     
     public BlobRef(UUID id, byte[] data, byte storageType) {
@@ -53,7 +53,7 @@ public class BlobRef {
     }
     
     public byte[] getIdOrBytes() {
-        if (storeType == SHORTLOB) {
+        if (storeType == SHORT_LOB) {
             return data;
         } else {
             return AkGUID.uuidToBytes(id);
@@ -62,7 +62,7 @@ public class BlobRef {
     
     public byte[] getValue() {
         byte[] res;
-        if (storeType == SHORTLOB) {
+        if (storeType == SHORT_LOB) {
             res = new byte[data.length + 1];
             System.arraycopy(data, 0, res, 1, data.length);
         }
@@ -75,11 +75,11 @@ public class BlobRef {
     }
     
     public boolean isShortLob() {
-        return storeType == SHORTLOB;
+        return storeType == SHORT_LOB;
     }
 
     public boolean isLongLob() {
-        return storeType == LONGLOB;
+        return storeType == LONG_LOB;
     }
     
     public UUID getId() {

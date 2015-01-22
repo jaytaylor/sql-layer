@@ -1,16 +1,30 @@
 ---
 - CreateTable: blob  (id INT PRIMARY KEY, bl BLOB)
 ---
-- Statement: INSERT INTO blob VALUES (1, '3f2504e0-4f89-41d3-9a0c-0305e82c3388' )
+- Statement: INSERT INTO blob VALUES (1, unhex('0102030405060708') )
 ---
 - Statement: SELECT * FROM blob
-- output: [[1, '3f2504e0-4f89-41d3-9a0c-0305e82c3388']]
+- output: [[1, !!binary 'AQIDBAUGBwg=']]
+---
+- Statement: UPDATE blob set bl = unhex('0102030400000000') where id = 1 returning *
+- output: [[1, !!binary 'AQIDBAAAAAA=']]
+---
+- Statement: SELECT * FROM blob
+- output: [[1, !!binary 'AQIDBAAAAAA=']]
 ---
 - Include: all-types-schema.yaml
 ---
 - Statement: "INSERT INTO all_types(bigint_field, blob_field)
-                VALUES (1, 'abc'), (2, X'0102'), (3, X'80'), (4, UNHEX('00FFFE01'))"
+                VALUES (2, X'0102030405060708'), (3, X'0102030405060708'), (4, UNHEX('0102030405060708'))"
 ---
-- Statement: SELECT HEX(blob_field) FROM all_types ORDER BY bigint_field
-- output_already_ordered: [['616263'],['0102'],['80'],['00FFFE01']]
+- Statement: SELECT blob_field FROM all_types ORDER BY bigint_field
+- output_already_ordered: [[!!binary 'AQIDBAUGBwg='],[!!binary 'AQIDBAUGBwg='],[!!binary 'AQIDBAUGBwg=']]
+
+--- # prefix intended for linking a uuid to a blob
+- Statement: INSERT INTO blob VALUES (1, unhex('02') )
+- error: [22511]
+
+--- # prefix not valid
+- Statement: INSERT INTO blob VALUES (1, unhex('03') )
+- error: [22511]
 ...

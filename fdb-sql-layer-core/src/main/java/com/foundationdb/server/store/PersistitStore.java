@@ -574,8 +574,9 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
 
     
     @Override
-    protected void storeLobs(Row row){
+    protected Row storeLobs(Row row){
         // do nothing
+        return row;
     }
 
     @Override

@@ -75,11 +75,6 @@ public final class Cast_From_Binary {
         public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
             byte[] in = source.getBytes();
             BlobRef blob = new BlobRef(in);
-            TInstance outputType = context.outputType();
-            int maxLen = 100000; // update with parameter
-            if (in.length > maxLen) {
-                // switch to large lob
-            }
             target.putObject(blob);
         }
 

@@ -149,7 +149,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     protected abstract void trackTableWrite(Session session, Table table);
 
     /** Handles actions for proper or storage of lobs */
-    abstract void storeLobs(Row row);
+    abstract Row storeLobs(Row row);
     
     /** Handles actions for clearing lobs*/
     abstract void deleteLobs(Row row);
@@ -617,17 +617,20 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
 
     private void writeRowInternal(final Session session,
                                 SDType storeData,
-                                final Row row,
+                                final Row rowInp,
                                 Collection<TableIndex> indexes,
                                 BitSet tablesRequiringHKeyMaintenance,
                                 boolean propagateHKeyChanges) {
         //TODO: It may be useful to move the constructHKey to higher in the
         // stack, and store the result in the row to avoid building it 
         // multiple times for GroupIndex maintenance. 
+
+        final Row row;
+        row = storeLobs(rowInp);
+        
         final Key hKey = getKey(session, storeData);
         this.constructHKey(session, row, hKey);
-
-        storeLobs(row);
+        
         packRow(session, storeData, row);
         store(session, storeData);
         

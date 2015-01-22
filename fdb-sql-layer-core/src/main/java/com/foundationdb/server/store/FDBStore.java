@@ -28,6 +28,7 @@ import com.foundationdb.directory.PathUtil;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.WriteIndexRow;
+import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.storeadapter.FDBAdapter;
@@ -36,9 +37,11 @@ import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.FDBNotCommittedException;
+import com.foundationdb.server.error.LobException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
-import com.foundationdb.server.service.blob.*;
+import com.foundationdb.server.service.blob.BlobRef;
+import com.foundationdb.server.service.blob.LobService;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.metrics.LongMetric;
@@ -638,18 +641,36 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     
     @Override
-    protected void storeLobs(Row row) {
+    protected Row storeLobs(Row row) {
         RowType rowType = row.rowType();
+        OverlayingRow resRow = new OverlayingRow(row);
+        Boolean changedRow = false;
+
         for( int i = 0; i < rowType.nFields(); i++ ) {
             if (rowType.typeAt(i).equalsExcludingNullable(AkBlob.INSTANCE.instance(true))) {
                 int tableId = rowType.table().getTableId();
                 BlobRef blobRef = (BlobRef)row.value(i).getObject();
+                String allowedLobFormat = configService.getProperty("fdbsql.blob.allowed_storage_format");
+                if (blobRef.isLongLob()) {
+                    if (allowedLobFormat.equalsIgnoreCase("SHORT_LOB")) {
+                        throw new LobException("Long lob storage format not allowed");
+                    }
+                } else if (blobRef.isShortLob()) {
+                    if (allowedLobFormat.equalsIgnoreCase("LONG_LOB") || blobRef.getBytes().length >= AkBlob.LOB_SWITCH_SIZE ) {
+                        UUID id = UUID.randomUUID();
+                        getLobService().createNewLob(id.toString());
+                        getLobService().writeBlob(id.toString(), 0, blobRef.getBytes());
+                        BlobRef newBlob = new BlobRef(id);
+                        resRow.overlay(i, newBlob);
+                        changedRow = true;
+                    }
+                }
                 if (blobRef.isLongLob()) {
                     getLobService().linkTableBlob(blobRef.getId().toString(), tableId);
-                    
                 }
             }
         }
+        return changedRow ? resRow : row;
     }
     
     @Override
