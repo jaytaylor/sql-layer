@@ -350,7 +350,7 @@ public class RandomSemiJoinTestDT extends PostgresServerITBase {
     }
 
     @Test
-    public void Test() {
+    public void test() {
         Random random = new Random(testSeed);
         for (int i=0; i<QUERY_COUNT; i++) {
             LOG.debug("Query #{}", i);
