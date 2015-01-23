@@ -116,6 +116,7 @@ public abstract class IndexCursor extends RowCursorImpl implements BindingsAware
             if(ordering.allAscending() || ordering.allDescending()) {
                 indexCursor = IndexCursorUnidirectional.create(context, iterationHelper, keyRange, ordering, adapter);
             } else {
+                assert false : "Index API.ordering not all ascending/descending";
                 indexCursor = IndexCursorMixedOrder.create(context, iterationHelper, keyRange, ordering, adapter);
             }
         }

@@ -28,6 +28,8 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
+
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.cursor;
@@ -76,6 +78,7 @@ public class IndexScanBoundedAllColumnsIT extends OperatorITBase
 
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testBounded_all4columns() {
 
         // DADD

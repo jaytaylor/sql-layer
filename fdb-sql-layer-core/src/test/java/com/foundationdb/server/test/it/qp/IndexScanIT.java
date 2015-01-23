@@ -26,6 +26,8 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.test.ExpressionGenerators;
 import com.foundationdb.server.types.value.ValueSource;
+
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.cursor;
@@ -93,6 +95,7 @@ public class IndexScanIT extends OperatorITBase
     }
 
     @Test(expected = IllegalArgumentException.class)
+    @Ignore("Mixed order not supported")
     public void testMoreThanOneInequalityMixedMode()
     {
         IndexBound loBound = new IndexBound(row(itemOidIidIndexRowType, 10, 10), new SetColumnSelector(0, 1));
@@ -175,6 +178,7 @@ public class IndexScanIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testMixedMode()
     {
         API.Ordering ordering = new API.Ordering();

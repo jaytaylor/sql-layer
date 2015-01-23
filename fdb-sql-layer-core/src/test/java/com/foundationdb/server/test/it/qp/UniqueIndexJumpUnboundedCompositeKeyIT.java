@@ -19,9 +19,13 @@ package com.foundationdb.server.test.it.qp;
 
 import java.util.Arrays;
 import java.lang.Long;
+
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.server.types.value.ValueSources;
+
+import org.junit.Ignore;
 import org.junit.Test;
+
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.Cursor;
@@ -29,6 +33,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -218,6 +223,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 5
     @Test
+    @Ignore("Mixed order not supported")
     public void testAAAAD_b_6_1016()
     {
         // 'correct ordering':
@@ -243,6 +249,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 6
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testAAAAD_b_3_1013()
     {
         // 'correct ordering':
@@ -264,6 +271,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 7
     @Test
+    @Ignore("Mixed order not supported")
     public void testAAAAD_b_2_1012()
     {
         // 'correct ordering':
@@ -286,6 +294,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 8
     @Test
+    @Ignore("Mixed order not supported")
     public void testAAAAD_b_2_1013()
     {
         // 'correct ordering':
@@ -309,6 +318,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 9
     @Test
+    @Ignore("Mixed order not supported")
     public void testAAADA_b_6_1016()
     {
         // 'correct ordering':
@@ -333,6 +343,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 10
     @Test
+    @Ignore("Mixed order not supported")
     public void testAAADA_b_3_1013()
     {
         // 'correct ordering':
@@ -356,6 +367,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 11
     @Test
+    @Ignore("Mixed order not supported")
     public void testAAADA_b_2_1012()
     {
         // 'correct ordering':
@@ -378,6 +390,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 12
     @Test
+    @Ignore("Mixed order not supported")
     public void testAAADA_b_2_1013()
     {
         // 'correct ordering':
@@ -400,6 +413,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 13
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testAAADD_b_6_1016()
     {
         // 'correct ordering':
@@ -425,6 +439,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 14
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testAAADD_b_3_1013()
     {
         // 'correct ordering':
@@ -448,6 +463,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 15
     @Test
+    @Ignore("Mixed order not supported")
     public void testAAADD_b_2_1012()
     {
         // 'correct ordering':
@@ -470,6 +486,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 16
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testAAADD_b_2_1013()
     {
         // 'correct ordering':
@@ -493,6 +510,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 17
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testAADAA_b_6_1016()
     {
         // 'correct ordering':
@@ -515,6 +533,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 18
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testAADAA_b_3_1013()
     {
         // 'correct ordering':
@@ -537,6 +556,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 19
     @Test
+    @Ignore("Mixed order not supported")
     public void testAADAA_b_2_1012()
     {
         // 'correct ordering':
@@ -561,6 +581,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 20
     @Test
+    @Ignore("Mixed order not supported")
     public void testAADAA_b_2_1013()
     {
         // 'correct ordering':
@@ -585,6 +606,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 21
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testAADAD_b_6_1016()
     {
         // 'correct ordering':
@@ -607,6 +629,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 22
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testAADAD_b_3_1013()
     {
         // 'correct ordering':
@@ -629,6 +652,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 23
     @Test
+    @Ignore("Mixed order not supported")
     public void testAADAD_b_2_1012()
     {
         // 'correct ordering':
@@ -652,6 +676,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 24
     @Test
+    @Ignore("Mixed order not supported")
     public void testAADAD_b_2_1013()
     {
         // 'correct ordering':
@@ -677,6 +702,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 25
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testAADDA_b_6_1016()
     {
         // 'correct ordering':
@@ -698,6 +724,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 26
     @Test
+    @Ignore("Mixed order not supported")
     public void testAADDA_b_3_1013()
     {
         // 'correct ordering':
@@ -722,6 +749,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 27
     @Test
+    @Ignore("Mixed order not supported")
     public void testAADDA_b_2_1012()
     {
         // 'correct ordering':
@@ -745,6 +773,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 28
     @Test
+    @Ignore("Mixed order not supported")
     public void testAADDA_b_2_1013()
     {
         // 'correct ordering':
@@ -768,6 +797,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 29
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testAADDD_b_6_1016()
     {
         // 'correct ordering':
@@ -790,6 +820,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 30
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testAADDD_b_3_1013()
     {
         // 'correct ordering':
@@ -814,6 +845,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 31
     @Test
+    @Ignore("Mixed order not supported")
     public void testAADDD_b_2_1012()
     {
         // 'correct ordering':
@@ -837,6 +869,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 32
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testAADDD_b_2_1013()
     {
         // 'correct ordering':
@@ -861,6 +894,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 33
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testADAAA_b_6_1016()
     {
         // 'correct ordering':
@@ -881,6 +915,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 34
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testADAAA_b_3_1013()
     {
         // 'correct ordering':
@@ -897,6 +932,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 35
     @Test
+    @Ignore("Mixed order not supported")
     public void testADAAA_b_2_1012()
     {
         // 'correct ordering':
@@ -915,6 +951,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 36
     @Test
+    @Ignore("Mixed order not supported")
     public void testADAAA_b_2_1013()
     {
         // 'correct ordering':
@@ -932,6 +969,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 37
     @Test
+    @Ignore("Mixed order not supported")
     public void testADAAD_b_6_1016()
     {
         // 'correct ordering':
@@ -952,6 +990,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 38
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testADAAD_b_3_1013()
     {
         // 'correct ordering':
@@ -968,6 +1007,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 39
     @Test
+    @Ignore("Mixed order not supported")
     public void testADAAD_b_2_1012()
     {
         // 'correct ordering':
@@ -985,6 +1025,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 40
     @Test
+    @Ignore("Mixed order not supported")
     public void testADAAD_b_2_1013()
     {
         // 'correct ordering':
@@ -1003,6 +1044,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 41
     @Test
+    @Ignore("Mixed order not supported")
     public void testADADA_b_6_1016()
     {
         // 'correct ordering':
@@ -1022,6 +1064,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 42
     @Test
+    @Ignore("Mixed order not supported")
     public void testADADA_b_3_1013()
     {
         // 'correct ordering':
@@ -1040,6 +1083,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 43
     @Test
+    @Ignore("Mixed order not supported")
     public void testADADA_b_2_1012()
     {
         // 'correct ordering':
@@ -1057,6 +1101,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 44
     @Test
+    @Ignore("Mixed order not supported")
     public void testADADA_b_2_1013()
     {
         // 'correct ordering':
@@ -1074,6 +1119,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 45
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testADADD_b_6_1016()
     {
         // 'correct ordering':
@@ -1094,6 +1140,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 46
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testADADD_b_3_1013()
     {
         // 'correct ordering':
@@ -1112,6 +1159,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 47
     @Test
+    @Ignore("Mixed order not supported")
     public void testADADD_b_2_1012()
     {
         // 'correct ordering':
@@ -1129,6 +1177,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 48
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testADADD_b_2_1013()
     {
         // 'correct ordering':
@@ -1147,6 +1196,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 49
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testADDAA_b_6_1016()
     {
         // 'correct ordering':
@@ -1164,6 +1214,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 50
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testADDAA_b_3_1013()
     {
         // 'correct ordering':
@@ -1181,6 +1232,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 51
     @Test
+    @Ignore("Mixed order not supported")
     public void testADDAA_b_2_1012()
     {
         // 'correct ordering':
@@ -1200,6 +1252,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 52
     @Test
+    @Ignore("Mixed order not supported")
     public void testADDAA_b_2_1013()
     {
         // 'correct ordering':
@@ -1219,6 +1272,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 53
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testADDAD_b_6_1016()
     {
         // 'correct ordering':
@@ -1236,6 +1290,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 54
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testADDAD_b_3_1013()
     {
         // 'correct ordering':
@@ -1253,6 +1308,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 55
     @Test
+    @Ignore("Mixed order not supported")
     public void testADDAD_b_2_1012()
     {
         // 'correct ordering':
@@ -1271,6 +1327,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 56
     @Test
+    @Ignore("Mixed order not supported")
     public void testADDAD_b_2_1013()
     {
         // 'correct ordering':
@@ -1291,6 +1348,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 57
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testADDDA_b_6_1016()
     {
         // 'correct ordering':
@@ -1307,6 +1365,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 58
     @Test
+    @Ignore("Mixed order not supported")
     public void testADDDA_b_3_1013()
     {
         // 'correct ordering':
@@ -1326,6 +1385,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 59
     @Test
+    @Ignore("Mixed order not supported")
     public void testADDDA_b_2_1012()
     {
         // 'correct ordering':
@@ -1344,6 +1404,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 60
     @Test
+    @Ignore("Mixed order not supported")
     public void testADDDA_b_2_1013()
     {
         // 'correct ordering':
@@ -1362,6 +1423,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 61
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testADDDD_b_6_1016()
     {
         // 'correct ordering':
@@ -1379,6 +1441,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 62
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testADDDD_b_3_1013()
     {
         // 'correct ordering':
@@ -1398,6 +1461,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 63
     @Test
+    @Ignore("Mixed order not supported")
     public void testADDDD_b_2_1012()
     {
         // 'correct ordering':
@@ -1416,6 +1480,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 64
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testADDDD_b_2_1013()
     {
         // 'correct ordering':
@@ -1435,6 +1500,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 65
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDAAAA_b_6_1016()
     {
         // 'correct ordering':
@@ -1460,6 +1526,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 66
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDAAAA_b_3_1013()
     {
         // 'correct ordering':
@@ -1481,6 +1548,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 67
     @Test
+    @Ignore("Mixed order not supported")
     public void testDAAAA_b_2_1012()
     {
         // 'correct ordering':
@@ -1504,6 +1572,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 68
     @Test
+    @Ignore("Mixed order not supported")
     public void testDAAAA_b_2_1013()
     {
         // 'correct ordering':
@@ -1526,6 +1595,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 69
     @Test
+    @Ignore("Mixed order not supported")
     public void testDAAAD_b_6_1016()
     {
         // 'correct ordering':
@@ -1551,6 +1621,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 70
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDAAAD_b_3_1013()
     {
         // 'correct ordering':
@@ -1572,6 +1643,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 71
     @Test
+    @Ignore("Mixed order not supported")
     public void testDAAAD_b_2_1012()
     {
         // 'correct ordering':
@@ -1594,6 +1666,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 72
     @Test
+    @Ignore("Mixed order not supported")
     public void testDAAAD_b_2_1013()
     {
         // 'correct ordering':
@@ -1617,6 +1690,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 73
     @Test
+    @Ignore("Mixed order not supported")
     public void testDAADA_b_6_1016()
     {
         // 'correct ordering':
@@ -1641,6 +1715,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 74
     @Test
+    @Ignore("Mixed order not supported")
     public void testDAADA_b_3_1013()
     {
         // 'correct ordering':
@@ -1664,6 +1739,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 75
     @Test
+    @Ignore("Mixed order not supported")
     public void testDAADA_b_2_1012()
     {
         // 'correct ordering':
@@ -1686,6 +1762,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 76
     @Test
+    @Ignore("Mixed order not supported")
     public void testDAADA_b_2_1013()
     {
         // 'correct ordering':
@@ -1708,6 +1785,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 77
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDAADD_b_6_1016()
     {
         // 'correct ordering':
@@ -1733,6 +1811,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 78
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDAADD_b_3_1013()
     {
         // 'correct ordering':
@@ -1756,6 +1835,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 79
     @Test
+    @Ignore("Mixed order not supported")
     public void testDAADD_b_2_1012()
     {
         // 'correct ordering':
@@ -1778,6 +1858,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 80
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDAADD_b_2_1013()
     {
         // 'correct ordering':
@@ -1801,6 +1882,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 81
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDADAA_b_6_1016()
     {
         // 'correct ordering':
@@ -1823,6 +1905,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 82
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDADAA_b_3_1013()
     {
         // 'correct ordering':
@@ -1845,6 +1928,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 83
     @Test
+    @Ignore("Mixed order not supported")
     public void testDADAA_b_2_1012()
     {
         // 'correct ordering':
@@ -1869,6 +1953,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 84
     @Test
+    @Ignore("Mixed order not supported")
     public void testDADAA_b_2_1013()
     {
         // 'correct ordering':
@@ -1893,6 +1978,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 85
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDADAD_b_6_1016()
     {
         // 'correct ordering':
@@ -1915,6 +2001,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 86
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDADAD_b_3_1013()
     {
         // 'correct ordering':
@@ -1937,6 +2024,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 87
     @Test
+    @Ignore("Mixed order not supported")
     public void testDADAD_b_2_1012()
     {
         // 'correct ordering':
@@ -1960,6 +2048,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 88
     @Test
+    @Ignore("Mixed order not supported")
     public void testDADAD_b_2_1013()
     {
         // 'correct ordering':
@@ -1985,6 +2074,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 89
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDADDA_b_6_1016()
     {
         // 'correct ordering':
@@ -2006,6 +2096,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 90
     @Test
+    @Ignore("Mixed order not supported")
     public void testDADDA_b_3_1013()
     {
         // 'correct ordering':
@@ -2030,6 +2121,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 91
     @Test
+    @Ignore("Mixed order not supported")
     public void testDADDA_b_2_1012()
     {
         // 'correct ordering':
@@ -2053,6 +2145,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 92
     @Test
+    @Ignore("Mixed order not supported")
     public void testDADDA_b_2_1013()
     {
         // 'correct ordering':
@@ -2076,6 +2169,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 93
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDADDD_b_6_1016()
     {
         // 'correct ordering':
@@ -2098,6 +2192,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 94
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDADDD_b_3_1013()
     {
         // 'correct ordering':
@@ -2122,6 +2217,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 95
     @Test
+    @Ignore("Mixed order not supported")
     public void testDADDD_b_2_1012()
     {
         // 'correct ordering':
@@ -2145,6 +2241,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 96
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDADDD_b_2_1013()
     {
         // 'correct ordering':
@@ -2169,6 +2266,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 97
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDAAA_b_6_1016()
     {
         // 'correct ordering':
@@ -2189,6 +2287,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 98
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDAAA_b_3_1013()
     {
         // 'correct ordering':
@@ -2205,6 +2304,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 99
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDAAA_b_2_1012()
     {
         // 'correct ordering':
@@ -2223,6 +2323,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 100
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDAAA_b_2_1013()
     {
         // 'correct ordering':
@@ -2240,6 +2341,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 101
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDAAD_b_6_1016()
     {
         // 'correct ordering':
@@ -2260,6 +2362,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 102
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDAAD_b_3_1013()
     {
         // 'correct ordering':
@@ -2276,6 +2379,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 103
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDAAD_b_2_1012()
     {
         // 'correct ordering':
@@ -2293,6 +2397,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 104
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDAAD_b_2_1013()
     {
         // 'correct ordering':
@@ -2311,6 +2416,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 105
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDADA_b_6_1016()
     {
         // 'correct ordering':
@@ -2330,6 +2436,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 106
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDADA_b_3_1013()
     {
         // 'correct ordering':
@@ -2348,6 +2455,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 107
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDADA_b_2_1012()
     {
         // 'correct ordering':
@@ -2365,6 +2473,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 108
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDADA_b_2_1013()
     {
         // 'correct ordering':
@@ -2382,6 +2491,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 109
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDADD_b_6_1016()
     {
         // 'correct ordering':
@@ -2402,6 +2512,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 110
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDADD_b_3_1013()
     {
         // 'correct ordering':
@@ -2420,6 +2531,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 111
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDADD_b_2_1012()
     {
         // 'correct ordering':
@@ -2437,6 +2549,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 112
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDADD_b_2_1013()
     {
         // 'correct ordering':
@@ -2455,6 +2568,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 113
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDDAA_b_6_1016()
     {
         // 'correct ordering':
@@ -2472,6 +2586,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 114
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDDAA_b_3_1013()
     {
         // 'correct ordering':
@@ -2489,6 +2604,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 115
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDDAA_b_2_1012()
     {
         // 'correct ordering':
@@ -2508,6 +2624,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 116
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDDAA_b_2_1013()
     {
         // 'correct ordering':
@@ -2527,6 +2644,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 117
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDDAD_b_6_1016()
     {
         // 'correct ordering':
@@ -2544,6 +2662,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 118
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDDAD_b_3_1013()
     {
         // 'correct ordering':
@@ -2561,6 +2680,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 119
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDDAD_b_2_1012()
     {
         // 'correct ordering':
@@ -2579,6 +2699,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 120
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDDAD_b_2_1013()
     {
         // 'correct ordering':
@@ -2599,6 +2720,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     // 121
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDDDA_b_6_1016()
     {
         // 'correct ordering':
@@ -2615,6 +2737,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 122
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDDDA_b_3_1013()
     {
         // 'correct ordering':
@@ -2634,6 +2757,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 123
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDDDA_b_2_1012()
     {
         // 'correct ordering':
@@ -2652,6 +2776,7 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
 
     // 124
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDDDA_b_2_1013()
     {
         // 'correct ordering':

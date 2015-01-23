@@ -447,6 +447,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         List<OrderByExpression> orderBy = new ArrayList<>(ncols);
         List<ExpressionNode> indexExpressions = new ArrayList<>(ncols);
         int i = 0;
+
         while (i < ncols) {
             ExpressionNode indexExpression;
             boolean ascending;
@@ -462,6 +463,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 IndexColumn indexColumn = indexColumns.get(i++);
                 indexExpression = getIndexExpression(index, indexColumn);
                 ascending = indexColumn.isAscending();
+                logger.debug("Set ordering for column {} - {}", indexColumn, ascending);
             }
             indexExpressions.add(indexExpression);
             orderBy.add(new OrderByExpression(indexExpression, ascending));
@@ -475,6 +477,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                                         List<OrderByExpression> outputOrdering,
                                         int outputPeggedCount, int comparisonFields) {
         if (index instanceof SingleIndexScan) {
+            logger.debug("Install ordering on index: {}", index);
             List<OrderByExpression> indexOrdering = index.getOrdering();
             if ((indexOrdering != null) && (indexOrdering != outputOrdering)) {
                 // Order comparison fields the same way as output.
@@ -482,14 +485,18 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 // like first comparison, trailing columns ordered
                 // like last comparison.
                 int i = 0;
+                boolean ascending = outputOrdering.get(outputPeggedCount).isAscending();
                 while (i < index.getPeggedCount()) {
-                    indexOrdering.get(i++).setAscending(outputOrdering.get(outputPeggedCount).isAscending());
+                    indexOrdering.get(i++).setAscending(ascending);
                 }
                 for (int j = 0; j < comparisonFields; j++) {
+                    assert outputOrdering.get(outputPeggedCount + j).isAscending() == ascending : "comparison ascending different order than initial";
                     indexOrdering.get(i++).setAscending(outputOrdering.get(outputPeggedCount + j).isAscending());
                 }
+                boolean lastAscending = outputOrdering.get(outputPeggedCount + comparisonFields - 1).isAscending();
+                assert ascending == lastAscending : "lastAscending in different order than initial";
                 while (i < indexOrdering.size()) {
-                    indexOrdering.get(i++).setAscending(outputOrdering.get(outputPeggedCount + comparisonFields - 1).isAscending());
+                    indexOrdering.get(i++).setAscending(lastAscending);
                 }
             }
         }
@@ -595,13 +602,27 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             if ((idx > 0) && (idx < indexOrdering.size()) && reverse.get(idx-1))
                 // Reverse after ORDER BY if reversed last one.
                 reverse.set(idx, indexOrdering.size(), true);
-            for (int i = 0; i < reverse.size(); i++) {
-                if (reverse.get(i)) {
-                    OrderByExpression indexColumn = indexOrdering.get(i);
-                    indexColumn.setAscending(!indexColumn.isAscending());
+            
+            // Don't allow mixed order index lookups, just use the order of the first column 
+            boolean isAscending = reverse.get(0) ? !indexOrdering.get(0).isAscending() : indexOrdering.get(0).isAscending();
+            for (OrderByExpression indexColumn : indexOrdering) {
+                logger.debug("Ascending settings on index column {} - {}", indexColumn, indexColumn.isAscending());
+                if (indexColumn.isAscending() != isAscending) {
+                    indexColumn.setAscending(isAscending);
                 }
             }
-            result = IndexScan.OrderEffectiveness.SORTED;
+            boolean orderByOrdering = true;
+            for (OrderByExpression targetColumn : queryGoal.getOrdering().getOrderBy()) {
+                if (targetColumn.isAscending() != isAscending) {
+                    orderByOrdering = false;
+                }
+            }
+            
+            // If the order by ordering columns all matches the 
+            // order of the index (ASC or DESC), the index is sorted. 
+            if (orderByOrdering) {
+                result = IndexScan.OrderEffectiveness.SORTED;
+            }
         }
         if (queryGoal.getGrouping() != null) {
             boolean anyFound = false, allFound = true;

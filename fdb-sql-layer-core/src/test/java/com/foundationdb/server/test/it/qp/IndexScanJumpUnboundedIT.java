@@ -28,6 +28,8 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.types.value.ValueSources;
+
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -106,6 +108,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testAAAD()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, ASC, B, ASC, C, ASC, ID, DESC));
@@ -121,6 +124,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testAADA()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, ASC, B, ASC, C, DESC, ID, ASC));
@@ -136,6 +140,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testAADD()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, ASC, B, ASC, C, DESC, ID, DESC));
@@ -151,6 +156,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testADAA()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, ASC, B, DESC, C, ASC, ID, ASC));
@@ -166,6 +172,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testADAD()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, ASC, B, DESC, C, ASC, ID, DESC));
@@ -181,6 +188,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testADDA()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, ASC, B, DESC, C, DESC, ID, ASC));
@@ -196,6 +204,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testADDD()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, ASC, B, DESC, C, DESC, ID, DESC));
@@ -211,6 +220,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDAAA()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, DESC, B, ASC, C, ASC, ID, ASC));
@@ -226,6 +236,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDAAD()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, DESC, B, ASC, C, ASC, ID, DESC));
@@ -241,6 +252,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDADA()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, DESC, B, ASC, C, DESC, ID, ASC));
@@ -256,6 +268,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDADD()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, DESC, B, ASC, C, DESC, ID, DESC));
@@ -271,6 +284,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDAA()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, DESC, B, DESC, C, ASC, ID, ASC));
@@ -286,6 +300,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDAD()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, DESC, B, DESC, C, ASC, ID, DESC));
@@ -301,6 +316,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDDA()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, DESC, B, DESC, C, DESC, ID, ASC));

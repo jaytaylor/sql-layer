@@ -37,12 +37,14 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.ComparisonFailure;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameters;
 
+@Ignore ("Mixed order not supported")
 @RunWith(SelectedParameterizedRunner.class)
 public class IndexScanUnboundedMixedOrderDT extends EmbeddedJDBCITBase
 {

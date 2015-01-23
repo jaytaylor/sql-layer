@@ -28,6 +28,8 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.test.ExpressionGenerators;
+
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.cursor;
@@ -157,6 +159,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testAtChildAtParentMixedOrder()
     {
         long[] childPKs = new long[] {11, 12, 21, 22};
@@ -175,6 +178,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testAtChildAfterParentMixedOrder()
     {
         long[] childPKs = new long[] {11, 12, 21, 22};
@@ -217,6 +221,7 @@ public class NonRootPKIndexScanIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testAtChildBeforeParentMixedOrder()
     {
         long[] childPKs = new long[] {11, 12, 21, 22};

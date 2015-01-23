@@ -29,6 +29,8 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.types.value.ValueSources;
+
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
@@ -118,6 +120,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testAAAD()
     {
         API.Ordering ordering = ordering(A, ASC, B, ASC, C, ASC, ID, DESC);
@@ -157,6 +160,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testAADA()
     {
         API.Ordering ordering = ordering(A, ASC, B, ASC, C, DESC, ID, ASC);
@@ -196,6 +200,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testAADD()
     {
         API.Ordering ordering = ordering(A, ASC, B, ASC, C, DESC, ID, DESC);
@@ -236,6 +241,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testADAA()
     {
         API.Ordering ordering = ordering(A, ASC, B, DESC, C, ASC, ID, ASC);
@@ -275,6 +281,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testADAD()
     {
         API.Ordering ordering = ordering(A, ASC, B, DESC, C, ASC, ID, DESC);
@@ -315,6 +322,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testADDA()
     {
         API.Ordering ordering = ordering(A, ASC, B, DESC, C, DESC, ID, ASC);
@@ -354,6 +362,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testADDD()
     {
         API.Ordering ordering = ordering(A, ASC, B, DESC, C, DESC, ID, DESC);
@@ -393,6 +402,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDAAA()
     {
         API.Ordering ordering = ordering(A, DESC, B, ASC, C, ASC, ID, ASC);
@@ -432,6 +442,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDAAD()
     {
         API.Ordering ordering = ordering(A, DESC, B, ASC, C, ASC, ID, DESC);
@@ -471,6 +482,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDADA()
     {
         API.Ordering ordering = ordering(A, DESC, B, ASC, C, DESC, ID, ASC);
@@ -510,6 +522,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDADD()
     {
         API.Ordering ordering = ordering(A, DESC, B, ASC, C, DESC, ID, DESC);
@@ -550,6 +563,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDAA()
     {
         API.Ordering ordering = ordering(A, DESC, B, DESC, C, ASC, ID, ASC);
@@ -589,6 +603,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDAD()
     {
         API.Ordering ordering = ordering(A, DESC, B, DESC, C, ASC, ID, DESC);
@@ -629,6 +644,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     }
     
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDADLegalRange()
     {
         testRange(getDDAD(),
@@ -649,6 +665,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDADOutOfRangeUpperBound()
     {
         testRange(getDDAD(),
@@ -668,6 +685,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDADOutOfRangeLowerBound()
     {
         testRange(getDDAD(),
@@ -687,6 +705,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDDA()
     {
         API.Ordering ordering = ordering(A, DESC, B, DESC, C, DESC, ID, ASC);
@@ -726,6 +745,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDDALegalRange()
     {
         testRange(getDDDA(),
@@ -746,6 +766,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
 
      
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDDAOutOfRangeLowerBound()
     {
         testRange(getDDDA(),
@@ -765,6 +786,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     }
 
     @Test
+    @Ignore("Mixed order not supported")
     public void testDDDAOutOfRangeUpperBound()
     {
         testRange(getDDDA(),

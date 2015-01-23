@@ -21,7 +21,10 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.server.types.value.ValueSources;
+
+import org.junit.Ignore;
 import org.junit.Test;
+
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.Cursor;
@@ -29,6 +32,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -182,6 +186,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 4
         @Test
+        @Ignore("Mixed order not supported")
         public void testAAAD_c_1019()
         {
             // 'correct ordering':
@@ -198,6 +203,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 5
         @Test
+        @Ignore("Mixed order not supported")
         public void testAAAD_c_1020()
         {
             // 'correct ordering':
@@ -214,6 +220,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 6
         @Test
+        @Ignore("Mixed order not supported")
         public void testAAAD_c_1021()
         {
             // 'correct ordering':
@@ -230,6 +237,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 7
         @Test
+        @Ignore("Mixed order not supported")
         public void testAADA_c_1019()
         {
             // 'correct ordering':
@@ -246,6 +254,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 8
         @Test
+        @Ignore("Mixed order not supported")
         public void testAADA_c_1020()
         {
             // 'correct ordering':
@@ -262,6 +271,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 9
         @Test
+        @Ignore("Mixed order not supported")
         public void testAADA_c_1021()
         {
             // 'correct ordering':
@@ -278,6 +288,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 10
         @Test
+        @Ignore("Mixed order not supported")
         public void testAADD_c_1019()
         {
             // 'correct ordering':
@@ -294,6 +305,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 11
         @Test
+        @Ignore("Mixed order not supported")
         public void testAADD_c_1020()
         {
             // 'correct ordering':
@@ -310,6 +322,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 12
         @Test
+        @Ignore("Mixed order not supported")
         public void testAADD_c_1021()
         {
             // 'correct ordering':
@@ -326,6 +339,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 13
         @Test
+        @Ignore("Mixed order not supported")
         public void testADAA_c_1019()
         {
             // 'correct ordering':
@@ -342,6 +356,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 14
         @Test
+        @Ignore("Mixed order not supported")
         public void testADAA_c_1020()
         {
             // 'correct ordering':
@@ -358,6 +373,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 15
         @Test
+        @Ignore("Mixed order not supported")
         public void testADAA_c_1021()
         {
             // 'correct ordering':
@@ -374,6 +390,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 16
         @Test
+        @Ignore("Mixed order not supported")
         public void testADAD_c_1019()
         {
             // 'correct ordering':
@@ -390,6 +407,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 17
         @Test
+        @Ignore("Mixed order not supported")
         public void testADAD_c_1020()
         {
             // 'correct ordering':
@@ -406,7 +424,8 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 18
         @Test
-        public void testADAD_c_1021()
+        @Ignore("Mixed order not supported")
+       public void testADAD_c_1021()
         {
             // 'correct ordering':
             // [1023, 1021, 1020, 1019, 1018, 1022, 1017, 1011, 1014, 1015, 1010, 1016, 1013, 1012]
@@ -422,6 +441,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 19
         @Test
+        @Ignore("Mixed order not supported")
         public void testADDA_c_1019()
         {
             // 'correct ordering':
@@ -438,6 +458,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 20
         @Test
+        @Ignore("Mixed order not supported")
         public void testADDA_c_1020()
         {
             // 'correct ordering':
@@ -454,6 +475,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 21
         @Test
+        @Ignore("Mixed order not supported")
         public void testADDA_c_1021()
         {
             // 'correct ordering':
@@ -470,6 +492,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 22
         @Test
+        @Ignore("Mixed order not supported")
         public void testADDD_c_1019()
         {
             // 'correct ordering':
@@ -486,6 +509,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 23
         @Test
+        @Ignore("Mixed order not supported")
         public void testADDD_c_1020()
         {
             // 'correct ordering':
@@ -502,6 +526,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 24
         @Test
+        @Ignore("Mixed order not supported")
         public void testADDD_c_1021()
         {
             // 'correct ordering':
@@ -518,6 +543,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 25
         @Test
+        @Ignore("Mixed order not supported")
         public void testDAAA_c_1019()
         {
             // 'correct ordering':
@@ -534,6 +560,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 26
         @Test
+        @Ignore("Mixed order not supported")
         public void testDAAA_c_1020()
         {
             // 'correct ordering':
@@ -550,6 +577,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 27
         @Test
+        @Ignore("Mixed order not supported")
         public void testDAAA_c_1021()
         {
             // 'correct ordering':
@@ -566,6 +594,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 28
         @Test
+        @Ignore("Mixed order not supported")
         public void testDAAD_c_1019()
         {
             // 'correct ordering':
@@ -582,6 +611,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 29
         @Test
+        @Ignore("Mixed order not supported")
         public void testDAAD_c_1020()
         {
             // 'correct ordering':
@@ -598,6 +628,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 30
         @Test
+        @Ignore("Mixed order not supported")
         public void testDAAD_c_1021()
         {
             // 'correct ordering':
@@ -614,6 +645,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 31
         @Test
+        @Ignore("Mixed order not supported")
         public void testDADA_c_1019()
         {
             // 'correct ordering':
@@ -630,6 +662,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 32
         @Test
+        @Ignore("Mixed order not supported")
         public void testDADA_c_1020()
         {
             // 'correct ordering':
@@ -646,6 +679,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 33
         @Test
+        @Ignore("Mixed order not supported")
         public void testDADA_c_1021()
         {
             // 'correct ordering':
@@ -662,6 +696,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 34
         @Test
+        @Ignore("Mixed order not supported")
         public void testDADD_c_1019()
         {
             // 'correct ordering':
@@ -678,6 +713,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 35
         @Test
+        @Ignore("Mixed order not supported")
         public void testDADD_c_1020()
         {
             // 'correct ordering':
@@ -694,6 +730,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 36
         @Test
+        @Ignore("Mixed order not supported")
         public void testDADD_c_1021()
         {
             // 'correct ordering':
@@ -710,6 +747,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 37
         @Test
+        @Ignore("Mixed order not supported")
         public void testDDAA_c_1019()
         {
             // 'correct ordering':
@@ -726,6 +764,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 38
         @Test
+        @Ignore("Mixed order not supported")
         public void testDDAA_c_1020()
         {
             // 'correct ordering':
@@ -742,6 +781,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 39
         @Test
+        @Ignore("Mixed order not supported")
         public void testDDAA_c_1021()
         {
             // 'correct ordering':
@@ -758,6 +798,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 40
         @Test
+        @Ignore("Mixed order not supported")
         public void testDDAD_c_1019()
         {
             // 'correct ordering':
@@ -774,6 +815,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 41
         @Test
+        @Ignore("Mixed order not supported")
         public void testDDAD_c_1020()
         {
             // 'correct ordering':
@@ -790,6 +832,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 42
         @Test
+        @Ignore("Mixed order not supported")
         public void testDDAD_c_1021()
         {
             // 'correct ordering':
@@ -806,6 +849,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 43
         @Test
+        @Ignore("Mixed order not supported")
         public void testDDDA_c_1019()
         {
             // 'correct ordering':
@@ -822,6 +866,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 44
         @Test
+        @Ignore("Mixed order not supported")
         public void testDDDA_c_1020()
         {
             // 'correct ordering':
@@ -838,6 +883,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 45
         @Test
+        @Ignore("Mixed order not supported")
         public void testDDDA_c_1021()
         {
             // 'correct ordering':
@@ -901,7 +947,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
         }
 
     
-    // test jumpting to rows  whose b == null
+    // test jumping to rows  whose b == null
     // There 3 rows with b == null, and 16 cases (2 ^4)
     // Thus there should be 3 * 16 = 48 cases here
     //
@@ -952,6 +998,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 4
         @Test
+        @Ignore("Mixed order not supported")
         public void testDAAA_b_1012()
         {
             // 'correct ordering':
@@ -966,6 +1013,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 5
         @Test
+        @Ignore("Mixed order not supported")
         public void testDAAA_b_1013()
         {
             // 'correct ordering':
@@ -980,6 +1028,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 6
         @Test
+        @Ignore("Mixed order not supported")
         public void testDAAA_b_1016()
         {
             // 'correct ordering':
@@ -994,6 +1043,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 7
         @Test
+        @Ignore("Mixed order not supported")
         public void testAAAD_b_1012()
         {
             // 'correct ordering':
@@ -1008,6 +1058,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 8
         @Test
+        @Ignore("Mixed order not supported")
         public void testAAAD_b_1013()
         {
             // 'correct ordering':
@@ -1022,6 +1073,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 9
         @Test
+        @Ignore("Mixed order not supported")
         public void testAAAD_b_1016()
         {
             // 'correct ordering':
@@ -1036,6 +1088,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 10
         @Test
+        @Ignore("Mixed order not supported")
         public void testADAA_b_1012()
         {
             // 'correct ordering':
@@ -1050,6 +1103,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 11
         @Test
+        @Ignore("Mixed order not supported")
         public void testADAA_b_1013()
         {
             // 'correct ordering':
@@ -1064,6 +1118,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 12
         @Test
+        @Ignore("Mixed order not supported")
         public void testADAA_b_1016()
         {
             // 'correct ordering':
@@ -1078,6 +1133,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 13
         @Test
+        @Ignore("Mixed order not supported")
         public void testDADA_b_1012()
         {
             // 'correct ordering':
@@ -1092,7 +1148,8 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 14
         @Test
-        public void testDADA_b_1013()
+        @Ignore("Mixed order not supported")
+       public void testDADA_b_1013()
         {
             // 'correct ordering':
             // [1012, 1013, 1016, 1010, 1015, 1014, 1011, 1017, 1022, 1018, 1019, 1020, 1021, 1023]
@@ -1106,6 +1163,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 15
         @Test
+        @Ignore("Mixed order not supported")
         public void testDADA_b_1016()
         {
             // 'correct ordering':
@@ -1120,6 +1178,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 16
         @Test
+        @Ignore("Mixed order not supported")
         public void testDDAA_b_1012()
         {
             // 'correct ordering':
@@ -1134,6 +1193,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 17
         @Test
+        @Ignore("Mixed order not supported")
         public void testDDAA_b_1013()
         {
             // 'correct ordering':
@@ -1148,6 +1208,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 18
         @Test
+        @Ignore("Mixed order not supported")
         public void testDDAA_b_1016()
         {
             // 'correct ordering':
@@ -1162,6 +1223,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 19
         @Test
+        @Ignore("Mixed order not supported")
         public void testDDAD_b_1012()
         {
             // 'correct ordering':
@@ -1176,6 +1238,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 20
         @Test
+        @Ignore("Mixed order not supported")
         public void testDDAD_b_1013()
         {
             // 'correct ordering':
@@ -1190,6 +1253,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 21
         @Test
+        @Ignore("Mixed order not supported")
         public void testDDAD_b_1016()
         {
             // 'correct ordering':
@@ -1204,6 +1268,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 22
         @Test
+        @Ignore("Mixed order not supported")
         public void testADAD_b_1012()
         {
             // 'correct ordering':
@@ -1218,6 +1283,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 23
         @Test
+        @Ignore("Mixed order not supported")
         public void testADAD_b_1013()
         {
             // 'correct ordering':
@@ -1232,6 +1298,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 24
         @Test
+        @Ignore("Mixed order not supported")
         public void testADAD_b_1016()
         {
             // 'correct ordering':
@@ -1246,6 +1313,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 25
         @Test
+        @Ignore("Mixed order not supported")
         public void testADDA_b_1012()
         {
             // 'correct ordering':
@@ -1260,6 +1328,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 26
         @Test
+        @Ignore("Mixed order not supported")
         public void testADDA_b_1013()
         {
             // 'correct ordering':
@@ -1274,6 +1343,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 27
         @Test
+        @Ignore("Mixed order not supported")
         public void testADDA_b_1016()
         {
             // 'correct ordering':
@@ -1288,6 +1358,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 28
         @Test
+        @Ignore("Mixed order not supported")
         public void testDADD_b_1012()
         {
             // 'correct ordering':
@@ -1302,6 +1373,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 29
         @Test
+        @Ignore("Mixed order not supported")
         public void testDADD_b_1013()
         {
             // 'correct ordering':
@@ -1316,6 +1388,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 30
         @Test
+        @Ignore("Mixed order not supported")
         public void testDADD_b_1016()
         {
             // 'correct ordering':
@@ -1330,6 +1403,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 31
         @Test
+        @Ignore("Mixed order not supported")
         public void testAADD_b_1012()
         {
             // 'correct ordering':
@@ -1344,6 +1418,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 32
         @Test
+        @Ignore("Mixed order not supported")
         public void testAADD_b_1013()
         {
             // 'correct ordering':
@@ -1358,6 +1433,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 33
         @Test
+        @Ignore("Mixed order not supported")
         public void testAADD_b_1016()
         {
             // 'correct ordering':
@@ -1372,6 +1448,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 34
         @Test
+        @Ignore("Mixed order not supported")
         public void testADDD_b_1012()
         {
             // 'correct ordering':
@@ -1386,7 +1463,8 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 35
         @Test
-        public void testADDD_b_1013()
+        @Ignore("Mixed order not supported")
+       public void testADDD_b_1013()
         {
             // 'correct ordering':
             // [1023, 1022, 1018, 1021, 1020, 1019, 1017, 1015, 1014, 1011, 1010, 1013, 1012, 1016]
@@ -1400,6 +1478,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 36
         @Test
+        @Ignore("Mixed order not supported")
         public void testADDD_b_1016()
         {
             // 'correct ordering':
@@ -1456,6 +1535,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 40
         @Test
+        @Ignore("Mixed order not supported")
         public void testDDDA_b_1012()
         {
             // 'correct ordering':
@@ -1470,6 +1550,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 41
         @Test
+        @Ignore("Mixed order not supported")
         public void testDDDA_b_1013()
         {
             // 'correct ordering':
@@ -1484,6 +1565,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 42
         @Test
+        @Ignore("Mixed order not supported")
         public void testDDDA_b_1016()
         {
             // 'correct ordering':
@@ -1498,6 +1580,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 43
         @Test
+        @Ignore("Mixed order not supported")
         public void testAADA_b_1012()
         {
             // 'correct ordering':
@@ -1512,6 +1595,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 44
         @Test
+        @Ignore("Mixed order not supported")
         public void testAADA_b_1013()
         {
             // 'correct ordering':
@@ -1526,6 +1610,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 45
         @Test
+        @Ignore("Mixed order not supported")
         public void testAADA_b_1016()
         {
             // 'correct ordering':
@@ -1540,6 +1625,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 46
         @Test
+        @Ignore("Mixed order not supported")
         public void testDAAD_b_1012()
         {
             // 'correct ordering':
@@ -1554,6 +1640,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 47
         @Test
+        @Ignore("Mixed order not supported")
         public void testDAAD_b_1013()
         {
             // 'correct ordering':
@@ -1568,6 +1655,7 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
         // 48
         @Test
+        @Ignore("Mixed order not supported")
         public void testDAAD_b_1016()
         {
             // 'correct ordering':

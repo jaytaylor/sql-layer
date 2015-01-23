@@ -20,7 +20,10 @@ package com.foundationdb.server.test.it.qp;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.server.types.value.ValueSources;
+
+import org.junit.Ignore;
 import org.junit.Test;
+
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.Cursor;
@@ -28,6 +31,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -220,6 +224,7 @@ public class UniqueIndexScanJumpBoundedWithNullsIT extends OperatorITBase
     }
     
     @Test
+    @Ignore("Mixed order not supported")
     public void testAAD()
     {
         // currently failing
