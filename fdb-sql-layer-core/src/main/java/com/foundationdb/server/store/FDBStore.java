@@ -646,7 +646,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         OverlayingRow resRow = new OverlayingRow(row);
         Boolean changedRow = false;
 
-        for( int i = 0; i < rowType.nFields(); i++ ) {
+        for ( int i = 0; i < rowType.nFields(); i++ ) {
             if (rowType.typeAt(i).equalsExcludingNullable(AkBlob.INSTANCE.instance(true))) {
                 int tableId = rowType.table().getTableId();
                 BlobRef blobRef = (BlobRef)row.value(i).getObject();
@@ -656,7 +656,10 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                         throw new LobException("Long lob storage format not allowed");
                     }
                 } else if (blobRef.isShortLob()) {
-                    if (allowedLobFormat.equalsIgnoreCase("LONG_LOB") || blobRef.getBytes().length >= AkBlob.LOB_SWITCH_SIZE ) {
+                    if (allowedLobFormat.equalsIgnoreCase("LONG_LOB")) {
+                        throw new LobException("Short lob storage format not allowed");
+                    }
+                    if (blobRef.getBytes().length >= AkBlob.LOB_SWITCH_SIZE) {
                         UUID id = UUID.randomUUID();
                         getLobService().createNewLob(id.toString());
                         getLobService().writeBlob(id.toString(), 0, blobRef.getBytes());
