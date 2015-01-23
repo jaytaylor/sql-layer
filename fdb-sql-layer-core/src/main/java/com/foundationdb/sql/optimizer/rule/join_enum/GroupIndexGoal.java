@@ -463,7 +463,6 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 IndexColumn indexColumn = indexColumns.get(i++);
                 indexExpression = getIndexExpression(index, indexColumn);
                 ascending = indexColumn.isAscending();
-                logger.debug("Set ordering for column {} - {}", indexColumn, ascending);
             }
             indexExpressions.add(indexExpression);
             orderBy.add(new OrderByExpression(indexExpression, ascending));
@@ -477,7 +476,6 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                                         List<OrderByExpression> outputOrdering,
                                         int outputPeggedCount, int comparisonFields) {
         if (index instanceof SingleIndexScan) {
-            logger.debug("Install ordering on index: {}", index);
             List<OrderByExpression> indexOrdering = index.getOrdering();
             if ((indexOrdering != null) && (indexOrdering != outputOrdering)) {
                 // Order comparison fields the same way as output.
@@ -606,7 +604,6 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             // Don't allow mixed order index lookups, just use the order of the first column 
             boolean isAscending = reverse.get(0) ? !indexOrdering.get(0).isAscending() : indexOrdering.get(0).isAscending();
             for (OrderByExpression indexColumn : indexOrdering) {
-                logger.debug("Ascending settings on index column {} - {}", indexColumn, indexColumn.isAscending());
                 if (indexColumn.isAscending() != isAscending) {
                     indexColumn.setAscending(isAscending);
                 }
