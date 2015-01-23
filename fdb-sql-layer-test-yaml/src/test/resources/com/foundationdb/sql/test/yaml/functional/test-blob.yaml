@@ -21,10 +21,11 @@
 - output_already_ordered: [[!!binary 'AQIDBAUGBwg='],[!!binary 'AQIDBAUGBwg='],[!!binary 'AQIDBAUGBwg=']]
 
 --- # prefix intended for linking a uuid to a blob
-- Statement: INSERT INTO blob VALUES (1, unhex('02') )
+- Statement: INSERT INTO blob VALUES (10, unhex('02') )
 - error: [22511]
 
 --- # prefix not valid
-- Statement: INSERT INTO blob VALUES (1, unhex('03') )
+- Statement: INSERT INTO blob VALUES (11, unhex('03') )
 - error: [22511]
+
 ...

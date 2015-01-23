@@ -20,7 +20,7 @@ package com.foundationdb.server.types.aksql.akfuncs;
 
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.common.funcs.CreateLongBlob;
-import com.foundationdb.server.types.mcompat.mtypes.*;
+import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 
 public class MCreateLongBlob {
     public static final TScalar EMPTY_LONG_BLOB = CreateLongBlob.createEmptyLongBlob();
