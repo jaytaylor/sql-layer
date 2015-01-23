@@ -1,0 +1,20 @@
+---
+- CreateTable: blob  (id INT PRIMARY KEY, bl BLOB)
+---
+- Statement: INSERT INTO blob VALUES (1, create_short_blob(unhex('02030405060708')));
+---
+- Statement: SELECT bl FROM blob
+- output_types: [VARCHAR FOR BIT DATA]
+
+--- # first byte is a 1
+- Statement: SELECT bl FROM blob
+- output_already_ordered: [[!!binary 'AQIDBAUGBwg=']]
+---
+- Statement: INSERT INTO blob VALUES (2, create_short_blob());
+---
+- Statement: SELECT bl FROM blob
+- row_count: 2
+---
+- Statement: INSERT INTO blob VALUES (3, create_short_blob(unhex(repeat('05', 50001))))
+- error: [22511]
+...
