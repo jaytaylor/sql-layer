@@ -140,89 +140,7 @@ public class IndexScanBoundedIT extends OperatorITBase
              ordering(ASC),
              1002, 1003);
     }
-/*    
-        // AAD
-        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, ASC, DESC),
-             1001, 1000, 1003, 1002, 1005, 1004, 1007, 1006);
-        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
-                   INCLUSIVE, 1, 15, UNSPECIFIED),
-             ordering(ASC, ASC, DESC),
-             1003, 1002);
-        test(range(INCLUSIVE, 1, 15, 151,
-                   INCLUSIVE, 1, 15, 155),
-             ordering(ASC, ASC, DESC),
-             1003, 1002);
-        // AA, A already tested
-        // ADA
-        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC, ASC),
-             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
-        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
-                   INCLUSIVE, 1, 15, UNSPECIFIED),
-             ordering(ASC, DESC, ASC),
-             1002, 1003);
-        test(range(INCLUSIVE, 1, 15, 151,
-                   INCLUSIVE, 1, 15, 155),
-             ordering(ASC, DESC, ASC),
-             1002, 1003);
-        // AD
-        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
-        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
-                   INCLUSIVE, 1, 15, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1002, 1003);
-        test(range(INCLUSIVE, 1, 15, 151,
-                   INCLUSIVE, 1, 15, 155),
-             ordering(ASC, DESC),
-             1002, 1003);
-        // A already tested
-        // ADD
-        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC, DESC),
-             1003, 1002, 1001, 1000, 1007, 1006, 1005, 1004);
-        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
-                   INCLUSIVE, 1, 15, UNSPECIFIED),
-             ordering(ASC, DESC, DESC),
-             1003, 1002);
-        test(range(INCLUSIVE, 1, 15, 151,
-                   INCLUSIVE, 1, 15, 155),
-             ordering(ASC, DESC, DESC),
-             1003, 1002);
-        // AD, A already tested
-        // DAA
-        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC, ASC),
-             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
-        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
-                   INCLUSIVE, 1, 15, UNSPECIFIED),
-             ordering(DESC, ASC, ASC),
-             1002, 1003);
-        test(range(INCLUSIVE, 1, 15, 151,
-                   INCLUSIVE, 1, 15, 155),
-             ordering(DESC, ASC, ASC),
-             1002, 1003);
-        // DA
-        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC),
-             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
-        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
-                   INCLUSIVE, 1, 15, UNSPECIFIED),
-             ordering(DESC, ASC),
-             1002, 1003);
-        test(range(INCLUSIVE, 1, 15, 151,
-                   INCLUSIVE, 1, 15, 155),
-             ordering(DESC, ASC),
-             1002, 1003);
-*/
+
     @Test
     public void test_IP_IP_D()
     {
@@ -240,34 +158,6 @@ public class IndexScanBoundedIT extends OperatorITBase
              ordering(DESC),
              1003, 1002);
     }
-/*        // DAD
-        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC, DESC),
-             1005, 1004, 1007, 1006, 1001, 1000, 1003, 1002);
-        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
-                   INCLUSIVE, 1, 15, UNSPECIFIED),
-             ordering(DESC, ASC, DESC),
-             1003, 1002);
-        test(range(INCLUSIVE, 1, 15, 151,
-                   INCLUSIVE, 1, 15, 155),
-             ordering(DESC, ASC, DESC),
-             1003, 1002);
-        // DA, D already tested
-        // DDA
-        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, DESC, ASC),
-             1006, 1007, 1004, 1005, 1002, 1003, 1000, 1001);
-        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
-                   INCLUSIVE, 1, 15, UNSPECIFIED),
-             ordering(DESC, DESC, ASC),
-             1002, 1003);
-        test(range(INCLUSIVE, 1, 15, 151,
-                   INCLUSIVE, 1, 15, 155),
-             ordering(DESC, DESC, ASC),
-             1002, 1003);
-*/
     @Test
     public void test_IP_IP_DD()
     {
@@ -356,89 +246,6 @@ public class IndexScanBoundedIT extends OperatorITBase
              ordering(ASC),
              1002, 1003);
     }
-/*    
-        // AAD
-        test(range(INCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, ASC, DESC),
-             1001, 1000, 1003, 1002, 1005, 1004, 1007, 1006);
-        test(range(INCLUSIVE, 1, 14, UNSPECIFIED,
-                   INCLUSIVE, 1, 16, UNSPECIFIED),
-             ordering(ASC, ASC, DESC),
-             1003, 1002);
-        test(range(INCLUSIVE, 1, 15, 149,
-                   INCLUSIVE, 1, 15, 160),
-             ordering(ASC, ASC, DESC),
-             1003, 1002);
-        // AA, A already tested
-        // ADA
-        test(range(INCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC, ASC),
-             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
-        test(range(INCLUSIVE, 1, 14, UNSPECIFIED,
-                   INCLUSIVE, 1, 16, UNSPECIFIED),
-             ordering(ASC, DESC, ASC),
-             1002, 1003);
-        test(range(INCLUSIVE, 1, 15, 149,
-                   INCLUSIVE, 1, 15, 160),
-             ordering(ASC, DESC, ASC),
-             1002, 1003);
-        // AD
-        test(range(INCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
-        test(range(INCLUSIVE, 1, 14, UNSPECIFIED,
-                   INCLUSIVE, 1, 16, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1002, 1003);
-        test(range(INCLUSIVE, 1, 15, 149,
-                   INCLUSIVE, 1, 15, 160),
-             ordering(ASC, DESC),
-             1002, 1003);
-        // A already tested
-        // ADD
-        test(range(INCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC, DESC),
-             1003, 1002, 1001, 1000, 1007, 1006, 1005, 1004);
-        test(range(INCLUSIVE, 1, 14, UNSPECIFIED,
-                   INCLUSIVE, 1, 16, UNSPECIFIED),
-             ordering(ASC, DESC, DESC),
-             1003, 1002);
-        test(range(INCLUSIVE, 1, 15, 149,
-                   INCLUSIVE, 1, 15, 160),
-             ordering(ASC, DESC, DESC),
-             1003, 1002);
-        // AD, A already tested
-        // DAA
-        test(range(INCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC, ASC),
-             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
-        test(range(INCLUSIVE, 1, 14, UNSPECIFIED,
-                   INCLUSIVE, 1, 16, UNSPECIFIED),
-             ordering(DESC, ASC, ASC),
-             1002, 1003);
-        test(range(INCLUSIVE, 1, 15, 149,
-                   INCLUSIVE, 1, 15, 160),
-             ordering(DESC, ASC, ASC),
-             1002, 1003);
-        // DA
-        test(range(INCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC),
-             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
-        test(range(INCLUSIVE, 1, 14, UNSPECIFIED,
-                   INCLUSIVE, 1, 16, UNSPECIFIED),
-             ordering(DESC, ASC),
-             1002, 1003);
-        test(range(INCLUSIVE, 1, 15, 149,
-                   INCLUSIVE, 1, 15, 160),
-             ordering(DESC, ASC),
-             1002, 1003);
-*/
     @Test
     public void test_IM_IM_D() 
     {
@@ -456,35 +263,6 @@ public class IndexScanBoundedIT extends OperatorITBase
              ordering(DESC),
              1003, 1002);
     }
-/*
-        // DAD
-        test(range(INCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC, DESC),
-             1005, 1004, 1007, 1006, 1001, 1000, 1003, 1002);
-        test(range(INCLUSIVE, 1, 14, UNSPECIFIED,
-                   INCLUSIVE, 1, 16, UNSPECIFIED),
-             ordering(DESC, ASC, DESC),
-             1003, 1002);
-        test(range(INCLUSIVE, 1, 15, 149,
-                   INCLUSIVE, 1, 15, 160),
-             ordering(DESC, ASC, DESC),
-             1003, 1002);
-        // DA, D already tested
-        // DDA
-        test(range(INCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, DESC, ASC),
-             1006, 1007, 1004, 1005, 1002, 1003, 1000, 1001);
-        test(range(INCLUSIVE, 1, 14, UNSPECIFIED,
-                   INCLUSIVE, 1, 16, UNSPECIFIED),
-             ordering(DESC, DESC, ASC),
-             1002, 1003);
-        test(range(INCLUSIVE, 1, 15, 149,
-                   INCLUSIVE, 1, 15, 160),
-             ordering(DESC, DESC, ASC),
-             1002, 1003);
-*/
     @Test
     public void test_IM_IM_DD()
     {
@@ -564,71 +342,6 @@ public class IndexScanBoundedIT extends OperatorITBase
                    EXCLUSIVE, 1, 15, 155),
              ordering(ASC));
     }
-/*    
-        // AAD
-        test(range(EXCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, ASC, DESC));
-        test(range(EXCLUSIVE, 1, 15, UNSPECIFIED,
-                   EXCLUSIVE, 1, 15, UNSPECIFIED),
-             ordering(ASC, ASC, DESC));
-        test(range(EXCLUSIVE, 1, 15, 151,
-                   EXCLUSIVE, 1, 15, 155),
-             ordering(ASC, ASC, DESC));
-        // AA, A already tested
-        // ADA
-        test(range(EXCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC, ASC));
-        test(range(EXCLUSIVE, 1, 15, UNSPECIFIED,
-                   EXCLUSIVE, 1, 15, UNSPECIFIED),
-             ordering(ASC, DESC, ASC));
-        test(range(EXCLUSIVE, 1, 15, 151,
-                   EXCLUSIVE, 1, 15, 155),
-             ordering(ASC, DESC, ASC));
-        // AD
-        test(range(EXCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC));
-        test(range(EXCLUSIVE, 1, 15, UNSPECIFIED,
-                   EXCLUSIVE, 1, 15, UNSPECIFIED),
-             ordering(ASC, DESC));
-        test(range(EXCLUSIVE, 1, 15, 151,
-                   EXCLUSIVE, 1, 15, 155),
-             ordering(ASC, DESC));
-        // A already tested
-        // ADD
-        test(range(EXCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC, DESC));
-        test(range(EXCLUSIVE, 1, 15, UNSPECIFIED,
-                   EXCLUSIVE, 1, 15, UNSPECIFIED),
-             ordering(ASC, DESC, DESC));
-        test(range(EXCLUSIVE, 1, 15, 151,
-                   EXCLUSIVE, 1, 15, 155),
-             ordering(ASC, DESC, DESC));
-        // AD, A already tested
-        // DAA
-        test(range(EXCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC, ASC));
-        test(range(EXCLUSIVE, 1, 15, UNSPECIFIED,
-                   EXCLUSIVE, 1, 15, UNSPECIFIED),
-             ordering(DESC, ASC, ASC));
-        test(range(EXCLUSIVE, 1, 15, 151,
-                   EXCLUSIVE, 1, 15, 155),
-             ordering(DESC, ASC, ASC));
-        // DA
-        test(range(EXCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC));
-        test(range(EXCLUSIVE, 1, 15, UNSPECIFIED,
-                   EXCLUSIVE, 1, 15, UNSPECIFIED),
-             ordering(DESC, ASC));
-        test(range(EXCLUSIVE, 1, 15, 151,
-                   EXCLUSIVE, 1, 15, 155),
-             ordering(DESC, ASC));
-*/
     @Test
     public void test_EP_EP_D()
     {
@@ -643,29 +356,6 @@ public class IndexScanBoundedIT extends OperatorITBase
                    EXCLUSIVE, 1, 15, 155),
              ordering(DESC));
     }
-/*    
-        // DAD
-        test(range(EXCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC, DESC));
-        test(range(EXCLUSIVE, 1, 15, UNSPECIFIED,
-                   EXCLUSIVE, 1, 15, UNSPECIFIED),
-             ordering(DESC, ASC, DESC));
-        test(range(EXCLUSIVE, 1, 15, 151,
-                   EXCLUSIVE, 1, 15, 155),
-             ordering(DESC, ASC, DESC));
-        // DA, D already tested
-        // DDA
-        test(range(EXCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, DESC, ASC));
-        test(range(EXCLUSIVE, 1, 15, UNSPECIFIED,
-                   EXCLUSIVE, 1, 15, UNSPECIFIED),
-             ordering(DESC, DESC, ASC));
-        test(range(EXCLUSIVE, 1, 15, 151,
-                   EXCLUSIVE, 1, 15, 155),
-             ordering(DESC, DESC, ASC));
-*/
     @Test
     public void test_EP_EP_DD()
     {
@@ -747,89 +437,6 @@ public class IndexScanBoundedIT extends OperatorITBase
              ordering(ASC),
              1002, 1003);
     }
-/*    
-        // AAD
-        test(range(EXCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, ASC, DESC),
-             1001, 1000, 1003, 1002, 1005, 1004, 1007, 1006);
-        test(range(EXCLUSIVE, 1, 14, UNSPECIFIED,
-                   EXCLUSIVE, 1, 16, UNSPECIFIED),
-             ordering(ASC, ASC, DESC),
-             1003, 1002);
-        test(range(EXCLUSIVE, 1, 15, 149,
-                   EXCLUSIVE, 1, 15, 160),
-             ordering(ASC, ASC, DESC),
-             1003, 1002);
-        // AA, A already tested
-        // ADA
-        test(range(EXCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC, ASC),
-             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
-        test(range(EXCLUSIVE, 1, 14, UNSPECIFIED,
-                   EXCLUSIVE, 1, 16, UNSPECIFIED),
-             ordering(ASC, DESC, ASC),
-             1002, 1003);
-        test(range(EXCLUSIVE, 1, 15, 149,
-                   EXCLUSIVE, 1, 15, 160),
-             ordering(ASC, DESC, ASC),
-             1002, 1003);
-        // AD
-        test(range(EXCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
-        test(range(EXCLUSIVE, 1, 14, UNSPECIFIED,
-                   EXCLUSIVE, 1, 16, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1002, 1003);
-        test(range(EXCLUSIVE, 1, 15, 149,
-                   EXCLUSIVE, 1, 15, 160),
-             ordering(ASC, DESC),
-             1002, 1003);
-        // A already tested
-        // ADD
-        test(range(EXCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC, DESC),
-             1003, 1002, 1001, 1000, 1007, 1006, 1005, 1004);
-        test(range(EXCLUSIVE, 1, 14, UNSPECIFIED,
-                   EXCLUSIVE, 1, 16, UNSPECIFIED),
-             ordering(ASC, DESC, DESC),
-             1003, 1002);
-        test(range(EXCLUSIVE, 1, 15, 149,
-                   EXCLUSIVE, 1, 15, 160),
-             ordering(ASC, DESC, DESC),
-             1003, 1002);
-        // AD, A already tested
-        // DAA
-        test(range(EXCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC, ASC),
-             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
-        test(range(EXCLUSIVE, 1, 14, UNSPECIFIED,
-                   EXCLUSIVE, 1, 16, UNSPECIFIED),
-             ordering(DESC, ASC, ASC),
-             1002, 1003);
-        test(range(EXCLUSIVE, 1, 15, 149,
-                   EXCLUSIVE, 1, 15, 160),
-             ordering(DESC, ASC, ASC),
-             1002, 1003);
-        // DA
-        test(range(EXCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC),
-             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
-        test(range(EXCLUSIVE, 1, 14, UNSPECIFIED,
-                   EXCLUSIVE, 1, 16, UNSPECIFIED),
-             ordering(DESC, ASC),
-             1002, 1003);
-        test(range(EXCLUSIVE, 1, 15, 149,
-                   EXCLUSIVE, 1, 15, 160),
-             ordering(DESC, ASC),
-             1002, 1003);
-*/
     @Test
     public void test_EM_EM_D()
     {
@@ -847,34 +454,6 @@ public class IndexScanBoundedIT extends OperatorITBase
              ordering(DESC),
              1003, 1002);
     }
-/*        // DAD
-        test(range(EXCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC, DESC),
-             1005, 1004, 1007, 1006, 1001, 1000, 1003, 1002);
-        test(range(EXCLUSIVE, 1, 14, UNSPECIFIED,
-                   EXCLUSIVE, 1, 16, UNSPECIFIED),
-             ordering(DESC, ASC, DESC),
-             1003, 1002);
-        test(range(EXCLUSIVE, 1, 15, 149,
-                   EXCLUSIVE, 1, 15, 160),
-             ordering(DESC, ASC, DESC),
-             1003, 1002);
-        // DA, D already tested
-        // DDA
-        test(range(EXCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, DESC, ASC),
-             1006, 1007, 1004, 1005, 1002, 1003, 1000, 1001);
-        test(range(EXCLUSIVE, 1, 14, UNSPECIFIED,
-                   EXCLUSIVE, 1, 16, UNSPECIFIED),
-             ordering(DESC, DESC, ASC),
-             1002, 1003);
-        test(range(EXCLUSIVE, 1, 15, 149,
-                   EXCLUSIVE, 1, 15, 160),
-             ordering(DESC, DESC, ASC),
-             1002, 1003);
-*/
     @Test
     public void test_EM_EM_DD()
     {
@@ -964,89 +543,6 @@ public class IndexScanBoundedIT extends OperatorITBase
              ordering(ASC),
              1000, 1001);
     }
-/*    
-        // AAD
-        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, ASC, DESC),
-             1001, 1000, 1003, 1002, 1005, 1004, 1007, 1006);
-        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
-                   EXCLUSIVE, 1, null, UNSPECIFIED),
-             ordering(ASC, ASC, DESC),
-             1003, 1002);
-        test(range(INCLUSIVE, 1, 11, 111,
-                   EXCLUSIVE, 1, 11, null),
-             ordering(ASC, ASC, DESC),
-             1001, 1000);
-        // AA, A already tested
-        // ADA
-        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
-        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
-                   EXCLUSIVE, 1, null, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1002, 1003);
-        test(range(INCLUSIVE, 1, 11, 111,
-                   EXCLUSIVE, 1, 11, null),
-             ordering(ASC, DESC),
-             1000, 1001);
-        // AD
-        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
-        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
-                   EXCLUSIVE, 1, null, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1002, 1003);
-        test(range(INCLUSIVE, 1, 11, 111,
-                   EXCLUSIVE, 1, 11, null),
-             ordering(ASC, DESC),
-             1000, 1001);
-        // A already tested
-        // ADD
-        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC, DESC),
-             1003, 1002, 1001, 1000, 1007, 1006, 1005, 1004);
-        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
-                   EXCLUSIVE, 1, null, UNSPECIFIED),
-             ordering(ASC, DESC, DESC),
-             1003, 1002);
-        test(range(INCLUSIVE, 1, 11, 111,
-                   EXCLUSIVE, 1, 11, null),
-             ordering(ASC, DESC, DESC),
-             1001, 1000);
-        // AD, A already tested
-        // DAA
-        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC, ASC),
-             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
-        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
-                   EXCLUSIVE, 1, null, UNSPECIFIED),
-             ordering(DESC, ASC, ASC),
-             1002, 1003);
-        test(range(INCLUSIVE, 1, 11, 111,
-                   EXCLUSIVE, 1, 11, null),
-             ordering(DESC, ASC, ASC),
-             1000, 1001);
-        // DA
-        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC),
-             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
-        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
-                   EXCLUSIVE, 1, null, UNSPECIFIED),
-             ordering(DESC, ASC),
-             1002, 1003);
-        test(range(INCLUSIVE, 1, 11, 111,
-                   EXCLUSIVE, 1, 11, null),
-             ordering(DESC, ASC),
-             1000, 1001);
-*/
     @Test
     public void testBoundedLeftInclusive_D()
     {
@@ -1064,47 +560,6 @@ public class IndexScanBoundedIT extends OperatorITBase
              ordering(DESC),
              1001, 1000);
     }
-/*        // DAD
-        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC, DESC),
-             1005, 1004, 1007, 1006, 1001, 1000, 1003, 1002);
-        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
-                   EXCLUSIVE, 1, null, UNSPECIFIED),
-             ordering(DESC, ASC, DESC),
-             1003, 1002);
-        test(range(INCLUSIVE, 1, 11, 111,
-                   EXCLUSIVE, 1, 11, null),
-             ordering(DESC, ASC, DESC),
-             1001, 1000);
-        // DA
-        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC),
-             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
-        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
-                   EXCLUSIVE, 1, null, UNSPECIFIED),
-             ordering(DESC, ASC),
-             1002, 1003);
-        test(range(INCLUSIVE, 1, 11, 111,
-                   EXCLUSIVE, 1, 11, null),
-             ordering(DESC, ASC),
-             1000, 1001);
-        // D already tested
-        // DDA
-        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, DESC, ASC),
-             1006, 1007, 1004, 1005, 1002, 1003, 1000, 1001);
-        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
-                   EXCLUSIVE, 1, null, UNSPECIFIED),
-             ordering(DESC, DESC, ASC),
-             1002, 1003);
-        test(range(INCLUSIVE, 1, 11, 111,
-                   EXCLUSIVE, 1, 11, null),
-             ordering(DESC, DESC, ASC),
-             1000, 1001);
-*/
     @Test
     public void testBoundedLeftInclusive_DD()
     {
@@ -1193,89 +648,6 @@ public class IndexScanBoundedIT extends OperatorITBase
              ordering(ASC),
              1004, 1005);
     }
-/*    
-        // AAD
-        test(range(EXCLUSIVE, 3, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, ASC, DESC),
-             1005, 1004, 1007, 1006);
-        test(range(EXCLUSIVE, 5, 53, UNSPECIFIED,
-                   EXCLUSIVE, 5, null, UNSPECIFIED),
-             ordering(ASC, ASC, DESC),
-             1007, 1006);
-        test(range(EXCLUSIVE, 5, 51, 500,
-                   EXCLUSIVE, 5, 51, null),
-             ordering(ASC, ASC, DESC),
-             1005, 1004);
-        // AA, A already tested
-        // ADA
-        test(range(EXCLUSIVE, 3, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1006, 1007, 1004, 1005);
-        test(range(EXCLUSIVE, 5, 53, UNSPECIFIED,
-                   EXCLUSIVE, 5, null, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1006, 1007);
-        test(range(EXCLUSIVE, 5, 51, 500,
-                   EXCLUSIVE, 5, 51, null),
-             ordering(ASC, DESC),
-             1004, 1005);
-        // AD
-        test(range(EXCLUSIVE, 3, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1006, 1007, 1004, 1005);
-        test(range(EXCLUSIVE, 5, 53, UNSPECIFIED,
-                   EXCLUSIVE, 5, null, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1006, 1007);
-        test(range(EXCLUSIVE, 5, 51, 500,
-                   EXCLUSIVE, 5, 51, null),
-             ordering(ASC, DESC),
-             1004, 1005);
-        // A already tested
-        // ADD
-        test(range(EXCLUSIVE, 3, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC, DESC),
-             1007, 1006, 1005, 1004);
-        test(range(EXCLUSIVE, 5, 53, UNSPECIFIED,
-                   EXCLUSIVE, 5, null, UNSPECIFIED),
-             ordering(ASC, DESC, DESC),
-             1007, 1006);
-        test(range(EXCLUSIVE, 5, 51, 500,
-                   EXCLUSIVE, 5, 51, null),
-             ordering(ASC, DESC, DESC),
-             1005, 1004);
-        // AD, A already tested
-        // DAA
-        test(range(EXCLUSIVE, 3, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC, ASC),
-             1004, 1005, 1006, 1007);
-        test(range(EXCLUSIVE, 5, 53, UNSPECIFIED,
-                   EXCLUSIVE, 5, null, UNSPECIFIED),
-             ordering(DESC, ASC, ASC),
-             1006, 1007);
-        test(range(EXCLUSIVE, 5, 51, 500,
-                   EXCLUSIVE, 5, 51, null),
-             ordering(DESC, ASC, ASC),
-             1004, 1005);
-        // DA
-        test(range(EXCLUSIVE, 3, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC),
-             1004, 1005, 1006, 1007);
-        test(range(EXCLUSIVE, 5, 53, UNSPECIFIED,
-                   EXCLUSIVE, 5, null, UNSPECIFIED),
-             ordering(DESC, ASC),
-             1006, 1007);
-        test(range(EXCLUSIVE, 5, 51, 500,
-                   EXCLUSIVE, 5, 51, null),
-             ordering(DESC, ASC),
-             1004, 1005);
-*/
     @Test
     public void testBoundedLeftExclusive_D()
     {
@@ -1293,47 +665,6 @@ public class IndexScanBoundedIT extends OperatorITBase
              ordering(DESC),
              1005, 1004);
     }
-/*        // DAD
-        test(range(EXCLUSIVE, 3, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC, DESC),
-             1005, 1004, 1007, 1006);
-        test(range(EXCLUSIVE, 5, 53, UNSPECIFIED,
-                   EXCLUSIVE, 5, null, UNSPECIFIED),
-             ordering(DESC, ASC, DESC),
-             1007, 1006);
-        test(range(EXCLUSIVE, 5, 51, 500,
-                   EXCLUSIVE, 5, 51, null),
-             ordering(DESC, ASC, DESC),
-             1005, 1004);
-        // DA
-        test(range(EXCLUSIVE, 3, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC),
-             1004, 1005, 1006, 1007);
-        test(range(EXCLUSIVE, 5, 53, UNSPECIFIED,
-                   EXCLUSIVE, 5, null, UNSPECIFIED),
-             ordering(DESC, ASC),
-             1006, 1007);
-        test(range(EXCLUSIVE, 5, 51, 500,
-                   EXCLUSIVE, 5, 51, null),
-             ordering(DESC, ASC),
-             1004, 1005);
-        // D already tested
-        // DDA
-        test(range(EXCLUSIVE, 3, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, DESC, ASC),
-             1006, 1007, 1004, 1005);
-        test(range(EXCLUSIVE, 5, 53, UNSPECIFIED,
-                   EXCLUSIVE, 5, null, UNSPECIFIED),
-             ordering(DESC, DESC, ASC),
-             1006, 1007);
-        test(range(EXCLUSIVE, 5, 51, 500,
-                   EXCLUSIVE, 5, 51, null),
-             ordering(DESC, DESC, ASC),
-             1004, 1005);
-*/
     @Test
     public void testBoundedLeftExclusive_DD()
     {
@@ -1422,89 +753,6 @@ public class IndexScanBoundedIT extends OperatorITBase
              ordering(ASC),
              1006);
     }
-/*    
-        // AAD
-        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, ASC, DESC),
-             1001, 1000, 1003, 1002, 1005, 1004, 1007, 1006);
-        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
-                   INCLUSIVE, 5, 55, UNSPECIFIED),
-             ordering(ASC, ASC, DESC),
-             1005, 1004, 1007, 1006);
-        test(range(EXCLUSIVE, 5, 55, null,
-                   INCLUSIVE, 5, 55, 551),
-             ordering(ASC, ASC, DESC),
-             1006);
-        // AA, A already tested
-        // ADA
-        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
-        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
-                   INCLUSIVE, 5, 55, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1006, 1007, 1004, 1005);
-        test(range(EXCLUSIVE, 5, 55, null,
-                   INCLUSIVE, 5, 55, 551),
-             ordering(ASC, DESC),
-             1006);
-        // AD
-        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
-        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
-                   INCLUSIVE, 5, 55, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1006, 1007, 1004, 1005);
-        test(range(EXCLUSIVE, 5, 55, null,
-                   INCLUSIVE, 5, 55, 551),
-             ordering(ASC, DESC),
-             1006);
-        // A already tested
-        // ADD
-        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC, DESC),
-             1003, 1002, 1001, 1000, 1007, 1006, 1005, 1004);
-        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
-                   INCLUSIVE, 5, 55, UNSPECIFIED),
-             ordering(ASC, DESC, DESC),
-             1007, 1006, 1005, 1004);
-        test(range(EXCLUSIVE, 5, 55, null,
-                   INCLUSIVE, 5, 55, 551),
-             ordering(ASC, DESC, DESC),
-             1006);
-        // AD, A already tested
-        // DAA
-        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC, ASC),
-             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
-        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
-                   INCLUSIVE, 5, 55, UNSPECIFIED),
-             ordering(DESC, ASC, ASC),
-             1004, 1005, 1006, 1007);
-        test(range(EXCLUSIVE, 5, 55, null,
-                   INCLUSIVE, 5, 55, 551),
-             ordering(DESC, ASC, ASC),
-             1006);
-        // DA
-        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC),
-             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
-        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
-                   INCLUSIVE, 5, 55, UNSPECIFIED),
-             ordering(DESC, ASC),
-             1004, 1005, 1006, 1007);
-        test(range(EXCLUSIVE, 5, 55, null,
-                   INCLUSIVE, 5, 55, 551),
-             ordering(DESC, ASC),
-             1006);
-*/
     @Test
     public void testBoundedRightInclusive_D()
     {
@@ -1522,48 +770,6 @@ public class IndexScanBoundedIT extends OperatorITBase
              ordering(DESC),
              1006);
     }
-/*    
-        // DAD
-        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC, DESC),
-             1005, 1004, 1007, 1006, 1001, 1000, 1003, 1002);
-        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
-                   INCLUSIVE, 5, 55, UNSPECIFIED),
-             ordering(DESC, ASC, DESC),
-             1005, 1004, 1007, 1006);
-        test(range(EXCLUSIVE, 5, 55, null,
-                   INCLUSIVE, 5, 55, 551),
-             ordering(DESC, ASC, DESC),
-             1006);
-        // DA
-        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC),
-             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
-        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
-                   INCLUSIVE, 5, 55, UNSPECIFIED),
-             ordering(DESC, ASC),
-             1004, 1005, 1006, 1007);
-        test(range(EXCLUSIVE, 5, 55, null,
-                   INCLUSIVE, 5, 55, 551),
-             ordering(DESC, ASC),
-             1006);
-        // D already tested
-        // DDA
-        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, DESC, ASC),
-             1006, 1007, 1004, 1005, 1002, 1003, 1000, 1001);
-        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
-                   INCLUSIVE, 5, 55, UNSPECIFIED),
-             ordering(DESC, DESC, ASC),
-             1006, 1007, 1004, 1005);
-        test(range(EXCLUSIVE, 5, 55, null,
-                   INCLUSIVE, 5, 55, 551),
-             ordering(DESC, DESC, ASC),
-             1006);
-*/
     @Test
     public void testBoundedRightInclusive_DD()
     {
@@ -1652,88 +858,6 @@ public class IndexScanBoundedIT extends OperatorITBase
              ordering(ASC),
              1006);
     }
-/*        // AAD
-        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, 8, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, ASC, DESC),
-             1001, 1000, 1003, 1002, 1005, 1004, 1007, 1006);
-        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
-                   EXCLUSIVE, 5, 58, UNSPECIFIED),
-             ordering(ASC, ASC, DESC),
-             1005, 1004, 1007, 1006);
-        test(range(EXCLUSIVE, 5, 55, null,
-                   EXCLUSIVE, 5, 55, 553),
-             ordering(ASC, ASC, DESC),
-             1006);
-        // AA, A already tested
-        // ADA
-        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, 8, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
-        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
-                   EXCLUSIVE, 5, 58, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1006, 1007, 1004, 1005);
-        test(range(EXCLUSIVE, 5, 55, null,
-                   EXCLUSIVE, 5, 55, 553),
-             ordering(ASC, DESC),
-             1006);
-        // AD
-        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, 8, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
-        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
-                   EXCLUSIVE, 5, 58, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1006, 1007, 1004, 1005);
-        test(range(EXCLUSIVE, 5, 55, null,
-                   EXCLUSIVE, 5, 55, 553),
-             ordering(ASC, DESC),
-             1006);
-        // A already tested
-        // ADD
-        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, 8, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC, DESC),
-             1003, 1002, 1001, 1000, 1007, 1006, 1005, 1004);
-        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
-                   EXCLUSIVE, 5, 58, UNSPECIFIED),
-             ordering(ASC, DESC, DESC),
-             1007, 1006, 1005, 1004);
-        test(range(EXCLUSIVE, 5, 55, null,
-                   EXCLUSIVE, 5, 55, 553),
-             ordering(ASC, DESC, DESC),
-             1006);
-        // AD, A already tested
-        // DAA
-        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, 8, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC, ASC),
-             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
-        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
-                   EXCLUSIVE, 5, 58, UNSPECIFIED),
-             ordering(DESC, ASC, ASC),
-             1004, 1005, 1006, 1007);
-        test(range(EXCLUSIVE, 5, 55, null,
-                   EXCLUSIVE, 5, 55, 553),
-             ordering(DESC, ASC, ASC),
-             1006);
-        // DA
-        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, 8, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC),
-             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
-        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
-                   EXCLUSIVE, 5, 58, UNSPECIFIED),
-             ordering(DESC, ASC),
-             1004, 1005, 1006, 1007);
-        test(range(EXCLUSIVE, 5, 55, null,
-                   EXCLUSIVE, 5, 55, 553),
-             ordering(DESC, ASC),
-             1006);
-*/
     @Test
     public void testBoundedRightExclusive_D()
     {
@@ -1751,47 +875,6 @@ public class IndexScanBoundedIT extends OperatorITBase
              ordering(DESC),
              1006);
     }
-/*        // DAD
-        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, 8, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC, DESC),
-             1005, 1004, 1007, 1006, 1001, 1000, 1003, 1002);
-        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
-                   EXCLUSIVE, 5, 58, UNSPECIFIED),
-             ordering(DESC, ASC, DESC),
-             1005, 1004, 1007, 1006);
-        test(range(EXCLUSIVE, 5, 55, null,
-                   EXCLUSIVE, 5, 55, 553),
-             ordering(DESC, ASC, DESC),
-             1006);
-        // DA
-        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, 8, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC),
-             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
-        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
-                   EXCLUSIVE, 5, 58, UNSPECIFIED),
-             ordering(DESC, ASC),
-             1004, 1005, 1006, 1007);
-        test(range(EXCLUSIVE, 5, 55, null,
-                   EXCLUSIVE, 5, 55, 553),
-             ordering(DESC, ASC),
-             1006);
-        // D already tested
-        // DDA
-        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
-                   EXCLUSIVE, 8, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, DESC, ASC),
-             1006, 1007, 1004, 1005, 1002, 1003, 1000, 1001);
-        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
-                   EXCLUSIVE, 5, 58, UNSPECIFIED),
-             ordering(DESC, DESC, ASC),
-             1006, 1007, 1004, 1005);
-        test(range(EXCLUSIVE, 5, 55, null,
-                   EXCLUSIVE, 5, 55, 553),
-             ordering(DESC, DESC, ASC),
-             1006);
-*/
     @Test
     public void testBoundedRightExclusive_DD()
     {

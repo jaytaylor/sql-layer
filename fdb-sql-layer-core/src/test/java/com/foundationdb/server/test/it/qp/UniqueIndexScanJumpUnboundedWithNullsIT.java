@@ -193,16 +193,7 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
                       getDDD(),
                       new long[] {1021, 1020, 1019, 1018, 1017, 1015, 1014, 1011, 1010, 1025, 1016, 1013, 1012, 1024});
     }
-
-    @Test
-    @Ignore("Mixed order not supported")
-    public void testAAD()
-    {
-        testSkipNulls(1014,
-                      getAAD(),
-                      new long[] {1014, 1017, 1018, 1022, 1019, 1020, 1021, 1023}); // skips 1016, which is a null
-    }
-    
+   
     @Test
     public void testAAAToFirstNull()
     {

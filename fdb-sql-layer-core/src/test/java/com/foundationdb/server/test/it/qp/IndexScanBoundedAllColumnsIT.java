@@ -77,45 +77,6 @@ public class IndexScanBoundedAllColumnsIT extends OperatorITBase
     }
 
 
-    @Test
-    @Ignore("Mixed order not supported")
-    public void testBounded_all4columns() {
-
-        // DADD
-        test(range(INCLUSIVE, 5, 55, 555, null,
-                        INCLUSIVE, 5, 55, 555, 1009),
-                ordering(DESC, ASC, DESC, DESC),
-                1009, 1008, 1007
-        );
-        test(range(EXCLUSIVE, 5, 55, 555, null,
-                        EXCLUSIVE, 5, 55, 555, 1009),
-                ordering(DESC, ASC, DESC, DESC),
-                1008, 1007
-        );
-        test(range(EXCLUSIVE, 5, 55, 555, 1007,
-                        EXCLUSIVE, 5, 55, 555, null),
-                ordering(DESC, ASC, DESC, DESC),
-                1009, 1008
-        );
-
-        // DAAD
-        test(range(INCLUSIVE, 5, 55, 555, null,
-                        INCLUSIVE, 5, 55, 555, 1009),
-                ordering(DESC, ASC, ASC, DESC),
-                1009, 1008, 1007
-        );
-        test(range(EXCLUSIVE, 5, 55, 555, null,
-                        EXCLUSIVE, 5, 55, 555, 1009),
-                ordering(DESC, ASC, ASC, DESC),
-                1008, 1007
-        );
-        test(range(EXCLUSIVE, 5, 55, 555, 1007,
-                        EXCLUSIVE, 5, 55, 555, null),
-                ordering(DESC, ASC, ASC, DESC),
-                1009, 1008
-        );
-    }
-
     // For use by this class
 
     private void test(IndexKeyRange keyRange, API.Ordering ordering, int ... expectedIds)
