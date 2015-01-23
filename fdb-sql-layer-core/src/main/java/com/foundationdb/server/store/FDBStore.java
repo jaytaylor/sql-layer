@@ -41,7 +41,6 @@ import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.DuplicateKeyException;
 import com.foundationdb.server.error.FDBNotCommittedException;
-import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -165,6 +164,12 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             }
         }
         return sequence.realValueForRawNumber(rawValue);
+    }
+
+    @Override
+    public void dropSchema(Session session, com.foundationdb.ais.model.Schema schema) {
+        super.dropSchema(session, schema);
+        removeFromCache(session, schema.getSequences().values());
     }
 
     public void setRollbackPending(Session session) {
@@ -393,9 +398,8 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     @Override
     public void deleteSequences(Session session, Collection<? extends Sequence> sequences) {
+        removeFromCache(session, sequences);
         for (Sequence sequence : sequences) {
-            session.remove(SEQ_UPDATES_KEY, SequenceCache.cacheKey(sequence));
-            sequenceCache.remove(sequence.getStorageUniqueKey());
             removeIfExists(session, rootDir, FDBNameGenerator.dataPath(sequence));
         }
     }
@@ -777,6 +781,24 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         return rawValue;
     }
 
+    private void removeFromCache(Session session, Collection<? extends Sequence> sequences) {
+        for(Sequence s : sequences) {
+            session.remove(SEQ_UPDATES_KEY, SequenceCache.cacheKey(s));
+            sequenceCache.remove(s.getStorageUniqueKey());
+        }
+    }
+
+    //
+    // Test only
+    //
+
+    int getSequenceCacheMapSize() {
+        return sequenceCache.size();
+    }
+
+    //
+    // Internal
+    //
 
     private static final ReadWriteMap.ValueCreator<Object, SequenceCache> SEQUENCE_CACHE_VALUE_CREATOR =
         new ReadWriteMap.ValueCreator<Object, SequenceCache>() {
