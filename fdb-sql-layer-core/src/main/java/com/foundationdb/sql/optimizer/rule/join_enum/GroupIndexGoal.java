@@ -536,7 +536,6 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         if (!sortAllowed) return result;
         List<OrderByExpression> indexOrdering = index.getOrdering();
         if (indexOrdering == null) return result;
-        BitSet reverse = new BitSet(indexOrdering.size());
         int nequals = index.getNEquality();
         int nunions = index.getNUnions();
         List<ExpressionNode> equalityColumns = null;
@@ -572,15 +571,6 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                         if (idx < nequals) {
                             index.setIncludeUnionAsEquality(false);
                         }
-                        if (indexColumn.isAscending() != targetColumn.isAscending()) {
-                            // To avoid mixed mode as much as possible,
-                            // defer changing the index order until
-                            // certain it will be effective.
-                            reverse.set(idx, true);
-                            if (idx == nequals)
-                                // Likewise reverse the initial equals segment.
-                                reverse.set(0, nequals, true);
-                        }
                         if (idx >= index.getNKeyColumns())
                             index.setUsesAllColumns(true);
                         idx++;
@@ -597,12 +587,8 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 }
                 break try_sorted;
             }
-            if ((idx > 0) && (idx < indexOrdering.size()) && reverse.get(idx-1))
-                // Reverse after ORDER BY if reversed last one.
-                reverse.set(idx, indexOrdering.size(), true);
-            
             // Don't allow mixed order index lookups, just use the order of the first column 
-            boolean isAscending = reverse.get(0) ? !indexOrdering.get(0).isAscending() : indexOrdering.get(0).isAscending();
+            boolean isAscending = queryGoal.getOrdering().getOrderBy().get(0).isAscending();
             for (OrderByExpression indexColumn : indexOrdering) {
                 if (indexColumn.isAscending() != isAscending) {
                     indexColumn.setAscending(isAscending);
