@@ -507,6 +507,13 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         return false;
     }
 
+    /** Called when embedded connection is closed, in case {@link inheritFromCall} was
+     * invoked at top-level. */
+    protected void endExplicit() {
+        ServerCallContextStack stack = ServerCallContextStack.get();
+        stack.endCallee(this);
+    }
+
     public boolean shouldNotify(QueryContext.NotificationLevel level) {
         return (level.ordinal() <= maxNotificationLevel.ordinal());
     }
