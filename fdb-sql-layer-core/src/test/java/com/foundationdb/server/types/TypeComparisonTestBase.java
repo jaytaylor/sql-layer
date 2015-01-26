@@ -74,8 +74,14 @@ public abstract class TypeComparisonTestBase
         List<Object[]> params = new ArrayList<>();
         for(TypeInfo info : typeInfos) {
             String name = info.type.name().unqualifiedName();
+            Value vnull = ValueSources.valuefromObject(null, info.type.instance(true));
             Value min = ValueSources.valuefromObject(info.min, info.type.instance(true));
             Value max = ValueSources.valuefromObject(info.max, info.type.instance(true));
+            params.add(new Object[] { name + "_null_null", vnull, vnull, 0 });
+            params.add(new Object[] { name + "_null_min", vnull, min, -1 });
+            params.add(new Object[] { name + "_min_null", min, vnull, 1 });
+            params.add(new Object[] { name + "_null_max", vnull, max, -1 });
+            params.add(new Object[] { name + "_max_null", max, vnull, 1 });
             params.add(new Object[] { name + "_min_min", min, min, 0 });
             params.add(new Object[] { name + "_min_max", min, max, -1 });
             params.add(new Object[] { name + "_max_min", max, min, 1 });
