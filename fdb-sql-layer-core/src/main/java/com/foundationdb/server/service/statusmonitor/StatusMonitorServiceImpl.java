@@ -130,10 +130,7 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
     @Override
     public void stop() {
         running = false;
-        if (instanceWatch != null) {
-            instanceWatch.cancel();
-            instanceWatch = null;
-        }
+        clearWatch();
         if (backgroundThread != null) {
             notifyBackground();
             try {
@@ -208,6 +205,7 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
     }
    
     private void writeStatus () {
+        clearWatch();
         String status = generateStatus();
         final byte[] jsonData = Tuple2.from(status).pack();
         getDatabase()
@@ -233,6 +231,13 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
             });
     }
     
+    private void clearWatch() {
+        if (instanceWatch != null) {
+            instanceWatch.cancel();
+            instanceWatch = null;
+        }
+    }
+
     private String generateStatus() {
         StringWriter str = new StringWriter();
         try {
