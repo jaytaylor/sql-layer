@@ -17,7 +17,7 @@
 
 package com.foundationdb.sql.pg;
 
-import com.foundationdb.server.types.aksql.aktypes.*;
+import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 import com.foundationdb.sql.server.ServerType;
 
 import com.foundationdb.sql.types.DataTypeDescriptor;
@@ -25,7 +25,6 @@ import com.foundationdb.sql.types.TypeId;
 
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Parameter;
-import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.UnknownDataTypeException;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;

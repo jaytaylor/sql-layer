@@ -18,10 +18,9 @@
 package com.foundationdb.server.service.blob;
 
 
-import com.foundationdb.server.error.*;
-import com.foundationdb.server.service.*;
-import com.foundationdb.server.service.security.*;
-import com.foundationdb.sql.server.*;
+import com.foundationdb.server.service.ServiceManager;
+import com.foundationdb.sql.server.ServerCallContextStack;
+import com.foundationdb.sql.server.ServerQueryContext;
 import com.foundationdb.qp.operator.QueryContext;
 
 import java.util.*;

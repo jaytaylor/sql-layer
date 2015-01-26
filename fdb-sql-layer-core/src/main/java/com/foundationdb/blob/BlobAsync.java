@@ -22,8 +22,10 @@ import java.util.List;
 
 import com.foundationdb.*;
 import com.foundationdb.async.*;
-import com.foundationdb.server.error.*;
-import com.foundationdb.tuple.*;
+import com.foundationdb.server.error.LobException;
+import com.foundationdb.tuple.Tuple;
+import com.foundationdb.tuple.Tuple2;
+import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.subspace.Subspace;
 
 /** Represents a potentially large binary value in FoundationDB. */

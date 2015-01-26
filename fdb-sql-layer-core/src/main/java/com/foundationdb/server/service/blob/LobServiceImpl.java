@@ -25,7 +25,7 @@ import com.foundationdb.TransactionContext;
 import com.foundationdb.directory.NoSuchDirectoryException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.store.FDBHolder;
-import com.google.inject.*;
+import com.google.inject.Inject;
 
 import java.util.Arrays;
 import java.util.List;

@@ -17,11 +17,11 @@
 
 package com.foundationdb.server.service.blob;
 
-import com.foundationdb.*;
-import com.foundationdb.server.store.*;
+import com.foundationdb.TransactionContext;
+import com.foundationdb.server.store.FDBHolder;
 import com.foundationdb.server.test.it.ITBase;
 
-import java.util.*;
+import java.util.UUID;
 
 import org.junit.*;
 

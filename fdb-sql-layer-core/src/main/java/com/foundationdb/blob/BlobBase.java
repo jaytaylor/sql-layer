@@ -20,7 +20,7 @@ package com.foundationdb.blob;
 import com.foundationdb.*;
 import com.foundationdb.async.*;
 import com.foundationdb.subspace.Subspace;
-import com.foundationdb.tuple.*;
+import com.foundationdb.tuple.Tuple2;
 
 public class BlobBase extends BlobAsync {
     

@@ -17,15 +17,15 @@
 
 package com.foundationdb.server.types.common;
 
-import com.foundationdb.server.service.blob.*;
+import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.TClassFormatter;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.common.types.*;
+import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.value.ValueSource;
-import com.foundationdb.util.*;
-
-import java.nio.charset.*;
+import com.foundationdb.util.AkibanAppender;
+import com.foundationdb.util.Strings;
+import java.nio.charset.Charset;
 import java.util.UUID;
 
 public class TFormatter {

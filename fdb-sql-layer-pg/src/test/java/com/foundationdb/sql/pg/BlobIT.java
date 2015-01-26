@@ -17,18 +17,20 @@
 
 package com.foundationdb.sql.pg;
 
-import com.foundationdb.*;
-import com.foundationdb.server.error.*;
-import com.foundationdb.server.service.blob.LobRoutines;
+import com.foundationdb.TransactionContext;
 import com.foundationdb.server.service.blob.LobService;
 import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 
-import com.foundationdb.server.store.*;
+import com.foundationdb.server.store.FDBHolder;
 import org.junit.*;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.IOException;
 import java.sql.*;
-import java.util.*;
+import java.util.UUID;
+import java.util.Arrays;
+import java.util.Random;
 
 public class BlobIT extends PostgresServerITBase {
     int dataSize = 100000;

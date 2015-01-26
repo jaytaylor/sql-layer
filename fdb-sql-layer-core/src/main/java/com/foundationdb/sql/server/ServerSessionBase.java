@@ -17,7 +17,6 @@
 
 package com.foundationdb.sql.server;
 
-import com.foundationdb.*;
 import com.foundationdb.ais.model.ForeignKey;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.operator.StoreAdapterHolder;
@@ -30,7 +29,6 @@ import com.foundationdb.server.error.TransactionAbortedException;
 import com.foundationdb.server.error.TransactionInProgressException;
 import com.foundationdb.server.error.TransactionReadOnlyException;
 import com.foundationdb.server.service.blob.LobService;
-import com.foundationdb.server.store.*;
 import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.ServiceManager;

@@ -17,16 +17,18 @@
 
 package com.foundationdb.server.types.aksql;
 
-import com.foundationdb.server.error.*;
-import com.foundationdb.server.service.blob.*;
+import com.foundationdb.server.error.InvalidGuidFormatException;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TParser;
-import com.foundationdb.server.types.aksql.aktypes.*;
-import com.foundationdb.server.types.common.types.*;
+import com.foundationdb.server.types.aksql.aktypes.AkGUID;
+import com.foundationdb.server.types.common.types.StringAttribute;
+import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 
-import java.io.*;
+import java.io.UnsupportedEncodingException;
 import java.util.UUID;
 
 public class AkParsers

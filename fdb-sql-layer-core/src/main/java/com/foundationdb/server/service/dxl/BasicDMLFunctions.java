@@ -42,7 +42,7 @@ import com.foundationdb.server.service.listener.TableListener;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.types.aksql.aktypes.*;
+import com.foundationdb.server.types.aksql.aktypes.AkBlob;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

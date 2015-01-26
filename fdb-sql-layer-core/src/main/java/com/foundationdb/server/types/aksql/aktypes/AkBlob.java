@@ -17,19 +17,23 @@
 
 package com.foundationdb.server.types.aksql.aktypes;
 
-import com.foundationdb.server.error.*;
-import com.foundationdb.server.types.*;
-import com.foundationdb.server.types.aksql.*;
-import com.foundationdb.server.types.common.*;
-import com.foundationdb.server.types.common.types.*;
-import com.foundationdb.server.types.mcompat.mtypes.*;
-import com.foundationdb.server.types.value.*;
-import com.foundationdb.sql.types.*;
+import com.foundationdb.server.error.InvalidParameterValueException;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.ValueIO;
+import com.foundationdb.server.types.aksql.AkParsers;
+import com.foundationdb.server.types.aksql.AkBundle;
+import com.foundationdb.server.types.aksql.AkCategory;
+import com.foundationdb.server.types.common.TFormatter;
+import com.foundationdb.server.types.common.types.NoAttrTClass;
+import com.foundationdb.server.types.value.ValueCacher;
+import com.foundationdb.server.types.value.UnderlyingType;
+import com.foundationdb.server.types.value.BasicValueTarget;
+import com.foundationdb.server.types.value.BasicValueSource;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueTarget;
+import com.foundationdb.server.types.value.ValueTargets;
+import com.foundationdb.sql.types.TypeId;
 import com.foundationdb.server.service.blob.BlobRef;
-import com.foundationdb.util.*;
-
-import java.io.*;
-import java.util.*;
 
 
 public class AkBlob extends NoAttrTClass {

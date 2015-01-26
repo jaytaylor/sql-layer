@@ -17,11 +17,23 @@
 
 package com.foundationdb.server.store;
 
-import com.foundationdb.*;
-import com.foundationdb.ais.model.*;
+import com.foundationdb.KeyValue;
+import com.foundationdb.Range;
+import com.foundationdb.Transaction;
+import com.foundationdb.async.Function;
+import com.foundationdb.ais.model.Column;
+import com.foundationdb.ais.model.Group;
+import com.foundationdb.ais.model.HasStorage;
+import com.foundationdb.ais.model.Index;
+import com.foundationdb.ais.model.Sequence;
+import com.foundationdb.ais.model.StorageDescription;
+import com.foundationdb.ais.model.Table;
+import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.AbstractVisitor;
+import com.foundationdb.ais.model.GroupsContainsLobsVisitor;
 import com.foundationdb.ais.util.TableChange.ChangeType;
 import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
-import com.foundationdb.async.Function;
 import com.foundationdb.async.AsyncIterator;
 import com.foundationdb.directory.DirectorySubspace;
 import com.foundationdb.directory.PathUtil;

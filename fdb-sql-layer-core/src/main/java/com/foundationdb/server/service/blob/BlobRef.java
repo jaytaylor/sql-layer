@@ -17,8 +17,8 @@
 
 package com.foundationdb.server.service.blob;
 
-import com.foundationdb.server.error.*;
-import com.foundationdb.server.types.aksql.aktypes.*;
+import com.foundationdb.server.error.LobException;
+import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 
 import java.util.UUID;
 import java.util.Arrays;

@@ -19,7 +19,7 @@
 package com.foundationdb.server.service.blob;
 
 
-import java.util.*;
+import java.util.List;
 
 public interface LobService {
 
