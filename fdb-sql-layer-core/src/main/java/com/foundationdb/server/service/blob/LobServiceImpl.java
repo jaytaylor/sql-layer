@@ -111,8 +111,9 @@ public class LobServiceImpl implements Service, LobService {
         BlobBase blob = openBlob(lobId);
         if (blob.isLinked(getTcx()).get()) {
             if (blob.getLinkedTable(getTcx()).get() != tableId) {
-                throw new LobException("lob is already linked to table");
+                throw new LobException("lob is already linked to a table");
             }
+            return;
         }
         blob.setLinkedTable(getTcx(), tableId).get();
     }

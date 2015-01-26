@@ -27,5 +27,7 @@
 --- # prefix not valid
 - Statement: INSERT INTO blob VALUES (11, unhex('03') )
 - error: [22511]
-
+--- # Cannot create an index on a blob column
+- Statement: ALTER TABLE blob ADD INDEX (bl)
+- error: [5000A]
 ...

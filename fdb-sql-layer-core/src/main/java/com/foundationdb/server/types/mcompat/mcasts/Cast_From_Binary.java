@@ -80,9 +80,7 @@ public final class Cast_From_Binary {
 
         @Override
         public TInstance preferredTarget(TPreptimeValue source) {
-            TInstance sourceType =  source.type();
-            return targetClass().instance(sourceType.attribute(Attrs.LENGTH),
-                    source.isNullable());
+            return targetClass().instance(source.isNullable());
         }
     }
 }

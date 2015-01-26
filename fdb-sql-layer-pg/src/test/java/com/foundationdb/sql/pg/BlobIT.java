@@ -18,6 +18,7 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.*;
+import com.foundationdb.server.error.*;
 import com.foundationdb.server.service.blob.LobRoutines;
 import com.foundationdb.server.service.blob.LobService;
 import com.foundationdb.server.types.aksql.aktypes.AkGUID;
@@ -672,10 +673,76 @@ public class BlobIT extends PostgresServerITBase {
         }
     }
     
+    @Test
+    public void createManyBlobsA() throws Exception {
+        Connection conn = getConnection();
+        Statement stmt = conn.createStatement();
+        stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
+        for (int i = 0; i < 1000; i++) {
+            stmt.execute("INSERT INTO t1 VALUES (" + i + ", create_long_blob())");
+        }
+        conn.close();
+    }
+
+    @Test
+    public void createManyBlobsB() throws Exception {
+        Connection conn = getConnection();
+        Statement stmt = conn.createStatement();
+        for (int i = 0; i < 10000; i++) {
+            stmt.execute("SELECT create_long_blob(unhex('050505'))");
+        }
+        conn.close();
+    }
+
+    @Test
+    public void createLargeBlob() throws Exception {
+        Connection conn = getConnection();
+        Statement stmt = conn.createStatement();
+        stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
+        
+        PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES ( 1, ?)");
+        int lengthInMb = 100;
+        long start = System.currentTimeMillis();
+        pstmt.setBlob(1, getInputStreamData(lengthInMb) );
+        long stop = System.currentTimeMillis();
+        System.out.println("time: " + ((stop - start)));
+        pstmt.execute();
+        
+        ResultSet rs = stmt.executeQuery("SELECT bl from t1");
+        rs.next();
+        Blob blob = rs.getBlob(1);
+        InputStream readStr = blob.getBinaryStream();
+        InputStream dataStr = getInputStreamData(lengthInMb);
+        int byteA;
+        int byteB;
+        while ( (byteA = readStr.read()) != -1) {
+            byteB = dataStr.read();
+            assert byteA == byteB;
+        }
+        conn.close();
+    }    
+    
     private byte[] generateBytes(int length) {
         byte[] inp = new byte[length];
         Random random = new Random();
         random.nextBytes(inp);
         return inp;
+    }
+    
+    private InputStream getInputStreamData(final int sizeInMB) {
+        return new InputStream() {
+            private int count1 = 0;
+            private int count2 = 0;
+            
+            @Override
+            public int read() throws IOException {
+                count1++;
+                if (count1 > 1000000) {
+                    count2++;
+                    count1 = 0;
+                }
+                return count2 < sizeInMB ? count1%256 : -1;
+            }
+        };
     }
 }

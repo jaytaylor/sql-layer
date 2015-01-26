@@ -174,6 +174,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     protected void cleanUpLobs() {
         List<String> toDo = new ArrayList<>(lobsCreated);
         lobService.checkAndCleanBlobs(toDo);
+        lobsCreated.clear();
     }
     
     @Override
