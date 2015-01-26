@@ -134,6 +134,17 @@ public class ServerCallContextStack
         callees.push(callee);
     }
 
+    public void endCallee(ServerSessionBase callee) {
+        if (stack.isEmpty() && !firstCalleeNested) {
+            callees.clear();
+            assert (sharedTransaction == null);
+        }
+    }
+
+    public ServerSessionBase currentCallee() {
+        return callees.peek();
+    }
+
     public ServerTransaction getSharedTransaction() {
         return sharedTransaction;
     }
