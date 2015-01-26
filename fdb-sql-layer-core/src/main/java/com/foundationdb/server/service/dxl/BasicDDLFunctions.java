@@ -420,15 +420,9 @@ public class BasicDDLFunctions implements DDLFunctions {
             Collection<Schema> schemas = new ArrayList<>(getAIS(session).getSchemas().values());
             for (Schema schema : schemas) {
                 if (!TableName.inSystemSchema(schema.getName())) {
-                    for (Table table : schema.getTables().values()) {
-                        for (TableListener listener : listenerService.getTableListeners()) {
-                            listener.onDrop(session, table);
-                        }
-                    }
+                    dropSchemaInternal(session, schema.getName());
                 }
             }
-            schemaManager().dropNonSystemSchemas(session);
-            store().dropNonSystemSchemas(session, schemas);
             txnService.commitTransaction(session);
         } finally {
             txnService.rollbackTransactionIfOpen(session);
