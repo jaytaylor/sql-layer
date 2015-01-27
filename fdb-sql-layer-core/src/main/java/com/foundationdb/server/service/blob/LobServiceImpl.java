@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class LobServiceImpl implements Service, LobService {
-    private final DirectorySubspace lobDirectory;
+    private DirectorySubspace lobDirectory;
     private final FDBHolder fdbHolder;
     // update with configurable value
     private final String LOB_DIRECTORY = "lobs";
@@ -154,6 +154,12 @@ public class LobServiceImpl implements Service, LobService {
         blob.truncate(getTcx(), size).get();
     }
 
+    @Override
+    public void clearAllLobs() {
+        lobDirectory.removeIfExists(getTcx()).get();
+        lobDirectory = fdbHolder.getRootDirectory().create(fdbHolder.getTransactionContext(), Arrays.asList(LOB_DIRECTORY)).get();
+    }
+    
     private BlobBase openBlob(String lobId) {
         try {
             DirectorySubspace ds = lobDirectory.open(getTcx(), Arrays.asList(lobId)).get();

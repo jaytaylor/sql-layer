@@ -39,6 +39,7 @@ public interface LobService {
     public void writeBlob(String lobId, long offset, byte[] data);
     public void appendBlob(String lobId, byte[] data);
     public void truncateBlob(String lobId, long size);
+    public void clearAllLobs();
     // copyBlob(String lobIdA, String LobIdB)
     
 }

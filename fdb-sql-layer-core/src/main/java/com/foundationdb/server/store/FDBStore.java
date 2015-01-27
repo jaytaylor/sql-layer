@@ -429,6 +429,11 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
     
     @Override
+    public void dropAllLobs(Session session) {
+        getLobService().clearAllLobs();
+    }
+    
+    @Override
     public void truncateIndexes(Session session, Collection<? extends Index> indexes) {
         for(Index index : indexes) {
             truncateTree(session, index);

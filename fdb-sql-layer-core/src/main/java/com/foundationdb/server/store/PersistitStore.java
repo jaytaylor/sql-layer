@@ -583,6 +583,11 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     protected void deleteLobs(Row row){
         // do nothing
     }
+
+    @Override
+    public void dropAllLobs(Session session) {
+        // do nothing
+    }
     
     @Override
     protected void executeLobOnlineDelete(Session session, String schemaName, String tableName) {

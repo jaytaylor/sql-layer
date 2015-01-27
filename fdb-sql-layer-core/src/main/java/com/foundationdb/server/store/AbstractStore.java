@@ -153,6 +153,9 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     
     /** Handles actions for clearing lobs*/
     abstract void deleteLobs(Row row);
+    
+    /** Clear all lob related data */
+    public abstract void dropAllLobs(Session session);
 
     protected abstract void registerLobForOnlineDelete(Session session, String schemaName, String tableName, UUID uuid);
 

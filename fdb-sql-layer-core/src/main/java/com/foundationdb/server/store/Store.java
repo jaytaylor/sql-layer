@@ -115,7 +115,8 @@ public interface Store extends KeyCreator {
     void removeTrees(Session session, com.foundationdb.ais.model.Schema schema);
     void removeTree(Session session, HasStorage object);
     void truncateTree(Session session, HasStorage object);
-
+    void dropAllLobs(Session session);
+    
     /**
      * Low level operation. Removes the given trees and <i>only</i> the given trees.
      * To ensure metadata and other state is updated, check if another method for

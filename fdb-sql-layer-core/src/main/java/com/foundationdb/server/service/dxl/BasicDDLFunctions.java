@@ -419,10 +419,15 @@ public class BasicDDLFunctions implements DDLFunctions {
         try {
             Collection<Schema> schemas = new ArrayList<>(getAIS(session).getSchemas().values());
             for (Schema schema : schemas) {
-                if (!TableName.inSystemSchema(schema.getName())) {
-                    dropSchemaInternal(session, schema.getName());
+                for (Table table : schema.getTables().values()) {
+                    for (TableListener listener : listenerService.getTableListeners()) {
+                        listener.onDrop(session, table);
+                    }
                 }
             }
+            schemaManager().dropNonSystemSchemas(session);
+            store().dropNonSystemSchemas(session, schemas);
+            store().dropAllLobs(session);
             txnService.commitTransaction(session);
         } finally {
             txnService.rollbackTransactionIfOpen(session);
@@ -837,12 +842,12 @@ public class BasicDDLFunctions implements DDLFunctions {
     public void createSQLJJar(Session session, SQLJJar sqljJar) {
         schemaManager().createSQLJJar(session, sqljJar);
     }
-    
+
     @Override
     public void replaceSQLJJar(Session session, SQLJJar sqljJar) {
         schemaManager().replaceSQLJJar(session, sqljJar);
     }
-    
+
     @Override
     public void dropSQLJJar(Session session, TableName jarName) {
         schemaManager().dropSQLJJar(session, jarName);
