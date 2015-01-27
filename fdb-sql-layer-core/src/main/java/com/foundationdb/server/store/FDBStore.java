@@ -667,7 +667,11 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             if (rowType.typeAt(i).equalsExcludingNullable(AkBlob.INSTANCE.instance(true))) {
                 int tableId = rowType.table().getTableId();
                 BlobRef blobRef = (BlobRef)row.value(i).getObject();
+
                 String allowedLobFormat = configService.getProperty("fdbsql.blob.allowed_storage_format");
+                if (blobRef == null) {
+                    continue;
+                }
                 if (blobRef.isLongLob()) {
                     if (allowedLobFormat.equalsIgnoreCase("SHORT_LOB")) {
                         throw new LobException("Long lob storage format not allowed");
@@ -675,6 +679,10 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                 } else if (blobRef.isShortLob()) {
                     if (allowedLobFormat.equalsIgnoreCase("LONG_LOB")) {
                         throw new LobException("Short lob storage format not allowed");
+                    }
+                    if (allowedLobFormat.equalsIgnoreCase("SHORT_LOB") && 
+                            (blobRef.getBytes().length >= AkBlob.LOB_SWITCH_SIZE)) {
+                        throw new LobException("Lob too large to store as SHORT_LOB");
                     }
                     if (blobRef.getBytes().length >= AkBlob.LOB_SWITCH_SIZE) {
                         UUID id = UUID.randomUUID();
@@ -699,6 +707,9 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         for( int i = 0; i < rowType.nFields(); i++ ) {
             if (rowType.typeAt(i).equalsExcludingNullable(AkBlob.INSTANCE.instance(true))) {
                 BlobRef blobRef = (BlobRef)row.value(i).getObject();
+                if (blobRef == null) {
+                    continue;
+                }
                 if (blobRef.isLongLob()) {
                     getLobService().deleteLob(blobRef.getId().toString());
                 }
