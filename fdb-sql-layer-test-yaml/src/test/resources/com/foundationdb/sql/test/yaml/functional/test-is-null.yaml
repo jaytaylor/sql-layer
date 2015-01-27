@@ -41,7 +41,7 @@
 ---
 - Statement: INSERT INTO all_types (blob_field) VALUES (null)
 ---
-- Statement: INSERT INTO all_types (blob_field) VALUES (''), ('deadbeef')
+- Statement: INSERT INTO all_types (blob_field) VALUES (create_short_blob()), (create_short_blob(unhex('abacad')))
 ---
 - Statement: SELECT blob_field FROM all_types WHERE blob_field IS NULL
 - output: [[null]]

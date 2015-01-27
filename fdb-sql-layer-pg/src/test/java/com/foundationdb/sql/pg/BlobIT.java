@@ -690,7 +690,7 @@ public class BlobIT extends PostgresServerITBase {
     public void createManyBlobsB() throws Exception {
         Connection conn = getConnection();
         Statement stmt = conn.createStatement();
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 1000; i++) {
             stmt.execute("SELECT create_long_blob(unhex('050505'))");
         }
         conn.close();
@@ -703,11 +703,8 @@ public class BlobIT extends PostgresServerITBase {
         stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
         
         PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES ( 1, ?)");
-        int lengthInMb = 100;
-        long start = System.currentTimeMillis();
+        int lengthInMb = 10;
         pstmt.setBlob(1, getInputStreamData(lengthInMb) );
-        long stop = System.currentTimeMillis();
-        System.out.println("time: " + ((stop - start)));
         pstmt.execute();
         
         ResultSet rs = stmt.executeQuery("SELECT bl from t1");
@@ -722,8 +719,38 @@ public class BlobIT extends PostgresServerITBase {
             assert byteA == byteB;
         }
         conn.close();
-    }    
-    
+    }
+
+    @Test
+    public void blobPerformance() throws Exception {
+        Connection conn = getConnection();
+        Statement stmt = conn.createStatement();
+        stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
+
+        PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES ( 1, ?)");
+        int lengthInMb = 10;
+        long start = System.currentTimeMillis();
+        pstmt.setBlob(1, getInputStreamData(lengthInMb) );
+        long stop = System.currentTimeMillis();
+        System.out.println("Writing --> time: " + ((stop - start)) + "ms, speed: " + (1000*(new Float(lengthInMb)/(stop-start)))+ " MB/sec");
+        pstmt.execute();
+
+        ResultSet rs = stmt.executeQuery("SELECT bl from t1");
+        rs.next();
+        Blob blob = rs.getBlob(1);
+        InputStream readStr = blob.getBinaryStream();
+        int byteA;
+        byte[] out = new byte[lengthInMb*1000000];
+        int i = 0;
+        start = System.currentTimeMillis();
+        while ( (byteA = readStr.read()) != -1) {
+            out[i] = (byte)byteA;
+        }
+        stop = System.currentTimeMillis();
+        System.out.println("Reading --> time: " + ((stop - start)) + "ms, speed: " + (1000*(new Float(lengthInMb)/(stop-start)))+ " MB/sec");        
+        conn.close();
+    }
+
     private byte[] generateBytes(int length) {
         byte[] inp = new byte[length];
         Random random = new Random();
