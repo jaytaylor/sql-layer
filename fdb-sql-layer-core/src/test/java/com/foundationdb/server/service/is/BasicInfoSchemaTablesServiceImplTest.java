@@ -822,6 +822,11 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
+        public void checkAllowedIndexes(Collection<? extends Index> indexes) {
+            // None
+        }
+
+        @Override
         public TableName registerStoredInformationSchemaTable(Table newTable, int version) {
             throw new UnsupportedOperationException();
         }
