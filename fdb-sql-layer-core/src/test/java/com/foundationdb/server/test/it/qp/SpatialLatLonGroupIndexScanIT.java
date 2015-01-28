@@ -30,9 +30,11 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
+import com.foundationdb.server.spatial.BoxLatLon;
 import com.foundationdb.server.spatial.Spatial;
 import com.foundationdb.server.types.value.ValueSources;
 import com.geophile.z.Space;
+import com.geophile.z.SpatialObject;
 import org.junit.Test;
 
 import java.math.BigDecimal;
@@ -290,11 +292,11 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                 }
                 // Get the query result using an index
                 Set<Integer> actual = new HashSet<>();
-                IndexBound lowerLeft = new IndexBound(row(pSpatialIndexRowType, beforeEQ, latLo, lonLo),
-                                                      new SetColumnSelector(0, 1, 2));
-                IndexBound upperRight = new IndexBound(row(pSpatialIndexRowType, beforeEQ, latHi, lonHi),
-                                                       new SetColumnSelector(0, 1, 2));
-                IndexKeyRange box = IndexKeyRange.spatialCoords(pSpatialIndexRowType, lowerLeft, upperRight);
+                SpatialObject queryBox = BoxLatLon.newBox(latLo.doubleValue(), latHi.doubleValue(),
+                                                          lonLo.doubleValue(), lonHi.doubleValue());
+                IndexBound boxBound = new IndexBound(row(pSpatialIndexRowType, beforeEQ, queryBox),
+                                                      new SetColumnSelector(0, 1));
+                IndexKeyRange box = IndexKeyRange.spatialObject(pSpatialIndexRowType, boxBound);
                 Operator plan = indexScan_Default(pSpatialIndexRowType, box, lookaheadQuantum());
                 Cursor cursor = API.cursor(plan, queryContext, queryBindings);
                 cursor.openTopLevel();
@@ -371,11 +373,11 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                 }
                 // Get the query result using an index
                 Set<Integer> actual = new HashSet<>();
-                IndexBound lowerLeft = new IndexBound(row(cSpatialIndexRowType, beforeEQ, latLo, lonLo),
-                                                      new SetColumnSelector(0, 1, 2));
-                IndexBound upperRight = new IndexBound(row(cSpatialIndexRowType, beforeEQ, latHi, lonHi),
-                                                       new SetColumnSelector(0, 1, 2));
-                IndexKeyRange box = IndexKeyRange.spatialCoords(cSpatialIndexRowType, lowerLeft, upperRight);
+                SpatialObject queryBox = BoxLatLon.newBox(latLo.doubleValue(), latHi.doubleValue(),
+                                                          lonLo.doubleValue(), lonHi.doubleValue());
+                IndexBound boxBound = new IndexBound(row(cSpatialIndexRowType, beforeEQ, queryBox),
+                                                      new SetColumnSelector(0, 1));
+                IndexKeyRange box = IndexKeyRange.spatialObject(cSpatialIndexRowType, boxBound);
                 Operator plan = indexScan_Default(cSpatialIndexRowType, box, lookaheadQuantum());
                 Cursor cursor = API.cursor(plan, queryContext, queryBindings);
                 cursor.openTopLevel();
