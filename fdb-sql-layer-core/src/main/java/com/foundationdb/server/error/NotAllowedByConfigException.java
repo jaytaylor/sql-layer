@@ -17,7 +17,8 @@
 
 package com.foundationdb.server.error;
 
-public class NotAllowedByConfigException extends InvalidOperationException
+// Not strictly limited to Startup but can occur there.
+public class NotAllowedByConfigException extends StartupFailureException
 {
     public NotAllowedByConfigException(String desc) {
         super(ErrorCode.NOT_ALLOWED_BY_CONFIG, desc);
