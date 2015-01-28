@@ -9,8 +9,8 @@
 ---
 - Statement: DELETE from all_types
 ---
-- Statement: INSERT INTO all_types (blob_field) VALUES ('deadbeef') returning blob_field
-- output: [[!utf8-bytes 'deadbeef']]
+- Statement: INSERT INTO all_types (blob_field) VALUES (create_short_blob(unhex('04')) returning blob_field
+- output: [[!!binary 'AQQ=']]
 ---
 - Statement: DELETE from all_types
 ---

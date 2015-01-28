@@ -41,10 +41,10 @@
 ---
 - Statement: INSERT INTO all_types (blob_field) VALUES (null)
 ---
-- Statement: INSERT INTO all_types (blob_field) VALUES (''), ('deadbeef')
+- Statement: INSERT INTO all_types (blob_field) VALUES (create_short_blob('')), (create_short_blob(unhex('04')))
 ---
 - Statement: SELECT blob_field FROM all_types WHERE blob_field IS NOT NULL
-- output: [[!!binary ''], [!utf8-bytes 'deadbeef']]
+- output: [[!!binary ''], [!!binary 'AQQ=']]
 ---
 - Statement: DELETE FROM all_types
 

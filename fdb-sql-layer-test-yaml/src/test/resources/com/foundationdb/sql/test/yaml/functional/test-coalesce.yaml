@@ -77,7 +77,7 @@
 ---
 - Statement: INSERT INTO all_types (bigint_unsigned_field) VALUES (1)
 ---
-- Statement: INSERT INTO all_types (blob_field) VALUES ('deadbeef')
+- Statement: INSERT INTO all_types (blob_field) VALUES (create_short_blob('deadbeef'))
 ---
 - Statement: INSERT INTO all_types (char_field) VALUES ('c')
 ---
@@ -139,14 +139,14 @@
 ---
 - Statement: INSERT INTO blobs VALUES (null, null)
 ---
-- Statement: INSERT INTO blobs (y) VALUES ('abcd')
+- Statement: INSERT INTO blobs (y) VALUES (create_short_blob(unhex('03')))
 ---
-- Statement: INSERT INTO blobs (x) VALUES ('1234')
+- Statement: INSERT INTO blobs (x) VALUES (create_short_blob(unhex('04')))
 ---
-- Statement: INSERT INTO blobs VALUES ('5678', 'ef00')
+- Statement: INSERT INTO blobs VALUES (create_short_blob(unhex('05')), create_short_blob(unhex('06')))
 ---
 - Statement: SELECT COALESCE(x, y) FROM blobs
-- output: [[null], [abcd], [1234], [5678]]
+- output: [[null], [!!binary 'AQM='], [!!binary 'AQQ='], [!!binary 'AQU=']]
 
 # clob
 ---

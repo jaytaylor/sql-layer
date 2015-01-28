@@ -1,13 +1,17 @@
 ---
 - CreateTable: blob  (id INT PRIMARY KEY, bl BLOB)
 ---
-- Statement: INSERT INTO blob VALUES (2, create_long_blob(unhex('0E0000')));
+- Statement: INSERT INTO blob VALUES (1, create_long_blob(unhex('0E0000')));
+---
+- Statement: INSERT INTO blob VALUES (2, create_long_blob('deadbeef'));
 ---
 - Statement: SELECT bl FROM blob
 - output_types: [VARCHAR FOR BIT DATA]
 ---
-- Statement: INSERT INTO blob VALUES (1, create_long_blob());
+- Statement: INSERT INTO blob VALUES (3, create_long_blob());
+---
+- Statement: INSERT INTO blob VALUES (4, null);
 ---
 - Statement: SELECT bl FROM blob
-- row_count: 2
+- row_count: 4
 ...
