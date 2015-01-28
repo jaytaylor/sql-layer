@@ -24,10 +24,6 @@ import com.foundationdb.server.types.texpressions.SerializeAs;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.util.AkibanAppender;
 import com.foundationdb.util.ArgumentValidation;
-import com.google.common.primitives.Booleans;
-import com.google.common.primitives.Doubles;
-import com.google.common.primitives.Floats;
-import com.google.common.primitives.Longs;
 import com.google.common.primitives.UnsignedBytes;
 
 import java.lang.reflect.Field;
@@ -81,10 +77,20 @@ public abstract class TClass {
         return (compare(sourceA, sourceB) == 0);
     }
 
+    /**
+     * Compares two (potentially {@code null}) values with {@link ValueSource#getType()} as their types.
+     * @return The value {@code 0} if {@code sourceA == sourceB};
+     *         a value less than {@code 0} if {@code sourceA < sourceB}; and
+     *         a value greater than {@code 0} if {@code sourceA > sourceB}
+     */
     public static int compare(ValueSource sourceA, ValueSource sourceB) {
         return compare(sourceA.getType(), sourceA, sourceB.getType(), sourceB);
     }
 
+    /**
+     * Compare {@code sourceA} and {@code sourceB} as {@code typeA} and {@code typeB}.
+     * @return See {@link #compare(ValueSource,ValueSource)}
+     */
     public static int compare(TInstance typeA, ValueSource sourceA, TInstance typeB, ValueSource sourceB) {
         if (comparisonNeedsCasting(typeA, typeB))
             throw new IllegalArgumentException("can't compare " + typeA + " and " + typeB);
@@ -97,14 +103,8 @@ public abstract class TClass {
     }
 
     /**
-     * Compares two values, assuming neither is null. The call site (<tt>TClass.compare</tt>) will handle the case
-     * that either or both sources is null.
-     * @param typeA the first operand's instance
-     * @param sourceA the first operand's value, which will not represent a null ValueSource
-     * @param typeB the second operand's instance
-     * @param sourceB the second operand's value, which will not represent a null ValueSource
-     * @return -1 if sourceA is less than sourceB; 0 if they're equal; 1 if sourceA is greater than sourceB
-     * @see TClass#compare(TInstance, com.foundationdb.server.types.value.ValueSource, TInstance, com.foundationdb.server.types.value.ValueSource)
+     * As {@link #compare(TInstance,ValueSource,TInstance,ValueSource)} with
+     * {@code null} expected to be handled already.
      */
     protected int doCompare(TInstance typeA, ValueSource sourceA, TInstance typeB, ValueSource sourceB) {
         if (sourceA.hasCacheValue() && sourceB.hasCacheValue()) {
@@ -116,23 +116,23 @@ public abstract class TClass {
                 return comparableA.compareTo(sourceB.getObject());
             }
         }
-        switch (TInstance.underlyingType(sourceA.getType())) {
+        switch (TInstance.underlyingType(typeA)) {
         case BOOL:
-            return Booleans.compare(sourceA.getBoolean(), sourceB.getBoolean());
+            return Boolean.compare(sourceA.getBoolean(), sourceB.getBoolean());
         case INT_8:
-            return sourceA.getInt8() - sourceB.getInt8();
+            return Integer.compare(sourceA.getInt8(), sourceB.getInt8());
         case INT_16:
-            return sourceA.getInt16() - sourceB.getInt16();
+            return Integer.compare(sourceA.getInt16(), sourceB.getInt16());
         case UINT_16:
-            return sourceA.getUInt16() - sourceB.getUInt16();
+            return Integer.compare(sourceA.getUInt16(), sourceB.getUInt16());
         case INT_32:
-            return sourceA.getInt32() - sourceB.getInt32();
+            return Integer.compare(sourceA.getInt32(), sourceB.getInt32());
         case INT_64:
-            return Longs.compare(sourceA.getInt64(), sourceB.getInt64());
+            return Long.compare(sourceA.getInt64(), sourceB.getInt64());
         case FLOAT:
-            return Floats.compare(sourceA.getFloat(), sourceB.getFloat());
+            return Float.compare(sourceA.getFloat(), sourceB.getFloat());
         case DOUBLE:
-            return Doubles.compare(sourceA.getDouble(), sourceB.getDouble());
+            return Double.compare(sourceA.getDouble(), sourceB.getDouble());
         case BYTES:
             return UnsignedBytes.lexicographicalComparator().compare(sourceA.getBytes(), sourceB.getBytes());
         case STRING:

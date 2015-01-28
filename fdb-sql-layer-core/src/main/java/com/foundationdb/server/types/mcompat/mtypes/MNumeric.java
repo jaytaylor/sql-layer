@@ -213,6 +213,11 @@ public class MNumeric extends SimpleDtdTClass {
         protected ValueIO getValueIO() {
             return bigintUnsignedIO;
         }
+
+        @Override
+        protected int doCompare(TInstance typeA, ValueSource sourceA, TInstance typeB, ValueSource sourceB) {
+            return UnsignedLongs.compare(sourceA.getInt64(), sourceB.getInt64());
+        }
     };
 
     public static final TClass DECIMAL_UNSIGNED = new MBigDecimal("decimal unsigned", 10)

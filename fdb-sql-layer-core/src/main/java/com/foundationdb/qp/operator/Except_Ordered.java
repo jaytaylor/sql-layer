@@ -128,7 +128,8 @@ final class Except_Ordered extends SetOperatorBase {
     public CompoundExplainer getExplainer(ExplainContext context) {
         Attributes att = new Attributes();
         att.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
-        att.put(Label.SET_OPTION, PrimitiveExplainer.getInstance("ALL"));
+        att.put(Label.NUM_SKIP, PrimitiveExplainer.getInstance(fixedFields));
+        att.put(Label.NUM_COMPARE, PrimitiveExplainer.getInstance(fieldsToCompare));
         for (Operator op : getInputOperators())
             att.put(Label.INPUT_OPERATOR, op.getExplainer(context));
         for (RowType type : getInputTypes())
@@ -136,7 +137,7 @@ final class Except_Ordered extends SetOperatorBase {
         att.put(Label.OUTPUT_TYPE, rowType().getExplainer(context));
         if(!removeDuplicates)
             att.put(Label.SET_OPTION, PrimitiveExplainer.getInstance("ALL"));
-        return new CompoundExplainer(Type.EXCEPT, att);
+        return new CompoundExplainer(Type.ORDERED, att);
     }
 
     private class Execution extends MultiChainedCursor { 

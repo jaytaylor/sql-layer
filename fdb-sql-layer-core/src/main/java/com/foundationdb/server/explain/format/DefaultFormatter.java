@@ -270,11 +270,8 @@ public class DefaultFormatter
         case DISTINCT:
             appendDistinctOperator(name, atts);
             break;
-        case UNION:
+        case UNION: // ALL
             appendUnionOperator(name, atts);
-            break;
-        case EXCEPT:
-            appendExceptOperator(name, atts);
             break;
         case BUFFER_OPERATOR:
             appendBufferOperator(name, atts);
@@ -804,16 +801,7 @@ public class DefaultFormatter
     protected void appendUnionOperator(String name, Attributes atts) {
         if ((levelOfDetail == LevelOfDetail.VERBOSE_WITHOUT_COST) ||
                 (levelOfDetail == LevelOfDetail.VERBOSE)) {
-            if((Boolean)atts.getValue(Label.PIPELINE)){
-                sb.append("Pipelining");
-            }
-        }
-    }
-
-    protected void appendExceptOperator(String name, Attributes atts) {
-        if ((levelOfDetail == LevelOfDetail.VERBOSE_WITHOUT_COST) ||
-                (levelOfDetail == LevelOfDetail.VERBOSE)) {
-            if((Boolean)atts.getValue(Label.PIPELINE)){
+            if((Boolean) atts.getValue(Label.PIPELINE)){
                 sb.append("Pipelining");
             }
         }

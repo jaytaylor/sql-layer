@@ -454,6 +454,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         while (!openResultSets.isEmpty()) {
             openResultSets.get(0).close();
         }
+        endExplicit();
         deregisterSessionMonitor();
         this.closed = true;
     }
