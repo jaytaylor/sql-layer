@@ -242,15 +242,14 @@ class IndexCursorSpatial_InBox extends IndexCursor
     {
         ValueRecord expressions = keyRange.lo().boundExpressions(context, bindings);
         Object object = expressions.value(index.firstSpatialArgument()).getObject();
-        if (!(object instanceof SpatialObject)) {
+        if (object instanceof SpatialObject) {
+            return (SpatialObject) object;
+        } else if (object instanceof Geometry) {
+            return JTS.spatialObject(space, (Geometry) object);
+        } else {
             throw new IllegalStateException(String.format("Expected SpatialObject, found: %s",
                                                           object.getClass()));
         }
-        SpatialObject spatialObject = (SpatialObject) object;
-        return
-            spatialObject instanceof Geometry
-            ? JTS.spatialObject(space, (Geometry) spatialObject)
-            : spatialObject;
     }
 
     private void logQueryIndex(SortedArray<RecordWithSpatialObject> queryIndex)
