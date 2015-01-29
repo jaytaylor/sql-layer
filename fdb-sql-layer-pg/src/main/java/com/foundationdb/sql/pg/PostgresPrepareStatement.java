@@ -51,16 +51,10 @@ public class PostgresPrepareStatement extends PostgresBaseCursorStatement
     }
     
     @Override
-    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
+    public PostgresStatementResult execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         server.prepareStatement(name, sql, stmt, params, paramTypes);
-        {        
-            PostgresMessenger messenger = server.getMessenger();
-            messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-            messenger.writeString("PREPARE");
-            messenger.sendMessage();
-        }
-        return 0;
+        return commandComplete("PREPARE");
     }
     
     @Override

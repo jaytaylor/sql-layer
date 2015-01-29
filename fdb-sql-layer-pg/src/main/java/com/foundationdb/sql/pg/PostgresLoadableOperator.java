@@ -52,13 +52,13 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
+    public PostgresStatementResult execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         bindings = PostgresLoadablePlan.setParameters(bindings, invocation);
         ServerCallContextStack stack = ServerCallContextStack.get();
         boolean success = false;
         stack.push(context, invocation);
         try {
-            int result = super.execute(context, bindings, maxrows);
+            PostgresStatementResult result = super.execute(context, bindings, maxrows);
             success = true;
             return result;
         }

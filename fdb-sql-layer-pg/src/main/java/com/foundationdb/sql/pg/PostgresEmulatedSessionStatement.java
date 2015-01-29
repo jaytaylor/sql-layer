@@ -29,7 +29,8 @@ import java.util.List;
 /**
  * Generally trivial handling of session verbs that aren't in the actual SQL grammar.
  */
-public class PostgresEmulatedSessionStatement implements PostgresStatement
+public class PostgresEmulatedSessionStatement extends PostgresStatementResults
+                                              implements PostgresStatement
 {
     enum Verb {
         UNLISTEN("UNLISTEN"),
@@ -88,17 +89,11 @@ public class PostgresEmulatedSessionStatement implements PostgresStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
+    public PostgresStatementResult execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         server.getSessionMonitor().countEvent(StatementTypes.OTHER_STMT);
         doOperation(context, server);
-        {        
-            PostgresMessenger messenger = server.getMessenger();
-            messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-            messenger.writeString(verb.getSQL());
-            messenger.sendMessage();
-        }
-        return 0;
+        return commandComplete(verb.getSQL());
     }
 
     @Override

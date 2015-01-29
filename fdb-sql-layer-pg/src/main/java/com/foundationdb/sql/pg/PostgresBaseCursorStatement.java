@@ -26,7 +26,8 @@ import java.io.IOException;
 /**
  * Common handling for cursor-related statements.
  */
-public abstract class PostgresBaseCursorStatement implements PostgresStatement
+public abstract class PostgresBaseCursorStatement extends PostgresStatementResults
+                                                  implements PostgresStatement
 {
     @Override
     public TransactionMode getTransactionMode() {

@@ -98,7 +98,7 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
     }
     
     @Override
-    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
+    public PostgresStatementResult execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         server.getSessionMonitor().countEvent(StatementTypes.SELECT);
         PostgresMessenger messenger = server.getMessenger();
@@ -164,15 +164,11 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
             }
         }
         if (suspended) {
-            messenger.beginMessage(PostgresMessages.PORTAL_SUSPENDED_TYPE.code());
-            messenger.sendMessage();
+            return portalSuspended(nrows);
         }
         else {
-            messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-            messenger.writeString("SELECT " + nrows);
-            messenger.sendMessage();
+            return commandComplete("SELECT " + nrows, nrows);
         }
-        return nrows;
     }
 
     @Override
