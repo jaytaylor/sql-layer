@@ -148,9 +148,14 @@ public class ConfigurationServiceImpl implements ConfigurationService, Service {
 
         // Also note, that, as of this writing, there are usages of both java.util date functionality and Joda
         if (timezone != null && timezone.length() != 0 && DateTimeZone.getProvider().getZone(timezone) == null) {
-            throw new InvalidTimeZoneException();
+            // Originally a hard error but JRE on CentOS 6 found to consistently misuse /etc/sysconfig/clock
+            // throw new InvalidTimeZoneException();
+            LOG.error("Reverting to timezone {} as Joda does not support user.timezone={}",
+                      DateTimeZone.getDefault(),
+                      timezone);
+        } else {
+            LOG.debug("Using timezone: {}", DateTimeZone.getDefault());
         }
-        LOG.debug("Using timezone: {}", DateTimeZone.getDefault());
     }
 
     @Override
