@@ -21,7 +21,7 @@
 # Test sum with incompatible data types
 ---
 - Statement: SELECT sum(blob_field) FROM all_types
-- output: [[NULL]]
+- error: [22508]
 # Test sum with inserted rows
 ---
 - Statement: INSERT INTO all_types

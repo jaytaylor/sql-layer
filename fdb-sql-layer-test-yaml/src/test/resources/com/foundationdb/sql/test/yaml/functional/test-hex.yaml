@@ -19,8 +19,7 @@
 - output: [['7A6170']]
 ---
 - Statement: SELECT HEX(blob_field) FROM all_types
-- output: [['E29883']]
-
+- error: [22508]
 ---
 - Statement: SELECT HEX( CAST(X'010203' AS VARCHAR(32) FOR BIT DATA) )
 - output: [['010203']]
