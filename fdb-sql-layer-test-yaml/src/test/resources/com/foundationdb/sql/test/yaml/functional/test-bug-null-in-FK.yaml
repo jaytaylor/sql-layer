@@ -2,14 +2,6 @@
 # when the query execution pulls the master row (with null reference) and attempts to generate
 # the HKey for the child table, the copy of the null value failed, causing the test to fail.
 ---
-- CreateTable:  Detail (
-        detail_key_column  serial not null,
-        x integer not null,
-        i integer not null,
-        master_key bigint not null,
-        more_master_key bigint,
-        primary key (detail_key_column))
----
 - CreateTable: master ( master_key_column  serial not null,
         version integer not null,
         name varchar(255),
@@ -20,24 +12,11 @@
 ---
 - Statement: alter table "master" add constraint FK_pjwkbsr2wxbylnpwknm7sdlx2 foreign key (otherMaster) references "master"
 ---
-- Statement: alter table Detail   add constraint uk  unique (x, i, master_key);
----
-- Statement: alter table Detail   add constraint CC foreign key (master_key)  references "master";
----
-- Statement: alter table Detail   add constraint FK_oqsugqt9wf16iu1n0u3o7mi78 foreign key (more_master_key)references "master";
----
 - Statement: insert into "master" (version, name, x, big_dec, otherMaster) 
       values (0, 'master', 0, 1234.123, null), (0, 'master', 0, 1234.123, null) RETURNING *; 
 - output: [[1, 0, 'master', 0, 1234.123, null], [2, 0, 'master', 0, 1234.123, null]]
 ---
-- Statement: insert into Detail (x, i, master_key) values (0, 0, 1),(0, 22, 1) RETURNING *;
-- output: [[1, 0, 0, 1, null], [2, 0, 22, 1, null]]
----
 - Statement: update "master" set version=1, name='Master', x=0, big_dec=1234.123, otherMaster=null where master_key_column=1 and version=0
----
-- Statement: update Detail set more_master_key=2 where detail_key_column=1;
----
-- Statement: update Detail set more_master_key=2 where detail_key_column=2;
 ---
 # This statement failed with a NullValueException. If this executes properly, the test passes
 - Statement: select master0_.master_key_column as master_key_column1_12_0_, 
@@ -55,8 +34,6 @@
       from "master" master0_ left outer join "master" master1_ 
           on master0_.otherMaster=master1_.master_key_column 
           where master0_.master_key_column=2
----
-- Statement: alter table Detail   drop constraint FK_oqsugqt9wf16iu1n0u3o7mi78;
 ---
 - Statement: alter table "master" drop constraint FK_pjwkbsr2wxbylnpwknm7sdlx2
 ...          
