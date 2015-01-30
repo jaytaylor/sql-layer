@@ -92,7 +92,7 @@ public class CreateBlob extends TScalarBase {
 
     @Override
     protected boolean neverConstant() {
-        return true;
+        return false;
     }
 
     @Override
