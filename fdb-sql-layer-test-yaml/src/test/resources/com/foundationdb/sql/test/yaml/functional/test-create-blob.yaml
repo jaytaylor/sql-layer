@@ -1,0 +1,18 @@
+---
+- CreateTable: blob  (id INT PRIMARY KEY, bl BLOB)
+---
+- Statement: INSERT INTO blob VALUES (0, create_blob(unhex(repeat('0E', 200000))));
+---
+- Statement: INSERT INTO blob VALUES (1, create_blob(unhex(repeat('0E', 2000))));
+---
+- Statement: INSERT INTO blob VALUES (2, create_blob('deadbeef'));
+---
+- Statement: INSERT INTO blob VALUES (3, create_blob());
+---
+- Statement: INSERT INTO blob VALUES (4, null);
+---
+- Statement: SELECT bl FROM blob
+- row_count: 5
+---
+- Statement: DROP TABLE blob
+...
