@@ -1,7 +1,3 @@
----
-#in
-- Properties: random-context
-- suppressed: true
 # Test bug (from hibernate) where the FK column in a table is null and being joined to itself. 
 # when the query execution pulls the master row (with null reference) and attempts to generate
 # the HKey for the child table, the copy of the null value failed, causing the test to fail.
