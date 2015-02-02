@@ -74,7 +74,7 @@ public class TFormatter {
                 if (blob.isShortLob()) {
                     String charsetName = StringFactory.DEFAULT_CHARSET.name();
                     Charset charset = Charset.forName(charsetName);
-                    String str = new String(blob.getIdOrBytes(), charset);
+                    String str = new String(blob.getBytes(), charset);
                     out.append(str);
                 } 
                 else if (blob.isLongLob()) {

@@ -104,6 +104,9 @@ public final class ValueSources {
         else if (type == null) {
             value = fromObject(object);
         }
+        else if (object instanceof BlobRef) {
+            value.putObject(object);
+        }
         else {
             switch (TInstance.underlyingType(type)) {
             case INT_8:

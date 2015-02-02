@@ -22,6 +22,7 @@ import java.util.UUID;
 
 import org.junit.Test;
 
+import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
@@ -32,7 +33,6 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.rowdata.SchemaFactory;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.DescriptorProtos.FileDescriptorSet;
@@ -85,6 +85,19 @@ public class ProtobufRowConverterTest {
                      1L, new BigDecimal("3.14"), new BigDecimal("1234567890.0987654321"));
     }
 
+    @Test
+    public void testBlob() throws Exception {
+        AkibanInformationSchema ais = ais(
+                "CREATE TABLE b(id INT PRIMARY KEY NOT NULL, bl blob)");
+        Group g = ais.getGroup(new TableName(SCHEMA, "b"));
+        RowType tRowType = schema.tableRowType(g.getRoot());
+        ProtobufRowConverter converter = converter(g);
+        byte[] ba = new byte[100];
+        ba[0] = BlobRef.SHORT_LOB;
+        encodeDecode(ais, converter, tRowType,
+                1, ba);        
+    }
+    
     @Test
     public void testNulls() throws Exception {
         AkibanInformationSchema ais = ais(
