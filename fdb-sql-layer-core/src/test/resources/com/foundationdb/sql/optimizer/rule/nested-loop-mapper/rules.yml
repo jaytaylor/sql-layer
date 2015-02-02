@@ -1,0 +1,11 @@
+- com.foundationdb.sql.optimizer.rule.ASTStatementLoader
+#- com.foundationdb.sql.optimizer.rule.AggregateMapper
+#- com.foundationdb.sql.optimizer.rule.AggregateToDistinctMapper
+- com.foundationdb.sql.optimizer.rule.TypeResolver
+- com.foundationdb.sql.optimizer.rule.ConstantFolder
+#- com.foundationdb.sql.optimizer.rule.OuterJoinPromoter
+- com.foundationdb.sql.optimizer.rule.ColumnEquivalenceFinder
+- com.foundationdb.sql.optimizer.rule.GroupJoinFinder
+- com.foundationdb.sql.optimizer.rule.InConditionReverser
+- com.foundationdb.sql.optimizer.rule.JoinAndIndexPicker
+- com.foundationdb.sql.optimizer.rule.NestedLoopMapper
