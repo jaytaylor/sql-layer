@@ -8,7 +8,9 @@
 ---
 - Statement: SELECT QUOTE_IDENT('values', '`')
 - output: [ ['`values`'] ]
-
+---
+- Statement: SELECT QUOTE_IDENT('CaseSensitive')
+- output: [ ['"CaseSensitive"'] ]
 ---
 - Statement: SELECT QUOTE_IDENT('foo', '"', TRUE)
 - output: [ ['"foo"'] ]
