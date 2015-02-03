@@ -1,6 +1,6 @@
 PhysicalSelect[name:varchar(32), order_date:date, sku:varchar(32), quan:int]
   Project_Default(customers.name, orders.order_date, items.sku, items.quan)
-    Sort_General(items.sku DESC, orders.order_date ASC)
+    Sort_General(items.sku ASC, orders.order_date DESC)
       Filter_Default(customers - orders - items)
         Flatten_HKeyOrdered(customers - orders INNER items)
           Flatten_HKeyOrdered(customers INNER orders)

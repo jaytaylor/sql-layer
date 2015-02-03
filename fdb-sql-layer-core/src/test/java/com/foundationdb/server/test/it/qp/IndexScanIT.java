@@ -26,6 +26,8 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.test.ExpressionGenerators;
 import com.foundationdb.server.types.value.ValueSource;
+
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.cursor;
@@ -92,19 +94,6 @@ public class IndexScanIT extends OperatorITBase
         compareRenderedHKeys(expected, cursor(indexScan, queryContext, queryBindings));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testMoreThanOneInequalityMixedMode()
-    {
-        IndexBound loBound = new IndexBound(row(itemOidIidIndexRowType, 10, 10), new SetColumnSelector(0, 1));
-        IndexBound hiBound = new IndexBound(row(itemOidIidIndexRowType, 20, 20), new SetColumnSelector(0, 1));
-        IndexKeyRange keyRange = IndexKeyRange.bounded(itemOidIidIndexRowType, loBound, false, hiBound, false);
-        API.Ordering ordering = new API.Ordering();
-        ordering.append(ExpressionGenerators.field(itemOidIidIndexRowType, 0), true);
-        ordering.append(ExpressionGenerators.field(itemOidIidIndexRowType, 1), false);
-        Operator indexScan = indexScan_Default(itemOidIidIndexRowType, keyRange, ordering);
-        String[] expected = new String[]{};
-        compareRenderedHKeys(expected, cursor(indexScan, queryContext, queryBindings));
-    }
 
     //
 
@@ -170,30 +159,6 @@ public class IndexScanIT extends OperatorITBase
             hkey(1, 12, 121),
             hkey(1, 11, 112),
             hkey(1, 11, 111),
-        };
-        compareRenderedHKeys(expected, cursor);
-    }
-
-    @Test
-    public void testMixedMode()
-    {
-        API.Ordering ordering = new API.Ordering();
-        ordering.append(field(itemOidIidIndexRowType, 0), true);
-        ordering.append(field(itemOidIidIndexRowType, 1), false);
-        Operator indexScan = indexScan_Default(itemOidIidIndexRowType,
-                                               IndexKeyRange.unbounded(itemOidIidIndexRowType),
-                                               ordering,
-                                               itemOidIidIndexRowType.tableType());
-        Cursor cursor = cursor(indexScan, queryContext, queryBindings);
-        String[] expected = new String[]{
-            hkey(1, 11, 112),
-            hkey(1, 11, 111),
-            hkey(1, 12, 122),
-            hkey(1, 12, 121),
-            hkey(2, 21, 212),
-            hkey(2, 21, 211),
-            hkey(2, 22, 222),
-            hkey(2, 22, 221),
         };
         compareRenderedHKeys(expected, cursor);
     }

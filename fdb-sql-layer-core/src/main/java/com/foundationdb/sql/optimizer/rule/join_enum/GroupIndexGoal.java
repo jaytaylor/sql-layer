@@ -447,6 +447,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         List<OrderByExpression> orderBy = new ArrayList<>(ncols);
         List<ExpressionNode> indexExpressions = new ArrayList<>(ncols);
         int i = 0;
+
         while (i < ncols) {
             ExpressionNode indexExpression;
             boolean ascending;
@@ -482,14 +483,18 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 // like first comparison, trailing columns ordered
                 // like last comparison.
                 int i = 0;
+                boolean ascending = outputOrdering.get(outputPeggedCount).isAscending();
                 while (i < index.getPeggedCount()) {
-                    indexOrdering.get(i++).setAscending(outputOrdering.get(outputPeggedCount).isAscending());
+                    indexOrdering.get(i++).setAscending(ascending);
                 }
                 for (int j = 0; j < comparisonFields; j++) {
+                    assert outputOrdering.get(outputPeggedCount + j).isAscending() == ascending : "comparison ascending different order than initial";
                     indexOrdering.get(i++).setAscending(outputOrdering.get(outputPeggedCount + j).isAscending());
                 }
+                boolean lastAscending = outputOrdering.get(outputPeggedCount + comparisonFields - 1).isAscending();
+                assert ascending == lastAscending : "lastAscending in different order than initial";
                 while (i < indexOrdering.size()) {
-                    indexOrdering.get(i++).setAscending(outputOrdering.get(outputPeggedCount + comparisonFields - 1).isAscending());
+                    indexOrdering.get(i++).setAscending(lastAscending);
                 }
             }
         }
@@ -502,6 +507,28 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         }
     }
 
+    private ExpressionNode targetExpression(OrderByExpression targetColumn) {
+        ExpressionNode targetExpression = targetColumn.getExpression();
+        if (targetExpression.isColumn()) {
+            ColumnExpression column = (ColumnExpression)targetExpression;
+            ColumnSource table = column.getTable();
+            if (table == queryGoal.getGrouping()) {
+                targetExpression = queryGoal.getGrouping()
+                    .getField(column.getPosition());
+            }
+            else if (table instanceof Project) {
+                // Cf. ASTStatementLoader.sortsForDistinct().
+                Project project = (Project)table;
+                if ((project.getOutput() == queryGoal.getOrdering()) &&
+                    (queryGoal.getOrdering().getOutput() instanceof Distinct)) {
+                    targetExpression = project.getFields()
+                        .get(column.getPosition());
+                }
+            }
+        }
+        return targetExpression;
+    }
+    
     // Determine how well this index does against the target.
     // Also, correct traversal order to match sort if possible.
     protected IndexScan.OrderEffectiveness determineOrderEffectiveness(SingleIndexScan index) {
@@ -509,7 +536,6 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         if (!sortAllowed) return result;
         List<OrderByExpression> indexOrdering = index.getOrdering();
         if (indexOrdering == null) return result;
-        BitSet reverse = new BitSet(indexOrdering.size());
         int nequals = index.getNEquality();
         int nunions = index.getNUnions();
         List<ExpressionNode> equalityColumns = null;
@@ -522,24 +548,8 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             for (OrderByExpression targetColumn : queryGoal.getOrdering().getOrderBy()) {
                 // Get the expression by which this is ordering, recognizing the
                 // special cases where the Sort is fed by GROUP BY or feeds DISTINCT.
-                ExpressionNode targetExpression = targetColumn.getExpression();
-                if (targetExpression.isColumn()) {
-                    ColumnExpression column = (ColumnExpression)targetExpression;
-                    ColumnSource table = column.getTable();
-                    if (table == queryGoal.getGrouping()) {
-                        targetExpression = queryGoal.getGrouping()
-                            .getField(column.getPosition());
-                    }
-                    else if (table instanceof Project) {
-                        // Cf. ASTStatementLoader.sortsForDistinct().
-                        Project project = (Project)table;
-                        if ((project.getOutput() == queryGoal.getOrdering()) &&
-                            (queryGoal.getOrdering().getOutput() instanceof Distinct)) {
-                            targetExpression = project.getFields()
-                                .get(column.getPosition());
-                        }
-                    }
-                }
+                ExpressionNode targetExpression = targetExpression(targetColumn); 
+
                 OrderByExpression indexColumn = getIndexColumn(indexOrdering, idx);
                 if (indexColumn == null && idx < nequals) {
                     throw new CorruptedPlanException("No index column expression for union comparison");
@@ -561,15 +571,6 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                         if (idx < nequals) {
                             index.setIncludeUnionAsEquality(false);
                         }
-                        if (indexColumn.isAscending() != targetColumn.isAscending()) {
-                            // To avoid mixed mode as much as possible,
-                            // defer changing the index order until
-                            // certain it will be effective.
-                            reverse.set(idx, true);
-                            if (idx == nequals)
-                                // Likewise reverse the initial equals segment.
-                                reverse.set(0, nequals, true);
-                        }
                         if (idx >= index.getNKeyColumns())
                             index.setUsesAllColumns(true);
                         idx++;
@@ -586,16 +587,25 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 }
                 break try_sorted;
             }
-            if ((idx > 0) && (idx < indexOrdering.size()) && reverse.get(idx-1))
-                // Reverse after ORDER BY if reversed last one.
-                reverse.set(idx, indexOrdering.size(), true);
-            for (int i = 0; i < reverse.size(); i++) {
-                if (reverse.get(i)) {
-                    OrderByExpression indexColumn = indexOrdering.get(i);
-                    indexColumn.setAscending(!indexColumn.isAscending());
+            // Don't allow mixed order index lookups, just use the order of the first column 
+            boolean isAscending = queryGoal.getOrdering().getOrderBy().get(0).isAscending();
+            for (OrderByExpression indexColumn : indexOrdering) {
+                if (indexColumn.isAscending() != isAscending) {
+                    indexColumn.setAscending(isAscending);
                 }
             }
-            result = IndexScan.OrderEffectiveness.SORTED;
+            boolean orderByOrdering = true;
+            for (OrderByExpression targetColumn : queryGoal.getOrdering().getOrderBy()) {
+                if (targetColumn.isAscending() != isAscending) {
+                    orderByOrdering = false;
+                }
+            }
+            
+            // If the order by ordering columns all matches the 
+            // order of the index (ASC or DESC), the index is sorted. 
+            if (orderByOrdering) {
+                result = IndexScan.OrderEffectiveness.SORTED;
+            }
         }
         if (queryGoal.getGrouping() != null) {
             boolean anyFound = false, allFound = true;

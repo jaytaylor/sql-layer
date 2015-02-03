@@ -1662,6 +1662,7 @@ public class OperatorAssembler extends BaseRule
                                 indexOrdering.get(i).isAscending(),
                                 index.getIndexColumns().get(i).getColumn().getCollator());
             }
+            assert ordering.allAscending() || ordering.allDescending() : "No index scan mixed ordering";
             return ordering;
         }
 
