@@ -16,14 +16,21 @@
  */
 package com.foundationdb.server.service.statusmonitor;
 
+import java.io.IOException;
+
 import org.junit.Test;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import com.foundationdb.Transaction;
 import com.foundationdb.async.Function;
+import com.foundationdb.server.service.is.BasicInfoSchemaTablesService;
+import com.foundationdb.server.service.is.ServerSchemaTablesService;
 import com.foundationdb.server.service.metrics.MetricsService;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager.BindingsConfigurationProvider;
 import com.foundationdb.server.test.it.FDBITBase;
 import com.foundationdb.tuple.Tuple2;
+import com.foundationdb.util.JsonUtils;
 
 import static org.junit.Assert.*;
 
@@ -31,7 +38,9 @@ public class StatusMonitorServiceIT extends FDBITBase {
 
     /** For use by classes that cannot extend this class directly */
     public static BindingsConfigurationProvider doBind(BindingsConfigurationProvider provider) {
-        return provider.require(StatusMonitorService.class);
+        return provider.require(StatusMonitorService.class)
+                .require(BasicInfoSchemaTablesService.class)
+                .require(ServerSchemaTablesService.class);
     }
 
     @Override
@@ -58,6 +67,51 @@ public class StatusMonitorServiceIT extends FDBITBase {
                  }
              }); 
         assertNotNull (results);
+        
+        try {
+            JsonParser parser = JsonUtils.jsonParser(results);
+            
+            assertEquals(JsonToken.START_OBJECT, parser.nextToken());
+            assertEquals(JsonToken.VALUE_STRING, parser.nextValue());
+            assertEquals("name", parser.getCurrentName());
+            assertEquals("SQL Layer", parser.getText());
+            assertEquals(JsonToken.VALUE_NUMBER_INT, parser.nextValue());
+            assertEquals("timestamp", parser.getCurrentName());
+            assertEquals(JsonToken.VALUE_STRING, parser.nextValue());
+            assertEquals("version", parser.getCurrentName());
+            assertEquals(JsonToken.VALUE_STRING, parser.nextValue());
+            assertEquals("host", parser.getCurrentName());
+            assertEquals(JsonToken.VALUE_STRING, parser.nextValue());
+            assertEquals("port", parser.getCurrentName());
+            assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+            assertEquals("instance", parser.getText());
+            assertEquals(JsonToken.START_OBJECT, parser.nextToken());
+            parser.skipChildren();
+            assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+            assertEquals("servers", parser.getText());
+            assertEquals(JsonToken.START_ARRAY, parser.nextToken());
+            parser.skipChildren();
+            assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+            assertEquals("sessions", parser.getText());
+            assertEquals(JsonToken.START_ARRAY, parser.nextToken());
+            parser.skipChildren();
+            assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+            assertEquals("statistics", parser.getText());
+            assertEquals(JsonToken.START_OBJECT, parser.nextToken());
+            parser.skipChildren();
+            assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+            assertEquals("garbage collectors", parser.getText());
+            assertEquals(JsonToken.START_ARRAY, parser.nextToken());
+            parser.skipChildren();
+            assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+            assertEquals("memory pools", parser.getText());
+            assertEquals(JsonToken.START_ARRAY, parser.nextToken());
+            parser.skipChildren();
+            assertEquals(JsonToken.END_OBJECT, parser.nextToken());
+        } catch (IOException e) {
+            assertTrue("IOException", false);
+        }
+        
     }
 
 

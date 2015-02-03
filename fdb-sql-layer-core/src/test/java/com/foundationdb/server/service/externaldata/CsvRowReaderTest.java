@@ -38,12 +38,14 @@ public final class CsvRowReaderTest {
         "id,s,t",
         "1,abc,2010-01-01",
         "2,xyz,",
+        "3,,2010-04-01",
         "666,\"quoted \"\"string\"\" here\",2013-01-01 13:02:03"
     };
 
     public static final Object[][] ROWS = {
         { 1, 20100101000000L, 100, "abc" },
         { 2, null, 100, "xyz" },
+        { 3, 20100401000000L, 100, null },
         { 666, 20130101130203L, 100, "quoted \"string\" here"}
     };
 

@@ -240,6 +240,10 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
             });
         }
 
+        for(Table t : curAIS.getTables().values()) {
+            checkAllowedIndexes(t.getIndexesIncludingInternal());
+        }
+
         listenerService.registerTableListener(this);
 
         registerSystemTables();

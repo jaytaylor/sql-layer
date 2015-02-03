@@ -231,16 +231,16 @@ public abstract class RowReader
         int columnIndex = fieldColumns[fieldIndex];
         if (!quoted && nullable[fieldIndex] && fieldMatches(nullBytes)) {
             row.valueAt(columnIndex).putNull();
-            fieldLength = 0;
-            return;
         }
-        // bytes -> string -> parsed typed value -> Java object.
-        String string = decodeField();
-        vstring.putString(string, null);
-        Value value = values[columnIndex];
-        value.getType().typeClass()
-            .fromObject(executionContexts[columnIndex], vstring, value);
-        ValueTargets.copyFrom(value, row.valueAt(columnIndex));
+        else {
+            // bytes -> string -> parsed typed value -> Java object.
+            String string = decodeField();
+            vstring.putString(string, null);
+            Value value = values[columnIndex];
+            value.getType().typeClass()
+                .fromObject(executionContexts[columnIndex], vstring, value);
+            ValueTargets.copyFrom(value, row.valueAt(columnIndex));
+        }
         fieldIndex++;
         fieldLength = 0;
     }

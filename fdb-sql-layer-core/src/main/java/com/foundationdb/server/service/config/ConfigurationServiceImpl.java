@@ -23,14 +23,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.TreeMap;
 
 import com.foundationdb.server.error.BadConfigDirectoryException;
@@ -42,7 +40,6 @@ import com.foundationdb.server.error.ServiceAlreadyStartedException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.util.tap.Tap;
 import com.google.inject.Inject;
-import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -151,9 +148,14 @@ public class ConfigurationServiceImpl implements ConfigurationService, Service {
 
         // Also note, that, as of this writing, there are usages of both java.util date functionality and Joda
         if (timezone != null && timezone.length() != 0 && DateTimeZone.getProvider().getZone(timezone) == null) {
-            throw new InvalidTimeZoneException();
+            // Originally a hard error but JRE on CentOS 6 found to consistently misuse /etc/sysconfig/clock
+            // throw new InvalidTimeZoneException();
+            LOG.error("Reverting to timezone {} as Joda does not support user.timezone={}",
+                      DateTimeZone.getDefault(),
+                      timezone);
+        } else {
+            LOG.debug("Using timezone: {}", DateTimeZone.getDefault());
         }
-        LOG.debug("Using timezone: {}", DateTimeZone.getDefault());
     }
 
     @Override

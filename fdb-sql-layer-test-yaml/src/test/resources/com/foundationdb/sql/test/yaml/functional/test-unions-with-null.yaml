@@ -89,6 +89,10 @@
 - Statement: SELECT NULL AS t1 UNION ALL SELECT NULL AS t1;
 - output: [[null], [null]]
 ---
+# Have to prepare and run in the same context, so skip this for random context
+- Properties: random-context
+- suppressed: true
+---
 # prepared statement
 - Statement: PREPARE s AS
                SELECT id, $1 FROM table1

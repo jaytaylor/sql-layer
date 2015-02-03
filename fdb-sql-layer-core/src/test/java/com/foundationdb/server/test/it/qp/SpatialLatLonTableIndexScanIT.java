@@ -32,6 +32,11 @@ import com.foundationdb.server.error.OutOfRangeException;
 import com.foundationdb.server.spatial.BoxLatLon;
 import com.foundationdb.server.spatial.Spatial;
 import com.geophile.z.Space;
+import com.geophile.z.SpatialObject;
+import com.geophile.z.spatialobject.jts.JTS;
+import com.geophile.z.spatialobject.jts.JTSSpatialObject;
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.GeometryFactory;
 import org.junit.Test;
 
 import java.math.BigDecimal;
@@ -352,11 +357,11 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                 }
                 // Get the query result using the (lat, lon) index
                 Set<Integer> actual = new HashSet<>();
-                IndexBound lowerLeft = new IndexBound(row(latLonIndexRowType, latLo, lonLo),
-                                                      new SetColumnSelector(0, 1));
-                IndexBound upperRight = new IndexBound(row(latLonIndexRowType, latHi, lonHi),
-                                                       new SetColumnSelector(0, 1));
-                IndexKeyRange box = IndexKeyRange.spatialCoords(latLonIndexRowType, lowerLeft, upperRight);
+                SpatialObject queryBox = BoxLatLon.newBox(latLo.doubleValue(), latHi.doubleValue(),
+                                                          lonLo.doubleValue(), lonHi.doubleValue());
+                IndexBound boxBound = new IndexBound(row(latLonIndexRowType, queryBox),
+                                                      new SetColumnSelector(0, 0));
+                IndexKeyRange box = IndexKeyRange.spatialObject(latLonIndexRowType, boxBound);
                 Operator plan = indexScan_Default(latLonIndexRowType, box, lookaheadQuantum());
                 Cursor cursor = API.cursor(plan, queryContext, queryBindings);
                 cursor.openTopLevel();
@@ -414,11 +419,11 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                 }
                 // Get the query result
                 Set<Integer> actual = new HashSet<>();
-                IndexBound lowerLeft = new IndexBound(row(latLonIndexRowType, latLo, lonLo),
-                                                      new SetColumnSelector(0, 1));
-                IndexBound upperRight = new IndexBound(row(latLonIndexRowType, latHi, lonHi),
-                                                       new SetColumnSelector(0, 1));
-                IndexKeyRange box = IndexKeyRange.spatialCoords(latLonIndexRowType, lowerLeft, upperRight);
+                SpatialObject queryBox = BoxLatLon.newBox(latLo.doubleValue(), latHi.doubleValue(),
+                                                          lonLo.doubleValue(), lonHi.doubleValue());
+                IndexBound boxBound = new IndexBound(row(latLonIndexRowType, queryBox),
+                                                      new SetColumnSelector(0, 0));
+                IndexKeyRange box = IndexKeyRange.spatialObject(latLonIndexRowType, boxBound);
                 Operator plan = indexScan_Default(latLonIndexRowType, box, lookaheadQuantum());
                 Cursor cursor = API.cursor(plan, queryContext, queryBindings);
                 cursor.openTopLevel();
@@ -478,11 +483,11 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                     }
                     // Get the query result using the (before, lat, lon) index
                     Set<Integer> actual = new HashSet<>();
-                    IndexBound lowerLeft = new IndexBound(row(beforeLatLonIndexRowType, before, latLo, lonLo),
-                                                          new SetColumnSelector(0, 1, 2));
-                    IndexBound upperRight = new IndexBound(row(beforeLatLonIndexRowType, before, latHi, lonHi),
-                                                           new SetColumnSelector(0, 1, 2));
-                    IndexKeyRange box = IndexKeyRange.spatialCoords(beforeLatLonIndexRowType, lowerLeft, upperRight);
+                    SpatialObject queryBox = BoxLatLon.newBox(latLo.doubleValue(), latHi.doubleValue(),
+                                                               lonLo.doubleValue(), lonHi.doubleValue());
+                    IndexBound boxBound = new IndexBound(row(beforeLatLonIndexRowType, before, queryBox),
+                                                          new SetColumnSelector(0, 1));
+                    IndexKeyRange box = IndexKeyRange.spatialObject(beforeLatLonIndexRowType, boxBound);
                     Operator plan = indexScan_Default(beforeLatLonIndexRowType, box, lookaheadQuantum());
                     Cursor cursor = API.cursor(plan, queryContext, queryBindings);
                     cursor.openTopLevel();
@@ -682,94 +687,6 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
         badBox(-451, 0, 0, 0);
     }
 
-    @Test
-    public void testExceedingMaxLatitude()
-    {
-        loadDB();
-        try (TransactionContext t = new TransactionContext()) {
-            BigDecimal latLo = new BigDecimal(70);
-            BigDecimal latHi = new BigDecimal(120);
-            BigDecimal lonLo = new BigDecimal(40);
-            BigDecimal lonHi = new BigDecimal(90);
-            // Get the right answer
-            Set<Integer> expected = new HashSet<>();
-            for (int id = 0; id < lats.size(); id++) {
-                BigDecimal lat = lats.get(id);
-                BigDecimal lon = lons.get(id);
-                if (latLo.compareTo(lat) <= 0 &&
-                    lat.compareTo(latHi) <= 0 &&
-                    lonLo.compareTo(lon) <= 0 &&
-                    lon.compareTo(lonHi) <= 0) {
-                    expected.add(id);
-                }
-            }
-            // Get the query result
-            Set<Integer> actual = new HashSet<>();
-            IndexBound lowerLeft = new IndexBound(row(latLonIndexRowType, latLo, lonLo),
-                                                  new SetColumnSelector(0, 0));
-            IndexBound upperRight = new IndexBound(row(latLonIndexRowType, latHi, lonHi),
-                                                   new SetColumnSelector(0, 0));
-            IndexKeyRange box = IndexKeyRange.spatialCoords(latLonIndexRowType, lowerLeft, upperRight);
-            Operator plan = indexScan_Default(latLonIndexRowType, box, lookaheadQuantum());
-            Cursor cursor = API.cursor(plan, queryContext, queryBindings);
-            cursor.openTopLevel();
-            Row row;
-            while ((row = cursor.next()) != null) {
-                assertSame(latLonIndexRowType.physicalRowType(), row.rowType());
-                int id = getLong(row, 1).intValue();
-                assertEquals(expectedHKey(id), row.hKey().toString());
-                actual.add(id);
-            }
-            // There should be no false negatives
-            assertTrue(actual.containsAll(expected));
-        }
-    }
-
-    @Test
-    public void testExceedingMaxLongitude()
-    {
-/*        loadDB();
-        BigDecimal latLo = new BigDecimal(-15);
-        BigDecimal latHi = new BigDecimal(15);
-        BigDecimal lonLo = new BigDecimal(160);
-        BigDecimal lonHi = new BigDecimal(190);
-        // Get the right answer
-        Set<Integer> expected = new HashSet<>();
-        for (int id = 0; id < lats.size(); id++) {
-            BigDecimal lat = lats.get(id);
-            BigDecimal lon = lons.get(id);
-            if (latLo.compareTo(lat) <= 0 &&
-                lat.compareTo(latHi) <= 0 &&
-                lonLo.compareTo(lon) <= 0 &&
-                lon.compareTo(lonHi) <= 0) {
-                expected.add(id);
-            }
-        }
-        // Get the query result
-        Set<Integer> actual = new HashSet<>();
-        IndexBound lowerLeft = new IndexBound(row(latLonIndexRowType, latLo, lonLo),
-                                              new SetColumnSelector(0, 0));
-        IndexBound upperRight = new IndexBound(row(latLonIndexRowType, latHi, lonHi),
-                                               new SetColumnSelector(0, 0));
-        IndexKeyRange box = IndexKeyRange.spatial(latLonIndexRowType, lowerLeft, upperRight);
-        Operator plan = indexScan_Default(latLonIndexRowType, box, lookaheadQuantum());
-        Cursor cursor = API.cursor(plan, queryContext, queryBindings);
-        cursor.openTopLevel();
-        Row row;
-        while ((row = cursor.next()) != null) {
-            assertSame(latLonIndexRowType.physicalRowType(), row.rowType());
-            long z = getLong(row, 0);
-            Integer expectedId = zToId.get(z);
-            assertNotNull(expectedId);
-            int id = getLong(row, 1).intValue();
-            assertEquals(expectedId.intValue(), id);
-            assertEquals(expectedHKey(id), row.hKey().toString());
-            actual.add(id);
-        }
-        // There should be no false negatives
-        assertTrue(actual.containsAll(expected));*/
-    }
-
     private void loadDB()
     {
         try (TransactionContext t = new TransactionContext()) {
@@ -852,6 +769,17 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
         return a;
     }
 
+    private JTSSpatialObject box(double xLo, double xHi, double yLo, double yHi)
+    {
+        Coordinate[] coords = new Coordinate[5];
+        coords[0] = new Coordinate(xLo, yLo);
+        coords[1] = new Coordinate(xLo, yHi);
+        coords[2] = new Coordinate(xHi, yHi);
+        coords[3] = new Coordinate(xHi, yLo);
+        coords[4] = coords[0];
+        return JTS.spatialObject(space, FACTORY.createPolygon(FACTORY.createLinearRing(coords), null));
+    }
+
     private void goodBox(int latLo, int latHi, int lonLo, int lonHi)
     {
         BoxLatLon.newBox(latLo, latHi, lonLo, lonHi);
@@ -875,6 +803,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
     private static final int LON_RANGE = LON_HI - LON_LO;
     private static final int DLAT = 10;
     private static final int DLON = 10;
+    private static final GeometryFactory FACTORY = new GeometryFactory();
 
 
     private int point;

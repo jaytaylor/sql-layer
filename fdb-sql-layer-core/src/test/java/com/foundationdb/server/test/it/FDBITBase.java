@@ -70,4 +70,8 @@ public class FDBITBase extends ITBase
     protected FDBTransactionService fdbTxnService() {
         return (FDBTransactionService)super.txnService();
     }
+
+    protected FDBStore fdbStore() {
+        return (FDBStore)super.store();
+    }
 }

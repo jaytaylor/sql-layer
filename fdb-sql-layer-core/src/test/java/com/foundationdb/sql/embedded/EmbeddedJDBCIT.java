@@ -17,6 +17,8 @@
 
 package com.foundationdb.sql.embedded;
 
+import com.foundationdb.sql.server.ServerCallContextStack;
+
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
@@ -262,6 +264,17 @@ public class EmbeddedJDBCIT extends EmbeddedJDBCITBase
                 assertFalse("too many rs rows", rs.next());
             }
         }
+    }
+
+    @Test
+    public void emptyCalleeStack() throws Exception {
+        for (int i = 0; i < 100; i++) {
+            try (Connection conn = getConnection();
+                 Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery(String.format("SELECT %d", i))) {
+            }
+        }
+        assertEquals(null, ServerCallContextStack.get().currentCallee());
     }
 
 }
