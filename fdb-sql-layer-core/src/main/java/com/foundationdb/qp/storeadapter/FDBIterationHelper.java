@@ -84,6 +84,11 @@ public class FDBIterationHelper implements IterationHelper
         return storeData.persistitKey;
     }
 
+    @Override 
+    public Key endKey() {
+        return storeData.endKey;
+    }
+    
     @Override
     public void clear() {
         storeData.persistitKey.clear();

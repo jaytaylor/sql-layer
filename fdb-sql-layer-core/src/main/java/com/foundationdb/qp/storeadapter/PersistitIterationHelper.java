@@ -60,6 +60,12 @@ public class PersistitIterationHelper implements IterationHelper
     {
         return exchange.getKey();
     }
+    
+    @Override
+    public Key endKey()
+    {
+        return new Key(exchange.getPersistitInstance());
+    }
 
     @Override
     public void clear()

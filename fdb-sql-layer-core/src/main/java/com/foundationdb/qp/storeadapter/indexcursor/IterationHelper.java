@@ -25,6 +25,7 @@ public interface IterationHelper
 {
     /** Get the (stateful) key associated with this helper. */
     Key key();
+    Key endKey();
 
     /** Clear internal state, including the {@link #key()}. */
     void clear();

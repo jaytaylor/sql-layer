@@ -450,6 +450,10 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             // scan may specify a value for both. But the persistit search can only deal with the [childPK] part of
             // the traversal.
             startKey.copyPersistitKeyTo(key());
+            //Copy endKey into key->FDBIterationHelper ->storeData.endKey 
+            // which sets an upper bound on the scan range
+            if (endKey != null)
+                endKey.copyPersistitKeyTo(endKey());
             pastStart = false;
         }
         keyComparison = initialKeyComparison;

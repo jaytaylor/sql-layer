@@ -45,6 +45,9 @@ import com.persistit.Key;
 
 import java.util.Arrays;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import static com.foundationdb.server.store.FDBStoreDataHelper.*;
 
 /** Storage using the FDB directory layer.
@@ -53,6 +56,7 @@ import static com.foundationdb.server.store.FDBStoreDataHelper.*;
 */
 public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBStoreData>
 {
+    private static final Logger LOG = LoggerFactory.getLogger(FDBStorageDescription.class);
     private byte[] prefixBytes;
 
     public FDBStorageDescription(HasStorage forObject, String storageFormat) {
@@ -216,6 +220,7 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
                                                                         future);
             return;
         }
+        
         KeySelector ksLeft, ksRight;
         switch (left) {
         case START:
@@ -257,6 +262,11 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
                               boolean key, boolean inclusive, boolean reverse,
                               FDBScanTransactionOptions transactionOptions) {
         KeySelector ksLeft, ksRight;
+
+        byte[] endKey = null;
+        if (storeData.endKey.getDepth() > 0)
+            endKey = packedTuple(storeData.storageDescription, storeData.endKey, null, null);
+
         byte[] prefixBytes = prefixBytes(storeData);
         if (!key) {
             ksLeft = KeySelector.firstGreaterOrEqual(prefixBytes);
@@ -264,24 +274,42 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
         }
         else if (inclusive) {
             if (reverse) {
-                ksLeft = KeySelector.firstGreaterThan(prefixBytes);
+                if (endKey != null) {
+                    ksLeft = KeySelector.firstGreaterOrEqual(endKey);
+                } else {
+                    ksLeft = KeySelector.firstGreaterThan(prefixBytes);
+                }
                 ksRight = KeySelector.firstGreaterThan(packKey(storeData));
             } 
             else {
                 ksLeft = KeySelector.firstGreaterOrEqual(packKey(storeData));
-                ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
+                if (endKey != null) {
+                    ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(endKey));
+                } else {
+                    ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
+                }
             }
         }
         else {
             if (reverse) {
-                ksLeft = KeySelector.firstGreaterThan(prefixBytes);
-                ksRight = KeySelector.firstGreaterOrEqual(packKey(storeData));
+                if (endKey != null) {
+                    ksLeft = KeySelector.firstGreaterOrEqual(endKey);
+                } else {
+                    ksLeft = KeySelector.firstGreaterThan(prefixBytes);
+                }
+                ksRight = KeySelector.firstGreaterThan(packKey(storeData));
             } 
             else {
                 ksLeft = KeySelector.firstGreaterThan(packKey(storeData));
-                ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
+                if (endKey != null) {
+                    ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(endKey));
+                } else {
+                    ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
+                }
             }
         }
+        //LOG.error("Index scan inclusive: {}, reverse: {}", inclusive, reverse);
+        //LOG.error("Index scan of : {} to {} ", ksLeft, ksRight);
         TransactionState txnState = store.getTransaction(session, storeData);
         storeData.iterator = new FDBStoreDataKeyValueIterator(storeData,
             txnState.getRangeIterator(ksLeft, ksRight, Transaction.ROW_LIMIT_UNLIMITED, reverse, transactionOptions));

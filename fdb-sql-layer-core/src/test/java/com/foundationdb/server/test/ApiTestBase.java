@@ -839,13 +839,13 @@ public class ApiTestBase {
 
     protected Operator scanIndexPlan(Index index) {
         Schema schema = SchemaCache.globalSchema(index.getAIS());
-        return API.indexScan_Default(schema.indexRowType(index));
+        return API.indexScan_Default(schema.indexRowType(index), false, null);
     }
 
     protected final List<Row> scanAllIndex(Index index) {
         AkibanInformationSchema ais = ais();
         Schema schema = SchemaCache.globalSchema(ais);
-        Operator plan = API.indexScan_Default(schema.indexRowType(index));
+        Operator plan = API.indexScan_Default(schema.indexRowType(index), false, null);
         return runPlan(session(), schema, plan);
     }
 
