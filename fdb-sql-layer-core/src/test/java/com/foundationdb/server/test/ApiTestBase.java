@@ -624,8 +624,27 @@ public class ApiTestBase {
         return ddl().getTable(session(), new TableName(schema, table)).getIndex(indexName);
     }
 
-    protected final TableIndex createSpatialTableIndex(String schema, String table, String indexName,
-                                                       int firstSpatialArgument, int spatialColumns,
+    protected final TableIndex createSpatialTableIndex(String schema,
+                                                       String table,
+                                                       String indexName,
+                                                       int firstSpatialArgument,
+                                                       int spatialColumns,
+                                                       String... indexCols) {
+        return createSpatialTableIndex(schema,
+                                       table,
+                                       indexName,
+                                       "GEO_LAT_LON",
+                                       firstSpatialArgument,
+                                       spatialColumns,
+                                       indexCols);
+    }
+
+    protected final TableIndex createSpatialTableIndex(String schema,
+                                                       String table,
+                                                       String indexName,
+                                                       String geoFunctionName,
+                                                       int firstSpatialArgument,
+                                                       int spatialColumns,
                                                        String... indexCols) {
         StringBuilder cols = new StringBuilder();
         for (int i = 0; i < indexCols.length; i++) {
