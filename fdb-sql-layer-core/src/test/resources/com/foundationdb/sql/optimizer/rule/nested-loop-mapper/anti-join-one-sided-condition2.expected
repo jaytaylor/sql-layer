@@ -1,0 +1,13 @@
+SelectQuery@63e772c0
+  ResultSet@701ece7d[c1]
+    Project@7686aa0c[t1.c1]
+      Select@306369f[]
+        UsingHashTable@5a89484a(HashTable@6ae920b5, [t2.c2])
+          TableGroupJoinTree@6f6281e8(TableGroup@2c3edf79(t2), t2 - GroupScan@53c197a0(Group(test.t2), rows = 1, cost = 0.00000))
+            TableSource@37362188(t2 - TableGroup@2c3edf79(t2))
+          MapJoin@4ac9b455(ANTI)
+            TableGroupJoinTree@4d599f60(TableGroup@5e5ecf(t1), t1 - GroupScan@33a26839(Group(test.t1), rows = 1, cost = 0.00000))
+              TableSource@42d38409(t1 - TableGroup@5e5ecf(t1))
+            Select@6b6890aa[t2.c3 == 4]
+              HashTableLookup@1df1bffd(HashTable@6ae920b5, [t1.c1])
+                TableSource@37362188(t2 - TableGroup@2c3edf79(t2))
