@@ -43,8 +43,13 @@ public interface PostgresStatement extends ServerStatement
     public void sendDescription(PostgresQueryContext context, 
                                 boolean always, boolean params) throws IOException;
 
+    public interface PostgresStatementResult {
+        public void sendCommandComplete(PostgresMessenger messenger) throws IOException;
+        public int getRowsProcessed();
+    }
+
     /** Execute statement and output results. Return number of rows processed. */
-    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException;
+    public PostgresStatementResult execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException;
 
     /** Whether or not the generation has been set */
     public boolean hasAISGeneration();

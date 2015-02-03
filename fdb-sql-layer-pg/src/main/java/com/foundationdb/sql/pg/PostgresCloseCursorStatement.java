@@ -49,19 +49,13 @@ public class PostgresCloseCursorStatement extends PostgresBaseCursorStatement
     }
     
     @Override
-    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
+    public PostgresStatementResult execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         if (preparedStatement)
             server.deallocatePreparedStatement(name);
         else
             server.closeBoundPortal(name);
-        {        
-            PostgresMessenger messenger = server.getMessenger();
-            messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-            messenger.writeString(preparedStatement ? "DEALLOCATE" : "CLOSE");
-            messenger.sendMessage();
-        }
-        return 0;
+        return commandComplete(preparedStatement ? "DEALLOCATE" : "CLOSE");
     }
     
     @Override

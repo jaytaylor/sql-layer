@@ -44,16 +44,10 @@ public class PostgresDeclareStatement extends PostgresBaseCursorStatement
     }
     
     @Override
-    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
+    public PostgresStatementResult execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         server.declareStatement(name, sql, stmt);
-        {        
-            PostgresMessenger messenger = server.getMessenger();
-            messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-            messenger.writeString("DECLARE");
-            messenger.sendMessage();
-        }
-        return 0;
+        return commandComplete("DECLARE");
     }
     
     @Override

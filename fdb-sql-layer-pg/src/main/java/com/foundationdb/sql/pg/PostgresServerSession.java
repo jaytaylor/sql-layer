@@ -22,6 +22,8 @@ import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.sql.server.ServerSession;
 import com.foundationdb.sql.server.ServerValueEncoder;
 
+import static com.foundationdb.sql.pg.PostgresStatement.PostgresStatementResult;
+
 import java.util.List;
 import java.io.IOException;
 
@@ -48,7 +50,7 @@ public interface PostgresServerSession extends ServerSession
                                  List<ParameterNode> params, int[] paramTypes);
 
     /** Execute prepared statement. */
-    public int executePreparedStatement(PostgresExecuteStatement estmt, int maxrows)
+    public PostgresStatementResult executePreparedStatement(PostgresExecuteStatement estmt, int maxrows)
             throws IOException;
 
     /** Remove prepared statement with given name. */
@@ -59,7 +61,7 @@ public interface PostgresServerSession extends ServerSession
                                  String sql, StatementNode stmt);
 
     /** Fetch from named cursor. */
-    public int fetchStatement(String name, int count) throws IOException;
+    public PostgresStatementResult fetchStatement(String name, int count) throws IOException;
 
     /** Remove declared cursor with given name. */
     public void closeBoundPortal(String name);

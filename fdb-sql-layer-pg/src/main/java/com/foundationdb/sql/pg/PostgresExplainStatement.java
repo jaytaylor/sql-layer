@@ -41,7 +41,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 /** SQL statement to explain another one. */
-public class PostgresExplainStatement implements PostgresStatement
+public class PostgresExplainStatement extends PostgresStatementResults
+                                      implements PostgresStatement
 {
     private OperatorCompiler compiler; // Used only to finish generation
     private List<String> explanation;
@@ -112,7 +113,7 @@ public class PostgresExplainStatement implements PostgresStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
+    public PostgresStatementResult execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         server.getSessionMonitor().countEvent(StatementTypes.OTHER_STMT);
         PostgresMessenger messenger = server.getMessenger();
@@ -129,12 +130,7 @@ public class PostgresExplainStatement implements PostgresStatement
             if ((maxrows > 0) && (nrows >= maxrows))
                 break;
         }
-        {        
-            messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-            messenger.writeString("EXPLAIN " + nrows);
-            messenger.sendMessage();
-        }
-        return nrows;
+        return commandComplete("EXPLAIN " + nrows, nrows);
     }
 
     @Override

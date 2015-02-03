@@ -61,6 +61,8 @@ import javax.net.ssl.SSLSocketFactory;
 import java.io.*;
 import java.util.*;
 
+import static com.foundationdb.sql.pg.PostgresStatement.PostgresStatementResult;
+
 /**
  * Connection to a Postgres server client.
  * Runs in its own thread; has its own Main Session.
@@ -742,17 +744,20 @@ public class PostgresServerConnection extends ServerSessionBase
                                             stmt.getEndOffset() + 1);
                 pstmt = generateStatementStub(stmtSQL, stmt, null, null);
                 boolean local = beforeExecute(pstmt);
+                PostgresStatementResult result;
                 boolean success = false;
                 try {
                     pstmt = finishGenerating(context, stmtSQL, stmt, null, null);
                     if ((statementCache != null) && singleStmt && pstmt.putInCache())
                         statementCache.put(stmtSQL, pstmt);
                     pstmt.sendDescription(context, false, false);
-                    rowsProcessed = executeStatement(pstmt, context, bindings, -1);
+                    result = executeStatement(pstmt, context, bindings, -1);
                     success = true;
                 } finally {
                     afterExecute(pstmt, local, success, true);
                 }
+                result.sendCommandComplete(messenger);
+                rowsProcessed = result.getRowsProcessed();
             }
         }
         readyForQuery();
@@ -1146,22 +1151,22 @@ public class PostgresServerConnection extends ServerSessionBase
     protected int executeStatementWithAutoTxn(PostgresStatement pstmt, PostgresQueryContext context, QueryBindings bindings, int maxrows)
             throws IOException {
         boolean localTransaction = beforeExecute(pstmt);
-        int rowsProcessed;
+        PostgresStatementResult result;
         boolean success = false;
         try {
-            rowsProcessed = executeStatement(pstmt, context, bindings, maxrows);
+            result = executeStatement(pstmt, context, bindings, maxrows);
             success = true;
         }
         finally {
             afterExecute(pstmt, localTransaction, success, true);
             sessionMonitor.leaveStage();
         }
-        return rowsProcessed;
+        result.sendCommandComplete(messenger);
+        return result.getRowsProcessed();
     }
 
-    protected int executeStatement(PostgresStatement pstmt, PostgresQueryContext context, QueryBindings bindings, int maxrows)
+    protected PostgresStatementResult executeStatement(PostgresStatement pstmt, PostgresQueryContext context, QueryBindings bindings, int maxrows)
             throws IOException {
-        int rowsProcessed;
         try {
             if (pstmt.getAISGenerationMode() == ServerStatement.AISGenerationMode.NOT_ALLOWED) {
                 updateAIS(context);
@@ -1170,12 +1175,11 @@ public class PostgresServerConnection extends ServerSessionBase
             }
             session.setTimeoutAfterMillis(getQueryTimeoutMilli());
             sessionMonitor.enterStage(MonitorStage.EXECUTE);
-            rowsProcessed = pstmt.execute(context, bindings, maxrows);
+            return pstmt.execute(context, bindings, maxrows);
         }
         finally {
             sessionMonitor.leaveStage();
         }
-        return rowsProcessed;
     }
 
     protected void emptyQuery() throws IOException {
@@ -1209,7 +1213,7 @@ public class PostgresServerConnection extends ServerSessionBase
     }
 
     @Override
-    public int executePreparedStatement(PostgresExecuteStatement estmt, int maxrows)
+    public PostgresStatementResult executePreparedStatement(PostgresExecuteStatement estmt, int maxrows)
             throws IOException {
         PostgresPreparedStatement pstmt = preparedStatements.get(estmt.getName());
         if (pstmt == null)
@@ -1221,7 +1225,7 @@ public class PostgresServerConnection extends ServerSessionBase
         pstmt.getStatement().sendDescription(context, false, false);
         int nrows = executeStatementWithAutoTxn(pstmt.getStatement(), context, bindings, maxrows);
         sessionMonitor.endStatement(nrows);
-        return nrows;
+        return PostgresStatementResults.noResult(nrows); // Already sent.
     }
 
     @Override
@@ -1283,7 +1287,7 @@ public class PostgresServerConnection extends ServerSessionBase
     }
 
     @Override
-    public int fetchStatement(String name, int count) throws IOException {
+    public PostgresStatementResult fetchStatement(String name, int count) throws IOException {
         PostgresBoundQueryContext bound = boundPortals.get(name);
         if (bound == null)
             throw new NoSuchCursorException(name);
@@ -1294,7 +1298,7 @@ public class PostgresServerConnection extends ServerSessionBase
         pstmt.getStatement().sendDescription(bound, false, false);
         int nrows = executeStatementWithAutoTxn(pstmt.getStatement(), bound, bindings, count);
         sessionMonitor.endStatement(nrows);
-        return nrows;
+        return PostgresStatementResults.noResult(nrows); // Already sent.
     }
 
     @Override

@@ -36,7 +36,8 @@ import java.util.regex.*;
  * Canned handling for fixed SQL text that comes from tools that
  * believe they are talking to a real Postgres database.
  */
-public class PostgresEmulatedMetaDataStatement implements PostgresStatement
+public class PostgresEmulatedMetaDataStatement extends PostgresStatementResults
+                                               implements PostgresStatement
 {
     enum Query {
         // ODBC driver sends this at the start; returning no rows is fine (and normal).
@@ -514,7 +515,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
+    public PostgresStatementResult execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         server.getSessionMonitor().countEvent(StatementTypes.OTHER_STMT);
         PostgresMessenger messenger = server.getMessenger();
@@ -611,12 +612,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             nrows = pgpool2StandbyQuery(context, server, messenger, maxrows);
             break;
         }
-        {        
-          messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-          messenger.writeString("SELECT " + nrows);
-          messenger.sendMessage();
-        }
-        return nrows;
+        return commandComplete("SELECT " + nrows, nrows);
     }
 
     @Override
