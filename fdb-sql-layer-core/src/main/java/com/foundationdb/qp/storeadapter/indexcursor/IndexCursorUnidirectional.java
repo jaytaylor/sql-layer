@@ -330,6 +330,8 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         }
     }
 
+    // TODO : Once the Persistit storage engine is removed, the FDB storage engine
+    // does a correct job of selecting the range, and this method can be removed.
     protected boolean beforeStart(Row row)
     {
         boolean beforeStart = false;
@@ -341,6 +343,8 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         return beforeStart;
     }
 
+    // TODO : Once the Persistit storage engine is removed, the FDB storage engine
+    // does a correct job of selecting the range, and this method can be removed.
     protected boolean pastEnd(Row row)
     {
         boolean pastEnd;

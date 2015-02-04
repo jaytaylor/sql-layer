@@ -278,6 +278,8 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
         else if (inclusive) {
             if (reverse) {
                 if (endKey != null) {
+                    // Since we don't have the inclusive/exclusive flag for the end key
+                    // assume inclusive (ie. get the last key even if it's beyond the range we need). 
                     ksLeft = KeySelector.firstGreaterOrEqual(endKey);
                 } else {
                     ksLeft = KeySelector.firstGreaterThan(prefixBytes);
@@ -296,6 +298,8 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
         else {
             if (reverse) {
                 if (endKey != null) {
+                    // Since we don't have the inclusive/exclusive flag for the end key
+                    // assume inclusive (ie. get the last key even if it's beyond the range we need). 
                     ksLeft = KeySelector.firstGreaterOrEqual(endKey);
                 } else {
                     ksLeft = KeySelector.firstGreaterThan(prefixBytes);
