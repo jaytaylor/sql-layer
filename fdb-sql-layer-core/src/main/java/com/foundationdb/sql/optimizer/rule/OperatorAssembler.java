@@ -1294,8 +1294,7 @@ public class OperatorAssembler extends BaseRule
                 if (collators != null) {
                     stream.operator = API.distinct_Partial(stream.operator, stream.rowType, collators);
                 } else {
-                    throw new UnsupportedOperationException(String.format(
-                        "Can't use Distinct_Partial except following a projection. Try again when types3 is in place"));
+                    throw new UnsupportedOperationException("Cannot find collators for Distinct_Partial from " + distinct.getInput());
                 }
                 break;
             default:
@@ -1309,8 +1308,9 @@ public class OperatorAssembler extends BaseRule
         // Hack to handle some easy and common cases until types3.
         private List<AkCollator> findCollators(PlanNode node)
         {
-            if (node instanceof Sort) {
-                return findCollators(((Sort)node).getInput());
+            if ((node instanceof Sort) ||
+                (node instanceof UsingLoaderBase)) {
+                return findCollators(((BasePlanWithInput)node).getInput());
             } else if (node instanceof MapJoin) {
                 return findCollators(((MapJoin)node).getInner());
             } else if (node instanceof Project) {
@@ -1662,6 +1662,7 @@ public class OperatorAssembler extends BaseRule
                                 indexOrdering.get(i).isAscending(),
                                 index.getIndexColumns().get(i).getColumn().getCollator());
             }
+            assert ordering.allAscending() || ordering.allDescending() : "No index scan mixed ordering";
             return ordering;
         }
 

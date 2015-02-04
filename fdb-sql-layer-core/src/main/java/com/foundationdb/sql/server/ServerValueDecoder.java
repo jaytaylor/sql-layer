@@ -111,10 +111,14 @@ public class ServerValueDecoder
                     value.putObject(AkGUID.bytesToUUID(encoded, 0));
                     source = value;
                     break;
+                case STRING_BYTES: {
+                    String s = new String(encoded, encoding);
+                    source = new Value(MString.VARCHAR.instance(s.length(), false), s);
+                    break;
+                }
                 // Note: these types had previous implementations, but I couldn't exercise them in tests to verify
                 // either with jdbc or pg8000. If you run into them, try looking at the log for this file, it most
                 // likely has a correct starting point
-                case STRING_BYTES:
                 case TIMESTAMP_FLOAT64_SECS_2000_NOTZ: // Types.TIMESTAMP
                 case DAYS_2000: // DATE
                 case TIME_FLOAT64_SECS_NOTZ: // TIME

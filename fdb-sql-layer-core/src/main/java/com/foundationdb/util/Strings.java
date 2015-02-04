@@ -514,7 +514,7 @@ public abstract class Strings {
              s = s.replaceAll( ("[" + quoteS + "]") , quoteS + quoteS );
         }
 
-        if (!force && !NodeToString.isReserved(s) && s.matches("[A-Za-z][_A-Za-z0-9$]*") ) {
+        if (!force && !NodeToString.isReserved(s) && s.matches("[a-z][_a-z0-9$]*") ) {
             return s;
         }
         else {

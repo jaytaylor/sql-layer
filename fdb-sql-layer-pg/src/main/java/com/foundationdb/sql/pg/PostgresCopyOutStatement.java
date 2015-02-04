@@ -78,7 +78,7 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
+    public PostgresStatementResult execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         if (toFile == null)
             return super.execute(context, bindings, maxrows);
 
@@ -110,13 +110,7 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
             context.finishCursor(this, cursor, nrows, false);
             postExecute(context, DXLFunction.UNSPECIFIED_DML_READ);
         }
-        {        
-            PostgresMessenger messenger = server.getMessenger();
-            messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-            messenger.writeString("COPY " + nrows);
-            messenger.sendMessage();
-        }
-        return 0;
+        return commandComplete("COPY " + nrows);
     }
 
     @Override

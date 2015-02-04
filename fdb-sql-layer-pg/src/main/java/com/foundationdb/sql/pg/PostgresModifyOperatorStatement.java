@@ -131,7 +131,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
     }
     
     @Override
-    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
+    public PostgresStatementResult execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         server.getSessionMonitor().countEvent(StatementTypes.DML_STMT);
         PostgresMessenger messenger = server.getMessenger();
@@ -185,15 +185,10 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
             }
         }
         
-        messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
         //TODO: Find a way to extract InsertNode#statementToString() or equivalent
-        if (isInsert()) {
-            messenger.writeString(statementType + " 0 " + rowsModified);
-        } else {
-            messenger.writeString(statementType + " " + rowsModified);
-        }
-        messenger.sendMessage();
-        return 0;
+        return commandComplete(isInsert() ?
+                               (statementType + " 0 " + rowsModified) :
+                               (statementType + " " + rowsModified));
     }
 
     @Override

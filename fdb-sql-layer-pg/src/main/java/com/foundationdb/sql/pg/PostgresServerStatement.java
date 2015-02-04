@@ -40,7 +40,8 @@ import com.foundationdb.server.error.UnsupportedConfigurationException;
 import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.sql.parser.AlterServerNode;
 
-public class PostgresServerStatement implements PostgresStatement {
+public class PostgresServerStatement extends PostgresStatementResults
+                                     implements PostgresStatement {
     private static final Logger LOG = LoggerFactory.getLogger(PostgresServerStatement.class);
     private final AlterServerNode statement;
     private long aisGeneration;
@@ -86,13 +87,13 @@ public class PostgresServerStatement implements PostgresStatement {
     }
 
     @Override
-    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
+    public PostgresStatementResult execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         
         context.checkQueryCancelation();
         PostgresServerSession server = context.getServer();
         server.getSessionMonitor().countEvent(StatementTypes.OTHER_STMT);
         try {
-            doOperation(server);
+            return doOperation(server);
         } catch (Exception e) {
             if (!(e instanceof ConnectionTerminatedException))
                 LOG.error("Execute command failed: " + e.getMessage());
@@ -103,7 +104,6 @@ public class PostgresServerStatement implements PostgresStatement {
             }
             throw new AkibanInternalException ("PostgrsServerStatement execute failed.", e);
         }
-        return 0;
     }
 
     @Override
@@ -138,7 +138,7 @@ public class PostgresServerStatement implements PostgresStatement {
         return null;
     }
 
-    protected void doOperation (PostgresServerSession session) throws Exception {
+    protected PostgresStatementResult doOperation (PostgresServerSession session) throws Exception {
         if (!session.getSecurityService().hasRestrictedAccess(session.getSession()))
             throw new SecurityException("Operation not allowed");
         PostgresServerConnection current = (PostgresServerConnection)session;
@@ -152,8 +152,7 @@ public class PostgresServerStatement implements PostgresStatement {
         switch (statement.getAlterSessionType()) {
         case SET_SERVER_VARIABLE:
             setVariable (server, statement.getVariable(), statement.getValue());
-            sendComplete (session.getMessenger());
-            break;
+            return statementComplete(statement);
         case INTERRUPT_SESSION:
             if (sessionId == null) {
                 for (PostgresServerConnection conn : server.getConnections()) {
@@ -166,8 +165,7 @@ public class PostgresServerStatement implements PostgresStatement {
                 if ((conn != null) && (conn != current))
                     conn.cancelQuery(null, byUser);
             }
-            sendComplete (session.getMessenger());
-            break;
+            return statementComplete(statement);
         case DISCONNECT_SESSION:
         case KILL_SESSION:
             {
@@ -197,8 +195,9 @@ public class PostgresServerStatement implements PostgresStatement {
                 }
             }
             if (completeCurrent == null)
-                sendComplete(session.getMessenger());
-            break;
+                return statementComplete(statement);
+            else
+                throw new ConnectionTerminatedException(completeCurrent);
         case SHUTDOWN:
             {
                 String msg = "FoundationDB SQL Layer being shutdown";
@@ -217,12 +216,14 @@ public class PostgresServerStatement implements PostgresStatement {
                 }
                 shutdown();
             }
-            // Note: no command completion, since always terminating.
-            break;
+            if (completeCurrent != null)
+                throw new ConnectionTerminatedException(completeCurrent);
+            else
+                // Note: no command completion, since always terminating.
+                return noResult();
+        default:
+            throw new IllegalArgumentException(statement.toString());
         }
-        // Now finally do what was indicated for the current connection.
-        if (completeCurrent != null)
-            throw new ConnectionTerminatedException(completeCurrent);
     }
 
     protected void setVariable(PostgresServer server, String variable, String value) {
@@ -238,13 +239,6 @@ public class PostgresServerStatement implements PostgresStatement {
                 conn.setProperty(variable, null); // As though SET x TO DEFAULT.
             }
         }
-    }
-    
-    protected void sendComplete (PostgresMessenger messenger) throws IOException {
-        messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-        messenger.writeString(statement.statementToString());
-        messenger.sendMessage();
-        
     }
 
     protected void shutdown () throws Exception {

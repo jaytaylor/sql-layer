@@ -113,11 +113,8 @@ public abstract class IndexCursor extends RowCursorImpl implements BindingsAware
             indexCursor = IndexCursorSpatial_InBox.create(context, iterationHelper, keyRange, openAllSubCursors);
         } else {
             SortKeyAdapter<?, ?> adapter = ValueSortKeyAdapter.INSTANCE;
-            if(ordering.allAscending() || ordering.allDescending()) {
-                indexCursor = IndexCursorUnidirectional.create(context, iterationHelper, keyRange, ordering, adapter);
-            } else {
-                indexCursor = IndexCursorMixedOrder.create(context, iterationHelper, keyRange, ordering, adapter);
-            }
+            assert ordering.allAscending() || ordering.allDescending() : "Index API.ordering not all ascending/descending";
+            indexCursor = IndexCursorUnidirectional.create(context, iterationHelper, keyRange, ordering, adapter);
         }
         return indexCursor;
     }

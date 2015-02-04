@@ -28,6 +28,8 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.test.ExpressionGenerators;
+
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.cursor;
@@ -142,85 +144,6 @@ public class NonRootPKIndexScanIT extends OperatorITBase
         long[] childPKs = new long[] {11, 12, 21, 22};
         int[] orderingMasks = new int[]{ALL_ASCENDING, ALL_DESCENDING};
         for (int orderingMask : orderingMasks) {
-            for (long childPK : childPKs) {
-                long parentPK = childPK / 10;
-                IndexBound loBound = new IndexBound(row(childPKRowType, childPK, parentPK, parentPK - 1), SELECTOR);
-                IndexBound hiBound = new IndexBound(row(childPKRowType, childPK, parentPK, parentPK), SELECTOR);
-                IndexKeyRange range = IndexKeyRange.bounded(childPKRowType, loBound, true, hiBound, true);
-                Operator plan = indexScan_Default(childPKRowType, range, ordering(orderingMask));
-                Row[] expected = new Row[] {
-                    row(childRowType, childPK, parentPK, parentPK),
-                };
-                compareRows(expected, cursor(plan, queryContext, queryBindings));
-            }
-        }
-    }
-
-    @Test
-    public void testAtChildAtParentMixedOrder()
-    {
-        long[] childPKs = new long[] {11, 12, 21, 22};
-        for (int orderingMask = 0x0; orderingMask <= 0x7; orderingMask++) {
-            for (long childPK : childPKs) {
-                long parentPK = childPK / 10;
-                IndexBound bound = new IndexBound(row(childPKRowType, childPK, parentPK, parentPK), SELECTOR);
-                IndexKeyRange range = IndexKeyRange.bounded(childPKRowType, bound, true, bound, true);
-                Operator plan = indexScan_Default(childPKRowType, range, ordering(orderingMask));
-                Row[] expected = new Row[] {
-                    row(childRowType, childPK, parentPK, parentPK),
-                };
-                compareRows(expected, cursor(plan, queryContext, queryBindings));
-            }
-        }
-    }
-
-    @Test
-    public void testAtChildAfterParentMixedOrder()
-    {
-        long[] childPKs = new long[] {11, 12, 21, 22};
-        for (int orderingMask = 0x0; orderingMask <= 0x7; orderingMask++) {
-            // Empty due to pid1
-            for (long childPK : childPKs) {
-                long parentPK = childPK / 10;
-                IndexBound loBound = new IndexBound(row(childPKRowType, childPK, parentPK + 1, parentPK + 1), SELECTOR);
-                IndexBound hiBound = new IndexBound(row(childPKRowType, childPK, parentPK + 1, parentPK + 1), SELECTOR);
-                IndexKeyRange range = IndexKeyRange.bounded(childPKRowType, loBound, true, hiBound, true);
-                Operator plan = indexScan_Default(childPKRowType, range, ordering(orderingMask));
-                Row[] expected = new Row[] {
-                };
-                compareRows(expected, cursor(plan, queryContext, queryBindings));
-            }
-            // Empty due to pid2
-            for (long childPK : childPKs) {
-                long parentPK = childPK / 10;
-                IndexBound loBound = new IndexBound(row(childPKRowType, childPK, parentPK, parentPK + 1), SELECTOR);
-                IndexBound hiBound = new IndexBound(row(childPKRowType, childPK, parentPK, parentPK + 1), SELECTOR);
-                IndexKeyRange range = IndexKeyRange.bounded(childPKRowType, loBound, true, hiBound, true);
-                Operator plan = indexScan_Default(childPKRowType, range, ordering(orderingMask));
-                Row[] expected = new Row[] {
-                };
-                compareRows(expected, cursor(plan, queryContext, queryBindings));
-            }
-                // Non-empty
-            for (long childPK : childPKs) {
-                long parentPK = childPK / 10;
-                IndexBound loBound = new IndexBound(row(childPKRowType, childPK, parentPK, parentPK), SELECTOR);
-                IndexBound hiBound = new IndexBound(row(childPKRowType, childPK, parentPK, parentPK + 1), SELECTOR);
-                IndexKeyRange range = IndexKeyRange.bounded(childPKRowType, loBound, true, hiBound, true);
-                Operator plan = indexScan_Default(childPKRowType, range, ordering(orderingMask));
-                Row[] expected = new Row[] {
-                    row(childRowType, childPK, parentPK, parentPK),
-                };
-                compareRows(expected, cursor(plan, queryContext, queryBindings));
-            }
-        }
-    }
-
-    @Test
-    public void testAtChildBeforeParentMixedOrder()
-    {
-        long[] childPKs = new long[] {11, 12, 21, 22};
-        for (int orderingMask = 0x0; orderingMask <= 0x7; orderingMask++) {
             for (long childPK : childPKs) {
                 long parentPK = childPK / 10;
                 IndexBound loBound = new IndexBound(row(childPKRowType, childPK, parentPK, parentPK - 1), SELECTOR);

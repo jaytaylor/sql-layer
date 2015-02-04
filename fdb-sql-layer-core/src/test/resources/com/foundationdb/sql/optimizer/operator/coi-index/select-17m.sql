@@ -1,0 +1,1 @@
+SELECT * FROM customers ORDER BY name ASC, cid DESC

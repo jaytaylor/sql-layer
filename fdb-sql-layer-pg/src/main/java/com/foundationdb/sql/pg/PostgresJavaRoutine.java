@@ -141,7 +141,7 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
+    public PostgresStatementResult execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         server.getSessionMonitor().countEvent(StatementTypes.CALL_STMT);
         PostgresMessenger messenger = server.getMessenger();
@@ -214,12 +214,7 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
         finally {
             call.pop(success);
         }
-        {        
-            messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-            messenger.writeString("CALL " + nrows);
-            messenger.sendMessage();
-        }
-        return nrows;
+        return commandComplete("CALL " + nrows, nrows);
     }
 
     public static List<String> columnNames(Routine routine) {

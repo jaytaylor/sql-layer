@@ -29,7 +29,8 @@ import java.util.List;
 /**
  * Common lock and tap handling for executable statements.
  */
-public abstract class PostgresBaseStatement implements PostgresStatement
+public abstract class PostgresBaseStatement extends PostgresStatementResults
+                                            implements PostgresStatement
 {
     protected long aisGeneration;
     protected abstract InOutTap executeTap();

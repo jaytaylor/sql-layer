@@ -95,7 +95,7 @@ public class NestedLoopMapper extends BaseRule
             PlanNode outer = join.getLeft();
             PlanNode inner = join.getRight();
             if (join.hasJoinConditions()) {
-                if (!JoinType.ANTI.equals(join.getJoinType())) {
+                if (join.getJoinType().isInner() || join.getJoinType().isSemi()) {
                     outer = moveConditionsToOuterNode(outer, join.getJoinConditions(),
                                                       getQuery(join).getOuterTables());
                 }

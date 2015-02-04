@@ -119,7 +119,7 @@ public class PostgresDDLStatement extends PostgresBaseStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
+    public PostgresStatementResult execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         server.getSessionMonitor().countEvent(StatementTypes.DDL_STMT);
         PostgresMessenger messenger = server.getMessenger();
@@ -148,12 +148,7 @@ public class PostgresDDLStatement extends PostgresBaseStatement
                 postExecute(context, DXLFunction.UNSPECIFIED_DDL_WRITE);
             }
         }
-        {        
-            messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-            messenger.writeString(ddl.statementToString());
-            messenger.sendMessage();
-        }
-        return 0;
+        return statementComplete(ddl);
     }
 
     @Override

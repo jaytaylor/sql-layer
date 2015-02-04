@@ -137,7 +137,7 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
+    public PostgresStatementResult execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         server.getSessionMonitor().countEvent(StatementTypes.OTHER_STMT);
         Session session = server.getSession();
@@ -172,13 +172,7 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
             postExecute(context, DXLFunction.UNSPECIFIED_DML_WRITE);
             istr.close();
         }
-        {        
-            PostgresMessenger messenger = server.getMessenger();
-            messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-            messenger.writeString("COPY " + nrows);
-            messenger.sendMessage();
-        }
-        return 0;
+        return commandComplete("COPY " + nrows);
     }
 
     @Override
