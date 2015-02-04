@@ -263,8 +263,12 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
         KeySelector ksLeft, ksRight;
 
         byte[] endKey = null;
-        if (storeData.endKey.getDepth() > 0)
+        if (storeData.endKey.getDepth() > 0) {
             endKey = packedTuple(storeData.storageDescription, storeData.endKey, null, null);
+            
+        } else {
+            assert storeData.endKey.getEncodedSize() == 0;
+        }
 
         byte[] prefixBytes = prefixBytes(storeData);
         if (!key) {
