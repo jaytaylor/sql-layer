@@ -213,7 +213,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     @Override
     public FDBStoreData createStoreData(Session session, FDBStorageDescription storageDescription) {
-        return new FDBStoreData(session, storageDescription, createKey());
+        return new FDBStoreData(session, storageDescription, createKey(), createKey());
     }
 
     @Override

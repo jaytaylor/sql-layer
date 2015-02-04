@@ -41,10 +41,12 @@ public class FDBStoreData {
     public FDBStoreDataIterator iterator;
     // What way, if any, persistitKey has been nudged
     public NudgeDir nudgeDir;
+    public Key endKey;
     
-    public FDBStoreData(Session session, FDBStorageDescription storageDescription, Key persistitKey) {
+    public FDBStoreData(Session session, FDBStorageDescription storageDescription, Key persistitKey, Key endKey) {
         this.storageDescription = storageDescription;
         this.persistitKey = persistitKey;
+        this.endKey = endKey;
         this.session = session;
     }
 

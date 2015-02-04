@@ -93,6 +93,11 @@ public abstract class IndexCursor extends RowCursorImpl implements BindingsAware
     {
         return iterationHelper.key();
     }
+    
+    protected Key endKey()
+    {
+        return iterationHelper.endKey();
+    }
 
     // IndexCursor interface
 

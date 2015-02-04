@@ -330,6 +330,8 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         }
     }
 
+    // TODO : Once the Persistit storage engine is removed, the FDB storage engine
+    // does a correct job of selecting the range, and this method can be removed.
     protected boolean beforeStart(Row row)
     {
         boolean beforeStart = false;
@@ -341,6 +343,8 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         return beforeStart;
     }
 
+    // TODO : Once the Persistit storage engine is removed, the FDB storage engine
+    // does a correct job of selecting the range, and this method can be removed.
     protected boolean pastEnd(Row row)
     {
         boolean pastEnd;
@@ -450,6 +454,10 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             // scan may specify a value for both. But the persistit search can only deal with the [childPK] part of
             // the traversal.
             startKey.copyPersistitKeyTo(key());
+            //Copy endKey into key->FDBIterationHelper ->storeData.endKey 
+            // which sets an upper bound on the scan range
+            if (endKey != null)
+                endKey.copyPersistitKeyTo(endKey());
             pastStart = false;
         }
         keyComparison = initialKeyComparison;

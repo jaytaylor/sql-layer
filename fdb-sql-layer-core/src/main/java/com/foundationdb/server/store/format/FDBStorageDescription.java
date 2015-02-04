@@ -45,6 +45,9 @@ import com.persistit.Key;
 
 import java.util.Arrays;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import static com.foundationdb.server.store.FDBStoreDataHelper.*;
 
 /** Storage using the FDB directory layer.
@@ -216,6 +219,7 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
                                                                         future);
             return;
         }
+        
         KeySelector ksLeft, ksRight;
         switch (left) {
         case START:
@@ -257,6 +261,15 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
                               boolean key, boolean inclusive, boolean reverse,
                               FDBScanTransactionOptions transactionOptions) {
         KeySelector ksLeft, ksRight;
+
+        byte[] endKey = null;
+        if (storeData.endKey.getDepth() > 0) {
+            endKey = packedTuple(storeData.storageDescription, storeData.endKey, null, null);
+            
+        } else {
+            assert storeData.endKey.getEncodedSize() == 0;
+        }
+
         byte[] prefixBytes = prefixBytes(storeData);
         if (!key) {
             ksLeft = KeySelector.firstGreaterOrEqual(prefixBytes);
@@ -264,22 +277,42 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
         }
         else if (inclusive) {
             if (reverse) {
-                ksLeft = KeySelector.firstGreaterThan(prefixBytes);
+                if (endKey != null) {
+                    // Since we don't have the inclusive/exclusive flag for the end key
+                    // assume inclusive (ie. get the last key even if it's beyond the range we need). 
+                    ksLeft = KeySelector.firstGreaterOrEqual(endKey);
+                } else {
+                    ksLeft = KeySelector.firstGreaterThan(prefixBytes);
+                }
                 ksRight = KeySelector.firstGreaterThan(packKey(storeData));
             } 
             else {
                 ksLeft = KeySelector.firstGreaterOrEqual(packKey(storeData));
-                ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
+                if (endKey != null) {
+                    ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(endKey));
+                } else {
+                    ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
+                }
             }
         }
         else {
             if (reverse) {
-                ksLeft = KeySelector.firstGreaterThan(prefixBytes);
-                ksRight = KeySelector.firstGreaterOrEqual(packKey(storeData));
+                if (endKey != null) {
+                    // Since we don't have the inclusive/exclusive flag for the end key
+                    // assume inclusive (ie. get the last key even if it's beyond the range we need). 
+                    ksLeft = KeySelector.firstGreaterOrEqual(endKey);
+                } else {
+                    ksLeft = KeySelector.firstGreaterThan(prefixBytes);
+                }
+                ksRight = KeySelector.firstGreaterThan(packKey(storeData));
             } 
             else {
                 ksLeft = KeySelector.firstGreaterThan(packKey(storeData));
-                ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
+                if (endKey != null) {
+                    ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(endKey));
+                } else {
+                    ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
+                }
             }
         }
         TransactionState txnState = store.getTransaction(session, storeData);
