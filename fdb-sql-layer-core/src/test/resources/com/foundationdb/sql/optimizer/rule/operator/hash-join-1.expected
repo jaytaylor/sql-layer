@@ -1,0 +1,9 @@
+PhysicalSelect@34ceca03[id, n, m, id, n]
+  Using_HashTable(0, Field(1))
+    Filter_Default(test.t2)
+      GroupScan_Default(test.t2)
+    Map_NestedLoops(1)
+      Filter_Default(test.t1)
+        GroupScan_Default(test.t1)
+      Project_Default(Bound(1, 0), Bound(1, 1), Bound(1, 2), Field(0), Field(1))
+        HashTableLookup_Default(0, Bound(1, 1))
