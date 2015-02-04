@@ -56,7 +56,6 @@ import static com.foundationdb.server.store.FDBStoreDataHelper.*;
 */
 public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBStoreData>
 {
-    private static final Logger LOG = LoggerFactory.getLogger(FDBStorageDescription.class);
     private byte[] prefixBytes;
 
     public FDBStorageDescription(HasStorage forObject, String storageFormat) {
@@ -308,8 +307,6 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
                 }
             }
         }
-        //LOG.error("Index scan inclusive: {}, reverse: {}", inclusive, reverse);
-        //LOG.error("Index scan of : {} to {} ", ksLeft, ksRight);
         TransactionState txnState = store.getTransaction(session, storeData);
         storeData.iterator = new FDBStoreDataKeyValueIterator(storeData,
             txnState.getRangeIterator(ksLeft, ksRight, Transaction.ROW_LIMIT_UNLIMITED, reverse, transactionOptions));
