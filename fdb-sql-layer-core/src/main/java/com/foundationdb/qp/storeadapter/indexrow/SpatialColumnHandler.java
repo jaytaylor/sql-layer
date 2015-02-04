@@ -29,6 +29,7 @@ import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.spatial.Spatial;
 import com.geophile.z.Space;
@@ -118,10 +119,16 @@ public class SpatialColumnHandler
         } else {
             ValueSource source = row.value(positions[0]);
             TClass tclass = source.getType().typeClass();
-            assert tclass == MBinary.BLOB : tclass;
-            byte[] spatialObjectBytes = source.getBytes();
             try {
-                spatialObject = Spatial.deserialize(space, spatialObjectBytes);
+                if (tclass instanceof MBinary) {
+                    byte[] spatialObjectBytes = source.getBytes();
+                    spatialObject = Spatial.deserializeWKB(space, spatialObjectBytes);
+                } else if (tclass instanceof MString) {
+                    String spatialObjectText = source.getString();
+                    spatialObject = Spatial.deserializeWKT(space, spatialObjectText);
+                } else {
+                    assert false : tclass;
+                }
             } catch (ParseException e) {
                 throw new InvalidSpatialObjectException();
             }

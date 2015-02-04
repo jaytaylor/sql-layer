@@ -22,7 +22,10 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.server.AkServerUtil;
 import com.foundationdb.server.rowdata.encoding.EncodingException;
 import com.foundationdb.server.spatial.Spatial;
+import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.value.UnderlyingType;
 import com.foundationdb.util.AkibanAppender;
+import com.geophile.z.spatialobject.jts.JTSSpatialObject;
 
 /**
  * Represent one or more rows of table data. The backing store is a byte array
@@ -304,7 +307,21 @@ public class RowData {
         // Serialize spatial objects
         Object[] valuesWithSpatialObjectsSerialized = new Object[values.length];
         for (int i = 0; i < values.length; i++) {
-            valuesWithSpatialObjectsSerialized[i] = Spatial.serializeIfSpatial(values[i]);
+            if (values[i] instanceof JTSSpatialObject) {
+                UnderlyingType underlyingType = TInstance.underlyingType(rowDef.getFieldDef(i).column().getType());
+                switch (underlyingType) {
+                    case BYTES:
+                        valuesWithSpatialObjectsSerialized[i] = Spatial.serializeWKB((JTSSpatialObject) values[i]);
+                        break;
+                    case STRING:
+                        valuesWithSpatialObjectsSerialized[i] = Spatial.serializeWKT((JTSSpatialObject) values[i]);
+                        break;
+                    default:
+                        assert false : rowDef.getFieldDef(i);
+                }
+            } else {
+                valuesWithSpatialObjectsSerialized[i] = values[i];
+            }
         }
         //
         RowDataBuilder builder = new RowDataBuilder(rowDef, this);

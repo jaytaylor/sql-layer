@@ -1,4 +1,4 @@
-/**
+    /**
  * Copyright (C) 2009-2013 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,27 +17,37 @@
 
 package com.foundationdb.server.test.it.qp;
 
+import com.foundationdb.ais.model.Group;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
+import com.foundationdb.qp.row.AbstractRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.spatial.Spatial;
+import com.foundationdb.server.types.common.BigDecimalWrapper;
+import com.foundationdb.server.types.value.ValueSource;
+import com.foundationdb.server.types.value.ValueSources;
+import com.foundationdb.util.WrappingByteSource;
 import com.geophile.z.Space;
+import com.geophile.z.SpatialObject;
 import com.geophile.z.spatialobject.jts.JTS;
 import com.geophile.z.spatialobject.jts.JTSSpatialObject;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
+import com.vividsolutions.jts.io.ParseException;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+
+
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -45,7 +55,9 @@ import java.util.Random;
 import java.util.Set;
 
 import static com.foundationdb.qp.operator.API.cursor;
+import static com.foundationdb.qp.operator.API.groupScan_Default;
 import static com.foundationdb.qp.operator.API.indexScan_Default;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /*
@@ -73,19 +85,22 @@ public class SpatialObjectsIndexIT extends OperatorITBase
             "id int not null",
             "lat decimal(10, 5)",
             "lon decimal(10, 5)",
-            "wkt blob", // POINT($LAT $LON)
+            "wkb blob", // POINT($LAT $LON)
+            "wkt text", // POINT($LAT $LON)
             "primary key(id)");
         createSpatialTableIndex("schema", "table", "idx_lat_lon", "GEO_LAT_LON", 0, 2, "lat", "lon");
         createSpatialTableIndex("schema", "table", "idx_wkt", "GEO_WKT", 0, 1, "wkt");
+        createSpatialTableIndex("schema", "table", "idx_wkb", "GEO_WKB", 0, 1, "wkb");
     }
 
     @Override
     protected void setupPostCreateSchema()
     {
-        tableRowType = schema.tableRowType(table(table));
-        tableOrdinal = tableRowType.table().getOrdinal();
+        TableRowType tableRowType = schema.tableRowType(table(table));
+        group = tableRowType.table().getGroup();
         latLonIndexRowType = indexType(table, "lat", "lon");
         wktIndexRowType = indexType(table, "wkt");
+        wkbIndexRowType = indexType(table, "wkb");
         space = Spatial.createLatLonSpace();
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
@@ -97,9 +112,34 @@ public class SpatialObjectsIndexIT extends OperatorITBase
     }
 
     @Test
-    public void testLoad()
+    public void testLoad() throws ParseException
     {
         loadDB();
+        try (TransactionContext t = new TransactionContext()) {
+            // Check table
+            Operator plan = groupScan_Default(group);
+            Cursor cursor = cursor(plan, queryContext, queryBindings);
+            try {
+                cursor.openTopLevel();
+                AbstractRow row;
+                int id = 0;
+                while ((row = (AbstractRow) cursor.next()) != null) {
+                    JTSSpatialObject jtsSpatialObject = points.get(id);
+                    Point point = (Point) jtsSpatialObject.geometry();
+                    assertEquals(id, row.value(0).getInt32());
+                    // lat/lon
+                    assertEquals(point.getX(), toDouble(row.value(1)), 0);
+                    assertEquals(point.getY(), toDouble(row.value(2)), 0);
+                    // wkb
+                    assertEquals(jtsSpatialObject, wkbToSpatialObject(row.value(3)));
+                    // wkt
+                    assertEquals(jtsSpatialObject, wktToSpatialObject(row.value(4)));
+                    id++;
+                }
+            } finally {
+                cursor.closeTopLevel();
+            }
+        }
         try (TransactionContext t = new TransactionContext()) {
             // Check wkt index
             Operator plan = indexScan_Default(wktIndexRowType);
@@ -113,6 +153,21 @@ public class SpatialObjectsIndexIT extends OperatorITBase
                     }
                 });
             compareRows(rows(wktIndexRowType.physicalRowType(), sort(expected)),
+                        cursor(plan, queryContext, queryBindings));
+        }
+        try (TransactionContext t = new TransactionContext()) {
+            // Check wkb index
+            Operator plan = indexScan_Default(wkbIndexRowType);
+            long[][] expected = zToId.toArray(
+                new ZToIdMapping.ExpectedRowCreator()
+                {
+                    @Override
+                    public long[] fields(long z, int id)
+                    {
+                        return new long[]{z, id};
+                    }
+                });
+            compareRows(rows(wkbIndexRowType.physicalRowType(), sort(expected)),
                         cursor(plan, queryContext, queryBindings));
         }
         try (TransactionContext t = new TransactionContext()) {
@@ -141,7 +196,7 @@ public class SpatialObjectsIndexIT extends OperatorITBase
             for (int id = 1; id < nIds; id += 2) {
                 JTSSpatialObject jtsSpatialObject = points.get(id);
                 Point point = (Point) jtsSpatialObject.geometry();
-                deleteRow(row(table, id, point.getX(), point.getY(), jtsSpatialObject), false);
+                deleteRow(row(table, id, point.getX(), point.getY(), jtsSpatialObject, jtsSpatialObject), false);
             }
         }
         try (TransactionContext t = new TransactionContext()) {
@@ -160,6 +215,24 @@ public class SpatialObjectsIndexIT extends OperatorITBase
                     }
                 });
             compareRows(rows(wktIndexRowType.physicalRowType(), sort(expected)),
+                        cursor(plan, queryContext, queryBindings));
+        }
+        try (TransactionContext t = new TransactionContext()) {
+            // Check wkb index
+            Operator plan = indexScan_Default(wkbIndexRowType);
+            long[][] expected = zToId.toArray(
+                new ZToIdMapping.ExpectedRowCreator()
+                {
+                    @Override
+                    public long[] fields(long z, int id)
+                    {
+                        return
+                            id % 2 == 0
+                            ? new long[]{z, id}
+                            : null;
+                    }
+                });
+            compareRows(rows(wkbIndexRowType.physicalRowType(), sort(expected)),
                         cursor(plan, queryContext, queryBindings));
         }
         try (TransactionContext t = new TransactionContext()) {
@@ -196,8 +269,8 @@ public class SpatialObjectsIndexIT extends OperatorITBase
                 double x = point.getX();
                 double y = point.getY();
                 JTSSpatialObject shiftedPoint = point(x, y + 1);
-                Row oldRow = row(table, id, x, y, jtsSpatialObject);
-                Row newRow = row(table, id, x, y + 1, shiftedPoint);
+                Row oldRow = row(table, id, x, y, jtsSpatialObject, jtsSpatialObject);
+                Row newRow = row(table, id, x, y + 1, shiftedPoint, shiftedPoint);
                 recordZToId(id, shiftedPoint);
                 updateRow(oldRow, newRow);
             }
@@ -215,6 +288,21 @@ public class SpatialObjectsIndexIT extends OperatorITBase
                     }
                 });
             compareRows(rows(wktIndexRowType.physicalRowType(), sort(expected)),
+                        cursor(plan, queryContext, queryBindings));
+        }
+        try (TransactionContext t = new TransactionContext()) {
+            // Check wkb index
+            Operator plan = indexScan_Default(wkbIndexRowType);
+            long[][] expected = zToId.toArray(
+                new ZToIdMapping.ExpectedRowCreator()
+                {
+                    @Override
+                    public long[] fields(long z, int id)
+                    {
+                        return new long[]{z, id};
+                    }
+                });
+            compareRows(rows(wkbIndexRowType.physicalRowType(), sort(expected)),
                         cursor(plan, queryContext, queryBindings));
         }
         try (TransactionContext t = new TransactionContext()) {
@@ -237,6 +325,7 @@ public class SpatialObjectsIndexIT extends OperatorITBase
     @Test
     public void testSpatialQuery()
     {
+        // TODO: lat/lon and wkb indexes
         final int ID_COLUMN = 1;
         loadDB();
         // dumpIndex(wktIndexRowType);
@@ -277,7 +366,7 @@ public class SpatialObjectsIndexIT extends OperatorITBase
             for (long lat = LAT_LO; lat <= LAT_HI; lat += DLAT) {
                 for (long lon = LON_LO; lon < LON_HI; lon += DLON) {
                     JTSSpatialObject point = point(lat, lon);
-                    writeRow(session(), row(table, id, lat, lon, point));
+                    writeRow(session(), row(table, id, lat, lon, point, point));
                     recordZToId(id, point);
                     points.add(point);
                     id++;
@@ -338,11 +427,6 @@ public class SpatialObjectsIndexIT extends OperatorITBase
         return rows;
     }
 
-    private String expectedHKey(int id)
-    {
-        return String.format("{%s,(long)%s}", tableOrdinal, id);
-    }
-
     private long[][] sort(long[][] a)
     {
         Arrays.sort(a,
@@ -386,6 +470,22 @@ public class SpatialObjectsIndexIT extends OperatorITBase
         }
     }
 
+    private SpatialObject wkbToSpatialObject(ValueSource valueSource) throws ParseException
+    {
+        return Spatial.deserializeWKB(space, ((WrappingByteSource) ValueSources.toObject(valueSource)).toByteSubarray());
+    }
+
+    private SpatialObject wktToSpatialObject(ValueSource valueSource) throws ParseException
+    {
+        return Spatial.deserializeWKT(space, ValueSources.toStringSimple(valueSource));
+    }
+
+    private double toDouble(ValueSource valueSource)
+    {
+        BigDecimalWrapper bigDecimalWrapper = (BigDecimalWrapper) valueSource.getObject();
+        return bigDecimalWrapper.asBigDecimal().doubleValue();
+    }
+
     private static final int LAT_LO = -90;
     private static final int LAT_HI = 90;
     private static final int LON_LO = -180;
@@ -396,9 +496,9 @@ public class SpatialObjectsIndexIT extends OperatorITBase
     private static final GeometryFactory FACTORY = new GeometryFactory();
 
     private int table;
-    private TableRowType tableRowType;
-    private int tableOrdinal;
+    private Group group;
     private IndexRowType wktIndexRowType;
+    private IndexRowType wkbIndexRowType;
     private IndexRowType latLonIndexRowType;
     private Space space;
     private ZToIdMapping zToId = new ZToIdMapping();
