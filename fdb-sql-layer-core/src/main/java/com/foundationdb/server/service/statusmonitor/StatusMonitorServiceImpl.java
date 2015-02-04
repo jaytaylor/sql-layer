@@ -117,7 +117,7 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
         instanceKey = ByteArrayUtil.join(rootDirectory.pack(),
                 Tuple2.from(STATUS_MONITOR_LAYER_NAME, address).pack());
 
-        backgroundThread = new Thread() {
+        backgroundThread = new Thread(null, null, "Status Monitor Background") {
             @Override
             public void run() {
                 backgroundThread();
@@ -167,14 +167,15 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
     }
     
     private void backgroundThread() {
+        backgroundIdle = false;
         try {
             while (running) {
                 writeStatus();
                 try {
                     synchronized(backgroundThread) {
-                        backgroundIdle=false;
-                        backgroundThread.wait(flushInterval);
                         backgroundIdle=true;
+                        backgroundThread.wait(flushInterval);
+                        backgroundIdle=false;
                     }
                 } catch (InterruptedException ex) {
                     break;
