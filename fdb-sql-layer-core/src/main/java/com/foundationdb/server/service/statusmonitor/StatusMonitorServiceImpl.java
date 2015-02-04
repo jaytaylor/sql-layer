@@ -117,7 +117,7 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
         instanceKey = ByteArrayUtil.join(rootDirectory.pack(),
                 Tuple2.from(STATUS_MONITOR_LAYER_NAME, address).pack());
 
-        backgroundThread = new Thread(null, null, "Status Monitor Background") {
+        backgroundThread = new Thread("Status Monitor Background") {
             @Override
             public void run() {
                 backgroundThread();
