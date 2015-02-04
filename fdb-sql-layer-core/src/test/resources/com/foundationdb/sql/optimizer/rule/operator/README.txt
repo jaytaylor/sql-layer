@@ -47,3 +47,5 @@ full-text-1: single parsed query
 full-text-2: terms on multiple branches
 
 hash-join-1: using hash join
+
+hash-join-1d: with DISTINCT

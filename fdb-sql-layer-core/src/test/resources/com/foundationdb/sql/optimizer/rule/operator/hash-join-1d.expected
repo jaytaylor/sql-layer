@@ -1,0 +1,10 @@
+PhysicalSelect@1dc3502b[m]
+  Distinct_Partial()
+    Using_HashTable(0, Field(1))
+      Filter_Default(test.t2)
+        GroupScan_Default(test.t2)
+      Map_NestedLoops(1)
+        GroupLookup_Default(Index(test.t1.t1_m) -> test.t1)
+          IndexScan_Default(Index(test.t1.t1_m), m > 0 ASC, id)
+        Project_Default(Bound(1, 2))
+          HashTableLookup_Default(0, Bound(1, 1))
