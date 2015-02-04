@@ -36,6 +36,7 @@ public class LobServiceImpl implements Service, LobService {
     private final FDBHolder fdbHolder;
     // update with configurable value
     private final String LOB_DIRECTORY = "lobs";
+    private static final int dataChunkSize = 9500000;
     
     @Inject
     public LobServiceImpl(FDBHolder fdbHolder) {
@@ -82,7 +83,7 @@ public class LobServiceImpl implements Service, LobService {
         DirectorySubspace ds;
         BlobBase blob;
         TransactionContext tcx = getTcx();
-        List<String> toDo = new ArrayList<String>();        
+        List<String> toDo = new ArrayList<>();        
         if (lobIds.size() > 0 ) {
             for (int i = 0; i < lobIds.size(); i++) {
                 String lob = lobIds.get(i);
@@ -139,7 +140,25 @@ public class LobServiceImpl implements Service, LobService {
     @Override
     public void writeBlob(String lobId, long offset, byte[] data) {
         BlobBase blob = openBlob(lobId);
-        blob.write(getTcx(), offset, data).get();
+        if (data.length < dataChunkSize) {
+            blob.write(getTcx(), offset, data).get();
+        }
+        else {
+            int noChunks = 1 + data.length / dataChunkSize;
+            int chunk = 0;
+            List<Future<Void>> done = new ArrayList<>();
+            int start, end;
+            while (chunk < noChunks) {
+                start = chunk * dataChunkSize;
+                end = (chunk + 1) * dataChunkSize;
+                end = data.length < end ? data.length : end;
+                done.add(blob.write(getTcx(), offset + start, Arrays.copyOfRange(data, start, end)));
+                chunk++;
+            }
+            for (Future<Void> res : done) {
+                res.get();
+            }
+        }
     }
 
     @Override

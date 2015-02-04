@@ -59,8 +59,8 @@ public class LobRoutines {
         return lobService().sizeBlob(blobId);
     }
     
-    public static byte[] readBlob(long offset, int length, String blobId) {
-        return lobService().readBlob(blobId, offset, length);
+    public static void readBlob(long offset, int length, String blobId, byte[][] out) {
+        out[0] = lobService().readBlob(blobId, offset, length);
     }
     
     public static void writeBlob(long offset, byte[] data, String blobId){

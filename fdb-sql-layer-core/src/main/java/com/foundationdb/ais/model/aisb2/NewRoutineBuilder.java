@@ -45,6 +45,8 @@ public interface NewRoutineBuilder {
     NewRoutineBuilder paramLongOut(String name);
 
     NewRoutineBuilder paramStringOut(String name, int length);
+    
+    NewRoutineBuilder paramVarBinaryOut(String name, int length);
 
     NewRoutineBuilder paramDoubleOut(String name);
     

@@ -401,7 +401,7 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
                 .paramLongIn("offset")
                 .paramIntegerIn("length")
                 .paramStringIn("blob_id", PATH_MAX)
-                .returnVarBinary("data", Integer.MAX_VALUE)
+                .paramVarBinaryOut("data", Integer.MAX_VALUE)
                 .externalName(LobRoutines.class.getCanonicalName(), "readBlob");
         aisb.procedure("write_blob")
                 .language("java", Routine.CallingConvention.JAVA)

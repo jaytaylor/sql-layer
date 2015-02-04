@@ -595,6 +595,14 @@ public class AISBBasedBuilder
             aisb.parameter(schema, object, name, Parameter.Direction.OUT, type);
             return this;
         }
+        
+        @Override
+        public NewRoutineBuilder paramVarBinaryOut(String name, int length) {
+            TInstance type = typesTranslator.typeForJDBCType(Types.VARBINARY, length, true,
+                    schema, object, name);
+            aisb.parameter(schema, object, name, Parameter.Direction.OUT, type);
+            return this;
+        }
 
         @Override
         public NewRoutineBuilder externalName(String className) {
