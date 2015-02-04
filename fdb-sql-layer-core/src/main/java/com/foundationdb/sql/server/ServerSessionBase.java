@@ -413,9 +413,12 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
                 break;
             case WRITE:
             case NEW_WRITE:
-                if (transactionDefaultReadOnly)
+                transaction = new ServerTransaction(this, transactionDefaultReadOnly, transactionDefaultIsolationLevel, transactionPeriodicallyCommit);
+                if (transaction.isReadOnly()) {
+                    transaction.abort();
+                    transaction = null;
                     throw new TransactionReadOnlyException();
-                transaction = new ServerTransaction(this, false, transactionDefaultIsolationLevel, transactionPeriodicallyCommit);
+                }
                 transaction.beforeUpdate();
                 localTransaction = true;
                 break;
