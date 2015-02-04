@@ -17,19 +17,16 @@
 
 package com.foundationdb.server.service.blob;
 
-import com.foundationdb.TransactionContext;
-import com.foundationdb.server.store.FDBHolder;
 import com.foundationdb.server.test.it.ITBase;
 
 import java.util.UUID;
+import java.util.Random;
 
 import org.junit.*;
 
 
 public class LobServiceIT extends ITBase {
-    private String schemaName = "test";
-    private String tableName = "table";
-    private String columnName = "name";
+    private LobService ls;
     private String idA;
     private String idB;
     private final byte[] data = "foo".getBytes();
@@ -37,10 +34,7 @@ public class LobServiceIT extends ITBase {
     @Test
     public void utilizeLobService() {
         // registration
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
         Assert.assertNotNull(ls);
-        FDBHolder fdbHolder = serviceManager().getServiceByClass(FDBHolder.class);
-        TransactionContext tcx = fdbHolder.getTransactionContext();
 
         // blob creation
         String id = UUID.randomUUID().toString();
@@ -71,14 +65,12 @@ public class LobServiceIT extends ITBase {
         ls.deleteLob(newPath);
         Assert.assertFalse(ls.existsLob(newPath));
     }
-
+    
     @Before
     public void setUp(){
         // registration
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
-        Assert.assertNotNull(ls);   
-        FDBHolder fdbHolder = serviceManager().getServiceByClass(FDBHolder.class);
-        TransactionContext tcx = fdbHolder.getTransactionContext();
+        this.ls = serviceManager().getServiceByClass(LobService.class);
+        Assert.assertNotNull(ls);
 
         idA = UUID.randomUUID().toString();
         idB = UUID.randomUUID().toString();
@@ -91,18 +83,63 @@ public class LobServiceIT extends ITBase {
     
     @Test
     public void blobGarbageCollector() {
-        // registration
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
-        Assert.assertNotNull(ls);
-        FDBHolder fdbHolder = serviceManager().getServiceByClass(FDBHolder.class);
-        TransactionContext tcx = fdbHolder.getTransactionContext();
-        
         // run collector
         ls.runLobGarbageCollector();
         
         // check cleaning
         Assert.assertTrue(ls.existsLob(idA));
         Assert.assertFalse(ls.existsLob(idB));
+    }
+    
+    @Test
+    public void performanceReadingWriting() {
+        int lengthInMb = 100;
+
+        byte[] data = generateBytes(1000000*lengthInMb);
+        byte[] output;
+        long start, stop;
+        start = System.currentTimeMillis();
+        ls.writeBlob(idA, 0, data);
+        stop = System.currentTimeMillis();
+        System.out.println("Writing --> time: " + ((stop - start)) + "ms, speed: " + (1000*(new Float(lengthInMb)/(stop-start)))+ " MB/sec");
+
+        start = System.currentTimeMillis();
+        output = ls.readBlob(idA);
+        stop = System.currentTimeMillis();
+        System.out.println("Reading --> time: " + ((stop - start)) + "ms, speed: " + (1000*(new Float(lengthInMb)/(stop-start)))+ " MB/sec");
+        Assert.assertArrayEquals(data, output);        
         
+        start = System.currentTimeMillis();
+        output = ls.readBlob(idA, 0L, data.length);
+        stop = System.currentTimeMillis();
+        System.out.println("Reading as section--> time: " + ((stop - start)) + "ms, speed: " + (1000*(new Float(lengthInMb)/(stop-start)))+ " MB/sec");
+        Assert.assertArrayEquals(data, output);
+
+        start = System.currentTimeMillis();
+        output = ls.readBlob(idA);
+        stop = System.currentTimeMillis();
+        System.out.println("Reading --> time: " + ((stop - start)) + "ms, speed: " + (1000*(new Float(lengthInMb)/(stop-start)))+ " MB/sec");
+
+        start = System.currentTimeMillis();
+        output = ls.readBlob(idA, 0L, data.length);
+        stop = System.currentTimeMillis();
+        System.out.println("Reading as section--> time: " + ((stop - start)) + "ms, speed: " + (1000*(new Float(lengthInMb)/(stop-start)))+ " MB/sec");
+
+        start = System.currentTimeMillis();
+        ls.writeBlob(idA, 0, data);
+        stop = System.currentTimeMillis();
+        System.out.println("Writing --> time: " + ((stop - start)) + "ms, speed: " + (1000*(new Float(lengthInMb)/(stop-start)))+ " MB/sec");
+
+        start = System.currentTimeMillis();
+        ls.writeBlob(idA, 0, data);
+        stop = System.currentTimeMillis();
+        System.out.println("Writing --> time: " + ((stop - start)) + "ms, speed: " + (1000*(new Float(lengthInMb)/(stop-start)))+ " MB/sec");
+    }
+
+    private byte[] generateBytes(int length) {
+        byte[] inp = new byte[length];
+        Random random = new Random();
+        random.nextBytes(inp);
+        return inp;
     }
 }

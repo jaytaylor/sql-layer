@@ -18,6 +18,8 @@
 package com.foundationdb.server.service.blob;
 
 import com.foundationdb.async.Future;
+import com.foundationdb.async.Function;
+import com.foundationdb.Transaction;
 import com.foundationdb.blob.BlobBase;
 import com.foundationdb.directory.DirectorySubspace;
 import com.foundationdb.server.error.LobException;
@@ -61,7 +63,7 @@ public class LobServiceImpl implements Service, LobService {
 
     @Override
     public void deleteLobs(String[] lobIds) {
-        List<Future<Boolean>> done = new ArrayList<Future<Boolean>>();
+        List<Future<Boolean>> done = new ArrayList<>();
         for (int i = 0; i < lobIds.length; i++) {
             done.add(lobDirectory.removeIfExists(getTcx(), Arrays.asList(lobIds[i])));
         }
@@ -71,11 +73,19 @@ public class LobServiceImpl implements Service, LobService {
     }
 
     @Override
-    public void moveLob(String oldId, String newId) {
-        List<String> newPath = new ArrayList<>(lobDirectory.getPath());
-        newPath.add(newId);
-        DirectorySubspace ds = lobDirectory.open(getTcx(), Arrays.asList(oldId)).get();
-        ds.moveTo(getTcx(), newPath).get();
+    public void moveLob(final String oldId, String newId) {
+        List<String> newPathTmp = new ArrayList<>(lobDirectory.getPath());
+        newPathTmp.add(newId);
+        final List<String> newPath = new ArrayList<>(newPathTmp);
+        TransactionContext tcx = getTcx();
+        tcx.run(new Function<Transaction, Void>() {
+            @Override
+            public Void apply(Transaction tr) {
+                DirectorySubspace ds = lobDirectory.open(tr, Arrays.asList(oldId)).get();
+                ds.moveTo(tr, newPath).get();
+                return null;
+            }
+        });
     }
 
     @Override
@@ -108,38 +118,64 @@ public class LobServiceImpl implements Service, LobService {
     }
 
     @Override
-    public void linkTableBlob(String lobId, int tableId) {
-        BlobBase blob = openBlob(lobId);
-        if (blob.isLinked(getTcx()).get()) {
-            if (blob.getLinkedTable(getTcx()).get() != tableId) {
-                throw new LobException("lob is already linked to a table");
+    public void linkTableBlob(final String lobId, final int tableId) {
+        TransactionContext tcx = getTcx();
+        tcx.run(new Function<Transaction, Void>() {
+            @Override
+            public Void apply(Transaction tr) {
+                BlobBase blob = openBlob(tr, lobId);
+                if (blob.isLinked(tr).get()) {
+                    if (blob.getLinkedTable(tr).get() != tableId) {
+                        throw new LobException("lob is already linked to a table");
+                    }
+                    return null;
+                }
+                blob.setLinkedTable(tr, tableId).get();
+                return null;
             }
-            return;
-        }
-        blob.setLinkedTable(getTcx(), tableId).get();
+        });
     }
 
     @Override
-    public long sizeBlob(String lobId) {
-        BlobBase blob = openBlob(lobId);
-        return blob.getSize(getTcx()).get().longValue();
+    public long sizeBlob(final String lobId) {
+        TransactionContext tcx = getTcx();
+        return tcx.run(new Function<Transaction, Long>() {
+            @Override
+            public Long apply(Transaction tr) {
+                BlobBase blob = openBlob(tr, lobId);
+                return blob.getSize(tr).get();
+            }
+        });
     }
 
     @Override
-    public byte[] readBlob(String lobId, long offset, int length) {
-        BlobBase blob = openBlob(lobId);
-        byte[] res = blob.read(getTcx(), offset, length).get();
+    public byte[] readBlob(final String lobId, final long offset, final int length) {
+        TransactionContext tcx = getTcx();
+        byte[] res =  tcx.run(new Function<Transaction, byte[]>() {
+            @Override
+            public byte[] apply(Transaction tr) {
+                BlobBase blob = openBlob(tr, lobId);
+                return blob.read(tr, offset, length).get();
+            }
+        });
         return res != null ? res : new byte[]{};
     }
     
     @Override
-    public byte[] readBlob(String lobId) {
-        return openBlob(lobId).read(getTcx()).get();
+    public byte[] readBlob(final String lobId) {
+        TransactionContext tcx = getTcx();
+        return tcx.run(new Function<Transaction, byte[]>() {
+            @Override
+            public byte[] apply(Transaction tr) {
+                BlobBase blob = openBlob(tr, lobId);
+                return blob.read(tr).get();
+            }
+        });
     }
 
     @Override
     public void writeBlob(String lobId, long offset, byte[] data) {
-        BlobBase blob = openBlob(lobId);
+        BlobBase blob = openBlob(getTcx(), lobId);
         if (data.length < dataChunkSize) {
             blob.write(getTcx(), offset, data).get();
         }
@@ -162,15 +198,44 @@ public class LobServiceImpl implements Service, LobService {
     }
 
     @Override
-    public void appendBlob(String lobId, byte[] data) {
-        BlobBase blob = openBlob(lobId);
-        blob.append(getTcx(), data).get();
+    public void appendBlob(final String lobId, final byte[] data) {
+        if (data.length < dataChunkSize) {
+            TransactionContext tcx = getTcx();
+            tcx.run(new Function<Transaction, Void>() {
+                @Override
+                public Void apply(Transaction tr) {
+                    BlobBase blob = openBlob(tr, lobId);
+                    blob.append(tr, data).get();
+                    return null;
+                }
+            });
+        }
+        else {
+            BlobBase blob = openBlob(getTcx(), lobId);
+            int noChunks = 1 + data.length / dataChunkSize;
+            int chunk = 0;
+            int start, end;
+            while (chunk < noChunks) {
+                start = chunk * dataChunkSize;
+                end = (chunk + 1) * dataChunkSize;
+                end = data.length < end ? data.length : end;
+                blob.append(getTcx(), Arrays.copyOfRange(data, start, end)).get();
+                chunk++;
+            }
+        }
     }
 
     @Override
-    public void truncateBlob(String lobId, long size) {
-        BlobBase blob = openBlob(lobId);
-        blob.truncate(getTcx(), size).get();
+    public void truncateBlob(final String lobId, final long size) {
+        TransactionContext tcx = getTcx();
+        tcx.run(new Function<Transaction, Void>() {
+            @Override
+            public Void apply(Transaction tr) {
+                BlobBase blob = openBlob(tr, lobId);
+                blob.truncate(tr, size).get();
+                return null;
+            }
+        });
     }
 
     @Override
@@ -179,15 +244,14 @@ public class LobServiceImpl implements Service, LobService {
         lobDirectory = fdbHolder.getRootDirectory().create(fdbHolder.getTransactionContext(), Arrays.asList(LOB_DIRECTORY)).get();
     }
     
-    private BlobBase openBlob(String lobId) {
+    private BlobBase openBlob(TransactionContext tcx, String lobId) {
         try {
-            DirectorySubspace ds = lobDirectory.open(getTcx(), Arrays.asList(lobId)).get();
+            DirectorySubspace ds = lobDirectory.open(tcx, Arrays.asList(lobId)).get();
             return new BlobBase(ds);
         }
         catch (NoSuchDirectoryException nsde) {
             throw new LobException("lob with id: "+ lobId +" does not exist");
         }
-    
     }
     
     private TransactionContext getTcx(){

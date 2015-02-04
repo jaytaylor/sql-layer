@@ -18,6 +18,7 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.TransactionContext;
+import com.foundationdb.ais.model.*;
 import com.foundationdb.server.service.blob.LobService;
 import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 
@@ -704,7 +705,7 @@ public class BlobIT extends PostgresServerITBase {
         
         PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES ( 1, ?)");
         int lengthInMb = 10;
-        pstmt.setBlob(1, getInputStreamData(lengthInMb) );
+        pstmt.setBlob(1, getInputStreamData(lengthInMb));
         pstmt.execute();
         
         ResultSet rs = stmt.executeQuery("SELECT bl from t1");
@@ -722,13 +723,13 @@ public class BlobIT extends PostgresServerITBase {
     }
 
     @Test
-    public void blobPerformance() throws Exception {
+    public void blobPerformanceA() throws Exception {
         Connection conn = getConnection();
         Statement stmt = conn.createStatement();
         stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
 
         PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES ( 1, ?)");
-        int lengthInMb = 10;
+        int lengthInMb = 100;
         long start = System.currentTimeMillis();
         pstmt.setBlob(1, getInputStreamData(lengthInMb) );
         long stop = System.currentTimeMillis();
@@ -751,6 +752,41 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
     }
 
+    @Test
+    public void blobPerformanceB() throws Exception {
+        Connection conn = getConnection();
+        Statement stmt = conn.createStatement();
+        stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
+
+        
+        long start = System.currentTimeMillis();
+        stmt.execute("INSERT INTO t1 VALUES (1, create_long_blob())");
+        long stop = System.currentTimeMillis();
+        System.out.println("Writing long blob without data --> time: " + ((stop - start)) + " ms");
+
+        start = System.currentTimeMillis();
+        stmt.execute("INSERT INTO t1 VALUES (2, create_short_blob())");
+        stop = System.currentTimeMillis();
+        System.out.println("Writing short blob without data --> time: " + ((stop - start)) + " ms");
+
+        start = System.currentTimeMillis();
+        stmt.execute("INSERT INTO t1 VALUES (3, create_long_blob(unhex('06')))");
+        stop = System.currentTimeMillis();
+        System.out.println("Writing long blob with 1 byte --> time: " + ((stop - start)) + " ms");
+
+        start = System.currentTimeMillis();
+        stmt.execute("INSERT INTO t1 VALUES (4, create_short_blob(unhex('07')))");
+        stop = System.currentTimeMillis();
+        System.out.println("Writing short blob with 1 byte --> time: " + ((stop - start)) + " ms");
+
+        start = System.currentTimeMillis();
+        stmt.execute("INSERT INTO t1 VALUES (0, create_long_blob())");
+        stop = System.currentTimeMillis();
+        System.out.println("Writing long blob without data --> time: " + ((stop - start)) + " ms");
+        
+        conn.close();
+    }
+    
     private byte[] generateBytes(int length) {
         byte[] inp = new byte[length];
         Random random = new Random();
