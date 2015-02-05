@@ -102,7 +102,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
 
     public static final String SKIP_AIS_UPGRADE_PROPERTY = "fdbsql.skip_ais_upgrade";
     public static final String FEATURE_SPATIAL_INDEX_PROPERTY = "fdbsql.feature.spatial_index_on";
-    public static final String FEATURE_BOOLEAN_INDEX_PROPERTY = "fdbsql.feature.boolean_index_on";
 
     public static final String COLLATION_MODE = "fdbsql.collation_mode";
     public static final String DEFAULT_CHARSET = "fdbsql.default_charset";
@@ -119,7 +118,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     protected TypesTranslator typesTranslator;
     protected AISCloner aisCloner;
     protected boolean withSpatialIndexes;
-    protected boolean withBooleanIndexes;
 
     protected SecurityService securityService;
 
@@ -243,7 +241,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
                                        storageFormatRegistry);
         storageFormatRegistry.registerStandardFormats();
         this.withSpatialIndexes = Boolean.parseBoolean(config.getProperty(FEATURE_SPATIAL_INDEX_PROPERTY));
-        this.withBooleanIndexes = Boolean.parseBoolean(config.getProperty(FEATURE_BOOLEAN_INDEX_PROPERTY));
     }
 
     @Override
@@ -808,15 +805,6 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             for(Index index : indexes) {
                 if(index.isSpatial()) {
                     throw new NotAllowedByConfigException("spatial index: " + index.getIndexName());
-                }
-            }
-        }
-        if(!withBooleanIndexes) {
-            for(Index index : indexes) {
-                for(IndexColumn icol : index.getKeyColumns()) {
-                    if(icol.getColumn().getType().typeClass().jdbcType() == Types.BOOLEAN) {
-                        throw new NotAllowedByConfigException("boolean index column: " + index.getIndexName() + "." + icol.getColumn().getName());
-                    }
                 }
             }
         }

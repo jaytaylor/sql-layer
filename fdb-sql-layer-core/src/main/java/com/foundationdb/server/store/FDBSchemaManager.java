@@ -137,15 +137,16 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
      * 4) Unique index format change
      * 5) Remove group index row counts
      * 6) Metadata stored using blob layer
+     * 7) Tuple encoding for boolean true
      */
-    private static final long CURRENT_DATA_VERSION = 6;
+    private static final long CURRENT_DATA_VERSION = 7;
     /**
      * 1) Initial directory based
      * 2) Online metadata support
      * 3) Type bundles
      * 4) Online DDL error-ing
-     * 5) ????
-     * 6) ????
+     * 5) index constraint naming
+     * 6) remove index fk constraints
      * 7) Hidden PK to Sequence/__row_id
      */
     private static final long CURRENT_META_VERSION = 7;
