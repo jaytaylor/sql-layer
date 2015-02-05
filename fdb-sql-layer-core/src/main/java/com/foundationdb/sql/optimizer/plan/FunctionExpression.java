@@ -18,8 +18,10 @@
 package com.foundationdb.sql.optimizer.plan;
 
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.TOverload;
 import com.foundationdb.server.types.TPreptimeContext;
 import com.foundationdb.server.types.texpressions.TValidatedScalar;
+import com.foundationdb.server.types.texpressions.TScalarBase;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.parser.ValueNode;
 import com.foundationdb.util.SparseArray;
@@ -61,6 +63,15 @@ public class FunctionExpression extends BaseExpression implements ResolvableExpr
     @Override
     public TValidatedScalar getResolved() {
         return overload;
+    }
+
+    public boolean anyNullTolerant() {
+        if (overload == null)
+            return true;        // Err on the side of caution.
+        TOverload underlying = overload.getUnderlying();
+        if (!(underlying instanceof TScalarBase))
+            return true;
+        return !((TScalarBase)underlying).allContaminatingNulls(operands.size());
     }
 
     public SparseArray<Object> getPreptimeValues() {
