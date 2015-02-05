@@ -1259,6 +1259,8 @@ public class PostgresEmulatedMetaDataStatement extends PostgresStatementResults
         case NORMAL:
             break;
         case GEO_LAT_LON:
+        case GEO_WKB:
+        case GEO_WKT:
             firstFunctionColumn = index.firstSpatialArgument();
             lastFunctionColumn = firstFunctionColumn + index.spatialColumns() - 1;
             break;

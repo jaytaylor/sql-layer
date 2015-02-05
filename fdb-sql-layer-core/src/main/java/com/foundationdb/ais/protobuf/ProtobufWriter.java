@@ -522,7 +522,9 @@ public class ProtobufWriter {
             index.getStorageDescription().writeProtobuf(storageBuilder);
             indexBuilder.setStorage(storageBuilder.build());
         }
-        if (index.getIndexMethod() == Index.IndexMethod.GEO_LAT_LON) {
+        if (index.getIndexMethod() == Index.IndexMethod.GEO_LAT_LON ||
+            index.getIndexMethod() == Index.IndexMethod.GEO_WKB ||
+            index.getIndexMethod() == Index.IndexMethod.GEO_WKT) {
             indexBuilder.
                     setFirstSpatialArg(index.firstSpatialArgument()).
                     setLastSpatialArg(index.lastSpatialArgument()).
@@ -606,7 +608,11 @@ public class ProtobufWriter {
             return AISProtobuf.IndexMethod.NORMAL;
         case GEO_LAT_LON:
             return AISProtobuf.IndexMethod.GEO_LAT_LON;
-        case FULL_TEXT: 
+        case GEO_WKB:
+            return AISProtobuf.IndexMethod.GEO_WKB;
+        case GEO_WKT:
+            return AISProtobuf.IndexMethod.GEO_WKT;
+        case FULL_TEXT:
             return AISProtobuf.IndexMethod.FULL_TEXT;
         }
     }

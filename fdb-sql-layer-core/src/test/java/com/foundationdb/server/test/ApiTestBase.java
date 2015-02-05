@@ -649,7 +649,7 @@ public class ApiTestBase {
         StringBuilder cols = new StringBuilder();
         for (int i = 0; i < indexCols.length; i++) {
             if (i > 0) cols.append(",");
-            if (i == firstSpatialArgument) cols.append("GEO_LAT_LON(");
+            if (i == firstSpatialArgument) cols.append(String.format("%s(", geoFunctionName));
             cols.append(indexCols[i]);
             if (i == firstSpatialArgument + spatialColumns - 1) cols.append(")");
         }
