@@ -1,0 +1,11 @@
+#
+# bigint on multicolumn primary key caused wrong check error on select
+#
+---
+- CreateTable: test_table ( Id1 bigint NOT NULL, Id2 int NOT NULL, PRIMARY KEY (Id1, Id2) )
+---
+- Statement: INSERT INTO test_table VALUES (1, 1),(2, 2),(20, 1)
+---
+- Statement: SELECT * FROM test_table WHERE Id1 = 20 AND Id2 = 1;
+- output: [ [20, 1] ]
+...
