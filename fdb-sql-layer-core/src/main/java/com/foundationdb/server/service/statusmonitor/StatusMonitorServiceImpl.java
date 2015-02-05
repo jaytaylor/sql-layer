@@ -54,7 +54,6 @@ import com.foundationdb.sql.embedded.EmbeddedJDBCService;
 import com.foundationdb.sql.embedded.JDBCDriver;
 import com.foundationdb.sql.embedded.JDBCResultSet;
 import com.foundationdb.sql.embedded.JDBCResultSetMetaData;
-import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple2;
 import com.foundationdb.util.AkibanAppender;
 import com.foundationdb.util.JsonUtils;
@@ -113,9 +112,8 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
         port = configService.getProperty("fdbsql.postgres.port");
         String address = host + ":" + port;
 
-        DirectorySubspace rootDirectory = new DirectoryLayer().createOrOpen(fdbService.getTransactionContext(), STATUS_MONITOR_DIR).get();
-        instanceKey = ByteArrayUtil.join(rootDirectory.pack(),
-                Tuple2.from(STATUS_MONITOR_LAYER_NAME, address).pack());
+        DirectorySubspace rootDirectory = DirectoryLayer.getDefault().createOrOpen(fdbService.getTransactionContext(), STATUS_MONITOR_DIR).get();
+        instanceKey = rootDirectory.pack(Tuple2.from(STATUS_MONITOR_LAYER_NAME, address));
 
         backgroundThread = new Thread("Status Monitor Background") {
             @Override
@@ -130,6 +128,7 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
     @Override
     public void stop() {
         running = false;
+        // Could/should clear instanceKey but writing in stop() isn't possible due to shutdown hook.
         clearWatch();
         if (backgroundThread != null) {
             notifyBackground();
@@ -191,21 +190,8 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
         return fdbService.getDatabase();
     }
 
-    // TODO: This should be used to remove the status when the service
-    // shuts down, but can't currently be called in stop() due
-    // to shutdown order. 
-    private void clearStatus() {
-        getDatabase()
-        .run(new Function<Transaction,Void>() {
-                 @Override
-                 public Void apply(Transaction tr) {
-                     tr.clear(instanceKey);
-                     return null;
-                 }
-             });
-    }
-   
     private void writeStatus () {
+        logger.debug("Writing status");
         clearWatch();
         String status = generateStatus();
         final byte[] jsonData = Tuple2.from(status).pack();
@@ -221,12 +207,14 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
     }
 
     private void setWatch(Transaction tr) {
+        logger.debug("Setting watch");
         // Initiate a watch (from this same transaction) for changes to the key
         // used to signal configuration changes.
         instanceWatch = tr.watch(instanceKey);
         instanceWatch.onReady(new Runnable() {
                 @Override
                 public void run() {
+                    logger.debug("Watch fired");
                     notifyBackground();
                 }
             });
@@ -234,6 +222,7 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
     
     private void clearWatch() {
         if (instanceWatch != null) {
+            logger.debug("Clearing watch");
             instanceWatch.cancel();
             instanceWatch = null;
         }

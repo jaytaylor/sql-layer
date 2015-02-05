@@ -18,6 +18,8 @@ package com.foundationdb.server.service.statusmonitor;
 
 import java.io.IOException;
 
+import com.foundationdb.directory.DirectoryLayer;
+import com.foundationdb.subspace.Subspace;
 import org.junit.Test;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -26,7 +28,6 @@ import com.foundationdb.Transaction;
 import com.foundationdb.async.Function;
 import com.foundationdb.server.service.is.BasicInfoSchemaTablesService;
 import com.foundationdb.server.service.is.ServerSchemaTablesService;
-import com.foundationdb.server.service.metrics.MetricsService;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager.BindingsConfigurationProvider;
 import com.foundationdb.server.test.it.FDBITBase;
 import com.foundationdb.tuple.Tuple2;
@@ -52,88 +53,131 @@ public class StatusMonitorServiceIT extends FDBITBase {
         return (StatusMonitorServiceImpl)serviceManager().getServiceByClass(StatusMonitorService.class);
     }
 
-    @Test
-    public void verifyStartupStatus() {
-        statusMonitorService().completeBackgroundWork();
-        String results = 
-        this.fdbHolder().getTransactionContext()
-        .run(new Function<Transaction,String> () {
-                 @Override
-                 public String apply(Transaction tr) {
-                     byte[] status = tr.get(statusMonitorService().instanceKey).get();
-                     if (status == null) return null;
-                     String results = Tuple2.fromBytes(status).getString(0);
-                     return results;
-                 }
-             }); 
-        assertNotNull (results);
-        
-        try {
-            JsonParser parser = JsonUtils.jsonParser(results);
-            
-            assertEquals(JsonToken.START_OBJECT, parser.nextToken());
-            assertEquals(JsonToken.VALUE_STRING, parser.nextValue());
-            assertEquals("name", parser.getCurrentName());
-            assertEquals("SQL Layer", parser.getText());
-            assertEquals(JsonToken.VALUE_NUMBER_INT, parser.nextValue());
-            assertEquals("timestamp", parser.getCurrentName());
-            assertEquals(JsonToken.VALUE_STRING, parser.nextValue());
-            assertEquals("version", parser.getCurrentName());
-            assertEquals(JsonToken.VALUE_STRING, parser.nextValue());
-            assertEquals("host", parser.getCurrentName());
-            assertEquals(JsonToken.VALUE_STRING, parser.nextValue());
-            assertEquals("port", parser.getCurrentName());
-            assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
-            assertEquals("instance", parser.getText());
-            assertEquals(JsonToken.START_OBJECT, parser.nextToken());
-            parser.skipChildren();
-            assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
-            assertEquals("servers", parser.getText());
-            assertEquals(JsonToken.START_ARRAY, parser.nextToken());
+    private void checkStatus(String statusJson) throws IOException {
+        assertNotNull("No status json text", statusJson);
 
-            // Check Servers array, which should have one object, the internal JDCB connection service.
-            
-            assertEquals(JsonToken.START_OBJECT, parser.nextToken());
-            assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
-            assertEquals("server_type", parser.getText());
-            assertEquals(JsonToken.VALUE_STRING, parser.nextToken());
-            assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
-            assertEquals("local_port", parser.getText());
-            
-            JsonToken port = parser.nextToken();
-            assertTrue (port == JsonToken.VALUE_NUMBER_INT || port == JsonToken.VALUE_NULL);
-            assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
-            assertEquals("start_time", parser.getText());
-            assertEquals(JsonToken.VALUE_NUMBER_INT, parser.nextToken());
-            assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
-            assertEquals("session_count", parser.getText());
-            assertEquals(JsonToken.VALUE_NUMBER_INT, parser.nextToken());
-            assertEquals(JsonToken.END_OBJECT, parser.nextToken());
-            assertEquals(JsonToken.END_ARRAY, parser.nextToken());
-            
-            
-            assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
-            assertEquals("sessions", parser.getText());
-            assertEquals(JsonToken.START_ARRAY, parser.nextToken());
-            parser.skipChildren();
-            assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
-            assertEquals("statistics", parser.getText());
-            assertEquals(JsonToken.START_OBJECT, parser.nextToken());
-            parser.skipChildren();
-            assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
-            assertEquals("garbage_collectors", parser.getText());
-            assertEquals(JsonToken.START_ARRAY, parser.nextToken());
-            parser.skipChildren();
-            assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
-            assertEquals("memory_pools", parser.getText());
-            assertEquals(JsonToken.START_ARRAY, parser.nextToken());
-            parser.skipChildren();
-            assertEquals(JsonToken.END_OBJECT, parser.nextToken());
-        } catch (IOException e) {
-            assertTrue("IOException", false);
-        }
-        
+        JsonParser parser = JsonUtils.jsonParser(statusJson);
+
+        assertEquals(JsonToken.START_OBJECT, parser.nextToken());
+        assertEquals(JsonToken.VALUE_STRING, parser.nextValue());
+        assertEquals("name", parser.getCurrentName());
+        assertEquals("SQL Layer", parser.getText());
+        assertEquals(JsonToken.VALUE_NUMBER_INT, parser.nextValue());
+        assertEquals("timestamp", parser.getCurrentName());
+        assertEquals(JsonToken.VALUE_STRING, parser.nextValue());
+        assertEquals("version", parser.getCurrentName());
+        assertEquals(JsonToken.VALUE_STRING, parser.nextValue());
+        assertEquals("host", parser.getCurrentName());
+        assertEquals(JsonToken.VALUE_STRING, parser.nextValue());
+        assertEquals("port", parser.getCurrentName());
+        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals("instance", parser.getText());
+        assertEquals(JsonToken.START_OBJECT, parser.nextToken());
+        parser.skipChildren();
+        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals("servers", parser.getText());
+        assertEquals(JsonToken.START_ARRAY, parser.nextToken());
+
+        // Check Servers array, which should have one object, the internal JDCB connection service.
+
+        assertEquals(JsonToken.START_OBJECT, parser.nextToken());
+        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals("server_type", parser.getText());
+        assertEquals(JsonToken.VALUE_STRING, parser.nextToken());
+        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals("local_port", parser.getText());
+
+        JsonToken port = parser.nextToken();
+        assertTrue (port == JsonToken.VALUE_NUMBER_INT || port == JsonToken.VALUE_NULL);
+        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals("start_time", parser.getText());
+        assertEquals(JsonToken.VALUE_NUMBER_INT, parser.nextToken());
+        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals("session_count", parser.getText());
+        assertEquals(JsonToken.VALUE_NUMBER_INT, parser.nextToken());
+        assertEquals(JsonToken.END_OBJECT, parser.nextToken());
+        assertEquals(JsonToken.END_ARRAY, parser.nextToken());
+
+
+        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals("sessions", parser.getText());
+        assertEquals(JsonToken.START_ARRAY, parser.nextToken());
+        parser.skipChildren();
+        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals("statistics", parser.getText());
+        assertEquals(JsonToken.START_OBJECT, parser.nextToken());
+        parser.skipChildren();
+        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals("garbage_collectors", parser.getText());
+        assertEquals(JsonToken.START_ARRAY, parser.nextToken());
+        parser.skipChildren();
+        assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+        assertEquals("memory_pools", parser.getText());
+        assertEquals(JsonToken.START_ARRAY, parser.nextToken());
+        parser.skipChildren();
+        assertEquals(JsonToken.END_OBJECT, parser.nextToken());
     }
 
+    private String readStatusJson() {
+        return fdbHolder().getTransactionContext().run(
+            new Function<Transaction,String> () {
+                @Override
+                public String apply(Transaction tr) {
+                    byte[] status = tr.get(statusMonitorService().instanceKey).get();
+                    if (status == null) return null;
+                    return Tuple2.fromBytes(status).getString(0);
+                }
+            });
+    }
 
+    private void waitAndCheckStatus() throws InterruptedException, IOException {
+        // Wait up to 5s for watch to fire and status to be written
+        String json = null;
+        for(int i = 0; (json == null) && (i < 50); ++i) {
+            Thread.sleep(100);
+            json = readStatusJson();
+        }
+        checkStatus(json);
+    }
+
+    @Test
+    public void verifyStartupStatus() throws IOException {
+        // Flush initial
+        statusMonitorService().completeBackgroundWork();
+        String json = readStatusJson();
+        checkStatus(json);
+    }
+
+    @Test
+    public void verifyStatusAfterClearKey() throws IOException, InterruptedException {
+        // Flush initial
+        statusMonitorService().completeBackgroundWork();
+        // Clear just the key
+        fdbHolder().getTransactionContext().run(
+            new Function<Transaction,Void> () {
+                @Override
+                public Void apply(Transaction tr) {
+                    tr.clear(statusMonitorService().instanceKey);
+                    return null;
+                }
+            });
+        waitAndCheckStatus();
+    }
+
+    @Test
+    public void verifyStatusAfterClearRange() throws IOException, InterruptedException {
+        // Flush initial
+        statusMonitorService().completeBackgroundWork();
+        // Clear entire layer directory like real Status Monitor
+        fdbHolder().getTransactionContext().run(
+            new Function<Transaction,Void> () {
+                @Override
+                public Void apply(Transaction tr) {
+                    Subspace smDir = DirectoryLayer.getDefault().open(tr, StatusMonitorServiceImpl.STATUS_MONITOR_DIR).get();
+                    tr.clear(smDir.range());
+                    return null;
+                }
+            });
+        waitAndCheckStatus();
+    }
 }
