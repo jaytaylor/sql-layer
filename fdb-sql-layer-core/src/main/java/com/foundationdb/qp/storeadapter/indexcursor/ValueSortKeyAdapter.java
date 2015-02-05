@@ -59,23 +59,8 @@ public class ValueSortKeyAdapter extends SortKeyAdapter<ValueSource, TPreparedEx
                                  TInstance[] types) {
         ValueSource loValueSource = loExpressions.value(f);
         ValueSource hiValueSource = hiExpressions.value(f);
-        if (loValueSource.isNull() && hiValueSource.isNull()) {
-            // OK, they're equal
-        } else if (loValueSource.isNull() || hiValueSource.isNull()) {
-            throw new IllegalArgumentException(String.format("lo: %s, hi: %s", loValueSource, hiValueSource));
-        } else {
-            TInstance type = types[f];
-            TPreparedExpression loEQHi =
-                    new TComparisonExpression(
-                            new TPreparedLiteral(type, loValueSource),
-                            Comparison.EQ,
-                            new TPreparedLiteral(type, hiValueSource)
-                    );
-            TEvaluatableExpression eval = loEQHi.build();
-            eval.evaluate();
-            if (!eval.resultValue().getBoolean()) {
-                throw new IllegalArgumentException();
-            }
+        if (!TClass.areEqual(loValueSource, hiValueSource)) {
+            throw new IllegalArgumentException(String.format("lo: %s <> hi: %s", loValueSource, hiValueSource));
         }
     }
 
