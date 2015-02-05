@@ -157,6 +157,47 @@ public abstract class ITBase extends ApiTestBase {
         assertEquals(expected.length, actualRows.size());
     }
 
+    public void printRows(RowCursor cursor)
+    {
+        printRows(cursor,
+                  new RowFormatter()
+                  {
+                      @Override
+                      public String format(Row row)
+                      {
+                          return String.valueOf(row);
+                      }
+                  });
+    }
+
+    public void printRows(RowCursor cursor, RowFormatter formatter)
+    {
+        boolean topLevel = cursor instanceof Cursor;
+        boolean began = false;
+        if(!txnService().isTransactionActive(session())) {
+            txnService().beginTransaction(session());
+            began = true;
+        }
+        try {
+            if (topLevel)
+                ((Cursor)cursor).openTopLevel();
+            else
+                cursor.open();
+            Row row;
+            while ((row = cursor.next()) != null) {
+                System.out.println(formatter.format(row));
+            }
+        } finally {
+            if (topLevel)
+                ((Cursor)cursor).closeTopLevel();
+            else
+                cursor.close();
+            if(began) {
+                txnService().commitTransaction(session());
+            }
+        }
+    }
+
     public void lookForDanglingStorage() throws Exception {
         // Collect all trees storage currently has
         Set<String> storeTrees = new TreeSet<>();
@@ -172,4 +213,10 @@ public abstract class ITBase extends ApiTestBase {
 
         assertEquals("Found orphaned trees", "[]", difference.toString());
     }
+
+    public interface RowFormatter
+    {
+        String format(Row row);
+    }
 }
+

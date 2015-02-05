@@ -127,9 +127,16 @@ public final class ValueSources {
                     value.putBytes((byte[])object);
                 else if (object instanceof ByteSource)
                     value.putBytes(((ByteSource)object).toByteSubarray());
+                else if (object instanceof JTSSpatialObject)
+                    value.putBytes(Spatial.serializeWKB((JTSSpatialObject) object));
                 break;
             case STRING:
-                throw new IllegalArgumentException("Unsafe toString(): " + object.getClass());
+                if ((object instanceof JTSSpatialObject)) {
+                    value = new Value(type, Spatial.serializeWKT((JTSSpatialObject) object));
+                } else {
+                    throw new IllegalArgumentException("Unsafe toString(): " + object.getClass());
+                }
+                break;
             case BOOL:
                 if (object instanceof Boolean)
                     value.putBool((Boolean)object);
@@ -276,10 +283,6 @@ public final class ValueSources {
         else if (object instanceof Byte) {
             type = MNumeric.TINYINT.instance(false);
             value = new Value(type, (Byte)object);
-        }
-        else if (object instanceof SpatialObject) {
-            type = MBinary.BLOB.instance(false);
-            value = new Value(type, Spatial.serialize((JTSSpatialObject) object));
         }
         else if (object instanceof UUID) {
             type = AkGUID.INSTANCE.instance(false);
