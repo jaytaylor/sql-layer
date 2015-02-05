@@ -90,7 +90,28 @@ public class StatusMonitorServiceIT extends FDBITBase {
             assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
             assertEquals("servers", parser.getText());
             assertEquals(JsonToken.START_ARRAY, parser.nextToken());
-            parser.skipChildren();
+
+            // Check Servers array, which should have one object, the internal JDCB connection service.
+            
+            assertEquals(JsonToken.START_OBJECT, parser.nextToken());
+            assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+            assertEquals("server_type", parser.getText());
+            assertEquals(JsonToken.VALUE_STRING, parser.nextToken());
+            assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+            assertEquals("local_port", parser.getText());
+            
+            JsonToken port = parser.nextToken();
+            assertTrue (port == JsonToken.VALUE_NUMBER_INT || port == JsonToken.VALUE_NULL);
+            assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+            assertEquals("start_time", parser.getText());
+            assertEquals(JsonToken.VALUE_NUMBER_INT, parser.nextToken());
+            assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+            assertEquals("session_count", parser.getText());
+            assertEquals(JsonToken.VALUE_NUMBER_INT, parser.nextToken());
+            assertEquals(JsonToken.END_OBJECT, parser.nextToken());
+            assertEquals(JsonToken.END_ARRAY, parser.nextToken());
+            
+            
             assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
             assertEquals("sessions", parser.getText());
             assertEquals(JsonToken.START_ARRAY, parser.nextToken());
@@ -100,11 +121,11 @@ public class StatusMonitorServiceIT extends FDBITBase {
             assertEquals(JsonToken.START_OBJECT, parser.nextToken());
             parser.skipChildren();
             assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
-            assertEquals("garbage collectors", parser.getText());
+            assertEquals("garbage_collectors", parser.getText());
             assertEquals(JsonToken.START_ARRAY, parser.nextToken());
             parser.skipChildren();
             assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
-            assertEquals("memory pools", parser.getText());
+            assertEquals("memory_pools", parser.getText());
             assertEquals(JsonToken.START_ARRAY, parser.nextToken());
             parser.skipChildren();
             assertEquals(JsonToken.END_OBJECT, parser.nextToken());
