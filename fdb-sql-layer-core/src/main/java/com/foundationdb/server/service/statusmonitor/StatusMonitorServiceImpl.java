@@ -274,10 +274,10 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
     private static final String INSTANCE_SQL =  "select server_store as store, server_jit_compiler_time as jit_compiler_time from information_schema.server_instance_summary";
     
     private static final String SERVERS = "servers";
-    private static final String SERVERS_SQL = "select * from information_schema.server_servers";
+    private static final String SERVERS_SQL = "select server_type, local_port, unix_timestamp(start_time) as start_time, session_count from information_schema.server_servers";
     
     private static final String SESSIONS = "sessions";
-    private static final String SESSIONS_SQL  = "select session_id, start_time, server_type, remote_address,"+ 
+    private static final String SESSIONS_SQL  = "select session_id, unix_timestamp(start_time) as start_time, server_type, remote_address,"+ 
         "query_count, failed_query_count, query_from_cache, logged_statements," +
         "call_statement_count, ddl_statement_count, dml_statement_count, select_statement_count," + 
         "other_statement_count from information_schema.server_sessions";
@@ -285,10 +285,10 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
     private static final String STATISTICS = "statistics";
     private static final String STATISTICS_SQL = "select * from information_schema.server_statistics_summary";
     
-    private static final String GARBAGE_COLLECTORS = "garbage collectors";
+    private static final String GARBAGE_COLLECTORS = "garbage_collectors";
     private static final String GARBAGE_COLLECTORS_SQL = "select * from information_schema.server_garbage_collectors";
     
-    private static final String MEMORY_POOLS = "memory pools";
+    private static final String MEMORY_POOLS = "memory_pools";
     private static final String MEMORY_POOLS_SQL = "select * from information_schema.server_memory_pools";
     
     protected void summary (String name, String sql, JsonGenerator gen, boolean arrayWrapper) throws JsonGenerationException, IOException {
