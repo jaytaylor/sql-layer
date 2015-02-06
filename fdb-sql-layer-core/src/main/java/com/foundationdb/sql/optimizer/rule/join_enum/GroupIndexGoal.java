@@ -422,21 +422,36 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         int ncols = indexColumns.size();
         int firstSpatialColumn, spatialColumns;
         SpecialIndexExpression.Function spatialFunction;
-        switch (aisIndex.getIndexMethod()) {
+        Index.IndexMethod aisIndexMethod = aisIndex.getIndexMethod();
+        switch (aisIndexMethod) {
         case GEO_LAT_LON:
+        case GEO_WKB:
+        case GEO_WKT:
             firstSpatialColumn = aisIndex.firstSpatialArgument();
             spatialColumns = aisIndex.spatialColumns();
-            if (spatialColumns == Spatial.LAT_LON_DIMENSIONS)
+            if (spatialColumns == Spatial.LAT_LON_DIMENSIONS) {
+                assert aisIndexMethod == Index.IndexMethod.GEO_LAT_LON : aisIndexMethod;
                 spatialFunction = SpecialIndexExpression.Function.GEO_LAT_LON;
-            else if (spatialColumns == 1)
-                spatialFunction = SpecialIndexExpression.Function.GEO_WKB;
+            }
+            else if (spatialColumns == 1) {
+                if (aisIndexMethod == Index.IndexMethod.GEO_WKB) {
+                    spatialFunction = SpecialIndexExpression.Function.GEO_WKB;
+                }
+                else if (aisIndexMethod == Index.IndexMethod.GEO_WKT) {
+                    spatialFunction = SpecialIndexExpression.Function.GEO_WKT;
+                }
+                else {
+                    spatialFunction = null;
+                    assert false : aisIndexMethod;
+                }
+            }
             else {
                 spatialFunction = null;
                 assert false : spatialColumns;
             }
             break;
         default:
-            assert false : aisIndex.getIndexMethod();
+            assert false : aisIndexMethod;
             /* and fall through */
         case NORMAL:
             firstSpatialColumn = Integer.MAX_VALUE;

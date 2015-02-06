@@ -68,7 +68,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         boolean success = false;
         try {
             INDEX_TRAVERSE.hit();
-            if (traverse(keyComparison, true)) {
+            if (traverse(keyComparison)) {
                 next = row();
                 // Guard against bug 1046053
                 assert next != startKey;
@@ -79,7 +79,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                 if (!pastStart) {
                     while (beforeStart(next)) {
                         next = null;
-                        if (traverse(subsequentKeyComparison, true)) {
+                        if (traverse(subsequentKeyComparison)) {
                             next = row();
                         } else {
                             setIdle();
@@ -476,7 +476,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             pastStart = false;
         }
         keyComparison = initialKeyComparison;
-        iterationHelper.preload(keyComparison, true);
+        iterationHelper.preload(keyComparison);
     }
 
     private Index index()

@@ -69,19 +69,9 @@ public abstract class IndexCursor extends RowCursorImpl implements BindingsAware
     
     // For use by subclasses
 
-    protected boolean nextInternal(boolean deep)
+    protected boolean traverse(Direction dir)
     {
-        return iterationHelper.next(deep);
-    }
-
-    protected boolean prevInternal(boolean deep)
-    {
-        return iterationHelper.prev(deep);
-    }
-
-    protected boolean traverse(Direction dir, boolean deep)
-    {
-        return iterationHelper.traverse(dir, deep);
+        return iterationHelper.traverse(dir);
     }
 
     protected void clear()

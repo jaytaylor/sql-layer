@@ -6,4 +6,4 @@ CREATE TABLE places
   shape BLOB
 );
 
-CREATE INDEX places_geo ON places(geo_lat_lon(shape));
+CREATE INDEX places_geo ON places(geo_wkb(shape));

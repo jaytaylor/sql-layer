@@ -54,9 +54,10 @@ public class SpatialColumnHandler
             IndexColumn indexColumn = index.getKeyColumns().get(firstSpatialField + c);
             Column column = indexColumn.getColumn();
             tinstances[c] = column.getType();
-            positions[c] = column.getPosition().intValue();
+            positions[c] = column.getPosition();
         }
         coords = new double[dimensions];
+        indexMethod = index.getIndexMethod();
     }
 
     public boolean handleSpatialColumn(WriteIndexRow writeIndexRow, int indexField, long zValue)
@@ -67,13 +68,6 @@ public class SpatialColumnHandler
         }
         return indexField >= firstSpatialField && indexField <= lastSpatialField;
     }
-
-    public long zValue (Row row) 
-    {
-        bind (row);
-        return Spatial.shuffle(space, coords[0], coords[1]);
-    }
-    
 
     public void processSpatialObject(Row rowData, Operation operation)
     {
@@ -87,6 +81,7 @@ public class SpatialColumnHandler
 
     private void bind (Row row) {
         if (lastSpatialField > firstSpatialField) {
+            assert indexMethod == Index.IndexMethod.GEO_LAT_LON : indexMethod;
             // Point coordinates stored in two columns
             assert dimensions == 2 : dimensions;
             double coord = Double.NaN;
@@ -118,16 +113,18 @@ public class SpatialColumnHandler
             spatialObject = new Point(x, y);
         } else {
             ValueSource source = row.value(positions[0]);
-            TClass tclass = source.getType().typeClass();
             try {
-                if (tclass instanceof MBinary) {
-                    byte[] spatialObjectBytes = source.getBytes();
-                    spatialObject = Spatial.deserializeWKB(space, spatialObjectBytes);
-                } else if (tclass instanceof MString) {
-                    String spatialObjectText = source.getString();
-                    spatialObject = Spatial.deserializeWKT(space, spatialObjectText);
-                } else {
-                    assert false : tclass;
+                switch (indexMethod) {
+                    case GEO_WKB:
+                        byte[] spatialObjectBytes = source.getBytes();
+                        spatialObject = Spatial.deserializeWKB(space, spatialObjectBytes);
+                        break;
+                    case GEO_WKT:
+                        String spatialObjectText = source.getString();
+                        spatialObject = Spatial.deserializeWKT(space, spatialObjectText);
+                        break;
+                    default:
+                        assert false : indexMethod;
                 }
             } catch (ParseException e) {
                 throw new InvalidSpatialObjectException();
@@ -154,6 +151,7 @@ public class SpatialColumnHandler
     private SpatialObject spatialObject;
     private long[] zs;
     private final double[] coords;
+    private final Index.IndexMethod indexMethod;
 
     // Inner classes
 

@@ -74,37 +74,17 @@ public class PersistitIterationHelper implements IterationHelper
     }
 
     @Override
-    public boolean next(boolean deep)
+    public boolean traverse(Direction dir)
     {
         try {
-            return exchange.next(deep);
+            return exchange.traverse(dir, true);
         } catch(PersistitException | RollbackException e) {
             throw PersistitAdapter.wrapPersistitException(adapter.getSession(), e);
         }
     }
 
     @Override
-    public boolean prev(boolean deep)
-    {
-        try {
-            return exchange.previous(deep);
-        } catch(PersistitException | RollbackException e) {
-            throw PersistitAdapter.wrapPersistitException(adapter.getSession(), e);
-        }
-    }
-
-    @Override
-    public boolean traverse(Direction dir, boolean deep)
-    {
-        try {
-            return exchange.traverse(dir, deep);
-        } catch(PersistitException | RollbackException e) {
-            throw PersistitAdapter.wrapPersistitException(adapter.getSession(), e);
-        }
-    }
-
-    @Override
-    public void preload(Direction dir, boolean deep) {
+    public void preload(Direction dir) {
     }
 
     // PersistitIterationHelper interface

@@ -60,15 +60,6 @@ import static com.foundationdb.qp.operator.API.indexScan_Default;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-/*
-TODO:
-
-- Something more interesting than points
-- Check actual objects
-- wkt
-- wkb
-*/
-
 public class SpatialObjectsIndexIT extends OperatorITBase
 {
     @Override
