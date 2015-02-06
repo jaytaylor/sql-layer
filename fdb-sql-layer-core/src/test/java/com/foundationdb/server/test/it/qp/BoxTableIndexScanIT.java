@@ -69,10 +69,10 @@ public class BoxTableIndexScanIT extends OperatorITBase
             "after int not null", // id mod 5
             "box blob",
             "primary key(id)");
-        createSpatialTableIndex("schema", "boxTable", "idx_box", 0, 1, "box");
-        createSpatialTableIndex("schema", "boxTable", "idx_before_box", 1, 1, "before", "box");
-        createSpatialTableIndex("schema", "boxTable", "idx_box_after", 0, 1, "box", "after");
-        createSpatialTableIndex("schema", "boxTable", "idx_before_box_after", 1, 1, "before", "box", "after");
+        createSpatialTableIndex("schema", "boxTable", "idx_box", "GEO_WKB", 0, 1, "box");
+        createSpatialTableIndex("schema", "boxTable", "idx_before_box", "GEO_WKB", 1, 1, "before", "box");
+        createSpatialTableIndex("schema", "boxTable", "idx_box_after", "GEO_WKB", 0, 1, "box", "after");
+        createSpatialTableIndex("schema", "boxTable", "idx_before_box_after", "GEO_WKB", 1, 1, "before", "box", "after");
     }
 
     @Override

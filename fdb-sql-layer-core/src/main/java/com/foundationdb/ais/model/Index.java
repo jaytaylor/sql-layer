@@ -409,10 +409,10 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
     }
 
     public enum IndexMethod {
-        // TODO: Replace GEO_LAT_LON with GEO_LAT_LON, GEO_WKB,
-        // GEO_WKT, GEO_JSON, etc.
         NORMAL(false),
         GEO_LAT_LON(true),
+        GEO_WKB(true),
+        GEO_WKT(true),
         FULL_TEXT(false);
 
         public boolean isSpatial()

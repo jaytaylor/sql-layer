@@ -414,7 +414,10 @@ public class IndexDDL
 
     static boolean isSpatial(String functionName)
     {
-        return functionName != null && functionName.equalsIgnoreCase(Index.IndexMethod.GEO_LAT_LON.name());
+        return functionName != null &&
+               (functionName.equalsIgnoreCase(Index.IndexMethod.GEO_LAT_LON.name()) ||
+                functionName.equalsIgnoreCase(Index.IndexMethod.GEO_WKB.name()) ||
+                functionName.equalsIgnoreCase(Index.IndexMethod.GEO_WKT.name()));
     }
 
     static boolean isFullText(String functionName)

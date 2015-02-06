@@ -487,6 +487,8 @@ public class ProtobufReader {
         if (pbIndex.hasIndexMethod()) {
             switch (pbIndex.getIndexMethod()) {
                 case GEO_LAT_LON:
+                case GEO_WKB:
+                case GEO_WKT:
                     assert pbIndex.hasFirstSpatialArg() == pbIndex.hasDimensions();
                     int firstSpatialArg = 0;
                     int lastSpatialArg = 0;
