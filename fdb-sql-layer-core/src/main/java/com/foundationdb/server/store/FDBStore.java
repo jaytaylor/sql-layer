@@ -530,11 +530,12 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         }
     }
 
+    // Test only traversal. 
     @Override
     public void traverse(Session session, Group group, TreeRecordVisitor visitor) {
         visitor.initialize(session, this);
         FDBStoreData storeData = createStoreData(session, group);
-        groupIterator(session, storeData);
+        groupIterator(session, storeData,  FDBScanTransactionOptions.NORMAL);
         while (storeData.next()) {
             Row row = expandGroupData(session, storeData, SchemaCache.globalSchema(group.getAIS()));
             visitor.visit(storeData.persistitKey, row);
@@ -546,6 +547,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         return expandRow(session, storeData, schema);
     }
     
+    // Test only Traversal
     @Override
     public <V extends IndexVisitor<Key, Value>> V traverse(Session session, Index index, V visitor, long scanTimeLimit, long sleepTime) {
         FDBStoreData storeData = createStoreData(session, index);
@@ -630,13 +632,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     public enum GroupIteratorBoundary { 
         START, END, KEY, NEXT_KEY, 
         FIRST_DESCENDANT, LAST_DESCENDANT
-    }
-
-    /** Iterate over the whole group. */
-    public void groupIterator(Session session, FDBStoreData storeData) {
-        groupIterator(session, storeData, 
-                      GroupIteratorBoundary.START, GroupIteratorBoundary.END, 
-                      Transaction.ROW_LIMIT_UNLIMITED, FDBScanTransactionOptions.NORMAL);
     }
 
     /** Iterate over just <code>storeData.persistitKey</code>, if present. */

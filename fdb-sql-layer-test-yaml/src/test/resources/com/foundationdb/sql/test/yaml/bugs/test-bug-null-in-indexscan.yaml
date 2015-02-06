@@ -1,0 +1,24 @@
+---
+- CreateTable: t(id INT PRIMARY KEY, x INT, INDEX(x))
+---
+- Statement: INSERT INTO t VALUES (1,10),(2,null),(3,30);
+---
+- Statement: SELECT * FROM t WHERE x=null
+- row_count: 0
+---
+- Statement: SELECT * from t WHERE x IS NULL;
+- row_count: 1
+---
+- Statement: SELECT * FROM t WHERE x = ?
+- params: [[null]]
+- row_count: 1
+---
+- Statement:  PREPARE foo AS SELECT * FROM t WHERE x = ?
+---
+- Statement: EXECUTE foo(null);
+- row_count: 1
+---
+- Statement: PREPARE foo2 AS SELECT * FROM T where x between ? and ?
+---
+- Statement: EXECUTE foo2 (1, NULL)
+...

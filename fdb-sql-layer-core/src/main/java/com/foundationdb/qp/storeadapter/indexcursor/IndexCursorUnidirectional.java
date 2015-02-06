@@ -20,6 +20,7 @@ package com.foundationdb.qp.storeadapter.indexcursor;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
+import com.foundationdb.server.types.texpressions.TNullExpression;
 import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
@@ -36,6 +37,9 @@ import com.foundationdb.server.types.TInstance;
 import com.persistit.Key;
 
 import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class IndexCursorUnidirectional<S> extends IndexCursor
 {
@@ -174,10 +178,16 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                 startKey.append(startBoundary);
             } else {
                 // Check constraints on start and end
-                ValueRecord loExpressions = lo.boundExpressions(context, bindings);
-                ValueRecord hiExpressions = hi.boundExpressions(context, bindings);
+                // Construct start and end keys
+                ValueRecord startExpressions = start.boundExpressions(context, bindings);
+                ValueRecord endExpressions = end.boundExpressions(context, bindings);
+
+                //ValueRecord loExpressions = lo.boundExpressions(context, bindings);
+                //ValueRecord hiExpressions = hi.boundExpressions(context, bindings);
+                LOG.error("start checking {}", startExpressions);
+                LOG.error("end checking {}", endExpressions);
                 for (int f = 0; f < endBoundColumns - 1; f++) {
-                    keyAdapter.checkConstraints(loExpressions, hiExpressions, f, null, types);
+                    keyAdapter.checkConstraints(startExpressions, endExpressions, f, null, types);
                 }
                 /*
                     Null bounds are slightly tricky. An index restriction is described by an IndexKeyRange which contains
@@ -202,9 +212,6 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                     - lo and hi are both null: This is NOT an unbounded case. This means that we are restricting both
                       lo and hi to be null, so write null, not Key.AFTER to endKey.
                 */
-                // Construct start and end keys
-                ValueRecord startExpressions = start.boundExpressions(context, bindings);
-                ValueRecord endExpressions = end.boundExpressions(context, bindings);
                 // startBoundColumns == endBoundColumns because jump() hasn't been called.
                 // If it had we'd be in reevaluateBoundaries, not here.
                 assert startBoundColumns == endBoundColumns;
@@ -213,6 +220,12 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                 for (int f = 0; f < startBoundColumns; f++) {
                     startValues[f] = keyAdapter.get(startExpressions, f);
                     endValues[f] = keyAdapter.get(endExpressions, f);
+                    
+                    LOG.error ("Types of values are {} and {} ", startValues[f].getClass().getName(), endValues[f].getClass().getName());
+                    if (keyAdapter.isNull(startValues[f]) && !(startValues[f] instanceof TNullExpression) ||
+                            keyAdapter.isNull(endValues[f]) && !(endValues[f] instanceof TNullExpression)) {
+                        //LOG.error("Expression value null found: {} or {}", startValues[f], endValues[f]);
+                    }
                 }
                 clearStart();
                 clearEnd();
@@ -253,7 +266,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                                 endKey.append(endValues[f], type(f));
                             } else {
                                 // Cases 2, 6, 14:
-                                throw new IllegalArgumentException();
+                                throw new IllegalArgumentException("Bad null ordering in IndexBounds: " + startValues[f] + " to " + endValues[f]);
                             }
                         } else {
                             // Cases 0, 4, 8, 12
@@ -275,7 +288,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                                 startKey.append(startValues[f], type(f));
                             } else {
                                 // Cases 2, 6, 14:
-                                throw new IllegalArgumentException();
+                                throw new IllegalArgumentException("Bad null ordering in IndexBounds: " + startValues[f] + " to " + endValues[f]);
                             }
                         } else {
                             // Cases 0, 4, 8, 12
@@ -528,4 +541,5 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     private Key endKeyKey;
     private boolean pastStart;
     private SortKeyAdapter<S, ?> sortKeyAdapter;
+    private static final Logger LOG = LoggerFactory.getLogger(IndexCursorUnidirectional.class);
 }

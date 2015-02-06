@@ -86,7 +86,14 @@ public final class RowBasedUnboundExpressions implements UnboundExpressions {
         {
             expressionRow = new ExpressionRow(rowType, context, bindings, pExprs);
         }
+        
+        @Override
+        public String toString() {
+            return expressionRow.toString();
+        }
 
         private final ExpressionRow expressionRow;
+        
+        
     }
 }
