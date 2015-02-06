@@ -681,7 +681,7 @@ public class BlobIT extends PostgresServerITBase {
         Connection conn = getConnection();
         Statement stmt = conn.createStatement();
         stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 100; i++) {
             stmt.execute("INSERT INTO t1 VALUES (" + i + ", create_long_blob())");
         }
         conn.close();
@@ -691,7 +691,7 @@ public class BlobIT extends PostgresServerITBase {
     public void createManyBlobsB() throws Exception {
         Connection conn = getConnection();
         Statement stmt = conn.createStatement();
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 100; i++) {
             stmt.execute("SELECT create_long_blob(unhex('050505'))");
         }
         conn.close();

@@ -67,6 +67,7 @@ import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.server.types.aksql.aktypes.AkBlob;
 import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 import com.foundationdb.server.types.service.TypesRegistryService;
+import com.foundationdb.server.types.value.*;
 import com.foundationdb.server.util.ReadWriteMap;
 import com.foundationdb.tuple.Tuple2;
 import com.foundationdb.tuple.Tuple;
@@ -666,39 +667,129 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         for ( int i = 0; i < rowType.nFields(); i++ ) {
             if (rowType.typeAt(i).equalsExcludingNullable(AkBlob.INSTANCE.instance(true))) {
                 int tableId = rowType.table().getTableId();
-                BlobRef blobRef = (BlobRef)row.value(i).getObject();
-
-                String allowedLobFormat = configService.getProperty("fdbsql.blob.allowed_storage_format");
-                if (blobRef == null) {
+                BlobRef blobRefTmp = (BlobRef)row.value(i).getObject();
+                String allowedLobFormat = configService.getProperty(AkBlob.BLOB_ALLOWED_FORMAT);
+                if (blobRefTmp == null) {
                     continue;
                 }
-                if (blobRef.isLongLob()) {
-                    if (allowedLobFormat.equalsIgnoreCase("SHORT_LOB")) {
+                BlobRef.LeadingBitState state;
+                BlobRef.LobType type;
+                byte[] value = blobRefTmp.getValue();
+                
+                // The contract: 
+                //    if blobReturnMode == SIMPLE 
+                //        - all BlobRef value contains no leading bit 
+                //        - data is always the data to be stored, never GUID of the blob
+                //        - all output to users is data only
+                //    if blobReturnMode == ADVANCED
+                //        - all input contains a leading bit
+                //        - if leading bit == LONG_BLOB
+                //              data is GUID of the blob
+                //          else data is content of the blob (which can be long or short blob)
+                // 
+                // all output of this function contains a leading bit of a type depending on the storage
+                // 
+                //
+                
+                if (isBlobReturnModeSimple()) {
+                    state = BlobRef.LeadingBitState.NO;
+                } else {
+                    state = BlobRef.LeadingBitState.YES;
+                }
+                // ensure correct state of the leading bit
+                blobRefTmp = new BlobRef(value, state, blobRefTmp.getLobType(), blobRefTmp.getRequestedLobType());
+                
+                if (blobRefTmp.isLongLob()) { // only set in ADVANCED mode
+                    if (allowedLobFormat.equalsIgnoreCase(AkBlob.SHORT_BLOB)) {
                         throw new LobException("Long lob storage format not allowed");
                     }
-                } else if (blobRef.isShortLob()) {
-                    if (allowedLobFormat.equalsIgnoreCase("LONG_LOB")) {
+                    type = BlobRef.LobType.LONG_LOB;
+                } else if (blobRefTmp.isShortLob()) { // only set in ADVANCED mode
+                    if (allowedLobFormat.equalsIgnoreCase(AkBlob.LONG_BLOB)) {
                         throw new LobException("Short lob storage format not allowed");
                     }
-                    if (allowedLobFormat.equalsIgnoreCase("SHORT_LOB") && 
-                            (blobRef.getBytes().length >= AkBlob.LOB_SWITCH_SIZE)) {
+                    if (allowedLobFormat.equalsIgnoreCase(AkBlob.SHORT_BLOB) && 
+                            (blobRefTmp.getBytes().length >= AkBlob.LOB_SWITCH_SIZE)) {
                         throw new LobException("Lob too large to store as SHORT_LOB");
                     }
-                    if (blobRef.getBytes().length >= AkBlob.LOB_SWITCH_SIZE) {
+                    if (blobRefTmp.getBytes().length >= AkBlob.LOB_SWITCH_SIZE) {
                         UUID id = UUID.randomUUID();
                         getLobService().createNewLob(id.toString());
-                        getLobService().writeBlob(id.toString(), 0, blobRef.getBytes());
-                        BlobRef newBlob = new BlobRef(id);
-                        resRow.overlay(i, newBlob);
-                        changedRow = true;
+                        getLobService().writeBlob(id.toString(), 0, blobRefTmp.getBytes());
+                        value = updateValue(id);
+                        type = BlobRef.LobType.LONG_LOB;
+                    } else {
+                        type = BlobRef.LobType.SHORT_LOB;
+                    }
+                } else { // only in SIMPLE mode, value needs updating, adding leading bit and correct value content (guid)
+                    // first verify if specific requested format is allowed --> should be done in functions.
+                    if (blobRefTmp.getRequestedLobType() == BlobRef.LobType.SHORT_LOB) {
+                        if (allowedLobFormat.equalsIgnoreCase(AkBlob.LONG_BLOB)) {
+                            throw new LobException("Short lob storage format not allowed");
+                        }
+                    }
+                    else if (blobRefTmp.getRequestedLobType() == BlobRef.LobType.LONG_LOB ) {
+                        if (allowedLobFormat.equalsIgnoreCase(AkBlob.SHORT_BLOB)) {
+                            throw new LobException("Long lob storage format not allowed");
+                        }
+                    }
+                    
+                    if (blobRefTmp.getRequestedLobType() == BlobRef.LobType.LONG_LOB || 
+                            allowedLobFormat.equalsIgnoreCase(AkBlob.LONG_BLOB) ||
+                            blobRefTmp.getBytes().length >= AkBlob.LOB_SWITCH_SIZE) {
+                        if (allowedLobFormat.equalsIgnoreCase(AkBlob.SHORT_BLOB)) {
+                            throw new LobException("Long lob storage format not allowed");
+                        }
+                        UUID id = UUID.randomUUID();
+                        getLobService().createNewLob(id.toString());
+                        getLobService().writeBlob(id.toString(), 0, blobRefTmp.getBytes());
+                        type = BlobRef.LobType.LONG_LOB;
+                        value = updateValue(id);
+                    }
+                    else {
+                        type = BlobRef.LobType.SHORT_LOB;
+                        value = updateValue(blobRefTmp.getBytes());
                     }
                 }
+                BlobRef blobRef = new BlobRef(value, BlobRef.LeadingBitState.YES, type, BlobRef.LobType.UNKNOWN);
                 if (blobRef.isLongLob()) {
                     getLobService().linkTableBlob(blobRef.getId().toString(), tableId);
                 }
+                resRow.overlay(i, blobRef);
+                changedRow = true;
             }
         }
         return changedRow ? resRow : row;
+    }
+    
+    
+    
+    private byte[] updateValue(UUID id) {
+        byte[] res = new byte[17];
+        System.arraycopy(AkGUID.uuidToBytes(id), 0, res, 1, 16);
+        res[0] = BlobRef.LONG_LOB;
+        return res;
+    }
+
+    private byte[] updateValue(byte[] data) {
+        byte[] res = new byte[data.length+1];
+        System.arraycopy(data, 0, res, 1, data.length);
+        res[0] = BlobRef.SHORT_LOB;
+        return res;
+    }
+    
+    public byte[] getBlobData(BlobRef blob) {
+        if (blob.isShortLob()) {
+            return blob.getBytes();
+        } else if (blob.isLongLob()) {
+            return getLobService().readBlob(blob.getId().toString());
+        } else {
+            throw new LobException("Type of lob not available");
+        }
+    }
+    
+    public boolean isBlobReturnModeSimple() {
+        return configService.getProperty(AkBlob.BLOB_RETURN_MODE).equalsIgnoreCase(AkBlob.SIMPLE) ? true : false;
     }
     
     @Override

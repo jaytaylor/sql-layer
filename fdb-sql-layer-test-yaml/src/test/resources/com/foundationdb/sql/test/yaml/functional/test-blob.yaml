@@ -1,7 +1,8 @@
 ---
 - CreateTable: blob  (id INT PRIMARY KEY, bl BLOB)
 ---
-- Statement: INSERT INTO blob VALUES (1, unhex('0102030405060708') )
+- Statement: INSERT INTO blob VALUES (1, X'0102030405060708' )
+#- Statement: INSERT INTO blob VALUES (1, unhex('0102030405060708') )
 ---
 - Statement: SELECT * FROM blob
 - output: [[1, !!binary 'AQIDBAUGBwg=']]

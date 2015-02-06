@@ -27,7 +27,7 @@ import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.LazyList;
-import com.foundationdb.server.types.aksql.aktypes.AkBlob;
+import com.foundationdb.server.types.aksql.aktypes.*;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.TOverloadResult;
@@ -61,26 +61,44 @@ public class CreateBlob extends TScalarBase {
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
-        UUID id = UUID.randomUUID();
-        byte[] data;
-        BlobRef blob = new BlobRef(null, new byte[0], BlobRef.SHORT_LOB);
-        ServiceManager sm = context.getQueryContext().getServiceManager();
-        String blobStorageFormat = sm.getServiceByClass(ConfigurationService.class).getProperty("fdbsql.blob.allowed_storage_format");
-        
+        BlobRef blob;
+        String mode = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.BLOB_RETURN_MODE);
+        BlobRef.LeadingBitState state = BlobRef.LeadingBitState.NO;
+        byte[] data = new byte[0];
         if (inputs.size() == 1) {
             data = inputs.get(0).getBytes();
-            if ((data.length < AkBlob.LOB_SWITCH_SIZE) && (!blobStorageFormat.equalsIgnoreCase("LONG_LOB")) ) {
-                blob = new BlobRef(null, data, BlobRef.SHORT_LOB);
-            }
-            else if (!blobStorageFormat.equalsIgnoreCase("SHORT_LOB")) {
+        }
+        
+        if (mode.equalsIgnoreCase(AkBlob.SIMPLE)){
+            blob = new BlobRef(data, state);
+        }
+        else {
+            state = BlobRef.LeadingBitState.YES;
+            ServiceManager sm = context.getQueryContext().getServiceManager();
+            String allowedStorageFormat = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.BLOB_ALLOWED_FORMAT);
+
+            if ((data.length < AkBlob.LOB_SWITCH_SIZE) && (!allowedStorageFormat.equalsIgnoreCase(AkBlob.LONG_BLOB))) {
+                byte[] tmp = new byte[data.length + 1];
+                tmp[0] = BlobRef.SHORT_LOB;
+                System.arraycopy(data, 0, tmp, 1, data.length);
+                data = tmp;
+            } 
+            else if ((data.length >= AkBlob.LOB_SWITCH_SIZE) && (allowedStorageFormat.equalsIgnoreCase(AkBlob.SHORT_BLOB))) {
+                throw new LobException("lob too large");
+            } 
+            else {
+                UUID id = UUID.randomUUID();
                 LobService lobService = sm.getServiceByClass(LobService.class);
                 lobService.createNewLob(id.toString());
-                lobService.writeBlob(id.toString(), 0, data);
-                blob = new BlobRef(id);
-
-            } else {
-                throw new LobException("Lob too large for inline storage");
-            }
+                if (data.length > 0) {
+                    lobService.writeBlob(id.toString(), 0, data);
+                }
+                byte[] tmp = new byte[17];
+                tmp[0] = BlobRef.LONG_LOB;
+                System.arraycopy(AkGUID.uuidToBytes(id), 0, tmp, 1, 16);
+                data = tmp;
+            } 
+            blob = new BlobRef(data, state);
         }
         output.putObject(blob);
     }

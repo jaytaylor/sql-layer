@@ -18,12 +18,12 @@
 package com.foundationdb.server.types.common.funcs;
 
 
-import com.foundationdb.server.error.InvalidArgumentTypeException;
+import com.foundationdb.server.error.*;
 import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.LazyList;
-import com.foundationdb.server.types.aksql.aktypes.AkGUID;
+import com.foundationdb.server.types.aksql.aktypes.*;
 import com.foundationdb.server.types.common.types.NoAttrTClass;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
@@ -52,6 +52,10 @@ public class IdBlob extends TScalarBase {
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
+        String mode = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.BLOB_RETURN_MODE);
+        if (mode.equalsIgnoreCase(AkBlob.SIMPLE)) {
+            throw new LobException("Function not supported for this SIMPLE blob mode");
+        }
         UUID guid = null;
         BlobRef blob;
         if (inputs.size() == 1) {

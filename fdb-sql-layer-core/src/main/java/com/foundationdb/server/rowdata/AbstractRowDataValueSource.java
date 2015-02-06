@@ -163,7 +163,7 @@ abstract class AbstractRowDataValueSource implements ValueSource {
         int size = (int) (offsetAndWidth >>> 32) - fieldDef().getPrefixSize();
         byte[] bytes = new byte[size];
         System.arraycopy(bytes(), offset, bytes, 0, size);
-        return new BlobRef(bytes);
+        return new BlobRef(bytes, BlobRef.LeadingBitState.YES);
     }
     
     // for use within this class

@@ -17,7 +17,8 @@
 
 package com.foundationdb.server.types.aksql.aktypes;
 
-import com.foundationdb.server.error.InvalidParameterValueException;
+import com.foundationdb.server.error.*;
+import com.foundationdb.server.service.blob.*;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.ValueIO;
 import com.foundationdb.server.types.aksql.AkParsers;
@@ -33,7 +34,6 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 import com.foundationdb.server.types.value.ValueTargets;
 import com.foundationdb.sql.types.TypeId;
-import com.foundationdb.server.service.blob.BlobRef;
 
 
 public class AkBlob extends NoAttrTClass {
@@ -42,6 +42,12 @@ public class AkBlob extends NoAttrTClass {
     public final static NoAttrTClass INSTANCE = new AkBlob();
     public final static ValueCacher CACHER = new BlobCacher();
     public final static int LOB_SWITCH_SIZE = 50000;
+    public final static String BLOB_RETURN_MODE = "fdbsql.blob.return_mode";
+    public final static String BLOB_ALLOWED_FORMAT = "fdbsql.blob.allowed_storage_format";
+    public final static String LONG_BLOB = "LONG_BLOB";
+    public final static String SHORT_BLOB = "SHORT_BLOB";
+    public final static String ADVANCED = "advanced";
+    public final static String SIMPLE = "simple";
     
     private AkBlob(){
         super(AkBundle.INSTANCE.id(), BLOBTYPE.getSQLTypeName(), AkCategory.STRING_BINARY, TFormatter.FORMAT.BLOB, 1,
@@ -76,7 +82,7 @@ public class AkBlob extends NoAttrTClass {
         @Override
         public Object valueToCache(BasicValueSource value, TInstance type) {
             byte[] bb = value.getBytes();
-            return new BlobRef(bb);
+            return new BlobRef(bb, BlobRef.LeadingBitState.YES);
         }
 
         @Override

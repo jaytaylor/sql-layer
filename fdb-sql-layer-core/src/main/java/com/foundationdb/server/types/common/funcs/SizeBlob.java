@@ -24,6 +24,7 @@ import com.foundationdb.server.service.blob.LobService;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.LazyList;
+import com.foundationdb.server.types.aksql.aktypes.*;
 import com.foundationdb.server.types.common.types.NoAttrTClass;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.texpressions.TScalarBase;
@@ -34,20 +35,20 @@ import com.foundationdb.server.types.value.ValueTarget;
 
 
 public class SizeBlob extends TScalarBase {
-    NoAttrTClass blob;
+    private NoAttrTClass blobClass;
 
     public static TScalar sizeBlob(final NoAttrTClass blob) {
         return new SizeBlob(blob);
     }
 
 
-    private SizeBlob(NoAttrTClass blob) {
-        this.blob = blob;
+    private SizeBlob(NoAttrTClass blobClass) {
+        this.blobClass = blobClass;
     }
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(this.blob, 0);
+        builder.covers(this.blobClass, 0);
     }
 
     @Override
@@ -58,11 +59,17 @@ public class SizeBlob extends TScalarBase {
             Object o = inputs.get(0).getObject();
             if (o instanceof BlobRef) {
                 blobRef = (BlobRef) o;
-                if (blobRef.isLongLob()) {
-                    LobService lobService = context.getQueryContext().getServiceManager().getServiceByClass(LobService.class);
-                    size = lobService.sizeBlob(blobRef.getId().toString());
-                } else {
-                    size = (long)(blobRef.getBytes().length);
+                String mode = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.BLOB_RETURN_MODE);
+                if (mode.equalsIgnoreCase(AkBlob.SIMPLE)) {
+                    size = (long) blobRef.getBytes().length;
+                }
+                else {
+                    if (blobRef.isLongLob()) {
+                        LobService lobService = context.getQueryContext().getServiceManager().getServiceByClass(LobService.class);
+                        size = lobService.sizeBlob(blobRef.getId().toString());
+                    } else {
+                        size = (long) (blobRef.getBytes().length);
+                    }
                 }
             } else {
                 throw new InvalidArgumentTypeException("Should be a blob column");

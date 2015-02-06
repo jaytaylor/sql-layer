@@ -18,13 +18,14 @@
 package com.foundationdb.server.types.common.funcs;
 
 
+import com.foundationdb.server.error.*;
 import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.service.blob.LobService;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.LazyList;
-import com.foundationdb.server.types.aksql.aktypes.AkBlob;
+import com.foundationdb.server.types.aksql.aktypes.*;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.TOverloadResult;
@@ -58,17 +59,32 @@ public class CreateLongBlob extends TScalarBase {
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
-        UUID id = UUID.randomUUID();
-        byte[] data;
-        LobService lobService = context.getQueryContext().getServiceManager().getServiceByClass(LobService.class);
-        lobService.createNewLob(id.toString());
+        String allowedFormat = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.BLOB_ALLOWED_FORMAT);
+        if (allowedFormat.equalsIgnoreCase(AkBlob.SHORT_BLOB)) {
+            throw new LobException("format not allowed");
+        }
+
+        byte[] data = new byte[0];
         if (inputs.size() == 1) {
             data = inputs.get(0).getBytes();
+        }
+        String mode = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.BLOB_RETURN_MODE);
+        BlobRef.LeadingBitState state = BlobRef.LeadingBitState.NO;
+        if (mode.equalsIgnoreCase(AkBlob.ADVANCED)) {
+            state = BlobRef.LeadingBitState.YES;
+            UUID id = UUID.randomUUID();
+            LobService lobService = context.getQueryContext().getServiceManager().getServiceByClass(LobService.class);
+            lobService.createNewLob(id.toString());
             if (data.length > 0) {
                 lobService.writeBlob(id.toString(), 0, data);
             }
+            byte[] tmp = new byte[17];
+            tmp[0] = BlobRef.LONG_LOB;
+            System.arraycopy(AkGUID.uuidToBytes(id), 0, tmp, 1, 16);
+            data = tmp;
         }
-        BlobRef blob = new BlobRef(id);
+
+        BlobRef blob = new BlobRef(data, state, BlobRef.LobType.UNKNOWN, BlobRef.LobType.LONG_LOB);
         output.putObject(blob);
     }
 

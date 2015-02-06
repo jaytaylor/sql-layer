@@ -57,6 +57,11 @@ public class CreateShortBlob extends TScalarBase {
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
+        String allowedFormat = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.BLOB_ALLOWED_FORMAT);
+        if (allowedFormat.equalsIgnoreCase(AkBlob.LONG_BLOB)) {
+            throw new LobException("format not allowed");
+        }
+        
         byte[] data = new byte[0];
         if (inputs.size() == 1) {
             data = inputs.get(0).getBytes();
@@ -64,7 +69,18 @@ public class CreateShortBlob extends TScalarBase {
                 throw new LobException("Lob size too large for small lob");
             }
         }
-        BlobRef blob = new BlobRef(null, data, BlobRef.SHORT_LOB);
+
+        String mode = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.BLOB_RETURN_MODE);
+        BlobRef.LeadingBitState state = BlobRef.LeadingBitState.NO;
+        if (mode.equalsIgnoreCase(AkBlob.ADVANCED)) {
+            state = BlobRef.LeadingBitState.YES;
+            byte[] tmp = new byte[data.length + 1];
+            tmp[0] = BlobRef.SHORT_LOB;
+            System.arraycopy(data, 0, tmp, 1, data.length);
+            data = tmp;
+        }
+
+        BlobRef blob = new BlobRef(data, state, BlobRef.LobType.UNKNOWN, BlobRef.LobType.SHORT_LOB);
         output.putObject(blob);
     }
 

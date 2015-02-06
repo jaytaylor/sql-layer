@@ -24,69 +24,103 @@ import java.util.UUID;
 import java.util.Arrays;
 
 public class BlobRef {
+    public enum LeadingBitState { NO, YES, UNKNOWN }
+    public enum LobType { SHORT_LOB, LONG_LOB, UNKNOWN }
     public static final byte SHORT_LOB = 0x01;
     public static final byte LONG_LOB = 0x02;
     private UUID id;
     private byte[] data;
-    private byte storeType;
+    private byte storeTypeBit;
+    private LeadingBitState leadingBitState = LeadingBitState.UNKNOWN;
+    private LobType lobType = LobType.UNKNOWN;
+    private LobType requestedType = LobType.UNKNOWN;
     
-    public BlobRef(byte[] value){
-        storeType = value[0];
-        if (storeType == SHORT_LOB) {
-            data = Arrays.copyOfRange(value, 1, value.length);
-        } else if (storeType == LONG_LOB) {
-            id = AkGUID.bytesToUUID(value, 1);
+    
+    public BlobRef(byte[] value) {
+        this(value, LeadingBitState.UNKNOWN);
+    }
+    public BlobRef(byte[] value, LeadingBitState state) {
+        this(value, state, LobType.UNKNOWN, LobType.UNKNOWN);
+    }
+    
+
+    public BlobRef(byte[] value, LeadingBitState state, LobType definedType, LobType requestedType) {
+        this.leadingBitState = state;
+        this.lobType = definedType;
+        this.requestedType = requestedType;
+        
+        if (leadingBitState == LeadingBitState.YES) {
+            storeTypeBit = value[0];
+            if (storeTypeBit == SHORT_LOB) {
+                lobType = LobType.SHORT_LOB;
+            } else if (storeTypeBit == LONG_LOB) {
+                lobType = LobType.LONG_LOB;
+            } else {
+                throw new LobException("Invalid leading bit");                
+            }
+            
+            if (isShortLob()) {
+                data = Arrays.copyOfRange(value, 1, value.length);
+            } else if (isLongLob()) {
+                if (value.length != 17){
+                    throw new LobException("invalid id length");
+                }
+                id = AkGUID.bytesToUUID(value, 1);
+            } else {
+                throw new LobException("Invalid store type");
+            }
         } else {
-            throw new LobException("Invalid store type");
-        }
-    }
-    
-    public BlobRef(UUID id){
-        this.id = id;
-        this.storeType = LONG_LOB;
-    }
-    
-    public BlobRef(UUID id, byte[] data, byte storageType) {
-        this.id = id;
-        this.data = data;
-        this.storeType = storageType;
-    }
-    
-    public byte[] getIdOrBytes() {
-        if (storeType == SHORT_LOB) {
-            return data;
-        } else {
-            return AkGUID.uuidToBytes(id);
+            data = value;
         }
     }
     
     public byte[] getValue() {
+        // always returns data with the correct leading bit if applicable
         byte[] res;
-        if (storeType == SHORT_LOB) {
-            res = new byte[data.length + 1];
-            System.arraycopy(data, 0, res, 1, data.length);
+        if (leadingBitState == LeadingBitState.YES) {
+            if (isShortLob()) {
+                res = new byte[data.length + 1];
+                System.arraycopy(data, 0, res, 1, data.length);
+                res[0] = storeTypeBit;
+            }
+            else {
+                res = new byte[17];
+                System.arraycopy(AkGUID.uuidToBytes(id), 0, res, 1, 16);
+                res[0] = storeTypeBit;
+            }
+        } else {
+            res = data;
         }
-        else {
-            res = new byte[17];
-            System.arraycopy(AkGUID.uuidToBytes(id), 0, res, 1, 16);
-        }
-        res[0] = storeType;
         return res;
     }
     
     public boolean isShortLob() {
-        return storeType == SHORT_LOB;
+        return lobType == LobType.SHORT_LOB;
     }
 
     public boolean isLongLob() {
-        return storeType == LONG_LOB;
+        return lobType == LobType.LONG_LOB;
     }
     
     public UUID getId() {
         return id;
     }
     
+    public void setId(UUID id) {
+        this.id = id;
+    }
+    
     public byte[] getBytes() {
         return data;
     }
+    
+    public LobType getLobType() {
+        return lobType;
+    }
+    
+    public void setLobType(LobType lobType) {
+        this.lobType = lobType;
+    }
+    
+    public LobType getRequestedLobType() { return requestedType; }
 }

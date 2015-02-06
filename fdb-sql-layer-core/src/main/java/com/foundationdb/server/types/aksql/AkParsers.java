@@ -22,7 +22,7 @@ import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TParser;
-import com.foundationdb.server.types.aksql.aktypes.AkGUID;
+import com.foundationdb.server.types.aksql.aktypes.*;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.value.ValueSource;
@@ -97,24 +97,17 @@ public class AkParsers
     {
         @Override
         public void parse(TExecutionContext context, ValueSource source, ValueTarget target) {
-            // first case may not be needed anymore (store --> cache)
-            if (source.getType().typeClass() == AkGUID.INSTANCE) {
-                UUID id = (UUID) source.getObject();
-                target.putObject(id);
+            String s = source.getString();
+            int charsetId = context.inputTypeAt(0).attribute(StringAttribute.CHARSET);
+            String charsetName = StringFactory.Charset.values()[charsetId].name();
+            byte[] bytes;
+            try {
+                bytes = s.getBytes(charsetName);
+            } catch (UnsupportedEncodingException e) {
+                throw new AkibanInternalException("while decoding string using " + charsetName, e);
             }
-            else {
-                String s = source.getString();
-                int charsetId = context.inputTypeAt(0).attribute(StringAttribute.CHARSET);
-                String charsetName = StringFactory.Charset.values()[charsetId].name();
-                byte[] bytes;
-                try {
-                    bytes = s.getBytes(charsetName);
-                } catch (UnsupportedEncodingException e) {
-                    throw new AkibanInternalException("while decoding string using " + charsetName, e);
-                }
-                BlobRef blob = new BlobRef(bytes); 
-                target.putObject(blob);  
-            }
+            BlobRef blob = new BlobRef(bytes);
+            target.putObject(blob);
         }
     };
 }

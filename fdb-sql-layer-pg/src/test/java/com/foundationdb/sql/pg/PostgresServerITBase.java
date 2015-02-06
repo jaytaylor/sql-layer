@@ -49,7 +49,7 @@ public class PostgresServerITBase extends ITBase
                  + PostgresServerITBase.class.getPackage().getName().replace('.', '/'));
 
     public static final String SCHEMA_NAME = "test";
-    public static final String CONNECTION_URL = "jdbc:fdbsql://%s:%d/"+SCHEMA_NAME;
+    public static final String CONNECTION_URL = "jdbc:fdbsql://%s:%d/"+SCHEMA_NAME+"?prepareThreshold=1";
     public static final String USER_NAME = "auser";
     public static final String USER_PASSWORD = "apassword";
 

@@ -59,6 +59,7 @@ public class UnwrapBlob extends TScalarBase {
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
+        
         byte[] data = new byte[0];
         BlobRef blob;
         if (inputs.size() == 1) {
@@ -69,11 +70,17 @@ public class UnwrapBlob extends TScalarBase {
                 } else {
                     throw new InvalidArgumentTypeException("Should be a blob column");
                 }
-                if (blob.isShortLob()) {
+                String mode = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.BLOB_RETURN_MODE);;
+                if (mode.equalsIgnoreCase(AkBlob.SIMPLE)){
                     data = blob.getBytes();
-                } else {
-                    LobService ls = context.getQueryContext().getServiceManager().getServiceByClass(LobService.class);
-                    data = ls.readBlob(blob.getId().toString());
+                }
+                else {
+                    if (blob.isShortLob()) {
+                        data = blob.getBytes();
+                    } else {
+                        LobService ls = context.getQueryContext().getServiceManager().getServiceByClass(LobService.class);
+                        data = ls.readBlob(blob.getId().toString());
+                    }
                 }
             }
         }
