@@ -27,7 +27,6 @@ import com.persistit.Key.Direction;
 import com.persistit.KeyShim;
 import com.persistit.Persistit;
 import com.persistit.Value;
-import com.persistit.KeyState;
 
 import static com.persistit.Key.Direction.EQ;
 import static com.persistit.Key.Direction.GT;
@@ -43,9 +42,6 @@ public class FDBIterationHelper implements IterationHelper
     // Initialized upon traversal
     private long lastKeyGen;
     private Direction itDir;
-    // Only instantiated for logical traversal
-    private Key spareKey;
-
 
     public FDBIterationHelper(FDBAdapter adapter, IndexRowType rowType) {
         this.adapter = adapter;
@@ -98,50 +94,26 @@ public class FDBIterationHelper implements IterationHelper
     }
 
     @Override
-    public boolean next(boolean deep) {
+    public boolean traverse(Direction dir) {
         try {
-            checkIterator(Direction.GT, deep);
-            return advance(deep);
+            checkIterator(dir);
+            return advance();
         } catch (Exception e) {
             throw FDBAdapter.wrapFDBException(adapter.getSession(), e);
         }
     }
 
     @Override
-    public boolean prev(boolean deep) {
-        try {
-            checkIterator(Direction.LT, deep);
-            return advance(deep);
-        } catch (Exception e) {
-            throw FDBAdapter.wrapFDBException(adapter.getSession(), e);
-        }
-    }
-
-    @Override
-    public boolean traverse(Direction dir, boolean deep) {
-        try {
-            checkIterator(dir, deep);
-            return advance(deep);
-        } catch (Exception e) {
-            throw FDBAdapter.wrapFDBException(adapter.getSession(), e);
-        }
-    }
-
-    @Override
-    public void preload(Direction dir, boolean deep) {
-        checkIterator(dir, deep);
+    public void preload(Direction dir) {
+        checkIterator(dir);
     }
 
     //
     // Internal
     //
 
-    private boolean advance(boolean deep) {
-        return deep ? advanceDeep() : advanceLogical();
-    }
-
     /** Advance iterator with pure physical (i.e. key order) traversal. */
-    private boolean advanceDeep() {
+    private boolean advance() {
         if(storeData.next()) {
             updateKey();
             return true;
@@ -149,40 +121,8 @@ public class FDBIterationHelper implements IterationHelper
         return false;
     }
 
-    /** Advance iterator with logical style (i.e. non-deep) traversal. Emulates Exchange shallow behavior. */
-    private boolean advanceLogical() {
-        if(spareKey == null) {
-            spareKey = adapter.getKeyCreator().createKey();
-        }
-        storeData.persistitKey.copyTo(spareKey);
-        int parentIndex = KeyShim.previousElementIndex(storeData.persistitKey, spareKey.getEncodedSize());
-        if(parentIndex < 0) {
-            parentIndex = 0;
-        }
-        while(storeData.next()) {
-            updateKey();
-            boolean matches = (spareKey.compareKeyFragment(storeData.persistitKey, 0, parentIndex) == 0);
-            if(matches) {
-                int originalSize = storeData.persistitKey.getEncodedSize();
-                int nextIndex = KeyShim.nextElementIndex(storeData.persistitKey, parentIndex);
-                if(nextIndex > 0) {
-                    // Note: Proper emulation would require looking up this (possibly fake) key. Server doesn't need it.
-                    if(nextIndex != originalSize) {
-                        storeData.persistitKey.setEncodedSize(nextIndex);
-                        storeData.persistitValue.clear();
-                    }
-                    return true;
-                }
-                // else we found a non-matching prefix (e.g. iterated from child to orphan cousin
-            }
-        }
-        // No match, restore original key
-        spareKey.copyTo(storeData.persistitKey);
-        return false;
-    }
-
     /** Check current iterator matches direction and recreate if not. */
-    private void checkIterator(Direction dir, boolean deep) {
+    private void checkIterator(Direction dir) {
         final boolean keyGenMatches = (lastKeyGen == storeData.persistitKey.getGeneration());
         if((itDir != dir) || !keyGenMatches) {
             // If the last key we returned hasn't changed and moving in the same direction, new iterator isn't needed.
@@ -195,37 +135,17 @@ public class FDBIterationHelper implements IterationHelper
             final int saveSize = storeData.persistitKey.getEncodedSize();
             final boolean exact = dir == EQ || dir == GTEQ || dir == LTEQ;
             final boolean reverse = (dir == LT) || (dir == LTEQ);
-            KeyState saveState = null;
-            
+
             assert storeData.nudgeDir == null;
-            if(!KeyShim.isSpecial(storeData.persistitKey)) {
-                if(exact) {
-                    if(reverse && !deep) {
-                        // exact, reverse, logical: want to see current key or a child
-                        // Note: child won't be returned, but current key will be synthesized by advanceLogical()
-                        saveState = new KeyState(storeData.persistitKey);
-                        // nudgeRight changes the content of the key
-                        KeyShim.nudgeRight(storeData.persistitKey);
-                        storeData.nudgeDir = FDBStoreData.NudgeDir.RIGHT;
-                    }
+            if(!KeyShim.isSpecial(storeData.persistitKey) && !exact) {
+                if(reverse) {
+                    // Non-exact, reverse: do not want to see current key
+                    KeyShim.nudgeLeft(storeData.persistitKey);
+                    storeData.nudgeDir = FDBStoreData.NudgeDir.LEFT;
                 } else {
-                    if(reverse) {
-                        // Non-exact, reverse: do not want to see current key
-                        KeyShim.nudgeLeft(storeData.persistitKey);
-                        storeData.nudgeDir = FDBStoreData.NudgeDir.LEFT;
-                    } else {
-                        if(deep) {
-                            // Non-exact, forward, deep: do not want to see current key
-                            KeyShim.nudgeDeeper(storeData.persistitKey);
-                            storeData.nudgeDir = FDBStoreData.NudgeDir.DEEPER;
-                        } else {
-                            // Non-exact, forward, logical: do not want to see current key or any children
-                            saveState = new KeyState(storeData.persistitKey);
-                            // nudgeRight changes the content of the key
-                            KeyShim.nudgeRight(storeData.persistitKey);
-                            storeData.nudgeDir = FDBStoreData.NudgeDir.RIGHT;
-                        }
-                    }
+                    // Non-exact, forward, deep: do not want to see current key
+                    KeyShim.nudgeDeeper(storeData.persistitKey);
+                    storeData.nudgeDir = FDBStoreData.NudgeDir.DEEPER;
                 }
             }
 
@@ -233,9 +153,6 @@ public class FDBIterationHelper implements IterationHelper
                                                        true, exact, reverse,
                                                        adapter.scanOptions());
             storeData.nudgeDir = null;
-            if (saveState != null) {
-                saveState.copyTo(storeData.persistitKey);
-            }
             storeData.persistitKey.setEncodedSize(saveSize);
             lastKeyGen = storeData.persistitKey.getGeneration();
             itDir = dir;
