@@ -20,7 +20,6 @@ package com.foundationdb.qp.storeadapter.indexcursor;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Index;
 import com.foundationdb.ais.model.IndexColumn;
-import com.foundationdb.server.types.texpressions.TNullExpression;
 import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
@@ -179,16 +178,15 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             } else {
                 // Check constraints on start and end
                 // Construct start and end keys
+                
+                LOG.error("Start bound: {}", start);
+                LOG.error("End bound: {}", end);
                 ValueRecord startExpressions = start.boundExpressions(context, bindings);
                 ValueRecord endExpressions = end.boundExpressions(context, bindings);
 
-                //ValueRecord loExpressions = lo.boundExpressions(context, bindings);
-                //ValueRecord hiExpressions = hi.boundExpressions(context, bindings);
                 LOG.error("start checking {}", startExpressions);
                 LOG.error("end checking {}", endExpressions);
-                for (int f = 0; f < endBoundColumns - 1; f++) {
-                    keyAdapter.checkConstraints(startExpressions, endExpressions, f, null, types);
-                }
+
                 /*
                     Null bounds are slightly tricky. An index restriction is described by an IndexKeyRange which contains
                     two IndexBounds. The IndexBound wraps an index row. The fields of the row that are being restricted are
@@ -215,17 +213,14 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                 // startBoundColumns == endBoundColumns because jump() hasn't been called.
                 // If it had we'd be in reevaluateBoundaries, not here.
                 assert startBoundColumns == endBoundColumns;
+                
+                for (int f = 0; f < startBoundColumns - 1; f++) {
+                    keyAdapter.checkConstraints(startExpressions, endExpressions, f, null, types);
+                }
                 S[] startValues = keyAdapter.createSourceArray(startBoundColumns);
                 S[] endValues = keyAdapter.createSourceArray(endBoundColumns);
                 for (int f = 0; f < startBoundColumns; f++) {
                     startValues[f] = keyAdapter.get(startExpressions, f);
-                    endValues[f] = keyAdapter.get(endExpressions, f);
-                    
-                    LOG.error ("Types of values are {} and {} ", startValues[f].getClass().getName(), endValues[f].getClass().getName());
-                    if (keyAdapter.isNull(startValues[f]) && !(startValues[f] instanceof TNullExpression) ||
-                            keyAdapter.isNull(endValues[f]) && !(endValues[f] instanceof TNullExpression)) {
-                        //LOG.error("Expression value null found: {} or {}", startValues[f], endValues[f]);
-                    }
                 }
                 clearStart();
                 clearEnd();
@@ -236,6 +231,13 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                     startKey.append(startValues[f], type(f));
                     endKey.append(startValues[f], type(f));
                     f++;
+                }
+                if (keyAdapter.isNull(startValues[f]) && !start.isLiteralNull(f)) {
+                    LOG.error("Found stop case for non-literal null in start");
+                }
+                endValues[f] = keyAdapter.get(endExpressions, f);
+                if (keyAdapter.isNull(endValues[f]) && !end.isLiteralNull(f)) {
+                    LOG.error("Found stop case for non-literal null in end");
                 }
                 // For the last column:
                 //  0   >   null      <   null:      (null, AFTER)

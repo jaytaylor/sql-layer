@@ -26,4 +26,5 @@ import com.foundationdb.server.types.value.ValueRecord;
 public interface UnboundExpressions {
     ValueRecord get(QueryContext context, QueryBindings bindings);
     CompoundExplainer getExplainer(ExplainContext context);
+    boolean isLiteralNull(int index);
 }
