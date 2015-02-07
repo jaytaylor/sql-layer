@@ -18,10 +18,8 @@
 package com.foundationdb.server.test.it.qp;
 
 import com.foundationdb.sql.embedded.EmbeddedJDBCITBase;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryFactory;
+import com.foundationdb.util.MicroBenchmark;
 import com.vividsolutions.jts.io.ParseException;
-import com.vividsolutions.jts.io.WKTReader;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -30,14 +28,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
 
-public class SpatialQueryDT extends EmbeddedJDBCITBase
+public class SpatialQueryPerformanceDT extends EmbeddedJDBCITBase
 {
     @Before
     public void setup() throws SQLException, ParseException
@@ -63,12 +58,13 @@ public class SpatialQueryDT extends EmbeddedJDBCITBase
                     insert.setInt(2 * r + 1, id++);
                     String box = randomBox(MAX_DATA_X, MAX_DATA_Y);
                     insert.setString(2 * r + 2, box);
-                    boxes.add(geometry(box));
+                    if (id % 1000 == 0) {
+                        System.out.format("Inserted %d rows\n", id);
+                    }
                 }
                 int updateCount = insert.executeUpdate();
                 assertEquals(ROWS_PER_INSERT, updateCount);
             }
-            // DON'T analyze the table. Run the first queries without the index (in theory).
         } finally {
             if (insert != null) {
                 insert.close();
@@ -83,47 +79,15 @@ public class SpatialQueryDT extends EmbeddedJDBCITBase
     }
 
     @Test
-    public void spatialQueries() throws SQLException, ParseException
+    public void spatialQueries() throws Exception
     {
-        List<Integer> actual = new ArrayList<>();
-        List<Integer> expected = new ArrayList<>();
-        String selectSQL = "select id from boxes where geo_overlaps(geo_wkt(box), geo_wkt(?))";
-        String addIndexSQL = "create index idx_box ON boxes(GEO_WKT(box))";
-        String analyzeSQL = "alter table boxes all update statistics";
-        try (PreparedStatement query = connection.prepareStatement(selectSQL);
-             Statement indexing = connection.createStatement()) {
-            for (int q = 0; q < N_QUERIES; q++) {
-                if (q == N_QUERIES / 3) {
-                    indexing.execute(addIndexSQL);
-                }
-                if (q == 2 * N_QUERIES / 3) {
-                    indexing.execute(analyzeSQL);
-                }
-                String queryBox = randomBox(MAX_QUERY_X, MAX_QUERY_Y);
-                // Actual
-                actual.clear();
-                query.setString(1, queryBox);
-                try (ResultSet resultSet = query.executeQuery()) {
-                    while (resultSet.next()) {
-                        actual.add(resultSet.getInt(1));
-                    }
-                }
-                // Expected
-                expected.clear();
-                Geometry queryGeo = geometry(queryBox);
-                for (int id = 0; id < boxes.size(); id++) {
-                    if (queryGeo.overlaps(boxes.get(id))) {
-                        expected.add(id);
-                    }
-                }
-                // Compare
-                Collections.sort(actual);
-                Collections.sort(expected);
-                assertEquals(expected, actual);
-            }
-        }
+        SpatialQueryBenchmark benchmark = new SpatialQueryBenchmark();
+        report("No index", benchmark.run());
+        benchmark.addIndex();
+        report("With index", benchmark.run());
+        benchmark.analyze();
+        report("Analyzed", benchmark.run());
     }
-
     private String randomBox(double maxX, double maxY)
     {
         double x = random.nextDouble() * LAT_SIZE + LAT_MIN;
@@ -143,9 +107,9 @@ public class SpatialQueryDT extends EmbeddedJDBCITBase
         return wkt;
     }
 
-    private static Geometry geometry(String wkt) throws ParseException
+    private void report(String label, double nsec)
     {
-        return WKT_READER.read(wkt);
+        System.out.format("%s: %f msec\n", label, nsec / 1000000);
     }
 
     private static final double LAT_MIN = -90;
@@ -160,12 +124,57 @@ public class SpatialQueryDT extends EmbeddedJDBCITBase
     private static final double MAX_QUERY_Y = 20;
     private static final int SEED = 101010101;
     private static final int N_BOXES = 100 * 1000;
-    private static final int N_QUERIES = 60;
     private static final int ROWS_PER_INSERT = 50;
-    private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
-    private static final WKTReader WKT_READER = new WKTReader(GEOMETRY_FACTORY);
+    private static final int BENCHMARK_HISTORY_SIZE = 10;
+    private static final double BENCHMARK_VARIATION = 0.1;
+    private static final String ADD_INDEX = "create index idx_box ON boxes(GEO_WKT(box))";
+    private static final String ANALYZE = "alter table boxes all update statistics";
+    private static final String SPATIAL_QUERY = "select id from boxes where geo_overlaps(geo_wkt(box), geo_wkt('%s'))";
 
     private final Random random = new Random(SEED);
-    private List<Geometry> boxes = new ArrayList<>();
     private Connection connection;
+
+    private class SpatialQueryBenchmark extends MicroBenchmark
+    {
+        @Override
+        public void beforeAction() throws SQLException
+        {
+            query = String.format(SPATIAL_QUERY, randomBox(MAX_QUERY_X, MAX_QUERY_Y));
+            statement = connection.createStatement();
+        }
+
+        @Override
+        public void afterAction() throws SQLException
+        {
+            statement.close();
+        }
+
+        @Override
+        public void action() throws SQLException, ParseException
+        {
+            try (ResultSet resultSet = statement.executeQuery(query)) {
+                while (resultSet.next()) {
+                    resultSet.getInt(1);
+                }
+            }
+        }
+
+        public void addIndex() throws SQLException
+        {
+            statement.execute(ADD_INDEX);
+        }
+
+        public void analyze() throws SQLException
+        {
+            statement.execute(ANALYZE);
+        }
+
+        SpatialQueryBenchmark() throws SQLException
+        {
+            super(BENCHMARK_HISTORY_SIZE, BENCHMARK_VARIATION);
+        }
+
+        private String query;
+        private Statement statement;
+    }
 }
