@@ -128,12 +128,15 @@ public class EmbeddedOperatorCompiler extends ServerOperatorCompiler
                 // which will look like SELECT fun(...).
             }
         }
+        long aisGeneration = getAIS().getGeneration();
         if (result.isUpdate())
             return new ExecutableModifyOperatorStatement(resultOperator,
+                                                         aisGeneration,
                                                          resultSetMetaData,
                                                          parameterMetaData);
         else
             return new ExecutableQueryOperatorStatement(resultOperator,
+                                                        aisGeneration,
                                                         resultSetMetaData,
                                                         parameterMetaData,
                                                         result.getCostEstimate());

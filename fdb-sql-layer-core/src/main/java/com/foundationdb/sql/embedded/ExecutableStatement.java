@@ -36,4 +36,8 @@ abstract class ExecutableStatement implements ServerStatement
         return -1;
     }
 
+    public long getAISGeneration() {
+        return 0;
+    }
+
 }

@@ -31,8 +31,9 @@ class ExecutableJavaMethod extends ExecutableJavaRoutine
     
     protected ExecutableJavaMethod(Method method,
                                    ServerCallInvocation invocation,
+                                   long aisGeneration,
                                    JDBCParameterMetaData parameterMetaData) {
-        super(invocation, parameterMetaData);
+        super(invocation, aisGeneration, parameterMetaData);
         this.method = method;
     }
 
@@ -42,7 +43,8 @@ class ExecutableJavaMethod extends ExecutableJavaRoutine
         JDBCConnection conn = context.getServer();
         Method method = conn.getRoutineLoader().loadJavaMethod(conn.getSession(),
                                                                invocation.getRoutineName());
-        return new ExecutableJavaMethod(method, invocation, parameterMetaData);
+        long aisGeneration = context.getAIS().getGeneration();
+        return new ExecutableJavaMethod(method, invocation, aisGeneration, parameterMetaData);
     }
 
     @Override

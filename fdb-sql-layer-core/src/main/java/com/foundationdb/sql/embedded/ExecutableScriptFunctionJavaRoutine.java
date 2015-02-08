@@ -31,8 +31,9 @@ class ExecutableScriptFunctionJavaRoutine extends ExecutableJavaRoutine
     
     protected ExecutableScriptFunctionJavaRoutine(ScriptPool<ScriptInvoker> pool,
                                                   ServerCallInvocation invocation,
+                                                  long aisGeneration,
                                                   JDBCParameterMetaData parameterMetaData) {
-        super(invocation, parameterMetaData);
+        super(invocation, aisGeneration, parameterMetaData);
         this.pool = pool;
     }
 
@@ -42,7 +43,8 @@ class ExecutableScriptFunctionJavaRoutine extends ExecutableJavaRoutine
         JDBCConnection conn = context.getServer();
         ScriptPool<ScriptInvoker> pool = conn.getRoutineLoader().getScriptInvoker(conn.getSession(),
                                                                                   invocation.getRoutineName());
-        return new ExecutableScriptFunctionJavaRoutine(pool, invocation, parameterMetaData);
+        long aisGeneration = context.getAIS().getGeneration();
+        return new ExecutableScriptFunctionJavaRoutine(pool, invocation, aisGeneration, parameterMetaData);
     }
 
     @Override

@@ -39,9 +39,10 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
     private static final Logger logger = LoggerFactory.getLogger(ExecutableModifyOperatorStatement.class);
 
     protected ExecutableModifyOperatorStatement(Operator resultOperator,
+                                                long aisGeneration,
                                                 JDBCResultSetMetaData resultSetMetaData, 
                                                 JDBCParameterMetaData parameterMetaData) {
-        super(resultOperator, resultSetMetaData, parameterMetaData);
+        super(resultOperator, aisGeneration, resultSetMetaData, parameterMetaData);
     }
     
     @Override
@@ -92,16 +93,6 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
     @Override
     public TransactionMode getTransactionMode() {
         return TransactionMode.WRITE;
-    }
-
-    @Override
-    public TransactionAbortedMode getTransactionAbortedMode() {
-        return TransactionAbortedMode.NOT_ALLOWED;
-    }
-
-    @Override
-    public AISGenerationMode getAISGenerationMode() {
-        return AISGenerationMode.NOT_ALLOWED;
     }
 
     static class SpoolCursor  extends RowCursorImpl  {
