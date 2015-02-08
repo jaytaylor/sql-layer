@@ -62,7 +62,7 @@ public class OverlappingDDLAndDMLMT extends PostgresMTBase {
         try {
         assertTrue(!conn1.createStatement().execute("EXECUTE q1"));
         } catch (SQLException e) {
-            assertEquals (e.getMessage(), "ERROR: Unusable statement due to DDL after generation");
+            assertEquals (e.getMessage(), "ERROR: Unusable prepared statement due to DDL after generation");
             assertEquals (e.getSQLState(), "0A50A");
         }
     }
@@ -84,7 +84,7 @@ public class OverlappingDDLAndDMLMT extends PostgresMTBase {
         try {
         assertTrue(!conn1.createStatement().execute("EXECUTE q1"));
         } catch (SQLException e) {
-            assertEquals (e.getMessage(), "ERROR: Unusable statement due to DDL after generation");
+            assertEquals (e.getMessage(), "ERROR: Unusable prepared statement due to DDL after generation");
             assertEquals (e.getSQLState(), "0A50A");
         }
         
