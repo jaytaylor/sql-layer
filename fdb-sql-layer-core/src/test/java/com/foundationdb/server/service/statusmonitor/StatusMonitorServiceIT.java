@@ -72,9 +72,22 @@ public class StatusMonitorServiceIT extends FDBITBase {
         assertEquals(JsonToken.VALUE_STRING, parser.nextValue());
         assertEquals("version", parser.getCurrentName());
         assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+
         assertEquals("instance", parser.getText());
         assertEquals(JsonToken.START_OBJECT, parser.nextToken());
-        parser.skipChildren();
+        assertEquals(JsonToken.VALUE_STRING, parser.nextValue());
+        assertEquals("id", parser.getCurrentName());
+        assertThat(parser.getText(), not(isEmptyOrNullString()));
+        assertEquals(JsonToken.VALUE_STRING, parser.nextValue());
+        assertEquals("host", parser.getCurrentName());
+        assertThat(parser.getText(), not(isEmptyOrNullString()));
+        assertEquals(JsonToken.VALUE_STRING, parser.nextValue());
+        assertEquals("store", parser.getCurrentName());
+        assertThat(parser.getText(), not(isEmptyOrNullString()));
+        assertEquals(JsonToken.VALUE_NUMBER_INT, parser.nextValue());
+        assertEquals("jit_compiler_time", parser.getCurrentName());
+        assertEquals(JsonToken.END_OBJECT, parser.nextToken());
+
         assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
         assertEquals("servers", parser.getText());
         assertEquals(JsonToken.START_ARRAY, parser.nextToken());

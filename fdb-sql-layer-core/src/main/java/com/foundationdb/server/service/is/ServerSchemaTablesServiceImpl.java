@@ -60,10 +60,14 @@ import com.foundationdb.util.tap.Tap;
 import com.foundationdb.util.tap.TapReport;
 import com.google.common.collect.Iterators;
 import com.google.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ServerSchemaTablesServiceImpl
     extends SchemaTablesService
     implements Service, ServerSchemaTablesService {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ServerSchemaTablesServiceImpl.class);
 
     static final TableName ERROR_CODES = new TableName (SCHEMA_NAME, "error_codes");
     static final TableName ERROR_CODE_CLASSES = new TableName (SCHEMA_NAME, "error_code_classes");
@@ -84,7 +88,9 @@ public class ServerSchemaTablesServiceImpl
     private final LayerInfoInterface serverInterface;
     private final SecurityService securityService;
     private final Store store;
-    
+
+    private volatile String hostname;
+
     @Inject
     public ServerSchemaTablesServiceImpl (SchemaManager schemaManager, 
                                           MonitorService monitor, 
@@ -98,6 +104,24 @@ public class ServerSchemaTablesServiceImpl
         this.serverInterface = serverInterface;
         this.securityService = securityService;
         this.store = store;
+    }
+
+    private String getHostname() {
+        // Compute and cache as host lookup may be expensive.
+        if(hostname == null) {
+            synchronized(this) {
+                if(hostname == null) {
+                    // TODO: Consider recomputing this periodically? See also FDBMetricsService.
+                    try {
+                        hostname = InetAddress.getLocalHost().getHostName();
+                    } catch(UnknownHostException ex) {
+                        LOG.error("Unable to retrieve hostname", ex);
+                        hostname = "localhost";
+                    }
+                }
+            }
+        }
+        return hostname;
     }
 
     @Override
@@ -196,22 +220,14 @@ public class ServerSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                String hostName = null;
-                try {
-                    hostName = InetAddress.getLocalHost().getHostName();
-                } catch (UnknownHostException e) {
-                    // do nothing -> Can't get the local host name/ip address
-                    // return null as a host name
-                }
-                
                 Long compile_time = ManagementFactory.getCompilationMXBean().getTotalCompilationTime();
-                
                 return new ValuesHolderRow(rowType,
                         serverInterface.getServerName(),
                         serverInterface.getVersionInfo().versionLong,
-                        hostName,
+                        getHostname(),
                         store.getName(),
                         compile_time,
+                        configService.getInstanceID(),
                         ++rowCounter);
             }
         }
@@ -637,8 +653,9 @@ public class ServerSchemaTablesServiceImpl
             .colString("server_version", DESCRIPTOR_MAX, false)
             .colString("server_host", IDENT_MAX, false)
             .colString("server_store", IDENT_MAX, false)
-            .colBigInt("server_jit_compiler_time", false);
-        
+            .colBigInt("server_jit_compiler_time", false)
+            .colString("server_id", IDENT_MAX, false);
+
         builder.table(SERVER_SERVERS)
             .colString("server_type", IDENT_MAX, false)
             .colBigInt("local_port", true)

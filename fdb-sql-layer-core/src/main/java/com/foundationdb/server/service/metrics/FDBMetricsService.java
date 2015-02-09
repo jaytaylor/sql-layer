@@ -418,8 +418,8 @@ public class FDBMetricsService implements MetricsService, Service
         // only 292 years.) There is a tradeoff between using synchronized clocks in a
         // multi-node environment and using clocks that NTP doesn't change so that
         // small-scale deltas are always accurate.  fdbserver metrics choose the former.
-        // TODO: Consider recomputing this periodically.
         timebase = System.currentTimeMillis() * 1000000 - System.nanoTime();
+        // TODO: Consider recomputing this periodically. See also ServerSchemaTablesServiceImpl.
         address = "127.0.0.1";
         try {
             address = InetAddress.getLocalHost().getHostAddress();

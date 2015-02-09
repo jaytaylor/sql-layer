@@ -184,7 +184,8 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
     }
     
     private static final String INSTANCE = "instance";
-    private static final String INSTANCE_SQL =  "select server_store as store, server_jit_compiler_time as jit_compiler_time from information_schema.server_instance_summary";
+    private static final String INSTANCE_SQL =  "select server_id as id, server_host as host, "+
+        "server_store as store, server_jit_compiler_time as jit_compiler_time from information_schema.server_instance_summary";
     
     private static final String SERVERS = "servers";
     private static final String SERVERS_SQL = "select server_type, local_port, unix_timestamp(start_time) as start_time, session_count from information_schema.server_servers";
