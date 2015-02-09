@@ -41,10 +41,11 @@ class ExecutableScriptFunctionJavaRoutine extends ExecutableJavaRoutine
                                                           JDBCParameterMetaData parameterMetaData,
                                                           EmbeddedQueryContext context) {
         JDBCConnection conn = context.getServer();
+        long[] aisGeneration = new long[1];
         ScriptPool<ScriptInvoker> pool = conn.getRoutineLoader().getScriptInvoker(conn.getSession(),
-                                                                                  invocation.getRoutineName());
-        long aisGeneration = context.getAIS().getGeneration();
-        return new ExecutableScriptFunctionJavaRoutine(pool, invocation, aisGeneration, parameterMetaData);
+                                                                                  invocation.getRoutineName(),
+                                                                                  aisGeneration);
+        return new ExecutableScriptFunctionJavaRoutine(pool, invocation, aisGeneration[0], parameterMetaData);
     }
 
     @Override

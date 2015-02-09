@@ -35,7 +35,7 @@ public class ServerJavaMethodTExpression extends ServerJavaRoutineTExpression {
                                             QueryBindings bindings,
                                             ServerRoutineInvocation invocation) {
         Method method = context.getServer().getRoutineLoader().
-            loadJavaMethod(context.getSession(), routine.getName());
+            loadJavaMethod(context.getSession(), routine.getName(), null);
         return new ServerJavaMethod(context, bindings, invocation, method);
     }
 

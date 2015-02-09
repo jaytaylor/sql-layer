@@ -41,10 +41,11 @@ class ExecutableJavaMethod extends ExecutableJavaRoutine
                                                           JDBCParameterMetaData parameterMetaData,
                                                           EmbeddedQueryContext context) {
         JDBCConnection conn = context.getServer();
+        long[] aisGeneration = new long[1];
         Method method = conn.getRoutineLoader().loadJavaMethod(conn.getSession(),
-                                                               invocation.getRoutineName());
-        long aisGeneration = context.getAIS().getGeneration();
-        return new ExecutableJavaMethod(method, invocation, aisGeneration, parameterMetaData);
+                                                               invocation.getRoutineName(),
+                                                               aisGeneration);
+        return new ExecutableJavaMethod(method, invocation, aisGeneration[0], parameterMetaData);
     }
 
     @Override
