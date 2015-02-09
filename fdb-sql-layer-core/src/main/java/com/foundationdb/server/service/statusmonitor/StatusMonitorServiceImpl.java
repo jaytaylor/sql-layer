@@ -19,7 +19,6 @@ package com.foundationdb.server.service.statusmonitor;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.InetAddress;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -68,16 +67,10 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
 
     public static final List<String> STATUS_MONITOR_DIR = Arrays.asList("Status Monitor","Layers");
     public static final String STATUS_MONITOR_LAYER_NAME = "SQL Layer";
-    
-    public static final String CONFIG_FLUSH_INTERVAL = "fdbsql.fdb.status.flush_interval";
+
     public static final String CONFIG_STATUS_ENABLE = "fdbsql.fdb.status.enabled";
 
     protected byte[] instanceKey;
-    private String host;
-    private String port;
-    protected Thread backgroundThread;
-    protected volatile boolean running, backgroundIdle;
-    private long flushInterval;
     private Future<Void> instanceWatch;
     FormatOptions options;
     
@@ -99,92 +92,24 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
         if (!Boolean.parseBoolean(configService.getProperty(CONFIG_STATUS_ENABLE))) {
             return;
         }
-        flushInterval = Long.parseLong(configService.getProperty(CONFIG_FLUSH_INTERVAL));
         options.set(FormatOptions.JsonBinaryFormatOption.fromProperty(configService.getProperty("fdbsql.sql.jsonbinary_output")));
 
-        host = "127.0.0.1";
-        try {
-            host = InetAddress.getLocalHost().getHostName();
-        }
-        catch (IOException ex) {
-            // Ignore
-        }
-        port = configService.getProperty("fdbsql.postgres.port");
-        String address = host + ":" + port;
-
         DirectorySubspace rootDirectory = DirectoryLayer.getDefault().createOrOpen(fdbService.getTransactionContext(), STATUS_MONITOR_DIR).get();
-        instanceKey = rootDirectory.pack(Tuple2.from(STATUS_MONITOR_LAYER_NAME, address));
+        instanceKey = rootDirectory.pack(Tuple2.from(STATUS_MONITOR_LAYER_NAME, configService.getInstanceID()));
 
-        backgroundThread = new Thread("Status Monitor Background") {
-            @Override
-            public void run() {
-                backgroundThread();
-            }
-        };
-        running = true;
-        backgroundThread.start();
+        writeStatus();
     }
 
     @Override
     public void stop() {
-        running = false;
         // Could/should clear instanceKey but writing in stop() isn't possible due to shutdown hook.
         clearWatch();
-        if (backgroundThread != null) {
-            notifyBackground();
-            try {
-                backgroundThread.join(1000);
-            }
-            catch (InterruptedException ex) {
-                backgroundThread.interrupt();
-            }
-        }
     }
 
     @Override
     public void crash() {
         stop();
     }
-
-    public void completeBackgroundWork() {
-        do {
-            notifyBackground();
-            try {
-                Thread.sleep(100);
-            }
-            catch (InterruptedException ex) {
-            }
-        } while (!backgroundIdle);
-    }
-    
-    protected void notifyBackground() {
-        if (Thread.currentThread() != backgroundThread) {
-            synchronized (backgroundThread) {
-                backgroundThread.notifyAll();
-            }
-        }
-    }
-    
-    private void backgroundThread() {
-        backgroundIdle = false;
-        try {
-            while (running) {
-                writeStatus();
-                try {
-                    synchronized(backgroundThread) {
-                        backgroundIdle=true;
-                        backgroundThread.wait(flushInterval);
-                        backgroundIdle=false;
-                    }
-                } catch (InterruptedException ex) {
-                    break;
-                }
-            }
-        } catch (Exception ex) {
-            logger.error("Error in metrics background thread", ex);
-        }
-    }
-  
 
     protected Database getDatabase() {
         return fdbService.getDatabase();
@@ -215,7 +140,7 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
                 @Override
                 public void run() {
                     logger.debug("Watch fired");
-                    notifyBackground();
+                    writeStatus();
                 }
             });
     }
@@ -233,11 +158,10 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
         try {
             JsonGenerator gen = JsonUtils.createJsonGenerator(str);
             gen.writeStartObject();
-            gen.writeStringField("name", "SQL Layer");
+            gen.writeStringField("id", configService.getInstanceID());
+            gen.writeStringField("name", STATUS_MONITOR_LAYER_NAME);
             gen.writeNumberField("timestamp", System.currentTimeMillis());
             gen.writeStringField("version", Main.VERSION_INFO.versionLong);
-            gen.writeStringField("host", host);
-            gen.writeStringField("port", port);
             summary(INSTANCE, INSTANCE_SQL, gen, false);
             summary(SERVERS, SERVERS_SQL, gen, true);
             summary(SESSIONS, SESSIONS_SQL, gen, true);
@@ -280,7 +204,8 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
     private static final String MEMORY_POOLS = "memory_pools";
     private static final String MEMORY_POOLS_SQL = "select * from information_schema.server_memory_pools";
     
-    protected void summary (String name, String sql, JsonGenerator gen, boolean arrayWrapper) throws JsonGenerationException, IOException {
+    protected void summary (String name, String sql, JsonGenerator gen, boolean arrayWrapper) throws IOException {
+       logger.trace("summary: {}", name);
        Properties props = new Properties();
        props.setProperty("database", TableName.INFORMATION_SCHEMA);
        try (Connection conn = jdbcService.getDriver().connect(JDBCDriver.URL, props);
