@@ -18,9 +18,12 @@
 package com.foundationdb.server.types.common.funcs;
 
 
+import com.foundationdb.*;
 import com.foundationdb.server.error.*;
 import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.service.blob.LobService;
+import com.foundationdb.server.service.transaction.*;
+import com.foundationdb.server.store.*;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
@@ -73,15 +76,19 @@ public class CreateLongBlob extends TScalarBase {
         if (mode.equalsIgnoreCase(AkBlob.ADVANCED)) {
             state = BlobRef.LeadingBitState.YES;
             UUID id = UUID.randomUUID();
-            LobService lobService = context.getQueryContext().getServiceManager().getServiceByClass(LobService.class);
-            lobService.createNewLob(id.toString());
-            if (data.length > 0) {
-                lobService.writeBlob(id.toString(), 0, data);
+            TransactionService txnService = context.getQueryContext().getServiceManager().getServiceByClass(TransactionService.class);
+            if (txnService instanceof FDBTransactionService) {
+                Transaction tr = ((FDBTransactionService) txnService).getTransaction(context.getQueryContext().getStore().getSession()).getTransaction();
+                LobService lobService = context.getQueryContext().getServiceManager().getServiceByClass(LobService.class);
+                lobService.createNewLob(tr, id.toString());
+                if (data.length > 0) {
+                    lobService.writeBlob(tr, id.toString(), 0, data);
+                }
+                byte[] tmp = new byte[17];
+                tmp[0] = BlobRef.LONG_LOB;
+                System.arraycopy(AkGUID.uuidToBytes(id), 0, tmp, 1, 16);
+                data = tmp;
             }
-            byte[] tmp = new byte[17];
-            tmp[0] = BlobRef.LONG_LOB;
-            System.arraycopy(AkGUID.uuidToBytes(id), 0, tmp, 1, 16);
-            data = tmp;
         }
 
         BlobRef blob = new BlobRef(data, state, BlobRef.LobType.UNKNOWN, BlobRef.LobType.LONG_LOB);

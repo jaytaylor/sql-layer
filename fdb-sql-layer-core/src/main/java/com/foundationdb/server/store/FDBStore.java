@@ -67,7 +67,6 @@ import com.foundationdb.server.store.format.FDBStorageDescription;
 import com.foundationdb.server.types.aksql.aktypes.AkBlob;
 import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 import com.foundationdb.server.types.service.TypesRegistryService;
-import com.foundationdb.server.types.value.*;
 import com.foundationdb.server.util.ReadWriteMap;
 import com.foundationdb.tuple.Tuple2;
 import com.foundationdb.tuple.Tuple;
@@ -425,13 +424,14 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         groupIterator(session, storeData);
         while (storeData.next()) {
             Row row = expandGroupData(session, storeData, SchemaCache.globalSchema(group.getAIS()));
-            deleteLobs(row);
+            deleteLobs(session, row);
         }
     }
     
     @Override
     public void dropAllLobs(Session session) {
-        getLobService().clearAllLobs();
+        Transaction tr = txnService.getTransaction(session).getTransaction();
+        getLobService().clearAllLobs(tr);
     }
     
     @Override
@@ -659,11 +659,12 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     
     @Override
-    protected Row storeLobs(Row row) {
+    protected Row storeLobs(Session session, Row row) {
         RowType rowType = row.rowType();
         OverlayingRow resRow = new OverlayingRow(row);
         Boolean changedRow = false;
-
+        
+        Transaction tr = txnService.getTransaction(session).getTransaction();
         for ( int i = 0; i < rowType.nFields(); i++ ) {
             if (rowType.typeAt(i).equalsExcludingNullable(AkBlob.INSTANCE.instance(true))) {
                 int tableId = rowType.table().getTableId();
@@ -715,8 +716,8 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                     }
                     if (blobRefTmp.getBytes().length >= AkBlob.LOB_SWITCH_SIZE) {
                         UUID id = UUID.randomUUID();
-                        getLobService().createNewLob(id.toString());
-                        getLobService().writeBlob(id.toString(), 0, blobRefTmp.getBytes());
+                        getLobService().createNewLob(tr, id.toString());
+                        getLobService().writeBlob(tr, id.toString(), 0, blobRefTmp.getBytes());
                         value = updateValue(id);
                         type = BlobRef.LobType.LONG_LOB;
                     } else {
@@ -746,8 +747,8 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                             value = updateValue(blobRefInit.getId());
                         } else {
                             UUID id = UUID.randomUUID();
-                            getLobService().createNewLob(id.toString());
-                            getLobService().writeBlob(id.toString(), 0, blobRefTmp.getBytes());
+                            getLobService().createNewLob(tr, id.toString());
+                            getLobService().writeBlob(tr, id.toString(), 0, blobRefTmp.getBytes());
                             type = BlobRef.LobType.LONG_LOB;
                             value = updateValue(id);
                         }
@@ -759,7 +760,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                 }
                 BlobRef blobRef = new BlobRef(value, BlobRef.LeadingBitState.YES, type, BlobRef.LobType.UNKNOWN);
                 if (blobRef.isLongLob()) {
-                    getLobService().linkTableBlob(blobRef.getId().toString(), tableId);
+                    getLobService().linkTableBlob(tr, blobRef.getId().toString(), tableId);
                 }
                 resRow.overlay(i, blobRef);
                 changedRow = true;
@@ -784,11 +785,12 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         return res;
     }
     
-    public byte[] getBlobData(BlobRef blob) {
+    public byte[] getBlobData(Session session, BlobRef blob) {
         if (blob.isShortLob()) {
             return blob.getBytes();
         } else if (blob.isLongLob()) {
-            return getLobService().readBlob(blob.getId().toString());
+            Transaction tr = txnService.getTransaction(session).getTransaction();
+            return getLobService().readBlob(tr, blob.getId().toString());
         } else {
             throw new LobException("Type of lob not available");
         }
@@ -799,7 +801,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
     
     @Override
-    protected void deleteLobs(Row row) {
+    protected void deleteLobs(Session session, Row row) {
         RowType rowType = row.rowType();
         for( int i = 0; i < rowType.nFields(); i++ ) {
             if (rowType.typeAt(i).equalsExcludingNullable(AkBlob.INSTANCE.instance(true))) {
@@ -808,7 +810,8 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                     continue;
                 }
                 if (blobRef.isLongLob()) {
-                    getLobService().deleteLob(blobRef.getId().toString());
+                    Transaction tr = txnService.getTransaction(session).getTransaction();
+                    getLobService().deleteLob(tr, blobRef.getId().toString());
                 }
             }
         }        
@@ -839,7 +842,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             while(it.hasNext()) {
                 KeyValue kv = it.next();
                 Tuple t = dir.unpack(kv.getKey());
-                getLobService().deleteLob(AkGUID.bytesToUUID(t.getBytes(0), 0).toString());
+                getLobService().deleteLob(tr.getTransaction(), AkGUID.bytesToUUID(t.getBytes(0), 0).toString());
             }
             rootDir.removeIfExists(tr.getTransaction(), onlineLobPath).get();
         }

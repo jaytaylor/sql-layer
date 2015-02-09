@@ -17,12 +17,13 @@
 
 package com.foundationdb.sql.pg;
 
-import com.foundationdb.TransactionContext;
+import com.foundationdb.*;
 import com.foundationdb.ais.model.*;
 import com.foundationdb.server.service.blob.LobService;
+import com.foundationdb.server.service.transaction.*;
+import com.foundationdb.server.store.*;
 import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 
-import com.foundationdb.server.store.FDBHolder;
 import org.junit.*;
 
 import java.io.ByteArrayInputStream;
@@ -43,13 +44,17 @@ public class BlobIT extends PostgresServerITBase {
         PreparedStatement pstmt = conn.prepareCall("CALL sys.create_specific_blob( ? )");
         pstmt.setString(1, idA);
         pstmt.execute();
+        pstmt.close();
+        
         LobService ls = serviceManager().getServiceByClass(LobService.class);
-        TransactionContext tcx = serviceManager().getServiceByClass(FDBHolder.class).getTransactionContext();
-        Assert.assertTrue(ls.existsLob(idA));
+        Assert.assertTrue(ls.existsLob(getTransaction(), idA));
+        commit();
         conn.close();
-        // time out is needed to have close finalize properly 
-        Thread.sleep(10);
-        Assert.assertFalse(ls.existsLob(idA));        
+        
+        Thread.sleep(100L);
+        
+        Assert.assertFalse(ls.existsLob(getTransaction(), idA));
+        commit();
     }
 
     @Test
@@ -80,10 +85,11 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
         
         LobService ls = serviceManager().getServiceByClass(LobService.class);
-        TransactionContext tcx = serviceManager().getServiceByClass(FDBHolder.class).getTransactionContext();
+        
         for (int k = 0; k < n; k++) {
-            Assert.assertFalse(ls.existsLob(ids[k]));
+            Assert.assertFalse(ls.existsLob(getTransaction(), ids[k]));
         }
+        commit();
     }
 
     @Test
@@ -121,12 +127,12 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
-        TransactionContext tcx = serviceManager().getServiceByClass(FDBHolder.class).getTransactionContext();
         for (int k = 0; k < n; k++) {
-            Assert.assertFalse(ls.existsLob(idsA[k]));
-            Assert.assertFalse(ls.existsLob(idsB[k]));
-            Assert.assertFalse(ls.existsLob(idsC[k]));
+            Assert.assertFalse(ls.existsLob(getTransaction(), idsA[k]));
+            Assert.assertFalse(ls.existsLob(getTransaction(), idsB[k]));
+            Assert.assertFalse(ls.existsLob(getTransaction(), idsC[k]));
         }
+        commit();
     }
 
     @Test
@@ -160,11 +166,12 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
-        TransactionContext tcx = serviceManager().getServiceByClass(FDBHolder.class).getTransactionContext();
+
         for (int k = 0; k < n; k++) {
-            Assert.assertFalse(ls.existsLob(idsA[k]));
-            Assert.assertFalse(ls.existsLob(idsB[k]));
+            Assert.assertFalse(ls.existsLob(getTransaction(), idsA[k]));
+            Assert.assertFalse(ls.existsLob(getTransaction(), idsB[k]));
         }
+        commit();
     }
 
     @Test
@@ -212,11 +219,11 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
-        TransactionContext tcx = serviceManager().getServiceByClass(FDBHolder.class).getTransactionContext();
         for (int k = 0; k < n; k++) {
-            Assert.assertFalse(ls.existsLob(ids_t1[k]));
-            Assert.assertFalse(ls.existsLob(ids_t2[k]));
+            Assert.assertFalse(ls.existsLob(getTransaction(), ids_t1[k]));
+            Assert.assertFalse(ls.existsLob(getTransaction(), ids_t2[k]));
         }
+        commit();
     }
 
     @Test
@@ -256,8 +263,9 @@ public class BlobIT extends PostgresServerITBase {
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
-            Assert.assertFalse(ls.existsLob(ids_t2[k]));
+            Assert.assertFalse(ls.existsLob(getTransaction(), ids_t2[k]));
         }
+        commit();
     }
 
     @Test
@@ -288,10 +296,10 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
-        TransactionContext tcx = serviceManager().getServiceByClass(FDBHolder.class).getTransactionContext();
         for (int k = 0; k < n; k++) {
-            Assert.assertFalse(ls.existsLob(ids[k]));
+            Assert.assertFalse(ls.existsLob(getTransaction(), ids[k]));
         }
+        commit();
     }
 
     @Test
@@ -316,6 +324,7 @@ public class BlobIT extends PostgresServerITBase {
             pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
             pstmt.execute();
         }
+        pstmt.close();
         String[] ids_t1 = new String[n];
         stmt.execute("SELECT bl FROM t1");
         ResultSet rs = stmt.getResultSet();
@@ -332,18 +341,19 @@ public class BlobIT extends PostgresServerITBase {
             rs.next();
             ids_t2[jj] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
         }
+        rs.close();
 
         stmt.execute(("DROP TABLE t2"));
         stmt.close();
-        pstmt.close();
         conn.close();
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
-        TransactionContext tcx = serviceManager().getServiceByClass(FDBHolder.class).getTransactionContext();
+        commit();
         for (int k = 0; k < n; k++) {
-            Assert.assertTrue(ls.existsLob(ids_t1[k]));
-            Assert.assertFalse(ls.existsLob(ids_t2[k]));
+            Assert.assertTrue(ls.existsLob(getTransaction(), ids_t1[k]));
+            Assert.assertFalse(ls.existsLob(getTransaction(), ids_t2[k]));
         }
+        commit();
     }
 
     @Test
@@ -391,11 +401,11 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
-        TransactionContext tcx = serviceManager().getServiceByClass(FDBHolder.class).getTransactionContext();
         for (int k = 0; k < n; k++) {
-            Assert.assertTrue(ls.existsLob(ids_t1[k]));
-            Assert.assertTrue(ls.existsLob(ids_t2[k]));
+            Assert.assertTrue(ls.existsLob(getTransaction(), ids_t1[k]));
+            Assert.assertTrue(ls.existsLob(getTransaction(), ids_t2[k]));
         }
+        commit();
     }
     
     @Test
@@ -426,10 +436,10 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
-        TransactionContext tcx = serviceManager().getServiceByClass(FDBHolder.class).getTransactionContext();
         for (int k = 0; k < n; k++) {
-            Assert.assertFalse(ls.existsLob(ids[k]));
+            Assert.assertFalse(ls.existsLob(getTransaction(), ids[k]));
         }
+        commit();
     }
 
     @Test
@@ -469,8 +479,9 @@ public class BlobIT extends PostgresServerITBase {
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
-            Assert.assertFalse(ls.existsLob(ids_t2[k]));
+            Assert.assertFalse(ls.existsLob(getTransaction(), ids_t2[k]));
         }
+        commit();
     }
 
     @Test
@@ -501,10 +512,10 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
-        TransactionContext tcx = serviceManager().getServiceByClass(FDBHolder.class).getTransactionContext();
         for (int k = 0; k < n; k++) {
-            Assert.assertFalse(ls.existsLob(ids[k]));
+            Assert.assertFalse(ls.existsLob(getTransaction(), ids[k]));
         }
+        commit();
     }
 
     @Test
@@ -536,8 +547,9 @@ public class BlobIT extends PostgresServerITBase {
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
-            Assert.assertTrue(ls.existsLob(ids[k]));
+            Assert.assertTrue(ls.existsLob(getTransaction(), ids[k]));
         }
+        commit();
     }
 
 
@@ -578,8 +590,9 @@ public class BlobIT extends PostgresServerITBase {
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
-            Assert.assertFalse(ls.existsLob(ids_t2[k]));
+            Assert.assertFalse(ls.existsLob(getTransaction(), ids_t2[k]));
         }
+        commit();
     }
 
     @Test
@@ -619,8 +632,9 @@ public class BlobIT extends PostgresServerITBase {
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
-            Assert.assertTrue(ls.existsLob(ids_t2[k]));
+            Assert.assertTrue(ls.existsLob(getTransaction(), ids_t2[k]));
         }
+        commit();
     }
 
     @Test
@@ -670,9 +684,10 @@ public class BlobIT extends PostgresServerITBase {
         LobService ls = serviceManager().getServiceByClass(LobService.class);
         TransactionContext tcx = serviceManager().getServiceByClass(FDBHolder.class).getTransactionContext();
         for (int k = 0; k < n; k++) {
-            Assert.assertFalse(ls.existsLob(ids_t1[k]));
-            Assert.assertTrue(ls.existsLob(ids_t2[k]));
+            Assert.assertFalse( ls.existsLob(getTransaction(), ids_t1[k]));
+            Assert.assertTrue(ls.existsLob(getTransaction(), ids_t2[k]));
         }
+        commit();
     }
     
     @Test
@@ -703,7 +718,7 @@ public class BlobIT extends PostgresServerITBase {
         stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
         
         PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES ( 1, ?)");
-        int lengthInMb = 10;
+        int lengthInMb = 9;
         pstmt.setBlob(1, getInputStreamData(lengthInMb));
         pstmt.execute();
         
@@ -728,7 +743,7 @@ public class BlobIT extends PostgresServerITBase {
         stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
 
         PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES ( 1, ?)");
-        int lengthInMb = 100;
+        int lengthInMb = 9;
         long start = System.currentTimeMillis();
         pstmt.setBlob(1, getInputStreamData(lengthInMb) );
         long stop = System.currentTimeMillis();
@@ -785,6 +800,27 @@ public class BlobIT extends PostgresServerITBase {
         
         conn.close();
     }
+
+    private Transaction getTransaction() {
+        TransactionService txnService = txnService();
+        if (txnService instanceof FDBTransactionService) {
+            if ( txnService.isTransactionActive(session())) {
+                return ((FDBTransactionService) txnService).getTransaction(session()).getTransaction();
+            } else {
+                txnService.beginTransaction(session());
+                return ((FDBTransactionService) txnService).getTransaction(session()).getTransaction();
+            }
+        }
+        else
+            return null;
+    }
+
+    private void commit() {
+        TransactionService ts = txnService();
+        ts.commitOrRetryTransaction(session());
+        ts.rollbackTransactionIfOpen(session());
+    }
+    
     
     private byte[] generateBytes(int length) {
         byte[] inp = new byte[length];

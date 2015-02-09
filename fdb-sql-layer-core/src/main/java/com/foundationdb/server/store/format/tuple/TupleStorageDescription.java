@@ -283,7 +283,7 @@ public class TupleStorageDescription extends FDBStorageDescription
                 if (oldBlob == null) {
                     continue;
                 } 
-                byte[] blobData = store.getBlobData(oldBlob);
+                byte[] blobData = store.getBlobData(session, oldBlob);
                 if (blobData == null) {
                     blobData = new byte[0];
                 }

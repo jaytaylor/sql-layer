@@ -19,28 +19,28 @@
 package com.foundationdb.server.service.blob;
 
 
+import com.foundationdb.*;
+
 import java.util.List;
 
 public interface LobService {
 
-    public void createNewLob(String lobId);
-    public boolean existsLob(String lobId);
-    public void deleteLob(String lobId);
     public void deleteLobs(String[] lobIds);
-    public void moveLob(String oldId, String newId);
-
-    public void checkAndCleanBlobs(List<String> lobIds); // return lon with number of blobs deleted
-    public void runLobGarbageCollector(); // return long with number of blobs deleted?
+    public void checkAndCleanBlobs(List<String> lobIds);
+    public void runLobGarbageCollector(); 
     
-    public void linkTableBlob(String lobId, int tableId);
-    public long sizeBlob(String lobId);
-    public byte[] readBlob(String lobId, long offset, int length);
-    public byte[] readBlob(String lobId);
-    public void writeBlob(String lobId, long offset, byte[] data);
-    public void appendBlob(String lobId, byte[] data);
-    public void truncateBlob(String lobId, long size);
-    public void clearAllLobs();
-    // copyBlob(String lobIdA, String LobIdB)
+    public void createNewLob(TransactionContext tcx, String lobId);
+    public boolean existsLob(TransactionContext tcx, String lobId);
+    public void deleteLob(TransactionContext tcx, String lobId);
+    public void moveLob(TransactionContext tcx, String oldId, String newId);
+    public void linkTableBlob(TransactionContext tcx, String lobId, int tableId);
+    public long sizeBlob(TransactionContext tcx, String lobId);
+    public byte[] readBlob(TransactionContext tcx, String lobId, long offset, int length);
+    public byte[] readBlob(TransactionContext tcx, String lobId);
+    public void writeBlob(TransactionContext tcx, String lobId, long offset, byte[] data);
+    public void appendBlob(TransactionContext tcx, String lobId, byte[] data);
+    public void truncateBlob(TransactionContext tcx, String lobId, long size);
+    public void clearAllLobs(TransactionContext tcx);
     
 }
 

@@ -18,7 +18,10 @@
 package com.foundationdb.server.service.blob;
 
 
+import com.foundationdb.*;
+import com.foundationdb.async.*;
 import com.foundationdb.server.service.ServiceManager;
+import com.foundationdb.server.store.*;
 import com.foundationdb.sql.server.ServerCallContextStack;
 import com.foundationdb.sql.server.ServerQueryContext;
 import com.foundationdb.qp.operator.QueryContext;
@@ -42,7 +45,9 @@ public class LobRoutines {
         // add security check on schema (securityService.isWriteAccessible() )
         ServerQueryContext context = ServerCallContextStack.getCallingContext();
         ServiceManager serviceManager = context.getServiceManager();
-        LobService ls = serviceManager.getServiceByClass(LobService.class);
+        final LobService ls = serviceManager.getServiceByClass(LobService.class);
+        FDBHolder fdbHolder = serviceManager.getServiceByClass(FDBHolder.class);
+        TransactionContext tcx = fdbHolder.getTransactionContext();
         
         if (specific) {
             // also check for valid format of id 
@@ -50,45 +55,62 @@ public class LobRoutines {
         } else {
             lobId = java.util.UUID.randomUUID().toString();
         }
-        ls.createNewLob(lobId);
+        final String id = lobId;
+        tcx.run(new Function<Transaction, Void>() {
+            @Override
+            public Void apply(Transaction tr) {
+                ls.createNewLob(tr, id);
+                return null;
+            }
+        });
+
         context.getServer().addCreatedLob(lobId);
         return lobId;
     }
     
     public static long sizeBlob(String blobId) {
-        return lobService().sizeBlob(blobId);
+        LobService ls = getLobService();
+        TransactionContext tcx = getTransactionContext();
+        return ls.sizeBlob(tcx, blobId);
     }
     
     public static void readBlob(long offset, int length, String blobId, byte[][] out) {
-        out[0] = lobService().readBlob(blobId, offset, length);
+        out[0] = getLobService().readBlob(getTransactionContext(), blobId, offset, length);
     }
     
     public static void writeBlob(long offset, byte[] data, String blobId){
-        lobService().writeBlob(blobId, offset, data);
+        getLobService().writeBlob(getTransactionContext(), blobId, offset, data);
     }
 
     public static void appendBlob(byte[] data, String blobId) {
-        lobService().appendBlob(blobId, data); 
+        getLobService().appendBlob(getTransactionContext(), blobId, data); 
     }
 
     public static void truncateBlob(long newLength, String blobId) {
-        lobService().truncateBlob(blobId, newLength);
+        getLobService().truncateBlob(getTransactionContext(), blobId, newLength);
     }
 
     public static void deleteBlob(String blobId){
-        lobService().deleteLob(blobId);
+        getLobService().deleteLob(getTransactionContext(),blobId);
     }
 
     public static void runLobGarbageCollector() {
-        lobService().runLobGarbageCollector();
+        getLobService().runLobGarbageCollector();
     }
     
-    private static LobService lobService() {
+    private static LobService getLobService() {
         QueryContext context = ServerCallContextStack.getCallingContext();
         ServiceManager serviceManager = context.getServiceManager();
         return serviceManager.getServiceByClass(LobService.class);        
     }
-    
+
+    private static TransactionContext getTransactionContext() {
+        QueryContext context = ServerCallContextStack.getCallingContext();
+        ServiceManager serviceManager = context.getServiceManager();
+        FDBHolder fdbHolder = serviceManager.getServiceByClass(FDBHolder.class);
+        return fdbHolder.getTransactionContext();
+    }
+
     /*
     private static void checkSchemaPermission(BlobBase blob, ServerQueryContext context, ServiceManager serviceManager, TransactionContext tcx){
         Future<Integer> ftableId = blob.getLinkedTable(tcx);

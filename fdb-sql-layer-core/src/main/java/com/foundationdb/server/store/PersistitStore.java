@@ -396,6 +396,12 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     }
 
     @Override
+    Row storeLobs(Session session, Row row) {
+        // does nothing
+        return null;
+    }
+
+    @Override
     protected Key getKey(Session session, Exchange exchange) {
         return exchange.getKey();
     }
@@ -573,14 +579,9 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     }
 
     
-    @Override
-    protected Row storeLobs(Row row){
-        // do nothing
-        return row;
-    }
 
     @Override
-    protected void deleteLobs(Row row){
+    protected void deleteLobs(Session session, Row row){
         // do nothing
     }
 

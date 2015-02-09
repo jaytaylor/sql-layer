@@ -149,10 +149,10 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     protected abstract void trackTableWrite(Session session, Table table);
 
     /** Handles actions for proper or storage of lobs */
-    abstract Row storeLobs(Row row);
+    abstract Row storeLobs(Session session, Row row);
     
     /** Handles actions for clearing lobs*/
-    abstract void deleteLobs(Row row);
+    abstract void deleteLobs(Session session, Row row);
     
     /** Clear all lob related data */
     public abstract void dropAllLobs(Session session);
@@ -629,7 +629,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         // multiple times for GroupIndex maintenance. 
 
         final Row row;
-        row = storeLobs(rowInp);
+        row = storeLobs(session, rowInp);
         
         final Key hKey = getKey(session, storeData);
         this.constructHKey(session, row, hKey);
@@ -731,7 +731,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
             }
         }
 
-        deleteLobs(row);
+        deleteLobs(session, row);
         // Remove the group row
         clear(session, storeData);
         rowTable.tableStatus().rowDeleted(session);

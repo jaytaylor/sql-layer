@@ -22,7 +22,8 @@ import com.foundationdb.server.error.LobException;
 import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.service.blob.LobService;
 import com.foundationdb.server.service.ServiceManager;
-import com.foundationdb.server.service.config.ConfigurationService;
+import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.store.FDBTransactionService;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
@@ -33,7 +34,7 @@ import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
-
+import com.foundationdb.Transaction;
 import java.util.UUID;
 
 public class CreateBlob extends TScalarBase {
@@ -76,28 +77,29 @@ public class CreateBlob extends TScalarBase {
             state = BlobRef.LeadingBitState.YES;
             ServiceManager sm = context.getQueryContext().getServiceManager();
             String allowedStorageFormat = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.BLOB_ALLOWED_FORMAT);
-
-            if ((data.length < AkBlob.LOB_SWITCH_SIZE) && (!allowedStorageFormat.equalsIgnoreCase(AkBlob.LONG_BLOB))) {
-                byte[] tmp = new byte[data.length + 1];
-                tmp[0] = BlobRef.SHORT_LOB;
-                System.arraycopy(data, 0, tmp, 1, data.length);
-                data = tmp;
-            } 
-            else if ((data.length >= AkBlob.LOB_SWITCH_SIZE) && (allowedStorageFormat.equalsIgnoreCase(AkBlob.SHORT_BLOB))) {
-                throw new LobException("lob too large");
-            } 
-            else {
-                UUID id = UUID.randomUUID();
-                LobService lobService = sm.getServiceByClass(LobService.class);
-                lobService.createNewLob(id.toString());
-                if (data.length > 0) {
-                    lobService.writeBlob(id.toString(), 0, data);
+            TransactionService txnService = context.getQueryContext().getServiceManager().getServiceByClass(TransactionService.class);
+            if (txnService instanceof FDBTransactionService) {
+                Transaction tr = ((FDBTransactionService) txnService).getTransaction(context.getQueryContext().getStore().getSession()).getTransaction();
+                if ((data.length < AkBlob.LOB_SWITCH_SIZE) && (!allowedStorageFormat.equalsIgnoreCase(AkBlob.LONG_BLOB))) {
+                    byte[] tmp = new byte[data.length + 1];
+                    tmp[0] = BlobRef.SHORT_LOB;
+                    System.arraycopy(data, 0, tmp, 1, data.length);
+                    data = tmp;
+                } else if ((data.length >= AkBlob.LOB_SWITCH_SIZE) && (allowedStorageFormat.equalsIgnoreCase(AkBlob.SHORT_BLOB))) {
+                    throw new LobException("lob too large");
+                } else {
+                    UUID id = UUID.randomUUID();
+                    LobService lobService = sm.getServiceByClass(LobService.class);
+                    lobService.createNewLob(tr, id.toString());
+                    if (data.length > 0) {
+                        lobService.writeBlob(tr, id.toString(), 0, data);
+                    }
+                    byte[] tmp = new byte[17];
+                    tmp[0] = BlobRef.LONG_LOB;
+                    System.arraycopy(AkGUID.uuidToBytes(id), 0, tmp, 1, 16);
+                    data = tmp;
                 }
-                byte[] tmp = new byte[17];
-                tmp[0] = BlobRef.LONG_LOB;
-                System.arraycopy(AkGUID.uuidToBytes(id), 0, tmp, 1, 16);
-                data = tmp;
-            } 
+            }
             blob = new BlobRef(data, state);
         }
         output.putObject(blob);

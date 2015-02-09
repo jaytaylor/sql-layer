@@ -8,18 +8,18 @@
 --- 
 - Statement: INSERT INTO blob VALUES (1, create_short_blob(unhex('050505')));
 ---
-- Statement: SELECT bl, unwrap_blob(bl) FROM blob WHERE id = 1;
-- output: [[ !!binary 'AQUFBQ==', !!binary 'BQUF' ]]
+- Statement: SELECT unwrap_blob(bl) FROM blob WHERE id = 1;
+- output: [[ !!binary 'BQUF' ]]
 --- 
 - Statement: INSERT INTO blob VALUES (2, create_blob('deadbeef'));
 ---
-- Statement: SELECT true, unwrap_blob(bl) FROM blob WHERE id = 2;
-- output: [[true,  !!binary 'ZGVhZGJlZWY=' ]]
+- Statement: SELECT  unwrap_blob(bl) FROM blob WHERE id = 2;
+- output: [[ !!binary 'ZGVhZGJlZWY=' ]]
 ---
 - Statement: INSERT INTO blob VALUES (3, create_blob());
 ---
-- Statement: SELECT true, unwrap_blob(bl), bl FROM blob WHERE id = 3;
-- output: [[true,  !!binary '', !!binary 'AQ==' ]]
+- Statement: SELECT unwrap_blob(bl) FROM blob WHERE id = 3;
+- output: [[!!binary '' ]]
 ---
 - Statement: INSERT INTO blob VALUES (4, null);
 ---

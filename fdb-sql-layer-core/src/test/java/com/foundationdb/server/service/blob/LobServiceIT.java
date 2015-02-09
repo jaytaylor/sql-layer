@@ -17,8 +17,11 @@
 
 package com.foundationdb.server.service.blob;
 
+import com.foundationdb.server.error.*;
+import com.foundationdb.server.service.transaction.*;
+import com.foundationdb.server.store.*;
 import com.foundationdb.server.test.it.ITBase;
-
+import com.foundationdb.Transaction;
 import java.util.UUID;
 import java.util.Random;
 
@@ -38,32 +41,50 @@ public class LobServiceIT extends ITBase {
 
         // blob creation
         String id = UUID.randomUUID().toString();
-        ls.createNewLob(id);
+        Transaction tr = getTransaction();
+        ls.createNewLob(tr, id);
+        commit();
 
-        ls.appendBlob(id, data);
-        Assert.assertEquals(ls.sizeBlob(id), new Long(data.length).longValue());
+        ls.appendBlob(getTransaction(), id, data);
+        commit();
+        
+        Assert.assertEquals(ls.sizeBlob(getTransaction(), id), new Long(data.length).longValue());
+        commit();
         
         // blob transfer to new address
         String newPath = UUID.randomUUID().toString();
-        ls.moveLob(id, newPath);
+        ls.moveLob(getTransaction(), id, newPath);
+        commit();
         
         // data retrieval
-        byte[] output = ls.readBlob(newPath, 0, data.length);
+        byte[] output = ls.readBlob(getTransaction(), newPath, 0, data.length);
+        commit();
         Assert.assertArrayEquals(data, output);
-        output = ls.readBlob(newPath);
+        output = ls.readBlob(getTransaction(), newPath);
+        commit();
         Assert.assertArrayEquals(data, output);
         
-        ls.truncateBlob(newPath, 2L);
-        Assert.assertEquals(ls.sizeBlob(newPath), 2L);
-
-        ls.truncateBlob(newPath, 0L);
-        Assert.assertEquals(ls.sizeBlob(newPath), 0L);
-        ls.appendBlob(newPath, data);
-        output = ls.readBlob(newPath);
+        ls.truncateBlob(getTransaction(), newPath, 2L);
+        commit();
+        Assert.assertEquals(ls.sizeBlob(getTransaction(), newPath), 2L);
+        commit();
+        
+        
+        ls.truncateBlob(getTransaction(), newPath, 0L);
+        commit();
+        
+        Assert.assertEquals(ls.sizeBlob(getTransaction(), newPath), 0L);
+        commit();
+        ls.appendBlob(getTransaction(), newPath, data);
+        commit();
+        output = ls.readBlob(getTransaction(), newPath);
+        commit();
         Assert.assertArrayEquals(data, output);        
         
-        ls.deleteLob(newPath);
-        Assert.assertFalse(ls.existsLob(newPath));
+        ls.deleteLob(getTransaction(), newPath);
+        commit();
+        Assert.assertFalse(ls.existsLob(getTransaction(), newPath));
+        commit();
     }
     
     @Before
@@ -71,14 +92,13 @@ public class LobServiceIT extends ITBase {
         // registration
         this.ls = serviceManager().getServiceByClass(LobService.class);
         Assert.assertNotNull(ls);
-
+        Transaction tr = getTransaction();
         idA = UUID.randomUUID().toString();
         idB = UUID.randomUUID().toString();
-        ls.createNewLob(idA);
-        ls.createNewLob(idB);
-
-        ls.linkTableBlob(idA, 1);
-
+        ls.createNewLob(tr, idA);
+        ls.createNewLob(tr, idB);
+        ls.linkTableBlob(tr, idA, 1);
+        commit();
     }
     
     @Test
@@ -87,53 +107,30 @@ public class LobServiceIT extends ITBase {
         ls.runLobGarbageCollector();
         
         // check cleaning
-        Assert.assertTrue(ls.existsLob(idA));
-        Assert.assertFalse(ls.existsLob(idB));
+        Assert.assertTrue(ls.existsLob(getTransaction(), idA));
+        Assert.assertFalse(ls.existsLob(getTransaction(), idB));
+        commit();
     }
     
-    @Test
-    public void performanceReadingWriting() {
-        int lengthInMb = 100;
-
-        byte[] data = generateBytes(1000000*lengthInMb);
-        byte[] output;
-        long start, stop;
-        start = System.currentTimeMillis();
-        ls.writeBlob(idA, 0, data);
-        stop = System.currentTimeMillis();
-        System.out.println("Writing --> time: " + ((stop - start)) + "ms, speed: " + (1000*(new Float(lengthInMb)/(stop-start)))+ " MB/sec");
-
-        start = System.currentTimeMillis();
-        output = ls.readBlob(idA);
-        stop = System.currentTimeMillis();
-        System.out.println("Reading --> time: " + ((stop - start)) + "ms, speed: " + (1000*(new Float(lengthInMb)/(stop-start)))+ " MB/sec");
-        Assert.assertArrayEquals(data, output);        
-        
-        start = System.currentTimeMillis();
-        output = ls.readBlob(idA, 0L, data.length);
-        stop = System.currentTimeMillis();
-        System.out.println("Reading as section--> time: " + ((stop - start)) + "ms, speed: " + (1000*(new Float(lengthInMb)/(stop-start)))+ " MB/sec");
-        Assert.assertArrayEquals(data, output);
-
-        start = System.currentTimeMillis();
-        output = ls.readBlob(idA);
-        stop = System.currentTimeMillis();
-        System.out.println("Reading --> time: " + ((stop - start)) + "ms, speed: " + (1000*(new Float(lengthInMb)/(stop-start)))+ " MB/sec");
-
-        start = System.currentTimeMillis();
-        output = ls.readBlob(idA, 0L, data.length);
-        stop = System.currentTimeMillis();
-        System.out.println("Reading as section--> time: " + ((stop - start)) + "ms, speed: " + (1000*(new Float(lengthInMb)/(stop-start)))+ " MB/sec");
-
-        start = System.currentTimeMillis();
-        ls.writeBlob(idA, 0, data);
-        stop = System.currentTimeMillis();
-        System.out.println("Writing --> time: " + ((stop - start)) + "ms, speed: " + (1000*(new Float(lengthInMb)/(stop-start)))+ " MB/sec");
-
-        start = System.currentTimeMillis();
-        ls.writeBlob(idA, 0, data);
-        stop = System.currentTimeMillis();
-        System.out.println("Writing --> time: " + ((stop - start)) + "ms, speed: " + (1000*(new Float(lengthInMb)/(stop-start)))+ " MB/sec");
+    
+    private Transaction getTransaction() {
+        TransactionService txnService = txnService();
+        if (txnService instanceof FDBTransactionService) {
+            if ( txnService.isTransactionActive(session())) {
+                return ((FDBTransactionService) txnService).getTransaction(session()).getTransaction();
+            } else {
+                txnService.beginTransaction(session());
+                return ((FDBTransactionService) txnService).getTransaction(session()).getTransaction();
+            }
+        }
+        else 
+            return null;
+    }
+    
+    private void commit() {
+        TransactionService ts = txnService();
+        ts.commitOrRetryTransaction(session());
+        ts.rollbackTransactionIfOpen(session());
     }
 
     private byte[] generateBytes(int length) {

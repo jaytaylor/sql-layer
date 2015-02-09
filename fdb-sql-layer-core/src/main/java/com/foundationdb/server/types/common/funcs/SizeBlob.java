@@ -18,9 +18,12 @@
 package com.foundationdb.server.types.common.funcs;
 
 
+import com.foundationdb.*;
 import com.foundationdb.server.error.InvalidArgumentTypeException;
 import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.service.blob.LobService;
+import com.foundationdb.server.service.transaction.*;
+import com.foundationdb.server.store.*;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.LazyList;
@@ -68,8 +71,12 @@ public class SizeBlob extends TScalarBase {
                 }
                 else {
                     if (blobRef.isLongLob()) {
-                        LobService lobService = context.getQueryContext().getServiceManager().getServiceByClass(LobService.class);
-                        size = lobService.sizeBlob(blobRef.getId().toString());
+                        TransactionService txnService = context.getQueryContext().getServiceManager().getServiceByClass(TransactionService.class);
+                        if (txnService instanceof FDBTransactionService) {
+                            Transaction tr = ((FDBTransactionService) txnService).getTransaction(context.getQueryContext().getStore().getSession()).getTransaction();
+                            LobService lobService = context.getQueryContext().getServiceManager().getServiceByClass(LobService.class);
+                            size = lobService.sizeBlob(tr, blobRef.getId().toString());
+                        }
                     } else {
                         size = (long) (blobRef.getBytes().length);
                     }
