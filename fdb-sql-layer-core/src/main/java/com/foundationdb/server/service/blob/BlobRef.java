@@ -34,6 +34,7 @@ public class BlobRef {
     private LeadingBitState leadingBitState = LeadingBitState.UNKNOWN;
     private LobType lobType = LobType.UNKNOWN;
     private LobType requestedType = LobType.UNKNOWN;
+    private Boolean returnedBlobInSimpleMode = false;
     
     
     public BlobRef(byte[] value) {
@@ -56,7 +57,7 @@ public class BlobRef {
             } else if (storeTypeBit == LONG_LOB) {
                 lobType = LobType.LONG_LOB;
             } else {
-                throw new LobException("Invalid leading bit");                
+                throw new LobException("Invalid leading bit -");                
             }
             
             if (isShortLob()) {
@@ -123,4 +124,12 @@ public class BlobRef {
     }
     
     public LobType getRequestedLobType() { return requestedType; }
+    
+    public Boolean isReturnedBlobInSimpleMode() {
+        return returnedBlobInSimpleMode;
+    }
+    
+    public void setIsReturnedBlobInSimpleMode(Boolean value) {
+        returnedBlobInSimpleMode = value;
+    }
 }

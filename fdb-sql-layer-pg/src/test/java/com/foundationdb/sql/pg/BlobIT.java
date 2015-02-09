@@ -369,20 +369,20 @@ public class BlobIT extends PostgresServerITBase {
             pstmt.execute();
         }
         String[] ids_t1 = new String[n];
-        stmt.execute("SELECT bl FROM t1");
+        stmt.execute("SELECT id_blob(bl) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
-            ids_t1[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();;
+            ids_t1[j] = rs.getString(1);
         }
         rs.close();
 
         String[] ids_t2 = new String[n];
-        stmt.execute("SELECT bl_t2 FROM t2");
+        stmt.execute("SELECT id_blob(bl_t2) FROM t2");
         rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
-            ids_t2[jj] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();;
+            ids_t2[jj] = rs.getString(1);
         }
 
         stmt.execute(("ALTER TABLE t2 DROP GROUPING FOREIGN KEY"));
@@ -509,7 +509,7 @@ public class BlobIT extends PostgresServerITBase {
 
     @Test
     public void testDropLobColumnB() throws Exception {
-        int n = 5;
+        int n = 1;
         Connection conn = getConnection();
         Statement stmt = conn.createStatement();
         stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB, col3 int)");
@@ -523,11 +523,11 @@ public class BlobIT extends PostgresServerITBase {
         pstmt.close();
         String[] ids = new String[n];
 
-        stmt.execute("SELECT bl FROM t1");
+        stmt.execute("SELECT id_blob(bl) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
-            ids[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
+            ids[j] = rs.getString(1);
         }
         rs.close();
         stmt.execute(("ALTER TABLE t1 DROP COLUMN col3"));
@@ -535,7 +535,6 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
-        TransactionContext tcx = serviceManager().getServiceByClass(FDBHolder.class).getTransactionContext();
         for (int k = 0; k < n; k++) {
             Assert.assertTrue(ls.existsLob(ids[k]));
         }
@@ -606,11 +605,11 @@ public class BlobIT extends PostgresServerITBase {
         }
 
         String[] ids_t2 = new String[n];
-        stmt.execute("SELECT bl_t2 FROM t.t2");
+        stmt.execute("SELECT id_blob(bl_t2) FROM t.t2");
         ResultSet rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
-            ids_t2[jj] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
+            ids_t2[jj] = rs.getString(1);
         }
 
         stmt.execute(("ALTER TABLE t.t2 DROP COLUMN col4"));
@@ -647,20 +646,20 @@ public class BlobIT extends PostgresServerITBase {
             pstmt.execute();
         }
         String[] ids_t1 = new String[n];
-        stmt.execute("SELECT bl FROM t1");
+        stmt.execute("SELECT id_blob(bl) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
-            ids_t1[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
+            ids_t1[j] = rs.getString(1);
         }
         rs.close();
 
         String[] ids_t2 = new String[n];
-        stmt.execute("SELECT bl_t2 FROM t2");
+        stmt.execute("SELECT id_blob(bl_t2) FROM t2");
         rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
-            ids_t2[jj] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
+            ids_t2[jj] = rs.getString(1);
         }
 
         stmt.execute(("ALTER TABLE t1 DROP COLUMN bl"));

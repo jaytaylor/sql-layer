@@ -33,8 +33,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.server.error.AkibanInternalException;
-import com.foundationdb.server.error.StorageDescriptionInvalidException;
+import com.foundationdb.server.error.*;
 import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.FDBStore;
@@ -281,11 +280,19 @@ public class TupleStorageDescription extends FDBStorageDescription
             OverlayingRow newRow = new OverlayingRow(row);
             for (int blobIndex : getBlobIndexes(rowType)) {
                 BlobRef oldBlob = getBlobFromRow(row.value(blobIndex));
+                if (oldBlob == null) {
+                    continue;
+                } 
                 byte[] blobData = store.getBlobData(oldBlob);
+                if (blobData == null) {
+                    blobData = new byte[0];
+                }
+                
                 BlobRef newBlob = new BlobRef(blobData, BlobRef.LeadingBitState.NO);
+                newBlob.setIsReturnedBlobInSimpleMode(true);
                 if (oldBlob.isLongLob()) {
                     newBlob.setId(oldBlob.getId());
-                    newBlob.setLobType(BlobRef.LobType.LONG_LOB);                    
+                    newBlob.setLobType(BlobRef.LobType.LONG_LOB);
                 } else {
                     newBlob.setLobType(BlobRef.LobType.SHORT_LOB);
                 }

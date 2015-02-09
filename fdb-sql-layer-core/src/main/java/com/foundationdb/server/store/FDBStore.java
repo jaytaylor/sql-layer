@@ -667,14 +667,15 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         for ( int i = 0; i < rowType.nFields(); i++ ) {
             if (rowType.typeAt(i).equalsExcludingNullable(AkBlob.INSTANCE.instance(true))) {
                 int tableId = rowType.table().getTableId();
-                BlobRef blobRefTmp = (BlobRef)row.value(i).getObject();
+                BlobRef blobRefInit = (BlobRef)row.value(i).getObject();
                 String allowedLobFormat = configService.getProperty(AkBlob.BLOB_ALLOWED_FORMAT);
-                if (blobRefTmp == null) {
+                
+                if (blobRefInit == null) {
                     continue;
                 }
                 BlobRef.LeadingBitState state;
                 BlobRef.LobType type;
-                byte[] value = blobRefTmp.getValue();
+                byte[] value = blobRefInit.getValue();
                 
                 // The contract: 
                 //    if blobReturnMode == SIMPLE 
@@ -697,14 +698,14 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                     state = BlobRef.LeadingBitState.YES;
                 }
                 // ensure correct state of the leading bit
-                blobRefTmp = new BlobRef(value, state, blobRefTmp.getLobType(), blobRefTmp.getRequestedLobType());
+                BlobRef blobRefTmp = new BlobRef(value, state, blobRefInit.getLobType(), blobRefInit.getRequestedLobType());
                 
-                if (blobRefTmp.isLongLob()) { // only set in ADVANCED mode
+                if (blobRefTmp.isLongLob() && !isBlobReturnModeSimple()) { // only set in ADVANCED mode
                     if (allowedLobFormat.equalsIgnoreCase(AkBlob.SHORT_BLOB)) {
                         throw new LobException("Long lob storage format not allowed");
                     }
                     type = BlobRef.LobType.LONG_LOB;
-                } else if (blobRefTmp.isShortLob()) { // only set in ADVANCED mode
+                } else if (blobRefTmp.isShortLob() && !isBlobReturnModeSimple()) { // only set in ADVANCED mode
                     if (allowedLobFormat.equalsIgnoreCase(AkBlob.LONG_BLOB)) {
                         throw new LobException("Short lob storage format not allowed");
                     }
@@ -740,11 +741,16 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                         if (allowedLobFormat.equalsIgnoreCase(AkBlob.SHORT_BLOB)) {
                             throw new LobException("Long lob storage format not allowed");
                         }
-                        UUID id = UUID.randomUUID();
-                        getLobService().createNewLob(id.toString());
-                        getLobService().writeBlob(id.toString(), 0, blobRefTmp.getBytes());
-                        type = BlobRef.LobType.LONG_LOB;
-                        value = updateValue(id);
+                        if (blobRefInit.isReturnedBlobInSimpleMode()){
+                            type = BlobRef.LobType.LONG_LOB;
+                            value = updateValue(blobRefInit.getId());
+                        } else {
+                            UUID id = UUID.randomUUID();
+                            getLobService().createNewLob(id.toString());
+                            getLobService().writeBlob(id.toString(), 0, blobRefTmp.getBytes());
+                            type = BlobRef.LobType.LONG_LOB;
+                            value = updateValue(id);
+                        }
                     }
                     else {
                         type = BlobRef.LobType.SHORT_LOB;

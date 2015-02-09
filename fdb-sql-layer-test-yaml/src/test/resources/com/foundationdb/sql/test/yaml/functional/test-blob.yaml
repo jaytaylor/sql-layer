@@ -2,15 +2,14 @@
 - CreateTable: blob  (id INT PRIMARY KEY, bl BLOB)
 ---
 - Statement: INSERT INTO blob VALUES (1, X'0102030405060708' )
-#- Statement: INSERT INTO blob VALUES (1, unhex('0102030405060708') )
 ---
-- Statement: SELECT * FROM blob
+- Statement: SELECT id, bl FROM blob
 - output: [[1, !!binary 'AQIDBAUGBwg=']]
 ---
-- Statement: UPDATE blob set bl = unhex('0102030400000000') where id = 1 returning *
+- Statement: UPDATE blob set bl = unhex('0102030400000000') where id = 1 returning id, bl
 - output: [[1, !!binary 'AQIDBAAAAAA=']]
 ---
-- Statement: SELECT * FROM blob
+- Statement: SELECT id, bl FROM blob
 - output: [[1, !!binary 'AQIDBAAAAAA=']]
 ---
 - Include: all-types-schema.yaml

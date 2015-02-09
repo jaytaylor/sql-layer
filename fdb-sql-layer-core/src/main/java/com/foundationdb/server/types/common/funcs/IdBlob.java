@@ -52,10 +52,6 @@ public class IdBlob extends TScalarBase {
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
-        String mode = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.BLOB_RETURN_MODE);
-        if (mode.equalsIgnoreCase(AkBlob.SIMPLE)) {
-            throw new LobException("Function not supported for this SIMPLE blob mode");
-        }
         UUID guid = null;
         BlobRef blob;
         if (inputs.size() == 1) {
