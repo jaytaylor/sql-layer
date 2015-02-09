@@ -126,6 +126,7 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
         .run(new Function<Transaction,Void>() {
                  @Override
                  public Void apply(Transaction tr) {
+                     tr.options().setPrioritySystemImmediate();
                      tr.set (instanceKey, jsonData);
                      setWatch(tr);
                      return null;
@@ -166,19 +167,22 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
             gen.writeStringField("name", STATUS_MONITOR_LAYER_NAME);
             gen.writeNumberField("timestamp", System.currentTimeMillis());
             gen.writeStringField("version", Main.VERSION_INFO.versionLong);
-            summary(INSTANCE, INSTANCE_SQL, gen, false);
-            summary(SERVERS, SERVERS_SQL, gen, true);
-            summary(SESSIONS, SESSIONS_SQL, gen, true);
-            summary(STATISTICS, STATISTICS_SQL, gen, false);
-            summary(GARBAGE_COLLECTORS, GARBAGE_COLLECTORS_SQL, gen, true);
-            summary(MEMORY_POOLS, MEMORY_POOLS_SQL, gen, true);
+            // TODO: Set transaction as priority immediate when possible
+            Properties props = new Properties();
+            props.setProperty("database", TableName.INFORMATION_SCHEMA);
+            try (Connection conn = jdbcService.getDriver().connect(JDBCDriver.URL, props);
+                 Statement s = conn.createStatement()) {
+                summary(s, INSTANCE, INSTANCE_SQL, gen, false);
+                summary(s, SERVERS, SERVERS_SQL, gen, true);
+                summary(s, SESSIONS, SESSIONS_SQL, gen, true);
+                summary(s, STATISTICS, STATISTICS_SQL, gen, false);
+                summary(s, GARBAGE_COLLECTORS, GARBAGE_COLLECTORS_SQL, gen, true);
+                summary(s, MEMORY_POOLS, MEMORY_POOLS_SQL, gen, true);
+            }
             gen.writeEndObject();
             gen.flush();
-        } catch (JsonGenerationException ex) {
-            logger.error("Unable to generate status due to JSON error: {}", ex);
-            return null;
-        } catch (IOException e) {
-            logger.error ("Unable to generate status due to IOException: {}", e);
+        } catch (SQLException | IOException ex) {
+            logger.error("Unable to generate status", ex);
             return null;
         }
         if (logger.isTraceEnabled()) {
@@ -212,28 +216,20 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
     private static final String MEMORY_POOLS = "memory_pools";
     private static final String MEMORY_POOLS_SQL = "select * from information_schema.server_memory_pools";
     
-    protected void summary (String name, String sql, JsonGenerator gen, boolean arrayWrapper) throws IOException {
+    protected void summary (Statement s, String name, String sql, JsonGenerator gen, boolean arrayWrapper) throws IOException, SQLException {
        logger.trace("summary: {}", name);
-       Properties props = new Properties();
-       props.setProperty("database", TableName.INFORMATION_SCHEMA);
-       try (Connection conn = jdbcService.getDriver().connect(JDBCDriver.URL, props);
-               Statement s = conn.createStatement()) {
-
-           if (arrayWrapper) {
-               gen.writeArrayFieldStart(name);
-           } else {
-               gen.writeFieldName(name);
-           }
-           JDBCResultSet rs = (JDBCResultSet)s.executeQuery(sql);
-           StringWriter strings = new StringWriter();
-           PrintWriter writer = new PrintWriter(strings);
-           collectResults(rs, writer, options);
-           gen.writeRawValue(strings.toString());
-           if (arrayWrapper) {
-               gen.writeEndArray();
-           }
-       } catch (SQLException e) {
-           logger.error("unable to generate summary for {}, inserting no data", name);
+       if (arrayWrapper) {
+           gen.writeArrayFieldStart(name);
+       } else {
+           gen.writeFieldName(name);
+       }
+       JDBCResultSet rs = (JDBCResultSet)s.executeQuery(sql);
+       StringWriter strings = new StringWriter();
+       PrintWriter writer = new PrintWriter(strings);
+       collectResults(rs, writer, options);
+       gen.writeRawValue(strings.toString());
+       if (arrayWrapper) {
+           gen.writeEndArray();
        }
     }
 
