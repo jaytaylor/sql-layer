@@ -194,7 +194,10 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
     private static final String SESSIONS_SQL  = "select session_id, unix_timestamp(start_time) as start_time, server_type, remote_address,"+ 
         "query_count, failed_query_count, query_from_cache, logged_statements," +
         "call_statement_count, ddl_statement_count, dml_statement_count, select_statement_count," + 
-        "other_statement_count from information_schema.server_sessions";
+        "other_statement_count from information_schema.server_sessions "+
+        // exclude our own session
+        "WHERE session_id <> CURRENT_SESSION_ID()";
+
     
     private static final String STATISTICS = "statistics";
     private static final String STATISTICS_SQL = "select * from information_schema.server_statistics_summary";
@@ -236,9 +239,7 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
         SQLOutput cursor = new SQLOutput(resultSet);
         try {
             JsonRowWriter jsonRowWriter = new JsonRowWriter(cursor);
-            if (jsonRowWriter.writeRowsFromOpenCursor(cursor, appender, "\n", cursor, opt)) {
-                appender.append('\n');
-            }
+            jsonRowWriter.writeRowsFromOpenCursor(cursor, appender, "", cursor, opt);
         } finally {
             cursor.close();
         }

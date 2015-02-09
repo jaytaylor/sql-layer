@@ -112,11 +112,12 @@ public class StatusMonitorServiceIT extends FDBITBase {
         assertEquals(JsonToken.END_OBJECT, parser.nextToken());
         assertEquals(JsonToken.END_ARRAY, parser.nextToken());
 
-
         assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
         assertEquals("sessions", parser.getText());
         assertEquals(JsonToken.START_ARRAY, parser.nextToken());
-        parser.skipChildren();
+        // There should be no sessions
+        assertEquals(JsonToken.END_ARRAY, parser.nextToken());
+
         assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
         assertEquals("statistics", parser.getText());
         assertEquals(JsonToken.START_OBJECT, parser.nextToken());
