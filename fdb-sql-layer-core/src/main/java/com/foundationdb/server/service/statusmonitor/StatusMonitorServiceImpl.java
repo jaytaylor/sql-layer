@@ -71,10 +71,10 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
     public static final String CONFIG_STATUS_ENABLE = "fdbsql.fdb.status.enabled";
 
     protected byte[] instanceKey;
+    private volatile boolean running;
     private Future<Void> instanceWatch;
     FormatOptions options;
-    
-    
+
     @Inject
     public StatusMonitorServiceImpl (ConfigurationService configService, 
             FDBHolder fdbService,
@@ -97,11 +97,13 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
         DirectorySubspace rootDirectory = DirectoryLayer.getDefault().createOrOpen(fdbService.getTransactionContext(), STATUS_MONITOR_DIR).get();
         instanceKey = rootDirectory.pack(Tuple2.from(STATUS_MONITOR_LAYER_NAME, configService.getInstanceID()));
 
+        running = true;
         writeStatus();
     }
 
     @Override
     public void stop() {
+        running = false;
         // Could/should clear instanceKey but writing in stop() isn't possible due to shutdown hook.
         clearWatch();
     }
@@ -140,7 +142,9 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
                 @Override
                 public void run() {
                     logger.debug("Watch fired");
-                    writeStatus();
+                    if(running) {
+                        writeStatus();
+                    }
                 }
             });
     }
