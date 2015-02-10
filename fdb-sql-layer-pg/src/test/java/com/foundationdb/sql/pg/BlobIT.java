@@ -18,11 +18,10 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.*;
-import com.foundationdb.ais.model.*;
+import com.foundationdb.server.error.*;
 import com.foundationdb.server.service.blob.LobService;
 import com.foundationdb.server.service.transaction.*;
 import com.foundationdb.server.store.*;
-import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 
 import org.junit.*;
 
@@ -31,7 +30,6 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.sql.*;
 import java.util.UUID;
-import java.util.Arrays;
 import java.util.Random;
 
 public class BlobIT extends PostgresServerITBase {
@@ -48,13 +46,13 @@ public class BlobIT extends PostgresServerITBase {
         
         LobService ls = serviceManager().getServiceByClass(LobService.class);
         Assert.assertTrue(ls.existsLob(getTransaction(), idA));
-        commit();
+        commitOrRollback();
         conn.close();
         
         Thread.sleep(100L);
         
         Assert.assertFalse(ls.existsLob(getTransaction(), idA));
-        commit();
+        commitOrRollback();
     }
 
     @Test
@@ -72,24 +70,29 @@ public class BlobIT extends PostgresServerITBase {
         }
         String[] ids = new String[n];
         
-        stmt.execute("SELECT bl FROM t1");
+        stmt.execute("SELECT id_blob(bl) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
-            ids[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
+            ids[j] = rs.getString(1);
         }
         rs.close();
+
+        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        for (int k = 0; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(getTransaction(), ids[k]));
+        }
+        commitOrRollback();
+        
         stmt.execute(("DROP TABLE t1"));
         stmt.close();
         pstmt.close();
         conn.close();
         
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
-        
         for (int k = 0; k < n; k++) {
             Assert.assertFalse(ls.existsLob(getTransaction(), ids[k]));
         }
-        commit();
+        commitOrRollback();
     }
 
     @Test
@@ -112,27 +115,35 @@ public class BlobIT extends PostgresServerITBase {
         String[] idsC = new String[n];
 
         
-        stmt.execute("SELECT blA, blB, blC FROM t1");
+        stmt.execute("SELECT id_blob(blA), id_blob(blB), id_blob(blC) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
-            idsA[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
-            idsB[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
-            idsC[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
+            idsA[j] = rs.getString(1);
+            idsB[j] = rs.getString(2);
+            idsC[j] = rs.getString(3);
         }
         rs.close();
+
+        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        for (int k = 0; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(getTransaction(), idsA[k]));
+            Assert.assertTrue(ls.existsLob(getTransaction(), idsB[k]));
+            Assert.assertTrue(ls.existsLob(getTransaction(), idsC[k]));
+        }
+        commitOrRollback();
+
         stmt.execute(("DROP TABLE t1"));
         stmt.close();
         pstmt.close();
         conn.close();
 
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
             Assert.assertFalse(ls.existsLob(getTransaction(), idsA[k]));
             Assert.assertFalse(ls.existsLob(getTransaction(), idsB[k]));
             Assert.assertFalse(ls.existsLob(getTransaction(), idsC[k]));
         }
-        commit();
+        commitOrRollback();
     }
 
     @Test
@@ -152,26 +163,32 @@ public class BlobIT extends PostgresServerITBase {
         String[] idsA = new String[n];
         String[] idsB = new String[n];
 
-        stmt.execute("SELECT bl, bl2 FROM t1");
+        stmt.execute("SELECT id_blob(bl), id_blob(bl2) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
-            idsA[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
+            idsA[j] = rs.getString(1);
             idsB[j] = rs.getString(2);
         }
         rs.close();
+        
+        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        for (int k = 0; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(getTransaction(), idsA[k]));
+            Assert.assertTrue(ls.existsLob(getTransaction(), idsB[k]));
+        }
+        commitOrRollback();
+
         stmt.execute(("TRUNCATE TABLE t1"));
         stmt.close();
         pstmt.close();
         conn.close();
 
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
-
         for (int k = 0; k < n; k++) {
             Assert.assertFalse(ls.existsLob(getTransaction(), idsA[k]));
             Assert.assertFalse(ls.existsLob(getTransaction(), idsB[k]));
         }
-        commit();
+        commitOrRollback();
     }
 
     @Test
@@ -197,33 +214,39 @@ public class BlobIT extends PostgresServerITBase {
             pstmt.execute();
         }
         String[] ids_t1 = new String[n];
-        stmt.execute("SELECT bl FROM t1");
+        stmt.execute("SELECT id_blob(bl) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
-            ids_t1[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
+            ids_t1[j] = rs.getString(1);
         }
         rs.close();
 
         String[] ids_t2 = new String[n];
-        stmt.execute("SELECT bl_t2 FROM t2");
+        stmt.execute("SELECT id_blob(bl_t2) FROM t2");
         rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
-            ids_t2[jj] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
+            ids_t2[jj] = rs.getString(1);
         }
+
+        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        for (int k = 0; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(getTransaction(), ids_t1[k]));
+            Assert.assertTrue(ls.existsLob(getTransaction(), ids_t2[k]));
+        }
+        commitOrRollback();
         
         stmt.execute(("DROP GROUP t1"));
         stmt.close();
         pstmt.close();
         conn.close();
 
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
             Assert.assertFalse(ls.existsLob(getTransaction(), ids_t1[k]));
             Assert.assertFalse(ls.existsLob(getTransaction(), ids_t2[k]));
         }
-        commit();
+        commitOrRollback();
     }
 
     @Test
@@ -249,23 +272,28 @@ public class BlobIT extends PostgresServerITBase {
         }
 
         String[] ids_t2 = new String[n];
-        stmt.execute("SELECT bl_t2 FROM t2");
+        stmt.execute("SELECT id_blob(bl_t2) FROM t2");
         ResultSet rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
-            ids_t2[jj] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
+            ids_t2[jj] = rs.getString(1);
         }
 
+        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        for (int k = 0; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(getTransaction(), ids_t2[k]));
+        }
+        commitOrRollback();
+        
         stmt.execute(("DROP GROUP t1"));
         stmt.close();
         pstmt.close();
         conn.close();
 
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
             Assert.assertFalse(ls.existsLob(getTransaction(), ids_t2[k]));
         }
-        commit();
+        commitOrRollback();
     }
 
     @Test
@@ -283,23 +311,28 @@ public class BlobIT extends PostgresServerITBase {
         }
         String[] ids = new String[n];
 
-        stmt.execute("SELECT bl FROM t1");
+        stmt.execute("SELECT id_blob(bl) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
-            ids[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
+            ids[j] = rs.getString(1);
         }
         rs.close();
+        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        for (int k = 0; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(getTransaction(), ids[k]));
+        }
+        commitOrRollback();
+
         stmt.execute(("DROP GROUP t1"));
         stmt.close();
         pstmt.close();
         conn.close();
 
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
             Assert.assertFalse(ls.existsLob(getTransaction(), ids[k]));
         }
-        commit();
+        commitOrRollback();
     }
 
     @Test
@@ -325,34 +358,43 @@ public class BlobIT extends PostgresServerITBase {
             pstmt.execute();
         }
         pstmt.close();
+        
         String[] ids_t1 = new String[n];
-        stmt.execute("SELECT bl FROM t1");
+        stmt.execute("SELECT id_blob(bl) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
-            ids_t1[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
+            ids_t1[j] = rs.getString(1);
         }
         rs.close();
 
         String[] ids_t2 = new String[n];
-        stmt.execute("SELECT bl_t2 FROM t2");
+        stmt.execute("SELECT id_blob(bl_t2) FROM t2");
         rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
-            ids_t2[jj] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
+            ids_t2[jj] = rs.getString(1);
         }
         rs.close();
 
+        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        Transaction tr = getTransaction();
+        for (int k = 0; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(tr, ids_t1[k]));
+            Assert.assertTrue(ls.existsLob(tr, ids_t2[k]));
+        }
+        commitOrRollback();
+        
         stmt.execute(("DROP TABLE t2"));
         stmt.close();
         conn.close();
 
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        tr = getTransaction();
         for (int k = 0; k < n; k++) {
-            Assert.assertTrue(ls.existsLob(getTransaction(), ids_t1[k]));
-            Assert.assertFalse(ls.existsLob(getTransaction(), ids_t2[k]));
+            Assert.assertTrue(ls.existsLob(tr, ids_t1[k]));
+            Assert.assertFalse(ls.existsLob(tr, ids_t2[k]));
         }
-        commit();
+        commitOrRollback();
     }
 
     @Test
@@ -404,7 +446,7 @@ public class BlobIT extends PostgresServerITBase {
             Assert.assertTrue(ls.existsLob(getTransaction(), ids_t1[k]));
             Assert.assertTrue(ls.existsLob(getTransaction(), ids_t2[k]));
         }
-        commit();
+        commitOrRollback();
     }
     
     @Test
@@ -423,22 +465,28 @@ public class BlobIT extends PostgresServerITBase {
         pstmt.close();
         String[] ids = new String[n];
 
-        stmt.execute("SELECT bl FROM testx.t1");
+        stmt.execute("SELECT id_blob(bl) FROM testx.t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
-            ids[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
+            ids[j] = rs.getString(1);;
         }
         rs.close();
+
+        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        for (int k = 0; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(getTransaction(), ids[k]));
+        }
+        commitOrRollback();
+
         stmt.execute(("DROP SCHEMA testx CASCADE"));
         stmt.close();
         conn.close();
 
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
             Assert.assertFalse(ls.existsLob(getTransaction(), ids[k]));
         }
-        commit();
+        commitOrRollback();
     }
 
     @Test
@@ -464,23 +512,28 @@ public class BlobIT extends PostgresServerITBase {
         }
 
         String[] ids_t2 = new String[n];
-        stmt.execute("SELECT bl_t2 FROM t.t2");
+        stmt.execute("SELECT id_blob(bl_t2) FROM t.t2");
         ResultSet rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
-            ids_t2[jj] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
+            ids_t2[jj] = rs.getString(1);
         }
 
+        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        for (int k = 0; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(getTransaction(), ids_t2[k]));
+        }
+        commitOrRollback();
+        
         stmt.execute(("DROP SCHEMA t CASCADE"));
         stmt.close();
         pstmt.close();
         conn.close();
 
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
             Assert.assertFalse(ls.existsLob(getTransaction(), ids_t2[k]));
         }
-        commit();
+        commitOrRollback();
     }
 
     @Test
@@ -499,22 +552,27 @@ public class BlobIT extends PostgresServerITBase {
         pstmt.close();
         String[] ids = new String[n];
         
-        stmt.execute("SELECT bl FROM t1");
+        stmt.execute("SELECT id_blob(bl) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
-            ids[j] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
+            ids[j] = rs.getString(1);
         }
         rs.close();
+        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        for (int k = 0; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(getTransaction(), ids[k]));
+        }
+        commitOrRollback();
+        
         stmt.execute(("ALTER TABLE t1 DROP COLUMN bl"));
         stmt.close();
         conn.close();
 
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
             Assert.assertFalse(ls.existsLob(getTransaction(), ids[k]));
         }
-        commit();
+        commitOrRollback();
     }
 
     @Test
@@ -548,7 +606,7 @@ public class BlobIT extends PostgresServerITBase {
         for (int k = 0; k < n; k++) {
             Assert.assertTrue(ls.existsLob(getTransaction(), ids[k]));
         }
-        commit();
+        commitOrRollback();
     }
 
 
@@ -575,23 +633,29 @@ public class BlobIT extends PostgresServerITBase {
         }
 
         String[] ids_t2 = new String[n];
-        stmt.execute("SELECT bl_t2 FROM t.t2");
+        stmt.execute("SELECT id_blob(bl_t2) FROM t.t2");
         ResultSet rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
-            ids_t2[jj] = AkGUID.bytesToUUID(Arrays.copyOfRange(rs.getBytes(1), 1, 17), 0).toString();
+            ids_t2[jj] = rs.getString(1);
         }
 
+        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        for (int k = 0; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(getTransaction(), ids_t2[k]));
+        }
+        commitOrRollback();
+    
+        
         stmt.execute(("ALTER TABLE t.t2 DROP COLUMN bl_t2"));
         stmt.close();
         pstmt.close();
         conn.close();
 
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
             Assert.assertFalse(ls.existsLob(getTransaction(), ids_t2[k]));
         }
-        commit();
+        commitOrRollback();
     }
 
     @Test
@@ -633,7 +697,7 @@ public class BlobIT extends PostgresServerITBase {
         for (int k = 0; k < n; k++) {
             Assert.assertTrue(ls.existsLob(getTransaction(), ids_t2[k]));
         }
-        commit();
+        commitOrRollback();
     }
 
     @Test
@@ -675,18 +739,23 @@ public class BlobIT extends PostgresServerITBase {
             ids_t2[jj] = rs.getString(1);
         }
 
+        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        for (int k = 0; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(getTransaction(), ids_t1[k]));
+            Assert.assertTrue(ls.existsLob(getTransaction(), ids_t2[k]));
+        }
+        commitOrRollback();
+        
         stmt.execute(("ALTER TABLE t1 DROP COLUMN bl"));
         stmt.close();
         pstmt.close();
         conn.close();
 
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
-        TransactionContext tcx = serviceManager().getServiceByClass(FDBHolder.class).getTransactionContext();
         for (int k = 0; k < n; k++) {
             Assert.assertFalse( ls.existsLob(getTransaction(), ids_t1[k]));
             Assert.assertTrue(ls.existsLob(getTransaction(), ids_t2[k]));
         }
-        commit();
+        commitOrRollback();
     }
     
     @Test
@@ -811,13 +880,17 @@ public class BlobIT extends PostgresServerITBase {
             }
         }
         else
-            return null;
+            Assert.fail();
+        return null;
     }
 
-    private void commit() {
+    private void commitOrRollback() {
         TransactionService ts = txnService();
-        ts.commitOrRetryTransaction(session());
-        ts.rollbackTransactionIfOpen(session());
+        try {
+            ts.commitOrRetryTransaction(session());
+        } finally {
+            ts.rollbackTransactionIfOpen(session());
+        }
     }
     
     
