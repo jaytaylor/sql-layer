@@ -19,7 +19,6 @@ package com.foundationdb.server.service.statusmonitor;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.InetAddress;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -68,20 +67,14 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
 
     public static final List<String> STATUS_MONITOR_DIR = Arrays.asList("Status Monitor","Layers");
     public static final String STATUS_MONITOR_LAYER_NAME = "SQL Layer";
-    
-    public static final String CONFIG_FLUSH_INTERVAL = "fdbsql.fdb.status.flush_interval";
+
     public static final String CONFIG_STATUS_ENABLE = "fdbsql.fdb.status.enabled";
 
     protected byte[] instanceKey;
-    private String host;
-    private String port;
-    protected Thread backgroundThread;
-    protected volatile boolean running, backgroundIdle;
-    private long flushInterval;
+    private volatile boolean running;
     private Future<Void> instanceWatch;
     FormatOptions options;
-    
-    
+
     @Inject
     public StatusMonitorServiceImpl (ConfigurationService configService, 
             FDBHolder fdbService,
@@ -99,30 +92,13 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
         if (!Boolean.parseBoolean(configService.getProperty(CONFIG_STATUS_ENABLE))) {
             return;
         }
-        flushInterval = Long.parseLong(configService.getProperty(CONFIG_FLUSH_INTERVAL));
         options.set(FormatOptions.JsonBinaryFormatOption.fromProperty(configService.getProperty("fdbsql.sql.jsonbinary_output")));
 
-        host = "127.0.0.1";
-        try {
-            host = InetAddress.getLocalHost().getHostName();
-        }
-        catch (IOException ex) {
-            // Ignore
-        }
-        port = configService.getProperty("fdbsql.postgres.port");
-        String address = host + ":" + port;
-
         DirectorySubspace rootDirectory = DirectoryLayer.getDefault().createOrOpen(fdbService.getTransactionContext(), STATUS_MONITOR_DIR).get();
-        instanceKey = rootDirectory.pack(Tuple2.from(STATUS_MONITOR_LAYER_NAME, address));
+        instanceKey = rootDirectory.pack(Tuple2.from(STATUS_MONITOR_LAYER_NAME, configService.getInstanceID()));
 
-        backgroundThread = new Thread("Status Monitor Background") {
-            @Override
-            public void run() {
-                backgroundThread();
-            }
-        };
         running = true;
-        backgroundThread.start();
+        writeStatus();
     }
 
     @Override
@@ -130,61 +106,12 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
         running = false;
         // Could/should clear instanceKey but writing in stop() isn't possible due to shutdown hook.
         clearWatch();
-        if (backgroundThread != null) {
-            notifyBackground();
-            try {
-                backgroundThread.join(1000);
-            }
-            catch (InterruptedException ex) {
-                backgroundThread.interrupt();
-            }
-        }
     }
 
     @Override
     public void crash() {
         stop();
     }
-
-    public void completeBackgroundWork() {
-        do {
-            notifyBackground();
-            try {
-                Thread.sleep(100);
-            }
-            catch (InterruptedException ex) {
-            }
-        } while (!backgroundIdle);
-    }
-    
-    protected void notifyBackground() {
-        if (Thread.currentThread() != backgroundThread) {
-            synchronized (backgroundThread) {
-                backgroundThread.notifyAll();
-            }
-        }
-    }
-    
-    private void backgroundThread() {
-        backgroundIdle = false;
-        try {
-            while (running) {
-                writeStatus();
-                try {
-                    synchronized(backgroundThread) {
-                        backgroundIdle=true;
-                        backgroundThread.wait(flushInterval);
-                        backgroundIdle=false;
-                    }
-                } catch (InterruptedException ex) {
-                    break;
-                }
-            }
-        } catch (Exception ex) {
-            logger.error("Error in metrics background thread", ex);
-        }
-    }
-  
 
     protected Database getDatabase() {
         return fdbService.getDatabase();
@@ -199,6 +126,7 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
         .run(new Function<Transaction,Void>() {
                  @Override
                  public Void apply(Transaction tr) {
+                     tr.options().setPrioritySystemImmediate();
                      tr.set (instanceKey, jsonData);
                      setWatch(tr);
                      return null;
@@ -215,7 +143,9 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
                 @Override
                 public void run() {
                     logger.debug("Watch fired");
-                    notifyBackground();
+                    if(running) {
+                        writeStatus();
+                    }
                 }
             });
     }
@@ -233,24 +163,26 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
         try {
             JsonGenerator gen = JsonUtils.createJsonGenerator(str);
             gen.writeStartObject();
-            gen.writeStringField("name", "SQL Layer");
+            gen.writeStringField("id", configService.getInstanceID());
+            gen.writeStringField("name", STATUS_MONITOR_LAYER_NAME);
             gen.writeNumberField("timestamp", System.currentTimeMillis());
             gen.writeStringField("version", Main.VERSION_INFO.versionLong);
-            gen.writeStringField("host", host);
-            gen.writeStringField("port", port);
-            summary(INSTANCE, INSTANCE_SQL, gen, false);
-            summary(SERVERS, SERVERS_SQL, gen, true);
-            summary(SESSIONS, SESSIONS_SQL, gen, true);
-            summary(STATISTICS, STATISTICS_SQL, gen, false);
-            summary(GARBAGE_COLLECTORS, GARBAGE_COLLECTORS_SQL, gen, true);
-            summary(MEMORY_POOLS, MEMORY_POOLS_SQL, gen, true);
+            // TODO: Set transaction as priority immediate when possible
+            Properties props = new Properties();
+            props.setProperty("database", TableName.INFORMATION_SCHEMA);
+            try (Connection conn = jdbcService.getDriver().connect(JDBCDriver.URL, props);
+                 Statement s = conn.createStatement()) {
+                summary(s, INSTANCE, INSTANCE_SQL, gen, false);
+                summary(s, SERVERS, SERVERS_SQL, gen, true);
+                summary(s, SESSIONS, SESSIONS_SQL, gen, true);
+                summary(s, STATISTICS, STATISTICS_SQL, gen, false);
+                summary(s, GARBAGE_COLLECTORS, GARBAGE_COLLECTORS_SQL, gen, true);
+                summary(s, MEMORY_POOLS, MEMORY_POOLS_SQL, gen, true);
+            }
             gen.writeEndObject();
             gen.flush();
-        } catch (JsonGenerationException ex) {
-            logger.error("Unable to generate status due to JSON error: {}", ex);
-            return null;
-        } catch (IOException e) {
-            logger.error ("Unable to generate status due to IOException: {}", e);
+        } catch (SQLException | IOException ex) {
+            logger.error("Unable to generate status", ex);
             return null;
         }
         if (logger.isTraceEnabled()) {
@@ -260,7 +192,8 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
     }
     
     private static final String INSTANCE = "instance";
-    private static final String INSTANCE_SQL =  "select server_store as store, server_jit_compiler_time as jit_compiler_time from information_schema.server_instance_summary";
+    private static final String INSTANCE_SQL =  "select server_id as id, server_host as host, "+
+        "server_store as store, server_jit_compiler_time as jit_compiler_time from information_schema.server_instance_summary";
     
     private static final String SERVERS = "servers";
     private static final String SERVERS_SQL = "select server_type, local_port, unix_timestamp(start_time) as start_time, session_count from information_schema.server_servers";
@@ -269,7 +202,10 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
     private static final String SESSIONS_SQL  = "select session_id, unix_timestamp(start_time) as start_time, server_type, remote_address,"+ 
         "query_count, failed_query_count, query_from_cache, logged_statements," +
         "call_statement_count, ddl_statement_count, dml_statement_count, select_statement_count," + 
-        "other_statement_count from information_schema.server_sessions";
+        "other_statement_count from information_schema.server_sessions "+
+        // exclude our own session
+        "WHERE session_id <> CURRENT_SESSION_ID()";
+
     
     private static final String STATISTICS = "statistics";
     private static final String STATISTICS_SQL = "select * from information_schema.server_statistics_summary";
@@ -280,27 +216,20 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
     private static final String MEMORY_POOLS = "memory_pools";
     private static final String MEMORY_POOLS_SQL = "select * from information_schema.server_memory_pools";
     
-    protected void summary (String name, String sql, JsonGenerator gen, boolean arrayWrapper) throws JsonGenerationException, IOException {
-       Properties props = new Properties();
-       props.setProperty("database", TableName.INFORMATION_SCHEMA);
-       try (Connection conn = jdbcService.getDriver().connect(JDBCDriver.URL, props);
-               Statement s = conn.createStatement()) {
-
-           if (arrayWrapper) {
-               gen.writeArrayFieldStart(name);
-           } else {
-               gen.writeFieldName(name);
-           }
-           JDBCResultSet rs = (JDBCResultSet)s.executeQuery(sql);
-           StringWriter strings = new StringWriter();
-           PrintWriter writer = new PrintWriter(strings);
-           collectResults(rs, writer, options);
-           gen.writeRawValue(strings.toString());
-           if (arrayWrapper) {
-               gen.writeEndArray();
-           }
-       } catch (SQLException e) {
-           logger.error("unable to generate summary for {}, inserting no data", name);
+    protected void summary (Statement s, String name, String sql, JsonGenerator gen, boolean arrayWrapper) throws IOException, SQLException {
+       logger.trace("summary: {}", name);
+       if (arrayWrapper) {
+           gen.writeArrayFieldStart(name);
+       } else {
+           gen.writeFieldName(name);
+       }
+       JDBCResultSet rs = (JDBCResultSet)s.executeQuery(sql);
+       StringWriter strings = new StringWriter();
+       PrintWriter writer = new PrintWriter(strings);
+       collectResults(rs, writer, options);
+       gen.writeRawValue(strings.toString());
+       if (arrayWrapper) {
+           gen.writeEndArray();
        }
     }
 
@@ -310,9 +239,7 @@ public class StatusMonitorServiceImpl implements StatusMonitorService, Service {
         SQLOutput cursor = new SQLOutput(resultSet);
         try {
             JsonRowWriter jsonRowWriter = new JsonRowWriter(cursor);
-            if (jsonRowWriter.writeRowsFromOpenCursor(cursor, appender, "\n", cursor, opt)) {
-                appender.append('\n');
-            }
+            jsonRowWriter.writeRowsFromOpenCursor(cursor, appender, "", cursor, opt);
         } finally {
             cursor.close();
         }

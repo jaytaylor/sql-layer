@@ -33,6 +33,8 @@ import com.foundationdb.server.test.it.FDBITBase;
 import com.foundationdb.tuple.Tuple2;
 import com.foundationdb.util.JsonUtils;
 
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.junit.Assert.*;
 
 public class StatusMonitorServiceIT extends FDBITBase {
@@ -60,20 +62,32 @@ public class StatusMonitorServiceIT extends FDBITBase {
 
         assertEquals(JsonToken.START_OBJECT, parser.nextToken());
         assertEquals(JsonToken.VALUE_STRING, parser.nextValue());
+        assertEquals("id", parser.getCurrentName());
+        assertThat(parser.getText(), not(isEmptyOrNullString()));
+        assertEquals(JsonToken.VALUE_STRING, parser.nextValue());
         assertEquals("name", parser.getCurrentName());
         assertEquals("SQL Layer", parser.getText());
         assertEquals(JsonToken.VALUE_NUMBER_INT, parser.nextValue());
         assertEquals("timestamp", parser.getCurrentName());
         assertEquals(JsonToken.VALUE_STRING, parser.nextValue());
         assertEquals("version", parser.getCurrentName());
-        assertEquals(JsonToken.VALUE_STRING, parser.nextValue());
-        assertEquals("host", parser.getCurrentName());
-        assertEquals(JsonToken.VALUE_STRING, parser.nextValue());
-        assertEquals("port", parser.getCurrentName());
         assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
+
         assertEquals("instance", parser.getText());
         assertEquals(JsonToken.START_OBJECT, parser.nextToken());
-        parser.skipChildren();
+        assertEquals(JsonToken.VALUE_STRING, parser.nextValue());
+        assertEquals("id", parser.getCurrentName());
+        assertThat(parser.getText(), not(isEmptyOrNullString()));
+        assertEquals(JsonToken.VALUE_STRING, parser.nextValue());
+        assertEquals("host", parser.getCurrentName());
+        assertThat(parser.getText(), not(isEmptyOrNullString()));
+        assertEquals(JsonToken.VALUE_STRING, parser.nextValue());
+        assertEquals("store", parser.getCurrentName());
+        assertThat(parser.getText(), not(isEmptyOrNullString()));
+        assertEquals(JsonToken.VALUE_NUMBER_INT, parser.nextValue());
+        assertEquals("jit_compiler_time", parser.getCurrentName());
+        assertEquals(JsonToken.END_OBJECT, parser.nextToken());
+
         assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
         assertEquals("servers", parser.getText());
         assertEquals(JsonToken.START_ARRAY, parser.nextToken());
@@ -98,11 +112,12 @@ public class StatusMonitorServiceIT extends FDBITBase {
         assertEquals(JsonToken.END_OBJECT, parser.nextToken());
         assertEquals(JsonToken.END_ARRAY, parser.nextToken());
 
-
         assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
         assertEquals("sessions", parser.getText());
         assertEquals(JsonToken.START_ARRAY, parser.nextToken());
-        parser.skipChildren();
+        // There should be no sessions
+        assertEquals(JsonToken.END_ARRAY, parser.nextToken());
+
         assertEquals(JsonToken.FIELD_NAME, parser.nextToken());
         assertEquals("statistics", parser.getText());
         assertEquals(JsonToken.START_OBJECT, parser.nextToken());
@@ -142,16 +157,12 @@ public class StatusMonitorServiceIT extends FDBITBase {
 
     @Test
     public void verifyStartupStatus() throws IOException {
-        // Flush initial
-        statusMonitorService().completeBackgroundWork();
         String json = readStatusJson();
         checkStatus(json);
     }
 
     @Test
     public void verifyStatusAfterClearKey() throws IOException, InterruptedException {
-        // Flush initial
-        statusMonitorService().completeBackgroundWork();
         // Clear just the key
         fdbHolder().getTransactionContext().run(
             new Function<Transaction,Void> () {
@@ -166,8 +177,6 @@ public class StatusMonitorServiceIT extends FDBITBase {
 
     @Test
     public void verifyStatusAfterClearRange() throws IOException, InterruptedException {
-        // Flush initial
-        statusMonitorService().completeBackgroundWork();
         // Clear entire layer directory like real Status Monitor
         fdbHolder().getTransactionContext().run(
             new Function<Transaction,Void> () {
