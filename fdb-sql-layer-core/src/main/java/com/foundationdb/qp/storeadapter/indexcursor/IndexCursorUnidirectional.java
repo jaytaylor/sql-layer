@@ -240,13 +240,13 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                 // SELECT * FROM t where x is NULL which should. 
                 // if this case is true, there will not be any rows returned, so
                 // idle the cursor, and return no rows quickly.
-                if (keyAdapter.isNull(startValues[f]) && !start.isLiteralNull(f)) {
+                if (keyAdapter.isNull(startValues[f]) && !start.isLiteral(f)) {
                     LOG.debug("Found stop case for non-literal null in start");
                     setIdle();
                     return;
                 }
                 endValues[f] = keyAdapter.get(endExpressions, f);
-                if (keyAdapter.isNull(endValues[f]) && !end.isLiteralNull(f)) {
+                if (keyAdapter.isNull(endValues[f]) && !end.isLiteral(f)) {
                     LOG.debug("Found stop case for non-literal null in end");
                     setIdle();
                     return;

@@ -56,8 +56,8 @@ public class IndexBound
         this.columnSelector = columnSelector;
     }
     
-    public boolean isLiteralNull(int index) {
-        return unboundExpressions.isLiteralNull(index);
+    public boolean isLiteral(int index) {
+        return unboundExpressions.isLiteral(index);
     }
 
     // Object state
@@ -85,7 +85,7 @@ public class IndexBound
         }
         
         @Override 
-        public boolean isLiteralNull(int index) {
+        public boolean isLiteral(int index) {
             // Because this is built off a row queried from the database, 
             // none of the values can ever be a literal null.
             return false;

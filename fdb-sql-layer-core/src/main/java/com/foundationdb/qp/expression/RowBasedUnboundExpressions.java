@@ -75,8 +75,9 @@ public final class RowBasedUnboundExpressions implements UnboundExpressions {
         this.pExprs = pExprs;
         this.rowType = rowType.schema().newProjectType(pExprs);
     }
-    
-    public boolean isLiteralNull(int index) {
+
+    @Override
+    public boolean isLiteral(int index) {
         return pExprs.get(index).isLiteral();
     }
 
