@@ -19,8 +19,6 @@ package com.foundationdb.server.types.texpressions;
 
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.LazyList;
-import com.foundationdb.server.types.ReversedLazyList;
-import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInputSet;
 import com.foundationdb.server.types.TInstance;

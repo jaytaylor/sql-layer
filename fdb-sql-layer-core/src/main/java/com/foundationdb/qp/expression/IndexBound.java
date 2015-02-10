@@ -55,6 +55,10 @@ public class IndexBound
         this.unboundExpressions = unboundExpressions;
         this.columnSelector = columnSelector;
     }
+    
+    public boolean isLiteral(int index) {
+        return unboundExpressions.isLiteral(index);
+    }
 
     // Object state
 
@@ -78,6 +82,13 @@ public class IndexBound
         @Override
         public String toString() {
             return String.valueOf(expressions);
+        }
+        
+        @Override 
+        public boolean isLiteral(int index) {
+            // Because this is built off a row queried from the database, 
+            // none of the values can ever be a literal null.
+            return false;
         }
 
         public PreBoundExpressions(ValueRecord expressions) {

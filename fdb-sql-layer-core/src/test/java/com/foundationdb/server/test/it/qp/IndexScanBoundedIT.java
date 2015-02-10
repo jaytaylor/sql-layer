@@ -19,6 +19,8 @@ package com.foundationdb.server.test.it.qp;
 
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
+import com.foundationdb.qp.expression.RowBasedUnboundExpressions;
+import com.foundationdb.qp.expression.UnboundExpressions;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
@@ -26,10 +28,17 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.SetColumnSelector;
+import com.foundationdb.server.types.texpressions.TNullExpression;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedLiteral;
+import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueSources;
+
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import static com.foundationdb.qp.operator.API.cursor;
 import static com.foundationdb.qp.operator.API.indexScan_Default;
@@ -915,19 +924,17 @@ public class IndexScanBoundedIT extends OperatorITBase
     // case 2: > null <= null
     @Test(expected=IllegalArgumentException.class)
     public void leftExclusiveNullRightInclusiveNull() {
-        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+        testEmptySet(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
                    INCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, ASC, ASC),
-             1000);
+             ordering(ASC, ASC, ASC));
     }
 
     // case 6: > non-null, <= null
     @Test(expected=IllegalArgumentException.class)
     public void leftExclusiveNonNullRightInclusiveNull() {
-        test(range(EXCLUSIVE, 1000, UNSPECIFIED, UNSPECIFIED,
+        testEmptySet(range(EXCLUSIVE, 1000, UNSPECIFIED, UNSPECIFIED,
                    INCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, ASC, ASC),
-             1000);
+             ordering(ASC, ASC, ASC));
     }
 
     // case 10: >= null, <= null
@@ -946,10 +953,9 @@ public class IndexScanBoundedIT extends OperatorITBase
     // case 14: >= non-null, <= null
     @Test(expected=IllegalArgumentException.class)
     public void leftInclusiveNonNullRightInclusiveNull() {
-        test(range(INCLUSIVE, 1000, UNSPECIFIED, UNSPECIFIED,
+        testEmptySet(range(INCLUSIVE, 1000, UNSPECIFIED, UNSPECIFIED,
                    INCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, ASC, ASC),
-             1000);
+             ordering(ASC, ASC, ASC));
     }
 
     // For use by this class
@@ -964,6 +970,13 @@ public class IndexScanBoundedIT extends OperatorITBase
         }
         compareRows(expected, cursor(plan, queryContext, queryBindings));
     }
+    
+    private void testEmptySet (IndexKeyRange keyRange, API.Ordering ordering) 
+    {
+        Operator plan = indexScan_Default(idxRowType, keyRange, ordering);
+        Row[] expected = new Row[0];
+        compareRows(expected, cursor(plan, queryContext, queryBindings));
+    }
 
     private void dump(IndexKeyRange keyRange, API.Ordering ordering, int ... expectedIds)
     {
@@ -971,6 +984,31 @@ public class IndexScanBoundedIT extends OperatorITBase
         dumpToAssertion(plan);
     }
 
+    private UnboundExpressions exprRow (Integer a, Integer b, Integer c) {
+       
+        List<TPreparedExpression> pExprs = new ArrayList<>(3);
+        if (a == UNSPECIFIED) {
+            fail();
+        } else if (a == null) {
+            pExprs.add(new TNullExpression(idxRowType.typeAt(0)));
+        } else {
+            pExprs.add(new TPreparedLiteral(new Value(idxRowType.typeAt(0), a)));
+        }
+        if (b == UNSPECIFIED || b == null) {
+            pExprs.add(new TNullExpression(idxRowType.typeAt(1)));
+        } else {
+            pExprs.add(new TPreparedLiteral(new Value(idxRowType.typeAt(1), b)));
+        }
+        
+        if (c == UNSPECIFIED || c == null) {
+            pExprs.add(new TNullExpression(idxRowType.typeAt(2)));
+        } else {
+            pExprs.add(new TPreparedLiteral(new Value(idxRowType.typeAt(2), c)));
+        }
+        
+        return  new RowBasedUnboundExpressions(idxRowType, pExprs);
+    }
+    
     private IndexKeyRange range(boolean loInclusive, Integer aLo, Integer bLo, Integer cLo,
                                 boolean hiInclusive, Integer aHi, Integer bHi, Integer cHi)
     {
@@ -979,22 +1017,22 @@ public class IndexScanBoundedIT extends OperatorITBase
             lo = null;
             fail();
         } else if (bLo == UNSPECIFIED) {
-            lo = new IndexBound(row(idxRowType, aLo), new SetColumnSelector(0));
+            lo = new IndexBound(exprRow(aLo, bLo, cLo), new SetColumnSelector(0));
         } else if (cLo == UNSPECIFIED) {
-            lo = new IndexBound(row(idxRowType, aLo, bLo), new SetColumnSelector(0, 1));
+            lo = new IndexBound(exprRow(aLo, bLo, cLo), new SetColumnSelector(0, 1));
         } else {
-            lo = new IndexBound(row(idxRowType, aLo, bLo, cLo), new SetColumnSelector(0, 1, 2));
+            lo = new IndexBound(exprRow(aLo, bLo, cLo), new SetColumnSelector(0, 1, 2));
         }
         IndexBound hi;
         if (aHi == UNSPECIFIED) {
             hi = null;
             fail();
         } else if (bHi == UNSPECIFIED) {
-            hi = new IndexBound(row(idxRowType, aHi), new SetColumnSelector(0));
+            hi = new IndexBound(exprRow(aHi, bHi, cHi), new SetColumnSelector(0));
         } else if (cHi == UNSPECIFIED) {
-            hi = new IndexBound(row(idxRowType, aHi, bHi), new SetColumnSelector(0, 1));
+            hi = new IndexBound(exprRow(aHi, bHi, cHi), new SetColumnSelector(0, 1));
         } else {
-            hi = new IndexBound(row(idxRowType, aHi, bHi, cHi), new SetColumnSelector(0, 1, 2));
+            hi = new IndexBound(exprRow(aHi, bHi, cHi), new SetColumnSelector(0, 1, 2));
         }
         return IndexKeyRange.bounded(idxRowType, lo, loInclusive, hi, hiInclusive);
     }

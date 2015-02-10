@@ -88,6 +88,11 @@ public final class TPreparedFunction implements TPreparedExpression {
         return overload.toString(inputs, resultType);
     }
 
+    @Override
+    public boolean isLiteral() {
+        return false;
+    }
+
     public TPreparedFunction(TValidatedScalar overload,
                              TInstance resultType,
                              List<? extends TPreparedExpression> inputs)

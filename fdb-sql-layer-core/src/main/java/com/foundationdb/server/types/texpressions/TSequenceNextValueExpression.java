@@ -70,6 +70,10 @@ public class TSequenceNextValueExpression implements TPreparedExpression
         return new CompoundExplainer(Type.FUNCTION, states);
     }
 
+    @Override
+    public boolean isLiteral() {
+        return false;
+    }
 
     private class InnerEvaluation implements TEvaluatableExpression
     {
