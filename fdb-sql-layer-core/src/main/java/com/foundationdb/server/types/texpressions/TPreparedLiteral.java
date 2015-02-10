@@ -81,6 +81,11 @@ public final class TPreparedLiteral implements TPreparedExpression {
             this.value = value;
         }
     }
+    
+    public TPreparedLiteral (ValueSource value) {
+        this.type = value.getType();
+        this.value = value;
+    }
 
     private final TInstance type;
     private final ValueSource value;

@@ -65,6 +65,11 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     {
         super.next();
         Row next = null;
+        
+        if (isIdle()) {
+            return next;
+        }
+        
         boolean success = false;
         try {
             INDEX_TRAVERSE.hit();
@@ -132,6 +137,9 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     {
         assert keyRange != null;
         CursorLifecycle.checkIdleOrActive(this);
+        // if the previous uses of the cursor have moved off the end (isIdle()) 
+        // reset to active state for processing
+        if (isIdle()) { setActive(); }
         keyRange =
             direction == FORWARD
             ? keyRange.resetLo(new IndexBound(row, columnSelector))
@@ -139,7 +147,6 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         initializeCursor();
         reevaluateBoundaries(context, sortKeyAdapter);
         initializeForOpen();
-        state = CursorLifecycle.CursorState.ACTIVE;
     }
 
     // IndexCursorUnidirectional interface
@@ -179,14 +186,8 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                 // Check constraints on start and end
                 // Construct start and end keys
                 
-                LOG.error("Start bound: {}", start);
-                LOG.error("End bound: {}", end);
                 ValueRecord startExpressions = start.boundExpressions(context, bindings);
                 ValueRecord endExpressions = end.boundExpressions(context, bindings);
-
-                LOG.error("start checking {}", startExpressions);
-                LOG.error("end checking {}", endExpressions);
-
                 /*
                     Null bounds are slightly tricky. An index restriction is described by an IndexKeyRange which contains
                     two IndexBounds. The IndexBound wraps an index row. The fields of the row that are being restricted are
@@ -221,6 +222,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                 S[] endValues = keyAdapter.createSourceArray(endBoundColumns);
                 for (int f = 0; f < startBoundColumns; f++) {
                     startValues[f] = keyAdapter.get(startExpressions, f);
+                    endValues[f] = keyAdapter.get(endExpressions, f);
                 }
                 clearStart();
                 clearEnd();
@@ -229,15 +231,25 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                 int f = 0;
                 while (f < startBoundColumns - 1) {
                     startKey.append(startValues[f], type(f));
-                    endKey.append(startValues[f], type(f));
+                    endKey.append(endValues[f], type(f));
                     f++;
                 }
+                
+                // checking for values which are null, but not literal nulls
+                // SELECT * FROM t where x = ? (parameter NULL) should return no rows
+                // SELECT * FROM t where x is NULL which should. 
+                // if this case is true, there will not be any rows returned, so
+                // idle the cursor, and return no rows quickly.
                 if (keyAdapter.isNull(startValues[f]) && !start.isLiteralNull(f)) {
-                    LOG.error("Found stop case for non-literal null in start");
+                    LOG.debug("Found stop case for non-literal null in start");
+                    setIdle();
+                    return;
                 }
                 endValues[f] = keyAdapter.get(endExpressions, f);
                 if (keyAdapter.isNull(endValues[f]) && !end.isLiteralNull(f)) {
-                    LOG.error("Found stop case for non-literal null in end");
+                    LOG.debug("Found stop case for non-literal null in end");
+                    setIdle();
+                    return;
                 }
                 // For the last column:
                 //  0   >   null      <   null:      (null, AFTER)
@@ -318,6 +330,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                 startValues[f] = keyAdapter.get(startExpressions, f);
             }
             clearStart();
+            
             // Construct bounds of search. For first boundColumns - 1 columns, if start and end are both null,
             // interpret the nulls literally.
             int f = 0;
@@ -451,6 +464,11 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     private void initializeForOpen()
     {
         clear();
+        // This can happen if evaluateBoundaries() finds non-literal nulls for the last values
+        // of the scan range. If this is true, skip this process.
+        if (isIdle()) {
+            return; 
+        }
         if (startKey != null) {
             // boundColumns > 0 means that startKey has some values other than BEFORE or AFTER. start == null
             // could happen in a lexicographic scan, and indicates no lower bound (so we're starting at BEFORE or AFTER).

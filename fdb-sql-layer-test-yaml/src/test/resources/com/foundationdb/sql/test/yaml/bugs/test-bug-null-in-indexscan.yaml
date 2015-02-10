@@ -11,14 +11,25 @@
 ---
 - Statement: SELECT * FROM t WHERE x = ?
 - params: [[null]]
-- row_count: 1
+- row_count: 0
 ---
 - Statement:  PREPARE foo AS SELECT * FROM t WHERE x = ?
 ---
 - Statement: EXECUTE foo(null);
-- row_count: 1
+- row_count: 0
 ---
 - Statement: PREPARE foo2 AS SELECT * FROM T where x between ? and ?
 ---
 - Statement: EXECUTE foo2 (1, NULL)
+- row_count: 0
+---
+- Statement: EXECUTE foo2 (null, 1)
+- row_count: 0
+---
+- Statement: SELECT * from t where x IN (null);
+- row_count: 0
+---
+- Statement: SELECT * From t where x in (?);
+- params: [[null]]
+- row_count: 0
 ...
