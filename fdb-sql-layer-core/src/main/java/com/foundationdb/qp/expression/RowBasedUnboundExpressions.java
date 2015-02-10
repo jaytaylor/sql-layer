@@ -29,14 +29,9 @@ import com.foundationdb.server.explain.Label;
 import com.foundationdb.server.explain.Type;
 import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.server.types.value.ValueSource;
-import com.foundationdb.server.types.texpressions.TNullExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
-import com.foundationdb.server.types.texpressions.TPreparedLiteral;
 
 import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class RowBasedUnboundExpressions implements UnboundExpressions {
     @Override
