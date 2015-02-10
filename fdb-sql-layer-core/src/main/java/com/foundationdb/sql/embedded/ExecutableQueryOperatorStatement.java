@@ -32,10 +32,11 @@ class ExecutableQueryOperatorStatement extends ExecutableOperatorStatement
     private static final Logger LOG = LoggerFactory.getLogger(ExecutableQueryOperatorStatement.class);
     
     protected ExecutableQueryOperatorStatement(Operator resultOperator,
-                                               JDBCResultSetMetaData resultSetMetaData, 
+                                               long aisGeneration,
+                                               JDBCResultSetMetaData resultSetMetaData,
                                                JDBCParameterMetaData parameterMetaData,
                                                CostEstimate costEstimate) {
-        super(resultOperator, resultSetMetaData, parameterMetaData);
+        super(resultOperator, aisGeneration, resultSetMetaData, parameterMetaData);
         this.costEstimate = costEstimate;
     }
     
@@ -63,16 +64,6 @@ class ExecutableQueryOperatorStatement extends ExecutableOperatorStatement
     @Override
     public TransactionMode getTransactionMode() {
         return TransactionMode.READ;
-    }
-
-    @Override
-    public TransactionAbortedMode getTransactionAbortedMode() {
-        return TransactionAbortedMode.NOT_ALLOWED;
-    }
-
-    @Override
-    public AISGenerationMode getAISGenerationMode() {
-        return AISGenerationMode.NOT_ALLOWED;
     }
 
     @Override

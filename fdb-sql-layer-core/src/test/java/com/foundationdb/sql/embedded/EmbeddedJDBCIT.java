@@ -17,12 +17,14 @@
 
 package com.foundationdb.sql.embedded;
 
+import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.sql.server.ServerCallContextStack;
 
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.sql.*;
@@ -95,6 +97,28 @@ public class EmbeddedJDBCIT extends EmbeddedJDBCITBase
             try (ResultSet rs = stmt.getResultSet()) {
                 assertFalse("doesn't have first row", rs.next());
             }
+        }
+    }
+
+    @Test
+    public void testPreparedStale() throws Exception {
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement("SELECT name FROM c")) {
+            assertTrue("has result set", pstmt.execute());
+            try (ResultSet rs = pstmt.getResultSet()) {
+            }
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("ALTER TABLE c DROP COLUMN name");
+            }
+            SQLException staleEx = null;
+            try {
+                pstmt.execute();
+            }
+            catch (SQLException ex) {
+                staleEx = ex;
+            }
+            assertNotNull("exception thrown", staleEx);
+            assertEquals("error code", ErrorCode.STALE_STATEMENT.getFormattedValue(), staleEx.getSQLState());
         }
     }
 

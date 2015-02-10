@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.service.routines;
 
+import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.error.ExternalRoutineInvocationException;
@@ -63,26 +64,30 @@ public class ScriptCache {
         return (getManager(session).getEngineByName(language) != null);
     }
 
-    public ScriptPool<ScriptEvaluator> getScriptEvaluator(Session session, TableName routineName) {
-        return getEntry(session, routineName).getScriptEvaluator();
+    public ScriptPool<ScriptEvaluator> getScriptEvaluator(Session session, TableName routineName, long[] ret_aisGeneration) {
+        return getEntry(session, routineName, ret_aisGeneration).getScriptEvaluator();
     }
 
-    public ScriptPool<ScriptLibrary> getScriptLibrary(Session session, TableName routineName) {
-        return getEntry(session, routineName).getScriptLibrary();
+    public ScriptPool<ScriptLibrary> getScriptLibrary(Session session, TableName routineName, long[] ret_aisGeneration) {
+        return getEntry(session, routineName, ret_aisGeneration).getScriptLibrary();
     }
 
-    public ScriptPool<ScriptInvoker> getScriptInvoker(Session session, TableName routineName) {
-        return getEntry(session, routineName).getScriptInvoker(this, session);
+    public ScriptPool<ScriptInvoker> getScriptInvoker(Session session, TableName routineName, long[] ret_aisGeneration) {
+        return getEntry(session, routineName, ret_aisGeneration).getScriptInvoker(this, session);
     }
 
     protected ScriptEngineManager getManager(Session session) {
         return engineProvider.getManager();
     }
 
-    protected synchronized CacheEntry getEntry(Session session, TableName routineName) {
-        Routine routine = dxlService.ddlFunctions().getAIS(session).getRoutine(routineName);
+    protected synchronized CacheEntry getEntry(Session session, TableName routineName,
+                                               long[] ret_aisGeneration) {
+        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+        Routine routine = ais.getRoutine(routineName);
         if (null == routine)
             throw new NoSuchRoutineException(routineName);
+        if (ret_aisGeneration != null)
+            ret_aisGeneration[0] = ais.getGeneration();
         long currentVersion = routine.getVersion();
         CacheEntry entry = cache.get(routineName);
         if ((entry != null) && (entry.version == currentVersion)) 
@@ -244,7 +249,7 @@ public class ScriptCache {
                 synchronized (this) {
                     spareEngine = null;
                 }
-                libraryPool = cache.getScriptLibrary(session, libraryName);
+                libraryPool = cache.getScriptLibrary(session, libraryName, null);
             }
             return new InvokerPool(libraryPool, function);
         }

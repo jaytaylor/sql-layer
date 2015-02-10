@@ -54,7 +54,8 @@ public class MockRoutineLoader implements RoutineLoader
     }
 
     @Override
-    public Method loadJavaMethod(Session session, TableName routineName) {
+    public Method loadJavaMethod(Session session, TableName routineName,
+                                 long[] ret_aisGeneration) {
         throw new UnsupportedOperationException();
     }
 
@@ -64,17 +65,20 @@ public class MockRoutineLoader implements RoutineLoader
     }
 
     @Override
-    public ScriptPool<ScriptEvaluator> getScriptEvaluator(Session session, TableName routineName) {
+    public ScriptPool<ScriptEvaluator> getScriptEvaluator(Session session, TableName routineName,
+                                                          long[] ret_aisGeneration) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public ScriptPool<ScriptInvoker> getScriptInvoker(Session session, TableName routineName) {
+    public ScriptPool<ScriptInvoker> getScriptInvoker(Session session, TableName routineName,
+                                                      long[] ret_aisGeneration) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public ScriptPool<ScriptLibrary> getScriptLibrary(Session session, TableName routineName) {
+    public ScriptPool<ScriptLibrary> getScriptLibrary(Session session, TableName routineName,
+                                                      long[] ret_aisGeneration) {
         throw new UnsupportedOperationException();
     }
 
