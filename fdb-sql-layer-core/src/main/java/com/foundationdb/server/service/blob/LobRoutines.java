@@ -18,10 +18,14 @@
 package com.foundationdb.server.service.blob;
 
 
-import com.foundationdb.*;
-import com.foundationdb.async.*;
+import com.foundationdb.TransactionContext;
+import com.foundationdb.Transaction;
+import com.foundationdb.async.Function;
+import com.foundationdb.server.error.LobException;
 import com.foundationdb.server.service.ServiceManager;
-import com.foundationdb.server.store.*;
+import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.store.FDBHolder;
+import com.foundationdb.server.store.FDBTransactionService;
 import com.foundationdb.sql.server.ServerCallContextStack;
 import com.foundationdb.sql.server.ServerQueryContext;
 import com.foundationdb.qp.operator.QueryContext;
@@ -107,8 +111,20 @@ public class LobRoutines {
     private static TransactionContext getTransactionContext() {
         QueryContext context = ServerCallContextStack.getCallingContext();
         ServiceManager serviceManager = context.getServiceManager();
-        FDBHolder fdbHolder = serviceManager.getServiceByClass(FDBHolder.class);
-        return fdbHolder.getTransactionContext();
+        TransactionService  txnService= serviceManager.getServiceByClass(TransactionService.class);
+        if (txnService instanceof  FDBTransactionService ) {
+            if (txnService.isTransactionActive(context.getSession())) {
+                return ((FDBTransactionService) txnService).getTransaction(context.getSession()).getTransaction();
+            }
+            else {
+                // or open and close a specific transaction?
+                FDBHolder fdbHolder = serviceManager.getServiceByClass(FDBHolder.class);
+                return fdbHolder.getTransactionContext();
+            }
+        }
+        else
+            throw new LobException("Unsupported lobs");
+        
     }
 
     /*

@@ -71,7 +71,7 @@ public class TFormatter {
             @Override
             public void format(TInstance type, ValueSource source, AkibanAppender out) {
                 BlobRef blob = (BlobRef) source.getObject();
-                if (blob.isShortLob()) {
+                if ( blob.isReturnedBlobInSimpleMode() || blob.isShortLob()) {
                     String charsetName = StringFactory.DEFAULT_CHARSET.name();
                     Charset charset = Charset.forName(charsetName);
                     String str = new String(blob.getBytes(), charset);
@@ -85,7 +85,7 @@ public class TFormatter {
             @Override
             public void formatAsLiteral(TInstance type, ValueSource source, AkibanAppender out) {
                 BlobRef blob = (BlobRef) source.getObject();
-                if (blob.isShortLob()) {
+                if ( blob.isReturnedBlobInSimpleMode() || blob.isShortLob()) {
                     byte[] value = source.getBytes();
                     out.append("X'");
                     out.append(Strings.hex(value));
@@ -101,7 +101,7 @@ public class TFormatter {
             @Override
             public void formatAsJson(TInstance type, ValueSource source, AkibanAppender out, FormatOptions options) {
                 BlobRef blob = (BlobRef) source.getObject();
-                if (blob.isShortLob()) {
+                if (blob.isReturnedBlobInSimpleMode() || blob.isShortLob()) {
                     String formattedString = options.get(FormatOptions.JsonBinaryFormatOption.class).format(blob.getBytes());
                     out.append("\"" + formattedString + "\"");
                 }

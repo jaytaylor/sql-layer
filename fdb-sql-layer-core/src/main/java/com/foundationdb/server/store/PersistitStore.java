@@ -398,7 +398,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     @Override
     Row storeLobs(Session session, Row row) {
         // does nothing
-        return null;
+        return row;
     }
 
     @Override

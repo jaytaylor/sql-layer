@@ -348,7 +348,6 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
-        commit();
         for (int k = 0; k < n; k++) {
             Assert.assertTrue(ls.existsLob(getTransaction(), ids_t1[k]));
             Assert.assertFalse(ls.existsLob(getTransaction(), ids_t2[k]));
