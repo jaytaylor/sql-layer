@@ -31,8 +31,12 @@ import com.foundationdb.server.types.value.ValueRecord;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.texpressions.TNullExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedLiteral;
 
 import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class RowBasedUnboundExpressions implements UnboundExpressions {
     @Override
@@ -73,12 +77,13 @@ public final class RowBasedUnboundExpressions implements UnboundExpressions {
     }
     
     public boolean isLiteralNull(int index) {
-        return pExprs.get(index) instanceof TNullExpression;
+        return pExprs.get(index) instanceof TNullExpression || 
+                pExprs.get(index) instanceof TPreparedLiteral;
     }
 
     private final List<TPreparedExpression> pExprs;
     private final RowType rowType;
-
+    private static final Logger LOG = LoggerFactory.getLogger(RowBasedUnboundExpressions.class);
     private static class ExpressionsAndBindings implements ValueRecord {
 
         @Override
