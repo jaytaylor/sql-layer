@@ -81,6 +81,11 @@ public final class TCastExpression implements TPreparedExpression {
         return "CAST(" + input + " AS " + targetInstance + ")";
     }
 
+    @Override
+    public boolean isLiteral() {
+        return false;
+    }
+
     public TCastExpression(TPreparedExpression input, TCast cast, TInstance targetInstance) {
         this.input = input;
         this.cast = cast;

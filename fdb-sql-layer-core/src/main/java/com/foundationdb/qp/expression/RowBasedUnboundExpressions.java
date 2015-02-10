@@ -77,13 +77,11 @@ public final class RowBasedUnboundExpressions implements UnboundExpressions {
     }
     
     public boolean isLiteralNull(int index) {
-        return pExprs.get(index) instanceof TNullExpression || 
-                pExprs.get(index) instanceof TPreparedLiteral;
+        return pExprs.get(index).isLiteral();
     }
 
     private final List<TPreparedExpression> pExprs;
     private final RowType rowType;
-    private static final Logger LOG = LoggerFactory.getLogger(RowBasedUnboundExpressions.class);
     private static class ExpressionsAndBindings implements ValueRecord {
 
         @Override

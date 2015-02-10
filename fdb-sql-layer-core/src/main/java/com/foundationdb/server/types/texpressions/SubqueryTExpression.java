@@ -43,6 +43,11 @@ abstract class SubqueryTExpression implements TPreparedExpression {
         states.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(bindingPosition));
         return new CompoundExplainer(Type.SUBQUERY, states);
     }
+    
+    @Override
+    public boolean isLiteral() {
+        return false;
+    }
 
     // for use by subclasses
 

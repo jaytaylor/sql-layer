@@ -61,6 +61,11 @@ public final class TNullExpression implements TPreparedExpression {
     public String toString() {
         return "Literal(NULL)";
     }
+    
+    @Override
+    public boolean isLiteral() {
+        return true;
+    }
 
     private final TInstance type;
 

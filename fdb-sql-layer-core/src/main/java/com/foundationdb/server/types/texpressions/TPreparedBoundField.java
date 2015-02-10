@@ -61,6 +61,11 @@ public final class TPreparedBoundField implements TPreparedExpression {
         return "Bound(" + rowPosition + ',' + fieldExpression + ')';
     }
 
+    @Override
+    public boolean isLiteral() {
+        return false;
+    }
+
     public TPreparedBoundField(RowType rowType, int rowPosition, int fieldPosition) {
         fieldExpression = new TPreparedField(rowType.typeAt(fieldPosition), fieldPosition);
         this.rowPosition = rowPosition;

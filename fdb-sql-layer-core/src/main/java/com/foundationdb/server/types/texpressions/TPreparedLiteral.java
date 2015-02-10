@@ -71,6 +71,11 @@ public final class TPreparedLiteral implements TPreparedExpression {
         return sb.toString();
     }
 
+    @Override
+    public boolean isLiteral() {
+        return true;
+    }
+
     public TPreparedLiteral(TInstance type, ValueSource value) {
         if (type == null) {
             this.type = null;
