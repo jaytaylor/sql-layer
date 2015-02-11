@@ -22,10 +22,12 @@ import com.foundationdb.async.Function;
 import com.foundationdb.Transaction;
 import com.foundationdb.blob.BlobBase;
 import com.foundationdb.directory.DirectorySubspace;
+import com.foundationdb.qp.operator.*;
 import com.foundationdb.server.error.LobException;
 import com.foundationdb.TransactionContext;
 import com.foundationdb.directory.NoSuchDirectoryException;
 import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.store.FDBHolder;
 import com.google.inject.Inject;
 
@@ -36,13 +38,14 @@ import java.util.ArrayList;
 public class LobServiceImpl implements Service, LobService {
     private DirectorySubspace lobDirectory;
     private final FDBHolder fdbHolder;
+    private final SecurityService securityService;
     // update with configurable value
     private final String LOB_DIRECTORY = "lobs";
-    private static final int dataChunkSize = 9500000;
     
     @Inject
-    public LobServiceImpl(FDBHolder fdbHolder) {
+    public LobServiceImpl(FDBHolder fdbHolder, SecurityService securityService) {
         this.fdbHolder = fdbHolder;
+        this.securityService = securityService;
         this.lobDirectory = fdbHolder.getRootDirectory().createOrOpen(fdbHolder.getTransactionContext(), Arrays.asList(LOB_DIRECTORY)).get();
     }
     
@@ -170,32 +173,19 @@ public class LobServiceImpl implements Service, LobService {
     }
 
     @Override
-    public void writeBlob(TransactionContext tcx, String lobId, long offset, byte[] data) {
-        BlobBase blob = openBlob(tcx, lobId);
-        if (data.length < dataChunkSize) {
-            blob.write(tcx, offset, data).get();
-        }
-        else {
-            int noChunks = 1 + data.length / dataChunkSize;
-            int chunk = 0;
-            List<Future<Void>> done = new ArrayList<>();
-            int start, end;
-            while (chunk < noChunks) {
-                start = chunk * dataChunkSize;
-                end = (chunk + 1) * dataChunkSize;
-                end = data.length < end ? data.length : end;
-                done.add(blob.write(tcx, offset + start, Arrays.copyOfRange(data, start, end)));
-                chunk++;
+    public void writeBlob(TransactionContext tcx, final String lobId, final long offset, final byte[] data) {
+        tcx.run(new Function<Transaction, Void>() {
+            @Override
+            public Void apply(Transaction tr) {
+                BlobBase blob = openBlob(tr, lobId);
+                blob.write(tr, offset, data).get();
+                return null;
             }
-            for (Future<Void> res : done) {
-                res.get();
-            }
-        }
+        });
     }
 
     @Override
     public void appendBlob(TransactionContext tcx, final String lobId, final byte[] data) {
-        if (data.length < dataChunkSize) {
             tcx.run(new Function<Transaction, Void>() {
                 @Override
                 public Void apply(Transaction tr) {
@@ -204,20 +194,6 @@ public class LobServiceImpl implements Service, LobService {
                     return null;
                 }
             });
-        }
-        else {
-            BlobBase blob = openBlob(tcx, lobId);
-            int noChunks = 1 + data.length / dataChunkSize;
-            int chunk = 0;
-            int start, end;
-            while (chunk < noChunks) {
-                start = chunk * dataChunkSize;
-                end = (chunk + 1) * dataChunkSize;
-                end = data.length < end ? data.length : end;
-                blob.append(tcx, Arrays.copyOfRange(data, start, end)).get();
-                chunk++;
-            }
-        }
     }
 
     @Override
@@ -236,6 +212,25 @@ public class LobServiceImpl implements Service, LobService {
     public void clearAllLobs(TransactionContext tcx) {
         lobDirectory.removeIfExists(tcx).get();
         lobDirectory = fdbHolder.getRootDirectory().create(tcx, Arrays.asList(LOB_DIRECTORY)).get();
+    }
+    
+    @Override
+    public void verifyAccessPermission(TransactionContext tcx, final QueryContext context, final String lobId) {
+        tcx.run(new Function<Transaction, Void>() {
+            @Override
+            public Void apply(Transaction tr) {
+                BlobBase blob = openBlob(tr, lobId);
+                Integer tableId = blob.getLinkedTable(tr).get();
+                if (tableId == -1) {
+                    return null;
+                }
+                String schemaName = context.getServiceManager().getSchemaManager().getAis(context.getSession()).getTable(tableId).getName().getSchemaName();
+                if (!securityService.isAccessible(context.getSession(), schemaName)) {
+                    throw new LobException("Cannot find lob");
+                }
+                return null;
+            }
+        });
     }
 
     private BlobBase openBlob(TransactionContext tcx, String lobId) {

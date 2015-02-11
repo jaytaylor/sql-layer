@@ -419,11 +419,6 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
                 .paramLongIn("length")
                 .paramStringIn("blob_id", PATH_MAX)
                 .externalName(LobRoutines.class.getCanonicalName(), "truncateBlob");
-        aisb.procedure("delete_blob")
-                .language("java", Routine.CallingConvention.JAVA)
-                .paramStringIn("blob_id", PATH_MAX)
-                .externalName(LobRoutines.class.getCanonicalName(), "deleteBlob");
-
         
         
         Collection<Routine> procs = aisb.ais().getRoutines().values();

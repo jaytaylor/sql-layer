@@ -20,6 +20,8 @@ package com.foundationdb.server.service.blob;
 
 
 import com.foundationdb.*;
+import com.foundationdb.qp.operator.*;
+import com.foundationdb.server.service.transaction.*;
 
 import java.util.List;
 
@@ -41,7 +43,7 @@ public interface LobService {
     public void appendBlob(TransactionContext tcx, String lobId, byte[] data);
     public void truncateBlob(TransactionContext tcx, String lobId, long size);
     public void clearAllLobs(TransactionContext tcx);
-    
+    public void verifyAccessPermission(TransactionContext tcx, QueryContext context, String lobId);
 }
 
 
