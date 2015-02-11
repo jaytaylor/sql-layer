@@ -20,9 +20,17 @@ package com.foundationdb.sql.pg;
 import com.foundationdb.*;
 import com.foundationdb.server.error.*;
 import com.foundationdb.server.service.blob.LobService;
+import com.foundationdb.server.service.config.*;
+import com.foundationdb.server.service.is.*;
+import com.foundationdb.server.service.monitor.*;
+import com.foundationdb.server.service.security.*;
+import com.foundationdb.server.service.servicemanager.*;
+import com.foundationdb.server.service.text.*;
 import com.foundationdb.server.service.transaction.*;
 import com.foundationdb.server.store.*;
 
+import com.foundationdb.sql.*;
+import com.foundationdb.sql.embedded.*;
 import org.junit.*;
 
 import java.io.ByteArrayInputStream;
@@ -34,6 +42,17 @@ import java.util.Random;
 
 public class BlobIT extends PostgresServerITBase {
     int dataSize = 100000;
+
+    @Override
+    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
+        return super.serviceBindingsProvider()
+                .bind(SchemaManager.class, FDBSchemaManager.class)
+                .bind(MonitorService.class, MonitorServiceImpl.class)
+                .bind(Store.class, FDBStore.class)
+                .bind(LayerInfoInterface.class, Main.class)
+                .bind(SecurityService.class, SecurityServiceImpl.class)
+                .bindAndRequire(ServerSchemaTablesService.class, ServerSchemaTablesServiceImpl.class);
+    }
     
     @Test
     public void testCleanUpLobs() throws Exception {
@@ -42,6 +61,10 @@ public class BlobIT extends PostgresServerITBase {
         PreparedStatement pstmt = conn.prepareCall("CALL sys.create_specific_blob( ? )");
         pstmt.setString(1, idA);
         pstmt.execute();
+        ResultSet rs = pstmt.getResultSet();
+        rs.next();
+        String idOut = rs.getObject(1).toString();
+        Assert.assertTrue(idA.equals(idOut));
         pstmt.close();
         
         LobService ls = serviceManager().getServiceByClass(LobService.class);
@@ -804,7 +827,7 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
     }
 
-    @Test
+    //@Test
     public void blobPerformanceA() throws Exception {
         Connection conn = getConnection();
         Statement stmt = conn.createStatement();
@@ -834,7 +857,7 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
     }
 
-    @Test
+    //@Test
     public void blobPerformanceB() throws Exception {
         Connection conn = getConnection();
         Statement stmt = conn.createStatement();

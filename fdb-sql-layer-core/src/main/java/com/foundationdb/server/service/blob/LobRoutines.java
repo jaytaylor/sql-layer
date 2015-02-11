@@ -25,6 +25,7 @@ import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.FDBTransactionService;
+import com.foundationdb.sql.server.ServerQueryContext;
 import com.foundationdb.sql.server.ServerCallContextStack;
 import com.foundationdb.qp.operator.QueryContext;
 
@@ -45,7 +46,7 @@ public class LobRoutines {
     
     private static String createNewLob(boolean specific, String lobId) {
         FDBTransactionService txnService = getTransactionService();
-        final QueryContext context = ServerCallContextStack.getCallingContext();
+        final ServerQueryContext context = ServerCallContextStack.getCallingContext();
         Session session = context.getSession();
         boolean startedTransaction = false;
 
@@ -79,6 +80,7 @@ public class LobRoutines {
                 txnService.rollbackTransactionIfOpen(session);
             }
         }
+        context.getServer().addCreatedLob(lobId);
         return id;
     }
     
