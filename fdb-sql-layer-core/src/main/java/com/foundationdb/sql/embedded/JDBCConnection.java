@@ -85,7 +85,6 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
             session = reqs.sessionService().createSession();
         setProperties(info);
         commitMode = (transaction != null) ? CommitMode.INHERITED : CommitMode.AUTO;
-        registerSessionMonitor();
     }
 
     @Override
@@ -145,7 +144,17 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
             addWarning(new JDBCWarning(level, errorCode, message));
         }
     }
-
+    
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            if (!closed)
+                close();        // close open files
+        } finally {
+            super.finalize();
+        }
+    }
+    
     protected void addWarning(JDBCWarning warning) {
         if (warnings == null)
             warnings = warning;
@@ -267,6 +276,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     // Slightly different contract than ServerSessionBase, since a transaction
     // remains open when a until its read result set is closed.
     protected void beforeExecuteStatement(String sql, ExecutableStatement stmt) throws SQLException {
+        registerSessionMonitor();
         sessionMonitor.startStatement(sql);
         sessionMonitor.enterStage(MonitorStage.EXECUTE);
         boolean localTransaction;
@@ -322,6 +332,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         openResultSets.remove(resultSet);
         if (checkAutoCommit()) {
             commitTransaction();
+            deregisterSessionMonitor();
             logger.debug("Auto COMMIT TRANSACTION");
         }
     }

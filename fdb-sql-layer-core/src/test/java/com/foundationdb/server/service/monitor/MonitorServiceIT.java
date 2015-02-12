@@ -19,6 +19,7 @@ package com.foundationdb.server.service.monitor;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.sql.CallableStatement;
@@ -29,6 +30,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.Collection;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -97,6 +99,7 @@ public class MonitorServiceIT extends ITBase {
         
         assertEquals (1, recount-count);
         assertEquals (1, requerys-querys);
+        assertEquals(0, getMonitorService().getSessionMonitors().size());
     }
 
     @Test
@@ -114,6 +117,7 @@ public class MonitorServiceIT extends ITBase {
         
         assertEquals (1, recount-count);
         assertEquals (1, reddl-ddl);
+        assertEquals(0, getMonitorService().getSessionMonitors().size());
     }
 
     @Test
@@ -127,10 +131,9 @@ public class MonitorServiceIT extends ITBase {
         
         long recount = getMonitorService().getCount(StatementTypes.STATEMENT);
         long reddl =  getMonitorService().getCount(StatementTypes.DML_STMT);
-
-        
         assertEquals (1, recount-count);
         assertEquals (1, reddl-ddl);
+        assertEquals(0, getMonitorService().getSessionMonitors().size());
     }
 
     @Test
@@ -156,6 +159,7 @@ public class MonitorServiceIT extends ITBase {
         long reddl =  getMonitorService().getCount(StatementTypes.DDL_STMT);
         assertEquals (1, recount-count);
         assertEquals (1, reddl-ddl);
+        assertEquals(0, getMonitorService().getSessionMonitors().size());
 
         long calls = getMonitorService().getCount(StatementTypes.CALL_STMT);
         long querys = getMonitorService().getCount(StatementTypes.SELECT);
@@ -172,6 +176,7 @@ public class MonitorServiceIT extends ITBase {
         assertEquals(2, newCount-recount);
         assertEquals(1, recalls-calls);
         assertEquals(1, requerys-querys);
+        assertEquals(0, getMonitorService().getSessionMonitors().size());
  
     }
     
@@ -193,6 +198,7 @@ public class MonitorServiceIT extends ITBase {
         long reddl =  getMonitorService().getCount(StatementTypes.DDL_STMT);
         assertEquals (1, recount-count);
         assertEquals (1, reddl-ddl);
+        assertEquals(0, getMonitorService().getSessionMonitors().size());
         long calls = getMonitorService().getCount(StatementTypes.CALL_STMT);
         long querys = getMonitorService().getCount(StatementTypes.SELECT);
         try (Connection conn = getConnection();
@@ -202,7 +208,7 @@ public class MonitorServiceIT extends ITBase {
             assertTrue(rs.next());
             assertEquals(3, rs.getInt(1));
             assertFalse("has more rows", rs.next());
-            
+            assertNull(rs.getWarnings());
         }
         long newCount = getMonitorService().getCount(StatementTypes.STATEMENT);
         long recalls = getMonitorService().getCount(StatementTypes.CALL_STMT);
@@ -211,8 +217,107 @@ public class MonitorServiceIT extends ITBase {
         assertEquals(2, newCount-recount);
         assertEquals(1, recalls-calls);
         assertEquals(1, requerys-querys);
-
-    
+        assertEquals(0, getMonitorService().getSessionMonitors().size());
+        try (Connection conn = getConnection();
+                CallableStatement stmt = conn.prepareCall("CALL test_rs()");
+                ResultSet rs = stmt.executeQuery()) {
+            assertNotNull (rs);
+            assertTrue(rs.next());
+            assertEquals(3, rs.getInt(1));
+            assertFalse("has more rows", rs.next());
+            assertNull(rs.getWarnings());
+            
+        }
+        assertEquals(0, getMonitorService().getSessionMonitors().size());
     }
-   
+
+    @Test
+    public void testCallRSWithClose() throws Exception {
+        long count = getMonitorService().getCount(StatementTypes.STATEMENT);
+        long ddl = getMonitorService().getCount(StatementTypes.DDL_STMT);
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement()) {
+             stmt.executeUpdate("CREATE PROCEDURE test_rs() DYNAMIC RESULT SETS 1 AS $$\n"+
+                     "function fun(rs) {\n"+ 
+                     "var conn = java.sql.DriverManager.getConnection('jdbc:default:connection');\n"+
+                     "var stmt = conn.createStatement();\n"+
+                     "rs[0] = stmt.executeQuery('SELECT sum(cid) FROM c');\n"+
+                     "}\n"+
+                     "$$ LANGUAGE javascript PARAMETER STYLE java EXTERNAL NAME 'fun'");
+        }
+        long recount = getMonitorService().getCount(StatementTypes.STATEMENT);
+        long reddl =  getMonitorService().getCount(StatementTypes.DDL_STMT);
+        assertEquals (1, recount-count);
+        assertEquals (1, reddl-ddl);
+        assertEquals(0, getMonitorService().getSessionMonitors().size());
+        long calls = getMonitorService().getCount(StatementTypes.CALL_STMT);
+        long querys = getMonitorService().getCount(StatementTypes.SELECT);
+        try (Connection conn = getConnection();
+                CallableStatement stmt = conn.prepareCall("CALL test_rs()");
+                ResultSet rs = stmt.executeQuery()) {
+            assertNotNull (rs);
+            assertTrue(rs.next());
+            assertEquals(3, rs.getInt(1));
+            assertFalse("has more rows", rs.next());
+            assertNull(rs.getWarnings());
+            
+            rs.getStatement().getConnection().close();
+        }
+        long newCount = getMonitorService().getCount(StatementTypes.STATEMENT);
+        long recalls = getMonitorService().getCount(StatementTypes.CALL_STMT);
+        long requerys = getMonitorService().getCount(StatementTypes.SELECT);
+        
+        assertEquals(2, newCount-recount);
+        assertEquals(1, recalls-calls);
+        assertEquals(1, requerys-querys);
+        assertEquals(0, getMonitorService().getSessionMonitors().size());
+    }
+
+    @Test
+    public void testCallRSReuseConnection() throws Exception {
+        long count = getMonitorService().getCount(StatementTypes.STATEMENT);
+        long ddl = getMonitorService().getCount(StatementTypes.DDL_STMT);
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement()) {
+             stmt.executeUpdate("CREATE PROCEDURE test_rs() DYNAMIC RESULT SETS 1 AS $$\n"+
+                     "function fun(rs) {\n"+ 
+                     "var conn = java.sql.DriverManager.getConnection('jdbc:default:connection');\n"+
+                     "var stmt = conn.createStatement();\n"+
+                     "rs[0] = stmt.executeQuery('SELECT sum(cid) FROM c');\n"+
+                     "}\n"+
+                     "$$ LANGUAGE javascript PARAMETER STYLE java EXTERNAL NAME 'fun'");
+        }
+        long recount = getMonitorService().getCount(StatementTypes.STATEMENT);
+        long reddl =  getMonitorService().getCount(StatementTypes.DDL_STMT);
+        assertEquals (1, recount-count);
+        assertEquals (1, reddl-ddl);
+        assertEquals(0, getMonitorService().getSessionMonitors().size());
+        long calls = getMonitorService().getCount(StatementTypes.CALL_STMT);
+        long querys = getMonitorService().getCount(StatementTypes.SELECT);
+        try (Connection conn = getConnection();
+                CallableStatement stmt = conn.prepareCall("CALL test_rs()")) {
+            ResultSet rs = stmt.executeQuery();
+            assertNotNull (rs);
+            assertTrue(rs.next());
+            assertEquals(3, rs.getInt(1));
+            assertFalse("has more rows", rs.next());
+            assertNull(rs.getWarnings());
+            rs.close();
+            Statement stmt2 = conn.createStatement();
+            rs = stmt2.executeQuery("SELECT name FROM c WHERE cid = 1");
+            assertTrue("has first row", rs.next());
+            assertEquals("result value", "Smith", rs.getString(1));
+            assertFalse("has more rows", rs.next());
+            rs.close();
+            stmt2.close();
+        }
+        long newCount = getMonitorService().getCount(StatementTypes.STATEMENT);
+        long recalls = getMonitorService().getCount(StatementTypes.CALL_STMT);
+        long requerys = getMonitorService().getCount(StatementTypes.SELECT);
+
+        assertEquals(3, newCount-recount);
+        assertEquals(1, recalls-calls);
+        assertEquals(2, requerys-querys);
+        assertEquals(0, getMonitorService().getSessionMonitors().size());
+    }
 }
