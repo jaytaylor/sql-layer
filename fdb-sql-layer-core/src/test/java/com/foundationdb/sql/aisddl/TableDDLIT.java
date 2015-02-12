@@ -24,6 +24,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import com.foundationdb.ais.model.ForeignKey;
+import com.foundationdb.server.error.UnsupportedFunctionInIndexException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 
 import org.junit.Test;
@@ -426,7 +427,7 @@ public class TableDDLIT extends AISDDLITBase {
 
     @Test
     public void createSpatialIndexTable() throws Exception {
-        String sql = "CREATE TABLE test.t16 (c1 decimal(11,7), c2 decimal(11,7), INDEX idx1 (z_order_lat_lon(c1, c2)))";
+        String sql = "CREATE TABLE test.t16 (c1 decimal(11,7), c2 decimal(11,7), INDEX idx1 (geo_lat_lon(c1, c2)))";
         executeDDL (sql);
         Table table = ais().getTable("test", "t16");
         TableIndex index = table.getIndex("idx1");
@@ -436,6 +437,13 @@ public class TableDDLIT extends AISDDLITBase {
         assertTrue (index.isSpatial());
     }
     
+    @Test (expected=UnsupportedFunctionInIndexException.class)
+    public void createIndexWithUnsupportedFunction() throws Exception {
+        // z_order_lat_lon is no longer supported, use geo_lat_lon instead
+        String sql = "CREATE TABLE test.t16 (c1 decimal(11,7), c2 decimal(11,7), INDEX idx1 (z_order_lat_lon(c1, c2)))";
+        executeDDL(sql);
+    }
+
     @Test
     public void testCreateNationalChar() throws Exception {
         String sql1 = "CREATE TABLE test.T1 (c1 NATIONAL CHAR(10), c2 NATIONAL CHARACTER VARYING(10), c3 LONG NVARCHAR) ";

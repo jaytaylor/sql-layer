@@ -30,12 +30,10 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.InternalIndexTypes;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.IndexRowPrefixSelector;
-import com.foundationdb.server.spatial.BoxLatLon;
 import com.foundationdb.server.spatial.GeophileCursor;
 import com.foundationdb.server.spatial.GeophileIndex;
+import com.foundationdb.server.spatial.Spatial;
 import com.foundationdb.server.spatial.TransformingIterator;
-import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.texpressions.TPreparedField;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.value.ValueRecord;
@@ -51,6 +49,8 @@ import com.geophile.z.SpatialObject;
 import com.geophile.z.index.RecordWithSpatialObject;
 import com.geophile.z.index.sortedarray.SortedArray;
 import com.geophile.z.space.SpaceImpl;
+import com.geophile.z.spatialobject.jts.JTS;
+import com.vividsolutions.jts.geom.Geometry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -240,24 +240,16 @@ class IndexCursorSpatial_InBox extends IndexCursor
 
     private SpatialObject spatialObject()
     {
-        SpatialObject spatialObject;
-        if (index.spatialColumns() == 1) {
-            // Spatial object
-            ValueRecord expressions = keyRange.lo().boundExpressions(context, bindings);
-            spatialObject = (SpatialObject) expressions.value(index.firstSpatialArgument()).getObject();
+        ValueRecord expressions = keyRange.lo().boundExpressions(context, bindings);
+        Object object = expressions.value(index.firstSpatialArgument()).getObject();
+        if (object instanceof SpatialObject) {
+            return (SpatialObject) object;
+        } else if (object instanceof Geometry) {
+            return JTS.spatialObject(space, (Geometry) object);
         } else {
-            // lat/lon columns
-            int latColumn = index.firstSpatialArgument();
-            int lonColumn = latColumn + 1;
-            TInstance xinst = index.getAllColumns().get(latColumn).getColumn().getType();
-            double xLo = TBigDecimal.getWrapper(loExpressions.value(latColumn), xinst).asBigDecimal().doubleValue();
-            double xHi = TBigDecimal.getWrapper(hiExpressions.value(latColumn), xinst).asBigDecimal().doubleValue();
-            TInstance yinst = index.getAllColumns().get(lonColumn).getColumn().getType();
-            double yLo = TBigDecimal.getWrapper(loExpressions.value(lonColumn), yinst).asBigDecimal().doubleValue();
-            double yHi = TBigDecimal.getWrapper(hiExpressions.value(lonColumn), yinst).asBigDecimal().doubleValue();
-            spatialObject = BoxLatLon.newBox(xLo, xHi, yLo, yHi);
+            throw new IllegalStateException(String.format("Expected SpatialObject, found: %s",
+                                                          object.getClass()));
         }
-        return spatialObject;
     }
 
     private void logQueryIndex(SortedArray<RecordWithSpatialObject> queryIndex)

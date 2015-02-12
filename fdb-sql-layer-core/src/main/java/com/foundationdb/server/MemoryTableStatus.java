@@ -17,7 +17,6 @@
 package com.foundationdb.server;
 
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
 
 public class MemoryTableStatus implements TableStatus
@@ -63,14 +62,6 @@ public class MemoryTableStatus implements TableStatus
         return expectedID;
     }
 
-    @Override
-    public synchronized void setRowDef(RowDef rowDef) {
-        if((rowDef != null) && (expectedID != rowDef.getRowDefId())) {
-            throw new IllegalArgumentException("RowDef ID " + rowDef.getRowDefId() +
-                                               " does not match expected ID " + expectedID);
-        }
-    }
-    
     @Override
     public synchronized void rowDeleted(Session session) {
         rowCount = Math.max(0, rowCount - 1);

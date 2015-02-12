@@ -56,7 +56,7 @@ public final class TPreparedFunction implements TPreparedExpression {
             }
         };
         TPreptimeContext preptimeContext = new TPreptimeContext(inputTypes, resultType, queryContext, preptimeValues);
-        return overload.evaluateConstant(preptimeContext, overload.filterInputs(lazyInputs));
+        return overload.evaluateConstant(preptimeContext, lazyInputs);
     }
 
     @Override
@@ -86,6 +86,11 @@ public final class TPreparedFunction implements TPreparedExpression {
     @Override
     public String toString() {
         return overload.toString(inputs, resultType);
+    }
+
+    @Override
+    public boolean isLiteral() {
+        return false;
     }
 
     public TPreparedFunction(TValidatedScalar overload,
@@ -167,7 +172,7 @@ public final class TPreparedFunction implements TPreparedExpression {
             this.inputValues = new ValueSource[inputs.size()];
             this.context = context;
             resultValue = new Value(resultType);
-            this.evaluations = overload.filterInputs(new LazyListBase<ValueSource>() {
+            this.evaluations = new LazyListBase<ValueSource>() {
                 @Override
                 public ValueSource get(int i) {
                     ValueSource value = inputValues[i];
@@ -184,7 +189,7 @@ public final class TPreparedFunction implements TPreparedExpression {
                 public int size() {
                     return inputValues.length;
                 }
-            });
+            };
         }
 
         private final TValidatedScalar overload;

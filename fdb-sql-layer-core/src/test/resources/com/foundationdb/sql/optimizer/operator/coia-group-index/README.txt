@@ -24,6 +24,8 @@ select-3l: group index for ordering only with left join
 
 select-3m: group index in mixed mode
 
+select-3n: group index in mixed mode reverse
+
 select-4: covering group index
 
 select-5: index IS NULL

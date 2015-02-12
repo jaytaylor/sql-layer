@@ -17,6 +17,8 @@
 
 package com.foundationdb.sql.pg;
 
+import com.foundationdb.server.service.monitor.SessionMonitor;
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.sql.optimizer.plan.CostEstimate;
 
 import java.io.IOException;
@@ -24,7 +26,8 @@ import java.io.IOException;
 /**
  * Common handling for cursor-related statements.
  */
-public abstract class PostgresBaseCursorStatement implements PostgresStatement
+public abstract class PostgresBaseCursorStatement extends PostgresStatementResults
+                                                  implements PostgresStatement
 {
     @Override
     public TransactionMode getTransactionMode() {
@@ -81,5 +84,4 @@ public abstract class PostgresBaseCursorStatement implements PostgresStatement
     public CostEstimate getCostEstimate() {
         return null;
     }
-
 }

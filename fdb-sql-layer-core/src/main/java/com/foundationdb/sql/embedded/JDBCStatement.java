@@ -19,7 +19,9 @@ package com.foundationdb.sql.embedded;
 
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.error.StaleStatementException;
 import com.foundationdb.sql.embedded.JDBCException.Wrapper;
+import com.foundationdb.sql.server.ServerStatement;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -59,12 +61,17 @@ public class JDBCStatement implements Statement
                 throw new JDBCException("Statement requires parameters; must prepare", ErrorCode.UNPREPARED_STATEMENT_WITH_PARAMETERS);
             context = new EmbeddedQueryContext(this);
         }
+        connection.beforeExecuteStatement(sql, stmt);
+        if (stmt.getAISGenerationMode() == ServerStatement.AISGenerationMode.NOT_ALLOWED) {
+            connection.updateAIS(context);
+            if (stmt.getAISGeneration() != connection.getAIS().getGeneration())
+                throw JDBCException.throwUnwrapped(new StaleStatementException());
+        }
         if (bindings == null) {
             bindings = context.createBindings();
         }
         boolean hasResultSet = false;
-        connection.beforeExecuteStatement(stmt);
-        boolean success = false;
+        Throwable failure = null;
         try {
             ExecuteResults results = stmt.execute(context, bindings);
             currentUpdateCount = results.getUpdateCount();
@@ -90,23 +97,29 @@ public class JDBCStatement implements Statement
                 pendingResultSets = results.getAdditionalResultSets();
                 hasResultSet = getMoreResults();
             }
-            success = true;
         }
         catch (RuntimeException ex) {
-            Throwable throwable = ex;
-            if (throwable instanceof Wrapper) {
-                throwable = (SQLException)ex.getCause();
+            failure = ex;
+            if (failure instanceof Wrapper) {
+                failure = (SQLException)failure.getCause();
             }
 
-            final ErrorCode code = ErrorCode.getCodeForRESTException(throwable);
+            final ErrorCode code = ErrorCode.getCodeForRESTException(failure);
             code.logAtImportance(
-                    LOG, "Statement execution for query {} failed with exception {}", sql, throwable
-            );
+                    LOG, "Statement execution for query {} failed with exception {}", sql, failure);
 
             throw JDBCException.throwUnwrapped(ex);
         }
+        catch (SQLException ex) {
+            failure = ex;
+            throw ex;
+        }
+        catch (Error err) {
+            failure = err;
+            throw err;
+        }
         finally {
-            connection.afterExecuteStatement(stmt, success);
+            connection.afterExecuteStatement(stmt, failure);
         }
         return hasResultSet;
     }

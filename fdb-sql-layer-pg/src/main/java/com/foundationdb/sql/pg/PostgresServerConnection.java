@@ -25,12 +25,10 @@ import com.foundationdb.sql.server.ServerStatement;
 import com.foundationdb.sql.server.ServerStatementCache;
 import com.foundationdb.sql.server.ServerValueDecoder;
 import com.foundationdb.sql.server.ServerValueEncoder;
-
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.parser.ParameterNode;
 import com.foundationdb.sql.parser.SQLParserException;
 import com.foundationdb.sql.parser.StatementNode;
-
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.api.DDLFunctions;
@@ -39,27 +37,31 @@ import com.foundationdb.server.service.metrics.LongMetric;
 import com.foundationdb.server.service.monitor.CursorMonitor;
 import com.foundationdb.server.service.monitor.MonitorStage;
 import com.foundationdb.server.service.monitor.PreparedStatementMonitor;
-
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.util.MultipleCauseException;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.Tap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.ietf.jgss.*;
+
 import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.security.SecureRandom;
+
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 
 import java.net.*;
+
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 import java.io.*;
 import java.util.*;
+
+import static com.foundationdb.sql.pg.PostgresStatement.PostgresStatementResult;
 
 /**
  * Connection to a Postgres server client.
@@ -74,7 +76,6 @@ public class PostgresServerConnection extends ServerSessionBase
     private static final InOutTap PROCESS_MESSAGE = Tap.createTimer("PostgresServerConnection: process message");
     private static final String THREAD_NAME_PREFIX = "PostgresServer_Session-"; // Session ID appended
     private static final String MD5_SALT = "MD5_SALT";
-    private static final ErrorCode[] slowErrors = {ErrorCode.FDB_PAST_VERSION, ErrorCode.QUERY_TIMEOUT};
 
     private final PostgresServer server;
     private boolean running = false, ignoreUntilSync = false;
@@ -385,14 +386,9 @@ public class PostgresServerConnection extends ServerSessionBase
             // Current statement did not complete, include in error message.
             sql = sessionMonitor.getCurrentStatement();
             if (sql != null) {
-                sessionMonitor.endStatement(-1); // For system tables and for next time.
-                if(reqs.monitor().isQueryLogEnabled() && ex instanceof InvalidOperationException){
-                    for(ErrorCode slowError : slowErrors) {
-                        if (((InvalidOperationException) ex).getCode() == slowError) {
-                            reqs.monitor().logQuery(sessionMonitor);
-                        }
-                    }
-                }
+                sessionMonitor.failStatement(ex); // For system tables and for next time.
+                if (reqs.monitor().isQueryLogEnabled())
+                    reqs.monitor().logQuery(sessionMonitor, ex);
             }
         }
         if (sql == null)
@@ -511,6 +507,7 @@ public class PostgresServerConnection extends ServerSessionBase
             }
             break;
         case CLEAR_TEXT:
+        case JAAS:
             {
                 messenger.beginMessage(PostgresMessages.AUTHENTICATION_TYPE.code());
                 messenger.writeInt(PostgresMessenger.AUTHENTICATION_CLEAR_TEXT);
@@ -577,11 +574,17 @@ public class PostgresServerConnection extends ServerSessionBase
             break;
         case CLEAR_TEXT:
             principal = reqs.securityService()
-                .authenticate(session, user, pass);
+                .authenticateLocal(session, user, pass);
             break;
         case MD5:
             principal = reqs.securityService()
-                .authenticate(session, user, pass, (byte[])attributes.remove(MD5_SALT));
+                .authenticateLocal(session, user, pass,
+                                   (byte[])attributes.remove(MD5_SALT));
+            break;
+        case JAAS:
+            principal = reqs.securityService()
+                .authenticateJaas(session, user, pass,
+                                  server.getJaasConfigName(), server.getJaasUserClass(), server.getJaasRoleClasses());
             break;
         }
         logger.debug("Login {}", (principal != null) ? principal : user);
@@ -696,9 +699,11 @@ public class PostgresServerConnection extends ServerSessionBase
         updateAIS(context);
         
         PostgresStatement pstmt = null;
-        if (statementCache != null)
+        if (statementCache != null) 
             pstmt = statementCache.get(sql);
-        if (pstmt == null) {
+        if (pstmt != null) {
+            sessionMonitor.countEvent(StatementTypes.FROM_CACHE);
+        } else {
             for (PostgresStatementParser parser : unparsedGenerators) {
                 // Try special recognition first; only allowed to turn
                 // into one statement.
@@ -740,24 +745,27 @@ public class PostgresServerConnection extends ServerSessionBase
                                             stmt.getEndOffset() + 1);
                 pstmt = generateStatementStub(stmtSQL, stmt, null, null);
                 boolean local = beforeExecute(pstmt);
+                PostgresStatementResult result;
                 boolean success = false;
                 try {
                     pstmt = finishGenerating(context, stmtSQL, stmt, null, null);
                     if ((statementCache != null) && singleStmt && pstmt.putInCache())
                         statementCache.put(stmtSQL, pstmt);
                     pstmt.sendDescription(context, false, false);
-                    rowsProcessed = executeStatement(pstmt, context, bindings, -1);
+                    result = executeStatement(pstmt, context, bindings, -1);
                     success = true;
                 } finally {
                     afterExecute(pstmt, local, success, true);
                 }
+                result.sendCommandComplete(messenger);
+                rowsProcessed = result.getRowsProcessed();
             }
         }
         readyForQuery();
         sessionMonitor.endStatement(rowsProcessed);
         logger.debug("Query complete: {} rows", rowsProcessed);
         if (reqs.monitor().isQueryLogEnabled()) {
-            reqs.monitor().logQuery(sessionMonitor);
+            reqs.monitor().logQuery(sessionMonitor, null);
         }
     }
 
@@ -969,7 +977,7 @@ public class PostgresServerConnection extends ServerSessionBase
         sessionMonitor.endStatement(rowsProcessed);
         logger.debug("Execute complete: {} rows", rowsProcessed);
         if (reqs.monitor().isQueryLogEnabled()) {
-            reqs.monitor().logQuery(sessionMonitor);
+            reqs.monitor().logQuery(sessionMonitor, null);
         }
     }
 
@@ -1144,22 +1152,22 @@ public class PostgresServerConnection extends ServerSessionBase
     protected int executeStatementWithAutoTxn(PostgresStatement pstmt, PostgresQueryContext context, QueryBindings bindings, int maxrows)
             throws IOException {
         boolean localTransaction = beforeExecute(pstmt);
-        int rowsProcessed;
+        PostgresStatementResult result;
         boolean success = false;
         try {
-            rowsProcessed = executeStatement(pstmt, context, bindings, maxrows);
+            result = executeStatement(pstmt, context, bindings, maxrows);
             success = true;
         }
         finally {
             afterExecute(pstmt, localTransaction, success, true);
             sessionMonitor.leaveStage();
         }
-        return rowsProcessed;
+        result.sendCommandComplete(messenger);
+        return result.getRowsProcessed();
     }
 
-    protected int executeStatement(PostgresStatement pstmt, PostgresQueryContext context, QueryBindings bindings, int maxrows)
+    protected PostgresStatementResult executeStatement(PostgresStatement pstmt, PostgresQueryContext context, QueryBindings bindings, int maxrows)
             throws IOException {
-        int rowsProcessed;
         try {
             if (pstmt.getAISGenerationMode() == ServerStatement.AISGenerationMode.NOT_ALLOWED) {
                 updateAIS(context);
@@ -1168,12 +1176,11 @@ public class PostgresServerConnection extends ServerSessionBase
             }
             session.setTimeoutAfterMillis(getQueryTimeoutMilli());
             sessionMonitor.enterStage(MonitorStage.EXECUTE);
-            rowsProcessed = pstmt.execute(context, bindings, maxrows);
+            return pstmt.execute(context, bindings, maxrows);
         }
         finally {
             sessionMonitor.leaveStage();
         }
-        return rowsProcessed;
     }
 
     protected void emptyQuery() throws IOException {
@@ -1207,7 +1214,7 @@ public class PostgresServerConnection extends ServerSessionBase
     }
 
     @Override
-    public int executePreparedStatement(PostgresExecuteStatement estmt, int maxrows)
+    public PostgresStatementResult executePreparedStatement(PostgresExecuteStatement estmt, int maxrows)
             throws IOException {
         PostgresPreparedStatement pstmt = preparedStatements.get(estmt.getName());
         if (pstmt == null)
@@ -1219,7 +1226,7 @@ public class PostgresServerConnection extends ServerSessionBase
         pstmt.getStatement().sendDescription(context, false, false);
         int nrows = executeStatementWithAutoTxn(pstmt.getStatement(), context, bindings, maxrows);
         sessionMonitor.endStatement(nrows);
-        return nrows;
+        return PostgresStatementResults.noResult(nrows); // Already sent.
     }
 
     @Override
@@ -1281,17 +1288,18 @@ public class PostgresServerConnection extends ServerSessionBase
     }
 
     @Override
-    public int fetchStatement(String name, int count) throws IOException {
+    public PostgresStatementResult fetchStatement(String name, int count) throws IOException {
         PostgresBoundQueryContext bound = boundPortals.get(name);
         if (bound == null)
             throw new NoSuchCursorException(name);
+        sessionMonitor.countEvent(StatementTypes.FROM_CACHE);
         QueryBindings bindings = bound.getBindings();
         PostgresPreparedStatement pstmt = bound.getStatement();
         sessionMonitor.startStatement(pstmt.getSQL(), pstmt.getName());
         pstmt.getStatement().sendDescription(bound, false, false);
         int nrows = executeStatementWithAutoTxn(pstmt.getStatement(), bound, bindings, count);
         sessionMonitor.endStatement(nrows);
-        return nrows;
+        return PostgresStatementResults.noResult(nrows); // Already sent.
     }
 
     @Override
@@ -1415,7 +1423,7 @@ public class PostgresServerConnection extends ServerSessionBase
         else if ("DateStyle".equals(key))
             return "ISO, MDY";
         else if ("transaction_isolation".equals(key))
-            return "serializable";
+            return getTransactionIsolationLevel().getSyntax().toLowerCase();
         else if ("integer_datetimes".equals(key))
             return "on";
         else if ("standard_conforming_strings".equals(key))

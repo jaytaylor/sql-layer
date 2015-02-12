@@ -19,14 +19,23 @@ package com.foundationdb.server.service.security;
 
 import com.foundationdb.server.service.session.Session;
 
+import java.security.Principal;
+import java.util.Collection;
+
 public class DummySecurityService implements SecurityService {
     @Override
-    public User authenticate(Session session, String name, String password) {
+    public Principal authenticateLocal(Session session, String name, String password) {
         return null;
     }
 
     @Override
-    public User authenticate(Session session, String name, String password, byte[] salt) {
+    public Principal authenticateLocal(Session session, String name, String password, byte[] salt) {
+        return null;
+    }
+
+    @Override
+    public Principal authenticateJaas(Session session, String name, String password,
+                                      String configName, Class<? extends Principal> userClass, Collection<Class<? extends Principal>> roleClasses) {
         return null;
     }
 
@@ -43,6 +52,10 @@ public class DummySecurityService implements SecurityService {
     @Override
     public boolean hasRestrictedAccess(Session session) {
         return true;
+    }
+
+    @Override
+    public void setAuthenticated(Session session, Principal user, boolean inAdminRole) {
     }
 
     @Override

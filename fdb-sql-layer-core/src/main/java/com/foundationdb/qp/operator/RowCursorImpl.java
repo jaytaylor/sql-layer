@@ -68,6 +68,12 @@ public abstract class RowCursorImpl implements RowCursor {
         state = CursorLifecycle.CursorState.IDLE;
     }
 
+    // Used in IndexCursorUnidirections#jump() to reactivate the cursor
+    protected void setActive() {
+        CursorLifecycle.checkIdleOrActive(this);
+        state = CursorLifecycle.CursorState.ACTIVE;
+    }
+    
     @Override
     public boolean isIdle()
     {

@@ -29,6 +29,7 @@ import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
+import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.spatial.Spatial;
 import com.geophile.z.Space;
@@ -53,9 +54,10 @@ public class SpatialColumnHandler
             IndexColumn indexColumn = index.getKeyColumns().get(firstSpatialField + c);
             Column column = indexColumn.getColumn();
             tinstances[c] = column.getType();
-            positions[c] = column.getPosition().intValue();
+            positions[c] = column.getPosition();
         }
         coords = new double[dimensions];
+        indexMethod = index.getIndexMethod();
     }
 
     public boolean handleSpatialColumn(WriteIndexRow writeIndexRow, int indexField, long zValue)
@@ -66,13 +68,6 @@ public class SpatialColumnHandler
         }
         return indexField >= firstSpatialField && indexField <= lastSpatialField;
     }
-
-    public long zValue (Row row) 
-    {
-        bind (row);
-        return Spatial.shuffle(space, coords[0], coords[1]);
-    }
-    
 
     public void processSpatialObject(Row rowData, Operation operation)
     {
@@ -86,6 +81,7 @@ public class SpatialColumnHandler
 
     private void bind (Row row) {
         if (lastSpatialField > firstSpatialField) {
+            assert indexMethod == Index.IndexMethod.GEO_LAT_LON : indexMethod;
             // Point coordinates stored in two columns
             assert dimensions == 2 : dimensions;
             double coord = Double.NaN;
@@ -117,17 +113,24 @@ public class SpatialColumnHandler
             spatialObject = new Point(x, y);
         } else {
             ValueSource source = row.value(positions[0]);
-            TClass tclass = source.getType().typeClass();
-            assert tclass == MBinary.VARBINARY : tclass;
-            byte[] spatialObjectBytes = source.getBytes();
             try {
-                spatialObject = Spatial.deserialize(space, spatialObjectBytes);
+                switch (indexMethod) {
+                    case GEO_WKB:
+                        byte[] spatialObjectBytes = source.getBytes();
+                        spatialObject = Spatial.deserializeWKB(space, spatialObjectBytes);
+                        break;
+                    case GEO_WKT:
+                        String spatialObjectText = source.getString();
+                        spatialObject = Spatial.deserializeWKT(space, spatialObjectText);
+                        break;
+                    default:
+                        assert false : indexMethod;
+                }
             } catch (ParseException e) {
                 throw new InvalidSpatialObjectException();
             }
         }
     }
-
 
     private long[] zArray()
     {
@@ -148,6 +151,7 @@ public class SpatialColumnHandler
     private SpatialObject spatialObject;
     private long[] zs;
     private final double[] coords;
+    private final Index.IndexMethod indexMethod;
 
     // Inner classes
 

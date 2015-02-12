@@ -129,10 +129,15 @@ public class OuterJoinPromoter extends BaseRule
 
         protected boolean insideDangerousFunction() {
             for (ExpressionNode inside : stack) {
-                if (inside instanceof FunctionExpression) {
-                    String name = ((FunctionExpression)inside).getFunction();
-                    if (name.equals("COALESCE") || name.equals("if"))
-                        return true;
+                if ((inside instanceof FunctionExpression) &&
+                    ((FunctionExpression)inside).anyNullTolerant()) {
+                    // We could attempt to match a particular operand
+                    // index by peeking at the next on the stack. Or
+                    // to understand functions that are null-tolerant
+                    // but cannot introduce a false positive condition
+                    // with NULL, such as ISTRUE. This simpler check
+                    // is more conservative.
+                    return true;
                 }
             }
             return false;

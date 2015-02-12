@@ -657,10 +657,20 @@ public class AISBinder implements Visitor
         return conditions;
     }
 
+    protected boolean columnReferencesView(ColumnBinding columnBinding) {
+        return columnBinding.getFromTable() != null &&
+                columnBinding.getFromTable().getUserData() instanceof TableBinding &&
+                ((TableBinding)columnBinding.getFromTable().getUserData()).getTable() instanceof View;
+    }
+
     protected void columnReference(ColumnReference columnReference) {
         ColumnBinding columnBinding = (ColumnBinding)columnReference.getUserData();
-        if (columnBinding != null)
-            return;
+        if (columnBinding != null) {
+            if (!expandViews || !columnReferencesView(columnBinding)) {
+                return;
+            }
+            columnBinding = null;
+        }
 
         String columnName = columnReference.getColumnName();
         if (columnReference.getTableNameNode() != null) {

@@ -23,15 +23,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.TreeMap;
+import java.util.UUID;
 
 import com.foundationdb.server.error.BadConfigDirectoryException;
 import com.foundationdb.server.error.ConfigurationPropertiesLoadException;
@@ -42,7 +41,6 @@ import com.foundationdb.server.error.ServiceAlreadyStartedException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.util.tap.Tap;
 import com.google.inject.Inject;
-import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +50,7 @@ public class ConfigurationServiceImpl implements ConfigurationService, Service {
 
     private final static String CONFIG_DEFAULTS_RESOURCE = "configuration-defaults.properties";
     private static final String INITIALLY_ENABLED_TAPS = "taps.initiallyenabled";
+    private static final String INSTANCE_ID_PROP = "fdbsql.instance_id";
 
     /** Server properties. Format specified by server. */
     public static final String CONFIG_DIR_PROP = "fdbsql.config_dir"; // Note: Also in GuicedServiceManager
@@ -76,6 +75,11 @@ public class ConfigurationServiceImpl implements ConfigurationService, Service {
     public void queryTimeoutMilli(long queryTimeoutMilli)
     {
         this.queryTimeoutMilli = queryTimeoutMilli;
+    }
+
+    @Override
+    public String getInstanceID() {
+        return getProperty(INSTANCE_ID_PROP);
     }
 
     @Override
@@ -133,6 +137,11 @@ public class ConfigurationServiceImpl implements ConfigurationService, Service {
             if (initiallyEnabledTaps != null) {
                 Tap.setInitiallyEnabled(initiallyEnabledTaps);
             }
+            String id = properties.get(INSTANCE_ID_PROP);
+            if((id == null) || id.isEmpty()) {
+                UUID uuid = UUID.randomUUID();
+                properties.put(INSTANCE_ID_PROP, uuid.toString());
+            }
         }
     }
 
@@ -151,9 +160,14 @@ public class ConfigurationServiceImpl implements ConfigurationService, Service {
 
         // Also note, that, as of this writing, there are usages of both java.util date functionality and Joda
         if (timezone != null && timezone.length() != 0 && DateTimeZone.getProvider().getZone(timezone) == null) {
-            throw new InvalidTimeZoneException();
+            // Originally a hard error but JRE on CentOS 6 found to consistently misuse /etc/sysconfig/clock
+            // throw new InvalidTimeZoneException();
+            LOG.error("Reverting to timezone {} as Joda does not support user.timezone={}",
+                      DateTimeZone.getDefault(),
+                      timezone);
+        } else {
+            LOG.debug("Using timezone: {}", DateTimeZone.getDefault());
         }
-        LOG.debug("Using timezone: {}", DateTimeZone.getDefault());
     }
 
     @Override

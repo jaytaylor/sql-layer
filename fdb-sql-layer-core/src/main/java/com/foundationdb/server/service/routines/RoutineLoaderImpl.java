@@ -47,6 +47,8 @@ import java.io.IOException;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -106,7 +108,8 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
             VersionedItem<ClassLoader> entry = classLoaders.get(jarName);  
             if ((entry != null) && (entry.version == currentVersion))
                 return entry.item;
-            ClassLoader loader = new URLClassLoader(new URL[] { sqljJar.getURL() }, engineProvider.getSafeClassLoader() );
+            
+            ClassLoader loader = createClassLoader(sqljJar, engineProvider.getSafeClassLoader()) ;
             if (entry != null) {
                 entry.item = loader;
             }
@@ -116,6 +119,16 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
             }
             return loader;
         }
+    }
+
+    private ClassLoader createClassLoader(final SQLJJar jar, final ClassLoader parentClassloader) {
+        return AccessController.doPrivileged(
+                new PrivilegedAction<ClassLoader>() {
+                    public ClassLoader run() {
+                        return new URLClassLoader(new URL[] {jar.getURL()}, parentClassloader);
+                    }
+                }
+        );
     }
 
     @Override
@@ -202,12 +215,16 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
     }
 
     @Override
-    public Method loadJavaMethod(Session session, TableName routineName) {
-        Routine routine = ais(session).getRoutine(routineName);
+    public Method loadJavaMethod(Session session, TableName routineName,
+                                 long[] ret_aisGeneration) {
+        AkibanInformationSchema ais = ais(session);
+        Routine routine = ais.getRoutine(routineName);
         if (routine == null)
             throw new NoSuchRoutineException(routineName);
         if (routine.getCallingConvention() != Routine.CallingConvention.JAVA)
             throw new SQLJInstanceException(routineName, "Routine was not SQL/J");
+        if (ret_aisGeneration != null)
+            ret_aisGeneration[0] = ais.getGeneration();
         long currentVersion = routine.getVersion();
         synchronized (javaMethods) {
             VersionedItem<Method> entry = javaMethods.get(routineName);
@@ -261,18 +278,18 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
     }
 
     @Override
-    public ScriptPool<ScriptEvaluator> getScriptEvaluator(Session session, TableName routineName) {
-        return scripts.getScriptEvaluator(session, routineName);
+    public ScriptPool<ScriptEvaluator> getScriptEvaluator(Session session, TableName routineName, long[] ret_aisGeneration) {
+        return scripts.getScriptEvaluator(session, routineName, ret_aisGeneration);
     }
 
     @Override
-    public ScriptPool<ScriptInvoker> getScriptInvoker(Session session, TableName routineName) {
-        return scripts.getScriptInvoker(session, routineName);
+    public ScriptPool<ScriptInvoker> getScriptInvoker(Session session, TableName routineName, long[] ret_aisGeneration) {
+        return scripts.getScriptInvoker(session, routineName, ret_aisGeneration);
     }
 
     @Override
-    public ScriptPool<ScriptLibrary> getScriptLibrary(Session session, TableName routineName) {
-        return scripts.getScriptLibrary(session, routineName);
+    public ScriptPool<ScriptLibrary> getScriptLibrary(Session session, TableName routineName, long[] ret_aisGeneration) {
+        return scripts.getScriptLibrary(session, routineName, ret_aisGeneration);
     }
 
     @Override

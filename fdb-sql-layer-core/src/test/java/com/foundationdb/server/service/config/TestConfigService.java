@@ -64,7 +64,6 @@ public class TestConfigService extends ConfigurationServiceImpl {
         ret.put(BUCKET_COUNT_KEY, BUCKET_COUNT);
         ret.put(FEATURE_DDL_WITH_DML_KEY, "true");
         ret.put(FEATURE_SPATIAL_INDEX_KEY, "true");
-        ret.put(FEATURE_DIRECT_ROUTINES_KEY, "true");
         // extra = test overrides
         if (extraProperties != null) {
             for (final Map.Entry<String, String> property : extraProperties.entrySet()) {
@@ -144,5 +143,4 @@ public class TestConfigService extends ConfigurationServiceImpl {
 
     public final static String FEATURE_DDL_WITH_DML_KEY = "fdbsql.feature.ddl_with_dml_on";
     public final static String FEATURE_SPATIAL_INDEX_KEY = "fdbsql.feature.spatial_index_on";
-    public final static String FEATURE_DIRECT_ROUTINES_KEY = "fdbsql.feature.direct_routines_on";
 }

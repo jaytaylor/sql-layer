@@ -30,9 +30,11 @@ import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
+import com.foundationdb.server.spatial.BoxLatLon;
 import com.foundationdb.server.spatial.Spatial;
 import com.foundationdb.server.types.value.ValueSources;
 import com.geophile.z.Space;
+import com.geophile.z.SpatialObject;
 import org.junit.Test;
 
 import java.math.BigDecimal;
@@ -45,6 +47,12 @@ import static org.junit.Assert.*;
 
 public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
 {
+    @Override
+    protected boolean doAutoTransaction()
+    {
+        return false;
+    }
+
     @Override
     public void setupCreateSchema()
     {
@@ -95,7 +103,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
     public void testLoad()
     {
         loadDB();
-        {
+        try (TransactionContext t = new TransactionContext()) {
             Operator plan = indexScan_Default(cSpatialIndexRowType);
             long[][] expected = new long[childZToCid.size()][];
             int r = 0;
@@ -107,7 +115,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
             }
             compareRows(rows(cSpatialIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
         }
-        {
+        try (TransactionContext t = new TransactionContext()) {
             Operator plan = indexScan_Default(pSpatialIndexRowType);
             long[][] expected = new long[parentZToPid.size() * CHILDREN_PER_PARENT][];
             int r = 0;
@@ -128,7 +136,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
     {
         loadDB();
         List<Row> remainingRows = new ArrayList<>();
-        {
+        try (TransactionContext t = new TransactionContext()) {
             // Delete the first (1 + (pid % CHILDREN_PER_PARENT)) children of parent pid, and
             // keep track of the remaining rows.
             for (Integer pid : parentZToPid.values()) {
@@ -144,7 +152,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                 }
             }
         }
-        {
+        try (TransactionContext t = new TransactionContext()) {
             Operator plan = indexScan_Default(cSpatialIndexRowType);
             long[][] expected = new long[remainingRows.size()][];
             int r = 0;
@@ -159,7 +167,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
             }
             compareRows(rows(cSpatialIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
         }
-        {
+        try (TransactionContext t = new TransactionContext()) {
             Operator plan = indexScan_Default(pSpatialIndexRowType);
             long[][] expected = new long[remainingRows.size()][];
             int r = 0;
@@ -183,7 +191,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
         List<Integer> pids = new ArrayList<>(parentZToPid.values());
         parentZToPid.clear();
         childZToCid.clear();
-        {
+        try (TransactionContext t = new TransactionContext()) {
             // Increment plon and clon values
             for (Integer pid : pids) {
                 BigDecimal plat = plats.get(pid);
@@ -205,7 +213,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                 }
             }
         }
-        {
+        try (TransactionContext t = new TransactionContext()) {
             Operator plan = indexScan_Default(cSpatialIndexRowType);
             long[][] expected = new long[childZToCid.size()][];
             int r = 0;
@@ -217,7 +225,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
             }
             compareRows(rows(cSpatialIndexRowType.physicalRowType(), sort(expected)), cursor(plan, queryContext, queryBindings));
         }
-        {
+        try (TransactionContext t = new TransactionContext()) {
             Operator plan = indexScan_Default(pSpatialIndexRowType);
             long[][] expected = new long[parentZToPid.size() * CHILDREN_PER_PARENT][];
             int r = 0;
@@ -246,70 +254,72 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
         BigDecimal lonHi;
         int nEmpty = 0;
         for (int i = 0; i < N; i++) {
-            beforeEQ = randomBefore();
-            latLo = randomLat();
-            latHi = randomLat();
-            if (latLo.compareTo(latHi) > 0) {
-                BigDecimal swap = latLo;
-                latLo = latHi;
-                latHi = swap;
-            }
-            lonLo = randomLon();
-            lonHi = randomLon();
-            if (lonLo.compareTo(lonHi) > 0) {
-                BigDecimal swap = lonLo;
-                lonLo = lonHi;
-                lonHi = swap;
-            }
-            // Get the right answer
-            Set<Integer> expectedCids = new HashSet<>();
-            for (int pid : parentZToPid.values()) {
-                int before = before(pid);
-                BigDecimal lat = plats.get(pid);
-                BigDecimal lon = plons.get(pid);
-                if (before == beforeEQ &&
-                    latLo.compareTo(lat) <= 0 &&
-                    lat.compareTo(latHi) <= 0 &&
-                    lonLo.compareTo(lon) <= 0 &&
-                    lon.compareTo(lonHi) <= 0) {
-                    for (int c = 1; c <= CHILDREN_PER_PARENT; c++) {
-                        int cid = pid + c;
-                        expectedCids.add(cid);
+            try (TransactionContext t = new TransactionContext()) {
+                beforeEQ = randomBefore();
+                latLo = randomLat();
+                latHi = randomLat();
+                if (latLo.compareTo(latHi) > 0) {
+                    BigDecimal swap = latLo;
+                    latLo = latHi;
+                    latHi = swap;
+                }
+                lonLo = randomLon();
+                lonHi = randomLon();
+                if (lonLo.compareTo(lonHi) > 0) {
+                    BigDecimal swap = lonLo;
+                    lonLo = lonHi;
+                    lonHi = swap;
+                }
+                // Get the right answer
+                Set<Integer> expectedCids = new HashSet<>();
+                for (int pid : parentZToPid.values()) {
+                    int before = before(pid);
+                    BigDecimal lat = plats.get(pid);
+                    BigDecimal lon = plons.get(pid);
+                    if (before == beforeEQ &&
+                        latLo.compareTo(lat) <= 0 &&
+                        lat.compareTo(latHi) <= 0 &&
+                        lonLo.compareTo(lon) <= 0 &&
+                        lon.compareTo(lonHi) <= 0) {
+                        for (int c = 1; c <= CHILDREN_PER_PARENT; c++) {
+                            int cid = pid + c;
+                            expectedCids.add(cid);
+                        }
                     }
                 }
+                if (expectedCids.isEmpty()) {
+                    nEmpty++;
+                }
+                // Get the query result using an index
+                Set<Integer> actual = new HashSet<>();
+                SpatialObject queryBox = BoxLatLon.newBox(latLo.doubleValue(), latHi.doubleValue(),
+                                                          lonLo.doubleValue(), lonHi.doubleValue());
+                IndexBound boxBound = new IndexBound(row(pSpatialIndexRowType, beforeEQ, queryBox),
+                                                      new SetColumnSelector(0, 1));
+                IndexKeyRange box = IndexKeyRange.spatialObject(pSpatialIndexRowType, boxBound);
+                Operator plan = indexScan_Default(pSpatialIndexRowType, box, lookaheadQuantum());
+                Cursor cursor = API.cursor(plan, queryContext, queryBindings);
+                cursor.openTopLevel();
+                Row row;
+                while ((row = cursor.next()) != null) {
+                    assertSame(pSpatialIndexRowType.physicalRowType(), row.rowType());
+                    // Get row state
+                    int before = getLong(row, 0).intValue();
+                    long z = getLong(row, 1);
+                    int pid = getLong(row, 3).intValue();
+                    int cid = getLong(row, 4).intValue();
+                    // Check against expected
+                    assertEquals(beforeEQ, before);
+                    Integer expectedPid = parentZToPid.get(z);
+                    assertNotNull(expectedPid);
+                    assertEquals(expectedPid.intValue(), pid);
+                    assertTrue(cid >= expectedPid + 1 && cid <= expectedPid + CHILDREN_PER_PARENT);
+                    assertEquals(expectedHKey(pid, cid), row.hKey().toString());
+                    actual.add(cid);
+                }
+                // There should be no false negatives
+                assertTrue(actual.containsAll(expectedCids));
             }
-            if (expectedCids.isEmpty()) {
-                nEmpty++;
-            }
-            // Get the query result using an index
-            Set<Integer> actual = new HashSet<>();
-            IndexBound lowerLeft = new IndexBound(row(pSpatialIndexRowType, beforeEQ, latLo, lonLo),
-                                                  new SetColumnSelector(0, 1, 2));
-            IndexBound upperRight = new IndexBound(row(pSpatialIndexRowType, beforeEQ, latHi, lonHi),
-                                                   new SetColumnSelector(0, 1, 2));
-            IndexKeyRange box = IndexKeyRange.spatialCoords(pSpatialIndexRowType, lowerLeft, upperRight);
-            Operator plan = indexScan_Default(pSpatialIndexRowType, box, lookaheadQuantum());
-            Cursor cursor = API.cursor(plan, queryContext, queryBindings);
-            cursor.openTopLevel();
-            Row row;
-            while ((row = cursor.next()) != null) {
-                assertSame(pSpatialIndexRowType.physicalRowType(), row.rowType());
-                // Get row state
-                int before = getLong(row, 0).intValue();
-                long z = getLong(row, 1);
-                int pid = getLong(row, 3).intValue();
-                int cid = getLong(row, 4).intValue();
-                // Check against expected
-                assertEquals(beforeEQ, before);
-                Integer expectedPid = parentZToPid.get(z);
-                assertNotNull(expectedPid);
-                assertEquals(expectedPid.intValue(), pid);
-                assertTrue(cid >= expectedPid + 1 && cid <= expectedPid + CHILDREN_PER_PARENT);
-                assertEquals(expectedHKey(pid, cid), row.hKey().toString());
-                actual.add(cid);
-            }
-            // There should be no false negatives
-            assertTrue(actual.containsAll(expectedCids));
         }
         // If there are too many empty results, we need to know about it, and try less restrictive queries.
         assertTrue(nEmpty < N * 0.2);
@@ -328,67 +338,69 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
         BigDecimal lonHi;
         int nEmpty = 0;
         for (int i = 0; i < N; i++) {
-            beforeEQ = randomBefore();
-            latLo = randomLat();
-            latHi = randomLat();
-            if (latLo.compareTo(latHi) > 0) {
-                BigDecimal swap = latLo;
-                latLo = latHi;
-                latHi = swap;
-            }
-            lonLo = randomLon();
-            lonHi = randomLon();
-            if (lonLo.compareTo(lonHi) > 0) {
-                BigDecimal swap = lonLo;
-                lonLo = lonHi;
-                lonHi = swap;
-            }
-            // Get the right answer
-            Set<Integer> expectedCids = new HashSet<>();
-            for (int cid : childZToCid.values()) {
-                int before = before(pid(cid));
-                BigDecimal lat = clats.get(cid);
-                BigDecimal lon = clons.get(cid);
-                if (before == beforeEQ &&
-                    latLo.compareTo(lat) <= 0 &&
-                    lat.compareTo(latHi) <= 0 &&
-                    lonLo.compareTo(lon) <= 0 &&
-                    lon.compareTo(lonHi) <= 0) {
-                    expectedCids.add(cid);
+            try (TransactionContext t = new TransactionContext()) {
+                beforeEQ = randomBefore();
+                latLo = randomLat();
+                latHi = randomLat();
+                if (latLo.compareTo(latHi) > 0) {
+                    BigDecimal swap = latLo;
+                    latLo = latHi;
+                    latHi = swap;
                 }
+                lonLo = randomLon();
+                lonHi = randomLon();
+                if (lonLo.compareTo(lonHi) > 0) {
+                    BigDecimal swap = lonLo;
+                    lonLo = lonHi;
+                    lonHi = swap;
+                }
+                // Get the right answer
+                Set<Integer> expectedCids = new HashSet<>();
+                for (int cid : childZToCid.values()) {
+                    int before = before(pid(cid));
+                    BigDecimal lat = clats.get(cid);
+                    BigDecimal lon = clons.get(cid);
+                    if (before == beforeEQ &&
+                        latLo.compareTo(lat) <= 0 &&
+                        lat.compareTo(latHi) <= 0 &&
+                        lonLo.compareTo(lon) <= 0 &&
+                        lon.compareTo(lonHi) <= 0) {
+                        expectedCids.add(cid);
+                    }
+                }
+                if (expectedCids.isEmpty()) {
+                    nEmpty++;
+                }
+                // Get the query result using an index
+                Set<Integer> actual = new HashSet<>();
+                SpatialObject queryBox = BoxLatLon.newBox(latLo.doubleValue(), latHi.doubleValue(),
+                                                          lonLo.doubleValue(), lonHi.doubleValue());
+                IndexBound boxBound = new IndexBound(row(cSpatialIndexRowType, beforeEQ, queryBox),
+                                                      new SetColumnSelector(0, 1));
+                IndexKeyRange box = IndexKeyRange.spatialObject(cSpatialIndexRowType, boxBound);
+                Operator plan = indexScan_Default(cSpatialIndexRowType, box, lookaheadQuantum());
+                Cursor cursor = API.cursor(plan, queryContext, queryBindings);
+                cursor.openTopLevel();
+                Row row;
+                while ((row = cursor.next()) != null) {
+                    assertSame(cSpatialIndexRowType.physicalRowType(), row.rowType());
+                    // Get row state
+                    int before = getLong(row, 0).intValue();
+                    long z = getLong(row, 1);
+                    int pid = getLong(row, 3).intValue();
+                    int cid = getLong(row, 4).intValue();
+                    // Check against expected
+                    assertEquals(beforeEQ, before);
+                    Integer expectedCid = childZToCid.get(z);
+                    assertNotNull(expectedCid);
+                    assertEquals(expectedCid.intValue(), cid);
+                    assertEquals(pid(expectedCid), pid);
+                    assertEquals(expectedHKey(pid, cid), row.hKey().toString());
+                    actual.add(cid);
+                }
+                // There should be no false negatives
+                assertTrue(actual.containsAll(expectedCids));
             }
-            if (expectedCids.isEmpty()) {
-                nEmpty++;
-            }
-            // Get the query result using an index
-            Set<Integer> actual = new HashSet<>();
-            IndexBound lowerLeft = new IndexBound(row(cSpatialIndexRowType, beforeEQ, latLo, lonLo),
-                                                  new SetColumnSelector(0, 1, 2));
-            IndexBound upperRight = new IndexBound(row(cSpatialIndexRowType, beforeEQ, latHi, lonHi),
-                                                   new SetColumnSelector(0, 1, 2));
-            IndexKeyRange box = IndexKeyRange.spatialCoords(cSpatialIndexRowType, lowerLeft, upperRight);
-            Operator plan = indexScan_Default(cSpatialIndexRowType, box, lookaheadQuantum());
-            Cursor cursor = API.cursor(plan, queryContext, queryBindings);
-            cursor.openTopLevel();
-            Row row;
-            while ((row = cursor.next()) != null) {
-                assertSame(cSpatialIndexRowType.physicalRowType(), row.rowType());
-                // Get row state
-                int before = getLong(row, 0).intValue();
-                long z = getLong(row, 1);
-                int pid = getLong(row, 3).intValue();
-                int cid = getLong(row, 4).intValue();
-                // Check against expected
-                assertEquals(beforeEQ, before);
-                Integer expectedCid = childZToCid.get(z);
-                assertNotNull(expectedCid);
-                assertEquals(expectedCid.intValue(), cid);
-                assertEquals(pid(expectedCid), pid);
-                assertEquals(expectedHKey(pid, cid), row.hKey().toString());
-                actual.add(cid);
-            }
-            // There should be no false negatives
-            assertTrue(actual.containsAll(expectedCids));
         }
         // If there are too many empty results, we need to know about it, and try less restrictive queries.
         assertTrue(nEmpty < N * 0.2);
@@ -400,88 +412,92 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
         loadDB();
         final int N = 100;
         for (int i = 0; i < N; i++) {
-            BigDecimal queryLat = randomLat();
-            BigDecimal queryLon = randomLon();
-            long zStart = Spatial.shuffle(space, queryLat.doubleValue(), queryLon.doubleValue());
-            for (int beforeEQ = 0; beforeEQ <= 2; beforeEQ++) {
-                // Expected
-                SortedMap<Long, Integer> distanceToId = new TreeMap<>();
-                for (Map.Entry<Long, Integer> entry : childZToCid.entrySet()) {
-                    long z = entry.getKey();
-                    int cid = entry.getValue();
-                    if (before(pid(cid)) == beforeEQ) {
-                        long distance = abs(z - zStart);
-                        Integer replaced = distanceToId.put(distance, cid);
-                        // TODO: Duplicate distances are possible
-                        assertNull(replaced);
+            try (TransactionContext t = new TransactionContext()) {
+                BigDecimal queryLat = randomLat();
+                BigDecimal queryLon = randomLon();
+                long zStart = Spatial.shuffle(space, queryLat.doubleValue(), queryLon.doubleValue());
+                for (int beforeEQ = 0; beforeEQ <= 2; beforeEQ++) {
+                    // Expected
+                    SortedMap<Long, Integer> distanceToId = new TreeMap<>();
+                    for (Map.Entry<Long, Integer> entry : childZToCid.entrySet()) {
+                        long z = entry.getKey();
+                        int cid = entry.getValue();
+                        if (before(pid(cid)) == beforeEQ) {
+                            long distance = abs(z - zStart);
+                            Integer replaced = distanceToId.put(distance, cid);
+                            // TODO: Duplicate distances are possible
+                            assertNull(replaced);
+                        }
                     }
+                    Collection<Integer> expectedIdByDistance = distanceToId.values();
+                    // Actual
+                    IndexBound zStartBound =
+                        new IndexBound(row(cSpatialIndexRowType, beforeEQ,  queryLat, queryLon),
+                                       new SetColumnSelector(0, 1, 2));
+                    IndexKeyRange zStartRange = IndexKeyRange.around(cSpatialIndexRowType, zStartBound);
+                    Operator plan = indexScan_Default(cSpatialIndexRowType, zStartRange, lookaheadQuantum());
+                    Cursor cursor = API.cursor(plan, queryContext, queryBindings);
+                    cursor.openTopLevel();
+                    Row row;
+                    long previousDistance = Long.MIN_VALUE;
+                    Collection<Integer> actualIdByDistance = new ArrayList<>();
+                    while ((row = cursor.next()) != null) {
+                        // Get row state
+                        int before = getLong(row, 0).intValue();
+                        long z = getLong(row, 1);
+                        int pid = getLong(row, 3).intValue();
+                        int cid = getLong(row, 4).intValue();
+                        // Check against expected
+                        assertSame(cSpatialIndexRowType.physicalRowType(), row.rowType());
+                        assertEquals(beforeEQ, before);
+                        BigDecimal clat = clats.get(cid);
+                        BigDecimal clon = clons.get(cid);
+                        long zExpected = Spatial.shuffle(space, clat.doubleValue(), clon.doubleValue());
+                        assertEquals(zExpected, z);
+                        Integer expectedCid = childZToCid.get(z);
+                        assertNotNull(expectedCid);
+                        assertEquals(expectedCid.intValue(), cid);
+                        assertEquals(pid(expectedCid), pid);
+                        assertEquals(expectedHKey(pid, cid), row.hKey().toString());
+                        long distance = abs(zExpected - zStart);
+                        assertTrue(distance >= previousDistance);
+                        previousDistance = distance;
+                        actualIdByDistance.add(cid);
+                    }
+                    assertEquals(new ArrayList<>(expectedIdByDistance),
+                                 new ArrayList<>(actualIdByDistance));
                 }
-                Collection<Integer> expectedIdByDistance = distanceToId.values();
-                // Actual
-                IndexBound zStartBound =
-                    new IndexBound(row(cSpatialIndexRowType, beforeEQ,  queryLat, queryLon),
-                                   new SetColumnSelector(0, 1, 2));
-                IndexKeyRange zStartRange = IndexKeyRange.around(cSpatialIndexRowType, zStartBound);
-                Operator plan = indexScan_Default(cSpatialIndexRowType, zStartRange, lookaheadQuantum());
-                Cursor cursor = API.cursor(plan, queryContext, queryBindings);
-                cursor.openTopLevel();
-                Row row;
-                long previousDistance = Long.MIN_VALUE;
-                Collection<Integer> actualIdByDistance = new ArrayList<>();
-                while ((row = cursor.next()) != null) {
-                    // Get row state
-                    int before = getLong(row, 0).intValue();
-                    long z = getLong(row, 1);
-                    int pid = getLong(row, 3).intValue();
-                    int cid = getLong(row, 4).intValue();
-                    // Check against expected
-                    assertSame(cSpatialIndexRowType.physicalRowType(), row.rowType());
-                    assertEquals(beforeEQ, before);
-                    BigDecimal clat = clats.get(cid);
-                    BigDecimal clon = clons.get(cid);
-                    long zExpected = Spatial.shuffle(space, clat.doubleValue(), clon.doubleValue());
-                    assertEquals(zExpected, z);
-                    Integer expectedCid = childZToCid.get(z);
-                    assertNotNull(expectedCid);
-                    assertEquals(expectedCid.intValue(), cid);
-                    assertEquals(pid(expectedCid), pid);
-                    assertEquals(expectedHKey(pid, cid), row.hKey().toString());
-                    long distance = abs(zExpected - zStart);
-                    assertTrue(distance >= previousDistance);
-                    previousDistance = distance;
-                    actualIdByDistance.add(cid);
-                }
-                assertEquals(new ArrayList<>(expectedIdByDistance),
-                             new ArrayList<>(actualIdByDistance));
             }
         }
     }
 
     private void loadDB()
     {
-        int pid = 0;
-        for (long y = LAT_LO; y < LAT_HI; y += DLAT) {
-            for (long x = LON_LO; x < LON_HI; x += DLON) {
-                BigDecimal plat = new BigDecimal(y);
-                BigDecimal plon = new BigDecimal(x);
-                writeRow(parent, pid, before(pid), plat, plon);
-                long parentZ = Spatial.shuffle(space, plat.doubleValue(), plon.doubleValue());
-                parentZToPid.put(parentZ, pid);
-                plats.put(pid, plat);
-                plons.put(pid, plon);
-                parentZs.add(parentZ);
-                // System.out.println(String.format("parent  %016x -> %s", parentZ, pid));
-                for (int cid = pid + 1; cid <= pid + CHILDREN_PER_PARENT; cid++) {
-                    BigDecimal clat = clat(plat, cid);
-                    BigDecimal clon = clon(plon, cid);
-                    clats.put(cid, clat);
-                    clons.put(cid, clon);
-                    long childZ = Spatial.shuffle(space, clat.doubleValue(), clon.doubleValue());
-                    childZToCid.put(childZ, cid);
-                    // System.out.println(String.format("    child  %016x -> %s", childZ, cid));
-                    writeRow(child, cid, pid, after(cid), clat, clon);
+        try (TransactionContext t = new TransactionContext()) {
+            int pid = 0;
+            for (long y = LAT_LO; y < LAT_HI; y += DLAT) {
+                for (long x = LON_LO; x < LON_HI; x += DLON) {
+                    BigDecimal plat = new BigDecimal(y);
+                    BigDecimal plon = new BigDecimal(x);
+                    writeRow(parent, pid, before(pid), plat, plon);
+                    long parentZ = Spatial.shuffle(space, plat.doubleValue(), plon.doubleValue());
+                    parentZToPid.put(parentZ, pid);
+                    plats.put(pid, plat);
+                    plons.put(pid, plon);
+                    parentZs.add(parentZ);
+                    // System.out.println(String.format("parent  %016x -> %s", parentZ, pid));
+                    for (int cid = pid + 1; cid <= pid + CHILDREN_PER_PARENT; cid++) {
+                        BigDecimal clat = clat(plat, cid);
+                        BigDecimal clon = clon(plon, cid);
+                        clats.put(cid, clat);
+                        clons.put(cid, clon);
+                        long childZ = Spatial.shuffle(space, clat.doubleValue(), clon.doubleValue());
+                        childZToCid.put(childZ, cid);
+                        // System.out.println(String.format("    child  %016x -> %s", childZ, cid));
+                        writeRow(child, cid, pid, after(cid), clat, clon);
+                    }
+                    pid += 10;
                 }
-                pid += 10;
             }
         }
     }

@@ -52,8 +52,13 @@ public abstract class IndexCursor extends RowCursorImpl implements BindingsAware
     @Override
     public void close()
     {
-        iterationHelper.closeIteration();
-        super.close();
+        try {
+            // The FDB implementation here does nothing, but the persistit ones do stuff that at the very least
+            // could get to a NullPointerException.
+            iterationHelper.closeIteration();
+        } finally {
+            super.close();
+        }
     }
 
     @Override
@@ -64,19 +69,9 @@ public abstract class IndexCursor extends RowCursorImpl implements BindingsAware
     
     // For use by subclasses
 
-    protected boolean nextInternal(boolean deep)
+    protected boolean traverse(Direction dir)
     {
-        return iterationHelper.next(deep);
-    }
-
-    protected boolean prevInternal(boolean deep)
-    {
-        return iterationHelper.prev(deep);
-    }
-
-    protected boolean traverse(Direction dir, boolean deep)
-    {
-        return iterationHelper.traverse(dir, deep);
+        return iterationHelper.traverse(dir);
     }
 
     protected void clear()
@@ -87,6 +82,11 @@ public abstract class IndexCursor extends RowCursorImpl implements BindingsAware
     protected Key key()
     {
         return iterationHelper.key();
+    }
+    
+    protected Key endKey()
+    {
+        return iterationHelper.endKey();
     }
 
     // IndexCursor interface
@@ -108,11 +108,8 @@ public abstract class IndexCursor extends RowCursorImpl implements BindingsAware
             indexCursor = IndexCursorSpatial_InBox.create(context, iterationHelper, keyRange, openAllSubCursors);
         } else {
             SortKeyAdapter<?, ?> adapter = ValueSortKeyAdapter.INSTANCE;
-            if(ordering.allAscending() || ordering.allDescending()) {
-                indexCursor = IndexCursorUnidirectional.create(context, iterationHelper, keyRange, ordering, adapter);
-            } else {
-                indexCursor = IndexCursorMixedOrder.create(context, iterationHelper, keyRange, ordering, adapter);
-            }
+            assert ordering.allAscending() || ordering.allDescending() : "Index API.ordering not all ascending/descending";
+            indexCursor = IndexCursorUnidirectional.create(context, iterationHelper, keyRange, ordering, adapter);
         }
         return indexCursor;
     }

@@ -1,5 +1,7 @@
 dangerous-function: condition that is satified when NULL does not promote
 
+dangerous-function-2: equivalent dangerous function
+
 direct-condition: condition on column of optional table itself
 
 function: condition involving normal function on optional table

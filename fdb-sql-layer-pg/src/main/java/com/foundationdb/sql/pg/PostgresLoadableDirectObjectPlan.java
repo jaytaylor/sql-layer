@@ -108,7 +108,7 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
     }
     
     @Override
-    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
+    public PostgresStatementResult execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         int nrows = 0;
@@ -157,18 +157,16 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
             stack.pop(context, invocation, success);
         }
         if (suspended) {
-            messenger.beginMessage(PostgresMessages.PORTAL_SUSPENDED_TYPE.code());
-            messenger.sendMessage();
+            return portalSuspended(nrows);
         }
+        else if (copier != null) {
+            // Make CopyManager happy.
+            return commandComplete("COPY", nrows);
+        }
+
         else {        
-            messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-            if (copier != null)
-                messenger.writeString("COPY"); // Make CopyManager happy.
-            else
-                messenger.writeString("CALL " + nrows);
-            messenger.sendMessage();
+            return commandComplete("CALL " + nrows, nrows);
         }
-        return nrows;
     }
 
 }

@@ -55,6 +55,7 @@ import com.foundationdb.server.error.NoSuchRoutineException;
 import com.foundationdb.server.error.NoSuchSQLJJarException;
 import com.foundationdb.server.error.NoSuchSequenceException;
 import com.foundationdb.server.error.NoSuchTableException;
+import com.foundationdb.server.error.NotAllowedByConfigException;
 import com.foundationdb.server.error.OnlineDDLInProgressException;
 import com.foundationdb.server.error.ProtectedTableDDLException;
 import com.foundationdb.server.error.ReferencedSQLJJarException;
@@ -83,6 +84,7 @@ import com.google.common.collect.Multimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -99,6 +101,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractSchemaManager.class);
 
     public static final String SKIP_AIS_UPGRADE_PROPERTY = "fdbsql.skip_ais_upgrade";
+    public static final String FEATURE_SPATIAL_INDEX_PROPERTY = "fdbsql.feature.spatial_index_on";
 
     public static final String COLLATION_MODE = "fdbsql.collation_mode";
     public static final String DEFAULT_CHARSET = "fdbsql.default_charset";
@@ -114,6 +117,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     protected final StorageFormatRegistry storageFormatRegistry;
     protected TypesTranslator typesTranslator;
     protected AISCloner aisCloner;
+    protected boolean withSpatialIndexes;
 
     protected SecurityService securityService;
 
@@ -236,6 +240,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         this.aisCloner = new AISCloner(typesRegistryService.getTypesRegistry(),
                                        storageFormatRegistry);
         storageFormatRegistry.registerStandardFormats();
+        this.withSpatialIndexes = Boolean.parseBoolean(config.getProperty(FEATURE_SPATIAL_INDEX_PROPERTY));
     }
 
     @Override
@@ -792,6 +797,17 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     @Override
     public AISCloner getAISCloner() {
         return aisCloner;
+    }
+
+    @Override
+    public void checkAllowedIndexes(Collection<? extends Index> indexes) {
+        if(!withSpatialIndexes) {
+            for(Index index : indexes) {
+                if(index.isSpatial()) {
+                    throw new NotAllowedByConfigException("spatial index: " + index.getIndexName());
+                }
+            }
+        }
     }
 
     //

@@ -45,6 +45,7 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.security.Principal;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -63,7 +64,7 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     private static final String BYTES_OUT_METRIC_NAME = "PostgresBytesOut";
 
     protected static enum AuthenticationType {
-        NONE, CLEAR_TEXT, MD5, GSS
+        NONE, CLEAR_TEXT, MD5, GSS, JAAS
     };
 
     private final Properties properties;
@@ -87,6 +88,9 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     private final CacheCounters cacheCounters = new CacheCounters();
     private AuthenticationType authenticationType;
     private Subject gssLogin;
+    private String jaasConfigName;
+    private Class<? extends Principal> jaasUserClass;
+    private Collection<Class<? extends Principal>> jaasRoleClasses;
     private final int slowLimit;
     private final int hardLimit;
 
@@ -174,7 +178,8 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
 
     @Override
     public void run() {
-        logger.info("Postgres server listening on {}:{}", host, port);
+        computeAuthenticationType();
+        logger.info("Starting Postgres server listening on {}:{} with authentication {}", host, port, authenticationType);
         Random rand = new Random();
         LongMetric bytesInMetric = null, bytesOutMetric = null;
         try {
@@ -390,34 +395,61 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
         return overrideCurrentTime;
     }
 
-    public synchronized AuthenticationType getAuthenticationType() {
-        if (authenticationType == null) {
-            if (properties.getProperty("gssConfigName") != null) {
-                authenticationType = AuthenticationType.GSS;
-            }
-            else {
-                String login = properties.getProperty("login", "none");
-                if (login.equals("none")) {
-                    authenticationType = AuthenticationType.NONE;
-                }
-                else if (login.equals("password")) {
-                    authenticationType = AuthenticationType.CLEAR_TEXT;
-                }
-                else if (login.equals("md5")) {
-                    authenticationType = AuthenticationType.MD5;
-                }
-                else {
-                    throw new IllegalArgumentException("Invalid login property: " +
-                                                       login);
-                }
-            }
-            if (authenticationType != AuthenticationType.NONE) {
-                logger.info("Authentication required {}", authenticationType);
-            }
-        }
+    public AuthenticationType getAuthenticationType() {
         return authenticationType;
     }
 
+    protected void computeAuthenticationType() {
+        if (properties.getProperty("gssConfigName") != null) {
+            authenticationType = AuthenticationType.GSS;
+        }
+        else if (properties.getProperty("jaas.configName") != null) {
+            authenticationType = AuthenticationType.JAAS;
+            jaasConfigName = properties.getProperty("jaas.configName");
+            String cprop = properties.getProperty("jaas.userClass");
+            if (cprop != null) {
+                try {
+                    jaasUserClass = Class.forName(cprop).asSubclass(Principal.class);
+                }
+                catch (ClassNotFoundException ex) {
+                    throw new IllegalArgumentException("Invalid jaas.userClass", ex);
+                }
+            }
+            cprop = properties.getProperty("jaas.roleClasses");
+            if (cprop != null) {
+                jaasRoleClasses = new ArrayList<>();
+                try {
+                    for (String c : cprop.split(",")) {
+                        jaasRoleClasses.add(Class.forName(c.trim()).asSubclass(Principal.class));
+                    }
+                }
+                catch (ClassNotFoundException ex) {
+                    throw new IllegalArgumentException("Invalid jaas.roleClasses", ex);
+                }
+            }
+        }
+        else {
+            String login = properties.getProperty("login", "none");
+            if (login.equals("none")) {
+                authenticationType = AuthenticationType.NONE;
+            }
+            else if (login.equals("password")) {
+                authenticationType = AuthenticationType.CLEAR_TEXT;
+            }
+            else if (login.equals("md5")) {
+                authenticationType = AuthenticationType.MD5;
+            }
+            else {
+                throw new IllegalArgumentException("Invalid login property: " +
+                                                   login);
+            }
+        }
+    }
+
+    /** Login to the KDC as the service for this server (using a keytab)
+     * and return the <code>Subject</code> that can then be used to
+     * authenticate a client.
+     */
     public synchronized Subject getGSSLogin() throws LoginException {
         if (gssLogin == null) {
             LoginContext lc = new LoginContext(properties.getProperty("gssConfigName"));
@@ -425,6 +457,18 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
             gssLogin = lc.getSubject();
         }
         return gssLogin;
+    }
+
+    public String getJaasConfigName() {
+        return jaasConfigName;
+    }
+
+    public Class<? extends Principal> getJaasUserClass() {
+        return jaasUserClass;
+    }
+
+    public Collection<Class<? extends Principal>> getJaasRoleClasses() {
+        return jaasRoleClasses;
     }
 
     /* ServerMonitor */

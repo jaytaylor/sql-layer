@@ -111,8 +111,9 @@ public class Base64
             protected void doEvaluate(TExecutionContext context,
                                       LazyList<? extends ValueSource> inputs,
                                       ValueTarget output) {
-                String charset = StringFactory.Charset.of(context.inputTypeAt(0).attribute(StringAttribute.CHARSET));
-                String string = inputs.get(0).getString();
+                ValueSource input = inputs.get(0);
+                String charset = StringFactory.Charset.of(input.getType().attribute(StringAttribute.CHARSET));
+                String string = input.getString();
                 try {
                     byte[] binary = string.getBytes(charset);
                     output.putString(Strings.toBase64(binary), null);

@@ -213,6 +213,11 @@ public final class ExpressionGenerators {
                     }
 
                     @Override
+                    public boolean isLiteral() {
+                        return false;
+                    }
+
+                    @Override
                     public TEvaluatableExpression build() {
                         final TEvaluatableExpression eval = expr.build();
                         return new TEvaluatableExpression() {

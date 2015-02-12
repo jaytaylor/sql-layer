@@ -62,15 +62,20 @@ public class MultiCursor extends RowCursorImpl implements BindingsAwareCursor
     @Override
     public void close()
     {
-        if (current != null) {
-            current.close();
+        try {
+            if (current != null) {
+                current.close();
+            }
+            if (openAll) {
+                while (cursorIterator.hasNext()) {
+                    current = cursorIterator.next();
+                    current.close();
+                }
+            }
+        } finally {
+            current = null;
+            super.close();
         }
-        while (cursorIterator.hasNext()) {
-            current = cursorIterator.next();
-            current.close();
-        }
-        current = null;
-        super.close();
     }
 
     @Override
@@ -106,8 +111,13 @@ public class MultiCursor extends RowCursorImpl implements BindingsAwareCursor
     private void startNextCursor()
     {
         if (cursorIterator.hasNext()) {
+            // closing last cursor
             if (current != null) {
-                current.close();
+                try {
+                    current.close();
+                } finally {
+                    current = null;
+                }
             }
             current = cursorIterator.next();
             if (!openAll) {

@@ -37,6 +37,9 @@ import com.persistit.Key;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 class IndexCursorUnidirectional<S> extends IndexCursor
 {
     // Cursor interface
@@ -62,10 +65,15 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     {
         super.next();
         Row next = null;
+        
+        if (isIdle()) {
+            return next;
+        }
+        
         boolean success = false;
         try {
             INDEX_TRAVERSE.hit();
-            if (traverse(keyComparison, true)) {
+            if (traverse(keyComparison)) {
                 next = row();
                 // Guard against bug 1046053
                 assert next != startKey;
@@ -76,7 +84,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                 if (!pastStart) {
                     while (beforeStart(next)) {
                         next = null;
-                        if (traverse(subsequentKeyComparison, true)) {
+                        if (traverse(subsequentKeyComparison)) {
                             next = row();
                         } else {
                             setIdle();
@@ -129,6 +137,9 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     {
         assert keyRange != null;
         CursorLifecycle.checkIdleOrActive(this);
+        // if the previous uses of the cursor have moved off the end (isIdle()) 
+        // reset to active state for processing
+        if (isIdle()) { setActive(); }
         keyRange =
             direction == FORWARD
             ? keyRange.resetLo(new IndexBound(row, columnSelector))
@@ -136,7 +147,6 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         initializeCursor();
         reevaluateBoundaries(context, sortKeyAdapter);
         initializeForOpen();
-        state = CursorLifecycle.CursorState.ACTIVE;
     }
 
     // IndexCursorUnidirectional interface
@@ -174,11 +184,10 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                 startKey.append(startBoundary);
             } else {
                 // Check constraints on start and end
-                ValueRecord loExpressions = lo.boundExpressions(context, bindings);
-                ValueRecord hiExpressions = hi.boundExpressions(context, bindings);
-                for (int f = 0; f < endBoundColumns - 1; f++) {
-                    keyAdapter.checkConstraints(loExpressions, hiExpressions, f, null, types);
-                }
+                // Construct start and end keys
+                
+                ValueRecord startExpressions = start.boundExpressions(context, bindings);
+                ValueRecord endExpressions = end.boundExpressions(context, bindings);
                 /*
                     Null bounds are slightly tricky. An index restriction is described by an IndexKeyRange which contains
                     two IndexBounds. The IndexBound wraps an index row. The fields of the row that are being restricted are
@@ -202,12 +211,13 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                     - lo and hi are both null: This is NOT an unbounded case. This means that we are restricting both
                       lo and hi to be null, so write null, not Key.AFTER to endKey.
                 */
-                // Construct start and end keys
-                ValueRecord startExpressions = start.boundExpressions(context, bindings);
-                ValueRecord endExpressions = end.boundExpressions(context, bindings);
                 // startBoundColumns == endBoundColumns because jump() hasn't been called.
                 // If it had we'd be in reevaluateBoundaries, not here.
                 assert startBoundColumns == endBoundColumns;
+                
+                for (int f = 0; f < startBoundColumns - 1; f++) {
+                    keyAdapter.checkConstraints(startExpressions, endExpressions, f, null, types);
+                }
                 S[] startValues = keyAdapter.createSourceArray(startBoundColumns);
                 S[] endValues = keyAdapter.createSourceArray(endBoundColumns);
                 for (int f = 0; f < startBoundColumns; f++) {
@@ -221,8 +231,25 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                 int f = 0;
                 while (f < startBoundColumns - 1) {
                     startKey.append(startValues[f], type(f));
-                    endKey.append(startValues[f], type(f));
+                    endKey.append(endValues[f], type(f));
                     f++;
+                }
+                
+                // checking for values which are null, but not literal nulls
+                // SELECT * FROM t where x = ? (parameter NULL) should return no rows
+                // SELECT * FROM t where x is NULL which should. 
+                // if this case is true, there will not be any rows returned, so
+                // idle the cursor, and return no rows quickly.
+                if (keyAdapter.isNull(startValues[f]) && !start.isLiteral(f)) {
+                    LOG.debug("Found stop case for non-literal null in start");
+                    setIdle();
+                    return;
+                }
+                endValues[f] = keyAdapter.get(endExpressions, f);
+                if (keyAdapter.isNull(endValues[f]) && !end.isLiteral(f)) {
+                    LOG.debug("Found stop case for non-literal null in end");
+                    setIdle();
+                    return;
                 }
                 // For the last column:
                 //  0   >   null      <   null:      (null, AFTER)
@@ -253,7 +280,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                                 endKey.append(endValues[f], type(f));
                             } else {
                                 // Cases 2, 6, 14:
-                                throw new IllegalArgumentException();
+                                throw new IllegalArgumentException("Bad null ordering in IndexBounds: " + startValues[f] + " to " + endValues[f]);
                             }
                         } else {
                             // Cases 0, 4, 8, 12
@@ -275,7 +302,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                                 startKey.append(startValues[f], type(f));
                             } else {
                                 // Cases 2, 6, 14:
-                                throw new IllegalArgumentException();
+                                throw new IllegalArgumentException("Bad null ordering in IndexBounds: " + startValues[f] + " to " + endValues[f]);
                             }
                         } else {
                             // Cases 0, 4, 8, 12
@@ -303,6 +330,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
                 startValues[f] = keyAdapter.get(startExpressions, f);
             }
             clearStart();
+            
             // Construct bounds of search. For first boundColumns - 1 columns, if start and end are both null,
             // interpret the nulls literally.
             int f = 0;
@@ -330,6 +358,8 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         }
     }
 
+    // TODO : Once the Persistit storage engine is removed, the FDB storage engine
+    // does a correct job of selecting the range, and this method can be removed.
     protected boolean beforeStart(Row row)
     {
         boolean beforeStart = false;
@@ -341,6 +371,8 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         return beforeStart;
     }
 
+    // TODO : Once the Persistit storage engine is removed, the FDB storage engine
+    // does a correct job of selecting the range, and this method can be removed.
     protected boolean pastEnd(Row row)
     {
         boolean pastEnd;
@@ -432,6 +464,11 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     private void initializeForOpen()
     {
         clear();
+        // This can happen if evaluateBoundaries() finds non-literal nulls for the last values
+        // of the scan range. If this is true, skip this process.
+        if (isIdle()) {
+            return; 
+        }
         if (startKey != null) {
             // boundColumns > 0 means that startKey has some values other than BEFORE or AFTER. start == null
             // could happen in a lexicographic scan, and indicates no lower bound (so we're starting at BEFORE or AFTER).
@@ -450,10 +487,14 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             // scan may specify a value for both. But the persistit search can only deal with the [childPK] part of
             // the traversal.
             startKey.copyPersistitKeyTo(key());
+            //Copy endKey into key->FDBIterationHelper ->storeData.endKey 
+            // which sets an upper bound on the scan range
+            if (endKey != null)
+                endKey.copyPersistitKeyTo(endKey());
             pastStart = false;
         }
         keyComparison = initialKeyComparison;
-        iterationHelper.preload(keyComparison, true);
+        iterationHelper.preload(keyComparison);
     }
 
     private Index index()
@@ -520,4 +561,5 @@ class IndexCursorUnidirectional<S> extends IndexCursor
     private Key endKeyKey;
     private boolean pastStart;
     private SortKeyAdapter<S, ?> sortKeyAdapter;
+    private static final Logger LOG = LoggerFactory.getLogger(IndexCursorUnidirectional.class);
 }

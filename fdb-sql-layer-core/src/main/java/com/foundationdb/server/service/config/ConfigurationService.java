@@ -90,5 +90,6 @@ public interface ConfigurationService
 
     long queryTimeoutMilli();
     void queryTimeoutMilli(long queryTimeoutMilli);
+    String getInstanceID();
     boolean testing();
 }

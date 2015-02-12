@@ -104,12 +104,15 @@ class PersistitGroupCursor extends RowCursorImpl implements GroupCursor
     @Override
     public void close()
     {
-        groupScan = null;
-        if (exchange != null) {
-            adapter.returnExchange(exchange);
-            exchange = null;
+        try {
+            groupScan = null;
+            if (exchange != null) {
+                adapter.returnExchange(exchange);
+                exchange = null;
+            }
+        } finally {
+            super.close();
         }
-        super.close();
     }
 
     // For use by this package

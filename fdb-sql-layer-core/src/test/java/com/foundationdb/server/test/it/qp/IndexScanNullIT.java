@@ -168,15 +168,6 @@ public class IndexScanNullIT extends OperatorITBase
         } catch (IllegalArgumentException e) {
             // expected
         }
-        // restrict both columns, mixed-mode
-        try {
-            test(range(INCLUSIVE, null, 8,
-                       INCLUSIVE, null, null),
-                 ordering(ASC, DESC));
-            fail();
-        } catch (IllegalArgumentException e) {
-            // expected
-        }
     }
 
     @Ignore

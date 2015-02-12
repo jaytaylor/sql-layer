@@ -144,6 +144,13 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
                 queryTimeoutMilli = (long)(Double.parseDouble(value) * 1000);
             return true;
         }
+        if ("statement_timeout".equals(key)) {
+            if (value == null)
+                queryTimeoutMilli = null;
+            else
+                queryTimeoutMilli = Long.parseLong(value);
+            return true;
+        }
         if ("transactionPeriodicallyCommit".equals(key)) {
             transactionPeriodicallyCommit = ServerTransaction.PeriodicallyCommit.fromProperty(value);
             return true;
@@ -298,6 +305,23 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     @Override
+    public void setTransactionPeriodicallyCommit(ServerTransaction.PeriodicallyCommit periodicallyCommit) {
+        this.transactionPeriodicallyCommit = periodicallyCommit;
+    }
+
+    @Override
+    public IsolationLevel getTransactionIsolationLevel() {
+        IsolationLevel level;
+        if (transaction == null)
+            level = transactionDefaultIsolationLevel;
+        else
+            level = transaction.getIsolationLevel();
+        if (level == IsolationLevel.UNSPECIFIED_ISOLATION_LEVEL)
+            level = getTransactionService().actualIsolationLevel(level);
+        return level;
+    }
+
+    @Override
     public IsolationLevel setTransactionIsolationLevel(IsolationLevel level) {
         if (transaction == null)
             throw new NoTransactionInProgressException();
@@ -308,11 +332,6 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     public IsolationLevel setTransactionDefaultIsolationLevel(IsolationLevel level) {
         this.transactionDefaultIsolationLevel = getTransactionService().actualIsolationLevel(level);
         return this.transactionDefaultIsolationLevel;
-    }
-
-    @Override
-    public void setTransactionPeriodicallyCommit(ServerTransaction.PeriodicallyCommit periodicallyCommit) {
-        this.transactionPeriodicallyCommit = periodicallyCommit;
     }
 
     @Override
@@ -410,9 +429,12 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
                 break;
             case WRITE:
             case NEW_WRITE:
-                if (transactionDefaultReadOnly)
+                transaction = new ServerTransaction(this, transactionDefaultReadOnly, transactionDefaultIsolationLevel, transactionPeriodicallyCommit);
+                if (transaction.isReadOnly()) {
+                    transaction.abort();
+                    transaction = null;
                     throw new TransactionReadOnlyException();
-                transaction = new ServerTransaction(this, false, transactionDefaultIsolationLevel, transactionPeriodicallyCommit);
+                }
                 transaction.beforeUpdate();
                 localTransaction = true;
                 break;
@@ -502,6 +524,13 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
                            ServerRoutineInvocation invocation,
                            boolean topLevel, boolean success) {
         return false;
+    }
+
+    /** Called when embedded connection is closed, in case {@link inheritFromCall} was
+     * invoked at top-level. */
+    protected void endExplicit() {
+        ServerCallContextStack stack = ServerCallContextStack.get();
+        stack.endCallee(this);
     }
 
     public boolean shouldNotify(QueryContext.NotificationLevel level) {

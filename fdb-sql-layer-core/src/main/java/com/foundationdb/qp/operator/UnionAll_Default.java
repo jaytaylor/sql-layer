@@ -154,15 +154,9 @@ final class UnionAll_Default extends SetOperatorBase {
 
         @Override
         public void close() {
-            if (!leftInput.isClosed()) {
-                leftInput.close();
-            }
-            if (!rightInput.isClosed()) {
-                rightInput.close();
-            }
             currentCursor = null;
             currentInputRowType = null;
-            state = CursorLifecycle.CursorState.CLOSED;
+            super.close();
         }
 
         @Override 

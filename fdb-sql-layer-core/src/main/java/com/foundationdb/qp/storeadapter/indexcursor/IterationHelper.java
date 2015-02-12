@@ -25,6 +25,7 @@ public interface IterationHelper
 {
     /** Get the (stateful) key associated with this helper. */
     Key key();
+    Key endKey();
 
     /** Clear internal state, including the {@link #key()}. */
     void clear();
@@ -39,38 +40,21 @@ public interface IterationHelper
      * Get the row for that last advancement.
      * <p/>
      * <i>
-     *     Note: {@link #next(boolean)}, {@link #prev(boolean)}, or {@link #traverse(Direction, boolean)} must
-     *     be called prior to this method.
+     *     Note: {@link #traverse(Direction, boolean)} must be called prior to this method.
      * </i>
      */
     Row row();
 
     /**
-     * Advance internal state by finding the next key.
-     * @param deep  <code>true</code> if the next physical key is desired, <code>false</code> if logical is.
-     * @return <code>true</code> if there was a key/value to traverse to.
-     */
-    boolean next(boolean deep);
-
-    /**
-     * Advance internal state by finding the previous key.
-     * @param deep  <code>true</code> if the next physical key is desired, <code>false</code> if logical is.
-     * @return <code>true</code> if there was a key/value to traverse to.
-     */
-    boolean prev(boolean deep);
-
-    /**
      * Advance internal state.
      * @param dir The direction to advance in.
-     * @param deep <code>true</code> if the next physical key is desired, <code>false</code> if logical is.
      * @return <code>true</code> if there was a key/value to traverse to.
      */
-    boolean traverse(Direction dir, boolean deep);
+    boolean traverse(Direction dir);
 
     /**
      * Start cursor for given direction if that can be done asynchronously.
      * @param dir The direction to advance in.
-     * @param deep <code>true</code> if the next physical key is desired, <code>false</code> if logical is.
      */
-    void preload(Direction dir, boolean deep);
+    void preload(Direction dir);
 }

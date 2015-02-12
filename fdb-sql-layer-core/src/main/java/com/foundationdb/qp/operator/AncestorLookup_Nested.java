@@ -334,13 +334,16 @@ class AncestorLookup_Nested extends Operator
             Row row;
             ancestorCursor.rebind(hKey, false);
             ancestorCursor.open();
-            row = ancestorCursor.next();
-            // Retrieved row might not actually be what we were looking for -- not all ancestors are present,
-            // (there are orphan rows).
-            if (row != null && !hKey.equals(row.hKey())) {
-                row = null;
+            try {
+                row = ancestorCursor.next();
+                // Retrieved row might not actually be what we were looking for -- not all ancestors are present,
+                // (there are orphan rows).
+                if (row != null && !hKey.equals(row.hKey())) {
+                    row = null;
+                }
+            } finally {
+                ancestorCursor.close();
             }
-            ancestorCursor.close();
             return row;
         }
 
@@ -359,10 +362,28 @@ class AncestorLookup_Nested extends Operator
             super.open();
             Row rowFromBindings = bindings.getRow(inputBindingPosition);
             assert rowFromBindings.rowType() == rowType : rowFromBindings;
-            for (int i = 0; i < hKeys.length; i++) {
-                hKeys[i] = rowFromBindings.ancestorHKey(ancestors.get(i));
-                cursors[i].rebind(hKeys[i], false);
-                cursors[i].open();
+            try {
+                for (int i = 0; i < hKeys.length; i++) {
+                    hKeys[i] = rowFromBindings.ancestorHKey(ancestors.get(i));
+                    cursors[i].rebind(hKeys[i], false);
+                    cursors[i].open();
+                }
+            } catch (Exception e) {
+                try {
+                    for (GroupCursor c : cursors) {
+                        try {
+                            if (!c.isClosed()) {
+                                c.close();
+                            }
+                        } catch (Exception innerE) {
+                            LOG.warn("Failed to close cursor", e);
+                        }
+                    }
+                } catch (Exception innerE2) {
+                    LOG.warn("Failed to close nested cursors", e);
+                } finally {
+                    throw e;
+                }
             }
             cursorIndex = 0;
         }
@@ -384,10 +405,13 @@ class AncestorLookup_Nested extends Operator
 
         @Override
         public void close() {
-            for (GroupCursor cursor : cursors) {
-                cursor.close();
+            try {
+                for (GroupCursor cursor : cursors) {
+                    cursor.close();
+                }
+            } finally {
+                super.close();
             }
-            super.close();
         }
 
         @Override
@@ -397,7 +421,7 @@ class AncestorLookup_Nested extends Operator
 
         @Override
         public boolean isActive() {
-            return ((cursorIndex < cursors.length) && cursors[cursorIndex].isActive());
+            return ((cursors != null ) && (cursorIndex < cursors.length) && cursors[cursorIndex].isActive());
         }
 
         @Override

@@ -26,12 +26,14 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.service.dxl.DXLFunctionsHook.DXLFunction;
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 
 import java.io.IOException;
 import java.util.List;
 
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.Tap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -129,8 +131,9 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
     }
     
     @Override
-    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
+    public PostgresStatementResult execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
+        server.getSessionMonitor().countEvent(StatementTypes.DML_STMT);
         PostgresMessenger messenger = server.getMessenger();
         int rowsModified = 0;
         if (resultOperator != null) {
@@ -182,15 +185,10 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
             }
         }
         
-        messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
         //TODO: Find a way to extract InsertNode#statementToString() or equivalent
-        if (isInsert()) {
-            messenger.writeString(statementType + " 0 " + rowsModified);
-        } else {
-            messenger.writeString(statementType + " " + rowsModified);
-        }
-        messenger.sendMessage();
-        return 0;
+        return commandComplete(isInsert() ?
+                               (statementType + " 0 " + rowsModified) :
+                               (statementType + " " + rowsModified));
     }
 
     @Override

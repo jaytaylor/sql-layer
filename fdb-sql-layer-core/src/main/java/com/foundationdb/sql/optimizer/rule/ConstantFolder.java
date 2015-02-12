@@ -190,15 +190,15 @@ public class ConstantFolder extends BaseRule
             }
             return cond;
         }
-        
+
+        /** @return {@code true} if the given condition is an idempotent equality comparison. */
         protected boolean isIdempotentEquality(ComparisonCondition cond) {
             if (cond.getOperation() != Comparison.EQ)
                 return false;
             ExpressionNode left = cond.getLeft();
             if (!left.equals(cond.getRight()))
                 return false;
-            if ((left instanceof FunctionExpression) &&
-                !isIdempotent((FunctionExpression)left))
+            if ((left instanceof FunctionExpression) && !isIdempotent((FunctionExpression)left))
                 return false;
             return true;
         }
@@ -276,15 +276,13 @@ public class ConstantFolder extends BaseRule
             return lfun;
         }
 
+        /** @return {@code true} if the given function is invariant for any particular execution of a query. */
         protected boolean isIdempotent(FunctionExpression fun) {
-            // TODO: Nice to get this from some functions repository
-            // associated with their implementations.
-            // Why do we even need this? Why can't we just know if the function is const?
             String fname = fun.getFunction();
-            return !("currentDate".equals(fname) ||
-                     "currentTime".equals(fname) ||
-                     "currentTimestamp".equals(fname) ||
-                     "RAND".equals(fname));
+            // current date/time methods fixed at transaction start.
+            return "current_date".equals(fname) ||
+                   "current_time".equals(fname) ||
+                   "current_timestamp".equals(fname);
         }
 
         protected ExpressionNode isNullExpression(FunctionExpression fun) {
@@ -820,13 +818,22 @@ public class ConstantFolder extends BaseRule
 
         protected ExpressionNode genericFunctionExpression(FunctionExpression fun) {
             TPreptimeValue preptimeValue = fun.getPreptimeValue();
-            return (preptimeValue.value() == null)
-                    ? fun
-                    : new ConstantExpression(preptimeValue);
+            if (preptimeValue.value() == null)
+                return fun;
+
+            if (fun instanceof FunctionCondition) {
+                return newBooleanConstant(getBooleanObject(preptimeValue), fun);
+            }
+
+            return new ConstantExpression(preptimeValue);
         }
 
         protected Boolean getBooleanObject(ConstantExpression expression) {
-            ValueSource value = expression.getPreptimeValue().value();
+            return getBooleanObject(expression.getPreptimeValue());
+        }
+
+        protected Boolean getBooleanObject(TPreptimeValue preptimeValue) {
+            ValueSource value = preptimeValue.value();
             return value == null || value.isNull()
                     ? null
                     : value.getBoolean();

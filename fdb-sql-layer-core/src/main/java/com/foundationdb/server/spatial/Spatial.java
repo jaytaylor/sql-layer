@@ -27,6 +27,8 @@ import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.io.ParseException;
 import com.vividsolutions.jts.io.WKBReader;
 import com.vividsolutions.jts.io.WKBWriter;
+import com.vividsolutions.jts.io.WKTReader;
+import com.vividsolutions.jts.io.WKTWriter;
 
 /*
 
@@ -71,22 +73,28 @@ public class Spatial
         space.decompose(spatialObject, zs);
     }
 
-    public static Object serializeIfSpatial(Object object)
+    public static byte[] serializeWKB(JTSSpatialObject spatialObject)
     {
+        return io.get().wkbWriter().write(spatialObject.geometry());
+    }
+
+    public static SpatialObject deserializeWKB(Space space, byte[] bytes) throws ParseException
+    {
+        Geometry geometry = io.get().wkbReader().read(bytes);
         return
-            object instanceof JTSSpatialObject
-            ? serialize((JTSSpatialObject) object)
-            : object;
+            geometry instanceof Point
+            ? JTS.spatialObject(space, (Point) geometry)
+            : JTS.spatialObject(space, geometry);
     }
 
-    public static byte[] serialize(JTSSpatialObject spatialObject)
+    public static String serializeWKT(JTSSpatialObject spatialObject)
     {
-        return io.get().writer().write(spatialObject.geometry());
+        return io.get().wktWriter().write(spatialObject.geometry());
     }
 
-    public static SpatialObject deserialize(Space space, byte[] bytes) throws ParseException
+    public static SpatialObject deserializeWKT(Space space, String string) throws ParseException
     {
-        Geometry geometry = io.get().reader().read(bytes);
+        Geometry geometry = io.get().wktReader().read(string);
         return
             geometry instanceof Point
             ? JTS.spatialObject(space, (Point) geometry)
@@ -114,24 +122,42 @@ public class Spatial
 
     private static class IO
     {
-        public WKBReader reader()
+        public WKBReader wkbReader()
         {
-            if (reader == null) {
-                reader = new WKBReader(factory);
+            if (wkbReader == null) {
+                wkbReader = new WKBReader(factory);
             }
-            return reader;
+            return wkbReader;
         }
 
-        public WKBWriter writer()
+        public WKBWriter wkbWriter()
         {
-            if (writer == null) {
-                writer = new WKBWriter();
+            if (wkbWriter == null) {
+                wkbWriter = new WKBWriter();
             }
-            return writer;
+            return wkbWriter;
+        }
+
+        public WKTReader wktReader()
+        {
+            if (wktReader == null) {
+                wktReader = new WKTReader(factory);
+            }
+            return wktReader;
+        }
+
+        public WKTWriter wktWriter()
+        {
+            if (wktWriter == null) {
+                wktWriter = new WKTWriter();
+            }
+            return wktWriter;
         }
 
         private final GeometryFactory factory = new GeometryFactory();
-        private WKBReader reader;
-        private WKBWriter writer;
+        private WKBReader wkbReader;
+        private WKBWriter wkbWriter;
+        private WKTReader wktReader;
+        private WKTWriter wktWriter;
     }
 }

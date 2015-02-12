@@ -38,10 +38,20 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Method;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
+import javax.security.auth.Subject;
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.NameCallback;
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.callback.UnsupportedCallbackException;
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -51,8 +61,11 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 public class SecurityServiceImpl implements SecurityService, Service {
     public static final String SCHEMA = TableName.SECURITY_SCHEMA;
@@ -313,42 +326,13 @@ public class SecurityServiceImpl implements SecurityService, Service {
     }
 
     @Override
-    public User authenticate(Session session, String name, String password) {
-        String expected = md5Password(name, password);
-        User user = null;
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        try {
-            conn = openConnection();
-            stmt = conn.prepareStatement(GET_USER_SQL);
-            stmt.setString(1, name);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next() && expected.equals(rs.getString(5))) {
-                user = getUser(rs);
-            }
-            rs.close();
-            conn.commit();
-        }
-        catch (SQLException ex) {
-            throw new SecurityException("Error adding role", ex);
-        }
-        finally {
-            cleanup(conn, stmt);
-        }
-        if (user == null) {
-            throw new AuthenticationFailedException("invalid username or password");
-        }
-        if (session != null) {
-            session.put(SESSION_KEY, user);
-        }
-        if (monitor.getUserMonitor(user.getName()) == null) {
-            monitor.registerUserMonitor(new UserMonitorImpl(user.getName()));
-        }
-        return user;
+    public Principal authenticateLocal(Session session, String name, String password) {
+        return authenticateLocal(session, name, password, null);
     }
 
     @Override
-    public User authenticate(Session session, String name, String password, byte[] salt) {
+    public Principal authenticateLocal(Session session, String name, String password,
+                                       byte[] salt) {
         User user = null;
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -357,8 +341,13 @@ public class SecurityServiceImpl implements SecurityService, Service {
             stmt = conn.prepareStatement(GET_USER_SQL);
             stmt.setString(1, name);
             ResultSet rs = stmt.executeQuery();
-            if (rs.next() && password.equals(salted(rs.getString(5), salt))) {
-                user = getUser(rs);
+            if (rs.next()) {
+                String md5 = rs.getString(5);
+                if ((salt == null) ?
+                    md5Password(name, password).equals(md5) :
+                    password.equals(salted(md5, salt))) {
+                    user = getUser(rs);
+                }
             }
             rs.close();
             conn.commit();
@@ -373,7 +362,8 @@ public class SecurityServiceImpl implements SecurityService, Service {
             throw new AuthenticationFailedException("invalid username or password");
         }
         if (session != null) {
-            session.put(SESSION_KEY, user);
+            session.put(SESSION_PRINCIPAL_KEY, user);
+            session.put(SESSION_ROLES_KEY, user.getRoles());
         }
         if (monitor.getUserMonitor(user.getName()) == null) {
             monitor.registerUserMonitor(new UserMonitorImpl(user.getName()));
@@ -467,33 +457,20 @@ public class SecurityServiceImpl implements SecurityService, Service {
         finally {
             cleanup(conn, stmt);
         }
-        session.remove(SESSION_KEY);
+        session.remove(SESSION_PRINCIPAL_KEY);
+        session.remove(SESSION_ROLES_KEY);
     }
 
     @Override
-    /** If this session is authenticated, does it have access to the given schema?
-     *
-     * NOTE: If authentication is enabled, caller must not call this (that is, allow
-     * any queries) without authentication, since that is indistinguishable from
-     * authentication disabled.
-     *
-     * @see com.foundationdb.sql.pg.PostgresServerConnection#authenticationOkay
-     */
     public boolean isAccessible(Session session, String schema) {
-        User user = session.get(SESSION_KEY);
+        Principal user = session.get(SESSION_PRINCIPAL_KEY);
         if (user == null) return true; // Authentication disabled.
-        return isAccessible(user.getName(), schema) || user.hasRole(ADMIN_ROLE);
+        if (isAccessible(user.getName(), schema)) return true;
+        Collection<String> roles = session.get(SESSION_ROLES_KEY);
+        return ((roles != null) && roles.contains(ADMIN_ROLE));
     }
 
     @Override
-    /** If this request user is authenticated, does it have access to the given schema?
-     *
-     * NOTE: If authentication is enabled, caller must not call this (that is, allow
-     * any queries) without authentication, since that is indistinguishable from
-     * authentication disabled.
-     *
-     * @see com.foundationdb.http.HttpConductorImpl.AuthenticationType
-     */
     public boolean isAccessible(Principal user, boolean inAdminRole, String schema) {
         if (user == null) return true; // Authentication disabled.
         if (inAdminRole) return true;
@@ -509,12 +486,121 @@ public class SecurityServiceImpl implements SecurityService, Service {
     }
 
     @Override
-    /** If this session is authenticated, does it administrative access?
-     */
     public boolean hasRestrictedAccess(Session session) {
-        User user = session.get(SESSION_KEY);
+        Principal user = session.get(SESSION_PRINCIPAL_KEY);
         if (user == null) return true; // Authentication disabled.
-        return user.hasRole(ADMIN_ROLE);
+        Collection<String> roles = session.get(SESSION_ROLES_KEY);
+        return ((roles != null) && roles.contains(ADMIN_ROLE));
+    }
+
+    @Override
+    public void setAuthenticated(Session session, Principal user, boolean inAdminRole) {
+        Collection<String> roles;
+        if (inAdminRole)
+            roles = Collections.singleton(ADMIN_ROLE);
+        else
+            roles = Collections.emptyList();
+        session.put(SESSION_PRINCIPAL_KEY, user);
+        session.put(SESSION_ROLES_KEY, roles);
+    }
+
+    @Override
+    public Principal authenticateJaas(Session session, String name, String password,
+                                      String configName, Class<? extends Principal> userClass, Collection<Class<? extends Principal>> roleClasses) {
+        Subject subject;
+        try {
+            LoginContext login = new LoginContext(configName, new NamePasswordCallbackHandler(name, password));
+            login.login();
+            subject = login.getSubject();
+        }
+        catch (LoginException ex) {
+            throw new AuthenticationFailedException(ex);
+        }
+        Set<? extends Principal> allPrincs = (userClass == null) ?
+            new HashSet<>(subject.getPrincipals()) :
+            subject.getPrincipals(userClass);
+        Collection<String> roles = null;
+        if (roleClasses != null) {
+            roles = new HashSet<>();
+            for (Class<? extends Principal> clazz : roleClasses) {
+                Set<? extends Principal> rolePrincs = subject.getPrincipals(clazz);
+                allPrincs.removeAll(rolePrincs);
+                for (Principal role : rolePrincs) {
+                    roles.add(role.getName());
+                }
+            }
+        }
+        Principal user;
+        if (allPrincs.isEmpty())
+            throw new AuthenticationFailedException("Authentication successful but no Principals returned");
+        user = allPrincs.iterator().next();
+        if (roleClasses == null) {
+            User localUser = getUser(user.getName());
+            if (localUser != null) {
+                roles = localUser.getRoles();
+            }
+        }
+        logger.debug("For user {}:\n{}\n  Chose principal {}, roles {}", name, subject, user, roles);
+        session.put(SESSION_PRINCIPAL_KEY, user);
+        session.put(SESSION_ROLES_KEY, roles);
+        return user;
+    }
+
+    protected static class NamePasswordCallbackHandler implements CallbackHandler {
+        private final String name, password;
+
+        public NamePasswordCallbackHandler(String name, String password) {
+            this.name = name;
+            this.password = password;
+        }
+
+        @Override
+        public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
+            for (Callback callback : callbacks) {
+                if (callback instanceof NameCallback) {
+                    ((NameCallback)callback).setName(name);
+                }
+                else if (callback instanceof PasswordCallback) {
+                    ((PasswordCallback)callback).setPassword(password.toCharArray());
+                }
+                else if (jettyCallback(callback)) {
+                    try {
+                        jettySetObjectMethod.invoke(callback, password);
+                    }
+                    catch (ReflectiveOperationException ex) {
+                        throw new IOException(ex);
+                    }
+                }
+                else {
+                    throw new UnsupportedCallbackException(callback);
+                }
+            }
+        }
+
+        // Avoid a dependency on all of jetty-plus just to get a one
+        // line method that might be used.
+
+        static Class<?> jettyObjectCallbackClass;
+        static Method jettySetObjectMethod;
+
+        static boolean jettyCallback(Callback callback) {
+            if (jettyObjectCallbackClass != null) {
+                return jettyObjectCallbackClass.isInstance(callback);
+            }
+            else if ("org.eclipse.jetty.plus.jaas.callback.ObjectCallback".equals(callback.getClass().getName())) {
+                try {
+                    jettySetObjectMethod = callback.getClass().getMethod("setObject", Object.class);
+                }
+                catch (ReflectiveOperationException ex) {
+                    return false;
+                }
+                jettyObjectCallbackClass = callback.getClass();
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
     }
 
     /* Service */

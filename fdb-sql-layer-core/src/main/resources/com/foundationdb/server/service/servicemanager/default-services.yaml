@@ -40,8 +40,9 @@
     com.foundationdb.server.store.Store : com.foundationdb.server.store.FDBStore
     com.foundationdb.server.store.statistics.IndexStatisticsService : com.foundationdb.server.store.statistics.FDBIndexStatisticsService
     com.foundationdb.server.service.transaction.TransactionService : com.foundationdb.server.store.FDBTransactionService
-    #com.foundationdb.server.service.metrics.MetricsService : com.foundationdb.server.service.metrics.FDBMetricsService
-    com.foundationdb.server.service.metrics.MetricsService : com.foundationdb.server.service.metrics.DummyMetricsService
+    com.foundationdb.server.service.statusmonitor.StatusMonitorService : com.foundationdb.server.service.statusmonitor.StatusMonitorServiceImpl
+    com.foundationdb.server.service.metrics.MetricsService : com.foundationdb.server.service.metrics.FDBMetricsService
+    #com.foundationdb.server.service.metrics.MetricsService : com.foundationdb.server.service.metrics.DummyMetricsService
     com.foundationdb.sql.optimizer.rule.cost.CostModelFactory : com.foundationdb.sql.optimizer.rule.cost.PersistitCostModelService
     com.foundationdb.server.service.text.FullTextIndexService: com.foundationdb.server.service.text.ThrowingFullTextService
     com.foundationdb.server.service.blob.LobService : com.foundationdb.server.service.blob.LobServiceImpl

@@ -31,6 +31,7 @@ public interface TableStatusCache {
      * @return Associated TableStatus.
      */
     TableStatus createTableStatus(int tableID);
+    TableStatus createTableStatus(Table table);
 
     /**
      * Retrieve, or create, a new table status for a memory table that will be

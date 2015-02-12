@@ -35,10 +35,10 @@ public interface RoutineLoader
     public JarFile openSQLJJarFile(Session session, TableName jarName) throws IOException;
 
     public LoadablePlan<?> loadLoadablePlan(Session session, TableName routineName);
-    public Method loadJavaMethod(Session session, TableName routineName);
+    public Method loadJavaMethod(Session session, TableName routineName, long[] ret_aisGeneration);
     public boolean isScriptLanguage(Session session, String language);
-    public ScriptPool<ScriptEvaluator> getScriptEvaluator(Session session, TableName routineName);
-    public ScriptPool<ScriptInvoker> getScriptInvoker(Session session, TableName routineName);
-    public ScriptPool<ScriptLibrary> getScriptLibrary(Session session, TableName routineName);
+    public ScriptPool<ScriptEvaluator> getScriptEvaluator(Session session, TableName routineName, long[] ret_aisGeneration);
+    public ScriptPool<ScriptInvoker> getScriptInvoker(Session session, TableName routineName, long[] ret_aisGeneration);
+    public ScriptPool<ScriptLibrary> getScriptLibrary(Session session, TableName routineName, long[] ret_aisGeneration);
     public void checkUnloadRoutine(Session session, TableName routineName);
 }

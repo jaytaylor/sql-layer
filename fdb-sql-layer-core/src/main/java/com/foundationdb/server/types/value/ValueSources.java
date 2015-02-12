@@ -26,6 +26,7 @@ import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
+import com.foundationdb.server.types.aksql.aktypes.AkGeometry;
 import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 import com.foundationdb.server.types.aksql.aktypes.AkBlob;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
@@ -39,6 +40,7 @@ import com.foundationdb.util.ByteSource;
 import com.foundationdb.util.WrappingByteSource;
 import com.geophile.z.SpatialObject;
 import com.geophile.z.spatialobject.jts.JTSSpatialObject;
+import com.vividsolutions.jts.geom.Geometry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -130,9 +132,16 @@ public final class ValueSources {
                     value.putBytes((byte[])object);
                 else if (object instanceof ByteSource)
                     value.putBytes(((ByteSource)object).toByteSubarray());
+                else if (object instanceof JTSSpatialObject)
+                    value.putBytes(Spatial.serializeWKB((JTSSpatialObject) object));
                 break;
             case STRING:
-                throw new IllegalArgumentException("Unsafe toString(): " + object.getClass());
+                if ((object instanceof JTSSpatialObject)) {
+                    value = new Value(type, Spatial.serializeWKT((JTSSpatialObject) object));
+                } else {
+                    throw new IllegalArgumentException("Unsafe toString(): " + object.getClass());
+                }
+                break;
             case BOOL:
                 if (object instanceof Boolean)
                     value.putBool((Boolean)object);
@@ -280,10 +289,6 @@ public final class ValueSources {
             type = MNumeric.TINYINT.instance(false);
             value = new Value(type, (Byte)object);
         }
-        else if (object instanceof SpatialObject) {
-            type = MBinary.VARBINARY.instance(65535, false);
-            value = new Value(type, Spatial.serialize((JTSSpatialObject) object));
-        } 
         else if (object instanceof UUID) {
             type = AkGUID.INSTANCE.instance(false);
             value = new Value(type);
@@ -366,6 +371,13 @@ public final class ValueSources {
             logger.error("Blob with underlying object of : {}", source.getObject().getClass());
         }
         
+        if (source.getType().typeClass() == AkGeometry.INSTANCE.widestComparable()) {
+            if (source.getObject() instanceof Geometry) {
+                return (Geometry) source.getObject();
+            }
+            logger.error("Geometry with underlying object of : {}", source.getObject().getClass());
+        }
+
         if (source.getType().typeClass() == MBinary.VARBINARY) {
             return new WrappingByteSource(source.getBytes());
         }

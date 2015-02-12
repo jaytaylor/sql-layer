@@ -28,12 +28,11 @@ import com.foundationdb.sql.parser.ExplainStatementNode;
 import com.foundationdb.sql.parser.ParameterNode;
 import com.foundationdb.sql.parser.StatementNode;
 import com.foundationdb.sql.server.ServerValueEncoder;
-
 import com.foundationdb.qp.operator.QueryBindings;
-
 import com.foundationdb.server.explain.Explainable;
 import com.foundationdb.server.explain.format.DefaultFormatter;
 import com.foundationdb.server.explain.format.JsonFormatter;
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.server.types.TClass;
 
 import java.util.Collections;
@@ -42,7 +41,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 /** SQL statement to explain another one. */
-public class PostgresExplainStatement implements PostgresStatement
+public class PostgresExplainStatement extends PostgresStatementResults
+                                      implements PostgresStatement
 {
     private OperatorCompiler compiler; // Used only to finish generation
     private List<String> explanation;
@@ -113,8 +113,9 @@ public class PostgresExplainStatement implements PostgresStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
+    public PostgresStatementResult execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
+        server.getSessionMonitor().countEvent(StatementTypes.OTHER_STMT);
         PostgresMessenger messenger = server.getMessenger();
         ServerValueEncoder encoder = server.getValueEncoder();
         int nrows = 0;
@@ -129,12 +130,7 @@ public class PostgresExplainStatement implements PostgresStatement
             if ((maxrows > 0) && (nrows >= maxrows))
                 break;
         }
-        {        
-            messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-            messenger.writeString("EXPLAIN " + nrows);
-            messenger.sendMessage();
-        }
-        return nrows;
+        return commandComplete("EXPLAIN " + nrows, nrows);
     }
 
     @Override

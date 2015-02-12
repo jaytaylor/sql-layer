@@ -30,6 +30,7 @@ import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.externaldata.CsvFormat;
 import com.foundationdb.server.service.externaldata.ExternalDataService;
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.sql.server.ServerTransaction;
 import com.foundationdb.util.tap.InOutTap;
@@ -136,8 +137,9 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
+    public PostgresStatementResult execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
+        server.getSessionMonitor().countEvent(StatementTypes.OTHER_STMT);
         Session session = server.getSession();
         ExternalDataService externalData = server.getExternalDataService();
         InputStream istr;
@@ -170,13 +172,7 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
             postExecute(context, DXLFunction.UNSPECIFIED_DML_WRITE);
             istr.close();
         }
-        {        
-            PostgresMessenger messenger = server.getMessenger();
-            messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-            messenger.writeString("COPY " + nrows);
-            messenger.sendMessage();
-        }
-        return 0;
+        return commandComplete("COPY " + nrows);
     }
 
     @Override

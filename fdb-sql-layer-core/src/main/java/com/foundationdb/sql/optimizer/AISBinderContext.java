@@ -19,16 +19,15 @@ package com.foundationdb.sql.optimizer;
 
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.parser.CreateViewNode;
+import com.foundationdb.sql.parser.ResultColumn;
 import com.foundationdb.sql.parser.SQLParser;
 import com.foundationdb.sql.parser.SQLParserFeature;
-
+import com.foundationdb.sql.server.ServerSession;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.View;
-
 import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.error.ViewHasBadSubqueryException;
-
 import com.foundationdb.server.types.service.TypesRegistryServiceImpl;
 
 import java.util.*;
@@ -231,21 +230,34 @@ public class AISBinderContext
     }
 
     /** Get view definition given the user's DDL. */
-    public AISViewDefinition getViewDefinition(CreateViewNode ddl) {
+    public AISViewDefinition getViewDefinition(CreateViewNode ddl, ServerSession server) {
         try {
-            AISViewDefinition view = new AISViewDefinition(ddl, parser);
             // Just want the definition for result columns and table references.
             // If the view uses another view, the inner one is treated
             // like a table for those purposes.
+            AISViewDefinition view = new AISViewDefinition(ddl, parser);
             binder.bind(view.getSubquery(), false);
-            if (typeComputer != null)
+            view.getTableColumnReferences(); // get the references before expanding views
+            if (typeComputer != null) {
                 typeComputer.compute(view.getSubquery());
+            }
+            if (!viewHasTypes(view)) {
+                ViewCompiler compiler = new ViewCompiler(server, server.getServiceManager().getStore());
+                compiler.findAndSetTypes(view);
+            }
             return view;
         }
         catch (StandardException ex) {
             throw new ViewHasBadSubqueryException(ddl.getObjectName().toString(), 
                                                   ex.getMessage());
         }
+    }
+
+    public boolean viewHasTypes(AISViewDefinition view) {
+        for (ResultColumn col : view.getResultColumns()) {
+            if (col.getType() == null) return false;
+        }
+        return true;
     }
 
     /** Get view definition using stored copy of original DDL. */

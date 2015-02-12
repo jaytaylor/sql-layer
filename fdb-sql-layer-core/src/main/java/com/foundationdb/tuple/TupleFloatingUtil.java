@@ -52,8 +52,9 @@ class TupleFloatingUtil {
     static final byte BIGINT_POS_CODE = 0x1d;
     static final byte BIGDEC_NEG_CODE = 0x23;
     static final byte BIGDEC_POS_CODE = 0x24;
-    static final byte TRUE_CODE = 0x25;
+    static final byte DEPRECATED_TRUE_CODE = 0x25;
     static final byte FALSE_CODE = 0x26;
+    static final byte TRUE_CODE = 0x27;
     static final byte UUID_CODE = 0x30;
 
     static byte[] floatingPointToByteArray (float value) {
@@ -294,6 +295,9 @@ class TupleFloatingUtil {
         }
         if (code == BIGINT_POS_CODE || code == BIGINT_NEG_CODE) {
             return decodeBigInt(rep, start);
+        }
+        if (code == DEPRECATED_TRUE_CODE) {
+            throw new IllegalArgumentException("Deprecated tuple data type " + code + " at index " + pos);
         }
         throw new IllegalArgumentException("Unknown tuple data type " + code + " at index " + pos);
     }

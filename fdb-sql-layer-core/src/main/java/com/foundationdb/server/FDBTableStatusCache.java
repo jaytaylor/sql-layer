@@ -21,12 +21,10 @@ import com.foundationdb.server.store.FDBHolder;
 import com.foundationdb.server.store.FDBStoreDataHelper;
 import com.foundationdb.server.store.FDBTransactionService;
 import com.foundationdb.server.store.FDBTransactionService.TransactionState;
-import com.foundationdb.Database;
 import com.foundationdb.MutationType;
 import com.foundationdb.Transaction;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple2;
@@ -57,8 +55,6 @@ public class FDBTableStatusCache implements TableStatusCache {
     private static final byte[] UNIQUE_PACKED = Tuple2.from("unique").pack();
     private static final byte[] ROW_COUNT_PACKED = Tuple2.from("rowCount").pack();
 
-
-    private final Database db;
     private final FDBTransactionService txnService;
     private final Map<Integer,MemoryTableStatus> memoryTableStatusMap = new HashMap<>();
 
@@ -66,12 +62,15 @@ public class FDBTableStatusCache implements TableStatusCache {
 
 
     public FDBTableStatusCache(FDBHolder holder, FDBTransactionService txnService) {
-        this.db = holder.getDatabase();
         this.txnService = txnService;
         this.packedTableStatusPrefix = holder.getRootDirectory().createOrOpen(holder.getTransactionContext(),
                                                                               TABLE_STATUS_DIR_PATH).get().pack();
     }
 
+    @Override 
+    public synchronized TableStatus createTableStatus(Table table) {
+        return new FDBTableStatus(table);
+    }
 
     @Override
     public synchronized TableStatus createTableStatus(int tableID) {
@@ -90,9 +89,7 @@ public class FDBTableStatusCache implements TableStatusCache {
 
     @Override
     public synchronized void detachAIS() {
-        for(MemoryTableStatus status : memoryTableStatusMap.values()) {
-            status.setRowDef(null);
-        }
+        //TODO: Nothing
     }
 
     @Override
@@ -128,6 +125,12 @@ public class FDBTableStatusCache implements TableStatusCache {
         private final int tableID;
         private volatile byte[] rowCountKey;
 
+        public FDBTableStatus(Table table) {
+            this.tableID = table.getTableId();
+            byte[] prefixBytes = FDBStoreDataHelper.prefixBytes(table.getPrimaryKeyIncludingInternal().getIndex());
+            this.rowCountKey = ByteArrayUtil.join(packedTableStatusPrefix, prefixBytes, ROW_COUNT_PACKED);
+        }
+        
         public FDBTableStatus(int tableID) {
             this.tableID = tableID;
 
@@ -148,17 +151,6 @@ public class FDBTableStatusCache implements TableStatusCache {
         public void truncate(Session session) {
             TransactionState txn = txnService.getTransaction(session);
             txn.setBytes(rowCountKey, packForAtomicOp(0));
-        }
-
-        @Override
-        public void setRowDef(RowDef rowDef) {
-            if(rowDef == null) {
-                this.rowCountKey = null;
-            } else {
-                assert rowDef.getRowDefId() == tableID;
-                byte[] prefixBytes = FDBStoreDataHelper.prefixBytes(rowDef.getPKIndex());
-                this.rowCountKey = ByteArrayUtil.join(packedTableStatusPrefix, prefixBytes, ROW_COUNT_PACKED);
-            }
         }
 
         @Override

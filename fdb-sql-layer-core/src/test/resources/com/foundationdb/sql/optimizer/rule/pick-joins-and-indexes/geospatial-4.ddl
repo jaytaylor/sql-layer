@@ -7,5 +7,5 @@ CREATE TABLE places
   lon DECIMAL(8,4)
 );
 
-CREATE INDEX places_geo_1 ON places(state, z_order_lat_lon(lat, lon), lat, lon);
-CREATE INDEX places_geo_2 ON places(city, z_order_lat_lon(lat, lon), lat, lon);
+CREATE INDEX places_geo_1 ON places(state, geo_lat_lon(lat, lon), lat, lon);
+CREATE INDEX places_geo_2 ON places(city, geo_lat_lon(lat, lon), lat, lon);

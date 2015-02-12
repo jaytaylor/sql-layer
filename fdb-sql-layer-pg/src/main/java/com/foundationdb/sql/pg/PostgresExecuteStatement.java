@@ -79,7 +79,7 @@ public class PostgresExecuteStatement extends PostgresBaseCursorStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
+    public PostgresStatementResult execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         return server.executePreparedStatement(this, maxrows);
     }

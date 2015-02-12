@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.service.routines;
 
+import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.error.ExternalRoutineInvocationException;
@@ -28,6 +29,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.script.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
@@ -61,48 +64,78 @@ public class ScriptCache {
         return (getManager(session).getEngineByName(language) != null);
     }
 
-    public ScriptPool<ScriptEvaluator> getScriptEvaluator(Session session, TableName routineName) {
-        return getEntry(session, routineName).getScriptEvaluator();
+    public ScriptPool<ScriptEvaluator> getScriptEvaluator(Session session, TableName routineName, long[] ret_aisGeneration) {
+        return getEntry(session, routineName, ret_aisGeneration).getScriptEvaluator();
     }
 
-    public ScriptPool<ScriptLibrary> getScriptLibrary(Session session, TableName routineName) {
-        return getEntry(session, routineName).getScriptLibrary();
+    public ScriptPool<ScriptLibrary> getScriptLibrary(Session session, TableName routineName, long[] ret_aisGeneration) {
+        return getEntry(session, routineName, ret_aisGeneration).getScriptLibrary();
     }
 
-    public ScriptPool<ScriptInvoker> getScriptInvoker(Session session, TableName routineName) {
-        return getEntry(session, routineName).getScriptInvoker(this, session);
+    public ScriptPool<ScriptInvoker> getScriptInvoker(Session session, TableName routineName, long[] ret_aisGeneration) {
+        return getEntry(session, routineName, ret_aisGeneration).getScriptInvoker(this, session);
     }
 
     protected ScriptEngineManager getManager(Session session) {
         return engineProvider.getManager();
     }
 
-    protected synchronized CacheEntry getEntry(Session session, TableName routineName) {
-        Routine routine = dxlService.ddlFunctions().getAIS(session).getRoutine(routineName);
+    protected synchronized CacheEntry getEntry(Session session, TableName routineName,
+                                               long[] ret_aisGeneration) {
+        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+        Routine routine = ais.getRoutine(routineName);
         if (null == routine)
             throw new NoSuchRoutineException(routineName);
+        if (ret_aisGeneration != null)
+            ret_aisGeneration[0] = ais.getGeneration();
         long currentVersion = routine.getVersion();
         CacheEntry entry = cache.get(routineName);
         if ((entry != null) && (entry.version == currentVersion)) 
             return entry;
 
-        ClassLoader origCL = Thread.currentThread().getContextClassLoader();
+        ClassLoader origCL = getContextClassLoader();
+        
         if (!routine.isSystemRoutine()) {
-            Thread.currentThread().setContextClassLoader(engineProvider.getSafeClassLoader());
+            setContextClassLoader(engineProvider.getSafeClassLoader());
         }
         
-        ScriptEngine engine = getManager(session).getEngineByName(routine.getLanguage());
-        if (engine == null)
-            throw new ExternalRoutineInvocationException(routineName, "Cannot find " + routine.getLanguage()
-                    + " script engine");
-        entry = new CacheEntry(routine, engine);
-        cache.put(routineName, entry);
-        if (!routine.isSystemRoutine()) {
-            Thread.currentThread().setContextClassLoader(origCL);
+        try {
+            ScriptEngine engine = getManager(session).getEngineByName(routine.getLanguage());
+            if (engine == null)
+                throw new ExternalRoutineInvocationException(routineName, "Cannot find " + routine.getLanguage()
+                        + " script engine");
+            entry = new CacheEntry(routine, engine);
+            cache.put(routineName, entry);
+        }
+        finally {
+            if (!routine.isSystemRoutine()) {
+                setContextClassLoader(origCL);
+            }
         }
         return entry;
     }
-
+    
+    private ClassLoader getContextClassLoader() {
+        return AccessController.doPrivileged(
+            new PrivilegedAction<ClassLoader>() {
+                public ClassLoader run() {
+                    return Thread.currentThread().getContextClassLoader();
+                }
+            }
+        );        
+    }
+    
+    private void setContextClassLoader(final ClassLoader cl) {
+        AccessController.doPrivileged(
+                new PrivilegedAction<Void>() {
+                    public Void run() {
+                        Thread.currentThread().setContextClassLoader(cl);
+                        return null;
+                    }
+                }
+        );
+    }
+    
     class CacheEntry {
         private TableName routineName;
         private long version;
@@ -216,7 +249,7 @@ public class ScriptCache {
                 synchronized (this) {
                     spareEngine = null;
                 }
-                libraryPool = cache.getScriptLibrary(session, libraryName);
+                libraryPool = cache.getScriptLibrary(session, libraryName, null);
             }
             return new InvokerPool(libraryPool, function);
         }

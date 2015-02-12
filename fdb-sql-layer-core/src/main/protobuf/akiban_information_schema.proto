@@ -55,8 +55,10 @@ message Sequence {
 
 enum IndexMethod {
    NORMAL          = 0;                  // Regular column index.
-   Z_ORDER_LAT_LON = 1;                  // Spatial index on latitude, longitude.
+   GEO_LAT_LON     = 1;                  // Spatial index on latitude, longitude.
    FULL_TEXT       = 2;                  // Lucene full index text.
+   GEO_WKB         = 3;                  // Spatial index on OpenGIS Well-Known Binary format.
+   GEO_WKT         = 4;                  // Spatial index on OpenGIS Well-Known Text format.
 }
 
 message IndexColumn {

@@ -177,47 +177,12 @@ public class PlanCostEstimator
         @Override
         protected void estimateCost() {
             int nscans = 1;
-            FunctionExpression func = (FunctionExpression)index.getLowComparand();
-            List<ExpressionNode> operands = func.getOperands();
             Space space = index.getIndex().space();
-            if ("_center".equals(func.getFunction())) {
-                nscans = 2;     // One in each direction.
-                costEstimate = costEstimator.costIndexScan(index.getIndex(),
-                                                           index.getEqualityComparands(),
-                                                           null, true,
-                                                           null, true);
-            } else if ("_center_radius".equals(func.getFunction())) {
-                BigDecimal lat = decimalConstant(operands.get(0));
-                BigDecimal lon = decimalConstant(operands.get(1));
-                BigDecimal r = decimalConstant(operands.get(2));
-                if ((lat != null) && (lon != null) && (r != null)) {
-                    SpatialObject box = BoxLatLon.newBox(lat.subtract(r).doubleValue(),
-                                                         lat.add(r).doubleValue(),
-                                                         lon.subtract(r).doubleValue(),
-                                                         lon.add(r).doubleValue());
-                    long[] zValues = new long[box.maxZ()];
-                    space.decompose(box, zValues);
-                    for (int i = 0; i < box.maxZ(); i++) {
-                        long z = zValues[i];
-                        if (z != -1L) {
-                            ExpressionNode lo = new ConstantExpression(Space.zLo(z), InternalIndexTypes.LONG.instance(true));
-                            ExpressionNode hi =  new ConstantExpression(Space.zHi(z), InternalIndexTypes.LONG.instance(true));
-                            CostEstimate zScanCost =
-                                costEstimator.costIndexScan(index.getIndex(), index.getEqualityComparands(),
-                                                            lo, true,
-                                                            hi, true);
-                            costEstimate =
-                                costEstimate == null
-                                ? zScanCost
-                                : costEstimate.union(zScanCost);
-                        }
-                    }
-                } else {
-                    throw new AkibanInternalException("Operands for spatial index must all be constant numbers: " + func);
-                }
-            } else {
-                throw new AkibanInternalException("Unexpected function for spatial index: " + func);
-            }
+            // TODO: Update for Geophile spatial join algorithm.
+            costEstimate = costEstimator.costIndexScan(index.getIndex(),
+                                                       index.getEqualityComparands(),
+                                                       null, true,
+                                                       null, true);
             index.setScanCostEstimate(costEstimate);
             long totalRows = costEstimate.getRowCount();
             long nrows = totalRows;

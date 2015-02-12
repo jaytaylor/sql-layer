@@ -24,13 +24,13 @@ import static com.foundationdb.sql.pg.PostgresJsonStatement.jsonAISColumns;
 import com.foundationdb.sql.parser.ParameterNode;
 import com.foundationdb.sql.server.ServerCallInvocation;
 import com.foundationdb.sql.server.ServerJavaRoutine;
-
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Parameter;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.server.error.ExternalRoutineInvocationException;
 import com.foundationdb.server.explain.Explainable;
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.Tap;
 
@@ -141,8 +141,9 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
+    public PostgresStatementResult execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
+        server.getSessionMonitor().countEvent(StatementTypes.CALL_STMT);
         PostgresMessenger messenger = server.getMessenger();
         int nrows = 0;
         Queue<ResultSet> dynamicResultSets = null;
@@ -213,12 +214,7 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
         finally {
             call.pop(success);
         }
-        {        
-            messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-            messenger.writeString("CALL " + nrows);
-            messenger.sendMessage();
-        }
-        return nrows;
+        return commandComplete("CALL " + nrows, nrows);
     }
 
     public static List<String> columnNames(Routine routine) {

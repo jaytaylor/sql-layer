@@ -486,22 +486,23 @@ public class ProtobufReader {
     private void handleSpatial(Index index, AISProtobuf.Index pbIndex) {
         if (pbIndex.hasIndexMethod()) {
             switch (pbIndex.getIndexMethod()) {
-                case Z_ORDER_LAT_LON:
+                case GEO_LAT_LON:
+                case GEO_WKB:
+                case GEO_WKT:
                     assert pbIndex.hasFirstSpatialArg() == pbIndex.hasDimensions();
                     int firstSpatialArg = 0;
                     int lastSpatialArg = 0;
-                    int dimensions = Spatial.LAT_LON_DIMENSIONS;
                     if (pbIndex.hasFirstSpatialArg()) {
                         firstSpatialArg = pbIndex.getFirstSpatialArg();
-                        dimensions = pbIndex.getDimensions();
                         if (pbIndex.hasLastSpatialArg()) {
                             lastSpatialArg = pbIndex.getLastSpatialArg();
                         } else {
                             // Schema created before spatial object support, when spatial meant just lat/lon.
-                            lastSpatialArg = firstSpatialArg + dimensions - 1;
+                            lastSpatialArg = firstSpatialArg + pbIndex.getDimensions() - 1;
                         }
                     }
-                    index.markSpatial(firstSpatialArg, lastSpatialArg - firstSpatialArg + 1);
+                    index.markSpatial(firstSpatialArg, lastSpatialArg - firstSpatialArg + 1,
+                                      Index.IndexMethod.valueOf(pbIndex.getIndexMethod().name()));
                     break;
             }
         }

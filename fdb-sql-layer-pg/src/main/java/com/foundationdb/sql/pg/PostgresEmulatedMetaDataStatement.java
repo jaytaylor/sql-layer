@@ -19,6 +19,7 @@ package com.foundationdb.sql.pg;
 
 import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.sql.optimizer.plan.CostEstimate;
 import com.foundationdb.sql.parser.ParameterNode;
@@ -35,7 +36,8 @@ import java.util.regex.*;
  * Canned handling for fixed SQL text that comes from tools that
  * believe they are talking to a real Postgres database.
  */
-public class PostgresEmulatedMetaDataStatement implements PostgresStatement
+public class PostgresEmulatedMetaDataStatement extends PostgresStatementResults
+                                               implements PostgresStatement
 {
     enum Query {
         // ODBC driver sends this at the start; returning no rows is fine (and normal).
@@ -513,8 +515,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
+    public PostgresStatementResult execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
+        server.getSessionMonitor().countEvent(StatementTypes.OTHER_STMT);
         PostgresMessenger messenger = server.getMessenger();
         int nrows = 0;
         switch (query) {
@@ -609,12 +612,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             nrows = pgpool2StandbyQuery(context, server, messenger, maxrows);
             break;
         }
-        {        
-          messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-          messenger.writeString("SELECT " + nrows);
-          messenger.sendMessage();
-        }
-        return nrows;
+        return commandComplete("SELECT " + nrows, nrows);
     }
 
     @Override
@@ -1051,7 +1049,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         Table table = (Table)columnar;
         Map<String,Index> indexes = new TreeMap<>();
         for (Index index : table.getIndexesIncludingInternal()) {
-            if (isAkibanPKIndex(index) || index.isConnectedToFK())
+            if (isAkibanPKIndex(index) || isConnectedToFK(index))
                 continue;
             indexes.put(index.getIndexName().getName(), index);
         }
@@ -1202,7 +1200,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         if (!table.isTable())
             return false;
         for (Index index : ((Table)table).getIndexes()) {
-            if (isAkibanPKIndex(index) || index.isConnectedToFK())
+            if (isAkibanPKIndex(index) || isConnectedToFK(index))
                 continue;
             return true;
         }
@@ -1228,6 +1226,15 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 indexColumns.get(0).getColumn().isAkibanPKColumn());
     }
 
+    public boolean isConnectedToFK(Index index) {
+        for(ForeignKey fkey : index.leafMostTable().getReferencingForeignKeys()) {
+            if(fkey.getReferencingIndex() == index) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private boolean isTableReferenced(Table table, Index groupIndex) {
         for (IndexColumn indexColumn : groupIndex.getKeyColumns()) {
             // A table may only be referenced by hKey components, in
@@ -1251,7 +1258,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         switch (index.getIndexMethod()) {
         case NORMAL:
             break;
-        case Z_ORDER_LAT_LON:
+        case GEO_LAT_LON:
+        case GEO_WKB:
+        case GEO_WKT:
             firstFunctionColumn = index.firstSpatialArgument();
             lastFunctionColumn = firstFunctionColumn + index.spatialColumns() - 1;
             break;

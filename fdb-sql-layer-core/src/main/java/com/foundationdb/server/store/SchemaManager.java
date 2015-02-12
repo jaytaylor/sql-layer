@@ -264,4 +264,7 @@ public interface SchemaManager {
 
     /** An <code>AISCloner</code> for merging. */
     AISCloner getAISCloner();
+
+    /** Throw an error if there are unsupported indexes. */
+    void checkAllowedIndexes(Collection<? extends Index> indexes);
 }

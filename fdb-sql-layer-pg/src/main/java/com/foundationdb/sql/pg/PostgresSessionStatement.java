@@ -27,6 +27,7 @@ import com.foundationdb.server.error.NoSuchConstraintException;
 import com.foundationdb.server.error.NoSuchSchemaException;
 import com.foundationdb.server.error.UnsupportedConfigurationException;
 import com.foundationdb.server.error.UnsupportedSQLException;
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.sql.optimizer.plan.CostEstimate;
 import com.foundationdb.sql.parser.AccessMode;
 import com.foundationdb.sql.parser.IsolationLevel;
@@ -48,7 +49,8 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /** SQL statements that affect session / environment state. */
-public class PostgresSessionStatement implements PostgresStatement
+public class PostgresSessionStatement extends PostgresStatementResults
+                                      implements PostgresStatement
 {
     enum Operation {
         USE, SET_CONFIGURATION, SHOW_CONFIGURATION,
@@ -69,6 +71,8 @@ public class PostgresSessionStatement implements PostgresStatement
         "optimizerDummySetting",
         // Execution.
         "constraintCheckTime", "queryTimeoutSec", "transactionPeriodicallyCommit",
+        // Compatible and translated.
+        "statement_timeout",
         // Compatible that actually does something.
         "client_encoding",
         // Compatible but ignored.
@@ -159,16 +163,12 @@ public class PostgresSessionStatement implements PostgresStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
+    public PostgresStatementResult execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
+        server.getSessionMonitor().countEvent(StatementTypes.OTHER_STMT);
         doOperation(context, server);
-        {        
-            PostgresMessenger messenger = server.getMessenger();
-            messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-            messenger.writeString(statement.statementToString());
-            messenger.sendMessage();
-        }
-        return (operation == Operation.SHOW_CONFIGURATION) ? 1 : 0;
+        return statementComplete(statement,
+                                 (operation == Operation.SHOW_CONFIGURATION) ? 1 : 0);
     }
 
     @Override

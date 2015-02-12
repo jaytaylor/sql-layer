@@ -28,6 +28,8 @@ import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
+
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.cursor;
@@ -74,44 +76,6 @@ public class IndexScanBoundedAllColumnsIT extends OperatorITBase
         use(db);
     }
 
-
-    @Test
-    public void testBounded_all4columns() {
-
-        // DADD
-        test(range(INCLUSIVE, 5, 55, 555, null,
-                        INCLUSIVE, 5, 55, 555, 1009),
-                ordering(DESC, ASC, DESC, DESC),
-                1009, 1008, 1007
-        );
-        test(range(EXCLUSIVE, 5, 55, 555, null,
-                        EXCLUSIVE, 5, 55, 555, 1009),
-                ordering(DESC, ASC, DESC, DESC),
-                1008, 1007
-        );
-        test(range(EXCLUSIVE, 5, 55, 555, 1007,
-                        EXCLUSIVE, 5, 55, 555, null),
-                ordering(DESC, ASC, DESC, DESC),
-                1009, 1008
-        );
-
-        // DAAD
-        test(range(INCLUSIVE, 5, 55, 555, null,
-                        INCLUSIVE, 5, 55, 555, 1009),
-                ordering(DESC, ASC, ASC, DESC),
-                1009, 1008, 1007
-        );
-        test(range(EXCLUSIVE, 5, 55, 555, null,
-                        EXCLUSIVE, 5, 55, 555, 1009),
-                ordering(DESC, ASC, ASC, DESC),
-                1008, 1007
-        );
-        test(range(EXCLUSIVE, 5, 55, 555, 1007,
-                        EXCLUSIVE, 5, 55, 555, null),
-                ordering(DESC, ASC, ASC, DESC),
-                1009, 1008
-        );
-    }
 
     // For use by this class
 

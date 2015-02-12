@@ -42,7 +42,10 @@ public final class NullIf extends TScalarBase
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
-        if(TClass.compare(context.inputTypeAt(0), inputs.get(0), context.inputTypeAt(1), inputs.get(1)) == 0) {
+        ValueSource input0 = inputs.get(0);
+        ValueSource input1 = inputs.get(1);
+
+        if(TClass.compare(input0.getType(), input0, input1.getType(), input1) == 0) {
             output.putNull();
         } else {
             ValueTargets.copyFrom(inputs.get(0), output);

@@ -22,13 +22,16 @@ import com.foundationdb.qp.operator.Operator;
 abstract class ExecutableOperatorStatement extends ExecutableStatement
 {
     protected Operator resultOperator;
+    protected long aisGeneration;
     protected JDBCResultSetMetaData resultSetMetaData;
     protected JDBCParameterMetaData parameterMetaData;
     
     protected ExecutableOperatorStatement(Operator resultOperator,
+                                          long aisGeneration,
                                           JDBCResultSetMetaData resultSetMetaData,
                                           JDBCParameterMetaData parameterMetaData) {
         this.resultOperator = resultOperator;
+        this.aisGeneration = aisGeneration;
         this.resultSetMetaData = resultSetMetaData;
         this.parameterMetaData = parameterMetaData;
     }
@@ -55,6 +58,16 @@ abstract class ExecutableOperatorStatement extends ExecutableStatement
     @Override
     public TransactionAbortedMode getTransactionAbortedMode() {
         return TransactionAbortedMode.NOT_ALLOWED;
+    }
+
+    @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.NOT_ALLOWED;
+    }
+
+    @Override
+    public long getAISGeneration() {
+        return aisGeneration;
     }
 
 }

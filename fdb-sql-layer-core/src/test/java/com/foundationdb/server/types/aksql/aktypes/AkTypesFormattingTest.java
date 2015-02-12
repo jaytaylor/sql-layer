@@ -42,7 +42,7 @@ public class AkTypesFormattingTest extends TypeFormattingTestBase
         params.add(tCase(AkBlob.INSTANCE, new byte[]{ 0x01, 0x42 }, "B", "\"\\x42\"", "X'0142'"));
         params.add(tCase(AkInterval.MONTHS, 13, "INTERVAL '1-1'", "13", "INTERVAL '1-01' YEAR TO MONTH"));
         params.add(tCase(AkInterval.SECONDS, 90061000001L, "INTERVAL '1 1:1:1.00001'", "90061.000001", "INTERVAL '1:01:01:01.000001' DAY TO SECOND"));
-        return checkParams(AkBundle.INSTANCE.id(), params, AkResultSet.INSTANCE);
+        return checkParams(AkBundle.INSTANCE.id(), params, AkResultSet.INSTANCE, AkGeometry.INSTANCE);
     }
 
     public AkTypesFormattingTest(TClass tClass, ValueSource valueSource, String str, String json, String literal) {

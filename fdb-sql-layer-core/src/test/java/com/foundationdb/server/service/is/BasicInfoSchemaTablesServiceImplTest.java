@@ -269,6 +269,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
             builder.pk(schema, table);
             builder.indexColumn(schema, table, Index.PRIMARY, "col1", 0, true, null);
             builder.foreignKey(schema, "child", Arrays.asList("col2"), schema, "parent", Arrays.asList("col1"), ForeignKey.Action.RESTRICT, ForeignKey.Action.RESTRICT, true, true, "fkey_parent");
+            builder.index(schema, "child", "fkey_parent");
+            builder.indexColumn(schema, "child", "fkey_parent", "col2", 0, true, null);
             builder.createGroup(table, schema);
             builder.addTableToGroup(table, schema, table);
             
@@ -817,6 +819,11 @@ public class BasicInfoSchemaTablesServiceImplTest {
         @Override
         public AISCloner getAISCloner() {
             return new AISCloner(typesRegistry, storageFormatRegistry);
+        }
+
+        @Override
+        public void checkAllowedIndexes(Collection<? extends Index> indexes) {
+            // None
         }
 
         @Override

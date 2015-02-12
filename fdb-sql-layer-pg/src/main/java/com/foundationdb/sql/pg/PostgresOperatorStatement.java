@@ -19,6 +19,7 @@ package com.foundationdb.sql.pg;
 
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.server.error.InvalidOperationException;
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.sql.optimizer.plan.CostEstimate;
 import com.foundationdb.qp.operator.*;
 import com.foundationdb.qp.row.Row;
@@ -97,8 +98,9 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
     }
     
     @Override
-    public int execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
+    public PostgresStatementResult execute(PostgresQueryContext context, QueryBindings bindings, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
+        server.getSessionMonitor().countEvent(StatementTypes.SELECT);
         PostgresMessenger messenger = server.getMessenger();
         int nrows = 0;
         Cursor cursor = null;
@@ -162,15 +164,11 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
             }
         }
         if (suspended) {
-            messenger.beginMessage(PostgresMessages.PORTAL_SUSPENDED_TYPE.code());
-            messenger.sendMessage();
+            return portalSuspended(nrows);
         }
         else {
-            messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-            messenger.writeString("SELECT " + nrows);
-            messenger.sendMessage();
+            return commandComplete("SELECT " + nrows, nrows);
         }
-        return nrows;
     }
 
     @Override

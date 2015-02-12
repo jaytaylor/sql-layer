@@ -60,9 +60,11 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.TimeZone;
 
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.util.Strings;
+import org.joda.time.DateTimeZone;
 import org.junit.ComparisonFailure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -207,10 +209,22 @@ public class YamlTester
     private int commandNumber = 0;
     private String commandName = null;
     private boolean suppressed = false;
-    private static final DateFormat DEFAULT_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-    private static final DateFormat DEFAULT_DATETIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S z");
+    private static final DateFormat DEFAULT_DATE_FORMAT;
+    private static final DateFormat DEFAULT_DATETIME_FORMAT;
     private static final int DEFAULT_RETRY_COUNT = 5;
     private int lineNumber = 1;
+
+    static {
+        String timezone="UTC";
+        DateTimeZone dateTimeZone = DateTimeZone.forID(timezone);
+        assert dateTimeZone != null;
+        DateTimeZone.setDefault(dateTimeZone);
+        // We still have usages of java.util.Date, but thanks to the ConfigurationServiceImpl.validateTimezone
+        // These should always be the same in production, so leaving this here until we cleanup remaining usages
+        TimeZone.setDefault(TimeZone.getTimeZone(timezone));
+        DEFAULT_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+        DEFAULT_DATETIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S z");
+    }
 
     public YamlTester(Reader in, Connection connection) {
         this(null, in, connection, false);

@@ -19,8 +19,11 @@ package com.foundationdb.server.error;
 
 public class InvalidSpatialObjectException extends InvalidOperationException
 {
-    public InvalidSpatialObjectException()
-    {
-        super(ErrorCode.INVALID_SPATIAL_OBJECT);
+    public InvalidSpatialObjectException() {
+        this("");
+    }
+
+    public InvalidSpatialObjectException(String message) {
+        super(ErrorCode.INVALID_SPATIAL_OBJECT, message);
     }
 }

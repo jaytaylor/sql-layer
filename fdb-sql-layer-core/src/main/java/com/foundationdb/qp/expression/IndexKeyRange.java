@@ -117,26 +117,6 @@ public class IndexKeyRange
      * They describe the lower-left and upper-right corners of a query box.
      * The ColumnSelectors for lo and hi must select for the same columns.
      *
-     * @param indexRowType The row type of index keys.
-     * @param lo           Lower bound of the range.
-     * @param hi           Upper bound of the range.
-     * @return IndexKeyRange covering the keys lying between lo and hi.
-     */
-    public static IndexKeyRange spatialCoords(IndexRowType indexRowType,
-                                              IndexBound lo,
-                                              IndexBound hi)
-    {
-        if (lo == null) {
-            throw new IllegalArgumentException("lo must not be null");
-        }
-        return new IndexKeyRange(indexRowType, lo, true, hi, true, IndexKind.SPATIAL_COORDS);
-    }
-
-    /**
-     * Describes a range of keys between lo and hi. lo and hi must both be non-null.
-     * They describe the lower-left and upper-right corners of a query box.
-     * The ColumnSelectors for lo and hi must select for the same columns.
-     *
      * @param indexRowType The row type of index keys. Contains a spatial object.
      * @param indexBound           Upper bound of the range.
      * @return IndexKeyRange covering the keys lying between lo and hi.
@@ -163,6 +143,22 @@ public class IndexKeyRange
             throw new IllegalArgumentException("IndexBound argument must not be null");
         }
         return new IndexKeyRange(indexRowType, lo, true, null, false, IndexKind.SPATIAL_COORDS);
+    }
+
+    /**
+     * Describes a range of keys starting at lo and expanding out,
+     *
+     * @param indexRowType The row type of index keys.
+     * @param lo           Lower bound of the range.
+     * @return IndexKeyRange covering the keys lying starting at lo.
+     */
+    public static IndexKeyRange aroundObject(IndexRowType indexRowType,
+                                             IndexBound lo)
+    {
+        if (lo == null) {
+            throw new IllegalArgumentException("IndexBound argument must not be null");
+        }
+        return new IndexKeyRange(indexRowType, lo, true, null, false, IndexKind.SPATIAL_OBJECT);
     }
 
     public boolean spatialCoordsIndex()

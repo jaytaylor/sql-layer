@@ -67,8 +67,8 @@ public class TableIndex extends Index
         TableIndex copy = create(table.getAIS(), table, index.getIndexName().getName(), index.getIndexId(),
                                   index.isUnique(),
                                   index.isPrimaryKey(), index.getConstraintName());
-        if (index.getIndexMethod() == IndexMethod.Z_ORDER_LAT_LON) {
-            copy.markSpatial(index.firstSpatialArgument(), index.spatialColumns());
+        if (index.isSpatial()) {
+            copy.markSpatial(index.firstSpatialArgument(), index.spatialColumns(), index.getIndexMethod());
         }
         return copy;
     }
@@ -178,6 +178,15 @@ public class TableIndex extends Index
             hKey = table.hKey();
         }
         return hKey;
+    }
+
+    //
+    // Constraint
+    //
+
+    @Override
+    public Table getConstraintTable() {
+        return table;
     }
 
     private final Table table;

@@ -17,7 +17,6 @@
 
 package com.foundationdb.server.store;
 
-import com.foundationdb.util.Undef;
 import com.persistit.Key;
 import com.persistit.Value;
 
@@ -31,7 +30,7 @@ public abstract class IndexRecordVisitor extends IndexVisitor<Key,Value> {
     @Override
     protected final void visit(Key key, Value value) {
         List<?> keyList = key(key, value);
-        Object valueObj = value.isDefined() ? value.get() : Undef.only();
+        Object valueObj = value.isDefined() ? value.get() : null;
         visit(keyList, valueObj);
     }
 

@@ -745,13 +745,6 @@ public class AISBuilder {
             checkFound(column, "creating foreign key", "referenced column",
                        concat(referencedSchemaName, referencedTableName, columnName));
             referencedColumns.add(column);
-        } 
-        // Add the (new) referencing index. Also takes care of duplicate fk name.
-        // IndexName must be the same as foreign key constraintName
-        index(referencingSchemaName, referencingTableName, name);
-        for (int i = 0; i < referencingColumnNames.size(); i++) {
-            indexColumn(referencingSchemaName, referencingTableName, name,
-                        referencingColumnNames.get(i), i, true, null);
         }
         ForeignKey.create(ais, name,
                           referencingTable, referencingColumns,

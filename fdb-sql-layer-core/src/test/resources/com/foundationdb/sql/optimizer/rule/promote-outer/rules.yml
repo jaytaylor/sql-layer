@@ -1,2 +1,3 @@
 - com.foundationdb.sql.optimizer.rule.ASTStatementLoader
+- com.foundationdb.sql.optimizer.rule.TypeResolver
 - com.foundationdb.sql.optimizer.rule.OuterJoinPromoter

@@ -37,6 +37,7 @@ import com.foundationdb.ais.model.Index.JoinType;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.text.FullTextQueryBuilder;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.common.funcs.GeoOverlaps;
 import com.foundationdb.server.types.texpressions.Comparison;
 import com.foundationdb.sql.types.DataTypeDescriptor;
 import com.foundationdb.sql.types.TypeId;
@@ -45,7 +46,6 @@ import com.google.common.base.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Types;
 import java.util.*;
 
 /** The goal of a indexes within a group. */
@@ -122,21 +122,38 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     }
 
     /**
-     * @param boundTables Tables already bound by the outside
-     * @param queryJoins Joins that come from the query, or part of the query, that an index is being searched for.
-     *                   Will generally, but not in the case of a sub-query, match <code>joins</code>.
-     * @param joins Joins that apply to this part of the query.
-     * @param outsideJoins All joins for this query.
-     * @param requiredJoins The joins that must be covered by the resulting join, either in the scans,
-     *                      or an outer select node
-     * @param sortAllowed <code>true</code> if sorting is allowed
-     *  @return Full list of all usable condition sources.
+     * @param boundTables Tables already bound by the outside. Columns of these tables
+     *                    are like constants for the sake of this index selection.
+     * @param queryJoins Joins that come from the query, or part of the query,
+     *                   that an index is being searched for.
+     *                   The type of these joins determines whether a column in a
+     *                   condition is nullable.
+     *                   Will generally match <code>joins</code>, except in the case
+     *                   of a subquery with only one table group, where it is empty,
+     *                   because it is the derived table that is nullable, not the inside
+     *                   of the subquery.
+     * @param joins Joins that apply to this part of the query. The conditions of these
+     *              are ones that might be indexed.
+     * @param outsideJoins All joins for this query. A column used in one of these must
+     *                     be supplied by its index source in determining whether that
+     *                     is covering.
+     * @param requiredJoins The joins that must be performed by the resulting join,
+     *                      either in the index scan conditions or an outer
+     *                      <code>Select</code> node, whose cost is then added.
+     * @param sortAllowed <code>true</code> if sorting from this index selection might
+     *                    accomplish sorting for the whole query.
+     * @param extraConditions Conditions that can be indexed but were invented solely for
+     *                        this index selection. For instance, a semi-join to
+     *                        <code>VALUES</code> appears here as equality with a column.
+     *  @return Full list of all usable condition sources. If this index is chosen, its
+     *          conditions should each come, and be removed from, from one of these.
      */
     public List<ConditionList> updateContext(Set<ColumnSource> boundTables,
                                              Collection<JoinOperator> queryJoins,
                                              Collection<JoinOperator> joins,
                                              Collection<JoinOperator> outsideJoins,
-                                             Collection<JoinOperator> requiredJoins, boolean sortAllowed,
+                                             Collection<JoinOperator> requiredJoins,
+                                             boolean sortAllowed,
                                              ConditionList extraConditions) {
         setBoundTables(boundTables);
         this.sortAllowed = sortAllowed;
@@ -400,25 +417,52 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     }
 
     private static void setColumnsAndOrdering(SingleIndexScan index) {
-        List<IndexColumn> indexColumns = index.getAllColumns();
+        Index aisIndex = index.getIndex();
+        List<IndexColumn> indexColumns = aisIndex.getAllColumns();
         int ncols = indexColumns.size();
         int firstSpatialColumn, spatialColumns;
         SpecialIndexExpression.Function spatialFunction;
-        if (index.getIndex().isSpatial()) {
-            Index spatialIndex = index.getIndex();
-            firstSpatialColumn = spatialIndex.firstSpatialArgument();
-            spatialColumns = spatialIndex.spatialColumns();
-            assert (spatialColumns == Spatial.LAT_LON_DIMENSIONS);
-            spatialFunction = SpecialIndexExpression.Function.Z_ORDER_LAT_LON;
-        }
-        else {
+        Index.IndexMethod aisIndexMethod = aisIndex.getIndexMethod();
+        switch (aisIndexMethod) {
+        case GEO_LAT_LON:
+        case GEO_WKB:
+        case GEO_WKT:
+            firstSpatialColumn = aisIndex.firstSpatialArgument();
+            spatialColumns = aisIndex.spatialColumns();
+            if (spatialColumns == Spatial.LAT_LON_DIMENSIONS) {
+                assert aisIndexMethod == Index.IndexMethod.GEO_LAT_LON : aisIndexMethod;
+                spatialFunction = SpecialIndexExpression.Function.GEO_LAT_LON;
+            }
+            else if (spatialColumns == 1) {
+                if (aisIndexMethod == Index.IndexMethod.GEO_WKB) {
+                    spatialFunction = SpecialIndexExpression.Function.GEO_WKB;
+                }
+                else if (aisIndexMethod == Index.IndexMethod.GEO_WKT) {
+                    spatialFunction = SpecialIndexExpression.Function.GEO_WKT;
+                }
+                else {
+                    spatialFunction = null;
+                    assert false : aisIndexMethod;
+                }
+            }
+            else {
+                spatialFunction = null;
+                assert false : spatialColumns;
+            }
+            break;
+        default:
+            assert false : aisIndexMethod;
+            /* and fall through */
+        case NORMAL:
             firstSpatialColumn = Integer.MAX_VALUE;
             spatialColumns = 0;
             spatialFunction = null;
+            break;
         }
         List<OrderByExpression> orderBy = new ArrayList<>(ncols);
         List<ExpressionNode> indexExpressions = new ArrayList<>(ncols);
         int i = 0;
+
         while (i < ncols) {
             ExpressionNode indexExpression;
             boolean ascending;
@@ -454,14 +498,18 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 // like first comparison, trailing columns ordered
                 // like last comparison.
                 int i = 0;
+                boolean ascending = outputOrdering.get(outputPeggedCount).isAscending();
                 while (i < index.getPeggedCount()) {
-                    indexOrdering.get(i++).setAscending(outputOrdering.get(outputPeggedCount).isAscending());
+                    indexOrdering.get(i++).setAscending(ascending);
                 }
                 for (int j = 0; j < comparisonFields; j++) {
+                    assert outputOrdering.get(outputPeggedCount + j).isAscending() == ascending : "comparison ascending different order than initial";
                     indexOrdering.get(i++).setAscending(outputOrdering.get(outputPeggedCount + j).isAscending());
                 }
+                boolean lastAscending = outputOrdering.get(outputPeggedCount + comparisonFields - 1).isAscending();
+                assert ascending == lastAscending : "lastAscending in different order than initial";
                 while (i < indexOrdering.size()) {
-                    indexOrdering.get(i++).setAscending(outputOrdering.get(outputPeggedCount + comparisonFields - 1).isAscending());
+                    indexOrdering.get(i++).setAscending(lastAscending);
                 }
             }
         }
@@ -474,6 +522,28 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         }
     }
 
+    private ExpressionNode targetExpression(OrderByExpression targetColumn) {
+        ExpressionNode targetExpression = targetColumn.getExpression();
+        if (targetExpression.isColumn()) {
+            ColumnExpression column = (ColumnExpression)targetExpression;
+            ColumnSource table = column.getTable();
+            if (table == queryGoal.getGrouping()) {
+                targetExpression = queryGoal.getGrouping()
+                    .getField(column.getPosition());
+            }
+            else if (table instanceof Project) {
+                // Cf. ASTStatementLoader.sortsForDistinct().
+                Project project = (Project)table;
+                if ((project.getOutput() == queryGoal.getOrdering()) &&
+                    (queryGoal.getOrdering().getOutput() instanceof Distinct)) {
+                    targetExpression = project.getFields()
+                        .get(column.getPosition());
+                }
+            }
+        }
+        return targetExpression;
+    }
+    
     // Determine how well this index does against the target.
     // Also, correct traversal order to match sort if possible.
     protected IndexScan.OrderEffectiveness determineOrderEffectiveness(SingleIndexScan index) {
@@ -481,7 +551,6 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         if (!sortAllowed) return result;
         List<OrderByExpression> indexOrdering = index.getOrdering();
         if (indexOrdering == null) return result;
-        BitSet reverse = new BitSet(indexOrdering.size());
         int nequals = index.getNEquality();
         int nunions = index.getNUnions();
         List<ExpressionNode> equalityColumns = null;
@@ -494,24 +563,8 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             for (OrderByExpression targetColumn : queryGoal.getOrdering().getOrderBy()) {
                 // Get the expression by which this is ordering, recognizing the
                 // special cases where the Sort is fed by GROUP BY or feeds DISTINCT.
-                ExpressionNode targetExpression = targetColumn.getExpression();
-                if (targetExpression.isColumn()) {
-                    ColumnExpression column = (ColumnExpression)targetExpression;
-                    ColumnSource table = column.getTable();
-                    if (table == queryGoal.getGrouping()) {
-                        targetExpression = queryGoal.getGrouping()
-                            .getField(column.getPosition());
-                    }
-                    else if (table instanceof Project) {
-                        // Cf. ASTStatementLoader.sortsForDistinct().
-                        Project project = (Project)table;
-                        if ((project.getOutput() == queryGoal.getOrdering()) &&
-                            (queryGoal.getOrdering().getOutput() instanceof Distinct)) {
-                            targetExpression = project.getFields()
-                                .get(column.getPosition());
-                        }
-                    }
-                }
+                ExpressionNode targetExpression = targetExpression(targetColumn); 
+
                 OrderByExpression indexColumn = getIndexColumn(indexOrdering, idx);
                 if (indexColumn == null && idx < nequals) {
                     throw new CorruptedPlanException("No index column expression for union comparison");
@@ -533,15 +586,6 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                         if (idx < nequals) {
                             index.setIncludeUnionAsEquality(false);
                         }
-                        if (indexColumn.isAscending() != targetColumn.isAscending()) {
-                            // To avoid mixed mode as much as possible,
-                            // defer changing the index order until
-                            // certain it will be effective.
-                            reverse.set(idx, true);
-                            if (idx == nequals)
-                                // Likewise reverse the initial equals segment.
-                                reverse.set(0, nequals, true);
-                        }
                         if (idx >= index.getNKeyColumns())
                             index.setUsesAllColumns(true);
                         idx++;
@@ -558,16 +602,25 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 }
                 break try_sorted;
             }
-            if ((idx > 0) && (idx < indexOrdering.size()) && reverse.get(idx-1))
-                // Reverse after ORDER BY if reversed last one.
-                reverse.set(idx, indexOrdering.size(), true);
-            for (int i = 0; i < reverse.size(); i++) {
-                if (reverse.get(i)) {
-                    OrderByExpression indexColumn = indexOrdering.get(i);
-                    indexColumn.setAscending(!indexColumn.isAscending());
+            // Don't allow mixed order index lookups, just use the order of the first column 
+            boolean isAscending = queryGoal.getOrdering().getOrderBy().get(0).isAscending();
+            for (OrderByExpression indexColumn : indexOrdering) {
+                if (indexColumn.isAscending() != isAscending) {
+                    indexColumn.setAscending(isAscending);
                 }
             }
-            result = IndexScan.OrderEffectiveness.SORTED;
+            boolean orderByOrdering = true;
+            for (OrderByExpression targetColumn : queryGoal.getOrdering().getOrderBy()) {
+                if (targetColumn.isAscending() != isAscending) {
+                    orderByOrdering = false;
+                }
+            }
+            
+            // If the order by ordering columns all matches the 
+            // order of the index (ASC or DESC), the index is sorted. 
+            if (orderByOrdering) {
+                result = IndexScan.OrderEffectiveness.SORTED;
+            }
         }
         if (queryGoal.getGrouping() != null) {
             boolean anyFound = false, allFound = true;
@@ -1756,53 +1809,61 @@ public class GroupIndexGoal implements Comparator<BaseScan>
      * Z-order of two coordinates.
      */
     public boolean spatialUsable(SingleIndexScan index, int nequals) {
-        // There are two cases to recognize:
+        // Look for a spatial-join compatible predicate one of whose operands
+        // matches the spatial index definition.
+
+        // There are two additional legacy cases to recognize (for the time being):
+        // WHERE distance_lat_lon(column_lat, column_lon, start_lat, start_lon) <= radius
         // ORDER BY znear(column_lat, column_lon, start_lat, start_lon), which
         // means fan out from that center in Z-order.
-        // WHERE distance_lat_lon(column_lat, column_lon, start_lat, start_lon) <= radius
         
         ExpressionNode nextColumn = index.getColumns().get(nequals);
         if (!(nextColumn instanceof SpecialIndexExpression)) 
             return false;       // Did not have enough equalities to get to spatial part.
         SpecialIndexExpression indexExpression = (SpecialIndexExpression)nextColumn;
-        assert (indexExpression.getFunction() == SpecialIndexExpression.Function.Z_ORDER_LAT_LON);
+        SpecialIndexExpression.Function spatialFunction = indexExpression.getFunction();
         List<ExpressionNode> operands = indexExpression.getOperands();
 
         boolean matched = false;
         for (ConditionExpression condition : conditions) {
-            if (condition instanceof ComparisonCondition) {
+            ExpressionNode spatialJoinTo = null;
+            if (condition instanceof FunctionCondition) {
+                FunctionCondition fcond = (FunctionCondition)condition;
+                spatialJoinTo = matchSpatialPredicate(spatialFunction, operands, fcond);
+            }
+            else if (condition instanceof ComparisonCondition) {
                 ComparisonCondition ccond = (ComparisonCondition)condition;
-                ExpressionNode centerRadius = null;
                 switch (ccond.getOperation()) {
                 case LE:
                 case LT:
-                    centerRadius = matchDistanceLatLon(operands,
-                                                       ccond.getLeft(), 
-                                                       ccond.getRight());
+                    spatialJoinTo = matchDistanceLatLon(spatialFunction, operands,
+                                                        ccond.getLeft(), 
+                                                        ccond.getRight());
                     break;
                 case GE:
                 case GT:
-                    centerRadius = matchDistanceLatLon(operands,
-                                                       ccond.getRight(), 
-                                                       ccond.getLeft());
+                    spatialJoinTo = matchDistanceLatLon(spatialFunction, operands,
+                                                        ccond.getRight(), 
+                                                        ccond.getLeft());
                     break;
                 }
-                if (centerRadius != null) {
-                    index.setLowComparand(centerRadius, true);
-                    index.setOrderEffectiveness(IndexScan.OrderEffectiveness.NONE);
-                    matched = true;
-                    break;
-                }
+            }
+            if (spatialJoinTo != null) {
+                index.setLowComparand(spatialJoinTo, true);
+                index.setHighComparand(spatialJoinTo, true);
+                index.setOrderEffectiveness(IndexScan.OrderEffectiveness.NONE);
+                matched = true;
+                break;
             }
         }
         if (!matched) {
             if (sortAllowed && (queryGoal.getOrdering() != null)) {
                 List<OrderByExpression> orderBy = queryGoal.getOrdering().getOrderBy();
                 if (orderBy.size() == 1) {
-                    ExpressionNode center = matchZnear(operands,
-                                                       orderBy.get(0));
-                    if (center != null) {
-                        index.setLowComparand(center, true);
+                    ExpressionNode spatialJoinTo = matchZnear(spatialFunction, operands,
+                                                              orderBy.get(0));
+                    if (spatialJoinTo != null) {
+                        index.setLowComparand(spatialJoinTo, true);
                         index.setOrderEffectiveness(IndexScan.OrderEffectiveness.SORTED);
                         matched = true;
                     }
@@ -1817,9 +1878,73 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         return true;
     }
 
-    private ExpressionNode matchDistanceLatLon(List<ExpressionNode> indexExpressions,
+    private ExpressionNode matchSpatialPredicate(SpecialIndexExpression.Function indexFunction,
+                                                 List<ExpressionNode> indexExpressions,
+                                                 FunctionCondition cond) {
+        String function = cond.getFunction();
+        List<ExpressionNode> operands = cond.getOperands();
+
+        for (GeoOverlaps.OverlapType overlap : GeoOverlaps.OverlapType.values()) {
+            if (function.equalsIgnoreCase(overlap.functionName())) {
+                ExpressionNode op1 = operands.get(0);
+                ExpressionNode op2 = operands.get(1);
+                if (matchSpatialIndex(indexFunction, indexExpressions, op1) &&
+                    constantOrBound(op2)) {
+                    return op2;
+                }
+                else if (matchSpatialIndex(indexFunction, indexExpressions, op2) &&
+                    constantOrBound(op1)) {
+                    return op1;
+                }
+            }
+        }
+
+        if (function.equalsIgnoreCase("geo_within_distance")) {
+            ExpressionNode op1 = operands.get(0);
+            ExpressionNode op2 = operands.get(1);
+            ExpressionNode radius = operands.get(2);
+            if (constantOrBound(radius)) {
+                if (matchSpatialIndex(indexFunction, indexExpressions, op1) &&
+                    constantOrBound(op2)) {
+                    return spatialWithinDistance(op2, radius);
+                }
+                if (matchSpatialIndex(indexFunction, indexExpressions, op2) &&
+                         constantOrBound(op1)) {
+                    return spatialWithinDistance(op1, radius);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private boolean matchSpatialIndex(SpecialIndexExpression.Function indexFunction,
+                                      List<ExpressionNode> indexExpressions,
+                                      ExpressionNode expr) {
+        if (!(expr instanceof FunctionExpression))
+            return false;
+        FunctionExpression func = (FunctionExpression)expr;
+        return (func.getFunction().equalsIgnoreCase(indexFunction.functionName()) &&
+                func.getOperands().equals(indexExpressions));
+    }
+
+    private ExpressionNode spatialWithinDistance(ExpressionNode op, ExpressionNode distance) {
+        return new FunctionExpression("geo_expanded_envelope",
+                                      Arrays.asList(op, distance),
+                                      null, null, null);
+    }
+
+    private ExpressionNode spatialPoint(ExpressionNode lat, ExpressionNode lon) {
+        return new FunctionExpression("geo_lat_lon",
+                                      Arrays.asList(lat, lon),
+                                      null, null, null);
+    }
+
+    private ExpressionNode matchDistanceLatLon(SpecialIndexExpression.Function function,
+                                               List<ExpressionNode> indexExpressions,
                                                ExpressionNode left, ExpressionNode right) {
-        if (!((left instanceof FunctionExpression) &&
+        if (!((function == SpecialIndexExpression.Function.GEO_LAT_LON) &&
+              (left instanceof FunctionExpression) &&
               ((FunctionExpression)left).getFunction().equalsIgnoreCase("distance_lat_lon") &&
               constantOrBound(right)))
             return null;
@@ -1831,6 +1956,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         ExpressionNode op2 = operands.get(1);
         ExpressionNode op3 = operands.get(2);
         ExpressionNode op4 = operands.get(3);
+        /* TODO: Should not be needed.
         if ((right.getType() != null) &&
             (right.getType().typeClass().jdbcType() != Types.DECIMAL)) {
             DataTypeDescriptor sqlType = 
@@ -1839,24 +1965,24 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 .getTypesTranslator().typeForSQLType(sqlType);
             right = new CastExpression(right, sqlType, right.getSQLsource(), type);
         }
+        */
         if (columnMatches(col1, op1) && columnMatches(col2, op2) &&
             constantOrBound(op3) && constantOrBound(op4)) {
-            return new FunctionExpression("_center_radius",
-                                          Arrays.asList(op3, op4, right),
-                                          null, null, null);
+            return spatialWithinDistance(spatialPoint(op3, op4), right);
         }
         if (columnMatches(col1, op3) && columnMatches(col2, op4) &&
             constantOrBound(op1) && constantOrBound(op2)) {
-            return new FunctionExpression("_center_radius",
-                                          Arrays.asList(op1, op2, right),
-                                          null, null, null);
+            return spatialWithinDistance(spatialPoint(op1, op2), right);
         }
         return null;
     }
 
-    private ExpressionNode matchZnear(List<ExpressionNode> indexExpressions, 
+    private ExpressionNode matchZnear(SpecialIndexExpression.Function function,
+                                      List<ExpressionNode> indexExpressions, 
                                       OrderByExpression orderBy) {
-        if (!orderBy.isAscending()) return null;
+        if (!((function == SpecialIndexExpression.Function.GEO_LAT_LON) &&
+              orderBy.isAscending()))
+            return null;
         ExpressionNode orderExpr = orderBy.getExpression();
         if (!((orderExpr instanceof FunctionExpression) &&
               ((FunctionExpression)orderExpr).getFunction().equalsIgnoreCase("znear")))
@@ -1871,12 +1997,12 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         ExpressionNode op4 = operands.get(3);
         if (columnMatches(col1, op1) && columnMatches(col2, op2) &&
             constantOrBound(op3) && constantOrBound(op4))
-            return new FunctionExpression("_center",
+            return new FunctionExpression("geo_lat_lon",
                                           Arrays.asList(op3, op4),
                                           null, null, null);
         if (columnMatches(col1, op3) && columnMatches(col2, op4) &&
             constantOrBound(op1) && constantOrBound(op2))
-            return new FunctionExpression("_center",
+            return new FunctionExpression("geo_lat_lon",
                                           Arrays.asList(op1, op2),
                                           null, null, null);
         return null;

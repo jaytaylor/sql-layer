@@ -69,11 +69,6 @@ public abstract class TScalarBase implements TScalar {
     }
 
     @Override
-    public Predicate<List<? extends TPreptimeValue>> isCandidate() {
-        return null;
-    }
-
-    @Override
     public void finishPreptimePhase(TPreptimeContext context) {
     }
 
@@ -148,6 +143,12 @@ public abstract class TScalarBase implements TScalar {
             public ValueSource get(int i) {
                 TPreptimeValue ptValue = inputs.get(i);
                 ValueSource source = ptValue.value();
+                if (source == null) {
+                    source = ValueSources.getNullSource(ptValue.type());
+                }
+                else if (source.getType().typeClass() instanceof TString) {
+                    source = ValueSources.valuefromObject(source.getObject(), ptValue.type());
+                }
                 assert allowNonConstsInEvaluation() || source != null
                         : "non-constant value where constant value expected";
                 return source;
@@ -211,6 +212,15 @@ public abstract class TScalarBase implements TScalar {
 
     protected boolean neverConstant() {
         return false;
+    }
+
+    public boolean allContaminatingNulls(int ninputs) {
+        for (int i = 0; i < ninputs; i++) {
+            if (!nullContaminates(i)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     protected boolean anyContaminatingNulls(List<? extends TPreptimeValue> inputs) {

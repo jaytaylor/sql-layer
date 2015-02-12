@@ -17,13 +17,15 @@
 
 package com.foundationdb.server.service.monitor;
 
+import com.foundationdb.server.error.ErrorCode;
+import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.QueryLogCloseException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.config.ConfigurationService;
-import com.foundationdb.server.service.jmx.JmxManageable;
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.server.service.session.Session;
-
 import com.google.inject.Inject;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,14 +37,18 @@ import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
-public class MonitorServiceImpl implements Service, MonitorService
+public class MonitorServiceImpl implements Service, MonitorService, SessionEventListener
 {
     private static final String QUERY_LOG_PROPERTY = "fdbsql.querylog.enabled";
     private static final String QUERY_LOG_FILE_PROPERTY = "fdbsql.querylog.filename";
     private static final String QUERY_LOG_THRESHOLD = "fdbsql.querylog.exec_threshold_ms";
+
+    private static final ErrorCode[] SLOW_ERRORS = {
+        ErrorCode.FDB_PAST_VERSION, ErrorCode.QUERY_TIMEOUT
+    };
     
     private static final Logger logger = LoggerFactory.getLogger(MonitorServiceImpl.class);
 
@@ -63,6 +69,9 @@ public class MonitorServiceImpl implements Service, MonitorService
     
     private Map<String, UserMonitor> users;
 
+    private AtomicLong[] statementCounter;
+    //private ConcurrentHashMap<StatementTypes, AtomicLong> statementCounter;
+    
     @Inject
     public MonitorServiceImpl(ConfigurationService config) {
         this.config = config;
@@ -72,7 +81,13 @@ public class MonitorServiceImpl implements Service, MonitorService
 
     @Override
     public void start() {
+        logger.debug("Starting Monitor Service...");
         servers = new ConcurrentHashMap<>();
+        
+        statementCounter = new AtomicLong[StatementTypes.values().length];
+        for (int i = 0; i < statementCounter.length; i++) {
+            statementCounter[i] = new AtomicLong(0);
+        }
 
         sessionAllocator = new AtomicInteger();
         sessions = new ConcurrentHashMap<>();
@@ -123,6 +138,7 @@ public class MonitorServiceImpl implements Service, MonitorService
         SessionMonitor old = sessions.put(sessionMonitor.getSessionId(), sessionMonitor);
         assert ((old == null) || (old == sessionMonitor));
         session.put(SESSION_KEY, sessionMonitor);
+        sessionMonitor.addSessionEventListener(this);
     }
 
     @Override
@@ -130,6 +146,7 @@ public class MonitorServiceImpl implements Service, MonitorService
         SessionMonitor old = sessions.remove(sessionMonitor.getSessionId());
         assert ((old == null) || (old == sessionMonitor));
         session.remove(SESSION_KEY);
+        sessionMonitor.removeSessionEventListener(this);
     }
 
     @Override
@@ -148,35 +165,52 @@ public class MonitorServiceImpl implements Service, MonitorService
     }
 
     @Override
-    public void logQuery(int sessionId, String sql, long duration, int rowsProcessed) {
+    public void logQuery(int sessionId, String sql,
+                         long duration, int rowsProcessed, Throwable failure) {
         /*
          * If an execution time threshold has been specified but the query
          * to be logged is not larger than that execution time threshold
-         * than we don't log anything.
+         * than we don't log anything, except when the exception intrinsically
+         * indicates a "slow" query.
          */
         if (queryLogThresholdMillis > 0 && duration < queryLogThresholdMillis) {
-            return;
+            boolean slow = false;
+            if (failure instanceof InvalidOperationException){
+                for (ErrorCode slowError : SLOW_ERRORS) {
+                    if (((InvalidOperationException)failure).getCode() == slowError) {
+                        slow = true;
+                        break;
+                    }
+                }
+            }
+            if (!slow) return;
         }
+        
+        SessionMonitor monitor = sessions.get(sessionId);
+        monitor.countEvent(StatementTypes.LOGGED);
         /*
          * format of each query log entry is:
          * #
          * # timestamp
          * # session_id=sessionID
-         * # execution_time=xxxx
+         * # execution_time=millis
+         * (optional) # error_msg=class: CODE: text
+         * (optional) # rows_processed=count
          * SQL text
          * #
          * For example:
          * # 2011-08-18 15:08:11.071
          * # session_id=2
          * # execution_time=69824520
+         * # rows_processed=100
          * select * from tables;
          * #
          * # 2011-08-18 15:08:18.224
          * # session_id=2
          * # execution_time=3132589
+         * # rows_processed=10
          * select * from groups;
          * #
-         * Execution time is output in milliseconds
          */
         StringBuilder buffer = new StringBuilder();
         buffer.append("# ");
@@ -188,6 +222,16 @@ public class MonitorServiceImpl implements Service, MonitorService
         buffer.append("# execution_time=");
         buffer.append(duration);
         buffer.append("\n");
+        if (failure != null) {
+            buffer.append("# error_msg=");
+            buffer.append(failure.toString().replace('\n', ' '));
+            buffer.append("\n");
+        }
+        else if (rowsProcessed >= 0) {
+            buffer.append("# rows_processed=");
+            buffer.append(rowsProcessed);
+            buffer.append("\n");
+        }
         buffer.append(sql);
         buffer.append("\n#\n");
         try {
@@ -204,11 +248,12 @@ public class MonitorServiceImpl implements Service, MonitorService
     }
     
     @Override
-    public void logQuery(SessionMonitor sessionMonitor) {
+    public void logQuery(SessionMonitor sessionMonitor, Throwable failure) {
         logQuery(sessionMonitor.getSessionId(), 
                  sessionMonitor.getCurrentStatement(),
                  sessionMonitor.getCurrentStatementDurationMillis(),
-                 sessionMonitor.getRowsProcessed());
+                 sessionMonitor.getRowsProcessed(),
+                 failure);
     }
 
     /** Register the given User monitor. */
@@ -295,6 +340,19 @@ public class MonitorServiceImpl implements Service, MonitorService
         return queryLogThresholdMillis;
     }
 
+    @Override
+    public long getCount(StatementTypes type) {
+        return statementCounter[type.ordinal()].get();
+    }
+
+    
+    /* SessionEventListener */
+    
+    @Override
+    public void countEvent (StatementTypes type) {
+        statementCounter[type.ordinal()].incrementAndGet();
+    }
+    
     /* Internal */
 
     /**

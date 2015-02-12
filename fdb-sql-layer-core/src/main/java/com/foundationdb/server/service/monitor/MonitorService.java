@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.service.monitor;
 
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.server.service.session.Session;
 
 import java.util.Collection;
@@ -51,10 +52,11 @@ public interface MonitorService {
     Collection<SessionMonitor> getSessionMonitors();
 
     /** Log the given SQL to the query log. */
-    void logQuery(int sessionId, String sqlText, long duration, int rowsProcessed);
+    void logQuery(int sessionId, String sqlText,
+                  long duration, int rowsProcessed, Throwable failure);
 
     /** Log last statement from given monitor. */
-    void logQuery(SessionMonitor sessionMonitor);
+    void logQuery(SessionMonitor sessionMonitor, Throwable failure);
     
     /** Register the given User monitor. */
     void registerUserMonitor (UserMonitor userMonitor);
@@ -73,6 +75,10 @@ public interface MonitorService {
     
     /** Get all the user monitors. */
     Collection<UserMonitor> getUserMonitors();
+
+    /** Get statisics counter for statement types */
+    long getCount(StatementTypes type);
+    
 
     //
     // Query Log Control

@@ -70,7 +70,8 @@ public abstract class MRoundBase extends TScalarBase {
             protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
                 TClass cached = (TClass) context.objectAt(RET_TYPE_INDEX);
                 BigDecimalWrapper result = TBigDecimal.getWrapper(context, DEC_INDEX);
-                result.set(TBigDecimal.getWrapper(inputs.get(0), context.inputTypeAt(0)));
+                ValueSource input = inputs.get(0);
+                result.set(TBigDecimal.getWrapper(input, input.getType()));
                 result = roundType.evaluate(result);
                 
                 TClass outT = context.outputType().typeClass();

@@ -1,0 +1,4 @@
+PhysicalSelect[cid:int, name:varchar(32)]
+  Project_Default(customers.cid, customers.name)
+    Sort_General(customers.name ASC, customers.cid DESC)
+      IndexScan_Default(Index(customers.name), name, cid)

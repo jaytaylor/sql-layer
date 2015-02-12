@@ -5,4 +5,4 @@ PhysicalSelect@2c6fc505[_SQL_COL_1]
         Limit_Default(10)
           Project_Default(Field(3), Field(4))
             GroupLookup_Default(Index(test.places.places_geo) -> test.places)
-              IndexScan_Default(Index(test.places.places_geo), (lat, lon) ZNEAR(42.3583, -71.0603))
+              IndexScan_Default(Index(test.places.places_geo), (lat, lon) ZNEAR('POINT (42.3583 -71.0603)'))

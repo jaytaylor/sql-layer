@@ -624,13 +624,32 @@ public class ApiTestBase {
         return ddl().getTable(session(), new TableName(schema, table)).getIndex(indexName);
     }
 
-    protected final TableIndex createSpatialTableIndex(String schema, String table, String indexName,
-                                                       int firstSpatialArgument, int spatialColumns,
+    protected final TableIndex createSpatialTableIndex(String schema,
+                                                       String table,
+                                                       String indexName,
+                                                       int firstSpatialArgument,
+                                                       int spatialColumns,
+                                                       String... indexCols) {
+        return createSpatialTableIndex(schema,
+                                       table,
+                                       indexName,
+                                       "GEO_LAT_LON",
+                                       firstSpatialArgument,
+                                       spatialColumns,
+                                       indexCols);
+    }
+
+    protected final TableIndex createSpatialTableIndex(String schema,
+                                                       String table,
+                                                       String indexName,
+                                                       String geoFunctionName,
+                                                       int firstSpatialArgument,
+                                                       int spatialColumns,
                                                        String... indexCols) {
         StringBuilder cols = new StringBuilder();
         for (int i = 0; i < indexCols.length; i++) {
             if (i > 0) cols.append(",");
-            if (i == firstSpatialArgument) cols.append("Z_ORDER_LAT_LON(");
+            if (i == firstSpatialArgument) cols.append(String.format("%s(", geoFunctionName));
             cols.append(indexCols[i]);
             if (i == firstSpatialArgument + spatialColumns - 1) cols.append(")");
         }
@@ -688,7 +707,7 @@ public class ApiTestBase {
                 ddl.append(",");
             }
             if(i == firstSpatialIndex) {
-                ddl.append("Z_ORDER_LAT_LON(");
+                ddl.append("GEO_LAT_LON(");
             }
             ddl.append(columnNames[i]);
             if(i == lastSpatialIndex) {
@@ -839,13 +858,13 @@ public class ApiTestBase {
 
     protected Operator scanIndexPlan(Index index) {
         Schema schema = SchemaCache.globalSchema(index.getAIS());
-        return API.indexScan_Default(schema.indexRowType(index));
+        return API.indexScan_Default(schema.indexRowType(index), false, null);
     }
 
     protected final List<Row> scanAllIndex(Index index) {
         AkibanInformationSchema ais = ais();
         Schema schema = SchemaCache.globalSchema(ais);
-        Operator plan = API.indexScan_Default(schema.indexRowType(index));
+        Operator plan = API.indexScan_Default(schema.indexRowType(index), false, null);
         return runPlan(session(), schema, plan);
     }
 

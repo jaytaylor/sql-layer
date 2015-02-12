@@ -25,6 +25,7 @@ import java.util.Set;
 
 import com.foundationdb.ais.AISCloner;
 import com.foundationdb.ais.model.Columnar;
+import com.foundationdb.ais.model.DefaultNameGenerator;
 import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.SQLJJar;
 import com.foundationdb.ais.model.Sequence;
@@ -190,27 +191,24 @@ public class TableDDL
                               builder.akibanInformationSchema(),
                               createTable.getTableElementList());
 
+        // First pass: Columns.
         int colpos = 0;
-        // first loop through table elements, add the columns
         for (TableElementNode tableElement : createTable.getTableElementList()) {
             if (tableElement instanceof ColumnDefinitionNode) {
                 addColumn (builder, typesTranslator,
                            (ColumnDefinitionNode)tableElement, schemaName, tableName, colpos++);
             }
         }
-        // second pass get the constraints (primary, FKs, and other keys)
-        // This needs to be done in two passes as the parser may put the
-        // constraint before the column definition. For example:
-        // CREATE TABLE t1 (c1 INT PRIMARY KEY) produces such a result.
-        // The Builder complains if you try to do such a thing.
+
+        // Second pass: GROUPING, PRIMARY, UNIQUE and INDEX.
+        // Requires the columns to have already been created.
         for (TableElementNode tableElement : createTable.getTableElementList()) {
             if (tableElement instanceof FKConstraintDefinitionNode) {
                 FKConstraintDefinitionNode fkdn = (FKConstraintDefinitionNode)tableElement;
                 if (fkdn.isGrouping()) {
                     addJoin (builder, fkdn, defaultSchemaName, schemaName, tableName);
-                } else {
-                    addForeignKey(builder, ddlFunctions.getAIS(session), fkdn, defaultSchemaName, schemaName, tableName);
                 }
+                // else: regular FK, done in third pass below
             }
             else if (tableElement instanceof ConstraintDefinitionNode) {
                 addIndex (namer, builder, (ConstraintDefinitionNode)tableElement, schemaName, tableName, context);
@@ -220,6 +218,18 @@ public class TableDDL
                 throw new UnsupportedSQLException("Unexpected TableElement", tableElement);
             }
         }
+
+        // Third pass: FOREIGN KEY.
+        // Separate pass as to not create extraneous indexes, if possible.
+        for (TableElementNode tableElement : createTable.getTableElementList()) {
+            if (tableElement instanceof FKConstraintDefinitionNode) {
+                FKConstraintDefinitionNode fkdn = (FKConstraintDefinitionNode)tableElement;
+                if (!fkdn.isGrouping()) {
+                    addForeignKey(builder, ddlFunctions.getAIS(session), fkdn, defaultSchemaName, schemaName, tableName);
+                }
+            }
+        }
+
         setTableStorage(ddlFunctions, createTable, builder, tableName, table, schemaName);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
@@ -636,7 +646,9 @@ public class TableDDL
         if(id.isUnique()) {
             constraintName = builder.getNameGenerator().generateUniqueConstraintName(table.getName().getSchemaName(), indexName);
         }
-        if (columnList.functionType() == IndexColumnList.FunctionType.FULL_TEXT) {
+        String functionName = columnList.functionName();
+        IndexDDL.checkFunctionNameValidity(functionName);
+        if (IndexDDL.isFullText(functionName)) {
             logger.debug ("Building Full text index on table {}", table.getName()) ;
             tableIndex = IndexDDL.buildFullTextIndex(builder, table.getName(), indexName, id, null, null);
         } else if (IndexDDL.checkIndexType (id, table.getName()) == Index.IndexType.TABLE) {
@@ -647,7 +659,7 @@ public class TableDDL
             tableIndex = IndexDDL.buildGroupIndex(builder, table.getName(), indexName, id, null, null);
         }
 
-        boolean indexIsSpatial = columnList.functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON;
+        boolean indexIsSpatial = IndexDDL.isSpatial(functionName);
         // Can't check isSpatialCompatible before the index columns have been added.
         if (indexIsSpatial && !Index.isSpatialCompatible(tableIndex)) {
             throw new BadSpatialIndexException(tableIndex.getIndexName().getTableName(), null);
@@ -695,23 +707,46 @@ public class TableDDL
                                                   referencedColumnNames.length);
         }
         List<Column> referencedColumns = new ArrayList<>(referencedColumnNames.length);
+        List<Column> referencingColumns = new ArrayList<>(referencingColumnNames.length);
         for (int i = 0; i < referencingColumnNames.length; i++) {
-            if (referencingTable.getColumn(referencingColumnNames[i]) == null) {
+            Column referencingColumn = referencingTable.getColumn(referencingColumnNames[i]);
+            if (referencingColumn == null) {
                 throw new NoSuchColumnException(referencingColumnNames[i]); 
             }
+            referencingColumns.add(referencingColumn);
             Column referencedColumn = referencedTable.getColumn(referencedColumnNames[i]);
             if (referencedColumn == null) {
                 throw new NoSuchColumnException(referencedColumnNames[i]);
             }
             referencedColumns.add(referencedColumn);
         }
-        // Pick an index.
-        TableIndex referencedIndex = ForeignKey.findReferencedIndex(referencedTable,
-                                                                    referencedColumns);
-        if (referencedIndex == null) {
-            throw new ForeignKeyIndexRequiredException(constraintName, referencedName,
-                                                       Arrays.toString(referencedColumnNames));
+
+        // Note: Referenced side index checked in validation
+
+        // Pick (or create) a referencing side index
+        TableIndex referencingIndex = ForeignKey.findReferencingIndex(referencingTable,
+                                                                      referencingColumns);
+        if (referencingIndex == null) {
+            List<String> allIndexNames = new ArrayList<>();
+            for(Index index : referencingTable.getIndexesIncludingInternal()) {
+                allIndexNames.add(index.getIndexName().getName());
+            }
+            for(Index index : referencingTable.getFullTextIndexes()) {
+                allIndexNames.add(index.getIndexName().getName());
+            }
+            String name = DefaultNameGenerator.findUnique(allIndexNames, constraintName, DefaultNameGenerator.MAX_IDENT);
+            builder.index(referencingSchemaName, referencingTableName, name);
+            for(int i = 0; i < referencingColumnNames.length; ++i) {
+                builder.indexColumn(referencingSchemaName,
+                                    referencingTableName,
+                                    name,
+                                    referencingColumnNames[i],
+                                    i,
+                                    true,
+                                    null /*indexedLength*/);
+            }
         }
+
         builder.foreignKey(referencingSchemaName, referencingTableName,
                            Arrays.asList(referencingColumnNames),
                            referencedName.getSchemaName(), referencedName.getTableName(),

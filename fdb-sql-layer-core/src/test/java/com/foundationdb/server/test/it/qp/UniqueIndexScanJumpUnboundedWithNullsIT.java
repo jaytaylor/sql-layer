@@ -19,7 +19,10 @@ package com.foundationdb.server.test.it.qp;
 
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.server.types.value.ValueSources;
+
+import org.junit.Ignore;
 import org.junit.Test;
+
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.Cursor;
@@ -27,6 +30,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -189,15 +193,7 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
                       getDDD(),
                       new long[] {1021, 1020, 1019, 1018, 1017, 1015, 1014, 1011, 1010, 1025, 1016, 1013, 1012, 1024});
     }
-
-    @Test
-    public void testAAD()
-    {
-        testSkipNulls(1014,
-                      getAAD(),
-                      new long[] {1014, 1017, 1018, 1022, 1019, 1020, 1021, 1023}); // skips 1016, which is a null
-    }
-    
+   
     @Test
     public void testAAAToFirstNull()
     {

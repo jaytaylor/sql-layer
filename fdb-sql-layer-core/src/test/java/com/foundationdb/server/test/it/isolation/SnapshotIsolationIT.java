@@ -92,4 +92,18 @@ public class SnapshotIsolationIT extends IsolationITBase
         }
     }
 
+    @Test
+    @Isolation(JDBCConnection.TRANSACTION_SERIALIZABLE_SNAPSHOT)
+    @SQLExceptionExpected(errorCode = ErrorCode.FDB_NOT_COMMITTED)
+    public void snapshotVsDDL() throws SQLException {
+        try(Connection conn1 = getConnection();
+            Statement stmt1 = conn1.createStatement();
+            Connection conn2 = getAutoCommitConnection();
+            Statement stmt2 = conn2.createStatement()) {
+            stmt1.executeUpdate("INSERT INTO balls VALUES (" + NBALLS + 1 + ", 'red')");
+            stmt2.executeUpdate("ALTER TABLE balls ADD COLUMN size INT");
+            // This fails (correctly) because AIS reads are always non-snapshot
+            conn1.commit();
+        }
+    }
 }

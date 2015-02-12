@@ -29,10 +29,13 @@ import java.util.Queue;
 
 abstract class ExecutableJavaRoutine extends ExecutableCallStatement
 {
+    protected long aisGeneration;
     
     protected ExecutableJavaRoutine(ServerCallInvocation invocation,
+                                    long aisGeneration,
                                     JDBCParameterMetaData parameterMetaData) {
         super(invocation, parameterMetaData);
+        this.aisGeneration = aisGeneration;
     }
 
     protected abstract ServerJavaRoutine javaRoutine(EmbeddedQueryContext context, QueryBindings bindings);
@@ -78,5 +81,10 @@ abstract class ExecutableJavaRoutine extends ExecutableCallStatement
     @Override
     public AISGenerationMode getAISGenerationMode() {
         return AISGenerationMode.NOT_ALLOWED;
+    }
+
+    @Override
+    public long getAISGeneration() {
+        return aisGeneration;
     }
 }

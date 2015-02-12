@@ -270,11 +270,8 @@ public class DefaultFormatter
         case DISTINCT:
             appendDistinctOperator(name, atts);
             break;
-        case UNION:
+        case UNION: // ALL
             appendUnionOperator(name, atts);
-            break;
-        case EXCEPT:
-            appendExceptOperator(name, atts);
             break;
         case BUFFER_OPERATOR:
             appendBufferOperator(name, atts);
@@ -398,7 +395,7 @@ public class DefaultFormatter
             for (int i = 0; i < ncols; i++) {
                 if (isSpatial && (i == nequals)) {
                     sb.append(", (");
-                    int ndims = atts.get(Label.LOW_COMPARAND).size();
+                    int ndims = ((Number)atts.getValue(Label.INDEX_SPATIAL_DIMENSIONS)).intValue();
                     for (int j = 0; j < ndims; j++) {
                         append(atts.get(Label.COLUMN_NAME).get(i+j));
                         sb.append(", ");
@@ -407,28 +404,16 @@ public class DefaultFormatter
                     sb.append(')');
                     if (!atts.containsKey(Label.HIGH_COMPARAND)) {
                         sb.append(" ZNEAR(");
-                        for (Explainer ex : atts.get(Label.LOW_COMPARAND)) {
-                            append(ex);
-                            sb.append(", ");
-                        }
-                        sb.setLength(sb.length() - 2);
-                        sb.append(')');
                     }
                     else {
-                        sb.append(" BETWEEN (");
-                        for (Explainer ex : atts.get(Label.LOW_COMPARAND)) {
-                            append(ex);
-                            sb.append(", ");
-                        }
-                        sb.setLength(sb.length() - 2);
-                        sb.append(") AND (");
-                        for (Explainer ex : atts.get(Label.HIGH_COMPARAND)) {
-                            append(ex);
-                            sb.append(", ");
-                        }
-                        sb.setLength(sb.length() - 2);
-                        sb.append(')');
+                        sb.append(" OVERLAP(");                        
                     }
+                    for (Explainer ex : atts.get(Label.LOW_COMPARAND)) {
+                        append(ex);
+                        sb.append(", ");
+                    }
+                    sb.setLength(sb.length() - 2);
+                    sb.append(')');
                     break;
                 }
                 sb.append(", ");
@@ -816,16 +801,7 @@ public class DefaultFormatter
     protected void appendUnionOperator(String name, Attributes atts) {
         if ((levelOfDetail == LevelOfDetail.VERBOSE_WITHOUT_COST) ||
                 (levelOfDetail == LevelOfDetail.VERBOSE)) {
-            if((Boolean)atts.getValue(Label.PIPELINE)){
-                sb.append("Pipelining");
-            }
-        }
-    }
-
-    protected void appendExceptOperator(String name, Attributes atts) {
-        if ((levelOfDetail == LevelOfDetail.VERBOSE_WITHOUT_COST) ||
-                (levelOfDetail == LevelOfDetail.VERBOSE)) {
-            if((Boolean)atts.getValue(Label.PIPELINE)){
+            if((Boolean) atts.getValue(Label.PIPELINE)){
                 sb.append("Pipelining");
             }
         }

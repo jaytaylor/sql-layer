@@ -89,7 +89,7 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
     @Override
     public void close()
     {
-        if (isActive()) {
+        if (!isClosed()) {
             super.close();
             geCursor.close();
             ltCursor.close();

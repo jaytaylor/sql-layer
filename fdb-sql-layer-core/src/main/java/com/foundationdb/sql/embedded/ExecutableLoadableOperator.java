@@ -45,18 +45,21 @@ class ExecutableLoadableOperator extends ExecutableQueryOperatorStatement
         LoadablePlan<?> plan = 
             conn.getRoutineLoader().loadLoadablePlan(conn.getSession(),
                                                      invocation.getRoutineName());
+        long aisGeneration = context.getAIS().getGeneration();
         JDBCResultSetMetaData resultSetMetaData = resultSetMetaData(plan, context);
         if (plan instanceof LoadableOperator)
-            return new ExecutableLoadableOperator((LoadableOperator)plan, invocation,
+            return new ExecutableLoadableOperator((LoadableOperator)plan,
+                                                  invocation, aisGeneration,
                                                   resultSetMetaData, parameterMetaData);
         throw new UnsupportedSQLException("Unsupported loadable plan", call);
     }
 
     protected ExecutableLoadableOperator(LoadableOperator loadableOperator, 
                                          ServerCallInvocation invocation,
+                                         long aisGeneration,
                                          JDBCResultSetMetaData resultSetMetaData,
                                          JDBCParameterMetaData parameterMetaData) {
-        super(loadableOperator.plan(), resultSetMetaData, parameterMetaData, null);
+        super(loadableOperator.plan(), aisGeneration, resultSetMetaData, parameterMetaData, null);
         this.invocation = invocation;
     }
     

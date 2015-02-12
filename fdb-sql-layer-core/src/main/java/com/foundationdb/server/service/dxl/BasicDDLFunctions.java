@@ -69,7 +69,6 @@ import com.foundationdb.server.error.NoSuchIndexException;
 import com.foundationdb.server.error.NoSuchSequenceException;
 import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.error.NoSuchTableIdException;
-import com.foundationdb.server.error.NotAllowedByConfigException;
 import com.foundationdb.server.error.ProtectedIndexException;
 import com.foundationdb.server.error.ReferencedSQLJJarException;
 import com.foundationdb.server.error.UnsupportedDropException;
@@ -114,19 +113,17 @@ import static com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
 public class BasicDDLFunctions implements DDLFunctions {
     private final static Logger logger = LoggerFactory.getLogger(BasicDDLFunctions.class);
 
-    private final static String FEATURE_SPATIAL_INDEX_PROP = "fdbsql.feature.spatial_index_on";
-
     private final SchemaManager schemaManager;
     private final Store store;
     private final IndexStatisticsService indexStatisticsService;
     private final TransactionService txnService;
     private final ListenerService listenerService;
-    private final boolean withSpatialIndexes;
     private OnlineDDLMonitor onlineDDLMonitor;
 
     @Override
     public void createTable(Session session, Table table)
     {
+        schemaManager.checkAllowedIndexes(table.getIndexesIncludingInternal());
         TableName tableName = schemaManager().createTableDefinition(session, table);
         Table newTable = getAIS(session).getTable(tableName);
         for(TableListener listener : listenerService.getTableListeners()) {
@@ -193,6 +190,7 @@ public class BasicDDLFunctions implements DDLFunctions {
             return;
         }
         logger.debug("creating table {}", table);
+        schemaManager.checkAllowedIndexes(table.getIndexesIncludingInternal());
         txnService.commitTransaction(session);
         try {
             onlineAt(OnlineDDLMonitor.Stage.PRE_METADATA);
@@ -321,6 +319,7 @@ public class BasicDDLFunctions implements DDLFunctions {
                                   final List<TableChange> tableIndexChanges,
                                   final QueryContext context)
     {
+        schemaManager.checkAllowedIndexes(newDefinition.getIndexesIncludingInternal());
         onlineAt(OnlineDDLMonitor.Stage.PRE_METADATA);
         final AISValidatorPair pair = txnService.run(session, new Callable<AISValidatorPair>() {
             @Override
@@ -653,13 +652,7 @@ public class BasicDDLFunctions implements DDLFunctions {
             return;
         }
 
-        if(!withSpatialIndexes) {
-            for(Index index : indexesToAdd) {
-                if(index.isSpatial()) {
-                    throw new NotAllowedByConfigException("spatial index");
-                }
-            }
-        }
+        schemaManager.checkAllowedIndexes(indexesToAdd);
 
         onlineAt(OnlineDDLMonitor.Stage.PRE_METADATA);
         txnService.run(session, new Runnable() {
@@ -742,8 +735,8 @@ public class BasicDDLFunctions implements DDLFunctions {
                 else {
                     throw new NoSuchIndexException(indexName);
                 }
-                // no primary key nor connected to a FK
-                if(index.isPrimaryKey() || index.isConnectedToFK()) {
+                // PRIMARY is special (affects grouping). FOREIGN KEY referenced handled in validations.
+                if(index.isPrimaryKey()) {
                     throw new ProtectedIndexException(indexName, table.getName());
                 }
                 if (allIndexes != tableIndexes) {
@@ -898,7 +891,6 @@ public class BasicDDLFunctions implements DDLFunctions {
         this.indexStatisticsService = indexStatisticsService;
         this.txnService = txnService;
         this.listenerService = listenerService;
-        this.withSpatialIndexes = Boolean.parseBoolean(configService.getProperty(FEATURE_SPATIAL_INDEX_PROP));
     }
 
     private TableChangeValidator alterTableDefinitions(Session session,

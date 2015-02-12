@@ -35,10 +35,6 @@ import java.util.Locale;
 
 public final class TExecutionContext {
 
-    public TInstance inputTypeAt(int index) {
-        return inputTypes.get(index);
-    }
-
     public Object objectAt(int index) {
         Object result = null;
         if (preptimeCache != null && preptimeCache.isDefined(index))

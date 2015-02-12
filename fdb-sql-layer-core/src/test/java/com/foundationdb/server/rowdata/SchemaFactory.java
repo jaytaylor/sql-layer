@@ -26,8 +26,10 @@ import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.View;
+import com.foundationdb.qp.memoryadapter.MemoryAdapter;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.MemoryOnlyTableStatusCache;
+import com.foundationdb.server.TableStatus;
 import com.foundationdb.server.TableStatusCache;
 import com.foundationdb.server.api.DDLFunctions;
 import com.foundationdb.server.api.ddl.DDLFunctionsMockBase;
@@ -110,7 +112,7 @@ public class SchemaFactory {
                 IndexDDL.createIndex(ddlFunctions, session, defaultSchema, (CreateIndexNode) stmt, null);
             } else if (stmt instanceof CreateViewNode) {
                 ViewDDL.createView(ddlFunctions, session, defaultSchema, (CreateViewNode) stmt,
-                                   new AISBinderContext(ddlFunctions.getAIS(session), defaultSchema), null);
+                                   new AISBinderContext(ddlFunctions.getAIS(session), defaultSchema), null, server);
             } else if (stmt instanceof CreateSequenceNode) {
                 SequenceDDL.createSequence(ddlFunctions, session, defaultSchema, (CreateSequenceNode)stmt);
             } else if (stmt instanceof CreateAliasNode) {
@@ -131,7 +133,19 @@ public class SchemaFactory {
     }
 
     public void buildRowDefs(AkibanInformationSchema ais) {
-        RowDefBuilder rowDefBuilder = new MockRowDefBuilder(ais, new MemoryOnlyTableStatusCache());
+        MemoryOnlyTableStatusCache tableStatusCache = new MemoryOnlyTableStatusCache();
+        // TODO: this attaches the TableStatus to each table. 
+        // This used to be done in RowDefBuilder#build() but no longer.
+        for (final Table table : ais.getTables().values()) {
+            final TableStatus status;
+            if (table.hasMemoryTableFactory()) {
+                status = tableStatusCache.getOrCreateMemoryTableStatus(table.getTableId(), MemoryAdapter.getMemoryTableFactory(table));
+            } else {
+                status = tableStatusCache.createTableStatus(table);
+            }
+            table.tableStatus(status);
+        }
+        RowDefBuilder rowDefBuilder = new MockRowDefBuilder(ais, tableStatusCache);
         rowDefBuilder.build();
     }
 

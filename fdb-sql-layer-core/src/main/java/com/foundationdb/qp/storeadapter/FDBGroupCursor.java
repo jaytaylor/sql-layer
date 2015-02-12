@@ -20,7 +20,6 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.qp.operator.CursorLifecycle;
 import com.foundationdb.qp.operator.GroupCursor;
 import com.foundationdb.qp.operator.RowCursorImpl;
-import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.Schema;

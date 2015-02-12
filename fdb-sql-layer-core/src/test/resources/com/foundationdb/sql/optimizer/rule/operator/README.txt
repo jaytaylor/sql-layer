@@ -40,6 +40,12 @@ geospatial-3: covering spatial index
 
 geospatial-5: Very large radius, testing handling of query regions exceeding latitude and longitude bounds.
 
+geospatial-6: non-point index
+
 full-text-1: single parsed query
 
 full-text-2: terms on multiple branches
+
+hash-join-1: using hash join
+
+hash-join-1d: with DISTINCT

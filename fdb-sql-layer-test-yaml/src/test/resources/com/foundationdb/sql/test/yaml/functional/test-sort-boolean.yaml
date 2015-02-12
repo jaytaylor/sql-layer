@@ -1,0 +1,13 @@
+---
+- CreateTable: tb(id INT PRIMARY KEY, value BOOLEAN)
+---
+- Statement: INSERT INTO tb VALUES (1, true), (2, false)
+---
+- Statement: SELECT id, value FROM tb ORDER BY value
+- output_already_ordered: [[2, false], [1, true]]
+---
+- Statement: CREATE INDEX tb_b ON tb(value)
+---
+- Statement: SELECT id, value FROM tb ORDER BY value
+- output_already_ordered: [[2, false], [1, true]]
+...

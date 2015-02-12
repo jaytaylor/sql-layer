@@ -533,7 +533,7 @@ public final class TypeResolver extends BaseRule {
                 }
             };
 
-            TPreptimeValue constantTpv = overload.evaluateConstant(context, overload.filterInputs(lazyInputs));
+            TPreptimeValue constantTpv = overload.evaluateConstant(context, lazyInputs);
             if (constantTpv != null) {
                 TPreptimeValue oldTpv = expression.getPreptimeValue();
                 assert oldTpv.type().equals(constantTpv.type())

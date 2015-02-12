@@ -179,6 +179,12 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         return sequence.realValueForRawNumber(rawValue);
     }
 
+    @Override
+    public void dropSchema(Session session, com.foundationdb.ais.model.Schema schema) {
+        super.dropSchema(session, schema);
+        removeFromCache(session, schema.getSequences().values());
+    }
+
     public void setRollbackPending(Session session) {
         if(txnService.isTransactionActive(session)) {
             txnService.setRollbackPending(session);
@@ -220,7 +226,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     @Override
     public FDBStoreData createStoreData(Session session, FDBStorageDescription storageDescription) {
-        return new FDBStoreData(session, storageDescription, createKey());
+        return new FDBStoreData(session, storageDescription, createKey(), createKey());
     }
 
     @Override
@@ -443,9 +449,8 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     @Override
     public void deleteSequences(Session session, Collection<? extends Sequence> sequences) {
+        removeFromCache(session, sequences);
         for (Sequence sequence : sequences) {
-            session.remove(SEQ_UPDATES_KEY, SequenceCache.cacheKey(sequence));
-            sequenceCache.remove(sequence.getStorageUniqueKey());
             removeIfExists(session, rootDir, FDBNameGenerator.dataPath(sequence));
         }
     }
@@ -577,11 +582,12 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         }
     }
 
+    // Test only traversal. 
     @Override
     public void traverse(Session session, Group group, TreeRecordVisitor visitor) {
         visitor.initialize(session, this);
         FDBStoreData storeData = createStoreData(session, group);
-        groupIterator(session, storeData);
+        groupIterator(session, storeData,  FDBScanTransactionOptions.NORMAL);
         while (storeData.next()) {
             Row row = expandGroupData(session, storeData, SchemaCache.globalSchema(group.getAIS()));
             visitor.visit(storeData.persistitKey, row);
@@ -593,6 +599,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         return expandRow(session, storeData, schema);
     }
     
+    // Test only Traversal
     @Override
     public <V extends IndexVisitor<Key, Value>> V traverse(Session session, Index index, V visitor, long scanTimeLimit, long sleepTime) {
         FDBStoreData storeData = createStoreData(session, index);
@@ -656,7 +663,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     public Class<? extends Exception> getOnlineDMLFailureException() {
         return FDBNotCommittedException.class;
     }
-
     
     @Override
     protected Row storeLobs(Session session, Row row) {
@@ -870,13 +876,6 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         FIRST_DESCENDANT, LAST_DESCENDANT
     }
 
-    /** Iterate over the whole group. */
-    public void groupIterator(Session session, FDBStoreData storeData) {
-        groupIterator(session, storeData, 
-                      GroupIteratorBoundary.START, GroupIteratorBoundary.END, 
-                      Transaction.ROW_LIMIT_UNLIMITED, FDBScanTransactionOptions.NORMAL);
-    }
-
     /** Iterate over just <code>storeData.persistitKey</code>, if present. */
     public void groupKeyIterator(Session session, FDBStoreData storeData, FDBScanTransactionOptions transactionOptions) {
         // NOTE: Caller checks whether key returned matches.
@@ -1019,6 +1018,24 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         return rawValue;
     }
 
+    private void removeFromCache(Session session, Collection<? extends Sequence> sequences) {
+        for(Sequence s : sequences) {
+            session.remove(SEQ_UPDATES_KEY, SequenceCache.cacheKey(s));
+            sequenceCache.remove(s.getStorageUniqueKey());
+        }
+    }
+
+    //
+    // Test only
+    //
+
+    int getSequenceCacheMapSize() {
+        return sequenceCache.size();
+    }
+
+    //
+    // Internal
+    //
 
     private static final ReadWriteMap.ValueCreator<Object, SequenceCache> SEQUENCE_CACHE_VALUE_CREATOR =
         new ReadWriteMap.ValueCreator<Object, SequenceCache>() {

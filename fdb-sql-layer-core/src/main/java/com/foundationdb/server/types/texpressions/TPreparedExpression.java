@@ -26,4 +26,5 @@ public interface TPreparedExpression extends Explainable {
     TPreptimeValue evaluateConstant(QueryContext queryContext);
     TInstance resultType();
     TEvaluatableExpression build();
+    boolean isLiteral();
 }

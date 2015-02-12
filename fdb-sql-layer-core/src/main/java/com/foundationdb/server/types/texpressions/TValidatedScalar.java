@@ -19,8 +19,6 @@ package com.foundationdb.server.types.texpressions;
 
 import com.foundationdb.server.explain.*;
 import com.foundationdb.server.types.LazyList;
-import com.foundationdb.server.types.ReversedLazyList;
-import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInputSet;
 import com.foundationdb.server.types.TInstance;
@@ -62,36 +60,14 @@ public final class TValidatedScalar extends TValidatedOverload implements TScala
         return scalar.getExplainer(context, inputs, resultType);
     }
 
-    public <T> LazyList<? extends T> filterInputs(LazyList<? extends T> inputs) {
-        return commuted ? new ReversedLazyList<>(inputs) : inputs;
-    }
-
-    public TValidatedScalar createCommuted() {
-        if (!coversExactlyNArgs(2))
-            throw new IllegalStateException("commuted overloads must take exactly two arguments: " + this);
-        TClass origArg1 = inputSetAt(1).targetType();
-        TClass origArg0 = inputSetAt(0).targetType();
-        if (origArg0 == origArg1)
-            throw new IllegalStateException("two-arg overload has same target class for both operands, so commuting "
-                    + "it makes no sense: " + this);
-
-        TInputSetBuilder builder = new TInputSetBuilder();
-        builder.covers(origArg1, 0);
-        builder.covers(origArg0, 1);
-        List<TInputSet> commutedInputSets = builder.toList();
-        return new TValidatedScalar(scalar, commutedInputSets, true);
-    }
-
     public TValidatedScalar(TScalar scalar) {
-        this(scalar, scalar.inputSets(), false);
+        this(scalar, scalar.inputSets());
     }
 
-    private TValidatedScalar(TScalar scalar, List<TInputSet> inputSets, boolean commuted) {
+    private TValidatedScalar(TScalar scalar, List<TInputSet> inputSets) {
         super(scalar, inputSets);
-        this.commuted = commuted;
         this.scalar = scalar;
     }
 
     private final TScalar scalar;
-    private final boolean commuted;
 }
