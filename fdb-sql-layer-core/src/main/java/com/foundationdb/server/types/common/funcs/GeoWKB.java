@@ -17,12 +17,17 @@
 
 package com.foundationdb.server.types.common.funcs;
 
-import com.foundationdb.server.error.InvalidSpatialObjectException;
+import com.foundationdb.*;
+import com.foundationdb.server.error.*;
+import com.foundationdb.server.service.blob.*;
+import com.foundationdb.server.service.transaction.*;
+import com.foundationdb.server.store.*;
 import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.TPreptimeContext;
+import com.foundationdb.server.types.aksql.aktypes.*;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import com.foundationdb.server.types.value.ValueSource;
@@ -56,10 +61,36 @@ public class GeoWKB extends TScalarBase
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
-        byte[] wkb = inputs.get(0).getBytes();
+        byte[] data = new byte[0];
+        BlobRef blob;
+        if (inputs.get(0).hasAnyValue()) {
+            Object o = inputs.get(0).getObject();
+            if (o instanceof BlobRef) {
+                blob = (BlobRef) o;
+            } else {
+                throw new InvalidArgumentTypeException("Should be a blob column");
+            }
+            String mode = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.BLOB_RETURN_MODE);
+            if (mode.equalsIgnoreCase(AkBlob.SIMPLE)){
+                data = blob.getBytes();
+            }
+            else {
+                if (blob.isShortLob()) {
+                    data = blob.getBytes();
+                } else {
+                    TransactionService txnService = context.getQueryContext().getServiceManager().getServiceByClass(TransactionService.class);
+                    if (txnService instanceof FDBTransactionService) {
+                        Transaction tr = ((FDBTransactionService) txnService).getTransaction(context.getQueryContext().getStore().getSession()).getTransaction();
+                        LobService ls = context.getQueryContext().getServiceManager().getServiceByClass(LobService.class);
+                        data = ls.readBlob(tr, blob.getId().toString());
+                    }
+                }
+            }
+        }
+        
         WKBReader reader = (WKBReader)context.preptimeObjectAt(READER_CONTEXT_POS);
         try {
-            Geometry geometry = reader.read(wkb);
+            Geometry geometry = reader.read(data);
             output.putObject(geometry);
         } catch(ParseException e) {
             throw new InvalidSpatialObjectException(e.getMessage());

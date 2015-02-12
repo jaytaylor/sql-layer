@@ -38,8 +38,9 @@ import com.foundationdb.sql.types.TypeId;
 
 public class AkBlob extends NoAttrTClass {
 
-    public final static TypeId BLOBTYPE = TypeId.BLOB_ID;
     public final static NoAttrTClass INSTANCE = new AkBlob();
+    
+    public final static TypeId BLOBTYPE = TypeId.BLOB_ID;
     public final static ValueCacher CACHER = new BlobCacher();
     public final static int LOB_SWITCH_SIZE = 50000;
     public final static String BLOB_RETURN_MODE = "fdbsql.blob.return_mode";
