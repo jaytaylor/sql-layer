@@ -17,9 +17,10 @@
 
 package com.foundationdb.server.service.monitor;
 
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public abstract class SessionMonitorBase implements SessionMonitor {
     private final int sessionID;
@@ -37,8 +38,7 @@ public abstract class SessionMonitorBase implements SessionMonitor {
     private long[] statementCounters = new long[StatementTypes.values().length];
     // TODO: In theory this needs to be a thread-safe data structure for adding/removing listeners
     // In practice, this is only executed in one thread.
-    private List<SessionEventListener> eventListeners = new ArrayList<>();
-    
+    private Set<SessionEventListener> eventListeners = new HashSet<>();
     
     protected SessionMonitorBase(int sessionID) {
         this.sessionID = sessionID;

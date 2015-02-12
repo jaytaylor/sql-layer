@@ -19,7 +19,6 @@ package com.foundationdb.sql.embedded;
 
 import com.foundationdb.sql.server.ServerCallInvocation;
 import com.foundationdb.sql.server.ServerJavaRoutine;
-import com.foundationdb.sql.server.ServerCallContextStack;
 
 import com.foundationdb.qp.operator.QueryBindings;
 

@@ -24,6 +24,7 @@ import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.sql.optimizer.plan.CostEstimate;
 
 class ExecutableQueryOperatorStatement extends ExecutableOperatorStatement
@@ -38,6 +39,11 @@ class ExecutableQueryOperatorStatement extends ExecutableOperatorStatement
                                                CostEstimate costEstimate) {
         super(resultOperator, aisGeneration, resultSetMetaData, parameterMetaData);
         this.costEstimate = costEstimate;
+    }
+
+    @Override
+    public StatementTypes getStatementType() {
+        return StatementTypes.SELECT;
     }
     
     @Override
