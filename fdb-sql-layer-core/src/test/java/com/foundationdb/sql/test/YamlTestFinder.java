@@ -57,7 +57,7 @@ public class YamlTestFinder
      * A regular expression matching the names of the YAML files in
      * the resource directories.
      */
-    private static final String FILE_NAME_REGEXP = "test-.*blob.*[.]yaml";
+    private static final String FILE_NAME_REGEXP = "test-.*[.]yaml"; 
 
     private final Collection<Object[]> params = new ArrayList<>();
     private final Pattern filenamePattern = Pattern.compile(FILE_NAME_REGEXP);

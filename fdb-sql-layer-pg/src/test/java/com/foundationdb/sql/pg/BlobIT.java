@@ -46,11 +46,6 @@ public class BlobIT extends PostgresServerITBase {
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
-                .bind(SchemaManager.class, FDBSchemaManager.class)
-                .bind(MonitorService.class, MonitorServiceImpl.class)
-                .bind(Store.class, FDBStore.class)
-                .bind(LayerInfoInterface.class, Main.class)
-                .bind(SecurityService.class, SecurityServiceImpl.class)
                 .bindAndRequire(ServerSchemaTablesService.class, ServerSchemaTablesServiceImpl.class);
     }
     

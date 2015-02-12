@@ -146,7 +146,7 @@
 - Statement: INSERT INTO blobs VALUES (create_short_blob(unhex('05')), create_short_blob(unhex('06')))
 ---
 - Statement: SELECT COALESCE(unwrap_blob(x), unwrap_blob(y)) FROM blobs
-- output: [[null], [!!binary 'Aw=='], [!!binary 'BA=='], [!!binary 'Bg==']]
+- output: [[null], [!!binary 'Aw=='], [!!binary 'BA=='], [!!binary 'BQ==']]
 
 # clob
 ---

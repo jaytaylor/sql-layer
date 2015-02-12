@@ -3,14 +3,14 @@
 ---
 - Statement: INSERT INTO blob VALUES (1, X'0102030405060708' )
 ---
-- Statement: SELECT id, bl FROM blob
-- output: [[1, !!binary 'AQIDBAUGBwg=']]
+- Statement: SELECT id, unwrap_blob(bl) FROM blob
+- row_count: 1
 ---
 - Statement: UPDATE blob set bl = unhex('0102030400000000') where id = 1 returning id, bl
-- output: [[1, !!binary 'AQIDBAAAAAA=']]
+- row_count: 1
 ---
-- Statement: SELECT id, bl FROM blob
-- output: [[1, !!binary 'AQIDBAAAAAA=']]
+- Statement: SELECT id, unwrap_blob(bl) FROM blob
+- row_count: 1
 ---
 - Include: all-types-schema.yaml
 ---
@@ -20,13 +20,6 @@
 - Statement: SELECT blob_field FROM all_types ORDER BY bigint_field
 - output_already_ordered: [[!!binary 'AQIDBAUGBwg='],[!!binary 'AQIDBAUGBwg='],[!!binary 'AQIDBAUGBwg=']]
 
---- # prefix intended for linking a uuid to a blob
-- Statement: INSERT INTO blob VALUES (10, unhex('02') )
-- error: [22511]
-
---- # prefix not valid
-- Statement: INSERT INTO blob VALUES (11, unhex('03') )
-- error: [22511]
 --- # Cannot create an index on a blob column
 - Statement: ALTER TABLE blob ADD INDEX (bl)
 - error: [5000A]
