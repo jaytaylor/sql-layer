@@ -97,7 +97,7 @@ public class AkParsers
         @Override
         public void parse(TExecutionContext context, ValueSource source, ValueTarget target) {
             String s = source.getString();
-            int charsetId = context.inputTypeAt(0).attribute(StringAttribute.CHARSET);
+            int charsetId = source.getType().attribute(StringAttribute.CHARSET);
             String charsetName = StringFactory.Charset.values()[charsetId].name();
             byte[] bytes;
             try {

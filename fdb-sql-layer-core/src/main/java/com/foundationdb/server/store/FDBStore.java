@@ -427,7 +427,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     
     private void deleteLobsChecked(Session session, Group group) {
         FDBStoreData storeData = createStoreData(session, group);
-        groupIterator(session, storeData);
+        groupIterator(session, storeData, FDBScanTransactionOptions.NORMAL);
         while (storeData.next()) {
             Row row = expandGroupData(session, storeData, SchemaCache.globalSchema(group.getAIS()));
             deleteLobs(session, row);
