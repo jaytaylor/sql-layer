@@ -238,13 +238,7 @@ public final class ValueSources {
         }
         else if (object instanceof BigDecimal) {
             BigDecimal bd = (BigDecimal) object;
-            int precision = bd.precision();
-            int scale = bd.scale();
-            if (precision < scale) {
-                // BigDecimal interprets something like "0.01" as having a scale of 2 and precision of 1.
-                precision = scale;
-            }
-            type = MNumeric.DECIMAL.instance(precision, scale, false);
+            type = MNumeric.DECIMAL.instance(BigDecimalWrapperImpl.sqlPrecision(bd), BigDecimalWrapperImpl.sqlScale(bd), false);
             value = new Value(type);
             value.putObject(new BigDecimalWrapperImpl(bd));
         }
