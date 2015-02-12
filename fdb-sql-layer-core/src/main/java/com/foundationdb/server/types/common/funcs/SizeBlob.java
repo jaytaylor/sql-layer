@@ -100,7 +100,7 @@ public class SizeBlob extends TScalarBase {
 
     @Override
     public String[] registeredNames() {
-        return new String[] {"size_blob"};
+        return new String[] {"size_blob", "octet_length"};
     }
 
     @Override
