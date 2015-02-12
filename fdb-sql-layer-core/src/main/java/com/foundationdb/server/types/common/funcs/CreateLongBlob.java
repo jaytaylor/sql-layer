@@ -19,16 +19,17 @@ package com.foundationdb.server.types.common.funcs;
 
 
 import com.foundationdb.*;
-import com.foundationdb.server.error.*;
+import com.foundationdb.server.error.LobException;
 import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.service.blob.LobService;
-import com.foundationdb.server.service.transaction.*;
-import com.foundationdb.server.store.*;
+import com.foundationdb.server.service.transaction.TransactionService;
+import com.foundationdb.server.store.FDBTransactionService;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.LazyList;
-import com.foundationdb.server.types.aksql.aktypes.*;
+import com.foundationdb.server.types.aksql.aktypes.AkBlob;
+import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.TOverloadResult;

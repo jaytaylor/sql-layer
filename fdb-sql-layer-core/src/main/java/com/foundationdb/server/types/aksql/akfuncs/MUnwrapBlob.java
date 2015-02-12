@@ -19,7 +19,7 @@ package com.foundationdb.server.types.aksql.akfuncs;
 
 
 import com.foundationdb.server.types.TScalar;
-import com.foundationdb.server.types.common.funcs.*;
+import com.foundationdb.server.types.common.funcs.UnwrapBlob;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 
 public class MUnwrapBlob {

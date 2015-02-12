@@ -22,7 +22,6 @@ import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TParser;
-import com.foundationdb.server.types.aksql.aktypes.*;
 import com.foundationdb.server.types.common.types.StringAttribute;
 import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.value.ValueSource;

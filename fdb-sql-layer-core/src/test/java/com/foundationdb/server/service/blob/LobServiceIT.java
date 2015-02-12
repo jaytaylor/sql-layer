@@ -17,9 +17,8 @@
 
 package com.foundationdb.server.service.blob;
 
-import com.foundationdb.server.error.*;
 import com.foundationdb.server.service.transaction.*;
-import com.foundationdb.server.store.*;
+import com.foundationdb.server.store.FDBTransactionService;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.Transaction;
 import java.util.UUID;

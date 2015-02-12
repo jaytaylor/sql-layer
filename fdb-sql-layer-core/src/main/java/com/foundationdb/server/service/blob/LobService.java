@@ -19,9 +19,8 @@
 package com.foundationdb.server.service.blob;
 
 
-import com.foundationdb.*;
-import com.foundationdb.qp.operator.*;
-import com.foundationdb.server.service.transaction.*;
+import com.foundationdb.TransactionContext;
+import com.foundationdb.qp.operator.QueryContext;
 
 import java.util.List;
 

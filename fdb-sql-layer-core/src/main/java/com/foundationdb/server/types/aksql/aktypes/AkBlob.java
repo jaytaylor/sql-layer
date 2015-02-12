@@ -17,8 +17,8 @@
 
 package com.foundationdb.server.types.aksql.aktypes;
 
-import com.foundationdb.server.error.*;
-import com.foundationdb.server.service.blob.*;
+import com.foundationdb.server.error.InvalidParameterValueException;
+import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.ValueIO;
 import com.foundationdb.server.types.aksql.AkParsers;

@@ -22,7 +22,7 @@ import com.foundationdb.async.Function;
 import com.foundationdb.Transaction;
 import com.foundationdb.blob.BlobBase;
 import com.foundationdb.directory.DirectorySubspace;
-import com.foundationdb.qp.operator.*;
+import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.error.LobException;
 import com.foundationdb.TransactionContext;
 import com.foundationdb.directory.NoSuchDirectoryException;
