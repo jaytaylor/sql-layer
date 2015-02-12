@@ -304,12 +304,14 @@ public class TBigDecimal extends TClassBase {
             }
             int allowedScale = typeInstance.attribute(DecimalAttribute.SCALE);
             int allowedPrecision = typeInstance.attribute(DecimalAttribute.PRECISION);
-            if (allowedPrecision < bigDecimal.precision()) {
-                throw new AkibanInternalException("precision of " + bigDecimal.precision()
+            int actualScale = BigDecimalWrapperImpl.sqlScale(bigDecimal);
+            int actualPrecision = BigDecimalWrapperImpl.sqlPrecision(bigDecimal);
+            if (allowedPrecision < actualPrecision) {
+                throw new AkibanInternalException("precision of " + actualPrecision
                         + " is greater than " + allowedPrecision + " for value " + bigDecimal);
             }
-            if (allowedScale < bigDecimal.scale()) {
-                throw new AkibanInternalException("scale of " + bigDecimal.scale()
+            if (allowedScale < actualScale) {
+                throw new AkibanInternalException("scale of " + actualScale
                         + " is greater than " + allowedScale + " for value " + bigDecimal);
             }
             BigDecimalWrapper wrapper = new BigDecimalWrapperImpl(bigDecimal).round(allowedScale);

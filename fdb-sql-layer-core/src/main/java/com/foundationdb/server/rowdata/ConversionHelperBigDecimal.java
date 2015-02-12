@@ -18,6 +18,7 @@
 package com.foundationdb.server.rowdata;
 
 import com.foundationdb.server.AkServerUtil;
+import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
 import com.foundationdb.util.AkibanAppender;
 
 import java.math.BigDecimal;
@@ -189,13 +190,9 @@ public final class ConversionHelperBigDecimal {
 
     public static String normalizeToString(BigDecimal value, int declPrec, int declScale) {
         // First, we have to turn the value into one that fits the FieldDef's constraints.
-        int valuePrec = value.precision();
-        int valueScale = value.scale();
+        int valuePrec = BigDecimalWrapperImpl.sqlPrecision(value);
+        int valueScale = BigDecimalWrapperImpl.sqlScale(value);
         assert valueScale >= 0 : value;
-        // MySQL sees "0.0123" as DECIMAL(4, 4). Java sees it as DECIMAL(3, 4). So, just do a simple conversion.
-        if (valuePrec < valueScale) {
-            valuePrec = valueScale;
-        }
         int valueIntDigits = valuePrec - valueScale;
         int declIntDigits = declPrec - declScale;
         if (valueIntDigits > declIntDigits) {

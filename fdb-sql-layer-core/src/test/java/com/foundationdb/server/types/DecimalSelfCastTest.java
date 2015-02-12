@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collection;
 
+import com.foundationdb.server.types.value.ValueSources;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -72,7 +73,7 @@ public class DecimalSelfCastTest {
 
     @Test
     public void checkSelfCast() {
-        Value start = new Value (MNumeric.DECIMAL.instance(source.precision(), source.scale(), false));
+        Value start = ValueSources.fromObject(source);
         start.putObject(new BigDecimalWrapperImpl(source));
         Value target = new Value (MNumeric.DECIMAL.instance(precision, scale, false));
         
