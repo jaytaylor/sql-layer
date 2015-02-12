@@ -154,6 +154,7 @@ public class MonitorServiceIT extends ITBase {
                      "conn.close();\n"+
                      "}\n"+
                      "$$ LANGUAGE javascript PARAMETER STYLE java EXTERNAL NAME 'fun'");
+
         }
         long recount = getMonitorService().getCount(StatementTypes.STATEMENT);
         long reddl =  getMonitorService().getCount(StatementTypes.DDL_STMT);
@@ -168,6 +169,7 @@ public class MonitorServiceIT extends ITBase {
             stmt.registerOutParameter(1, Types.INTEGER);
             stmt.execute();
             assertEquals(3, stmt.getInt(1));
+            assertEquals(1, getMonitorService().getSessionMonitors().size());
         }
         long newCount = getMonitorService().getCount(StatementTypes.STATEMENT);
         long recalls = getMonitorService().getCount(StatementTypes.CALL_STMT);
@@ -209,6 +211,7 @@ public class MonitorServiceIT extends ITBase {
             assertEquals(3, rs.getInt(1));
             assertFalse("has more rows", rs.next());
             assertNull(rs.getWarnings());
+            assertEquals(2, getMonitorService().getSessionMonitors().size());
         }
         long newCount = getMonitorService().getCount(StatementTypes.STATEMENT);
         long recalls = getMonitorService().getCount(StatementTypes.CALL_STMT);
@@ -260,6 +263,7 @@ public class MonitorServiceIT extends ITBase {
             assertEquals(3, rs.getInt(1));
             assertFalse("has more rows", rs.next());
             assertNull(rs.getWarnings());
+            assertEquals(2, getMonitorService().getSessionMonitors().size());
             
             rs.getStatement().getConnection().close();
         }
