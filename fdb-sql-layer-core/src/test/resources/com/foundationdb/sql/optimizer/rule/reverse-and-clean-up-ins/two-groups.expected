@@ -1,7 +1,7 @@
 SelectQuery@3590ed52
   ResultSet@3dccbdf7[city, state, name]
     MapJoin@62b92956()
-      ExpressionsSource@2d68be1b([[MA], [NH], [VT]])
+      ExpressionsSource@2d68be1b([['MA'], ['NH'], ['VT']])
       MapJoin@6a48ffbc()
         Flatten@587b8be7(customers INNER addresses)
           AncestorLookup@171e1813(addresses -> [customers, addresses])

@@ -1,6 +1,6 @@
 [double]
 SelectQuery@33079383
   ResultSet@366597a1[_SQL_COL_1]
-    Project@47c5e6ed[concat(n = ,Cast($0 AS MCOMPAT_ VARCHAR(22, UTF8, UCS_BINARY) NULL))]
+    Project@47c5e6ed[concat('n = ',Cast($0 AS MCOMPAT_ VARCHAR(22, UTF8, UCS_BINARY) NULL))]
       Select@6913b29e[]
         ExpressionsSource@c33d8f7([[]])

@@ -1,7 +1,7 @@
 SelectQuery@78c52f42
   ResultSet@59a1d3ff[city, sku]
     MapJoin@3a477718()
-      SingleIndexScan@29dbe68c(Index(test.orders.order_date[IndexColumn(order_date)]), covering/NONE, =2000-01-01, rows = 1, cost = 6.07540)
+      SingleIndexScan@29dbe68c(Index(test.orders.order_date[IndexColumn(order_date)]), covering/NONE, =DATE '2000-01-01', rows = 1, cost = 6.07540)
       MapJoin@23fd06cc()
         Flatten@49860d94(customers LEFT addresses)
           BranchLookup@38c94d89(customers -> addresses)

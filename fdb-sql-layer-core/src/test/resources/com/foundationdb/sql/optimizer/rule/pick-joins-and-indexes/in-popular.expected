@@ -4,5 +4,5 @@ SelectQuery@5a52059c
       Select@720eb0ac[]
         AggregateSource@227126b4(UNGROUPED,[])
           Select@32a40516[]
-            TableGroupJoinTree@4617d1d2(TableGroup@45d055f1(sources), sources - SingleIndexScan@2fa1b2ca(Index(test.sources.source_country[IndexColumn(country)]), covering/NONE, UNIONs of [% = CHN, % = MEX], rows = 9990, cost = 6518.00))
+            TableGroupJoinTree@4617d1d2(TableGroup@45d055f1(sources), sources - SingleIndexScan@2fa1b2ca(Index(test.sources.source_country[IndexColumn(country)]), covering/NONE, UNIONs of [% = 'CHN', % = 'MEX'], rows = 9990, cost = 6518.00))
               TableSource@7c9d07e2(sources - TableGroup@45d055f1(sources))

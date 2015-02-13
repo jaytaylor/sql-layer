@@ -3,9 +3,9 @@ SelectQuery@72c7423b
     Project@4f01b9cf[orders.order_date, items.sku, items.quan]
       Select@7a4ded8e[]
         JoinNode@1227445d(SEMI/NESTED_LOOPS[items.quan == i2.quan])
-          TableGroupJoinTree@4a710a3e(TableGroup@370e652(customers), customers INNER orders INNER items - SingleIndexScan@690c2a7a(Index(test.customers.name[IndexColumn(name)]), NONE, =Smith, rows = 200, cost = 16447.9))
+          TableGroupJoinTree@4a710a3e(TableGroup@370e652(customers), customers INNER orders INNER items - SingleIndexScan@690c2a7a(Index(test.customers.name[IndexColumn(name)]), NONE, ='Smith', rows = 200, cost = 16447.9))
             TableSource@38a3d488(customers - TableGroup@370e652(customers))
               TableSource@bd649c5(orders - TableGroupJoin@2a6cc873(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
                 TableSource@21852a95(items - TableGroupJoin@55e0f6df(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))
-          TableGroupJoinTree@7be27131(TableGroup@5b895cb9(customers), i2 - SingleIndexScan@1726a4a2(Index(test.items.sku[IndexColumn(sku)]), NONE, =1234, rows = 97, cost = 814.313))
+          TableGroupJoinTree@7be27131(TableGroup@5b895cb9(customers), i2 - SingleIndexScan@1726a4a2(Index(test.items.sku[IndexColumn(sku)]), NONE, ='1234', rows = 97, cost = 814.313))
             TableSource@26f997aa(i2 - TableGroup@5b895cb9(customers))

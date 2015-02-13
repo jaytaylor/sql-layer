@@ -1,11 +1,11 @@
 SelectQuery@4ed357ce
   ResultSet@1529bdd0[name, oid, oid]
     Project@676cad8a[customers.name, o1.oid, o2.oid]
-      Select@ff57412[o2.order_date == 2012-01-01]
+      Select@ff57412[o2.order_date == DATE '2012-01-01']
         Product@4bc1ae26(customers)
           Flatten@189067a5(customers INNER o1)
             AncestorLookup@30848e3c(orders -> [customers, orders])
-              SingleIndexScan@9f0bd05(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, =2011-12-31, rows = 1, cost = 1000.72)
+              SingleIndexScan@9f0bd05(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, =DATE '2011-12-31', rows = 1, cost = 1000.72)
               TableSource@32fe03ae(customers - TableGroup@11800a9(customers))
               TableSource@42a3aea9(o1 - TableGroupJoin@6b16d658(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
           Flatten@28526255(customers INNER o2)

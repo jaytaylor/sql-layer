@@ -1,6 +1,6 @@
 SelectQuery@642413d4
   ResultSet@fb2e3fd[pid]
     Project@43a09ce2[places.pid]
-      Select@3f183caa[geo_within_distance(geo_lat_lon(places.lat,places.lon),POINT (42.3583 -71.0603),0.0466)]
-        TableGroupJoinTree@7b66322e(TableGroup@f324455(places), places - SingleIndexScan@3a894088(Index(test.places.places_geo[IndexColumn(state), IndexColumn(lat), IndexColumn(lon), IndexColumn(lat), IndexColumn(lon)])application space: (-90.0:90.0, -180.0:180.0)  gBits: 28, 29, covering/NONE, =MA, @geo_expanded_envelope(POINT (42.3583 -71.0603),0.0466), rows = 1, cost = 6.97840))
+      Select@3f183caa[geo_within_distance(geo_lat_lon(places.lat,places.lon),'POINT (42.3583 -71.0603)',4.660000e-02)]
+        TableGroupJoinTree@7b66322e(TableGroup@f324455(places), places - SingleIndexScan@3a894088(Index(test.places.places_geo[IndexColumn(state), IndexColumn(lat), IndexColumn(lon), IndexColumn(lat), IndexColumn(lon)])application space: (-90.0:90.0, -180.0:180.0)  gBits: 28, 29, covering/NONE, ='MA', @geo_expanded_envelope('POINT (42.3583 -71.0603)',4.660000e-02), rows = 1, cost = 6.97840))
           TableSource@b34832b(places - TableGroup@f324455(places))

@@ -4,7 +4,7 @@ SelectQuery@6bed037a
       Select@48008b9e[]
         Flatten@3da9b5c7(customers INNER orders)
           AncestorLookup@50dd3b71(orders -> [customers, orders])
-            Select@6c69a130[orders.order_date != 2011-04-01]
-              SingleIndexScan@ad58deb(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >2011-01-01, rows = 859, cost = 89559.8)
+            Select@6c69a130[orders.order_date != DATE '2011-04-01']
+              SingleIndexScan@ad58deb(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >DATE '2011-01-01', rows = 859, cost = 89559.8)
             TableSource@14356788(customers - TableGroup@4a5844db(customers))
             TableSource@3e201c15(orders - TableGroupJoin@6910abfe(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

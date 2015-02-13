@@ -4,7 +4,7 @@ SelectQuery@4cd297c0
       Select@50c3d062[]
         Product@67a5fb5a(customers)
           Flatten@469695f(customers LEFT addresses)
-            Select@2484de3c[addresses.city != Boston]
+            Select@2484de3c[addresses.city != 'Boston']
               GroupScan@79123c5f(Group(test.customers), rows = 100000, cost = 4.06386e+06)
                 TableSource@67b14530(customers - TableGroup@1c39bf12(customers))
                 TableSource@2b52b6f5(addresses - TableGroupJoin@6648938(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))

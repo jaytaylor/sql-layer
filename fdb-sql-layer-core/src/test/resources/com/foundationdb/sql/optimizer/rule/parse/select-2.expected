@@ -1,7 +1,7 @@
 SelectQuery@15af33d6
   ResultSet@cf546f8[name, name]
     Project@3b064a6d[parent.name, child.name]
-      Select@536c79d7[parent.name == Smith]
+      Select@536c79d7[parent.name == 'Smith']
         JoinNode@76b33d0a(INNER[parent.id == child.pid])
           TableSource@716c9867(parent)
           TableSource@1089cc5e(child)

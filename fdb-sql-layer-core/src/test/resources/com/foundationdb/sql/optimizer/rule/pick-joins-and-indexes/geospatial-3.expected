@@ -2,6 +2,6 @@ SelectQuery@27c4cca4
   ResultSet@69573761[pid]
     Project@5cf4f74e[places.pid]
       Sort@40881b7d[distance_lat_lon(places.lat,places.lon,42.3583,-71.0603)]
-        Select@5698518f[distance_lat_lon(places.lat,places.lon,42.3583,-71.0603) <= 0.0466]
-          TableGroupJoinTree@2a12afb3(TableGroup@6c90b616(places), places - SingleIndexScan@10a29609(Index(test.places.places_geo[IndexColumn(state), IndexColumn(lat), IndexColumn(lon), IndexColumn(lat), IndexColumn(lon)])application space: (-90.0:90.0, -180.0:180.0)  gBits: 28, 29, covering/NONE, =MA, @geo_expanded_envelope(geo_lat_lon(42.3583,-71.0603),0.0466), rows = 1, cost = 85.9784))
+        Select@5698518f[distance_lat_lon(places.lat,places.lon,42.3583,-71.0603) <= 4.660000e-02]
+          TableGroupJoinTree@2a12afb3(TableGroup@6c90b616(places), places - SingleIndexScan@10a29609(Index(test.places.places_geo[IndexColumn(state), IndexColumn(lat), IndexColumn(lon), IndexColumn(lat), IndexColumn(lon)])application space: (-90.0:90.0, -180.0:180.0)  gBits: 28, 29, covering/NONE, ='MA', @geo_expanded_envelope(geo_lat_lon(42.3583,-71.0603),4.660000e-02), rows = 1, cost = 85.9784))
             TableSource@419d563a(places - TableGroup@6c90b616(places))

@@ -1,5 +1,5 @@
 DMLStatement@3b1c8384(customers)
   DeleteStatement@4cfe6d6d(customers)
     Select@53c23698[]
-      TableGroupJoinTree@738e601d(TableGroup@8484b30(customers), customers - SingleIndexScan@4240408f(Index(test.customers.name[IndexColumn(name)]), NONE, =James, rows = 1, cost = 12.2338))
+      TableGroupJoinTree@738e601d(TableGroup@8484b30(customers), customers - SingleIndexScan@4240408f(Index(test.customers.name[IndexColumn(name)]), NONE, ='James', rows = 1, cost = 12.2338))
         TableSource@717124a3(customers - TableGroup@8484b30(customers))

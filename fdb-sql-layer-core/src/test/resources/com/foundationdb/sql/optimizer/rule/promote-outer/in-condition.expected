@@ -8,4 +8,4 @@ SelectQuery@fd13604
 
 Subquery@6f03879
   Project@40ca99c9[orders.order_date == VALUES[0]]
-    ExpressionsSource@35367c5a([[2010-12-31], [2011-01-01]])
+    ExpressionsSource@35367c5a([[DATE '2010-12-31'], [DATE '2011-01-01']])

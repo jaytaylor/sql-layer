@@ -3,7 +3,7 @@ SelectQuery@7cadb683
     Project@ccae1fa[customers.cid, orders.order_date]
       Select@5bb9eaa5[]
         JoinNode@1d94a824(INNER/NESTED_LOOPS)
-          TableGroupJoinTree@49acab08(TableGroup@aaae2a8(customers), customers - SingleIndexScan@59068910(Index(test.customers.name[IndexColumn(name)]), covering/NONE, =Smith, rows = 1, cost = 6.04220))
+          TableGroupJoinTree@49acab08(TableGroup@aaae2a8(customers), customers - SingleIndexScan@59068910(Index(test.customers.name[IndexColumn(name)]), covering/NONE, ='Smith', rows = 1, cost = 6.04220))
             TableSource@2e9d4ecf(customers - TableGroup@aaae2a8(customers))
           TableGroupJoinTree@6710c001(TableGroup@3c10a719(customers), orders - SingleIndexScan@694a791d(Index(test.orders.PRIMARY[IndexColumn(oid)]), NONE, =Subquery@5d1dc52f, rows = 1, cost = 13.2198))
             TableSource@65691318(orders - TableGroup@3c10a719(customers))
@@ -13,6 +13,6 @@ Subquery@5d1dc52f
     Project@52dc9c9c[MIN(o2.oid)]
       Select@2128b147[]
         AggregateSource@11adf044(UNGROUPED,[])
-          Select@768ebd52[o2.order_date > 2010-01-01]
+          Select@768ebd52[o2.order_date > DATE '2010-01-01']
             TableGroupJoinTree@152f8f4d(TableGroup@49a54659(customers), o2 - GroupLoopScan@1c19bbe8(customers - o2, rows = 10, cost = 33.0742))
               TableSource@25d99371(o2 - TableGroup@49a54659(customers))

@@ -2,7 +2,7 @@ SelectQuery@45824573
   ResultSet@6b9da4ab[order_date, sku, quan]
     Project@3aa60dbf[orders.order_date, items.sku, items.quan]
       Select@6bd094ad[]
-        TableGroupJoinTree@31fe5693(TableGroup@3a80211e(customers), customers INNER orders INNER items - MultiIndexIntersectScan@d467f3(INTERSECT(compare 1, skip 1: SingleIndexScan@78f482f1(Index(test.items.sku[IndexColumn(sku)]), , UNIONs of [% = 1234, % = 4567, % = 6666]) AND skip 1: SingleIndexScan@7cc0da40(Index(test.customers.name[IndexColumn(name)]), , =Smith)), NONE, rows = 1, cost = 225.287))
+        TableGroupJoinTree@31fe5693(TableGroup@3a80211e(customers), customers INNER orders INNER items - MultiIndexIntersectScan@d467f3(INTERSECT(compare 1, skip 1: SingleIndexScan@78f482f1(Index(test.items.sku[IndexColumn(sku)]), , UNIONs of [% = '1234', % = '4567', % = '6666']) AND skip 1: SingleIndexScan@7cc0da40(Index(test.customers.name[IndexColumn(name)]), , ='Smith')), NONE, rows = 1, cost = 225.287))
           TableSource@9587a50(customers - TableGroup@3a80211e(customers))
             TableSource@fc61efb(orders - TableGroupJoin@5938dfbc(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
               TableSource@181bf8d4(items - TableGroupJoin@24e8dd67(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

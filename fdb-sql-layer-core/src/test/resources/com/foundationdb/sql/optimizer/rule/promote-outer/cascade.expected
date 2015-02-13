@@ -1,7 +1,7 @@
 SelectQuery@22c977fc
   ResultSet@58e4533b[name, order_date]
     Project@76147414[customers.name, orders.order_date]
-      Select@38d1099c[addresses.state == MA]
+      Select@38d1099c[addresses.state == 'MA']
         JoinNode@76cf0d8(INNER[addresses.cid == orders.cid])
           JoinNode@137f8b7(INNER[orders.cid == customers.cid])
             TableSource@1a9b701(customers)

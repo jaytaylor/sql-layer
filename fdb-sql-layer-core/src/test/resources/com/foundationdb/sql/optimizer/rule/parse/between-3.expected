@@ -1,5 +1,5 @@
 SelectQuery@6847991a
   ResultSet@3494af72[_SQL_COL_1]
-    Project@d8a8056[or(and(items.sku >= 3,items.sku <= 8),and(items.quan >= 10,items.quan <= 100))]
+    Project@d8a8056[or(and(items.sku >= '3',items.sku <= '8'),and(items.quan >= 10,items.quan <= 100))]
       Select@7fef950b[]
         TableSource@4a2246cb(items)

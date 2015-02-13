@@ -3,4 +3,4 @@ SelectQuery@5d9cf4ce
     Project@165ad92b[GROUP[0]]
       AggregateSource@423d0396(FIRST_FROM_INDEX,[MIN])
         Project@980b9cd[customers.cid]
-          SingleIndexScan@6226469a(Index(test.customers.name[IndexColumn(name)]), covering/FOR_MIN_MAX, UNIONs of [% = Adams, % = Jones, % = Smith], rows = 3, cost = 18.1266)
+          SingleIndexScan@6226469a(Index(test.customers.name[IndexColumn(name)]), covering/FOR_MIN_MAX, UNIONs of [% = 'Adams', % = 'Jones', % = 'Smith'], rows = 3, cost = 18.1266)

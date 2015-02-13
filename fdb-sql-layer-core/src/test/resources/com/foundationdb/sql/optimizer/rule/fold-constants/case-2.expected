@@ -1,5 +1,5 @@
 SelectQuery@646d6aa0
   ResultSet@4b7361e2[_SQL_COL_1]
-    Project@41f6321[if(customers.name != ,customers.name,default)]
+    Project@41f6321[if(customers.name != '',customers.name,'default')]
       Select@28a50da4[]
         TableSource@5075c744(customers)

@@ -1,4 +1,4 @@
 DMLStatement@2ff327e4(child)
   DeleteStatement@44cc2153(child)
-    Select@359ff36e[child.name == Fred]
+    Select@359ff36e[child.name == 'Fred']
       TableSource@1826d643(child)

@@ -2,5 +2,5 @@ SelectQuery@3a7a639e
   ResultSet@39223810[cid, name]
     Project@758ebfbd[customers.cid, customers.name]
       Select@6ece4d96[]
-        TableGroupJoinTree@2a47ebaf(TableGroup@57c243d8(customers), customers - FullTextScan@12f446eb(customers - PARSE(customers.name, john)))
+        TableGroupJoinTree@2a47ebaf(TableGroup@57c243d8(customers), customers - FullTextScan@12f446eb(customers - PARSE(customers.name, 'john')))
           TableSource@36af7a1e(customers - TableGroup@57c243d8(customers))

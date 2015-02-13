@@ -4,5 +4,5 @@ SelectQuery@3c9353
       Select@14a36cd[]
         Flatten@1b57da2(items)
           AncestorLookup@4b530d(items -> [items])
-            SingleIndexScan@139aad8(Index(test.items.sku[IndexColumn(sku)]), NONE, =1234, rows = 97, cost = 734.773)
+            SingleIndexScan@139aad8(Index(test.items.sku[IndexColumn(sku)]), NONE, ='1234', rows = 97, cost = 734.773)
             TableSource@1d3e40f(items - TableGroup@ff5cf9(customers))

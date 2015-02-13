@@ -5,7 +5,7 @@ SelectQuery@7ce1eae7
         Flatten@69555185(customers RIGHT orders INNER items)
           AncestorLookup@605b28c9(orders -> [customers])
             BranchLookup@d2d58b(orders -> orders)
-              SingleIndexScan@11c19919(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >2011-01-01, rows = 17200, cost = 1.54006e+06)
+              SingleIndexScan@11c19919(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >DATE '2011-01-01', rows = 17200, cost = 1.54006e+06)
               TableSource@46798249(orders - TableGroupJoin@488d12e4(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
               TableSource@4d898115(items - TableGroupJoin@3d2a416a(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))
             TableSource@7e79b177(customers - TableGroup@212cb585(customers))

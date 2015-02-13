@@ -1,5 +1,5 @@
 SelectQuery@559a6cd4
   ResultSet@d5efe34[_SQL_COL_1]
-    Project@57830ec7[plus(plus(cos(1),sin(3.14)),tan(child.name))]
+    Project@57830ec7[plus(plus(cos(1),sin(3.140000e+00)),tan(child.name))]
       Select@5d3f57b3[]
         TableSource@6996d898(child)
