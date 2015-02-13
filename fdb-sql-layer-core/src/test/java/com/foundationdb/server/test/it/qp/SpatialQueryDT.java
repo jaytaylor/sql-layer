@@ -90,14 +90,19 @@ public class SpatialQueryDT extends EmbeddedJDBCITBase
         String selectSQL = "select id from boxes where geo_overlaps(geo_wkt(box), geo_wkt(?))";
         String addIndexSQL = "create index idx_box ON boxes(GEO_WKT(box))";
         String analyzeSQL = "alter table boxes all update statistics";
-        try (PreparedStatement query = connection.prepareStatement(selectSQL);
-             Statement indexing = connection.createStatement()) {
+        PreparedStatement query = null;
+        Statement indexing = null;
+        try {
+            query = connection.prepareStatement(selectSQL);
+            indexing = connection.createStatement();
             for (int q = 0; q < N_QUERIES; q++) {
                 if (q == N_QUERIES / 3) {
                     indexing.execute(addIndexSQL);
+                    query = connection.prepareStatement(selectSQL);
                 }
                 if (q == 2 * N_QUERIES / 3) {
                     indexing.execute(analyzeSQL);
+                    query = connection.prepareStatement(selectSQL);
                 }
                 String queryBox = randomBox(MAX_QUERY_X, MAX_QUERY_Y);
                 // Actual
@@ -120,6 +125,13 @@ public class SpatialQueryDT extends EmbeddedJDBCITBase
                 Collections.sort(actual);
                 Collections.sort(expected);
                 assertEquals(expected, actual);
+            }
+        } finally {
+            if (query != null) {
+                query.close();
+            }
+            if (indexing != null) {
+                indexing.close();
             }
         }
     }

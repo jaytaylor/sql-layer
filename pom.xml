@@ -109,7 +109,6 @@
                     </systemPropertyVariables>
                     <argLine>-Xmx512m ${fdbsql.test.extraJvmArgs} ${fdbsql.test.JmxJvmArgs} ${surefireJacocoArg}
                         -Dmvn.main.basedir=${main.basedir} -Dmvn.settings.localRepository=${settings.localRepository}
-                        -Djava.security.manager -Djava.security.policy=${main.basedir}/fdb-sql-layer-common/test/resources/tests.policy
                     </argLine>
                     <includes>
                         <include>**/*Test.java</include>
@@ -133,7 +132,6 @@
                               <!-- These two properties have to be set here rather than in the systemPropertyVariables section
                                    because they bubble into the policy file before failsafe starts setting properties -->
                              -Dmvn.main.basedir=${main.basedir} -Dmvn.settings.localRepository=${settings.localRepository}
-                             -Djava.security.manager -Djava.security.policy=${main.basedir}/fdb-sql-layer-common/test/resources/tests.policy
                     </argLine>
                 </configuration>
                 <executions>
