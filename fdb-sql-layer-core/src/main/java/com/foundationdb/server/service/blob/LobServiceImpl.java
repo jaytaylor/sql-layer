@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 FoundationDB, LLC
+ * Copyright (C) 2009-2015 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -20,7 +20,7 @@ package com.foundationdb.server.service.blob;
 import com.foundationdb.async.Future;
 import com.foundationdb.async.Function;
 import com.foundationdb.Transaction;
-import com.foundationdb.blob.BlobBase;
+import com.foundationdb.blob.SQLBlob;
 import com.foundationdb.directory.DirectorySubspace;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.error.LobException;
@@ -39,7 +39,6 @@ public class LobServiceImpl implements Service, LobService {
     private DirectorySubspace lobDirectory;
     private final FDBHolder fdbHolder;
     private final SecurityService securityService;
-    // update with configurable value
     private final String LOB_DIRECTORY = "lobs";
     
     @Inject
@@ -52,7 +51,7 @@ public class LobServiceImpl implements Service, LobService {
     @Override
     public void checkAndCleanBlobs(List<String> lobIds) {
         DirectorySubspace ds;
-        BlobBase blob;
+        SQLBlob blob;
         TransactionContext tcx = getTcx();
         List<String> toDo = new ArrayList<>();        
         if (lobIds.size() > 0 ) {
@@ -62,7 +61,7 @@ public class LobServiceImpl implements Service, LobService {
                 // List may be over complete, existence is not sure
                 if (lobDirectory.exists(tcx, path).get()) {
                     ds = lobDirectory.open(tcx, path).get();
-                    blob = new BlobBase(ds);
+                    blob = new SQLBlob(ds);
                     if (!blob.isLinked(tcx).get()) {
                         toDo.add(lob);
                     }
@@ -125,7 +124,7 @@ public class LobServiceImpl implements Service, LobService {
         tcx.run(new Function<Transaction, Void>() {
             @Override
             public Void apply(Transaction tr) {
-                BlobBase blob = openBlob(tr, lobId);
+                SQLBlob blob = openBlob(tr, lobId);
                 if (blob.isLinked(tr).get()) {
                     if (blob.getLinkedTable(tr).get() != tableId) {
                         throw new LobException("lob is already linked to a table");
@@ -143,7 +142,7 @@ public class LobServiceImpl implements Service, LobService {
         return tcx.run(new Function<Transaction, Long>() {
             @Override
             public Long apply(Transaction tr) {
-                BlobBase blob = openBlob(tr, lobId);
+                SQLBlob blob = openBlob(tr, lobId);
                 return blob.getSize(tr).get();
             }
         });
@@ -154,7 +153,7 @@ public class LobServiceImpl implements Service, LobService {
         byte[] res =  tcx.run(new Function<Transaction, byte[]>() {
             @Override
             public byte[] apply(Transaction tr) {
-                BlobBase blob = openBlob(tr, lobId);
+                SQLBlob blob = openBlob(tr, lobId);
                 return blob.read(tr, offset, length).get();
             }
         });
@@ -166,7 +165,7 @@ public class LobServiceImpl implements Service, LobService {
         return tcx.run(new Function<Transaction, byte[]>() {
             @Override
             public byte[] apply(Transaction tr) {
-                BlobBase blob = openBlob(tr, lobId);
+                SQLBlob blob = openBlob(tr, lobId);
                 return blob.read(tr).get();
             }
         });
@@ -177,7 +176,7 @@ public class LobServiceImpl implements Service, LobService {
         tcx.run(new Function<Transaction, Void>() {
             @Override
             public Void apply(Transaction tr) {
-                BlobBase blob = openBlob(tr, lobId);
+                SQLBlob blob = openBlob(tr, lobId);
                 blob.write(tr, offset, data).get();
                 return null;
             }
@@ -189,7 +188,7 @@ public class LobServiceImpl implements Service, LobService {
             tcx.run(new Function<Transaction, Void>() {
                 @Override
                 public Void apply(Transaction tr) {
-                    BlobBase blob = openBlob(tr, lobId);
+                    SQLBlob blob = openBlob(tr, lobId);
                     blob.append(tr, data).get();
                     return null;
                 }
@@ -201,7 +200,7 @@ public class LobServiceImpl implements Service, LobService {
         tcx.run(new Function<Transaction, Void>() {
             @Override
             public Void apply(Transaction tr) {
-                BlobBase blob = openBlob(tr, lobId);
+                SQLBlob blob = openBlob(tr, lobId);
                 blob.truncate(tr, size).get();
                 return null;
             }
@@ -219,7 +218,7 @@ public class LobServiceImpl implements Service, LobService {
         tcx.run(new Function<Transaction, Void>() {
             @Override
             public Void apply(Transaction tr) {
-                BlobBase blob = openBlob(tr, lobId);
+                SQLBlob blob = openBlob(tr, lobId);
                 Integer tableId = blob.getLinkedTable(tr).get();
                 if (tableId == -1) {
                     return null;
@@ -233,10 +232,10 @@ public class LobServiceImpl implements Service, LobService {
         });
     }
 
-    private BlobBase openBlob(TransactionContext tcx, String lobId) {
+    private SQLBlob openBlob(TransactionContext tcx, String lobId) {
         try {
             DirectorySubspace ds = lobDirectory.open(tcx, Arrays.asList(lobId)).get();
-            return new BlobBase(ds);
+            return new SQLBlob(ds);
         }
         catch (NoSuchDirectoryException nsde) {
             throw new LobException("lob with id: "+ lobId +" does not exist");

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 FoundationDB, LLC
+ * Copyright (C) 2009-2015 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -65,28 +65,26 @@ public class UnwrapBlob extends TScalarBase {
         
         byte[] data = new byte[0];
         BlobRef blob;
-        if (inputs.size() == 1) {
-            if (inputs.get(0).hasAnyValue()) {
-                Object o = inputs.get(0).getObject();
-                if (o instanceof BlobRef) {
-                    blob = (BlobRef) o;
-                } else {
-                    throw new InvalidArgumentTypeException("Should be a blob column");
-                }
-                String mode = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.BLOB_RETURN_MODE);
-                if (mode.equalsIgnoreCase(AkBlob.SIMPLE)){
+        if (inputs.get(0).hasAnyValue()) {
+            Object o = inputs.get(0).getObject();
+            if (o instanceof BlobRef) {
+                blob = (BlobRef) o;
+            } else {
+                throw new InvalidArgumentTypeException("Should be a blob column");
+            }
+            String mode = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.BLOB_RETURN_MODE);
+            if (mode.equalsIgnoreCase(AkBlob.SIMPLE)){
+                data = blob.getBytes();
+            }
+            else {
+                if (blob.isShortLob()) {
                     data = blob.getBytes();
-                }
-                else {
-                    if (blob.isShortLob()) {
-                        data = blob.getBytes();
-                    } else {
-                        TransactionService txnService = context.getQueryContext().getServiceManager().getServiceByClass(TransactionService.class);
-                        if (txnService instanceof FDBTransactionService) {
-                            Transaction tr = ((FDBTransactionService) txnService).getTransaction(context.getQueryContext().getStore().getSession()).getTransaction();
-                            LobService ls = context.getQueryContext().getServiceManager().getServiceByClass(LobService.class);
-                            data = ls.readBlob(tr, blob.getId().toString());
-                        }
+                } else {
+                    TransactionService txnService = context.getQueryContext().getServiceManager().getServiceByClass(TransactionService.class);
+                    if (txnService instanceof FDBTransactionService) {
+                        Transaction tr = ((FDBTransactionService) txnService).getTransaction(context.getQueryContext().getStore().getSession()).getTransaction();
+                        LobService ls = context.getQueryContext().getServiceManager().getServiceByClass(LobService.class);
+                        data = ls.readBlob(tr, blob.getId().toString());
                     }
                 }
             }
@@ -102,11 +100,6 @@ public class UnwrapBlob extends TScalarBase {
     @Override
     protected boolean neverConstant() {
         return false;
-    }
-
-    @Override
-    public String[] registeredNames() {
-        return new String[] {"unwrap_blob"};
     }
 
     @Override

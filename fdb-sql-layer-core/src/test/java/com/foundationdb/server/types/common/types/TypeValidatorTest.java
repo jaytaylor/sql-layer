@@ -37,7 +37,6 @@ public class TypeValidatorTest
         assertTrue(isTypeSupported("MCOMPAT", "int"));
         assertTrue(isTypeSupported("MCOMPAT", "varchar"));
         assertTrue(isTypeSupported("MCOMPAT", "text"));
-//        assertTrue(isTypeSupported("MCOMPAT", "blob"));
         assertFalse(isTypeSupported("AKSQL", "result set"));
     }
 
@@ -46,7 +45,6 @@ public class TypeValidatorTest
         assertTrue(isTypeSupportedAsIndex("MCOMPAT", "int"));
         assertTrue(isTypeSupportedAsIndex("MCOMPAT", "varchar"));
         assertFalse(isTypeSupportedAsIndex("MCOMPAT", "text"));
-//        assertFalse(isTypeSupportedAsIndex("MCOMPAT", "blob"));
     }
 
     @Test

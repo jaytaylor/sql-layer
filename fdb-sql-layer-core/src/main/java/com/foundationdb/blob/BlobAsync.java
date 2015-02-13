@@ -124,7 +124,7 @@ public class BlobAsync {
                              public Future<Chunk> apply(final byte[] chunkKey) {
                                  // Nothing before (sparse) or before beginning
                                  if ((chunkKey == null) ||
-                                     (ByteArrayUtil.compareUnsigned(chunkKey, dataKey(Long.valueOf(0))) < 0)) {
+                                     (ByteArrayUtil.compareUnsigned(chunkKey, dataKey(0L)) < 0)) {
                                      return new ReadyFuture<>(new Chunk());
                                  }
                                  final Long chunkOffset = dataKeyOffset(chunkKey);
@@ -163,6 +163,9 @@ public class BlobAsync {
                         if (chunk.startOffset == offset) {
                             return null; // Already a split point.
                         }
+                        
+                        // chunk.startOffset is at most CHUNCK_LARGE smaller than offset
+                        assert ((offset-chunk.startOffset) < Integer.MAX_VALUE);
                         int splitPoint = (int) (offset - chunk.startOffset);
 
                         // Set the value at (DATA_KEY, chunk.startOffset) to the values in
@@ -361,6 +364,7 @@ public class BlobAsync {
                                      @Override
                                      public byte[] apply(List<KeyValue> chunks) {
                                          // Copy the data over from the list into a byte array.
+                                         // n is an integer from the input
                                          byte[] result = new byte[(int)Math.min(n, (size-offset))];
                                          for(KeyValue chunk : chunks){
                                              long chunkOffset = dataKeyOffset(chunk.getKey());

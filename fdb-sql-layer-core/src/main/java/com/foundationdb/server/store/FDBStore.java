@@ -100,6 +100,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     private final MetricsService metricsService;
     private final ReadWriteMap<Object, SequenceCache> sequenceCache;
     private LobService lobService;
+    private String allowedBlobFormat;
 
     private static final String ROWS_FETCHED_METRIC = "SQLLayerRowsFetched";
     private static final String ROWS_STORED_METRIC = "SQLLayerRowsStored";
@@ -135,6 +136,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         }
         this.metricsService = metricsService;
         this.sequenceCache = ReadWriteMap.wrapFair(new HashMap<Object, SequenceCache>());
+        lobService = serviceManager.getServiceByClass(LobService.class);
     }
 
     @Override
@@ -209,6 +211,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         this.constraintHandler = new FDBConstraintHandler(this, configService, typesRegistryService, serviceManager, txnService);
         this.onlineHelper = new OnlineHelper(txnService, schemaManager, this, typesRegistryService, constraintHandler, withConcurrentDML);
         listenerService.registerRowListener(onlineHelper);
+        this.allowedBlobFormat = configService.getProperty(AkBlob.BLOB_ALLOWED_FORMAT);
     }
 
     @Override
@@ -437,7 +440,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     @Override
     public void dropAllLobs(Session session) {
         Transaction tr = txnService.getTransaction(session).getTransaction();
-        getLobService().clearAllLobs(tr);
+        lobService.clearAllLobs(tr);
     }
     
     @Override
@@ -672,10 +675,9 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         
         Transaction tr = txnService.getTransaction(session).getTransaction();
         for ( int i = 0; i < rowType.nFields(); i++ ) {
-            if (rowType.typeAt(i).equalsExcludingNullable(AkBlob.INSTANCE.instance(true))) {
+            if (rowType.typeAt(i).typeClass() == AkBlob.INSTANCE) {
                 int tableId = rowType.table().getTableId();
                 BlobRef blobRefInit = (BlobRef)row.value(i).getObject();
-                String allowedLobFormat = configService.getProperty(AkBlob.BLOB_ALLOWED_FORMAT);
                 
                 if (blobRefInit == null) {
                     continue;
@@ -708,22 +710,22 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                 BlobRef blobRefTmp = new BlobRef(value, state, blobRefInit.getLobType(), blobRefInit.getRequestedLobType());
                 
                 if (blobRefTmp.isLongLob() && !isBlobReturnModeSimple()) { // only set in ADVANCED mode
-                    if (allowedLobFormat.equalsIgnoreCase(AkBlob.SHORT_BLOB)) {
+                    if (allowedBlobFormat.equalsIgnoreCase(AkBlob.SHORT_BLOB)) {
                         throw new LobException("Long lob storage format not allowed");
                     }
                     type = BlobRef.LobType.LONG_LOB;
                 } else if (blobRefTmp.isShortLob() && !isBlobReturnModeSimple()) { // only set in ADVANCED mode
-                    if (allowedLobFormat.equalsIgnoreCase(AkBlob.LONG_BLOB)) {
+                    if (allowedBlobFormat.equalsIgnoreCase(AkBlob.LONG_BLOB)) {
                         throw new LobException("Short lob storage format not allowed");
                     }
-                    if (allowedLobFormat.equalsIgnoreCase(AkBlob.SHORT_BLOB) && 
+                    if (allowedBlobFormat.equalsIgnoreCase(AkBlob.SHORT_BLOB) && 
                             (blobRefTmp.getBytes().length >= AkBlob.LOB_SWITCH_SIZE)) {
                         throw new LobException("Lob too large to store as SHORT_LOB");
                     }
                     if (blobRefTmp.getBytes().length >= AkBlob.LOB_SWITCH_SIZE) {
                         UUID id = UUID.randomUUID();
-                        getLobService().createNewLob(tr, id.toString());
-                        getLobService().writeBlob(tr, id.toString(), 0, blobRefTmp.getBytes());
+                        lobService.createNewLob(tr, id.toString());
+                        lobService.writeBlob(tr, id.toString(), 0, blobRefTmp.getBytes());
                         value = updateValue(id);
                         type = BlobRef.LobType.LONG_LOB;
                     } else {
@@ -732,20 +734,20 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                 } else { // only in SIMPLE mode, value needs updating, adding leading bit and correct value content (guid)
                     // first verify if specific requested format is allowed --> should be done in functions.
                     if (blobRefTmp.getRequestedLobType() == BlobRef.LobType.SHORT_LOB) {
-                        if (allowedLobFormat.equalsIgnoreCase(AkBlob.LONG_BLOB)) {
+                        if (allowedBlobFormat.equalsIgnoreCase(AkBlob.LONG_BLOB)) {
                             throw new LobException("Short lob storage format not allowed");
                         }
                     }
                     else if (blobRefTmp.getRequestedLobType() == BlobRef.LobType.LONG_LOB ) {
-                        if (allowedLobFormat.equalsIgnoreCase(AkBlob.SHORT_BLOB)) {
+                        if (allowedBlobFormat.equalsIgnoreCase(AkBlob.SHORT_BLOB)) {
                             throw new LobException("Long lob storage format not allowed");
                         }
                     }
                     
                     if (blobRefTmp.getRequestedLobType() == BlobRef.LobType.LONG_LOB || 
-                            allowedLobFormat.equalsIgnoreCase(AkBlob.LONG_BLOB) ||
+                            allowedBlobFormat.equalsIgnoreCase(AkBlob.LONG_BLOB) ||
                             blobRefTmp.getBytes().length >= AkBlob.LOB_SWITCH_SIZE) {
-                        if (allowedLobFormat.equalsIgnoreCase(AkBlob.SHORT_BLOB)) {
+                        if (allowedBlobFormat.equalsIgnoreCase(AkBlob.SHORT_BLOB)) {
                             throw new LobException("Long lob storage format not allowed");
                         }
                         if (blobRefInit.isReturnedBlobInSimpleMode()){
@@ -753,8 +755,8 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                             value = updateValue(blobRefInit.getId());
                         } else {
                             UUID id = UUID.randomUUID();
-                            getLobService().createNewLob(tr, id.toString());
-                            getLobService().writeBlob(tr, id.toString(), 0, blobRefTmp.getBytes());
+                            lobService.createNewLob(tr, id.toString());
+                            lobService.writeBlob(tr, id.toString(), 0, blobRefTmp.getBytes());
                             type = BlobRef.LobType.LONG_LOB;
                             value = updateValue(id);
                         }
@@ -766,7 +768,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                 }
                 BlobRef blobRef = new BlobRef(value, BlobRef.LeadingBitState.YES, type, BlobRef.LobType.UNKNOWN);
                 if (blobRef.isLongLob()) {
-                    getLobService().linkTableBlob(tr, blobRef.getId().toString(), tableId);
+                    lobService.linkTableBlob(tr, blobRef.getId().toString(), tableId);
                 }
                 resRow.overlay(i, blobRef);
                 changedRow = true;
@@ -796,7 +798,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             return blob.getBytes();
         } else if (blob.isLongLob()) {
             Transaction tr = txnService.getTransaction(session).getTransaction();
-            return getLobService().readBlob(tr, blob.getId().toString());
+            return lobService.readBlob(tr, blob.getId().toString());
         } else {
             throw new LobException("Type of lob not available");
         }
@@ -810,23 +812,17 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     protected void deleteLobs(Session session, Row row) {
         RowType rowType = row.rowType();
         for( int i = 0; i < rowType.nFields(); i++ ) {
-            if (rowType.typeAt(i).equalsExcludingNullable(AkBlob.INSTANCE.instance(true))) {
+            if (rowType.typeAt(i).typeClass() == AkBlob.INSTANCE) {
                 BlobRef blobRef = (BlobRef)row.value(i).getObject();
                 if (blobRef == null) {
                     continue;
                 }
                 if (blobRef.isLongLob()) {
                     Transaction tr = txnService.getTransaction(session).getTransaction();
-                    getLobService().deleteLob(tr, blobRef.getId().toString());
+                    lobService.deleteLob(tr, blobRef.getId().toString());
                 }
             }
         }        
-    }
-    
-    private LobService getLobService() {
-        if (lobService == null)
-            lobService = serviceManager.getServiceByClass(LobService.class);
-        return lobService;
     }
     
     @Override
@@ -844,11 +840,11 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         TransactionState tr = txnService.getTransaction(session);
         if (rootDir.exists(tr.getTransaction(), onlineLobPath).get()) {
             DirectorySubspace dir = rootDir.createOrOpen(tr.getTransaction(), onlineLobPath).get();
-            AsyncIterator<KeyValue> it = tr.getRangeIterator(dir.range(), Integer.MAX_VALUE).iterator();
+            AsyncIterator<KeyValue> it = tr.getRangeIterator(dir.range()).iterator();
             while(it.hasNext()) {
                 KeyValue kv = it.next();
                 Tuple t = dir.unpack(kv.getKey());
-                getLobService().deleteLob(tr.getTransaction(), AkGUID.bytesToUUID(t.getBytes(0), 0).toString());
+                lobService.deleteLob(tr.getTransaction(), AkGUID.bytesToUUID(t.getBytes(0), 0).toString());
             }
             rootDir.removeIfExists(tr.getTransaction(), onlineLobPath).get();
         }

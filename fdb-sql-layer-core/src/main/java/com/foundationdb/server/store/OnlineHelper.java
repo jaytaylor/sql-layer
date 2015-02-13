@@ -415,7 +415,7 @@ public class OnlineHelper implements RowListener
         for(Table root : origRoots) {
             final LobCheck lobCheckRes = checkForDropLob(root, changeSets, origAIS);
 
-                    Operator plan = API.groupScan_Default(root.getGroup());
+            Operator plan = API.groupScan_Default(root.getGroup());
             runPlan(session, contextIfNull(context, origAdapter), schemaManager, txnService, plan, new RowHandler() {
                 @Override
                 public void handleRow(Row oldRow) {

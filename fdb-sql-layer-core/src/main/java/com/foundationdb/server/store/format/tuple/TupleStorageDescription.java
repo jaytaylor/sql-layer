@@ -281,48 +281,39 @@ public class TupleStorageDescription extends FDBStorageDescription
         Row result = row;
         if (store.isBlobReturnModeSimple()) {
             OverlayingRow newRow = new OverlayingRow(row);
-            for (int blobIndex : getBlobIndexes(rowType)) {
-                BlobRef oldBlob = getBlobFromRow(row.value(blobIndex));
-                if (oldBlob == null) {
-                    continue;
-                } 
-                byte[] blobData = store.getBlobData(session, oldBlob);
-                if (blobData == null) {
-                    blobData = new byte[0];
+            for( int blobIndex = 0; blobIndex < rowType.nFields(); blobIndex ++) {
+                if (rowType.typeAt(blobIndex).typeClass() == AkBlob.INSTANCE) {
+                    BlobRef oldBlob = getBlobFromRow(row.value(blobIndex));
+                    if (oldBlob == null) {
+                        continue;
+                    }
+                    byte[] blobData = store.getBlobData(session, oldBlob);
+                    if (blobData == null) {
+                        blobData = new byte[0];
+                    }
+
+                    BlobRef newBlob = new BlobRef(blobData, BlobRef.LeadingBitState.NO);
+                    newBlob.setIsReturnedBlobInSimpleMode(true);
+                    if (oldBlob.isLongLob()) {
+                        newBlob.setId(oldBlob.getId());
+                        newBlob.setLobType(BlobRef.LobType.LONG_LOB);
+                    } else {
+                        newBlob.setLobType(BlobRef.LobType.SHORT_LOB);
+                    }
+                    newRow.overlay(blobIndex, newBlob);
+                    result = newRow;
                 }
-                
-                BlobRef newBlob = new BlobRef(blobData, BlobRef.LeadingBitState.NO);
-                newBlob.setIsReturnedBlobInSimpleMode(true);
-                if (oldBlob.isLongLob()) {
-                    newBlob.setId(oldBlob.getId());
-                    newBlob.setLobType(BlobRef.LobType.LONG_LOB);
-                } else {
-                    newBlob.setLobType(BlobRef.LobType.SHORT_LOB);
-                }
-                newRow.overlay(blobIndex, newBlob);
-                result = newRow;
             }
         }
         return result;
     }
     
-    private List<Integer> getBlobIndexes(RowType rowType) {
-        List<Integer> blobIndexes = new ArrayList<>();
-        for (int i = 0; i < rowType.nFields(); i ++) {
-            if (rowType.typeAt(i).typeClass().equals(AkBlob.INSTANCE)) {
-                blobIndexes.add(Integer.valueOf(i));
-            }
-        }
-        return blobIndexes;
-    }
-    
     private BlobRef getBlobFromRow(ValueSource value) {
-        BlobRef blob = null;
         Object o = value.getObject();
         if ( o instanceof BlobRef) {
-            blob = (BlobRef) o;
+            return  (BlobRef) o;
         }
-        return blob;
+        throw new AkibanInternalException("Value must be a blob");
     }
     
     public static Table tableFromOrdinals(Group group, Key hkey) {

@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.store.format.protobuf;
 
+import com.foundationdb.server.error.*;
 import com.foundationdb.server.rowdata.ConversionHelperBigDecimal;
 import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.types.TClass;
@@ -295,7 +296,7 @@ public abstract class ProtobufRowConversion
                 BlobRef blob = (BlobRef)bl;
                 return ByteString.copyFrom(blob.getValue());
             }
-            return ByteString.copyFrom(new byte[0]);
+            throw new AkibanInternalException("bl must be a blob object");
         }
     }
 

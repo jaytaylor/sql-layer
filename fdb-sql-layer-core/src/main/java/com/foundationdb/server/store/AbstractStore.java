@@ -774,7 +774,6 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
                 listener.onUpdatePre(session, oldRow.rowType().table(), hKey, oldRow, newRow);
             }
 
-//            storeLobs(newRow);
             store(session, storeData);
 
             for(RowListener listener : listenerService.getRowListeners()) {

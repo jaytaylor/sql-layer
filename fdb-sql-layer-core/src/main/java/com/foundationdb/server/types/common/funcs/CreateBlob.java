@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 FoundationDB, LLC
+ * Copyright (C) 2009-2015 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -114,11 +114,6 @@ public class CreateBlob extends TScalarBase {
     @Override
     protected boolean neverConstant() {
         return false;
-    }
-
-    @Override
-    public String[] registeredNames() {
-        return new String[] {"create_blob"};
     }
 
     @Override

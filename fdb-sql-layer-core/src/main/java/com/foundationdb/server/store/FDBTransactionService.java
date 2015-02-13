@@ -215,6 +215,10 @@ public class FDBTransactionService implements TransactionService {
             return transaction.getRange(start, end, Transaction.ROW_LIMIT_UNLIMITED, false).iterator();
         }
 
+        public AsyncIterable<KeyValue> getRangeIterator(Range range) {
+            return transaction.getRange(range);
+        }
+        
         public AsyncIterable<KeyValue> getRangeIterator(Range range, int limit) {
             return transaction.getRange(range, limit);
         }

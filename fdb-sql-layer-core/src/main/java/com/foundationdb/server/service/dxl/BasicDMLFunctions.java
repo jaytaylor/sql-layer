@@ -27,7 +27,6 @@ import com.foundationdb.ais.model.AbstractVisitor;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Join;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.ais.model.Column;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryContext;
@@ -42,7 +41,6 @@ import com.foundationdb.server.service.listener.TableListener;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.types.aksql.aktypes.AkBlob;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,10 +88,8 @@ class BasicDMLFunctions implements DMLFunctions {
                 }
             }
         }
-        for (Column column : table.getColumns()) {
-            if (column.getType().equalsExcludingNullable(AkBlob.INSTANCE.instance(true)))
-                return false;
-        }
+        if (BasicDDLFunctions.containsBlob(table))
+            return false;
         return true;
     }
 

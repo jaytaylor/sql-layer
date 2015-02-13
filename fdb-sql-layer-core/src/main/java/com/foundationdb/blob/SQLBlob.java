@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2013 FoundationDB, LLC
+ * Copyright (C) 2009-2015 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -22,9 +22,9 @@ import com.foundationdb.async.*;
 import com.foundationdb.subspace.Subspace;
 import com.foundationdb.tuple.Tuple2;
 
-public class BlobBase extends BlobAsync {
+public class SQLBlob extends BlobAsync {
     
-    public BlobBase(Subspace subspace){
+    public SQLBlob(Subspace subspace){
         super (subspace);
     }
 
@@ -32,7 +32,7 @@ public class BlobBase extends BlobAsync {
         return tcx.runAsync(new Function<Transaction, Future<Void>>() {
             @Override
             public Future<Void> apply(Transaction tr) {
-                tr.set(attributeKey(), Tuple2.from(String.valueOf(tableId)).pack());
+                tr.set(attributeKey(), Tuple2.from((long)tableId).pack());
                 return new ReadyFuture<>((Void) null);
             }
         });
@@ -46,9 +46,9 @@ public class BlobBase extends BlobAsync {
                     @Override
                     public Integer apply(byte[] tableIdBytes) {
                         if(tableIdBytes == null) {
-                            return -1;
+                            return null;
                         }
-                        String tableIDString = Tuple2.fromBytes(tableIdBytes).getString(0);
+                        int tableIDString = (int)Tuple2.fromBytes(tableIdBytes).getLong(0);
                         return Integer.valueOf(tableIDString);
                     }
                 });
@@ -66,8 +66,7 @@ public class BlobBase extends BlobAsync {
                         if(tableIdBytes == null) {
                             return false;
                         }
-                        String tableIDString = Tuple2.fromBytes(tableIdBytes).getString(0);
-                        return Integer.valueOf(tableIDString) == -1 ? false : true;
+                        return true;
                     }
                 });
             }

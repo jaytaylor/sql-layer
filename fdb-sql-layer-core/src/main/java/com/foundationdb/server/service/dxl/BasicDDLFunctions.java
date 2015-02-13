@@ -283,7 +283,7 @@ public class BasicDDLFunctions implements DDLFunctions {
         }
 
         DMLFunctions dml = new BasicDMLFunctions(schemaManager(), store(), listenerService);
-        if(table.isRoot() && !containsLob(table)) {
+        if(table.isRoot() && !containsBlob(table)) {
             // Root table and no child tables, can delete all associated trees
             store().removeTrees(session, table);
         } else {
@@ -303,9 +303,9 @@ public class BasicDDLFunctions implements DDLFunctions {
                 SchemaManager.DropBehavior.RESTRICT);
     }
 
-    private boolean containsLob(Table table) {
+    public static boolean containsBlob(Table table) {
         for (Column column : table.getColumns()) {
-            if (column.getType().equalsExcludingNullable(AkBlob.INSTANCE.instance(true)))
+            if (column.getType().typeClass() == AkBlob.INSTANCE)
                 return true;
         }
         return false;
@@ -455,7 +455,7 @@ public class BasicDDLFunctions implements DDLFunctions {
             // Cannot drop entire group if parent is not in the same schema
             final Join parentJoin = table.getParentJoin();
             
-            if (containsLob(table)) {
+            if (containsBlob(table)) {
                 explicitlyDroppedTables.add(table);
             } else if(parentJoin != null) {
                 final Table parentTable = parentJoin.getParent();
