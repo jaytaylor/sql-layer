@@ -132,8 +132,12 @@ public final class ValueSources {
                     value.putBytes((byte[])object);
                 else if (object instanceof ByteSource)
                     value.putBytes(((ByteSource)object).toByteSubarray());
-                else if (object instanceof JTSSpatialObject)
-                    value.putBytes(Spatial.serializeWKB((JTSSpatialObject) object));
+                else if (object instanceof JTSSpatialObject) {
+                    if (((AkBlob) type.typeClass()).INSTANCE.equals(AkBlob.INSTANCE)) {
+                        byte[] content = Spatial.serializeWKB((JTSSpatialObject) object);
+                        value.putObject(new BlobRef(content));
+                    }
+                }
                 break;
             case STRING:
                 if ((object instanceof JTSSpatialObject)) {

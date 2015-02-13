@@ -156,10 +156,10 @@
 
 # clob
 ---
-- Statement: INSERT INTO all_types (clob_field, blob_field) VALUES (null, null)
+- Statement: INSERT INTO all_types (clob_field) VALUES (null)
 ---
-- Statement: INSERT INTO all_types (clob_field, blob_field) VALUES
-    ('', ''), ('dead', 'dead'), ('beef', 'beef00')
+- Statement: INSERT INTO all_types (clob_field) VALUES
+    (''), ('dead'), ('beef')
 ---
 - Statement: SELECT clob_field FROM all_types WHERE clob_field IN ('')
 - output: [['']]
@@ -168,9 +168,6 @@
     IN ('dead', 'beef')
 - output: [['dead'], ['beef']]
 ---
-- Statement: SELECT clob_field FROM all_types WHERE clob_field IN (blob_field)
-- output: [[''], ['dead']]
----
 - Statement: SELECT clob_field FROM all_types WHERE clob_field IN (?)
 - params: [['beef']]
 - output: [['beef']]
@@ -178,9 +175,6 @@
 - Statement: SELECT clob_field FROM all_types WHERE clob_field IN (?)
 - params: [['dead']]
 - output: [['dead']]
----
-- Statement: SELECT blob_field IN (clob_field) FROM all_types
-- output: [[null], [true], [true], [false]]
 
 ---
 - Statement: DELETE FROM all_types

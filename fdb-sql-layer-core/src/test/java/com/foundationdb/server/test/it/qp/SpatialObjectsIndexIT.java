@@ -29,11 +29,11 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.server.api.dml.SetColumnSelector;
+import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.spatial.Spatial;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
-import com.foundationdb.util.WrappingByteSource;
 import com.geophile.z.Space;
 import com.geophile.z.SpatialObject;
 import com.geophile.z.spatialobject.jts.JTS;
@@ -463,7 +463,7 @@ public class SpatialObjectsIndexIT extends OperatorITBase
 
     private SpatialObject wkbToSpatialObject(ValueSource valueSource) throws ParseException
     {
-        return Spatial.deserializeWKB(space, ((WrappingByteSource) ValueSources.toObject(valueSource)).toByteSubarray());
+        return Spatial.deserializeWKB(space, ((BlobRef) ValueSources.toObject(valueSource)).getBytes());
     }
 
     private SpatialObject wktToSpatialObject(ValueSource valueSource) throws ParseException

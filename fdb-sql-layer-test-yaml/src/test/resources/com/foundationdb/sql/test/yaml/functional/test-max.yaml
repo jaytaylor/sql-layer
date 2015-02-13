@@ -11,71 +11,71 @@
 # Test with no rows => null
 ---
 - Statement: SELECT MAX(bigint_field), MAX(bigint_unsigned_field),
-    MAX(blob_field), MAX(tinyint_field), MAX(char_field),
+    MAX(tinyint_field), MAX(char_field),
     MAX(char_multi_field), MAX(clob_field), MAX(date_field),
     MAX(decimal_field), MAX(double_field), MAX(float_field),
     MAX(integer_field), MAX(numeric_field), MAX(real_field),
     MAX(smallint_field), MAX(time_field), MAX(timestamp_field) FROM
     all_types
-- output: [[null, null, null, null, null, null, null, null, null, null,
+- output: [[null, null, null, null, null, null, null, null, null,
             null, null, null, null, null, null, null]]
 
 # Test with null row => null
 ---
 - Statement: INSERT INTO all_types (bigint_field, bigint_unsigned_field,
-    blob_field, tinyint_field, char_field, char_multi_field, clob_field,
+    tinyint_field, char_field, char_multi_field, clob_field,
     date_field, decimal_field, double_field, float_field, integer_field,
     numeric_field, real_field, smallint_field, time_field,
     timestamp_field)
-    VALUES (null, null, null, null, null, null, null, null, null, null,
+    VALUES (null, null, null, null, null, null, null, null, null,
     null, null, null, null, null, null, null)
 ---
 - Statement: SELECT MAX(bigint_field), MAX(bigint_unsigned_field),
-    MAX(blob_field), MAX(tinyint_field), MAX(char_field),
+    MAX(tinyint_field), MAX(char_field),
     MAX(char_multi_field), MAX(clob_field), MAX(date_field),
     MAX(decimal_field), MAX(double_field), MAX(float_field),
     MAX(integer_field), MAX(numeric_field), MAX(real_field),
     MAX(smallint_field), MAX(time_field), MAX(timestamp_field) FROM
     all_types
-- output: [[null, null, null, null, null, null, null, null, null, null,
+- output: [[null, null, null, null, null, null, null, null, null,
             null, null, null, null, null, null, null]]
 
 # Insert single row
 ---
 - Statement: INSERT INTO all_types (bigint_field, bigint_unsigned_field,
-    blob_field, tinyint_field, char_field, char_multi_field, clob_field,
+    tinyint_field, char_field, char_multi_field, clob_field,
     decimal_field, double_field, float_field, integer_field,
     numeric_field, real_field, smallint_field, time_field,
     timestamp_field)
-    VALUES (1, 1, '1.0', 1, '1', '1.0', '1.0', 1.0, 1.0, 1.0, 1, 1.0,
+    VALUES (1, 1, 1, '1', '1.0', '1.0', 1.0, 1.0, 1.0, 1, 1.0,
     1.0, 1, '01:01:01', '1000-01-01 01:01:01')
 ---
 - Statement: SELECT MAX(bigint_field), MAX(bigint_unsigned_field),
-    MAX(blob_field), MAX(tinyint_field), MAX(char_field),
+    MAX(tinyint_field), MAX(char_field),
     MAX(char_multi_field), MAX(clob_field), MAX(decimal_field),
     MAX(double_field), MAX(float_field), MAX(integer_field),
     MAX(numeric_field), MAX(real_field), MAX(smallint_field),
     MAX(time_field), MAX(timestamp_field) FROM all_types
-- output: [[1, 1, 1.0, 1, 1, 1.0, 1.0, 1, 1.0, 1.0, 1, 1, 1.0, 1,
+- output: [[1, 1, 1, 1, 1.0, 1.0, 1, 1.0, 1.0, 1, 1, 1.0, 1,
     '01:01:01', !re '1000-01-01 01:01:01([.]0)?']]
 
 # Insert another row
 ---
 - Statement: INSERT INTO all_types (bigint_field, bigint_unsigned_field,
-    blob_field, tinyint_field, char_field, char_multi_field, clob_field,
+    tinyint_field, char_field, char_multi_field, clob_field,
     decimal_field, double_field, float_field, integer_field,
     numeric_field, real_field, smallint_field, time_field,
     timestamp_field)
-    VALUES (2, 2, 2.0, 0, '2', '2.0', 2.0, 2.0, 2.0, 2.0, 2, 2.0, 2.0,
+    VALUES (2, 2, 0, '2', '2.0', 2.0, 2.0, 2.0, 2.0, 2, 2.0, 2.0,
     2, '02:02:02', '2000-02-02 02:02:02')
 ---
 - Statement: SELECT MAX(bigint_field), MAX(bigint_unsigned_field),
-    MAX(blob_field), MAX(tinyint_field), MAX(char_field),
+    MAX(tinyint_field), MAX(char_field),
     MAX(char_multi_field), MAX(clob_field), MAX(decimal_field),
     MAX(double_field), MAX(float_field), MAX(integer_field),
     MAX(numeric_field), MAX(real_field), MAX(smallint_field),
     MAX(time_field), MAX(timestamp_field) FROM all_types
-- output: [[2, 2, 2.0, 1, 2, 2.0, 2.0, 2, 2.0, 2.0, 2, 2, 2.0, 2,
+- output: [[2, 2, 1, 2, 2.0, 2.0, 2, 2.0, 2.0, 2, 2, 2.0, 2,
     '02:02:02', !re '2000-02-02 02:02:02([.]0)?']]
 
 ---

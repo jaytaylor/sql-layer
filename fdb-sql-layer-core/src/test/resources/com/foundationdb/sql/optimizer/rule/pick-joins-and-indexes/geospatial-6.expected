@@ -2,5 +2,5 @@ SelectQuery@48f4713c
   ResultSet@f1868c9[pid]
     Project@4ba6ec50[places.pid]
       Select@642413d4[geo_covers(geo_wkb(places.shape),POINT (42.3583 -71.0603))]
-        TableGroupJoinTree@fb2e3fd(TableGroup@6f9c5048(places), places - SingleIndexScan@5114b7c7(Index(test.places.places_geo[IndexColumn(shape)])application space: (-90.0:90.0, -180.0:180.0)  gBits: 28, 29, NONE, @POINT (42.3583 -71.0603), rows = 1, cost = 3333.25))
+        TableGroupJoinTree@fb2e3fd(TableGroup@6f9c5048(places), places - SingleIndexScan@5114b7c7(Index(test.places.places_geo[IndexColumn(shape)])application space: (-90.0:90.0, -180.0:180.0)  gBits: 28, 29, NONE, @POINT (42.3583 -71.0603), rows = 1, cost = 1673.32))
           TableSource@6af5bbd0(places - TableGroup@6f9c5048(places))

@@ -38,7 +38,6 @@ import com.foundationdb.sql.types.TypeId;
 
 public class AkBlob extends NoAttrTClass {
 
-    public final static NoAttrTClass INSTANCE = new AkBlob();
     
     public final static TypeId BLOBTYPE = TypeId.BLOB_ID;
     public final static ValueCacher CACHER = new BlobCacher();
@@ -49,6 +48,7 @@ public class AkBlob extends NoAttrTClass {
     public final static String SHORT_BLOB = "SHORT_BLOB";
     public final static String ADVANCED = "advanced";
     public final static String SIMPLE = "simple";
+    public final static NoAttrTClass INSTANCE = new AkBlob();
     
     private AkBlob(){
         super(AkBundle.INSTANCE.id(), BLOBTYPE.getSQLTypeName(), AkCategory.STRING_BINARY, TFormatter.FORMAT.BLOB, 1,
@@ -76,7 +76,7 @@ public class AkBlob extends NoAttrTClass {
                 byte[] bb = ((BlobRef) bdw).getValue();
                 target.putBytes(bb);
             } else {
-                throw new InvalidParameterValueException("cannot perform Blob-id cast on Object");
+                throw new InvalidParameterValueException("Object is not a blob instance");
             }
         }
 
