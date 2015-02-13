@@ -1,5 +1,5 @@
 SelectQuery@5cc6e70a
   ResultSet@66a711c[cid, name]
     Project@3627e88e[customers.cid, customers.name]
-      Select@7614de68[customers.name == Smith]
+      Select@7614de68[customers.name == 'Smith']
         TableSource@5415ba68(customers)

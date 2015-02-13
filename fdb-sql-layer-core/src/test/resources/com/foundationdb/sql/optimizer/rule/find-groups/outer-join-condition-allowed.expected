@@ -2,7 +2,7 @@ SelectQuery@37e80c87
   ResultSet@638e8fbd[cid, name, oid, cid, order_date, iid, oid, sku, quan, price]
     Project@247ef45b[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date, items.iid, items.oid, items.sku, items.quan, items.price]
       Select@adc9515[]
-        TableGroupJoinTree@17bf9b45(TableGroup@246adb31(customers), customers LEFT orders LEFT items ON items.sku != 1234)
+        TableGroupJoinTree@17bf9b45(TableGroup@246adb31(customers), customers LEFT orders LEFT items ON items.sku != '1234')
           TableSource@69ce835b(customers - TableGroup@246adb31(customers))
             TableSource@751201a1(orders - TableGroupJoin@635c80a4(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
               TableSource@71292d12(items - TableGroupJoin@4e01c1f2(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

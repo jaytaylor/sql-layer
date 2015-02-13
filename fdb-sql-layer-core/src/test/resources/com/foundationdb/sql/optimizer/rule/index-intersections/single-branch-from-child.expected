@@ -1,4 +1,4 @@
 MultiIndexIntersectScan@615cc989(compare 2
-    skip 1: SingleIndexScan@12b3734f(Index(test.items.sku[IndexColumn(sku)]), =1234)
-    skip 1: SingleIndexScan@43575120(Index(test.orders.order_date[IndexColumn(order_date)]), =2000-10-31)
+    skip 1: SingleIndexScan@12b3734f(Index(test.items.sku[IndexColumn(sku)]), ='1234')
+    skip 1: SingleIndexScan@43575120(Index(test.orders.order_date[IndexColumn(order_date)]), =DATE '2000-10-31')
     -> NONE, rows = 1, cost = 116.013)

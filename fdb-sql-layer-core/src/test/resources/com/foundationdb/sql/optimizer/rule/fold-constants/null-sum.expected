@@ -3,5 +3,5 @@ SelectQuery@17918f0
     Project@510ebe18[NULL, GROUP[0]]
       Select@1f08ed8[]
         AggregateSource@cbf9bd(UNGROUPED,[COUNT(*)])
-          Select@322bce[items.sku == 321]
+          Select@322bce[items.sku == '321']
             TableSource@92b1a1(items)

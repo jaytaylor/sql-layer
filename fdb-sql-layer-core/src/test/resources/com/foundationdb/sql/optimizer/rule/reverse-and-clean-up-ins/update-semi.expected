@@ -9,7 +9,7 @@ DMLStatement@66c74e0b(items)
           Limit@57e7f1de(LIMIT 1)
             Select@3cb852e8[]
               Flatten@9bf9ea2(orders INNER i2)
-                Select@694b1c7c[orders.order_date > 2011-03-02]
+                Select@694b1c7c[orders.order_date > DATE '2011-03-02']
                   BranchLookup@423b46e5(orders -> orders)
                     SingleIndexScan@41ab865b(Index(test.orders.PRIMARY[IndexColumn(oid)]), NONE, =items.oid, rows = 17, cost = 1716.58)
                     TableSource@1814fb02(orders - TableGroup@6401e20b(customers))

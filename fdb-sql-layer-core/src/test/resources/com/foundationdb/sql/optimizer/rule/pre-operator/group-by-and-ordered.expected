@@ -3,4 +3,4 @@ SelectQuery@30ad6f6f
     Project@3bb633cd[PROJECT[1], PROJECT[0]]
       Distinct@237bec94
         Project@193f003f[orders.order_date, orders.oid]
-          SingleIndexScan@7e561816(Index(test.customers.sku_and_date_2[IndexColumn(sku), IndexColumn(order_date), IndexColumn(oid)]), covering/SORTED/reverse, =1234, rows = 97, cost = 80.8152)
+          SingleIndexScan@7e561816(Index(test.customers.sku_and_date_2[IndexColumn(sku), IndexColumn(order_date), IndexColumn(oid)]), covering/SORTED/reverse, ='1234', rows = 97, cost = 80.8152)

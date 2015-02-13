@@ -1,5 +1,5 @@
 SelectQuery@2f566b7d
   ResultSet@52aaf3d2[id, name, state]
     Project@556d8a64[parent.id, parent.name, parent.state]
-      Select@a98d70d[like(parent.name,S%)]
+      Select@a98d70d[like(parent.name,'S%')]
         TableSource@384e9bea(parent)

@@ -3,7 +3,7 @@ SelectQuery@48342983
     Project@37841ff8[customers.cid, parent.name]
       Select@434eef41[isNull(parent.name)]
         JoinNode@58b47b0f(LEFT/NESTED_LOOPS)
-          TableGroupJoinTree@30dda1eb(TableGroup@30fb4348(customers), customers - SingleIndexScan@3ffe4517(Index(test.customers.name[IndexColumn(name)]), covering/NONE, =foo, rows = 1, cost = 6.86220))
+          TableGroupJoinTree@30dda1eb(TableGroup@30fb4348(customers), customers - SingleIndexScan@3ffe4517(Index(test.customers.name[IndexColumn(name)]), covering/NONE, ='foo', rows = 1, cost = 6.86220))
             TableSource@2a8a4820(customers - TableGroup@30fb4348(customers))
           TableGroupJoinTree@26b1645d(TableGroup@4e6a09d3(parent), parent - ExpressionsHKeyScan@6b5b9c1(TableSource@431e6d2b(parent - TableGroup@46128ae(parent)), customers.cid, rows = 1, cost = 8.18040))
             TableSource@1bc51f4e(parent - TableGroup@4e6a09d3(parent))

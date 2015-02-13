@@ -4,6 +4,6 @@ SelectQuery@3c985bf9
       Select@7b97ab3[]
         AggregateSource@222681bb(PRESORTED,[addresses.city],[])
           Select@e0f2d81[addresses.city == customers.name]
-            TableGroupJoinTree@674775d(TableGroup@42e97022(customers), customers INNER addresses - SingleIndexScan@6bc0ea7f(Index(test.customers.state_and_name[IndexColumn(state), IndexColumn(name)]), GROUPED, =NY, rows = 10, cost = 1051.04))
+            TableGroupJoinTree@674775d(TableGroup@42e97022(customers), customers INNER addresses - SingleIndexScan@6bc0ea7f(Index(test.customers.state_and_name[IndexColumn(state), IndexColumn(name)]), GROUPED, ='NY', rows = 10, cost = 1051.04))
               TableSource@30260a6d(customers - TableGroup@42e97022(customers))
                 TableSource@117692cd(addresses - TableGroupJoin@4d70dfac(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))

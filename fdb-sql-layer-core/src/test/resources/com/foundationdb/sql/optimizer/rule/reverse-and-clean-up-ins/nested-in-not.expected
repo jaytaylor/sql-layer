@@ -11,4 +11,4 @@ SelectQuery@338c94e3
               Select@66261964[]
                 Limit@447e166a(LIMIT 1)
                   Select@4f4d28a0[orders.oid == items.oid]
-                    SingleIndexScan@31f1ac47(Index(test.items.sku[IndexColumn(sku)]), covering/NONE, =1234, rows = 97, cost = 158.981)
+                    SingleIndexScan@31f1ac47(Index(test.items.sku[IndexColumn(sku)]), covering/NONE, ='1234', rows = 97, cost = 158.981)

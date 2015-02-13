@@ -10,7 +10,7 @@ SelectQuery@270cd144
               Limit@1b71dc1f(LIMIT 1)
                 Select@b80fa71[]
                   Flatten@457514c6(items)
-                    Select@502a854c[items.sku == 1234]
+                    Select@502a854c[items.sku == '1234']
                       AncestorLookup@179569b2(items -> [items])
                         SingleIndexScan@524e3136(Index(test.items.__akiban_fk_1[IndexColumn(oid)]), NONE, =orders.oid, rows = 1, cost = 188.762)
                         TableSource@b849d5c(items - TableGroup@b80fa71(customers))

@@ -1,11 +1,11 @@
 SelectQuery@3df73567
   ResultSet@30d31cf9[quan, quan]
     Project@74133879[i1.quan, i2.quan]
-      Select@19e0cb78[i2.sku == 4567]
+      Select@19e0cb78[i2.sku == '4567']
         Product@5117e672(customers)
           Flatten@781a6ff5(customers INNER o1 INNER i1)
             AncestorLookup@fac7b6d(items -> [customers, orders, items])
-              MultiIndexIntersectScan@4db3925(INTERSECT(compare 1, skip 1: SingleIndexScan@5484aea0(Index(test.items.sku[IndexColumn(sku)]), , =1234) AND skip 1: SingleIndexScan@52e4b5b9(Index(test.items.sku[IndexColumn(sku)]), , =4567)), NONE, rows = 1, cost = 17303.6)
+              MultiIndexIntersectScan@4db3925(INTERSECT(compare 1, skip 1: SingleIndexScan@5484aea0(Index(test.items.sku[IndexColumn(sku)]), , ='1234') AND skip 1: SingleIndexScan@52e4b5b9(Index(test.items.sku[IndexColumn(sku)]), , ='4567')), NONE, rows = 1, cost = 17303.6)
               TableSource@33e5903a(customers - TableGroup@40de3b0e(customers))
               TableSource@245fea74(o1 - TableGroupJoin@2556af33(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
               TableSource@3b2add9e(i1 - TableGroupJoin@5e08506b(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

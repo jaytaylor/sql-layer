@@ -5,7 +5,7 @@ SelectQuery@19fac852
         Product@466d1750(customers)
           Flatten@2415a94f(customers INNER addresses)
             AncestorLookup@a1e940b(addresses -> [customers, addresses])
-              SingleIndexScan@5d89635d(Index(test.addresses.state[IndexColumn(state)]), NONE, >M, rows = 640, cost = 63209.9)
+              SingleIndexScan@5d89635d(Index(test.addresses.state[IndexColumn(state)]), NONE, >'M', rows = 640, cost = 63209.9)
               TableSource@52234265(customers - TableGroup@66da9ea4(customers))
               TableSource@8dc1f04(addresses - TableGroupJoin@1ae555bd(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))
           Flatten@465ff916(customers LEFT orders)

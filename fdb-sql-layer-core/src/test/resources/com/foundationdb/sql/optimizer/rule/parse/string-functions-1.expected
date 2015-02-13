@@ -1,5 +1,5 @@
 SelectQuery@3b64c5ef
   ResultSet@54feec5f[name, _SQL_COL_1, _SQL_COL_2, _SQL_COL_3, _SQL_COL_4, _SQL_COL_5, _SQL_COL_6, _SQL_COL_7, _SQL_COL_8, _SQL_COL_9, _SQL_COL_10]
-    Project@2c507c91[parent.name, upper(parent.name), lower(parent.name), upper(parent.name), lower(parent.name), trim(parent.name, ), ltrim(parent.name, ), rtrim(parent.name, ), substring(parent.name,1,2), getOctetLength(parent.name), locate(parent.name,bar,1)]
+    Project@2c507c91[parent.name, upper(parent.name), lower(parent.name), upper(parent.name), lower(parent.name), trim(parent.name,' '), ltrim(parent.name,' '), rtrim(parent.name,' '), substring(parent.name,1,2), getOctetLength(parent.name), locate(parent.name,'bar',1)]
       Select@58222a51[]
         TableSource@2b08590b(parent)

@@ -6,6 +6,6 @@ SelectQuery@6c67b0d2
           Select@60119b0[]
             Flatten@358a7722(orders LEFT shipments)
               BranchLookup@159374a4(orders -> orders)
-                SingleIndexScan@3cec60d(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >2010-01-01, rows = 966, cost = 24707.5)
+                SingleIndexScan@3cec60d(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >DATE '2010-01-01', rows = 966, cost = 24707.5)
                 TableSource@799987cd(orders - TableGroup@68073dbd(customers))
                 TableSource@14747fa3(shipments - TableGroupJoin@7c2c816e(Join(test/orders/oid/test/test.shipments/oid: test.shipments -> test.orders, group(test.customers))))

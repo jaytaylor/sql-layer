@@ -3,7 +3,7 @@ SelectQuery@651e32f7
     Project@20c0f3f3[customers.name, orders.order_date]
       Sort@3759bf4c[orders.order_date DESC]
         Select@5bcfe751[]
-          TableGroupJoinTree@2e5ba5ee(TableGroup@6e49eccd(customers), customers INNER addresses INNER orders - SingleIndexScan@2eac409(Index(test.addresses.state[IndexColumn(state)]), NONE, =MA, rows = 150, cost = 15680.6))
+          TableGroupJoinTree@2e5ba5ee(TableGroup@6e49eccd(customers), customers INNER addresses INNER orders - SingleIndexScan@2eac409(Index(test.addresses.state[IndexColumn(state)]), NONE, ='MA', rows = 150, cost = 15680.6))
             TableSource@7b0aac(customers - TableGroup@6e49eccd(customers))
               TableSource@183330(addresses - TableGroupJoin@2ec2c5e(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))
               TableSource@df9a273(orders - TableGroupJoin@5f54d0d1(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

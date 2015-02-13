@@ -208,8 +208,7 @@ public abstract class RangeEndpoint implements Comparable<RangeEndpoint> {
 
         @Override
         public String describeValue() {
-            Object value = getValue();
-            return value == null ? "NULL" : value.toString();
+            return valueExpression.toString();
         }
 
         @Override

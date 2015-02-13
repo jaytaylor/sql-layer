@@ -5,7 +5,7 @@ SelectQuery@26114629
         AggregateSource@140de648(PRESORTED,[items.sku],[])
           Select@1c898b41[]
             JoinNode@6deea96c(INNER/NESTED_LOOPS)
-              TableGroupJoinTree@5faecf45(TableGroup@64afb650(customers), customers INNER orders INNER items - SingleIndexScan@2f63e9a1(Index(test.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), covering/SORTED, =Smith, rows = 177, cost = 147.820))
+              TableGroupJoinTree@5faecf45(TableGroup@64afb650(customers), customers INNER orders INNER items - SingleIndexScan@2f63e9a1(Index(test.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), covering/SORTED, ='Smith', rows = 177, cost = 147.820))
                 TableSource@7a9d1714(customers - TableGroup@64afb650(customers))
                   TableSource@5f5660ef(orders - TableGroupJoin@4da9ec16(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
                     TableSource@569bc36d(items - TableGroupJoin@4ecac02f(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

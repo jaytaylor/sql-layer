@@ -10,4 +10,4 @@ SelectQuery@5284a2fb
 
 Subquery@b6526e
   Project@475dfdbb[and(customers.name == VALUES[0],items.sku == VALUES[1])]
-    ExpressionsSource@6bbd2497([[Smith, 1234], [Jones, 4567]])
+    ExpressionsSource@6bbd2497([['Smith', '1234'], ['Jones', '4567']])

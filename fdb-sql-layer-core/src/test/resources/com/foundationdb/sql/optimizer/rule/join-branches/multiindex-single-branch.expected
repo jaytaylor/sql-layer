@@ -1,10 +1,10 @@
 SelectQuery@6e4d4f6e
   ResultSet@1599f755[cid, name, oid, cid, order_date, iid, oid, sku, quan]
     Project@2f3cf887[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date, items.iid, items.oid, items.sku, items.quan]
-      Select@4be07f4b[orders.order_date == 2019-09-28]
+      Select@4be07f4b[orders.order_date == DATE '2019-09-28']
         Flatten@139f953(customers INNER orders INNER items)
           AncestorLookup@51fb8c6(items -> [customers, orders, items])
-            MultiIndexIntersectScan@5c4e9b7d(INTERSECT(compare 1, skip 1: SingleIndexScan@4dbed348(Index(test.items.sku[IndexColumn(sku)]), , =0275) AND skip 1: SingleIndexScan@31ddeda2(Index(test.customers.name[IndexColumn(name)]), , =Atzdz)), NONE, rows = 1, cost = 330.361)
+            MultiIndexIntersectScan@5c4e9b7d(INTERSECT(compare 1, skip 1: SingleIndexScan@4dbed348(Index(test.items.sku[IndexColumn(sku)]), , ='0275') AND skip 1: SingleIndexScan@31ddeda2(Index(test.customers.name[IndexColumn(name)]), , ='Atzdz')), NONE, rows = 1, cost = 330.361)
             TableSource@74c9a375(customers - TableGroup@7d6bb63e(customers))
             TableSource@620a9239(orders - TableGroupJoin@659bd1ca(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
             TableSource@6607db7d(items - TableGroupJoin@58ea58e3(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

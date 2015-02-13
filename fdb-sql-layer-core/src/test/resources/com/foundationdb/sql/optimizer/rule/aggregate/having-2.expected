@@ -1,7 +1,7 @@
 SelectQuery@6f649b44
   ResultSet@16e1eea8[order_date, _SQL_COL_1]
     Project@4afb6354[GROUP[0], GROUP[2]]
-      Select@426295eb[GROUP[1] < a]
+      Select@426295eb[GROUP[1] < 'a']
         AggregateSource@56609959([orders.order_date],[MIN(items.sku), SUM(times(items.price,items.quan))])
           Select@5ff3ce5c[]
             JoinNode@7f712b3a(INNER[orders.oid == items.oid])

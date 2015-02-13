@@ -2,7 +2,7 @@ DMLStatement@7193d430(customers)
   DeleteStatement@204fd591(customers)
     Select@594e3329[]
       JoinNode@7372b685(INNER/NESTED_LOOPS)
-        TableGroupJoinTree@17d44748(TableGroup@702d10f9(customers), c2 - SingleIndexScan@1eb584f8(Index(test.customers.name[IndexColumn(name)]), covering/NONE, =James, rows = 1, cost = 6.04220))
+        TableGroupJoinTree@17d44748(TableGroup@702d10f9(customers), c2 - SingleIndexScan@1eb584f8(Index(test.customers.name[IndexColumn(name)]), covering/NONE, ='James', rows = 1, cost = 6.04220))
           TableSource@9141a37(c2 - TableGroup@702d10f9(customers))
         TableGroupJoinTree@7508d8d7(TableGroup@1f2cc588(customers), c1 - ExpressionsHKeyScan@345c73b5(TableSource@6c51589(c1 - TableGroup@1f2cc588(customers)), c2.cid, rows = 1, cost = 7.87160))
           TableSource@6c51589(c1 - TableGroup@1f2cc588(customers))

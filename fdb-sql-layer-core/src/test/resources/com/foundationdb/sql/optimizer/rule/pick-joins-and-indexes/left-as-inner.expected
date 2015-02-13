@@ -2,6 +2,6 @@ SelectQuery@11575ea3
   ResultSet@7f062839[cid]
     Project@6d3af755[orders.cid]
       Select@3a442579[]
-        TableGroupJoinTree@4ff848d1(TableGroup@42e97022(customers), orders INNER items - SingleIndexScan@6bc0ea7f(Index(test.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), covering/NONE, =1234, =2010-01-01, rows = 1, cost = 6.35760))
+        TableGroupJoinTree@4ff848d1(TableGroup@42e97022(customers), orders INNER items - SingleIndexScan@6bc0ea7f(Index(test.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), covering/NONE, ='1234', =DATE '2010-01-01', rows = 1, cost = 6.35760))
           TableSource@1e079362(orders - TableGroup@42e97022(customers))
             TableSource@35d1655(items - TableGroupJoin@3b8ada76(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

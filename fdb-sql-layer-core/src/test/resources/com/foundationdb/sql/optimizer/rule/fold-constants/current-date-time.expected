@@ -1,5 +1,5 @@
 SelectQuery@4805298
   ResultSet@4ae7b77[oid]
     Project@5b2bc407[orders.oid]
-      Select@1652d654[orders.order_date > minus(current_date(),INTERVAL '7 0:0:0.00000')]
+      Select@1652d654[orders.order_date > minus(current_date(),INTERVAL '7' DAY)]
         TableSource@2e1ed620(orders)

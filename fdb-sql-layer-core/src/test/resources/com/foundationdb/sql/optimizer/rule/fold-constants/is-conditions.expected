@@ -1,5 +1,5 @@
 SelectQuery@214a7a12
   ResultSet@209444d1[_SQL_COL_1, _SQL_COL_2, _SQL_COL_3, _SQL_COL_4, _SQL_COL_5]
-    Project@6632060c[false, true, addresses.state == addresses.state, false, false]
+    Project@6632060c[FALSE, TRUE, addresses.state == addresses.state, FALSE, FALSE]
       Select@5e2b323e[]
         TableSource@3f64b09c(addresses)

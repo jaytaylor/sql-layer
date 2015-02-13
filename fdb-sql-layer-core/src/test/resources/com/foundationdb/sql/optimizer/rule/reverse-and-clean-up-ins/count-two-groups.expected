@@ -4,7 +4,7 @@ SelectQuery@53f64158
       Select@14fdb00d[]
         AggregateSource@1d766806(UNGROUPED,[COUNT(*)])
           MapJoin@373c0b53()
-            ExpressionsSource@761eec35([[1234], [4567], [6666]])
+            ExpressionsSource@761eec35([['1234'], ['4567'], ['6666']])
             MapJoin@470b9279()
               Flatten@588f07a1(customers)
                 AncestorLookup@4345de8a(items -> [customers])

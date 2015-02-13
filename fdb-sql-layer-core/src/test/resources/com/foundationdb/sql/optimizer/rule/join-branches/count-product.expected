@@ -7,7 +7,7 @@ SelectQuery@cbf30e
             Product@4b035d(customers)
               Flatten@aa37a6(customers INNER addresses)
                 BranchLookup@d1fa5(customers -> customers)
-                  SingleIndexScan@198a455(Index(test.customers.name[IndexColumn(name)]), NONE, =Smith, rows = 10, cost = 1340.69)
+                  SingleIndexScan@198a455(Index(test.customers.name[IndexColumn(name)]), NONE, ='Smith', rows = 10, cost = 1340.69)
                   TableSource@2e8f01b8(customers - TableGroup@6a162595(customers))
                   TableSource@1b3f829(addresses - TableGroupJoin@99353f(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))
               Flatten@ca0115(customers INNER orders)

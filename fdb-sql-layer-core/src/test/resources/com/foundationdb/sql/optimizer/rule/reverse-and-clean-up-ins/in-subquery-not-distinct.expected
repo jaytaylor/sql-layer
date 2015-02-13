@@ -9,5 +9,5 @@ SelectQuery@33847a42
               Flatten@28bcd765(c2)
                 Select@51e7b969[customers.name == c2.name]
                   AncestorLookup@443dc681(orders -> [customers])
-                    SingleIndexScan@33b36227(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >2020-03-02, rows = 1, cost = 13.0870)
+                    SingleIndexScan@33b36227(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >DATE '2020-03-02', rows = 1, cost = 13.0870)
                     TableSource@66208c2a(c2 - TableGroup@45f108f5(customers))

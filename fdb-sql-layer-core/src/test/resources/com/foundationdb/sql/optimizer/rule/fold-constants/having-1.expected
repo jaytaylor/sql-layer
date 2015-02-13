@@ -1,7 +1,7 @@
 SelectQuery@10e35d5
   ResultSet@70c26b16[_SQL_COL_1]
     Project@6c04ab2f[GROUP[0]]
-      Select@18e8541[GROUP[0] > M]
+      Select@18e8541[GROUP[0] > 'M']
         AggregateSource@caf6c1(UNGROUPED,[MAX(customers.name)])
           Select@1ce85c4[]
             TableSource@1fcc0a2(customers)

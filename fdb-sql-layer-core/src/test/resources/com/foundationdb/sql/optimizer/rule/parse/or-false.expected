@@ -1,5 +1,5 @@
 SelectQuery@4f19c297
   ResultSet@24367013[_SQL_COL_1]
-    Project@71f801f7[f(true)]
+    Project@71f801f7[f(TRUE)]
       Select@51493995[]
         TableSource@1e638ee4(child)

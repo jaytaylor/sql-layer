@@ -2,5 +2,5 @@ SelectQuery@60f58487
   ResultSet@16cfeccc[cid, name]
     Project@2cc350c7[customers.cid, customers.name]
       Select@4aec4fc6[]
-        TableGroupJoinTree@60697697(TableGroup@2be8e4f4(customers), customers - SingleIndexScan@470f65b1(Index(test.customers.name[IndexColumn(name)]), covering/NONE, <_min(Smith,Jones), rows = 85, cost = 63.8510))
+        TableGroupJoinTree@60697697(TableGroup@2be8e4f4(customers), customers - SingleIndexScan@470f65b1(Index(test.customers.name[IndexColumn(name)]), covering/NONE, <_min('Smith','Jones'), rows = 85, cost = 63.8510))
           TableSource@3470e98e(customers - TableGroup@2be8e4f4(customers))

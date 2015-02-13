@@ -2,6 +2,6 @@ SelectQuery@70556101
   ResultSet@7553c244[cid]
     Project@4df73a89[customers.cid]
       Select@2224205c[]
-        TableGroupJoinTree@71c88986(TableGroup@49188ce3(customers), customers INNER addresses - SingleIndexScan@6ac9b092(Index(test.customers.state_and_name[IndexColumn(state), IndexColumn(name)]), NONE, =MA, =Adams, rows = 1, cost = 12.3666))
+        TableGroupJoinTree@71c88986(TableGroup@49188ce3(customers), customers INNER addresses - SingleIndexScan@6ac9b092(Index(test.customers.state_and_name[IndexColumn(state), IndexColumn(name)]), NONE, ='MA', ='Adams', rows = 1, cost = 12.3666))
           TableSource@4ee049fb(customers - TableGroup@49188ce3(customers))
             TableSource@67192631(addresses - TableGroupJoin@12a90e78(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))
