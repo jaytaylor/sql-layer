@@ -360,6 +360,8 @@ class IndexCursorUnidirectional<S> extends IndexCursor
 
     // TODO : Once the Persistit storage engine is removed, the FDB storage engine
     // does a correct job of selecting the range, and this method can be removed.
+    // TODO : Except beforeStart() also used to manage exceptions in the list:
+    // e.g. SELECT * from t where t.id != 2 order by t.id ; 
     protected boolean beforeStart(Row row)
     {
         boolean beforeStart = false;
@@ -368,6 +370,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             int c = current.compareTo(startKey, startBoundColumns) * direction;
             beforeStart = c < 0 || c == 0 && !startInclusive;
         }
+        //assert false == beforeStart : row;
         return beforeStart;
     }
 
@@ -383,6 +386,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             int c = current.compareTo(endKey, endBoundColumns) * direction;
             pastEnd = c > 0 || c == 0 && !endInclusive;
         }
+        assert false == pastEnd : row;
         return pastEnd;
     }
 
@@ -494,7 +498,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             pastStart = false;
         }
         keyComparison = initialKeyComparison;
-        iterationHelper.preload(keyComparison);
+        iterationHelper.preload(keyComparison, this.endInclusive);
     }
 
     private Index index()

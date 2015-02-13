@@ -96,7 +96,7 @@ public class FDBIterationHelper implements IterationHelper
     @Override
     public boolean traverse(Direction dir) {
         try {
-            checkIterator(dir);
+            checkIterator(dir, true);
             return advance();
         } catch (Exception e) {
             throw FDBAdapter.wrapFDBException(adapter.getSession(), e);
@@ -104,8 +104,8 @@ public class FDBIterationHelper implements IterationHelper
     }
 
     @Override
-    public void preload(Direction dir) {
-        checkIterator(dir);
+    public void preload(Direction dir, boolean endInclusive) {
+        checkIterator(dir, endInclusive);
     }
 
     //
@@ -122,7 +122,7 @@ public class FDBIterationHelper implements IterationHelper
     }
 
     /** Check current iterator matches direction and recreate if not. */
-    private void checkIterator(Direction dir) {
+    private void checkIterator(Direction dir, boolean endInclusive) {
         final boolean keyGenMatches = (lastKeyGen == storeData.persistitKey.getGeneration());
         if((itDir != dir) || !keyGenMatches) {
             // If the last key we returned hasn't changed and moving in the same direction, new iterator isn't needed.
@@ -135,6 +135,7 @@ public class FDBIterationHelper implements IterationHelper
             final int saveSize = storeData.persistitKey.getEncodedSize();
             final boolean exact = dir == EQ || dir == GTEQ || dir == LTEQ;
             final boolean reverse = (dir == LT) || (dir == LTEQ);
+            final boolean exactEnd = endInclusive;
 
             assert storeData.nudgeDir == null;
             if(!KeyShim.isSpecial(storeData.persistitKey) && !exact) {
@@ -150,7 +151,7 @@ public class FDBIterationHelper implements IterationHelper
             }
 
             adapter.getUnderlyingStore().indexIterator(adapter.getSession(), storeData,
-                                                       true, exact, reverse,
+                                                       true, exact, exactEnd, reverse,
                                                        adapter.scanOptions());
             storeData.nudgeDir = null;
             storeData.persistitKey.setEncodedSize(saveSize);

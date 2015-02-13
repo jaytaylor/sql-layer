@@ -132,7 +132,7 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
         visitor.init(bucketCount);
         FDBStoreData storeData = getStore().createStoreData(session, index);
         // Whole index, forward.
-        getStore().indexIterator(session, storeData, false, false, false,
+        getStore().indexIterator(session, storeData, false, false, true, false,
                                  transactionOptions);
         while(storeData.next()) {
             if (++skippedSamples < sampleRate)

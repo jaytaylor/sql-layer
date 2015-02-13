@@ -365,7 +365,7 @@ public class Except_OrderedIT extends OperatorITBase
     }
 
     @Test
-    public void testDisjoint()
+    public void testDisjoint_asc_duplicates()
     {
         Operator plan = exceptPlan( uXIndexRowType,tXIndexRowType, true, false);
         Row[] expected = new Row[] {
@@ -377,9 +377,13 @@ public class Except_OrderedIT extends OperatorITBase
                 row(uRowType, 9L, 1005L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
+    }
+    @Test
+    public void testDisjoint_desc_duplicates()
+    {
 
-        plan = exceptPlan( uXIndexRowType,tXIndexRowType, false, false);
-        expected = new Row[] {
+        Operator plan = exceptPlan( uXIndexRowType,tXIndexRowType, false, false);
+        Row[] expected = new Row[] {
                 row(uRowType, 9L, 1005L),
                 row(uRowType, 9L, 1004L),
                 row(uRowType, 8L, 1003L),
@@ -388,8 +392,13 @@ public class Except_OrderedIT extends OperatorITBase
                 row(uRowType, 1L, 1000L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
-        plan = exceptPlan( uXIndexRowType,tXIndexRowType, true, true);
-        expected = new Row[] {
+    }
+
+    @Test
+    public void testDisjoint_asc_noDulicates()
+    {
+        Operator plan = exceptPlan( uXIndexRowType,tXIndexRowType, true, true);
+        Row[] expected = new Row[] {
                 row(uRowType, 1L, 1000L),
                 row(uRowType, 2L, 1001L),
                 row(uRowType, 5L, 1002L),
@@ -397,9 +406,13 @@ public class Except_OrderedIT extends OperatorITBase
                 row(uRowType, 9L, 1004L),
         };
         compareRows(expected, cursor(plan, queryContext, queryBindings));
-
-        plan = exceptPlan( uXIndexRowType,tXIndexRowType, false, true);
-        expected = new Row[] {
+    }
+    
+    @Test
+    public void testDisjoint_desc_noDulicates()
+    {
+        Operator plan = exceptPlan( uXIndexRowType,tXIndexRowType, false, true);
+        Row[] expected = new Row[] {
                 row(uRowType, 9L, 1005L),
                 row(uRowType, 8L, 1003L),
                 row(uRowType, 5L, 1002L),

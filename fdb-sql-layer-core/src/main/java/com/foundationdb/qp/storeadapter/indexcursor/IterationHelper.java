@@ -56,5 +56,5 @@ public interface IterationHelper
      * Start cursor for given direction if that can be done asynchronously.
      * @param dir The direction to advance in.
      */
-    void preload(Direction dir);
+    void preload(Direction dir, boolean endInclusive);
 }

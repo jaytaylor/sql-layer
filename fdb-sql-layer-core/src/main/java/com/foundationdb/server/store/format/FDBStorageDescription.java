@@ -57,7 +57,8 @@ import static com.foundationdb.server.store.FDBStoreDataHelper.*;
 public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBStoreData>
 {
     private byte[] prefixBytes;
-
+    private static final Logger LOG = LoggerFactory.getLogger(FDBStorageDescription.class);
+    
     public FDBStorageDescription(HasStorage forObject, String storageFormat) {
         super(forObject, storageFormat);
     }
@@ -253,12 +254,13 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
 
     /** Set up <code>storeData.iterator</code> to iterate over index.
      * @param key Start at <code>storeData.persistitKey</code>
-     * @param inclusive Include key itself in result.
+     * @param startInclusive Include key itself in result.
+     * @param endInclusive Include end key in result. 
      * @param reverse Iterate in reverse.
      * @param snapshot Snapshot range scan
      */
     public void indexIterator(FDBStore store, Session session, FDBStoreData storeData,
-                              boolean key, boolean inclusive, boolean reverse,
+                              boolean key, boolean startInclusive, boolean endInclusive, boolean reverse,
                               FDBScanTransactionOptions transactionOptions) {
         KeySelector ksLeft, ksRight;
 
@@ -269,18 +271,19 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
         } else {
             assert storeData.endKey.getEncodedSize() == 0;
         }
-
         byte[] prefixBytes = prefixBytes(storeData);
         if (!key) {
             ksLeft = KeySelector.firstGreaterOrEqual(prefixBytes);
             ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
         }
-        else if (inclusive) {
+        else if (startInclusive) {
             if (reverse) {
                 if (endKey != null) {
-                    // Since we don't have the inclusive/exclusive flag for the end key
-                    // assume inclusive (ie. get the last key even if it's beyond the range we need). 
-                    ksLeft = KeySelector.firstGreaterOrEqual(endKey);
+                    if (endInclusive) {
+                        ksLeft = KeySelector.firstGreaterOrEqual(endKey);
+                    } else {
+                        ksLeft = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(endKey));
+                    }
                 } else {
                     ksLeft = KeySelector.firstGreaterThan(prefixBytes);
                 }
@@ -289,7 +292,11 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
             else {
                 ksLeft = KeySelector.firstGreaterOrEqual(packKey(storeData));
                 if (endKey != null) {
-                    ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(endKey));
+                    if (endInclusive) {
+                        ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(endKey));
+                    } else {
+                        ksRight = KeySelector.firstGreaterOrEqual(endKey);
+                    }
                 } else {
                     ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
                 }
@@ -298,23 +305,32 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
         else {
             if (reverse) {
                 if (endKey != null) {
-                    // Since we don't have the inclusive/exclusive flag for the end key
-                    // assume inclusive (ie. get the last key even if it's beyond the range we need). 
-                    ksLeft = KeySelector.firstGreaterOrEqual(endKey);
+                    if (endInclusive) {
+                        ksLeft = KeySelector.firstGreaterOrEqual(endKey);
+                    } else {
+                        ksLeft = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(endKey));
+                    }
                 } else {
                     ksLeft = KeySelector.firstGreaterThan(prefixBytes);
                 }
+                //ksRight = KeySelector.lastLessThan(packKey(storeData));
                 ksRight = KeySelector.firstGreaterThan(packKey(storeData));
             } 
             else {
                 ksLeft = KeySelector.firstGreaterThan(packKey(storeData));
                 if (endKey != null) {
-                    ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(endKey));
+                    if (endInclusive) {
+                        ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(endKey));
+                    } else {
+                        ksRight = KeySelector.firstGreaterOrEqual(endKey);
+                    }
                 } else {
                     ksRight = KeySelector.firstGreaterOrEqual(ByteArrayUtil.strinc(prefixBytes));
                 }
             }
         }
+        LOG.trace (" Reverse: " + reverse  +", startInclusive: {}, endInclusive: {}", startInclusive, endInclusive);
+        LOG.trace ("generated KeySelectors: Left: {}, Right: {}", ksLeft, ksRight);
         TransactionState txnState = store.getTransaction(session, storeData);
         storeData.iterator = new FDBStoreDataKeyValueIterator(storeData,
             txnState.getRangeIterator(ksLeft, ksRight, Transaction.ROW_LIMIT_UNLIMITED, reverse, transactionOptions));
