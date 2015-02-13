@@ -70,7 +70,6 @@ public class MonitorServiceImpl implements Service, MonitorService, SessionEvent
     private Map<String, UserMonitor> users;
 
     private AtomicLong[] statementCounter;
-    //private ConcurrentHashMap<StatementTypes, AtomicLong> statementCounter;
     
     @Inject
     public MonitorServiceImpl(ConfigurationService config) {
@@ -137,16 +136,20 @@ public class MonitorServiceImpl implements Service, MonitorService, SessionEvent
     public void registerSessionMonitor(SessionMonitor sessionMonitor, Session session) {
         SessionMonitor old = sessions.put(sessionMonitor.getSessionId(), sessionMonitor);
         assert ((old == null) || (old == sessionMonitor));
-        session.put(SESSION_KEY, sessionMonitor);
-        sessionMonitor.addSessionEventListener(this);
+        if (old == null) {
+            session.put(SESSION_KEY, sessionMonitor);
+            sessionMonitor.addSessionEventListener(this);
+        } 
     }
 
     @Override
     public void deregisterSessionMonitor(SessionMonitor sessionMonitor, Session session) {
         SessionMonitor old = sessions.remove(sessionMonitor.getSessionId());
         assert ((old == null) || (old == sessionMonitor));
-        session.remove(SESSION_KEY);
-        sessionMonitor.removeSessionEventListener(this);
+        if (old == sessionMonitor) {
+            session.remove(SESSION_KEY);
+            sessionMonitor.removeSessionEventListener(this);
+        }
     }
 
     @Override

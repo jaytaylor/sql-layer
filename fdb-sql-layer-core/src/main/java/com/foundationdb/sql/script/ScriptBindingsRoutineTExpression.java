@@ -40,7 +40,7 @@ public class ScriptBindingsRoutineTExpression extends ServerJavaRoutineTExpressi
                                             QueryBindings bindings,
                                             ServerRoutineInvocation invocation) {
         ScriptPool<ScriptEvaluator> pool = context.getServer().getRoutineLoader().
-            getScriptEvaluator(context.getSession(), routine.getName());
+            getScriptEvaluator(context.getSession(), routine.getName(), null);
         return new ScriptBindingsRoutine(context, bindings, invocation, pool);
     }
 

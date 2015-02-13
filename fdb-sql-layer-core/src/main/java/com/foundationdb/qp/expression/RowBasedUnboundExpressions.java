@@ -71,9 +71,13 @@ public final class RowBasedUnboundExpressions implements UnboundExpressions {
         this.rowType = rowType.schema().newProjectType(pExprs);
     }
 
+    @Override
+    public boolean isLiteral(int index) {
+        return pExprs.get(index).isLiteral();
+    }
+
     private final List<TPreparedExpression> pExprs;
     private final RowType rowType;
-
     private static class ExpressionsAndBindings implements ValueRecord {
 
         @Override
@@ -86,7 +90,14 @@ public final class RowBasedUnboundExpressions implements UnboundExpressions {
         {
             expressionRow = new ExpressionRow(rowType, context, bindings, pExprs);
         }
+        
+        @Override
+        public String toString() {
+            return expressionRow.toString();
+        }
 
         private final ExpressionRow expressionRow;
+        
+        
     }
 }

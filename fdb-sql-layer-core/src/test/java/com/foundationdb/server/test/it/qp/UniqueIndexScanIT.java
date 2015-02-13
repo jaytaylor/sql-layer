@@ -17,8 +17,14 @@
 
 package com.foundationdb.server.test.it.qp;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
+import com.foundationdb.qp.expression.RowBasedUnboundExpressions;
+import com.foundationdb.qp.expression.UnboundExpressions;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
@@ -26,10 +32,16 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.SetColumnSelector;
+import com.foundationdb.server.types.texpressions.TNullExpression;
+import com.foundationdb.server.types.texpressions.TPreparedExpression;
+import com.foundationdb.server.types.texpressions.TPreparedLiteral;
+import com.foundationdb.server.types.value.Value;
+
 import org.junit.Test;
 
 import static com.foundationdb.qp.operator.API.cursor;
 import static com.foundationdb.qp.operator.API.indexScan_Default;
+import static org.junit.Assert.fail;
 
 // Like IndexScanIT, but testing unique indexes and the handling of duplicate nulls
 
@@ -502,11 +514,14 @@ public class UniqueIndexScanIT extends OperatorITBase
     }
 
     // For use by this class
-
+    
     private IndexKeyRange startAtNull(IndexRowType indexRowType, boolean loInclusive, int hi, boolean hiInclusive)
     {
+        
+        UnboundExpressions row = new RowBasedUnboundExpressions (indexRowType, 
+                Arrays.asList((TPreparedExpression)new TNullExpression(indexRowType.typeAt(0))));
         return IndexKeyRange.bounded(indexRowType,
-                                     new IndexBound(row(indexRowType, new Object[]{null}), COLUMN_0),
+                                     new IndexBound(row, COLUMN_0),
                                      loInclusive,
                                      new IndexBound(row(indexRowType, hi), COLUMN_0),
                                      hiInclusive);

@@ -205,7 +205,7 @@ public class PlanGenerator {
         Ordering ordering = API.ordering();
         for (int i = 0; i < nkeys; i++) {
             ordering.append(new TPreparedField(indexType.typeAt(i), i),
-                            false);
+                            true); // Ascending order
         }
 
         return API.indexScan_Default(indexType, indexRange, ordering);

@@ -92,6 +92,11 @@ public abstract class TComparisonExpressionBase implements TPreparedExpression {
         return left + " " + comparison + ' ' + right;
     }
 
+    @Override
+    public boolean isLiteral() {
+        return false;
+    }
+
     public TComparisonExpressionBase(TPreparedExpression left, Comparison comparison, TPreparedExpression right) {
         this.left = left;
         this.comparison = comparison;

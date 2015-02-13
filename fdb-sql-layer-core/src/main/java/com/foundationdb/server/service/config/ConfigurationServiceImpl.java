@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.UUID;
 
 import com.foundationdb.server.error.BadConfigDirectoryException;
 import com.foundationdb.server.error.ConfigurationPropertiesLoadException;
@@ -49,6 +50,7 @@ public class ConfigurationServiceImpl implements ConfigurationService, Service {
 
     private final static String CONFIG_DEFAULTS_RESOURCE = "configuration-defaults.properties";
     private static final String INITIALLY_ENABLED_TAPS = "taps.initiallyenabled";
+    private static final String INSTANCE_ID_PROP = "fdbsql.instance_id";
 
     /** Server properties. Format specified by server. */
     public static final String CONFIG_DIR_PROP = "fdbsql.config_dir"; // Note: Also in GuicedServiceManager
@@ -73,6 +75,11 @@ public class ConfigurationServiceImpl implements ConfigurationService, Service {
     public void queryTimeoutMilli(long queryTimeoutMilli)
     {
         this.queryTimeoutMilli = queryTimeoutMilli;
+    }
+
+    @Override
+    public String getInstanceID() {
+        return getProperty(INSTANCE_ID_PROP);
     }
 
     @Override
@@ -129,6 +136,11 @@ public class ConfigurationServiceImpl implements ConfigurationService, Service {
             String initiallyEnabledTaps = properties.get(INITIALLY_ENABLED_TAPS);
             if (initiallyEnabledTaps != null) {
                 Tap.setInitiallyEnabled(initiallyEnabledTaps);
+            }
+            String id = properties.get(INSTANCE_ID_PROP);
+            if((id == null) || id.isEmpty()) {
+                UUID uuid = UUID.randomUUID();
+                properties.put(INSTANCE_ID_PROP, uuid.toString());
             }
         }
     }

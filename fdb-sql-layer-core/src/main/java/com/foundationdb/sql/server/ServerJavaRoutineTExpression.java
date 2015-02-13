@@ -30,7 +30,6 @@ import com.foundationdb.server.explain.std.TExpressionExplainer;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.value.*;
-import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.texpressions.TEvaluatableExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.value.ValueSource;
@@ -97,6 +96,11 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
             evals.add(input.build());
         }
         return new TEvaluatableJavaRoutine(routine, evals);
+    }
+
+    @Override
+    public boolean isLiteral() {
+        return false;
     }
 
     protected abstract ServerJavaRoutine javaRoutine(ServerQueryContext context,

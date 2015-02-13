@@ -18,10 +18,10 @@
 package com.foundationdb.sql.embedded;
 
 import com.foundationdb.sql.embedded.JDBCParameterMetaData.ParameterType;
-
 import com.foundationdb.ais.model.Parameter;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.error.UnsupportedSQLException;
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.sql.parser.CallStatementNode;
 import com.foundationdb.sql.parser.ParameterNode;
@@ -106,4 +106,8 @@ abstract class ExecutableCallStatement extends ExecutableStatement
         return parameterMetaData;
     }
     
+    @Override
+    public StatementTypes getStatementType() {
+        return StatementTypes.CALL_STMT;
+    }
 }

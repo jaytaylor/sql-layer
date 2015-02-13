@@ -60,6 +60,11 @@ public final class TPreparedParameter implements TPreparedExpression {
         return "Variable(pos=" + position + ')';
     }
 
+    @Override
+    public boolean isLiteral() {
+        return false;
+    }
+
     public TPreparedParameter(int position, TInstance type) {
         this.position = position;
         this.type = type;

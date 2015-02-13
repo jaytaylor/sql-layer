@@ -18,11 +18,13 @@
 package com.foundationdb.sql.embedded;
 
 import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.sql.server.ServerStatement;
 
 abstract class ExecutableStatement implements ServerStatement
 {
     public abstract ExecuteResults execute(EmbeddedQueryContext context, QueryBindings bindings);
+    public abstract StatementTypes getStatementType();
 
     public JDBCResultSetMetaData getResultSetMetaData() {
         return null;
@@ -35,5 +37,10 @@ abstract class ExecutableStatement implements ServerStatement
     public long getEstimatedRowCount() {
         return -1;
     }
+
+    public long getAISGeneration() {
+        return 0;
+    }
+    
 
 }

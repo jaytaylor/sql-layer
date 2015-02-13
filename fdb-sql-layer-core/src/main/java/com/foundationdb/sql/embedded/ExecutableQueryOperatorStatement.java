@@ -24,6 +24,7 @@ import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.operator.QueryBindings;
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.sql.optimizer.plan.CostEstimate;
 
 class ExecutableQueryOperatorStatement extends ExecutableOperatorStatement
@@ -32,11 +33,17 @@ class ExecutableQueryOperatorStatement extends ExecutableOperatorStatement
     private static final Logger LOG = LoggerFactory.getLogger(ExecutableQueryOperatorStatement.class);
     
     protected ExecutableQueryOperatorStatement(Operator resultOperator,
-                                               JDBCResultSetMetaData resultSetMetaData, 
+                                               long aisGeneration,
+                                               JDBCResultSetMetaData resultSetMetaData,
                                                JDBCParameterMetaData parameterMetaData,
                                                CostEstimate costEstimate) {
-        super(resultOperator, resultSetMetaData, parameterMetaData);
+        super(resultOperator, aisGeneration, resultSetMetaData, parameterMetaData);
         this.costEstimate = costEstimate;
+    }
+
+    @Override
+    public StatementTypes getStatementType() {
+        return StatementTypes.SELECT;
     }
     
     @Override
@@ -63,16 +70,6 @@ class ExecutableQueryOperatorStatement extends ExecutableOperatorStatement
     @Override
     public TransactionMode getTransactionMode() {
         return TransactionMode.READ;
-    }
-
-    @Override
-    public TransactionAbortedMode getTransactionAbortedMode() {
-        return TransactionAbortedMode.NOT_ALLOWED;
-    }
-
-    @Override
-    public AISGenerationMode getAISGenerationMode() {
-        return AISGenerationMode.NOT_ALLOWED;
     }
 
     @Override

@@ -40,7 +40,7 @@ public class ScriptFunctionJavaRoutineTExpression extends ServerJavaRoutineTExpr
                                             QueryBindings bindings,
                                             ServerRoutineInvocation invocation) {
         ScriptPool<ScriptInvoker> pool = context.getServer().getRoutineLoader().
-            getScriptInvoker(context.getSession(), routine.getName());
+            getScriptInvoker(context.getSession(), routine.getName(), null);
         return new ScriptFunctionJavaRoutine(context, bindings, invocation, pool);
     }
 

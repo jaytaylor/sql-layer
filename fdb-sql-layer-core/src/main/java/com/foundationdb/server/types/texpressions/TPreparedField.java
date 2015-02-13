@@ -59,6 +59,11 @@ public final class TPreparedField implements TPreparedExpression {
         return "Field(" + fieldIndex + ')';
     }
 
+    @Override
+    public boolean isLiteral() {
+        return false;
+    }
+
     public TPreparedField(TInstance typeInstance, int fieldIndex) {
         this.typeInstance = typeInstance;
         this.fieldIndex = fieldIndex;

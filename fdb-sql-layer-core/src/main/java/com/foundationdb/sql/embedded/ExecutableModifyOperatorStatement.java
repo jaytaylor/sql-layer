@@ -26,6 +26,7 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.RowCursorImpl;
 import com.foundationdb.qp.row.ImmutableRow;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,11 +40,17 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
     private static final Logger logger = LoggerFactory.getLogger(ExecutableModifyOperatorStatement.class);
 
     protected ExecutableModifyOperatorStatement(Operator resultOperator,
+                                                long aisGeneration,
                                                 JDBCResultSetMetaData resultSetMetaData, 
                                                 JDBCParameterMetaData parameterMetaData) {
-        super(resultOperator, resultSetMetaData, parameterMetaData);
+        super(resultOperator, aisGeneration, resultSetMetaData, parameterMetaData);
     }
     
+    @Override
+    public StatementTypes getStatementType() {
+        return StatementTypes.DML_STMT;
+    }
+
     @Override
     public ExecuteResults execute(EmbeddedQueryContext context, QueryBindings bindings) {
         int updateCount = 0;
@@ -92,16 +99,6 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
     @Override
     public TransactionMode getTransactionMode() {
         return TransactionMode.WRITE;
-    }
-
-    @Override
-    public TransactionAbortedMode getTransactionAbortedMode() {
-        return TransactionAbortedMode.NOT_ALLOWED;
-    }
-
-    @Override
-    public AISGenerationMode getAISGenerationMode() {
-        return AISGenerationMode.NOT_ALLOWED;
     }
 
     static class SpoolCursor  extends RowCursorImpl  {

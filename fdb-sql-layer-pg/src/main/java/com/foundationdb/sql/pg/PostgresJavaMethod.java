@@ -36,8 +36,10 @@ public class PostgresJavaMethod extends PostgresJavaRoutine
                                               List<PostgresType> columnTypes,
                                               List<Column> aisColumns,
                                               PostgresType[] parameterTypes) {
+        long[] aisGeneration = new long[1];
         Method method = server.getRoutineLoader()
-            .loadJavaMethod(server.getSession(), invocation.getRoutineName());
+            .loadJavaMethod(server.getSession(), invocation.getRoutineName(),
+                            aisGeneration);
         return new PostgresJavaMethod(method, invocation,
                                       columnNames, columnTypes, aisColumns,
                                       parameterTypes);

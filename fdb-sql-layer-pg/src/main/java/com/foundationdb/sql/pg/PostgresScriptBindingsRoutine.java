@@ -37,8 +37,10 @@ public class PostgresScriptBindingsRoutine extends PostgresJavaRoutine
                                                           List<PostgresType> columnTypes,
                                                           List<Column> aisColumns,
                                                           PostgresType[] parameterTypes) {
+        long[] aisGeneration = new long[1];
         ScriptPool<ScriptEvaluator> pool = server.getRoutineLoader()
-            .getScriptEvaluator(server.getSession(), invocation.getRoutineName());
+            .getScriptEvaluator(server.getSession(), invocation.getRoutineName(),
+                                aisGeneration);
         return new PostgresScriptBindingsRoutine(pool, invocation,
                                                  columnNames, columnTypes, aisColumns,
                                                  parameterTypes);
