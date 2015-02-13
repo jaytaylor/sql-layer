@@ -152,7 +152,6 @@ public class TypeValidator
         case Types.VARBINARY:
             return Types.VARBINARY;
         case Types.LONGVARBINARY:
-        //case Types.BLOB:
             return Types.LONGVARBINARY;
         default:
             return jdbcType;

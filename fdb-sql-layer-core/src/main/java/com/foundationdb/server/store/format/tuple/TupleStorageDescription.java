@@ -33,7 +33,8 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.server.error.*;
+import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.StorageDescriptionInvalidException;
 import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.FDBStore;
@@ -46,7 +47,9 @@ import com.foundationdb.tuple.Tuple2;
 import com.persistit.Key;
 import com.persistit.KeyShim;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.ArrayList;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

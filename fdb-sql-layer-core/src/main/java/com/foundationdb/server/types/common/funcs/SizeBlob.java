@@ -18,7 +18,7 @@
 package com.foundationdb.server.types.common.funcs;
 
 
-import com.foundationdb.*;
+import com.foundationdb.Transaction;
 import com.foundationdb.server.error.InvalidArgumentTypeException;
 import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.service.blob.LobService;

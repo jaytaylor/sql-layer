@@ -29,7 +29,7 @@ import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.subspace.Subspace;
 
 /** Represents a potentially large binary value in FoundationDB. */
-public class BlobAsync implements Lob {
+public class BlobAsync {
     /**
      * The size parameter of the blob is held in the subspace indexed by
      * <code>SIZE_KEY</code> of the blob's main subspace.

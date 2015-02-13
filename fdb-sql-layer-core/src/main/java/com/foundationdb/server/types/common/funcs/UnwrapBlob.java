@@ -22,7 +22,7 @@ import com.foundationdb.Transaction;
 import com.foundationdb.server.error.InvalidArgumentTypeException;
 import com.foundationdb.server.service.blob.LobService;
 import com.foundationdb.server.service.blob.BlobRef;
-import com.foundationdb.server.service.transaction.*;
+import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.FDBTransactionService;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TExecutionContext;
