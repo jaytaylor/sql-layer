@@ -313,8 +313,7 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
                 } else {
                     ksLeft = KeySelector.firstGreaterThan(prefixBytes);
                 }
-                //ksRight = KeySelector.lastLessThan(packKey(storeData));
-                ksRight = KeySelector.firstGreaterThan(packKey(storeData));
+                ksRight = KeySelector.firstGreaterOrEqual(packKey(storeData));
             } 
             else {
                 ksLeft = KeySelector.firstGreaterThan(packKey(storeData));
