@@ -360,8 +360,6 @@ class IndexCursorUnidirectional<S> extends IndexCursor
 
     // TODO : Once the Persistit storage engine is removed, the FDB storage engine
     // does a correct job of selecting the range, and this method can be removed.
-    // TODO : Except beforeStart() also used to manage exceptions in the list:
-    // e.g. SELECT * from t where t.id != 2 order by t.id ; 
     protected boolean beforeStart(Row row)
     {
         boolean beforeStart = false;
