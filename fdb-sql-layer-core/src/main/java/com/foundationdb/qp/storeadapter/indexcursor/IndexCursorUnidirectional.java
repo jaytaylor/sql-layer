@@ -368,6 +368,9 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             int c = current.compareTo(startKey, startBoundColumns) * direction;
             beforeStart = c < 0 || c == 0 && !startInclusive;
         }
+        //TODO: all of the FDB Tests pass with this enabled, but will cause 
+        // Persistit index use to fail. 
+        //assert false == beforeStart : keyRange + " to " + row;
         return beforeStart;
     }
 
@@ -383,6 +386,9 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             int c = current.compareTo(endKey, endBoundColumns) * direction;
             pastEnd = c > 0 || c == 0 && !endInclusive;
         }
+        //TODO: all of the FDB Tests pass with this enabled, but will cause 
+        // Persistit index use to fail. 
+        //assert false == pastEnd : keyRange + " to " + row;
         return pastEnd;
     }
 
@@ -494,7 +500,7 @@ class IndexCursorUnidirectional<S> extends IndexCursor
             pastStart = false;
         }
         keyComparison = initialKeyComparison;
-        iterationHelper.preload(keyComparison);
+        iterationHelper.preload(keyComparison, this.endInclusive);
     }
 
     private Index index()

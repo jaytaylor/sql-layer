@@ -561,7 +561,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         else {
             transactionOptions = FDBScanTransactionOptions.SNAPSHOT;
         }
-        indexIterator(session, storeData, false, false, false, transactionOptions);
+        indexIterator(session, storeData, false, false, true, false, transactionOptions);
         while(storeData.next()) {
             // Key
             unpackKey(storeData);
@@ -673,14 +673,14 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     /** Iterate over the whole index. */
     public void indexIterator(Session session, FDBStoreData storeData,
                               FDBScanTransactionOptions transactionOptions) {
-        indexIterator(session, storeData, false, false, false, transactionOptions);
+        indexIterator(session, storeData, false, false, true, false, transactionOptions);
     }
 
     public void indexIterator(Session session, FDBStoreData storeData,
-                              boolean key, boolean inclusive, boolean reverse,
+                              boolean key, boolean startInclusive, boolean endInclusive, boolean reverse,
                               FDBScanTransactionOptions transactionOptions) {
         storeData.storageDescription.indexIterator(this, session, storeData,
-                                                   key, inclusive, reverse,
+                                                   key, startInclusive, endInclusive, reverse,
                                                    transactionOptions);
     }
 

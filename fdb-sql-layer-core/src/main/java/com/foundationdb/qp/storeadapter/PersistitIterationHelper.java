@@ -84,7 +84,7 @@ public class PersistitIterationHelper implements IterationHelper
     }
 
     @Override
-    public void preload(Direction dir) {
+    public void preload(Direction dir, boolean endInclusive) {
     }
 
     // PersistitIterationHelper interface
