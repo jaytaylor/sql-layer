@@ -93,7 +93,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
         return 1;
     }
 
-// suppress until blobs work @Test
+    @Test
     public void testLoad()
     {
         loadDB();
@@ -159,7 +159,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
         }
     }
 
-    //@Test
+    @Test
     public void testLoadAndRemove()
     {
         loadDB();
@@ -244,7 +244,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
         }
     }
 
-    //@Test
+    @Test
     public void testLoadAndUpdate()
     {
         loadDB();
@@ -326,7 +326,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
     }
 
 
-    //@Test
+    @Test
     public void testSpatialQuery()
     {
         final int ID_COLUMN = 1;
@@ -362,7 +362,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
         }
     }
 
-    //@Test
+    @Test
     public void testHybridQuery()
     {
         final int ID_COLUMN = 2;

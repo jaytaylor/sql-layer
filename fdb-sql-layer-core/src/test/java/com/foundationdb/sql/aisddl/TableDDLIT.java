@@ -198,7 +198,7 @@ public class TableDDLIT extends AISDDLITBase {
         assertEquals ("DATETIME", table.getColumn(5).getTypeName());
     }
     
-// suppress until lobs active    @Test
+    @Test
     public void testCreateLOB() throws Exception {
         String sql1 = "CREATE TABLE test.t1 (col40 CLOB NOT NULL, col41 CLOB, col42 BLOB NOT NULL, col43 BLOB)";
         executeDDL(sql1);

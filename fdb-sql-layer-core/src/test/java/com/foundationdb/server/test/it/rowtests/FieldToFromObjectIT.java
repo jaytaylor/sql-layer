@@ -113,13 +113,13 @@ public class FieldToFromObjectIT extends ITBase {
         testRow(def, 3, "zebra", "see spot run");                    // other
     }
 
-    // suppress @Test
+    @Test
     public void blobTypes() throws InvalidOperationException {
         final int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES,
-                                             "MCOMPAT_ tinyblob", "MCOMPAT_ blob", "MCOMPAT_ mediumblob", "MCOMPAT_ longblob");
+                                             "AKSQL_ blob");
         final RowDef def = getRowDef(tid);
-        testRow(def, 1, "".getBytes(), "".getBytes(), "".getBytes(), "".getBytes());            // empty
-        testRow(def, 2, "a".getBytes(), "bc".getBytes(), "def".getBytes(), "hijk".getBytes());  // other
+        testRow(def, 1, "".getBytes());            // empty
+        testRow(def, 2, "a".getBytes());           // other
     }
 
     @Test

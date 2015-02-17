@@ -222,9 +222,9 @@ public class KeyToObjectIT extends ITBase {
         testKeyToObject(tid, values.length, "c2");
     }
 
-    // suppress until blobs are active @Test(expected=UnsupportedIndexDataTypeException.class)
+    @Test(expected=UnsupportedIndexDataTypeException.class)
     public void blobField() throws Exception {
-        createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES, "MCOMPAT_ blob");
+        createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES, "AKSQL_ blob");
     }
 
     @Test(expected=UnsupportedIndexDataTypeException.class)
