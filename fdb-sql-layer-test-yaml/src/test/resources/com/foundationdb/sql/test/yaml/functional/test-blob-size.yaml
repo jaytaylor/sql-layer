@@ -11,7 +11,7 @@
 ---
 - Statement: INSERT INTO blob VALUES (4, null);
 ---
-- Statement: SELECT id, size_blob(bl) FROM blob ORDER BY id ASC
+- Statement: SELECT id, blob_size(bl) FROM blob ORDER BY id ASC
 - output: [[0, 120], [1, 240], [2, 0], [3, 0], [4, null]]
 ---
 - Statement: DROP TABLE blob

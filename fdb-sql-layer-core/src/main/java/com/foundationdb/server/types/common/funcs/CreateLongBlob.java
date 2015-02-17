@@ -70,6 +70,13 @@ public class CreateLongBlob extends TScalarBase {
         BlobRef.LeadingBitState state = BlobRef.LeadingBitState.NO;
         if (mode.equalsIgnoreCase(AkBlob.WRAPPED)) {
             state = BlobRef.LeadingBitState.YES;
+            /*
+            byte[] tmp = new byte[data.length + 1];
+            tmp[0] = BlobRef.LONG_LOB;
+            System.arraycopy(data, 0, tmp, 1, data.length);
+            data = tmp;
+            */
+            
             UUID id = UUID.randomUUID();
             TransactionService txnService = context.getQueryContext().getServiceManager().getServiceByClass(TransactionService.class);
             if (txnService instanceof FDBTransactionService) {

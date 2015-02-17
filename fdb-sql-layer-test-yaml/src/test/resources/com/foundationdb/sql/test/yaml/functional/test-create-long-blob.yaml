@@ -1,7 +1,7 @@
 ---
 - CreateTable: blob  (id INT PRIMARY KEY, bl BLOB)
 ---
-- Statement: INSERT INTO blob VALUES (1, create_short_blob(unhex('02030405060708')));
+- Statement: INSERT INTO blob VALUES (1, create_long_blob(unhex('02030405060708')));
 ---
 - Statement: SELECT unwrap_blob(bl) FROM blob
 - output: [[!!binary 'AgMEBQYHCA==']]
