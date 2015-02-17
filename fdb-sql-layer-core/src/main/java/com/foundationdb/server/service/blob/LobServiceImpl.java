@@ -50,21 +50,32 @@ public class LobServiceImpl implements Service, LobService {
     }
     
     @Override
-    public void checkAndCleanBlobs(List<String> lobIds) {
+    public void checkAndCleanBlobs(List<?> lobIds) {
         DirectorySubspace ds;
         SQLBlob blob;
         TransactionContext tcx = getTcx();
         List<UUID> toDo = new ArrayList<>();        
         if (lobIds.size() > 0 ) {
-            for (String lob : lobIds) {
-                List<String> path = Arrays.asList(lob);
-                // List may be over complete, existence is not sure
-                if (lobDirectory.exists(tcx, path).get()) {
-                    ds = lobDirectory.open(tcx, path).get();
-                    blob = new SQLBlob(ds);
-                    if (!blob.isLinked(tcx).get()) {
-                        toDo.add(UUID.fromString(lob));
+            for (Object lob : lobIds) {
+                if (lob instanceof String) {
+                    List<String> path = Arrays.asList((String)lob);
+                    // List may be over complete, existence is not sure
+                    if (lobDirectory.exists(tcx, path).get()) {
+                        ds = lobDirectory.open(tcx, path).get();
+                        blob = new SQLBlob(ds);
+                        if (!blob.isLinked(tcx).get()) {
+                            toDo.add(UUID.fromString((String)lob));
+                        }
                     }
+                } else if (lob instanceof UUID) {
+                    List<String> path = Arrays.asList(lob.toString());
+                    if (lobDirectory.exists(tcx, path).get()) {
+                        ds = lobDirectory.open(tcx, path).get();
+                        blob = new SQLBlob(ds);
+                        if (!blob.isLinked(tcx).get()) {
+                            toDo.add((UUID)lob);
+                        }
+                    }                    
                 }
             }
             deleteLobs(toDo.toArray(new UUID[toDo.size()]));

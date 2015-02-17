@@ -45,6 +45,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 
 /** A session has the state needed to execute SQL statements and
  * return results to the client. */
@@ -196,6 +197,6 @@ public interface ServerSession
     public void setDeferredForeignKey(ForeignKey foreignKey, boolean deferred);
     
     /** Register lob for possible garbage collection */
-    public void addCreatedLob(String lobId);
+    public void addCreatedLob(UUID lobId);
     
 }

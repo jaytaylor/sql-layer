@@ -72,7 +72,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     protected ServerValueEncoder.ZeroDateTimeBehavior zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.NONE;
     protected FormatOptions options = new FormatOptions();    
     protected QueryContext.NotificationLevel maxNotificationLevel = QueryContext.NotificationLevel.INFO;
-    private Set<String> lobsCreated = new HashSet<>();
+    private Set<UUID> lobsCreated = new HashSet<>();
     private LobService lobService;
     
     public ServerSessionBase(ServerServiceRequirements reqs) {
@@ -171,13 +171,13 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
     
     @Override
-    public void addCreatedLob(String lobId) {
+    public void addCreatedLob(UUID lobId) {
         lobsCreated.add(lobId);
     }
     
 
     protected void cleanUpLobs() {
-        List<String> toDo = new ArrayList<>(lobsCreated);
+        List<UUID> toDo = new ArrayList<>(lobsCreated);
         lobService.checkAndCleanBlobs(toDo);
         lobsCreated.clear();
     }
