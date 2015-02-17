@@ -43,7 +43,6 @@ public class AkBlob extends NoAttrTClass {
     public final static ValueCacher CACHER = new BlobCacher();
     public final static int LOB_SWITCH_SIZE = 50000;
     public final static String BLOB_RETURN_MODE = "fdbsql.blob.return_mode";
-    public final static String BLOB_ALLOWED_FORMAT = "fdbsql.blob.allowed_storage_format";
     public final static String LONG_BLOB = "LONG_BLOB";
     public final static String SHORT_BLOB = "SHORT_BLOB";
     public final static String ADVANCED = "advanced";

@@ -57,11 +57,6 @@ public class CreateShortBlob extends TScalarBase {
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
-        String allowedFormat = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.BLOB_ALLOWED_FORMAT);
-        if (allowedFormat.equalsIgnoreCase(AkBlob.LONG_BLOB)) {
-            throw new LobException("format not allowed");
-        }
-        
         byte[] data = new byte[0];
         if (inputs.size() == 1) {
             data = inputs.get(0).getBytes();

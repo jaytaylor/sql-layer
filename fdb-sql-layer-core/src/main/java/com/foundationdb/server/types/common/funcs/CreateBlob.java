@@ -77,18 +77,16 @@ public class CreateBlob extends TScalarBase {
         else {
             state = BlobRef.LeadingBitState.YES;
             ServiceManager sm = context.getQueryContext().getServiceManager();
-            String allowedStorageFormat = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.BLOB_ALLOWED_FORMAT);
             TransactionService txnService = context.getQueryContext().getServiceManager().getServiceByClass(TransactionService.class);
             if (txnService instanceof FDBTransactionService) {
                 Transaction tr = ((FDBTransactionService) txnService).getTransaction(context.getQueryContext().getStore().getSession()).getTransaction();
-                if ((data.length < AkBlob.LOB_SWITCH_SIZE) && (!allowedStorageFormat.equalsIgnoreCase(AkBlob.LONG_BLOB))) {
+                if ((data.length < AkBlob.LOB_SWITCH_SIZE)) {
                     byte[] tmp = new byte[data.length + 1];
                     tmp[0] = BlobRef.SHORT_LOB;
                     System.arraycopy(data, 0, tmp, 1, data.length);
                     data = tmp;
-                } else if ((data.length >= AkBlob.LOB_SWITCH_SIZE) && (allowedStorageFormat.equalsIgnoreCase(AkBlob.SHORT_BLOB))) {
-                    throw new LobException("lob too large");
-                } else {
+                } 
+                else {
                     UUID id = UUID.randomUUID();
                     LobService lobService = sm.getServiceByClass(LobService.class);
                     lobService.createNewLob(tr, id.toString());
