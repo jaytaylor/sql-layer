@@ -34,7 +34,7 @@ public class BlobRef {
     private LeadingBitState leadingBitState = LeadingBitState.UNKNOWN;
     private LobType lobType = LobType.UNKNOWN;
     private LobType requestedType = LobType.UNKNOWN;
-    private Boolean returnedBlobInSimpleMode = false;
+    private Boolean returnedBlobInUnwrappedMode = false;
     
     
     public BlobRef(byte[] value) {
@@ -125,11 +125,11 @@ public class BlobRef {
     
     public LobType getRequestedLobType() { return requestedType; }
     
-    public Boolean isReturnedBlobInSimpleMode() {
-        return returnedBlobInSimpleMode;
+    public Boolean isReturnedBlobInUnwrappedMode() {
+        return returnedBlobInUnwrappedMode;
     }
     
-    public void setIsReturnedBlobInSimpleMode(Boolean value) {
-        returnedBlobInSimpleMode = value;
+    public void setIsReturnedBlobInUnwrappedMode(Boolean value) {
+        returnedBlobInUnwrappedMode = value;
     }
 }

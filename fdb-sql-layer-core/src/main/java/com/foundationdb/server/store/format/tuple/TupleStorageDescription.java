@@ -292,7 +292,7 @@ public class TupleStorageDescription extends FDBStorageDescription
                     }
 
                     BlobRef newBlob = new BlobRef(blobData, BlobRef.LeadingBitState.NO);
-                    newBlob.setIsReturnedBlobInSimpleMode(true);
+                    newBlob.setIsReturnedBlobInUnwrappedMode(true);
                     if (oldBlob.isLongLob()) {
                         newBlob.setId(oldBlob.getId());
                         newBlob.setLobType(BlobRef.LobType.LONG_LOB);

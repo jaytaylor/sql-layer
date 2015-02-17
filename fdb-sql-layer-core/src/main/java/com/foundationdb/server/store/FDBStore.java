@@ -719,11 +719,11 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                     } else {
                         type = BlobRef.LobType.SHORT_LOB;
                     }
-                } else { // only in SIMPLE mode, value needs updating, adding leading bit and correct value content (guid)
+                } else { // only in UNWRAPPED mode, value needs updating, adding leading bit and correct value content (guid)
                     // first verify if specific requested format is allowed --> should be done in functions.
                     if (blobRefTmp.getRequestedLobType() == BlobRef.LobType.LONG_LOB || 
                             blobRefTmp.getBytes().length >= AkBlob.LOB_SWITCH_SIZE) {
-                        if (blobRefInit.isReturnedBlobInSimpleMode()){
+                        if (blobRefInit.isReturnedBlobInUnwrappedMode()){
                             type = BlobRef.LobType.LONG_LOB;
                             value = updateValue(blobRefInit.getId());
                         } else {
