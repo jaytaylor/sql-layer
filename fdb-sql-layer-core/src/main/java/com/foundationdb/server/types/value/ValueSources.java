@@ -370,7 +370,7 @@ public final class ValueSources {
 
         if (AkBlob.isBlob(source.getType().typeClass())) {
             if (source.getObject() instanceof BlobRef) {
-                return (BlobRef) source.getObject();
+                return ((BlobRef)source.getObject()).getValue();
             }
             logger.error("Blob with underlying object of : {}", source.getObject().getClass());
         }
