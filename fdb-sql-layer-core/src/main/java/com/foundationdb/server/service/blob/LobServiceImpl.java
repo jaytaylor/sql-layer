@@ -26,7 +26,7 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.error.LobException;
 import com.foundationdb.TransactionContext;
 import com.foundationdb.directory.NoSuchDirectoryException;
-import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.*;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.store.FDBHolder;
 import com.google.inject.Inject;
@@ -37,15 +37,15 @@ import java.util.ArrayList;
 
 public class LobServiceImpl implements Service, LobService {
     private DirectorySubspace lobDirectory;
-    private final FDBHolder fdbHolder;
+    private FDBHolder fdbHolder;
     private final SecurityService securityService;
+    private final ServiceManager serviceManager;
     private final String LOB_DIRECTORY = "lobs";
     
     @Inject
-    public LobServiceImpl(FDBHolder fdbHolder, SecurityService securityService) {
-        this.fdbHolder = fdbHolder;
+    public LobServiceImpl(ServiceManager serviceManager, SecurityService securityService) {
+        this.serviceManager = serviceManager;
         this.securityService = securityService;
-        this.lobDirectory = fdbHolder.getRootDirectory().createOrOpen(fdbHolder.getTransactionContext(), Arrays.asList(LOB_DIRECTORY)).get();
     }
     
     @Override
@@ -220,7 +220,7 @@ public class LobServiceImpl implements Service, LobService {
             public Void apply(Transaction tr) {
                 SQLBlob blob = openBlob(tr, lobId);
                 Integer tableId = blob.getLinkedTable(tr).get();
-                if (tableId == -1) {
+                if (tableId == null) {
                     return null;
                 }
                 String schemaName = context.getServiceManager().getSchemaManager().getAis(context.getSession()).getTable(tableId).getName().getSchemaName();
@@ -248,6 +248,8 @@ public class LobServiceImpl implements Service, LobService {
     
     @Override
     public void start() {
+        this.fdbHolder = serviceManager.getServiceByClass(FDBHolder.class);
+        this.lobDirectory = fdbHolder.getRootDirectory().createOrOpen(fdbHolder.getTransactionContext(), Arrays.asList(LOB_DIRECTORY)).get();
     }
 
     @Override
