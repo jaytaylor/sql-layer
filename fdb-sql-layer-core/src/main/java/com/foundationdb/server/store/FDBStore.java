@@ -685,11 +685,11 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                 byte[] value = blobRefInit.getValue();
                 
                 // The contract: 
-                //    if blobReturnMode == SIMPLE 
+                //    if blobReturnMode == UNWRAPPED 
                 //        - all BlobRef value contains no leading bit 
                 //        - data is always the data to be stored, never GUID of the blob
                 //        - all output to users is data only
-                //    if blobReturnMode == ADVANCED
+                //    if blobReturnMode == WRAPPED
                 //        - all input contains a leading bit
                 //        - if leading bit == LONG_BLOB
                 //              data is GUID of the blob
@@ -699,7 +699,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                 // 
                 //
                 
-                if (isBlobReturnModeSimple()) {
+                if (isBlobReturnModeUnwrapped()) {
                     state = BlobRef.LeadingBitState.NO;
                 } else {
                     state = BlobRef.LeadingBitState.YES;
@@ -707,9 +707,9 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                 // ensure correct state of the leading bit
                 BlobRef blobRefTmp = new BlobRef(value, state, blobRefInit.getLobType(), blobRefInit.getRequestedLobType());
                 
-                if (blobRefTmp.isLongLob() && !isBlobReturnModeSimple()) { // only set in ADVANCED mode
+                if (blobRefTmp.isLongLob() && !isBlobReturnModeUnwrapped()) { // only set in WRAPPED mode
                     type = BlobRef.LobType.LONG_LOB;
-                } else if (blobRefTmp.isShortLob() && !isBlobReturnModeSimple()) { // only set in ADVANCED mode
+                } else if (blobRefTmp.isShortLob() && !isBlobReturnModeUnwrapped()) { // only set in WRAPPED mode
                     if (blobRefTmp.getBytes().length >= AkBlob.LOB_SWITCH_SIZE) {
                         UUID id = UUID.randomUUID();
                         lobService.createNewLob(tr, id.toString());
@@ -777,8 +777,8 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         }
     }
     
-    public boolean isBlobReturnModeSimple() {
-        return configService.getProperty(AkBlob.BLOB_RETURN_MODE).equalsIgnoreCase(AkBlob.SIMPLE) ? true : false;
+    public boolean isBlobReturnModeUnwrapped() {
+        return configService.getProperty(AkBlob.RETURN_UNWRAPPED).equalsIgnoreCase(AkBlob.UNWRAPPED) ? true : false;
     }
     
     @Override

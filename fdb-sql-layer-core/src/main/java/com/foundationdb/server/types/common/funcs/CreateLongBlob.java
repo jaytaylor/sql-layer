@@ -19,7 +19,6 @@ package com.foundationdb.server.types.common.funcs;
 
 
 import com.foundationdb.*;
-import com.foundationdb.server.error.LobException;
 import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.service.blob.LobService;
 import com.foundationdb.server.service.transaction.TransactionService;
@@ -67,9 +66,9 @@ public class CreateLongBlob extends TScalarBase {
         if (inputs.size() == 1) {
             data = inputs.get(0).getBytes();
         }
-        String mode = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.BLOB_RETURN_MODE);
+        String mode = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.RETURN_UNWRAPPED);
         BlobRef.LeadingBitState state = BlobRef.LeadingBitState.NO;
-        if (mode.equalsIgnoreCase(AkBlob.ADVANCED)) {
+        if (mode.equalsIgnoreCase(AkBlob.WRAPPED)) {
             state = BlobRef.LeadingBitState.YES;
             UUID id = UUID.randomUUID();
             TransactionService txnService = context.getQueryContext().getServiceManager().getServiceByClass(TransactionService.class);

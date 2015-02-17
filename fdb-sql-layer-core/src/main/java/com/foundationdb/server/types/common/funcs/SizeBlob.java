@@ -62,8 +62,8 @@ public class SizeBlob extends TScalarBase {
             Object o = inputs.get(0).getObject();
             if (o instanceof BlobRef) {
                 blobRef = (BlobRef) o;
-                String mode = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.BLOB_RETURN_MODE);
-                if (mode.equalsIgnoreCase(AkBlob.SIMPLE)) {
+                String mode = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.RETURN_UNWRAPPED);
+                if (mode.equalsIgnoreCase(AkBlob.UNWRAPPED)) {
                     byte[] content = blobRef.getBytes();
                     if (content != null) {
                         size = (long)content.length;

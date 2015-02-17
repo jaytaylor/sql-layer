@@ -65,9 +65,9 @@ public class CreateShortBlob extends TScalarBase {
             }
         }
 
-        String mode = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.BLOB_RETURN_MODE);
+        String mode = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.RETURN_UNWRAPPED);
         BlobRef.LeadingBitState state = BlobRef.LeadingBitState.NO;
-        if (mode.equalsIgnoreCase(AkBlob.ADVANCED)) {
+        if (mode.equalsIgnoreCase(AkBlob.WRAPPED)) {
             state = BlobRef.LeadingBitState.YES;
             byte[] tmp = new byte[data.length + 1];
             tmp[0] = BlobRef.SHORT_LOB;

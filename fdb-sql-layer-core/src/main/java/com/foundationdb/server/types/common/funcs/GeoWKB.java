@@ -72,8 +72,8 @@ public class GeoWKB extends TScalarBase
             } else {
                 throw new InvalidArgumentTypeException("Should be a blob column");
             }
-            String mode = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.BLOB_RETURN_MODE);
-            if (mode.equalsIgnoreCase(AkBlob.SIMPLE)){
+            String mode = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.RETURN_UNWRAPPED);
+            if (mode.equalsIgnoreCase(AkBlob.UNWRAPPED)){
                 data = blob.getBytes();
             }
             else {

@@ -18,7 +18,6 @@
 package com.foundationdb.server.types.common.funcs;
 
 
-import com.foundationdb.server.error.LobException;
 import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.service.blob.LobService;
 import com.foundationdb.server.service.ServiceManager;
@@ -64,14 +63,14 @@ public class CreateBlob extends TScalarBase {
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
         BlobRef blob;
-        String mode = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.BLOB_RETURN_MODE);
+        String mode = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.RETURN_UNWRAPPED);
         BlobRef.LeadingBitState state = BlobRef.LeadingBitState.NO;
         byte[] data = new byte[0];
         if (inputs.size() == 1) {
             data = inputs.get(0).getBytes();
         }
         
-        if (mode.equalsIgnoreCase(AkBlob.SIMPLE)){
+        if (mode.equalsIgnoreCase(AkBlob.UNWRAPPED)){
             blob = new BlobRef(data, state);
         }
         else {

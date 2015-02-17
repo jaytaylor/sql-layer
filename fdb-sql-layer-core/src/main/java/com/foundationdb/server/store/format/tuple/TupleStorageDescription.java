@@ -49,7 +49,6 @@ import com.persistit.KeyShim;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.ArrayList;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -279,7 +278,7 @@ public class TupleStorageDescription extends FDBStorageDescription
     
     private Row overlayBlobData(RowType rowType, Row row, FDBStore store, Session session) {
         Row result = row;
-        if (store.isBlobReturnModeSimple()) {
+        if (store.isBlobReturnModeUnwrapped()) {
             OverlayingRow newRow = new OverlayingRow(row);
             for( int blobIndex = 0; blobIndex < rowType.nFields(); blobIndex ++) {
                 if (rowType.typeAt(blobIndex).typeClass() == AkBlob.INSTANCE) {

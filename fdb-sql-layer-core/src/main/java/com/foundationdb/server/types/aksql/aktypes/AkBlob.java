@@ -42,11 +42,9 @@ public class AkBlob extends NoAttrTClass {
     public final static TypeId BLOBTYPE = TypeId.BLOB_ID;
     public final static ValueCacher CACHER = new BlobCacher();
     public final static int LOB_SWITCH_SIZE = 50000;
-    public final static String BLOB_RETURN_MODE = "fdbsql.blob.return_mode";
-    public final static String LONG_BLOB = "LONG_BLOB";
-    public final static String SHORT_BLOB = "SHORT_BLOB";
-    public final static String ADVANCED = "advanced";
-    public final static String SIMPLE = "simple";
+    public final static String RETURN_UNWRAPPED = "fdbsql.blob.return_unwrapped";
+    public final static String WRAPPED = "false";
+    public final static String UNWRAPPED = "true";
     public final static NoAttrTClass INSTANCE = new AkBlob();
     
     private AkBlob(){
