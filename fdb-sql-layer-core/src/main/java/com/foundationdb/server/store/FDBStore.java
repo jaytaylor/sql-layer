@@ -136,7 +136,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         }
         this.metricsService = metricsService;
         this.sequenceCache = ReadWriteMap.wrapFair(new HashMap<Object, SequenceCache>());
-        lobService = serviceManager.getServiceByClass(LobService.class);
+
     }
 
     @Override
@@ -212,6 +212,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         this.onlineHelper = new OnlineHelper(txnService, schemaManager, this, typesRegistryService, constraintHandler, withConcurrentDML);
         listenerService.registerRowListener(onlineHelper);
         this.allowedBlobFormat = configService.getProperty(AkBlob.BLOB_ALLOWED_FORMAT);
+        lobService = serviceManager.getServiceByClass(LobService.class);
     }
 
     @Override

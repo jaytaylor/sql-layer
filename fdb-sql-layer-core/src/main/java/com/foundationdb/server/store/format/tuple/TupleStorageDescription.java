@@ -309,9 +309,12 @@ public class TupleStorageDescription extends FDBStorageDescription
     }
     
     private BlobRef getBlobFromRow(ValueSource value) {
-        Object o = value.getObject();
-        if ( o instanceof BlobRef) {
-            return  (BlobRef) o;
+        Object object = value.getObject();
+        if ( object == null ) {
+            return null;
+        }
+        if ( object instanceof BlobRef) {
+            return  (BlobRef) object;
         }
         throw new AkibanInternalException("Value must be a blob");
     }
