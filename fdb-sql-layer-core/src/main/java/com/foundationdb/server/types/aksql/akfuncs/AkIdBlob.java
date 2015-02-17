@@ -19,10 +19,9 @@ package com.foundationdb.server.types.aksql.akfuncs;
 
 
 import com.foundationdb.server.types.TScalar;
-import com.foundationdb.server.types.common.funcs.CreateBlob;
-import com.foundationdb.server.types.mcompat.mtypes.MBinary;
+import com.foundationdb.server.types.aksql.aktypes.AkBlob;
+import com.foundationdb.server.types.common.funcs.IdBlob;
 
-public class MCreateBlob {
-    public static final TScalar EMPTY_LONG_BLOB = CreateBlob.createEmptyBlob();
-    public static final TScalar LONG_BLOB = CreateBlob.createBlob(MBinary.VARBINARY);
+public class AkIdBlob {
+    public static final TScalar ID_BLOB = IdBlob.idBlob(AkBlob.INSTANCE);
 }

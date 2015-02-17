@@ -37,15 +37,15 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 
 
-public class SizeBlob extends TScalarBase {
+public class BlobSize extends TScalarBase {
     private NoAttrTClass blobClass;
 
-    public static TScalar sizeBlob(final NoAttrTClass blob) {
-        return new SizeBlob(blob);
+    public static TScalar blobSize(final NoAttrTClass blob) {
+        return new BlobSize(blob);
     }
 
 
-    private SizeBlob(NoAttrTClass blobClass) {
+    private BlobSize(NoAttrTClass blobClass) {
         this.blobClass = blobClass;
     }
 
@@ -90,7 +90,7 @@ public class SizeBlob extends TScalarBase {
 
     @Override
     public String displayName() {
-        return "SIZE_BLOB";
+        return "BLOB_SIZE";
     }
 
     @Override

@@ -22,7 +22,7 @@ import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.common.funcs.CreateShortBlob;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 
-public class MCreateShortBlob {
+public class AkCreateShortBlob {
     public static final TScalar EMPTY_SHORT_BLOB = CreateShortBlob.createEmptyShortBlob();
     public static final TScalar SHORT_BLOB = CreateShortBlob.createShortBlob(MBinary.VARBINARY);
 }

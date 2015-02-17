@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009-2015 FoundationDB, LLC
+ * Copyright (C) 2009-2013 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -19,10 +19,9 @@ package com.foundationdb.server.types.aksql.akfuncs;
 
 
 import com.foundationdb.server.types.TScalar;
-import com.foundationdb.server.types.common.funcs.CreateLongBlob;
-import com.foundationdb.server.types.mcompat.mtypes.MBinary;
+import com.foundationdb.server.types.aksql.aktypes.AkBlob;
+import com.foundationdb.server.types.common.funcs.BlobSize;
 
-public class MCreateLongBlob {
-    public static final TScalar EMPTY_LONG_BLOB = CreateLongBlob.createEmptyLongBlob();
-    public static final TScalar LONG_BLOB = CreateLongBlob.createLongBlob(MBinary.VARBINARY);    
+public class AkBlobSize {
+    public static final TScalar BLOB_SIZE = BlobSize.blobSize(AkBlob.INSTANCE);
 }

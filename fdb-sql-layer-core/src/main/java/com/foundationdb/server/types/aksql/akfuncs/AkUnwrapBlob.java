@@ -22,6 +22,6 @@ import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.common.funcs.UnwrapBlob;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 
-public class MUnwrapBlob {
+public class AkUnwrapBlob {
     public static final TScalar INSTANCE = UnwrapBlob.unwrapBlob(MBinary.VARBINARY);
 }
