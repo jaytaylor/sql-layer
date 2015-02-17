@@ -30,7 +30,7 @@ public class GroupsContainsLobsVisitor extends AbstractVisitor {
     
     @Override
     public void visit(Column column) {
-        if (column.getType().equalsExcludingNullable(AkBlob.INSTANCE.instance(true))) {
+        if (AkBlob.isBlob(column.getType().typeClass())) {
             if (!collection.contains(column.getTable().getGroup())) {
                 collection.add(column.getTable());
                 containsLob = true;

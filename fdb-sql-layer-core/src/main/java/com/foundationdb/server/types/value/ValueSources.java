@@ -133,7 +133,7 @@ public final class ValueSources {
                 else if (object instanceof ByteSource)
                     value.putBytes(((ByteSource)object).toByteSubarray());
                 else if (object instanceof JTSSpatialObject) {
-                    if (((AkBlob) type.typeClass()).INSTANCE.equals(AkBlob.INSTANCE)) {
+                    if (AkBlob.isBlob(type.typeClass())) {
                         byte[] content = Spatial.serializeWKB((JTSSpatialObject) object);
                         value.putObject(new BlobRef(content));
                     }
@@ -368,7 +368,7 @@ public final class ValueSources {
             logger.error("GUID with underlying object of : {}", source.getObject().getClass());
         }
 
-        if (source.getType().typeClass() == AkBlob.INSTANCE.widestComparable()) {
+        if (AkBlob.isBlob(source.getType().typeClass())) {
             if (source.getObject() instanceof BlobRef) {
                 return (BlobRef) source.getObject();
             }

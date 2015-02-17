@@ -305,7 +305,7 @@ public class BasicDDLFunctions implements DDLFunctions {
 
     public static boolean containsBlob(Table table) {
         for (Column column : table.getColumns()) {
-            if (column.getType().typeClass() == AkBlob.INSTANCE)
+            if (AkBlob.isBlob(column.getType().typeClass()))
                 return true;
         }
         return false;

@@ -673,7 +673,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         
         Transaction tr = txnService.getTransaction(session).getTransaction();
         for ( int i = 0; i < rowType.nFields(); i++ ) {
-            if (rowType.typeAt(i).typeClass() == AkBlob.INSTANCE) {
+            if (AkBlob.isBlob(rowType.typeAt(i).typeClass())) {
                 int tableId = rowType.table().getTableId();
                 BlobRef blobRefInit = (BlobRef)row.value(i).getObject();
                 
@@ -785,7 +785,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     protected void deleteLobs(Session session, Row row) {
         RowType rowType = row.rowType();
         for( int i = 0; i < rowType.nFields(); i++ ) {
-            if (rowType.typeAt(i).typeClass() == AkBlob.INSTANCE) {
+            if (AkBlob.isBlob(rowType.typeAt(i).typeClass())) {
                 BlobRef blobRef = (BlobRef)row.value(i).getObject();
                 if (blobRef == null) {
                     continue;

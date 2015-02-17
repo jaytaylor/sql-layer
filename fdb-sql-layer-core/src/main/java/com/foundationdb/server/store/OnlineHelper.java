@@ -442,7 +442,7 @@ public class OnlineHelper implements RowListener
                         if (change.hasChangeType() && change.getChangeType().equals("DROP")) {
                             String oldColName = change.getOldName();
                             Column col = oldTable.getColumn(oldColName);
-                            if (col.getType().equalsExcludingNullable(AkBlob.INSTANCE.instance(true))){
+                            if (AkBlob.isBlob(col.getType().typeClass())){
                                 LobCheck lc = new LobCheck();
                                 lc. tableId = oldTable.getTableId();
                                 lc.columnPos = col.getPosition();

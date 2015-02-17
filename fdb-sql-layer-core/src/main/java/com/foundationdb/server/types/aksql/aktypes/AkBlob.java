@@ -19,8 +19,7 @@ package com.foundationdb.server.types.aksql.aktypes;
 
 import com.foundationdb.server.error.InvalidParameterValueException;
 import com.foundationdb.server.service.blob.BlobRef;
-import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.ValueIO;
+import com.foundationdb.server.types.*;
 import com.foundationdb.server.types.aksql.AkParsers;
 import com.foundationdb.server.types.aksql.AkBundle;
 import com.foundationdb.server.types.aksql.AkCategory;
@@ -122,4 +121,8 @@ public class AkBlob extends NoAttrTClass {
             copy(in, typeInstance, out);
         }
     };
+    
+    public static boolean isBlob(TClass clazz) {
+        return clazz == AkBlob.INSTANCE;
+    } 
 }

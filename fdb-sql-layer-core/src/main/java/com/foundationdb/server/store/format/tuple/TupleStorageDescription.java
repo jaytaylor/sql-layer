@@ -281,7 +281,7 @@ public class TupleStorageDescription extends FDBStorageDescription
         if (store.isBlobReturnModeUnwrapped()) {
             OverlayingRow newRow = new OverlayingRow(row);
             for( int blobIndex = 0; blobIndex < rowType.nFields(); blobIndex ++) {
-                if (rowType.typeAt(blobIndex).typeClass() == AkBlob.INSTANCE) {
+                if (AkBlob.isBlob(rowType.typeAt(blobIndex).typeClass())) {
                     BlobRef oldBlob = getBlobFromRow(row.value(blobIndex));
                     if (oldBlob == null) {
                         continue;
