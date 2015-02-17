@@ -29,8 +29,8 @@ import org.junit.*;
 
 public class LobServiceIT extends ITBase {
     private LobService ls;
-    private String idA;
-    private String idB;
+    private UUID idA;
+    private UUID idB;
     private final byte[] data = "foo".getBytes();
     
     @Test
@@ -39,7 +39,7 @@ public class LobServiceIT extends ITBase {
         Assert.assertNotNull(ls);
 
         // blob creation
-        String id = UUID.randomUUID().toString();
+        UUID id = UUID.randomUUID();
         Transaction tr = getTransaction();
         ls.createNewLob(tr, id);
         commit();
@@ -51,7 +51,7 @@ public class LobServiceIT extends ITBase {
         commit();
         
         // blob transfer to new address
-        String newPath = UUID.randomUUID().toString();
+        UUID newPath = UUID.randomUUID();
         ls.moveLob(getTransaction(), id, newPath);
         commit();
         
@@ -92,8 +92,8 @@ public class LobServiceIT extends ITBase {
         this.ls = serviceManager().getServiceByClass(LobService.class);
         Assert.assertNotNull(ls);
         Transaction tr = getTransaction();
-        idA = UUID.randomUUID().toString();
-        idB = UUID.randomUUID().toString();
+        idA = UUID.randomUUID();
+        idB = UUID.randomUUID();
         ls.createNewLob(tr, idA);
         ls.createNewLob(tr, idB);
         ls.linkTableBlob(tr, idA, 1);

@@ -23,26 +23,29 @@ import com.foundationdb.TransactionContext;
 import com.foundationdb.qp.operator.QueryContext;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface LobService {
 
-    public void deleteLobs(String[] lobIds);
     public void checkAndCleanBlobs(List<String> lobIds);
-    public void runLobGarbageCollector(); 
     
-    public void createNewLob(TransactionContext tcx, String lobId);
-    public boolean existsLob(TransactionContext tcx, String lobId);
-    public void deleteLob(TransactionContext tcx, String lobId);
-    public void moveLob(TransactionContext tcx, String oldId, String newId);
-    public void linkTableBlob(TransactionContext tcx, String lobId, int tableId);
-    public long sizeBlob(TransactionContext tcx, String lobId);
-    public byte[] readBlob(TransactionContext tcx, String lobId, long offset, int length);
-    public byte[] readBlob(TransactionContext tcx, String lobId);
-    public void writeBlob(TransactionContext tcx, String lobId, long offset, byte[] data);
-    public void appendBlob(TransactionContext tcx, String lobId, byte[] data);
-    public void truncateBlob(TransactionContext tcx, String lobId, long size);
+    public void deleteLobs(UUID[] lobIds);
+    public void runLobGarbageCollector();
+    
+    public void createNewLob(TransactionContext tcx, UUID lobId);
+    public boolean existsLob(TransactionContext tcx, UUID lobId);
+    public void deleteLob(TransactionContext tcx, UUID lobId);
+    public void moveLob(TransactionContext tcx, UUID oldId, UUID newId);
+    public void linkTableBlob(TransactionContext tcx, UUID lobId, int tableId);
+    public long sizeBlob(TransactionContext tcx, UUID lobId);
+    public byte[] readBlob(TransactionContext tcx, UUID lobId, long offset, int length);
+    public byte[] readBlob(TransactionContext tcx, UUID lobId);
+    public void writeBlob(TransactionContext tcx, UUID lobId, long offset, byte[] data);
+    public void appendBlob(TransactionContext tcx, UUID lobId, byte[] data);
+    public void truncateBlob(TransactionContext tcx, UUID lobId, long size);
     public void clearAllLobs(TransactionContext tcx);
-    public void verifyAccessPermission(TransactionContext tcx, QueryContext context, String lobId);
+    public void verifyAccessPermission(TransactionContext tcx, QueryContext context, UUID lobId);
+
 }
 
 

@@ -82,9 +82,9 @@ public class CreateLongBlob extends TScalarBase {
             if (txnService instanceof FDBTransactionService) {
                 Transaction tr = ((FDBTransactionService) txnService).getTransaction(context.getQueryContext().getStore().getSession()).getTransaction();
                 LobService lobService = context.getQueryContext().getServiceManager().getServiceByClass(LobService.class);
-                lobService.createNewLob(tr, id.toString());
+                lobService.createNewLob(tr, id);
                 if (data.length > 0) {
-                    lobService.writeBlob(tr, id.toString(), 0, data);
+                    lobService.writeBlob(tr, id, 0, data);
                 }
                 byte[] tmp = new byte[17];
                 tmp[0] = BlobRef.LONG_LOB;

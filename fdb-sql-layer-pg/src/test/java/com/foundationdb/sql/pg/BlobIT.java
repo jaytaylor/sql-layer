@@ -52,14 +52,15 @@ public class BlobIT extends PostgresServerITBase {
     @Test
     public void testCleanUpLobs() throws Exception {
         Connection conn = getConnection();
-        String idA =  UUID.randomUUID().toString();
+        UUID idA =  UUID.randomUUID();
+        
         PreparedStatement pstmt = conn.prepareCall("CALL sys.create_specific_blob( ? )");
-        pstmt.setString(1, idA);
+        pstmt.setString(1, idA.toString());
         pstmt.execute();
         ResultSet rs = pstmt.getResultSet();
         rs.next();
         String idOut = rs.getObject(1).toString();
-        Assert.assertTrue(idA.equals(idOut));
+        Assert.assertTrue(idA.toString().equals(idOut));
         pstmt.close();
         
         LobService ls = serviceManager().getServiceByClass(LobService.class);
@@ -98,7 +99,7 @@ public class BlobIT extends PostgresServerITBase {
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
-            Assert.assertTrue(ls.existsLob(getTransaction(), ids[k]));
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids[k])));
         }
         commitOrRollback();
         
@@ -108,7 +109,7 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
         
         for (int k = 0; k < n; k++) {
-            Assert.assertFalse(ls.existsLob(getTransaction(), ids[k]));
+            Assert.assertFalse(ls.existsLob(getTransaction(), UUID.fromString(ids[k])));
         }
         commitOrRollback();
     }
@@ -145,9 +146,9 @@ public class BlobIT extends PostgresServerITBase {
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
-            Assert.assertTrue(ls.existsLob(getTransaction(), idsA[k]));
-            Assert.assertTrue(ls.existsLob(getTransaction(), idsB[k]));
-            Assert.assertTrue(ls.existsLob(getTransaction(), idsC[k]));
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(idsA[k])));
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(idsB[k])));
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(idsC[k])));
         }
         commitOrRollback();
 
@@ -157,9 +158,9 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
 
         for (int k = 0; k < n; k++) {
-            Assert.assertFalse(ls.existsLob(getTransaction(), idsA[k]));
-            Assert.assertFalse(ls.existsLob(getTransaction(), idsB[k]));
-            Assert.assertFalse(ls.existsLob(getTransaction(), idsC[k]));
+            Assert.assertFalse(ls.existsLob(getTransaction(), UUID.fromString(idsA[k])));
+            Assert.assertFalse(ls.existsLob(getTransaction(), UUID.fromString(idsB[k])));
+            Assert.assertFalse(ls.existsLob(getTransaction(), UUID.fromString(idsC[k])));
         }
         commitOrRollback();
     }
@@ -192,8 +193,8 @@ public class BlobIT extends PostgresServerITBase {
         
         LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
-            Assert.assertTrue(ls.existsLob(getTransaction(), idsA[k]));
-            Assert.assertTrue(ls.existsLob(getTransaction(), idsB[k]));
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(idsA[k])));
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(idsB[k])));
         }
         commitOrRollback();
 
@@ -203,8 +204,8 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
 
         for (int k = 0; k < n; k++) {
-            Assert.assertFalse(ls.existsLob(getTransaction(), idsA[k]));
-            Assert.assertFalse(ls.existsLob(getTransaction(), idsB[k]));
+            Assert.assertFalse(ls.existsLob(getTransaction(), UUID.fromString(idsA[k])));
+            Assert.assertFalse(ls.existsLob(getTransaction(), UUID.fromString(idsB[k])));
         }
         commitOrRollback();
     }
@@ -250,8 +251,8 @@ public class BlobIT extends PostgresServerITBase {
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
-            Assert.assertTrue(ls.existsLob(getTransaction(), ids_t1[k]));
-            Assert.assertTrue(ls.existsLob(getTransaction(), ids_t2[k]));
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_t1[k])));
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_t2[k])));
         }
         commitOrRollback();
         
@@ -261,8 +262,8 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
 
         for (int k = 0; k < n; k++) {
-            Assert.assertFalse(ls.existsLob(getTransaction(), ids_t1[k]));
-            Assert.assertFalse(ls.existsLob(getTransaction(), ids_t2[k]));
+            Assert.assertFalse(ls.existsLob(getTransaction(), UUID.fromString(ids_t1[k])));
+            Assert.assertFalse(ls.existsLob(getTransaction(), UUID.fromString(ids_t2[k])));
         }
         commitOrRollback();
     }
@@ -299,7 +300,7 @@ public class BlobIT extends PostgresServerITBase {
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
-            Assert.assertTrue(ls.existsLob(getTransaction(), ids_t2[k]));
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_t2[k])));
         }
         commitOrRollback();
         
@@ -309,7 +310,7 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
 
         for (int k = 0; k < n; k++) {
-            Assert.assertFalse(ls.existsLob(getTransaction(), ids_t2[k]));
+            Assert.assertFalse(ls.existsLob(getTransaction(), UUID.fromString(ids_t2[k])));
         }
         commitOrRollback();
     }
@@ -338,7 +339,7 @@ public class BlobIT extends PostgresServerITBase {
         rs.close();
         LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
-            Assert.assertTrue(ls.existsLob(getTransaction(), ids[k]));
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids[k])));
         }
         commitOrRollback();
 
@@ -348,7 +349,7 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
 
         for (int k = 0; k < n; k++) {
-            Assert.assertFalse(ls.existsLob(getTransaction(), ids[k]));
+            Assert.assertFalse(ls.existsLob(getTransaction(), UUID.fromString(ids[k])));
         }
         commitOrRollback();
     }
@@ -398,8 +399,8 @@ public class BlobIT extends PostgresServerITBase {
         LobService ls = serviceManager().getServiceByClass(LobService.class);
         Transaction tr = getTransaction();
         for (int k = 0; k < n; k++) {
-            Assert.assertTrue(ls.existsLob(tr, ids_t1[k]));
-            Assert.assertTrue(ls.existsLob(tr, ids_t2[k]));
+            Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t1[k])));
+            Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t2[k])));
         }
         commitOrRollback();
         
@@ -409,8 +410,8 @@ public class BlobIT extends PostgresServerITBase {
 
         tr = getTransaction();
         for (int k = 0; k < n; k++) {
-            Assert.assertTrue(ls.existsLob(tr, ids_t1[k]));
-            Assert.assertFalse(ls.existsLob(tr, ids_t2[k]));
+            Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t1[k])));
+            Assert.assertFalse(ls.existsLob(tr, UUID.fromString(ids_t2[k])));
         }
         commitOrRollback();
     }
@@ -461,8 +462,8 @@ public class BlobIT extends PostgresServerITBase {
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
-            Assert.assertTrue(ls.existsLob(getTransaction(), ids_t1[k]));
-            Assert.assertTrue(ls.existsLob(getTransaction(), ids_t2[k]));
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_t1[k])));
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_t2[k])));
         }
         commitOrRollback();
     }
@@ -493,7 +494,7 @@ public class BlobIT extends PostgresServerITBase {
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
-            Assert.assertTrue(ls.existsLob(getTransaction(), ids[k]));
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids[k])));
         }
         commitOrRollback();
 
@@ -502,7 +503,7 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
 
         for (int k = 0; k < n; k++) {
-            Assert.assertFalse(ls.existsLob(getTransaction(), ids[k]));
+            Assert.assertFalse(ls.existsLob(getTransaction(), UUID.fromString(ids[k])));
         }
         commitOrRollback();
     }
@@ -539,7 +540,7 @@ public class BlobIT extends PostgresServerITBase {
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
-            Assert.assertTrue(ls.existsLob(getTransaction(), ids_t2[k]));
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_t2[k])));
         }
         commitOrRollback();
         
@@ -549,7 +550,7 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
 
         for (int k = 0; k < n; k++) {
-            Assert.assertFalse(ls.existsLob(getTransaction(), ids_t2[k]));
+            Assert.assertFalse(ls.existsLob(getTransaction(), UUID.fromString(ids_t2[k])));
         }
         commitOrRollback();
     }
@@ -579,7 +580,7 @@ public class BlobIT extends PostgresServerITBase {
         rs.close();
         LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
-            Assert.assertTrue(ls.existsLob(getTransaction(), ids[k]));
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids[k])));
         }
         commitOrRollback();
         
@@ -588,7 +589,7 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
 
         for (int k = 0; k < n; k++) {
-            Assert.assertFalse(ls.existsLob(getTransaction(), ids[k]));
+            Assert.assertFalse(ls.existsLob(getTransaction(), UUID.fromString(ids[k])));
         }
         commitOrRollback();
     }
@@ -622,7 +623,7 @@ public class BlobIT extends PostgresServerITBase {
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
-            Assert.assertTrue(ls.existsLob(getTransaction(), ids[k]));
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids[k])));
         }
         commitOrRollback();
     }
@@ -660,7 +661,7 @@ public class BlobIT extends PostgresServerITBase {
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
-            Assert.assertTrue(ls.existsLob(getTransaction(), ids_t2[k]));
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_t2[k])));
         }
         commitOrRollback();
     
@@ -671,7 +672,7 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
 
         for (int k = 0; k < n; k++) {
-            Assert.assertFalse(ls.existsLob(getTransaction(), ids_t2[k]));
+            Assert.assertFalse(ls.existsLob(getTransaction(), UUID.fromString(ids_t2[k])));
         }
         commitOrRollback();
     }
@@ -713,7 +714,7 @@ public class BlobIT extends PostgresServerITBase {
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
-            Assert.assertTrue(ls.existsLob(getTransaction(), ids_t2[k]));
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_t2[k])));
         }
         commitOrRollback();
     }
@@ -759,8 +760,8 @@ public class BlobIT extends PostgresServerITBase {
 
         LobService ls = serviceManager().getServiceByClass(LobService.class);
         for (int k = 0; k < n; k++) {
-            Assert.assertTrue(ls.existsLob(getTransaction(), ids_t1[k]));
-            Assert.assertTrue(ls.existsLob(getTransaction(), ids_t2[k]));
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_t1[k])));
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_t2[k])));
         }
         commitOrRollback();
         
@@ -770,8 +771,8 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
 
         for (int k = 0; k < n; k++) {
-            Assert.assertFalse( ls.existsLob(getTransaction(), ids_t1[k]));
-            Assert.assertTrue(ls.existsLob(getTransaction(), ids_t2[k]));
+            Assert.assertFalse( ls.existsLob(getTransaction(), UUID.fromString(ids_t1[k])));
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_t2[k])));
         }
         commitOrRollback();
     }

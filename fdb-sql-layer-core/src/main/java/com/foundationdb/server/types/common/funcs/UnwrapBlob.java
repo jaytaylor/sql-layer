@@ -84,7 +84,7 @@ public class UnwrapBlob extends TScalarBase {
                     if (txnService instanceof FDBTransactionService) {
                         Transaction tr = ((FDBTransactionService) txnService).getTransaction(context.getQueryContext().getStore().getSession()).getTransaction();
                         LobService ls = context.getQueryContext().getServiceManager().getServiceByClass(LobService.class);
-                        data = ls.readBlob(tr, blob.getId().toString());
+                        data = ls.readBlob(tr, blob.getId());
                     }
                 }
             }

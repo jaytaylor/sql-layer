@@ -712,8 +712,8 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                 } else if (blobRefTmp.isShortLob() && !isBlobReturnModeUnwrapped()) { // only set in WRAPPED mode
                     if (blobRefTmp.getBytes().length >= AkBlob.LOB_SWITCH_SIZE) {
                         UUID id = UUID.randomUUID();
-                        lobService.createNewLob(tr, id.toString());
-                        lobService.writeBlob(tr, id.toString(), 0, blobRefTmp.getBytes());
+                        lobService.createNewLob(tr, id);
+                        lobService.writeBlob(tr, id, 0, blobRefTmp.getBytes());
                         value = updateValue(id);
                         type = BlobRef.LobType.LONG_LOB;
                     } else {
@@ -728,8 +728,8 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                             value = updateValue(blobRefInit.getId());
                         } else {
                             UUID id = UUID.randomUUID();
-                            lobService.createNewLob(tr, id.toString());
-                            lobService.writeBlob(tr, id.toString(), 0, blobRefTmp.getBytes());
+                            lobService.createNewLob(tr, id);
+                            lobService.writeBlob(tr, id, 0, blobRefTmp.getBytes());
                             type = BlobRef.LobType.LONG_LOB;
                             value = updateValue(id);
                         }
@@ -741,7 +741,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                 }
                 BlobRef blobRef = new BlobRef(value, BlobRef.LeadingBitState.YES, type, BlobRef.LobType.UNKNOWN);
                 if (blobRef.isLongLob()) {
-                    lobService.linkTableBlob(tr, blobRef.getId().toString(), tableId);
+                    lobService.linkTableBlob(tr, blobRef.getId(), tableId);
                 }
                 resRow.overlay(i, blobRef);
                 changedRow = true;
@@ -771,7 +771,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             return blob.getBytes();
         } else if (blob.isLongLob()) {
             Transaction tr = txnService.getTransaction(session).getTransaction();
-            return lobService.readBlob(tr, blob.getId().toString());
+            return lobService.readBlob(tr, blob.getId());
         } else {
             throw new LobException("Type of lob not available");
         }
@@ -792,7 +792,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                 }
                 if (blobRef.isLongLob()) {
                     Transaction tr = txnService.getTransaction(session).getTransaction();
-                    lobService.deleteLob(tr, blobRef.getId().toString());
+                    lobService.deleteLob(tr, blobRef.getId());
                 }
             }
         }        
@@ -817,7 +817,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             while(it.hasNext()) {
                 KeyValue kv = it.next();
                 Tuple t = dir.unpack(kv.getKey());
-                lobService.deleteLob(tr.getTransaction(), AkGUID.bytesToUUID(t.getBytes(0), 0).toString());
+                lobService.deleteLob(tr.getTransaction(), AkGUID.bytesToUUID(t.getBytes(0), 0));
             }
             rootDir.removeIfExists(tr.getTransaction(), onlineLobPath).get();
         }

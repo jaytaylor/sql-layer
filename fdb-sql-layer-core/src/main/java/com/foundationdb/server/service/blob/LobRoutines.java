@@ -49,15 +49,14 @@ public class LobRoutines {
         final ServerQueryContext context = ServerCallContextStack.getCallingContext();
         Session session = context.getSession();
         boolean startedTransaction = false;
-
+        final UUID id; 
         if (specific) {
             // This is a check for valid format of id 
-            lobId = UUID.fromString(lobId).toString();
+            id = UUID.fromString(lobId);
         } else {
-            lobId = java.util.UUID.randomUUID().toString();
+            id = java.util.UUID.randomUUID();
         }
-        final String id = lobId;
-
+        
         if (!txnService.isTransactionActive(session)) {
             txnService.beginTransaction(session);
             startedTransaction = true;
@@ -81,7 +80,7 @@ public class LobRoutines {
             }
         }
         context.getServer().addCreatedLob(lobId);
-        return id;
+        return id.toString();
     }
     
     
@@ -95,14 +94,15 @@ public class LobRoutines {
             txnService.beginTransaction(session);
             startedTransaction = true;
         }
+        final UUID id = UUID.fromString(blobId);
         FDBTransactionService.TransactionState txnState = txnService.getTransaction(session);
         try {
             size = txnState.getTransaction().run(new Function<Transaction, Long>() {
                 @Override
                 public Long apply(Transaction tr) {
                     LobService ls = getLobService();
-                    ls.verifyAccessPermission(tr, context, blobId);
-                    return ls.sizeBlob(tr, blobId);
+                    ls.verifyAccessPermission(tr, context, id);
+                    return ls.sizeBlob(tr, id);
                 }
             });
             if (startedTransaction) {
@@ -119,6 +119,7 @@ public class LobRoutines {
     public static void readBlob(final long offset, final int length, final String blobId, byte[][] out) {
         FDBTransactionService txnService = getTransactionService();
         final QueryContext context = ServerCallContextStack.getCallingContext();
+        final UUID id = UUID.fromString(blobId);
         Session session = context.getSession();
         boolean startedTransaction = false;
         byte[] output;
@@ -132,8 +133,8 @@ public class LobRoutines {
                 @Override
                 public byte[] apply(Transaction tr) {
                     LobService ls = getLobService();
-                    ls.verifyAccessPermission(tr, context, blobId);
-                    return ls.readBlob(tr, blobId, offset, length);
+                    ls.verifyAccessPermission(tr, context, id);
+                    return ls.readBlob(tr, id, offset, length);
                 }
             });
             if (startedTransaction) {
@@ -152,6 +153,7 @@ public class LobRoutines {
         final QueryContext context = ServerCallContextStack.getCallingContext();
         Session session = context.getSession();
         boolean startedTransaction = false;
+        final UUID id = UUID.fromString(blobId);
         if (!txnService.isTransactionActive(session)) {
             txnService.beginTransaction(session);
             startedTransaction = true;
@@ -162,8 +164,8 @@ public class LobRoutines {
                 @Override
                 public Void apply(Transaction tr) {
                     LobService ls = getLobService();
-                    ls.verifyAccessPermission(tr, context, blobId);
-                    ls.writeBlob(tr, blobId, offset, data);
+                    ls.verifyAccessPermission(tr, context, id);
+                    ls.writeBlob(tr, id, offset, data);
                     return null;
                 }
             });
@@ -182,6 +184,7 @@ public class LobRoutines {
         final QueryContext context = ServerCallContextStack.getCallingContext();
         Session session = context.getSession();
         boolean startedTransaction = false;
+        final UUID id = UUID.fromString(blobId);
         if (!txnService.isTransactionActive(session)) {
             txnService.beginTransaction(session);
             startedTransaction = true;
@@ -192,8 +195,8 @@ public class LobRoutines {
                 @Override
                 public Void apply(Transaction tr) {
                     LobService ls = getLobService();
-                    ls.verifyAccessPermission(tr, context, blobId);
-                    ls.appendBlob(tr, blobId, data);
+                    ls.verifyAccessPermission(tr, context, id);
+                    ls.appendBlob(tr, id, data);
                     return null;
                 }
             });
@@ -212,6 +215,7 @@ public class LobRoutines {
         final QueryContext context = ServerCallContextStack.getCallingContext();
         Session session = context.getSession();
         boolean startedTransaction = false;
+        final UUID id = UUID.fromString(blobId);
         if (!txnService.isTransactionActive(session)) {
             txnService.beginTransaction(session);
             startedTransaction = true;
@@ -222,8 +226,8 @@ public class LobRoutines {
                 @Override
                 public Void apply(Transaction tr) {
                     LobService ls = getLobService();
-                    ls.verifyAccessPermission(tr, context, blobId);
-                    ls.truncateBlob(tr, blobId, newLength);
+                    ls.verifyAccessPermission(tr, context, id);
+                    ls.truncateBlob(tr, id, newLength);
                     return null;
                 }
             });

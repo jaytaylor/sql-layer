@@ -34,6 +34,7 @@ import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.UUID;
 
 public class LobServiceImpl implements Service, LobService {
     private DirectorySubspace lobDirectory;
@@ -53,21 +54,20 @@ public class LobServiceImpl implements Service, LobService {
         DirectorySubspace ds;
         SQLBlob blob;
         TransactionContext tcx = getTcx();
-        List<String> toDo = new ArrayList<>();        
+        List<UUID> toDo = new ArrayList<>();        
         if (lobIds.size() > 0 ) {
-            for (int i = 0; i < lobIds.size(); i++) {
-                String lob = lobIds.get(i);
+            for (String lob : lobIds) {
                 List<String> path = Arrays.asList(lob);
                 // List may be over complete, existence is not sure
                 if (lobDirectory.exists(tcx, path).get()) {
                     ds = lobDirectory.open(tcx, path).get();
                     blob = new SQLBlob(ds);
                     if (!blob.isLinked(tcx).get()) {
-                        toDo.add(lob);
+                        toDo.add(UUID.fromString(lob));
                     }
                 }
             }
-            deleteLobs(toDo.toArray(new String[toDo.size()]));
+            deleteLobs(toDo.toArray(new UUID[toDo.size()]));
         }
     }
 
@@ -79,25 +79,25 @@ public class LobServiceImpl implements Service, LobService {
 
     
     @Override
-    public void createNewLob(TransactionContext tcx, String lobId) {
-        lobDirectory.create(tcx, Arrays.asList(lobId)).get();
+    public void createNewLob(TransactionContext tcx, UUID lobId) {
+        lobDirectory.create(tcx, Arrays.asList(lobId.toString())).get();
     }
 
     @Override
-    public boolean existsLob(TransactionContext tcx, String lobId) {
-        return lobDirectory.exists(tcx, Arrays.asList(lobId)).get();
+    public boolean existsLob(TransactionContext tcx, UUID lobId) {
+        return lobDirectory.exists(tcx, Arrays.asList(lobId.toString())).get();
     }
 
     @Override
-    public void deleteLob(TransactionContext tcx, String lobId) {
-        lobDirectory.removeIfExists(tcx, Arrays.asList(lobId)).get();
+    public void deleteLob(TransactionContext tcx, UUID lobId) {
+        lobDirectory.removeIfExists(tcx, Arrays.asList(lobId.toString())).get();
     }
 
     @Override
-    public void deleteLobs(String[] lobIds) {
+    public void deleteLobs(UUID[] lobIds) {
         List<Future<Boolean>> done = new ArrayList<>();
-        for (int i = 0; i < lobIds.length; i++) {
-            done.add(lobDirectory.removeIfExists(getTcx(), Arrays.asList(lobIds[i])));
+        for (UUID lob : lobIds) {
+            done.add(lobDirectory.removeIfExists(getTcx(), Arrays.asList(lob.toString())));
         }
         for (Future<Boolean> item : done) {
             item.get();
@@ -105,14 +105,14 @@ public class LobServiceImpl implements Service, LobService {
     }
 
     @Override
-    public void moveLob(TransactionContext tcx, final String oldId, String newId) {
+    public void moveLob(TransactionContext tcx, final UUID oldId, UUID newId) {
         List<String> newPathTmp = new ArrayList<>(lobDirectory.getPath());
-        newPathTmp.add(newId);
+        newPathTmp.add(newId.toString());
         final List<String> newPath = new ArrayList<>(newPathTmp);
         tcx.run(new Function<Transaction, Void>() {
             @Override
             public Void apply(Transaction tr) {
-                DirectorySubspace ds = lobDirectory.open(tr, Arrays.asList(oldId)).get();
+                DirectorySubspace ds = lobDirectory.open(tr, Arrays.asList(oldId.toString())).get();
                 ds.moveTo(tr, newPath).get();
                 return null;
             }
@@ -120,7 +120,7 @@ public class LobServiceImpl implements Service, LobService {
     }
 
     @Override
-    public void linkTableBlob(TransactionContext tcx, final String lobId, final int tableId) {
+    public void linkTableBlob(TransactionContext tcx, final UUID lobId, final int tableId) {
         tcx.run(new Function<Transaction, Void>() {
             @Override
             public Void apply(Transaction tr) {
@@ -138,7 +138,7 @@ public class LobServiceImpl implements Service, LobService {
     }
 
     @Override
-    public long sizeBlob(TransactionContext tcx, final String lobId) {
+    public long sizeBlob(TransactionContext tcx, final UUID lobId) {
         return tcx.run(new Function<Transaction, Long>() {
             @Override
             public Long apply(Transaction tr) {
@@ -149,7 +149,7 @@ public class LobServiceImpl implements Service, LobService {
     }
 
     @Override
-    public byte[] readBlob(TransactionContext tcx, final String lobId, final long offset, final int length) {
+    public byte[] readBlob(TransactionContext tcx, final UUID lobId, final long offset, final int length) {
         byte[] res =  tcx.run(new Function<Transaction, byte[]>() {
             @Override
             public byte[] apply(Transaction tr) {
@@ -161,7 +161,7 @@ public class LobServiceImpl implements Service, LobService {
     }
 
     @Override
-    public byte[] readBlob(TransactionContext tcx, final String lobId) {
+    public byte[] readBlob(TransactionContext tcx, final UUID lobId) {
         return tcx.run(new Function<Transaction, byte[]>() {
             @Override
             public byte[] apply(Transaction tr) {
@@ -172,7 +172,7 @@ public class LobServiceImpl implements Service, LobService {
     }
 
     @Override
-    public void writeBlob(TransactionContext tcx, final String lobId, final long offset, final byte[] data) {
+    public void writeBlob(TransactionContext tcx, final UUID lobId, final long offset, final byte[] data) {
         tcx.run(new Function<Transaction, Void>() {
             @Override
             public Void apply(Transaction tr) {
@@ -184,7 +184,7 @@ public class LobServiceImpl implements Service, LobService {
     }
 
     @Override
-    public void appendBlob(TransactionContext tcx, final String lobId, final byte[] data) {
+    public void appendBlob(TransactionContext tcx, final UUID lobId, final byte[] data) {
             tcx.run(new Function<Transaction, Void>() {
                 @Override
                 public Void apply(Transaction tr) {
@@ -196,7 +196,7 @@ public class LobServiceImpl implements Service, LobService {
     }
 
     @Override
-    public void truncateBlob(TransactionContext tcx, final String lobId, final long size) {
+    public void truncateBlob(TransactionContext tcx, final UUID lobId, final long size) {
         tcx.run(new Function<Transaction, Void>() {
             @Override
             public Void apply(Transaction tr) {
@@ -214,7 +214,7 @@ public class LobServiceImpl implements Service, LobService {
     }
     
     @Override
-    public void verifyAccessPermission(TransactionContext tcx, final QueryContext context, final String lobId) {
+    public void verifyAccessPermission(TransactionContext tcx, final QueryContext context, final UUID lobId) {
         tcx.run(new Function<Transaction, Void>() {
             @Override
             public Void apply(Transaction tr) {
@@ -232,9 +232,9 @@ public class LobServiceImpl implements Service, LobService {
         });
     }
 
-    private SQLBlob openBlob(TransactionContext tcx, String lobId) {
+    private SQLBlob openBlob(TransactionContext tcx, UUID lobId) {
         try {
-            DirectorySubspace ds = lobDirectory.open(tcx, Arrays.asList(lobId)).get();
+            DirectorySubspace ds = lobDirectory.open(tcx, Arrays.asList(lobId.toString())).get();
             return new SQLBlob(ds);
         }
         catch (NoSuchDirectoryException nsde) {

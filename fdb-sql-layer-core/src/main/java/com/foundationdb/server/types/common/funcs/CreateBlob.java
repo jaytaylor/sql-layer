@@ -88,9 +88,9 @@ public class CreateBlob extends TScalarBase {
                 else {
                     UUID id = UUID.randomUUID();
                     LobService lobService = sm.getServiceByClass(LobService.class);
-                    lobService.createNewLob(tr, id.toString());
+                    lobService.createNewLob(tr, id);
                     if (data.length > 0) {
-                        lobService.writeBlob(tr, id.toString(), 0, data);
+                        lobService.writeBlob(tr, id, 0, data);
                     }
                     byte[] tmp = new byte[17];
                     tmp[0] = BlobRef.LONG_LOB;

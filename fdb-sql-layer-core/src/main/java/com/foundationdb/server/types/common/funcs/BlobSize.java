@@ -75,7 +75,7 @@ public class BlobSize extends TScalarBase {
                         if (txnService instanceof FDBTransactionService) {
                             Transaction tr = ((FDBTransactionService) txnService).getTransaction(context.getQueryContext().getStore().getSession()).getTransaction();
                             LobService lobService = context.getQueryContext().getServiceManager().getServiceByClass(LobService.class);
-                            size = lobService.sizeBlob(tr, blobRef.getId().toString());
+                            size = lobService.sizeBlob(tr, blobRef.getId());
                         }
                     } else {
                         size = (long) (blobRef.getBytes().length);
