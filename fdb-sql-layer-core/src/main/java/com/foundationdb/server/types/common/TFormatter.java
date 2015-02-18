@@ -17,6 +17,7 @@
 
 package com.foundationdb.server.types.common;
 
+import com.foundationdb.server.error.*;
 import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.TClassFormatter;
@@ -70,16 +71,7 @@ public class TFormatter {
         BLOB {
             @Override
             public void format(TInstance type, ValueSource source, AkibanAppender out) {
-                BlobRef blob = (BlobRef) source.getObject();
-                if ( blob.isReturnedBlobInUnwrappedMode() || blob.isShortLob()) {
-                    String charsetName = StringFactory.DEFAULT_CHARSET.name();
-                    Charset charset = Charset.forName(charsetName);
-                    String str = new String(blob.getBytes(), charset);
-                    out.append(str);
-                } 
-                else if (blob.isLongLob()) {
-                    out.append(blob.getId().toString());
-                } 
+                throw new LobException("Unsupported format");
             }
 
             @Override
@@ -106,9 +98,7 @@ public class TFormatter {
                     out.append("\"" + formattedString + "\"");
                 }
                 else if (blob.isLongLob()) {
-                    out.append("\"");
-                    format(type, source, out);
-                    out.append("\"");
+                    out.append("\"" + blob.getId().toString() + "\"");
                 }
             }
         };

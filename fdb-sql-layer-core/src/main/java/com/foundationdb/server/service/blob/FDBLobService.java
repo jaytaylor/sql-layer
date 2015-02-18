@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.UUID;
 
-public class LobServiceImpl implements Service, LobService {
+public class FDBLobService implements Service, LobService {
     private DirectorySubspace lobDirectory;
     private FDBHolder fdbHolder;
     private FDBTransactionService transactionService;
@@ -49,7 +49,7 @@ public class LobServiceImpl implements Service, LobService {
     private final String LOB_DIRECTORY = "lobs";
     
     @Inject
-    public LobServiceImpl(ServiceManager serviceManager, SecurityService securityService) {
+    public FDBLobService(ServiceManager serviceManager, SecurityService securityService) {
         this.serviceManager = serviceManager;
         this.securityService = securityService;
     }

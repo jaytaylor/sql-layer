@@ -17,8 +17,7 @@
 
 package com.foundationdb.server.types.aksql;
 
-import com.foundationdb.server.error.InvalidGuidFormatException;
-import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.error.*;
 import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TParser;
@@ -96,17 +95,7 @@ public class AkParsers
     {
         @Override
         public void parse(TExecutionContext context, ValueSource source, ValueTarget target) {
-            String s = source.getString();
-            int charsetId = source.getType().attribute(StringAttribute.CHARSET);
-            String charsetName = StringFactory.Charset.values()[charsetId].name();
-            byte[] bytes;
-            try {
-                bytes = s.getBytes(charsetName);
-            } catch (UnsupportedEncodingException e) {
-                throw new AkibanInternalException("while decoding string using " + charsetName, e);
-            }
-            BlobRef blob = new BlobRef(bytes);
-            target.putObject(blob);
+            throw new LobException("String parsing unsupported");
         }
     };
 }

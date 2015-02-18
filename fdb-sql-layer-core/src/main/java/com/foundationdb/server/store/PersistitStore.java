@@ -397,7 +397,8 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
 
     @Override
     Row storeLobs(Session session, Row row) {
-        throw new UnsupportedOperationException();
+        // check row for not containing blobs, throw exception
+        return row;
     }
 
     @Override

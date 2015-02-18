@@ -84,8 +84,10 @@ public abstract class TypeFormattingTestBase
         StringBuilder sb = new StringBuilder();
         AkibanAppender out = AkibanAppender.of(sb);
         sb.setLength(0);
-        source.getType().format(source, out);
-        assertEquals(typeName + " str", formatted, sb.toString());
+        if (formatted != null) {
+            source.getType().format(source, out);
+            assertEquals(typeName + " str", formatted, sb.toString());
+        }
         sb.setLength(0);
         source.getType().formatAsJson(source, out, FORMAT_OPTS);
         assertEquals(typeName + " json", formattedJSON, sb.toString());

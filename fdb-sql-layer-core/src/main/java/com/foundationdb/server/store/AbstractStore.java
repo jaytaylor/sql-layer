@@ -630,6 +630,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
         // multiple times for GroupIndex maintenance. 
 
         final Row row;
+        
         row = storeLobs(session, rowInp);
         
         final Key hKey = getKey(session, storeData);
