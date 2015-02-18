@@ -21,31 +21,23 @@ import com.foundationdb.server.service.session.Session;
 
 public class VirtualTableStatus implements TableStatus
 {
-    private final int expectedID;
+    private final int tableID;
     private final VirtualScanFactory factory;
-    private long rowCount = 0;
 
-    public VirtualTableStatus(int expectedID, VirtualScanFactory factory) {
-        this.expectedID = expectedID;
+    public VirtualTableStatus(int tableID, VirtualScanFactory factory) {
+        assert factory != null;
+        this.tableID = tableID;
         this.factory = factory;
     }
 
     @Override
-    public long getRowCount(Session session) {
-        if(factory != null) {
-            return factory.rowCount(session);
-        }
-        synchronized(this) {
-            return rowCount;
-        }
+    public synchronized long getRowCount(Session session) {
+        return factory.rowCount(session);
     }
 
     @Override
     public synchronized void setRowCount(Session session, long rowCount) {
-        if(factory != null) {
-            throw new IllegalArgumentException("Cannot set row count for virtual table");
-        }
-        this.rowCount = rowCount;
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -55,21 +47,21 @@ public class VirtualTableStatus implements TableStatus
 
     @Override
     public int getTableID() {
-        return expectedID;
+        return tableID;
     }
 
     @Override
     public synchronized void rowDeleted(Session session) {
-        rowCount = Math.max(0, rowCount - 1);
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public synchronized void rowsWritten(Session session, long count) {
-        rowCount += count;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public synchronized void truncate(Session session) {
-        rowCount = 0;
+        throw new UnsupportedOperationException();
     }
 }

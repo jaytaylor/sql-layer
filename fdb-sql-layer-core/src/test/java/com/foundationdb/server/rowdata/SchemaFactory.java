@@ -28,7 +28,7 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.qp.virtual.VirtualAdapter;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.server.MemoryOnlyTableStatusCache;
+import com.foundationdb.server.SimpleTableStatusCache;
 import com.foundationdb.server.TableStatus;
 import com.foundationdb.server.TableStatusCache;
 import com.foundationdb.server.api.DDLFunctions;
@@ -133,7 +133,7 @@ public class SchemaFactory {
     }
 
     public void buildRowDefs(AkibanInformationSchema ais) {
-        MemoryOnlyTableStatusCache tableStatusCache = new MemoryOnlyTableStatusCache();
+        SimpleTableStatusCache tableStatusCache = new SimpleTableStatusCache();
         // TODO: this attaches the TableStatus to each table. 
         // This used to be done in RowDefBuilder#build() but no longer.
         for (final Table table : ais.getTables().values()) {
