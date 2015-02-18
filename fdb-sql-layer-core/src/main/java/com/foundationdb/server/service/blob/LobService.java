@@ -18,8 +18,7 @@
 
 package com.foundationdb.server.service.blob;
 
-
-import com.foundationdb.TransactionContext;
+import com.foundationdb.server.service.session.Session;
 import com.foundationdb.qp.operator.QueryContext;
 
 import java.util.List;
@@ -31,20 +30,20 @@ public interface LobService {
     
     public void deleteLobs(UUID[] lobIds);
     public void runLobGarbageCollector();
-    
-    public void createNewLob(TransactionContext tcx, UUID lobId);
-    public boolean existsLob(TransactionContext tcx, UUID lobId);
-    public void deleteLob(TransactionContext tcx, UUID lobId);
-    public void moveLob(TransactionContext tcx, UUID oldId, UUID newId);
-    public void linkTableBlob(TransactionContext tcx, UUID lobId, int tableId);
-    public long sizeBlob(TransactionContext tcx, UUID lobId);
-    public byte[] readBlob(TransactionContext tcx, UUID lobId, long offset, int length);
-    public byte[] readBlob(TransactionContext tcx, UUID lobId);
-    public void writeBlob(TransactionContext tcx, UUID lobId, long offset, byte[] data);
-    public void appendBlob(TransactionContext tcx, UUID lobId, byte[] data);
-    public void truncateBlob(TransactionContext tcx, UUID lobId, long size);
-    public void clearAllLobs(TransactionContext tcx);
-    public void verifyAccessPermission(TransactionContext tcx, QueryContext context, UUID lobId);
+
+    public void createNewLob(Session session, UUID lobId);
+    public boolean existsLob(Session session, UUID lobId);
+    public void deleteLob(Session session, UUID lobId);
+    public void moveLob(Session session, UUID oldId, UUID newId);
+    public void linkTableBlob(Session session, UUID lobId, int tableId);
+    public long sizeBlob(Session session, UUID lobId);
+    public byte[] readBlob(Session session, UUID lobId, long offset, int length);
+    public byte[] readBlob(Session session, UUID lobId);
+    public void writeBlob(Session session, UUID lobId, long offset, byte[] data);
+    public void appendBlob(Session session, UUID lobId, byte[] data);
+    public void truncateBlob(Session session, UUID lobId, long size);
+    public void clearAllLobs(Session session);
+    public void verifyAccessPermission(Session session, QueryContext context, UUID lobId);
 
 }
 

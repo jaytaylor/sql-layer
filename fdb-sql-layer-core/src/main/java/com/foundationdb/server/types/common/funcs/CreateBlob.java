@@ -19,9 +19,6 @@ package com.foundationdb.server.types.common.funcs;
 
 
 import com.foundationdb.server.service.blob.BlobRef;
-import com.foundationdb.server.service.blob.LobService;
-import com.foundationdb.server.service.ServiceManager;
-import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.*;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TClass;
@@ -34,7 +31,6 @@ import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
-import com.foundationdb.Transaction;
 import java.util.UUID;
 
 public class CreateBlob extends TScalarBase {
@@ -75,23 +71,18 @@ public class CreateBlob extends TScalarBase {
         }
         else {
             state = BlobRef.LeadingBitState.YES;
-            ServiceManager sm = context.getQueryContext().getServiceManager();
-            TransactionService txnService = context.getQueryContext().getServiceManager().getServiceByClass(TransactionService.class);
-            if (txnService instanceof FDBTransactionService) {
-                Transaction tr = ((FDBTransactionService) txnService).getTransaction(context.getQueryContext().getStore().getSession()).getTransaction();
-                if ((data.length < AkBlob.LOB_SWITCH_SIZE)) {
-                    byte[] tmp = new byte[data.length + 1];
-                    tmp[0] = BlobRef.SHORT_LOB;
-                    System.arraycopy(data, 0, tmp, 1, data.length);
-                    data = tmp;
-                } 
-                else {
-                    UUID id = FDBStore.writeDataToNewBlob(tr, data); 
-                    byte[] tmp = new byte[17];
-                    tmp[0] = BlobRef.LONG_LOB;
-                    System.arraycopy(AkGUID.uuidToBytes(id), 0, tmp, 1, 16);
-                    data = tmp;
-                }
+            if ((data.length < AkBlob.LOB_SWITCH_SIZE)) {
+                byte[] tmp = new byte[data.length + 1];
+                tmp[0] = BlobRef.SHORT_LOB;
+                System.arraycopy(data, 0, tmp, 1, data.length);
+                data = tmp;
+            }
+            else {
+                UUID id = FDBStore.writeDataToNewBlob(context.getQueryContext().getSession(), data);
+                byte[] tmp = new byte[17];
+                tmp[0] = BlobRef.LONG_LOB;
+                System.arraycopy(AkGUID.uuidToBytes(id), 0, tmp, 1, 16);
+                data = tmp;
             }
             blob = new BlobRef(data, state);
         }

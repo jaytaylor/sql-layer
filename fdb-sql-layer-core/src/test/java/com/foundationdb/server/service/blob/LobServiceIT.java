@@ -40,49 +40,61 @@ public class LobServiceIT extends ITBase {
 
         // blob creation
         UUID id = UUID.randomUUID();
-        Transaction tr = getTransaction();
-        ls.createNewLob(tr, id);
+        getTransaction();
+        ls.createNewLob(session(), id);
         commit();
 
-        ls.appendBlob(getTransaction(), id, data);
+        getTransaction();
+        ls.appendBlob(session(), id, data);
         commit();
         
-        Assert.assertEquals(ls.sizeBlob(getTransaction(), id), new Long(data.length).longValue());
+        getTransaction();
+        Assert.assertEquals(ls.sizeBlob(session(), id), new Long(data.length).longValue());
         commit();
         
         // blob transfer to new address
         UUID newPath = UUID.randomUUID();
-        ls.moveLob(getTransaction(), id, newPath);
+        getTransaction();
+        ls.moveLob(session(), id, newPath);
         commit();
         
         // data retrieval
-        byte[] output = ls.readBlob(getTransaction(), newPath, 0, data.length);
+        getTransaction();
+        byte[] output = ls.readBlob(session(), newPath, 0, data.length);
         commit();
         Assert.assertArrayEquals(data, output);
-        output = ls.readBlob(getTransaction(), newPath);
+        getTransaction();
+        output = ls.readBlob(session(), newPath);
         commit();
         Assert.assertArrayEquals(data, output);
         
-        ls.truncateBlob(getTransaction(), newPath, 2L);
+        getTransaction();
+        ls.truncateBlob(session(), newPath, 2L);
         commit();
-        Assert.assertEquals(ls.sizeBlob(getTransaction(), newPath), 2L);
-        commit();
-        
-        
-        ls.truncateBlob(getTransaction(), newPath, 0L);
+        getTransaction();
+        Assert.assertEquals(ls.sizeBlob(session(), newPath), 2L);
         commit();
         
-        Assert.assertEquals(ls.sizeBlob(getTransaction(), newPath), 0L);
+        getTransaction();
+        ls.truncateBlob(session(), newPath, 0L);
         commit();
-        ls.appendBlob(getTransaction(), newPath, data);
+        
+        getTransaction();
+        Assert.assertEquals(ls.sizeBlob(session(), newPath), 0L);
         commit();
-        output = ls.readBlob(getTransaction(), newPath);
+        getTransaction();
+        ls.appendBlob(session(), newPath, data);
+        commit();
+        getTransaction();
+        output = ls.readBlob(session(), newPath);
         commit();
         Assert.assertArrayEquals(data, output);        
         
-        ls.deleteLob(getTransaction(), newPath);
+        getTransaction();
+        ls.deleteLob(session(), newPath);
         commit();
-        Assert.assertFalse(ls.existsLob(getTransaction(), newPath));
+        getTransaction();
+        Assert.assertFalse(ls.existsLob(session(), newPath));
         commit();
     }
     
@@ -91,12 +103,12 @@ public class LobServiceIT extends ITBase {
         // registration
         this.ls = serviceManager().getServiceByClass(LobService.class);
         Assert.assertNotNull(ls);
-        Transaction tr = getTransaction();
+        getTransaction();
         idA = UUID.randomUUID();
         idB = UUID.randomUUID();
-        ls.createNewLob(tr, idA);
-        ls.createNewLob(tr, idB);
-        ls.linkTableBlob(tr, idA, 1);
+        ls.createNewLob(session(), idA);
+        ls.createNewLob(session(), idB);
+        ls.linkTableBlob(session(), idA, 1);
         commit();
     }
     
@@ -106,8 +118,9 @@ public class LobServiceIT extends ITBase {
         ls.runLobGarbageCollector();
         
         // check cleaning
-        Assert.assertTrue(ls.existsLob(getTransaction(), idA));
-        Assert.assertFalse(ls.existsLob(getTransaction(), idB));
+        getTransaction();
+        Assert.assertTrue(ls.existsLob(session(), idA));
+        Assert.assertFalse(ls.existsLob(session(), idB));
         commit();
     }
     

@@ -47,7 +47,7 @@ public class LobRoutines {
     private static String createNewLob(boolean specific, String lobId) {
         FDBTransactionService txnService = getTransactionService();
         final ServerQueryContext context = ServerCallContextStack.getCallingContext();
-        Session session = context.getSession();
+        final Session session = context.getSession();
         boolean startedTransaction = false;
         final UUID id; 
         if (specific) {
@@ -67,7 +67,7 @@ public class LobRoutines {
                 @Override
                 public Void apply(Transaction tr) {
                     LobService ls = getLobService();
-                    ls.createNewLob(tr, id);
+                    ls.createNewLob(session, id);
                     return null;
                 }
             });
@@ -87,7 +87,7 @@ public class LobRoutines {
     public static long sizeBlob(final String blobId) {
         FDBTransactionService txnService = getTransactionService();
         final QueryContext context = ServerCallContextStack.getCallingContext();
-        Session session = context.getSession();
+        final Session session = context.getSession();
         boolean startedTransaction = false;
         long size; 
         if (!txnService.isTransactionActive(session)) {
@@ -101,8 +101,8 @@ public class LobRoutines {
                 @Override
                 public Long apply(Transaction tr) {
                     LobService ls = getLobService();
-                    ls.verifyAccessPermission(tr, context, id);
-                    return ls.sizeBlob(tr, id);
+                    ls.verifyAccessPermission(session, context, id);
+                    return ls.sizeBlob(session, id);
                 }
             });
             if (startedTransaction) {
@@ -120,7 +120,7 @@ public class LobRoutines {
         FDBTransactionService txnService = getTransactionService();
         final QueryContext context = ServerCallContextStack.getCallingContext();
         final UUID id = UUID.fromString(blobId);
-        Session session = context.getSession();
+        final Session session = context.getSession();
         boolean startedTransaction = false;
         byte[] output;
         if (!txnService.isTransactionActive(session)) {
@@ -133,8 +133,8 @@ public class LobRoutines {
                 @Override
                 public byte[] apply(Transaction tr) {
                     LobService ls = getLobService();
-                    ls.verifyAccessPermission(tr, context, id);
-                    return ls.readBlob(tr, id, offset, length);
+                    ls.verifyAccessPermission(session, context, id);
+                    return ls.readBlob(session, id, offset, length);
                 }
             });
             if (startedTransaction) {
@@ -151,7 +151,7 @@ public class LobRoutines {
     public static void writeBlob(final long offset, final byte[] data, final String blobId){
         FDBTransactionService txnService = getTransactionService();
         final QueryContext context = ServerCallContextStack.getCallingContext();
-        Session session = context.getSession();
+        final Session session = context.getSession();
         boolean startedTransaction = false;
         final UUID id = UUID.fromString(blobId);
         if (!txnService.isTransactionActive(session)) {
@@ -164,8 +164,8 @@ public class LobRoutines {
                 @Override
                 public Void apply(Transaction tr) {
                     LobService ls = getLobService();
-                    ls.verifyAccessPermission(tr, context, id);
-                    ls.writeBlob(tr, id, offset, data);
+                    ls.verifyAccessPermission(session, context, id);
+                    ls.writeBlob(session, id, offset, data);
                     return null;
                 }
             });
@@ -182,7 +182,7 @@ public class LobRoutines {
     public static void appendBlob(final byte[] data, final String blobId) {
         FDBTransactionService txnService = getTransactionService();
         final QueryContext context = ServerCallContextStack.getCallingContext();
-        Session session = context.getSession();
+        final Session session = context.getSession();
         boolean startedTransaction = false;
         final UUID id = UUID.fromString(blobId);
         if (!txnService.isTransactionActive(session)) {
@@ -195,8 +195,8 @@ public class LobRoutines {
                 @Override
                 public Void apply(Transaction tr) {
                     LobService ls = getLobService();
-                    ls.verifyAccessPermission(tr, context, id);
-                    ls.appendBlob(tr, id, data);
+                    ls.verifyAccessPermission(session, context, id);
+                    ls.appendBlob(session, id, data);
                     return null;
                 }
             });
@@ -213,7 +213,7 @@ public class LobRoutines {
     public static void truncateBlob(final long newLength, final String blobId) {
         FDBTransactionService txnService = getTransactionService();
         final QueryContext context = ServerCallContextStack.getCallingContext();
-        Session session = context.getSession();
+        final Session session = context.getSession();
         boolean startedTransaction = false;
         final UUID id = UUID.fromString(blobId);
         if (!txnService.isTransactionActive(session)) {
@@ -226,8 +226,8 @@ public class LobRoutines {
                 @Override
                 public Void apply(Transaction tr) {
                     LobService ls = getLobService();
-                    ls.verifyAccessPermission(tr, context, id);
-                    ls.truncateBlob(tr, id, newLength);
+                    ls.verifyAccessPermission(session, context, id);
+                    ls.truncateBlob(session, id, newLength);
                     return null;
                 }
             });

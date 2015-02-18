@@ -18,11 +18,7 @@
 package com.foundationdb.server.types.common.funcs;
 
 
-import com.foundationdb.*;
 import com.foundationdb.server.service.blob.BlobRef;
-import com.foundationdb.server.service.blob.LobService;
-import com.foundationdb.server.service.transaction.TransactionService;
-import com.foundationdb.server.store.FDBTransactionService;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TClass;
@@ -71,16 +67,11 @@ public class CreateLongBlob extends TScalarBase {
         BlobRef.LeadingBitState state = BlobRef.LeadingBitState.NO;
         if (mode.equalsIgnoreCase(AkBlob.WRAPPED)) {
             state = BlobRef.LeadingBitState.YES;
-            UUID id;
-            TransactionService txnService = context.getQueryContext().getServiceManager().getServiceByClass(TransactionService.class);
-            if (txnService instanceof FDBTransactionService) {
-                Transaction tr = ((FDBTransactionService) txnService).getTransaction(context.getQueryContext().getStore().getSession()).getTransaction();
-                id = FDBStore.writeDataToNewBlob(tr, data);
-                byte[] tmp = new byte[17];
-                tmp[0] = BlobRef.LONG_LOB;
-                System.arraycopy(AkGUID.uuidToBytes(id), 0, tmp, 1, 16);
-                data = tmp;
-            }
+            UUID id = FDBStore.writeDataToNewBlob(context.getQueryContext().getSession(), data);
+            byte[] tmp = new byte[17];
+            tmp[0] = BlobRef.LONG_LOB;
+            System.arraycopy(AkGUID.uuidToBytes(id), 0, tmp, 1, 16);
+            data = tmp;
         }
 
         BlobRef blob = new BlobRef(data, state, BlobRef.LobType.UNKNOWN, BlobRef.LobType.LONG_LOB);

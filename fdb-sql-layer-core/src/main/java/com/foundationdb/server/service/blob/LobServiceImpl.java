@@ -26,9 +26,13 @@ import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.error.LobException;
 import com.foundationdb.TransactionContext;
 import com.foundationdb.directory.NoSuchDirectoryException;
-import com.foundationdb.server.service.*;
+import com.foundationdb.server.service.session.Session;
+import com.foundationdb.server.service.Service;
+import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.security.SecurityService;
+import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.FDBHolder;
+import com.foundationdb.server.store.FDBTransactionService;
 import com.google.inject.Inject;
 
 import java.util.Arrays;
@@ -39,6 +43,7 @@ import java.util.UUID;
 public class LobServiceImpl implements Service, LobService {
     private DirectorySubspace lobDirectory;
     private FDBHolder fdbHolder;
+    private FDBTransactionService transactionService;
     private final SecurityService securityService;
     private final ServiceManager serviceManager;
     private final String LOB_DIRECTORY = "lobs";
@@ -53,13 +58,13 @@ public class LobServiceImpl implements Service, LobService {
     public void checkAndCleanBlobs(List<?> lobIds) {
         DirectorySubspace ds;
         SQLBlob blob;
-        TransactionContext tcx = getTcx();
+        TransactionContext tcx = getTxc();
         List<UUID> toDo = new ArrayList<>();        
         if (lobIds.size() > 0 ) {
             for (Object lob : lobIds) {
+                // List may be over complete, existence is not sure
                 if (lob instanceof String) {
                     List<String> path = Arrays.asList((String)lob);
-                    // List may be over complete, existence is not sure
                     if (lobDirectory.exists(tcx, path).get()) {
                         ds = lobDirectory.open(tcx, path).get();
                         blob = new SQLBlob(ds);
@@ -73,7 +78,7 @@ public class LobServiceImpl implements Service, LobService {
                         ds = lobDirectory.open(tcx, path).get();
                         blob = new SQLBlob(ds);
                         if (!blob.isLinked(tcx).get()) {
-                            toDo.add((UUID)lob);
+                            toDo.add((UUID) lob);
                         }
                     }                    
                 }
@@ -84,31 +89,31 @@ public class LobServiceImpl implements Service, LobService {
 
     @Override
     public void runLobGarbageCollector() {
-        List<String> lobs = lobDirectory.list(getTcx()).get();
+        List<String> lobs = lobDirectory.list(getTxc()).get();
         checkAndCleanBlobs(lobs);
     }
 
     
     @Override
-    public void createNewLob(TransactionContext tcx, UUID lobId) {
-        lobDirectory.create(tcx, Arrays.asList(lobId.toString())).get();
+    public void createNewLob(Session session, UUID lobId) {
+        lobDirectory.create(getTxc(session), Arrays.asList(lobId.toString())).get();
     }
 
     @Override
-    public boolean existsLob(TransactionContext tcx, UUID lobId) {
-        return lobDirectory.exists(tcx, Arrays.asList(lobId.toString())).get();
+    public boolean existsLob(Session session, UUID lobId) {
+        return lobDirectory.exists(getTxc(session), Arrays.asList(lobId.toString())).get();
     }
 
     @Override
-    public void deleteLob(TransactionContext tcx, UUID lobId) {
-        lobDirectory.removeIfExists(tcx, Arrays.asList(lobId.toString())).get();
+    public void deleteLob(Session session, UUID lobId) {
+        lobDirectory.removeIfExists(getTxc(session), Arrays.asList(lobId.toString())).get();
     }
 
     @Override
     public void deleteLobs(UUID[] lobIds) {
         List<Future<Boolean>> done = new ArrayList<>();
         for (UUID lob : lobIds) {
-            done.add(lobDirectory.removeIfExists(getTcx(), Arrays.asList(lob.toString())));
+            done.add(lobDirectory.removeIfExists(getTxc(), Arrays.asList(lob.toString())));
         }
         for (Future<Boolean> item : done) {
             item.get();
@@ -116,11 +121,11 @@ public class LobServiceImpl implements Service, LobService {
     }
 
     @Override
-    public void moveLob(TransactionContext tcx, final UUID oldId, UUID newId) {
+    public void moveLob(Session session, final UUID oldId, UUID newId) {
         List<String> newPathTmp = new ArrayList<>(lobDirectory.getPath());
         newPathTmp.add(newId.toString());
         final List<String> newPath = new ArrayList<>(newPathTmp);
-        tcx.run(new Function<Transaction, Void>() {
+        getTxc(session).run(new Function<Transaction, Void>() {
             @Override
             public Void apply(Transaction tr) {
                 DirectorySubspace ds = lobDirectory.open(tr, Arrays.asList(oldId.toString())).get();
@@ -131,8 +136,8 @@ public class LobServiceImpl implements Service, LobService {
     }
 
     @Override
-    public void linkTableBlob(TransactionContext tcx, final UUID lobId, final int tableId) {
-        tcx.run(new Function<Transaction, Void>() {
+    public void linkTableBlob(Session session, final UUID lobId, final int tableId) {
+        getTxc(session).run(new Function<Transaction, Void>() {
             @Override
             public Void apply(Transaction tr) {
                 SQLBlob blob = openBlob(tr, lobId);
@@ -149,8 +154,8 @@ public class LobServiceImpl implements Service, LobService {
     }
 
     @Override
-    public long sizeBlob(TransactionContext tcx, final UUID lobId) {
-        return tcx.run(new Function<Transaction, Long>() {
+    public long sizeBlob(Session session, final UUID lobId) {
+        return getTxc(session).run(new Function<Transaction, Long>() {
             @Override
             public Long apply(Transaction tr) {
                 SQLBlob blob = openBlob(tr, lobId);
@@ -160,8 +165,8 @@ public class LobServiceImpl implements Service, LobService {
     }
 
     @Override
-    public byte[] readBlob(TransactionContext tcx, final UUID lobId, final long offset, final int length) {
-        byte[] res =  tcx.run(new Function<Transaction, byte[]>() {
+    public byte[] readBlob(Session session, final UUID lobId, final long offset, final int length) {
+        byte[] res =  getTxc(session).run(new Function<Transaction, byte[]>() {
             @Override
             public byte[] apply(Transaction tr) {
                 SQLBlob blob = openBlob(tr, lobId);
@@ -172,8 +177,8 @@ public class LobServiceImpl implements Service, LobService {
     }
 
     @Override
-    public byte[] readBlob(TransactionContext tcx, final UUID lobId) {
-        return tcx.run(new Function<Transaction, byte[]>() {
+    public byte[] readBlob(Session session, final UUID lobId) {
+        return getTxc(session).run(new Function<Transaction, byte[]>() {
             @Override
             public byte[] apply(Transaction tr) {
                 SQLBlob blob = openBlob(tr, lobId);
@@ -183,8 +188,8 @@ public class LobServiceImpl implements Service, LobService {
     }
 
     @Override
-    public void writeBlob(TransactionContext tcx, final UUID lobId, final long offset, final byte[] data) {
-        tcx.run(new Function<Transaction, Void>() {
+    public void writeBlob(Session session, final UUID lobId, final long offset, final byte[] data) {
+        getTxc(session).run(new Function<Transaction, Void>() {
             @Override
             public Void apply(Transaction tr) {
                 SQLBlob blob = openBlob(tr, lobId);
@@ -195,8 +200,8 @@ public class LobServiceImpl implements Service, LobService {
     }
 
     @Override
-    public void appendBlob(TransactionContext tcx, final UUID lobId, final byte[] data) {
-            tcx.run(new Function<Transaction, Void>() {
+    public void appendBlob(Session session, final UUID lobId, final byte[] data) {
+            getTxc(session).run(new Function<Transaction, Void>() {
                 @Override
                 public Void apply(Transaction tr) {
                     SQLBlob blob = openBlob(tr, lobId);
@@ -207,8 +212,8 @@ public class LobServiceImpl implements Service, LobService {
     }
 
     @Override
-    public void truncateBlob(TransactionContext tcx, final UUID lobId, final long size) {
-        tcx.run(new Function<Transaction, Void>() {
+    public void truncateBlob(Session session, final UUID lobId, final long size) {
+        getTxc(session).run(new Function<Transaction, Void>() {
             @Override
             public Void apply(Transaction tr) {
                 SQLBlob blob = openBlob(tr, lobId);
@@ -219,14 +224,15 @@ public class LobServiceImpl implements Service, LobService {
     }
 
     @Override
-    public void clearAllLobs(TransactionContext tcx) {
-        lobDirectory.removeIfExists(tcx).get();
-        lobDirectory = fdbHolder.getRootDirectory().create(tcx, Arrays.asList(LOB_DIRECTORY)).get();
+    public void clearAllLobs(Session session) { 
+        TransactionContext txc = getTxc(session);
+        lobDirectory.removeIfExists(txc).get();
+        lobDirectory = fdbHolder.getRootDirectory().create(txc, Arrays.asList(LOB_DIRECTORY)).get();
     }
     
     @Override
-    public void verifyAccessPermission(TransactionContext tcx, final QueryContext context, final UUID lobId) {
-        tcx.run(new Function<Transaction, Void>() {
+    public void verifyAccessPermission(Session session, final QueryContext context, final UUID lobId) {
+        getTxc(session).run(new Function<Transaction, Void>() {
             @Override
             public Void apply(Transaction tr) {
                 SQLBlob blob = openBlob(tr, lobId);
@@ -253,13 +259,21 @@ public class LobServiceImpl implements Service, LobService {
         }
     }
     
-    private TransactionContext getTcx(){
+    private TransactionContext getTxc(){
         return fdbHolder.getTransactionContext();
     }
+    
+    private TransactionContext getTxc(Session session) {
+        return transactionService.getTransaction(session).getTransaction();
+    } 
     
     @Override
     public void start() {
         this.fdbHolder = serviceManager.getServiceByClass(FDBHolder.class);
+        TransactionService ts = serviceManager.getServiceByClass(TransactionService.class);
+        if (ts instanceof FDBTransactionService) {
+            this.transactionService = (FDBTransactionService)ts;
+        }
         this.lobDirectory = fdbHolder.getRootDirectory().createOrOpen(fdbHolder.getTransactionContext(), Arrays.asList(LOB_DIRECTORY)).get();
     }
 

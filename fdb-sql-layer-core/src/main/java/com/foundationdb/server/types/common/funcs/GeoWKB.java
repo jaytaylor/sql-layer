@@ -17,13 +17,10 @@
 
 package com.foundationdb.server.types.common.funcs;
 
-import com.foundationdb.Transaction;
 import com.foundationdb.server.error.InvalidSpatialObjectException;
 import com.foundationdb.server.error.InvalidArgumentTypeException;
 import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.service.blob.LobService;
-import com.foundationdb.server.service.transaction.TransactionService;
-import com.foundationdb.server.store.FDBTransactionService;
 import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
@@ -80,12 +77,8 @@ public class GeoWKB extends TScalarBase
                 if (blob.isShortLob()) {
                     data = blob.getBytes();
                 } else {
-                    TransactionService txnService = context.getQueryContext().getServiceManager().getServiceByClass(TransactionService.class);
-                    if (txnService instanceof FDBTransactionService) {
-                        Transaction tr = ((FDBTransactionService) txnService).getTransaction(context.getQueryContext().getStore().getSession()).getTransaction();
-                        LobService ls = context.getQueryContext().getServiceManager().getServiceByClass(LobService.class);
-                        data = ls.readBlob(tr, blob.getId());
-                    }
+                    LobService ls = context.getQueryContext().getServiceManager().getServiceByClass(LobService.class);
+                    data = ls.readBlob(context.getQueryContext().getSession(), blob.getId());
                 }
             }
         }
