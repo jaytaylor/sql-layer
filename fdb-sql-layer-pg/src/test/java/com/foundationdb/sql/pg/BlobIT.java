@@ -864,10 +864,10 @@ public class BlobIT extends PostgresServerITBase {
         preparedStatement.close();
         conn.close();
 
-        for (int k = 0; k < 2; k++) {
+        for (int k = 0; k < 3; k++) {
             Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids[k])));
         }
-        for (int k = 2; k < n; k++) {
+        for (int k = 3; k < n; k++) {
             Assert.assertFalse(ls.existsLob(getTransaction(), UUID.fromString(ids[k])));
         }
         commitOrRollback();
@@ -890,7 +890,7 @@ public class BlobIT extends PostgresServerITBase {
         }
         preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
         for (int ii = 0; ii < n; ii++ ) {
-            preparedStatement.setInt(1, ii*10);
+            preparedStatement.setInt(1, ii);
             preparedStatement.setInt(2, ii);
             preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
             preparedStatement.execute();
@@ -929,12 +929,12 @@ public class BlobIT extends PostgresServerITBase {
 
         tr = getTransaction();
 
-        for (int k = 0; k < 2; k++) {
+        for (int k = 0; k < 3; k++) {
             Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t1[k])));
             Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t2[k])));
         }
         
-        for (int k = 2; k < n; k++) {
+        for (int k = 3; k < n; k++) {
             Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t1[k])));
             Assert.assertFalse(ls.existsLob(tr, UUID.fromString(ids_t2[k])));
         }
@@ -958,7 +958,7 @@ public class BlobIT extends PostgresServerITBase {
         }
         preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
         for (int ii = 0; ii < n; ii++ ) {
-            preparedStatement.setInt(1, ii*10);
+            preparedStatement.setInt(1, ii);
             preparedStatement.setInt(2, ii);
             preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
             preparedStatement.execute();
@@ -997,12 +997,12 @@ public class BlobIT extends PostgresServerITBase {
 
         tr = getTransaction();
 
-        for (int k = 0; k < 2; k++) {
+        for (int k = 0; k < 3; k++) {
             Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t1[k])));
             Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t2[k])));
         }
 
-        for (int k = 2; k < n; k++) {
+        for (int k = 3; k < n; k++) {
             Assert.assertFalse(ls.existsLob(tr, UUID.fromString(ids_t1[k])));
             Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t2[k])));
         }
@@ -1127,7 +1127,7 @@ public class BlobIT extends PostgresServerITBase {
         }
         preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
         for (int ii = 0; ii < n; ii++ ) {
-            preparedStatement.setInt(1, ii*10);
+            preparedStatement.setInt(1, ii);
             preparedStatement.setInt(2, ii);
             preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
             preparedStatement.execute();
@@ -1161,11 +1161,10 @@ public class BlobIT extends PostgresServerITBase {
         commitOrRollback();
 
         stmt.execute("UPDATE t2 SET bl_t2 = create_long_blob(unhex('030405')) WHERE id_t2 = 2");
-        stmt.execute("SELECT id_blob(bl_t2), isTrue(unwrap_blob(bl_t2) = unhex('030405')) FROM t2 WHERE id_t2 = 2");
+        stmt.execute("SELECT id_blob(bl_t2) FROM t2 WHERE id_t2 = 2");
         ResultSet resultSet = stmt.getResultSet();
-        Assert.assertTrue(resultSet.next());
+        resultSet.next();
         String blobId = resultSet.getString(1);
-        Assert.assertTrue(resultSet.getBoolean(2));
         stmt.close();
         conn.close();
 
@@ -1178,7 +1177,7 @@ public class BlobIT extends PostgresServerITBase {
         Assert.assertFalse(ls.existsLob(getTransaction(), UUID.fromString(ids_t2[2])));
         Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_t1[2])));
         Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(blobId)));
-        for (int k = 2; k < n; k++) {
+        for (int k = 3; k < n; k++) {
             Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t1[k])));
             Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t2[k])));
         }
@@ -1202,7 +1201,7 @@ public class BlobIT extends PostgresServerITBase {
         }
         preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
         for (int ii = 0; ii < n; ii++ ) {
-            preparedStatement.setInt(1, ii*10);
+            preparedStatement.setInt(1, ii);
             preparedStatement.setInt(2, ii);
             preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
             preparedStatement.execute();
@@ -1253,7 +1252,7 @@ public class BlobIT extends PostgresServerITBase {
         Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_t2[2])));
         Assert.assertFalse(ls.existsLob(getTransaction(), UUID.fromString(ids_t1[2])));
         Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(blobId)));
-        for (int k = 2; k < n; k++) {
+        for (int k = 3; k < n; k++) {
             Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t1[k])));
             Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t2[k])));
         }
