@@ -1,0 +1,12 @@
+# sql-layer issue 690
+---
+- Statement: SELECT TIMESTAMP '2015-02-18 14:37:30'
+- output: [ [!re '2015-02-18 14:37:30([.]0)?'] ]
+
+# Failed with truncate error and clamped to epoch start
+---
+- Statement: SELECT TIMESTAMP '1969-08-18 12:34:56'
+- output: [ [!re '1969-08-18 12:34:56([.]0)?'] ]
+---
+- Statement: SELECT TIMESTAMP '1900-08-18 12:34:56'
+- output: [ [!re '1900-08-18 12:34:56([.]0)?'] ]

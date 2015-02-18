@@ -1,0 +1,21 @@
+# sql-layer issue 525
+---
+- CreateTable: i (iid INT PRIMARY KEY, sku VARCHAR(5), color VARCHAR(32))
+---
+- Statement: INSERT INTO i VALUES (1, 'a1234', 'RED')
+---
+- Statement: INSERT INTO i VALUES (2, 'a4567', 'YELLOW')
+---
+- Statement: INSERT INTO i VALUES (3, 'b8973', 'BLUE')
+---
+- Statement: INSERT INTO i VALUES (4, 'c3456', 'BLACK')
+---
+- Statement: INSERT INTO i VALUES (5, 'a0005', 'GREEN')
+---
+- Statement: INSERT INTO i VALUES (6, 'e9874', 'BROWN')
+---
+- Statement: INSERT INTO i VALUES (7, 'a1478', 'YELLOW')
+---
+- Statement: select count(*) from i where i.sku in (select sku from i where i.sku like 'a%' order by i.color desc limit 10)
+- output: [ [4] ]
+

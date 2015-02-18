@@ -1,0 +1,20 @@
+# Reported on community site
+---
+- CreateTable: account(id GUID DEFAULT CREATE_RANDOM_GUID(), a VARCHAR(32))
+
+---
+- Statement: SET OutputFormat TO 'json'
+
+# Failed with NullPointerException
+---
+- Statement: INSERT INTO account values ('7560ca74-55c4-4018-ac69-09fd97c97bac', '0') RETURNING id
+- output_already_ordered: [ ['{"id":"7560ca74-55c4-4018-ac69-09fd97c97bac"}'] ]
+---
+- Statement: UPDATE account SET a='1' WHERE id='7560ca74-55c4-4018-ac69-09fd97c97bac' RETURNING id
+- output_already_ordered: [ ['{"id":"7560ca74-55c4-4018-ac69-09fd97c97bac"}'] ]
+---
+- Statement: DELETE FROM account WHERE a='1' RETURNING id
+- output_already_ordered: [ ['{"id":"7560ca74-55c4-4018-ac69-09fd97c97bac"}'] ]
+
+---
+- Statement: SET OutputFormat TO DEFAULT
