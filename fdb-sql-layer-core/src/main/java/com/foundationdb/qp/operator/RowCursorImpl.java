@@ -43,7 +43,7 @@ import com.foundationdb.server.api.dml.ColumnSelector;
  *  * @see com.foundationdb.qp.storeadapter.indexcursor.IndexCursorSpatial_NearPoint
  *  * @see com.foundationdb.qp.storeadapter.indexcursor.IndexCursorUnidrectional
  *  
- * @see com.foundationdb.qp.memoryadapter.MemoryGroupCursor
+ * @see com.foundationdb.qp.virtualadapter.VirtualGroupCursor
  * @see com.foundationdb.qp.storeadapter.FDBGroupCursor
  * @see com.foundationdb.qp.storeadapter.PersistitGroupCursor
  */

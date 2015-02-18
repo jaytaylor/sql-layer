@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.qp.memoryadapter;
+package com.foundationdb.qp.virtualadapter;
 
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.qp.operator.CursorLifecycle;
@@ -24,7 +24,7 @@ import com.foundationdb.qp.operator.RowCursorImpl;
 import com.foundationdb.qp.row.HKey;
 import com.foundationdb.qp.row.Row;
 
-public class MemoryGroupCursor extends RowCursorImpl implements GroupCursor {
+public class VirtualGroupCursor extends RowCursorImpl implements GroupCursor {
 
     @Override
     public void rebind(HKey hKey, boolean deep) {
@@ -71,15 +71,15 @@ public class MemoryGroupCursor extends RowCursorImpl implements GroupCursor {
         public void close();
     }
     
-    public MemoryGroupCursor (MemoryAdapter adapter, Group group) {
+    public VirtualGroupCursor(VirtualAdapter adapter, Group group) {
         this.adapter = adapter;
-        this.factory = MemoryAdapter.getMemoryTableFactory(group);
+        this.factory = VirtualAdapter.getFactory(group);
         this.group = group;
         assert this.factory != null : group;
     }
     
-    private final MemoryAdapter adapter;
-    private final MemoryTableFactory factory;
+    private final VirtualAdapter adapter;
+    private final VirtualScanFactory factory;
     private GroupScan scan;
     private Group group;
 }

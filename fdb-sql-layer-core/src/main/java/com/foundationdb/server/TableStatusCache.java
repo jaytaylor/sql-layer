@@ -18,7 +18,7 @@
 package com.foundationdb.server;
 
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.qp.virtualadapter.VirtualScanFactory;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
 
@@ -34,14 +34,14 @@ public interface TableStatusCache {
     TableStatus createTableStatus(Table table);
 
     /**
-     * Retrieve, or create, a new table status for a memory table that will be
+     * Retrieve, or create, a new table status for a virtual table that will be
      * serviced by the given factory. Unlike statuses returned from the
      * {@link #createTableStatus(int)} method, these are saved by the TableStatusCache.
      * @param tableID ID of the table.
      * @param factory Factory providing rowCount.
      * @return Associated TableStatus;
      */
-    TableStatus getOrCreateMemoryTableStatus(int tableID, MemoryTableFactory factory);
+    TableStatus getOrCreateVirtualTableStatus(int tableID, VirtualScanFactory factory);
 
     /**
      * Clean up any AIS associated state stored by this cache or any of its

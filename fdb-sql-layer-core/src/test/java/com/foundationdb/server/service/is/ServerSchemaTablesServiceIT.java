@@ -18,11 +18,10 @@
 package com.foundationdb.server.service.is;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
-import com.foundationdb.qp.memoryadapter.MemoryAdapter;
+import com.foundationdb.qp.virtualadapter.VirtualAdapter;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.QueryContext;
@@ -37,15 +36,11 @@ import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.server.test.it.qp.TestRow;
-import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.value.Value;
 import com.foundationdb.server.types.TPreptimeValue;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
-import com.foundationdb.server.types.texpressions.TPreparedField;
 import com.foundationdb.server.types.texpressions.TPreparedLiteral;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -191,7 +186,7 @@ public class ServerSchemaTablesServiceIT extends ITBase
         Table table = ais().getTable(tableName);
         Schema schema = SchemaCache.globalSchema(ais());
         TableRowType rowType = schema.tableRowType(table);
-        MemoryAdapter adapter = new MemoryAdapter(session(), configService());
+        VirtualAdapter adapter = new VirtualAdapter(session(), configService());
 
         QueryContext queryContext = new SimpleQueryContext(adapter);
         Row[] rows = objectToRows(expected, rowType);
@@ -208,7 +203,7 @@ public class ServerSchemaTablesServiceIT extends ITBase
         Table table = ais().getTable(tableName);
         Schema schema = SchemaCache.globalSchema(ais());
         TableRowType rowType = schema.tableRowType(table);
-        MemoryAdapter adapter = new MemoryAdapter(session(), configService());
+        VirtualAdapter adapter = new VirtualAdapter(session(), configService());
 
         QueryContext queryContext = new SimpleQueryContext(adapter);
         
@@ -237,7 +232,7 @@ public class ServerSchemaTablesServiceIT extends ITBase
         Table serverTable = ais().getTable(table);
         Schema schema = SchemaCache.globalSchema(ais());
         TableRowType rowType = schema.tableRowType(serverTable);
-        MemoryAdapter adapter = new MemoryAdapter(session(), configService());
+        VirtualAdapter adapter = new VirtualAdapter(session(), configService());
 
         Row[] rows = objectToRows(expected, rowType);
 

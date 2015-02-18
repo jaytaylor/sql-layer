@@ -22,31 +22,31 @@ import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.CommonProtobuf;
-import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.qp.virtualadapter.VirtualScanFactory;
 
 import java.util.Map;
 
-public class MemoryTableStorageFormat extends StorageFormat<MemoryTableStorageDescription>
+public class VirtualTableStorageFormat extends StorageFormat<VirtualTableStorageDescription>
 {
-    private final Map<TableName,MemoryTableFactory> memoryTableFactories;
+    private final Map<TableName,VirtualScanFactory> virtualScanFactories;
 
-    final static String identifier = "memory";
+    final static String identifier = "virtual";
 
-    private MemoryTableStorageFormat(Map<TableName,MemoryTableFactory> memoryTableFactories) {
-        this.memoryTableFactories = memoryTableFactories;
+    private VirtualTableStorageFormat(Map<TableName, VirtualScanFactory> virtualScanFactories) {
+        this.virtualScanFactories = virtualScanFactories;
     }
 
-    public static void register(StorageFormatRegistry registry, Map<TableName,MemoryTableFactory> memoryTableFactories) {
-        registry.registerStorageFormat(CommonProtobuf.memoryTable, null, MemoryTableStorageDescription.class, new MemoryTableStorageFormat(memoryTableFactories));
+    public static void register(StorageFormatRegistry registry, Map<TableName,VirtualScanFactory> virtualScanFactories) {
+        registry.registerStorageFormat(CommonProtobuf.virtualTable, null, VirtualTableStorageDescription.class, new VirtualTableStorageFormat(virtualScanFactories));
     }
 
-    public MemoryTableStorageDescription readProtobuf(Storage pbStorage, HasStorage forObject, MemoryTableStorageDescription storageDescription) {
-        switch (pbStorage.getExtension(CommonProtobuf.memoryTable)) {
-        case MEMORY_TABLE_FACTORY:
+    public VirtualTableStorageDescription readProtobuf(Storage pbStorage, HasStorage forObject, VirtualTableStorageDescription storageDescription) {
+        switch (pbStorage.getExtension(CommonProtobuf.virtualTable)) {
+        case VIRTUAL_SCAN_FACTORY:
             if (storageDescription == null) {
-                storageDescription = new MemoryTableStorageDescription(forObject, identifier);
+                storageDescription = new VirtualTableStorageDescription(forObject, identifier);
             }
-            storageDescription.setMemoryTableFactory(memoryTableFactories.get(((Group)forObject).getName()));
+            storageDescription.setVirtualScanFactory(virtualScanFactories.get(((Group)forObject).getName()));
             break;
         }
         return storageDescription;

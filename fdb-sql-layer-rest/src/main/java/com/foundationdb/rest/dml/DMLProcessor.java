@@ -97,8 +97,8 @@ public abstract class DMLProcessor {
         }
         
         private StoreAdapter getAdapter() {
-            // no writing to the memory tables. 
-            if (table.hasMemoryTableFactory())
+            // no writing to the virtual tables.
+            if (table.isVirtual())
                 throw new ProtectedTableDDLException (table.getName());
             return store.createAdapter(session);
         }
