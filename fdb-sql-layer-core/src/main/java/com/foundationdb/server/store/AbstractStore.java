@@ -57,6 +57,7 @@ import com.foundationdb.server.service.listener.RowListener;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.aksql.aktypes.*;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.sql.optimizer.rule.PlanGenerator;
@@ -764,10 +765,13 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
             tablesRequiringHKeyMaintenance = hKeyDependentTableOrdinals(oldRow.rowType());
         } else if (propagateHKeyChanges) {
             tablesRequiringHKeyMaintenance = analyzeFieldChanges(oldRow, newRow);
-        }
-
+        } 
+        
+        boolean oldRowContainsBlob = AkBlob.containsBlob(oldRow.rowType());
+        boolean newRowContainsBlob = AkBlob.containsBlob(newRow.rowType());
+        
         // May still be null (i.e. no pk or fk changes), check again
-        if(tablesRequiringHKeyMaintenance == null) {
+        if(tablesRequiringHKeyMaintenance == null && !oldRowContainsBlob && !newRowContainsBlob) {
             packRow(session, storeData, newRow);
 
             for(RowListener listener : listenerService.getRowListeners()) {
