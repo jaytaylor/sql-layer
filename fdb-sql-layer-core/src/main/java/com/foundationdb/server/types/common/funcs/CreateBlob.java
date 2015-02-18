@@ -22,7 +22,7 @@ import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.service.blob.LobService;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.transaction.TransactionService;
-import com.foundationdb.server.store.FDBTransactionService;
+import com.foundationdb.server.store.*;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
@@ -86,12 +86,7 @@ public class CreateBlob extends TScalarBase {
                     data = tmp;
                 } 
                 else {
-                    UUID id = UUID.randomUUID();
-                    LobService lobService = sm.getServiceByClass(LobService.class);
-                    lobService.createNewLob(tr, id);
-                    if (data.length > 0) {
-                        lobService.writeBlob(tr, id, 0, data);
-                    }
+                    UUID id = FDBStore.writeDataToNewBlob(tr, data); 
                     byte[] tmp = new byte[17];
                     tmp[0] = BlobRef.LONG_LOB;
                     System.arraycopy(AkGUID.uuidToBytes(id), 0, tmp, 1, 16);
@@ -106,11 +101,6 @@ public class CreateBlob extends TScalarBase {
     @Override
     public String displayName() {
         return "CREATE_BLOB";
-    }
-
-    @Override
-    protected boolean neverConstant() {
-        return false;
     }
 
     @Override

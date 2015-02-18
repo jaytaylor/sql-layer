@@ -69,22 +69,19 @@ public class UnwrapBlob extends TScalarBase {
             Object o = inputs.get(0).getObject();
             if (o instanceof BlobRef) {
                 blob = (BlobRef) o;
-            } else {
-                throw new InvalidArgumentTypeException("Should be a blob column");
-            }
-            String mode = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.RETURN_UNWRAPPED);
-            if (mode.equalsIgnoreCase(AkBlob.UNWRAPPED)){
-                data = blob.getBytes();
-            }
-            else {
-                if (blob.isShortLob()) {
+                String mode = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.RETURN_UNWRAPPED);
+                if (mode.equalsIgnoreCase(AkBlob.UNWRAPPED)) {
                     data = blob.getBytes();
                 } else {
-                    TransactionService txnService = context.getQueryContext().getServiceManager().getServiceByClass(TransactionService.class);
-                    if (txnService instanceof FDBTransactionService) {
-                        Transaction tr = ((FDBTransactionService) txnService).getTransaction(context.getQueryContext().getStore().getSession()).getTransaction();
-                        LobService ls = context.getQueryContext().getServiceManager().getServiceByClass(LobService.class);
-                        data = ls.readBlob(tr, blob.getId());
+                    if (blob.isShortLob()) {
+                        data = blob.getBytes();
+                    } else {
+                        TransactionService txnService = context.getQueryContext().getServiceManager().getServiceByClass(TransactionService.class);
+                        if (txnService instanceof FDBTransactionService) {
+                            Transaction tr = ((FDBTransactionService) txnService).getTransaction(context.getQueryContext().getStore().getSession()).getTransaction();
+                            LobService ls = context.getQueryContext().getServiceManager().getServiceByClass(LobService.class);
+                            data = ls.readBlob(tr, blob.getId());
+                        }
                     }
                 }
             }
@@ -95,11 +92,6 @@ public class UnwrapBlob extends TScalarBase {
     @Override
     public String displayName() {
         return "UNWRAP_BLOB";
-    }
-
-    @Override
-    protected boolean neverConstant() {
-        return false;
     }
 
     @Override

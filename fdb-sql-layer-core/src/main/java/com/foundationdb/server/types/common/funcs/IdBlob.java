@@ -77,11 +77,6 @@ public class IdBlob extends TScalarBase {
     }
 
     @Override
-    protected boolean neverConstant() {
-        return false;
-    }
-
-    @Override
     public TOverloadResult resultType() {
         return TOverloadResult.fixed(AkGUID.INSTANCE);
     }

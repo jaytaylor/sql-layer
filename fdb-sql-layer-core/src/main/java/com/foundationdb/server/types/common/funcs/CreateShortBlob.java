@@ -85,11 +85,6 @@ public class CreateShortBlob extends TScalarBase {
     }
 
     @Override
-    protected boolean neverConstant() {
-        return false;
-    }
-
-    @Override
     public TOverloadResult resultType() {
         return TOverloadResult.fixed(AkBlob.INSTANCE);
     }

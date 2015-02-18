@@ -94,11 +94,6 @@ public class BlobSize extends TScalarBase {
     }
 
     @Override
-    protected boolean neverConstant() {
-        return false;
-    }
-
-    @Override
     public String[] registeredNames() {
         return new String[] {displayName(), "octet_length"};
     }

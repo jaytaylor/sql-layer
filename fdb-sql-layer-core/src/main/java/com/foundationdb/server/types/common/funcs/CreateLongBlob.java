@@ -23,6 +23,7 @@ import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.service.blob.LobService;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.FDBTransactionService;
+import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
@@ -70,22 +71,11 @@ public class CreateLongBlob extends TScalarBase {
         BlobRef.LeadingBitState state = BlobRef.LeadingBitState.NO;
         if (mode.equalsIgnoreCase(AkBlob.WRAPPED)) {
             state = BlobRef.LeadingBitState.YES;
-            /*
-            byte[] tmp = new byte[data.length + 1];
-            tmp[0] = BlobRef.LONG_LOB;
-            System.arraycopy(data, 0, tmp, 1, data.length);
-            data = tmp;
-            */
-            
-            UUID id = UUID.randomUUID();
+            UUID id;
             TransactionService txnService = context.getQueryContext().getServiceManager().getServiceByClass(TransactionService.class);
             if (txnService instanceof FDBTransactionService) {
                 Transaction tr = ((FDBTransactionService) txnService).getTransaction(context.getQueryContext().getStore().getSession()).getTransaction();
-                LobService lobService = context.getQueryContext().getServiceManager().getServiceByClass(LobService.class);
-                lobService.createNewLob(tr, id);
-                if (data.length > 0) {
-                    lobService.writeBlob(tr, id, 0, data);
-                }
+                id = FDBStore.writeDataToNewBlob(tr, data);
                 byte[] tmp = new byte[17];
                 tmp[0] = BlobRef.LONG_LOB;
                 System.arraycopy(AkGUID.uuidToBytes(id), 0, tmp, 1, 16);
@@ -100,11 +90,6 @@ public class CreateLongBlob extends TScalarBase {
     @Override
     public String displayName() {
         return "CREATE_LONG_BLOB";
-    }
-
-    @Override
-    protected boolean neverConstant() {
-        return true;
     }
 
     @Override

@@ -17,9 +17,7 @@
 
 package com.foundationdb.server.store;
 
-import com.foundationdb.KeyValue;
-import com.foundationdb.Range;
-import com.foundationdb.Transaction;
+import com.foundationdb.*;
 import com.foundationdb.async.Function;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
@@ -97,7 +95,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     private final FDBTransactionService txnService;
     private final MetricsService metricsService;
     private final ReadWriteMap<Object, SequenceCache> sequenceCache;
-    private LobService lobService;
+    private static LobService lobService;
 
     private static final String ROWS_FETCHED_METRIC = "SQLLayerRowsFetched";
     private static final String ROWS_STORED_METRIC = "SQLLayerRowsStored";
@@ -711,9 +709,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                     }
                     else if (blobRefTmp.isShortLob()) { 
                         if (blobRefTmp.getBytes().length >= AkBlob.LOB_SWITCH_SIZE) {
-                            UUID id = UUID.randomUUID();
-                            lobService.createNewLob(tr, id);
-                            lobService.writeBlob(tr, id, 0, blobRefTmp.getBytes());
+                            UUID id = writeDataToNewBlob(tr, blobRefTmp.getBytes());
                             value = updateValue(id);
                             type = BlobRef.LobType.LONG_LOB;
                         } else {
@@ -730,9 +726,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                             type = BlobRef.LobType.LONG_LOB;
                             value = updateValue(blobRefInit.getId());
                         } else {
-                            UUID id = UUID.randomUUID();
-                            lobService.createNewLob(tr, id);
-                            lobService.writeBlob(tr, id, 0, blobRefTmp.getBytes());
+                            UUID id = writeDataToNewBlob(tr, blobRefTmp.getBytes());
                             type = BlobRef.LobType.LONG_LOB;
                             value = updateValue(id);
                         }
@@ -753,6 +747,12 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         return changedRow ? resRow : row;
     }
     
+    public static UUID writeDataToNewBlob(TransactionContext tr, byte[] data) {
+        UUID id = UUID.randomUUID();
+        lobService.createNewLob(tr, id);
+        lobService.writeBlob(tr, id, 0, data);
+        return id;
+    }
     
     
     private byte[] updateValue(UUID id) {
