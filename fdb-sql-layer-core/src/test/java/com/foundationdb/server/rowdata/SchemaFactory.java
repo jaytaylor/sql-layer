@@ -26,7 +26,7 @@ import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.View;
-import com.foundationdb.qp.memoryadapter.MemoryAdapter;
+import com.foundationdb.qp.virtual.VirtualAdapter;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.MemoryOnlyTableStatusCache;
 import com.foundationdb.server.TableStatus;
@@ -138,8 +138,9 @@ public class SchemaFactory {
         // This used to be done in RowDefBuilder#build() but no longer.
         for (final Table table : ais.getTables().values()) {
             final TableStatus status;
-            if (table.hasMemoryTableFactory()) {
-                status = tableStatusCache.getOrCreateMemoryTableStatus(table.getTableId(), MemoryAdapter.getMemoryTableFactory(table));
+            if (table.isVirtual()) {
+                status = tableStatusCache.getOrCreateVirtualTableStatus(table.getTableId(),
+                                                                        VirtualAdapter.getFactory(table));
             } else {
                 status = tableStatusCache.createTableStatus(table);
             }

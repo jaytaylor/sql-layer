@@ -28,8 +28,8 @@ import java.util.TreeMap;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.qp.memoryadapter.MemoryAdapter;
-import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.qp.virtual.VirtualAdapter;
+import com.foundationdb.qp.virtual.VirtualScanFactory;
 import com.foundationdb.server.TableStatusCache;
 import com.foundationdb.server.service.session.Session;
 import org.slf4j.Logger;
@@ -74,7 +74,7 @@ public class RowDefBuilder
         LOG.trace("Built RowDefs: {}", this);
     }
 
-    private RowDef createRowDefCommon(Table table, MemoryTableFactory factory) {
+    private RowDef createRowDefCommon(Table table, VirtualScanFactory factory) {
         return new RowDef(table); // Hooks up table's rowDef too
     }
 
@@ -90,7 +90,7 @@ public class RowDefBuilder
     }
 
     private RowDef createTableRowDef(Table table) {
-        RowDef rowDef = createRowDefCommon(table, table.hasMemoryTableFactory() ? MemoryAdapter.getMemoryTableFactory(table) : null);
+        RowDef rowDef = createRowDefCommon(table, table.isVirtual() ? VirtualAdapter.getFactory(table) : null);
         // parentRowDef
         int[] parentJoinFields;
         if (table.getParentJoin() != null) {

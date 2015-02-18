@@ -35,15 +35,13 @@ import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.blob.BlobAsync;
 import com.foundationdb.directory.DirectorySubspace;
 import com.foundationdb.directory.PathUtil;
-import com.foundationdb.qp.memoryadapter.MemoryAdapter;
-import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.qp.virtual.VirtualAdapter;
 import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.server.FDBTableStatusCache;
 import com.foundationdb.server.TableStatus;
 import com.foundationdb.server.error.FDBAdapterException;
 import com.foundationdb.server.error.MetadataVersionNewerException;
 import com.foundationdb.server.error.MetadataVersionTooOldException;
-import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.rowdata.RowDefBuilder;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
@@ -168,7 +166,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     private FDBTableStatusCache tableStatusCache;
     private AkibanInformationSchema curAIS;
     private NameGenerator nameGenerator;
-    private AkibanInformationSchema memoryTableAIS;
+    private AkibanInformationSchema virtualTableAIS;
 
 
     @Inject
@@ -201,7 +199,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         final boolean clearIncompatibleData = Boolean.parseBoolean(config.getProperty(CLEAR_INCOMPATIBLE_DATA_PROP));
 
         initSchemaManagerDirectory();
-        this.memoryTableAIS = new AkibanInformationSchema();
+        this.virtualTableAIS = new AkibanInformationSchema();
         this.tableStatusCache = new FDBTableStatusCache(holder, txnService);
 
         try(Session session = sessionService.createSession()) {
@@ -257,7 +255,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         this.tableStatusCache = null;
         this.curAIS = null;
         this.nameGenerator = null;
-        this.memoryTableAIS = null;
+        this.virtualTableAIS = null;
     }
 
     @Override
@@ -364,7 +362,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
             @Override
             public void run(Session session, long timestamp) {
                 synchronized(AIS_LOCK) {
-                    saveMemoryTables(newAIS);
+                    saveVirtualTables(newAIS);
                     FDBSchemaManager.this.curAIS = SENTINEL_AIS;
                 }
             }
@@ -589,11 +587,11 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
 
      // TODO: Remove when FDB shutdown hook issue is resolved
      @Override
-     public void unRegisterMemoryInformationSchemaTable(TableName tableName) {
+     public void unRegisterVirtualTable(TableName tableName) {
          if(serviceManager.getState() == ServiceManager.State.STOPPING) {
              return; // Skip as to avoid DB access
          }
-         super.unRegisterMemoryInformationSchemaTable(tableName);
+         super.unRegisterVirtualTable(tableName);
      }
 
     // TODO: Remove when FDB shutdown hook issue is resolved
@@ -758,7 +756,7 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
                 selector = new ProtobufWriter.SingleSchemaSelector(schema) {
                     @Override
                     public Columnar getSelected(Columnar columnar) {
-                        if(columnar.isTable() && ((Table)columnar).hasMemoryTableFactory()) {
+                        if(columnar.isTable() && ((Table)columnar).isVirtual()) {
                             return null;
                         }
                         return columnar;
@@ -796,12 +794,12 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         return buffer;
     }
 
-    private void saveMemoryTables(AkibanInformationSchema newAIS) {
-        // Want *just* non-persisted memory tables and system routines
-        this.memoryTableAIS = aisCloner.clone(newAIS, new ProtobufWriter.TableFilterSelector() {
+    private void saveVirtualTables(AkibanInformationSchema newAIS) {
+        // Want *just* non-persisted virtual tables and system routines
+        this.virtualTableAIS = aisCloner.clone(newAIS, new ProtobufWriter.TableFilterSelector() {
             @Override
             public Columnar getSelected(Columnar columnar) {
-                if(columnar.isTable() && ((Table)columnar).hasMemoryTableFactory()) {
+                if(columnar.isTable() && ((Table)columnar).isVirtual()) {
                     return columnar;
                 }
                 return null;
@@ -836,8 +834,9 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
         // This used to be done in RowDefBuilder#build() but no longer.
         for (final Table table : newAIS.getTables().values()) {
             final TableStatus status;
-            if (table.hasMemoryTableFactory()) {
-                status = tableStatusCache.getOrCreateMemoryTableStatus(table.getTableId(), MemoryAdapter.getMemoryTableFactory(table));
+            if (table.isVirtual()) {
+                status = tableStatusCache.getOrCreateVirtualTableStatus(table.getTableId(),
+                                                                        VirtualAdapter.getFactory(table));
             } else {
                 status = tableStatusCache.createTableStatus(table);
             }
@@ -936,8 +935,8 @@ public class FDBSchemaManager extends AbstractSchemaManager implements Service, 
     }
 
     private ProtobufReader newProtobufReader() {
-        // Start with existing memory tables, merge in stored ones
-        final AkibanInformationSchema newAIS = aisCloner.clone(memoryTableAIS);
+        // Start with existing virtual tables, merge in stored ones
+        final AkibanInformationSchema newAIS = aisCloner.clone(virtualTableAIS);
         return new ProtobufReader(typesRegistryService.getTypesRegistry(), storageFormatRegistry, newAIS);
     }
 

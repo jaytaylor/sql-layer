@@ -41,9 +41,9 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
-import com.foundationdb.qp.memoryadapter.MemoryAdapter;
-import com.foundationdb.qp.memoryadapter.MemoryGroupCursor;
-import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.qp.virtual.VirtualAdapter;
+import com.foundationdb.qp.virtual.VirtualGroupCursor;
+import com.foundationdb.qp.virtual.VirtualScanFactory;
 import com.foundationdb.server.error.DuplicateTableNameException;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.error.ISTableVersionMismatchException;
@@ -86,8 +86,8 @@ public final class SchemaManagerIT extends ITBase {
         });
     }
 
-    private void registerISTable(final Table table, final MemoryTableFactory factory) throws Exception {
-        schemaManager.registerMemoryInformationSchemaTable(table, factory);
+    private void registerISTable(final Table table, final VirtualScanFactory factory) throws Exception {
+        schemaManager.registerVirtualTable(table, factory);
     }
 
     private void registerISTable(final Table table, final int version) throws Exception {
@@ -95,7 +95,7 @@ public final class SchemaManagerIT extends ITBase {
     }
 
     private void unRegisterISTable(final TableName name) throws Exception {
-        schemaManager.unRegisterMemoryInformationSchemaTable(name);
+        schemaManager.unRegisterVirtualTable(name);
     }
 
     private void deleteTableDef(final String schema, final String table) throws Exception {
@@ -403,24 +403,24 @@ public final class SchemaManagerIT extends ITBase {
     }
 
     @Test
-    public void registerMemoryTableBasic() throws Exception {
+    public void registerVirtualTableBasic() throws Exception {
         final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
-        MemoryTableFactory factory = new MemoryTableFactoryMock();
+        VirtualScanFactory factory = new VirtualScanFactoryMock();
         registerISTable(makeSimpleISTable(tableName, ddl().getTypesTranslator()), factory);
 
         {
             Table testTable = ddl().getAIS(session()).getTable(tableName);
             assertNotNull("New table exists", testTable);
-            assertEquals("Is memoryTable", true, testTable.hasMemoryTableFactory());
-            assertSame("Exact factory preserved", factory, MemoryAdapter.getMemoryTableFactory(testTable));
+            assertEquals("Is virtualTable", true, testTable.isVirtual());
+            assertSame("Exact factory preserved", factory, VirtualAdapter.getFactory(testTable));
         }
 
         createTable(SCHEMA, T1_NAME, T1_DDL);
         {
             Table testTable = ddl().getAIS(session()).getTable(tableName);
             assertNotNull("New table exists after DDL", testTable);
-            assertEquals("Is memoryTable after more DDL", true, testTable.hasMemoryTableFactory());
-            assertSame("Exact factory preserved after more DDL", factory, MemoryAdapter.getMemoryTableFactory(testTable));
+            assertEquals("Is virtualTable after more DDL", true, testTable.isVirtual());
+            assertSame("Exact factory preserved after more DDL", factory, VirtualAdapter.getFactory(testTable));
         }
 
         {
@@ -431,10 +431,10 @@ public final class SchemaManagerIT extends ITBase {
     }
 
     @Test
-    public void noDuplicateMemoryTables() throws Exception {
+    public void noDuplicateVirtualTables() throws Exception {
         final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
         final Table sourceTable = makeSimpleISTable(tableName, ddl().getTypesTranslator());
-        MemoryTableFactory factory = new MemoryTableFactoryMock();
+        VirtualScanFactory factory = new VirtualScanFactoryMock();
         registerISTable(sourceTable, factory);
         try {
             registerISTable(sourceTable, factory);
@@ -442,18 +442,18 @@ public final class SchemaManagerIT extends ITBase {
         } catch(DuplicateTableNameException e) {
             // expected
         } finally {
-            schemaManager.unRegisterMemoryInformationSchemaTable(tableName);
+            schemaManager.unRegisterVirtualTable(tableName);
         }
     }
 
     @Test(expected=IllegalArgumentException.class)
-    public void noNullMemoryTableFactory() throws Exception {
+    public void noNullVirtualScanFactory() throws Exception {
         final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
         registerISTable(makeSimpleISTable(tableName, ddl().getTypesTranslator()), null);
     }
 
     @Test(expected=IllegalArgumentException.class)
-    public void noMemoryTableOutsideAISSchema() throws Exception {
+    public void noVirtualTableOutsideAISSchema() throws Exception {
         final TableName tableName = new TableName("foo", "test_table");
         registerISTable(makeSimpleISTable(tableName, ddl().getTypesTranslator()), null);
     }
@@ -531,7 +531,7 @@ public final class SchemaManagerIT extends ITBase {
         builder.table(name).colInt("id", false).pk("id");
         try {
             builder.table(T1_NAME).colInt("id", false).colInt("pid", true).pk("id").joinTo("information_schema", "p").on("pid", "id");
-            registerISTable(builder.unvalidatedAIS().getTable(name), new MemoryTableFactoryMock());
+            registerISTable(builder.unvalidatedAIS().getTable(name), new VirtualScanFactoryMock());
             ddl().createTable(session(), builder.unvalidatedAIS().getTable(SCHEMA, T1_NAME));
         } finally {
             // ApiTestBase#tearDownAllTables skips IS tables 
@@ -825,14 +825,15 @@ public final class SchemaManagerIT extends ITBase {
         return builder.ais().getTable(name);
     }
 
-    private static class MemoryTableFactoryMock implements MemoryTableFactory {
+    private static class VirtualScanFactoryMock implements VirtualScanFactory
+    {
         @Override
         public TableName getName() {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public VirtualGroupCursor.GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             throw new UnsupportedOperationException();
         }
 

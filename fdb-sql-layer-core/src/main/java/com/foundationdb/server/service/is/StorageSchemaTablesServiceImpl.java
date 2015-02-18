@@ -39,9 +39,9 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
-import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
-import com.foundationdb.qp.memoryadapter.MemoryAdapter;
-import com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
+import com.foundationdb.qp.virtual.BasicFactoryBase;
+import com.foundationdb.qp.virtual.VirtualAdapter;
+import com.foundationdb.qp.virtual.VirtualGroupCursor.GroupScan;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
@@ -200,7 +200,7 @@ public class StorageSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             return new Scan(getRowType(group.getAIS()));
         }
 
@@ -234,7 +234,7 @@ public class StorageSchemaTablesServiceImpl
             super(sourceTable);
         }
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             return new Scan(getRowType(group.getAIS()));
         }
 
@@ -295,7 +295,7 @@ public class StorageSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             return new Scan(getRowType(group.getAIS()));
         }
 
@@ -327,7 +327,7 @@ public class StorageSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             return new Scan(getRowType(group.getAIS()));
         }
 
@@ -365,7 +365,7 @@ public class StorageSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             return new Scan(getRowType(group.getAIS()));
         }
 
@@ -400,7 +400,7 @@ public class StorageSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             return new Scan(getRowType(group.getAIS()));
         }
 
@@ -438,7 +438,7 @@ public class StorageSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             return new Scan(getRowType(group.getAIS()));
         }
 
@@ -505,7 +505,7 @@ public class StorageSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             return new Scan(getRowType(group.getAIS()));
         }
 
@@ -554,7 +554,7 @@ public class StorageSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             return new Scan(getRowType(group.getAIS()));
         }
 
@@ -595,7 +595,7 @@ public class StorageSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             return new Scan(getRowType(group.getAIS()));
         }
 
@@ -678,7 +678,7 @@ public class StorageSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             return new Scan(getRowType(group.getAIS()));
         }
 

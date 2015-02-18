@@ -22,57 +22,61 @@ import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.validation.AISValidationOutput;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.CommonProtobuf;
-import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.qp.virtual.VirtualScanFactory;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
 
-/** An in-memory <code>INFORMATION_SCHEMA</code> table. */
-public class MemoryTableStorageDescription extends StorageDescription
+/** An in-memory system table. */
+public class VirtualTableStorageDescription extends StorageDescription
 {
-    MemoryTableFactory memoryTableFactory;
+    VirtualScanFactory virtualScanFactory;
 
-    public MemoryTableStorageDescription(HasStorage forObject, String storageFormat) {
+    public VirtualTableStorageDescription(HasStorage forObject, String storageFormat) {
         super(forObject, storageFormat);
     }
 
-    public MemoryTableStorageDescription(HasStorage forObject, MemoryTableFactory memoryTableFactory, String storageFormat) {
+    public VirtualTableStorageDescription(HasStorage forObject,
+                                          VirtualScanFactory virtualScanFactory,
+                                          String storageFormat) {
         super(forObject, storageFormat);
-        assert memoryTableFactory != null;
-        this.memoryTableFactory = memoryTableFactory;
+        assert virtualScanFactory != null;
+        this.virtualScanFactory = virtualScanFactory;
     }
 
-    public MemoryTableStorageDescription(HasStorage forObject, MemoryTableStorageDescription other, String storageFormat) {
+    public VirtualTableStorageDescription(HasStorage forObject,
+                                          VirtualTableStorageDescription other,
+                                          String storageFormat) {
         super(forObject, other, storageFormat);
-        this.memoryTableFactory = other.memoryTableFactory;
+        this.virtualScanFactory = other.virtualScanFactory;
     }
 
-    public MemoryTableFactory getMemoryTableFactory() {
-        return memoryTableFactory;
+    public VirtualScanFactory getVirtualScanFactory() {
+        return virtualScanFactory;
     }
 
-    public void setMemoryTableFactory(MemoryTableFactory memoryTableFactory) {
-        this.memoryTableFactory = memoryTableFactory;
+    public void setVirtualScanFactory(VirtualScanFactory virtualScanFactory) {
+        this.virtualScanFactory = virtualScanFactory;
     }
 
     @Override
     public StorageDescription cloneForObject(HasStorage forObject) {
-        return new MemoryTableStorageDescription(forObject, this, storageFormat);
+        return new VirtualTableStorageDescription(forObject, this, storageFormat);
     }
 
     @Override
     public StorageDescription cloneForObjectWithoutState(HasStorage forObject) {
-        return new MemoryTableStorageDescription(forObject, storageFormat);
+        return new VirtualTableStorageDescription(forObject, storageFormat);
     }
 
     @Override
     public void writeProtobuf(Storage.Builder builder) {
-        builder.setExtension(CommonProtobuf.memoryTable, 
-                             CommonProtobuf.MemoryTableType.MEMORY_TABLE_FACTORY);
+        builder.setExtension(CommonProtobuf.virtualTable,
+                             CommonProtobuf.VirtualTableType.VIRTUAL_SCAN_FACTORY);
         writeUnknownFields(builder);
     }
 
     @Override
     public Object getUniqueKey() {
-        return memoryTableFactory;
+        return virtualScanFactory;
     }
 
     @Override
@@ -81,13 +85,13 @@ public class MemoryTableStorageDescription extends StorageDescription
     }
 
     @Override
-    public boolean isMemoryTableFactory() {
+    public boolean isVirtual() {
         return true;
     }
 
     @Override
     public void validate(AISValidationOutput output) {
-        if (memoryTableFactory == null) {
+        if (virtualScanFactory == null) {
             throw new StorageDescriptionInvalidException(object, "is missing factory");
         }
     }

@@ -24,7 +24,7 @@ import com.foundationdb.ais.model.NameGenerator;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
-import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.qp.virtual.VirtualScanFactory;
 import com.foundationdb.sql.parser.StorageFormatNode;
 import com.foundationdb.server.error.UnsupportedSQLException;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -92,14 +92,14 @@ public abstract class StorageFormatRegistry
     private final Map<String,Format<?>> formatsByIdentifier = new TreeMap<>();
     private Constructor<? extends StorageDescription> defaultStorageConstructor;
 
-    // The MemoryTableFactory itself cannot be serialized, so remember
+    // The VirtualScanFactory itself cannot be serialized, so remember
     // it by group name and recover that way. Could remember a unique
-    // id and actually write that, but sometimes the memory table AIS
+    // id and actually write that, but sometimes the virtual table AIS
     // is actually written to disk.
-    private final Map<TableName,MemoryTableFactory> memoryTableFactories = new HashMap<>();
+    private final Map<TableName,VirtualScanFactory> virtualScanFactories = new HashMap<>();
 
     public void registerStandardFormats() {
-        MemoryTableStorageFormat.register(this, memoryTableFactories);
+        VirtualTableStorageFormat.register(this, virtualScanFactories);
         FullTextIndexFileStorageFormat.register(this);
         getDefaultDescriptionConstructor();
     }
@@ -155,16 +155,16 @@ public abstract class StorageFormatRegistry
 
     /** Could this registry (and its associated store) support this class? */
     public boolean isDescriptionClassAllowed(Class<? extends StorageDescription> descriptionClass) {
-        return (MemoryTableStorageDescription.class.isAssignableFrom(descriptionClass) ||
+        return (VirtualTableStorageDescription.class.isAssignableFrom(descriptionClass) ||
                 FullTextIndexFileStorageDescription.class.isAssignableFrom(descriptionClass));
     }
 
-    public void registerMemoryFactory(TableName name, MemoryTableFactory memoryFactory) {
-        memoryTableFactories.put(name, memoryFactory);
+    public void registerVirtualScanFactory(TableName name, VirtualScanFactory scanFactory) {
+        virtualScanFactories.put(name, scanFactory);
     }
 
-    public void unregisterMemoryFactory(TableName name) {
-        memoryTableFactories.remove(name);
+    public void unregisterVirtualScanFactory(TableName name) {
+        virtualScanFactories.remove(name);
     }
 
     @SuppressWarnings("unchecked")
@@ -204,9 +204,9 @@ public abstract class StorageFormatRegistry
     public void finishStorageDescription(HasStorage object, NameGenerator nameGenerator) {
         if (object.getStorageDescription() == null) {
             if (object instanceof Group) {
-                MemoryTableFactory factory = memoryTableFactories.get(((Group)object).getName());
+                VirtualScanFactory factory = virtualScanFactories.get(((Group)object).getName());
                 if (factory != null) {
-                    object.setStorageDescription(new MemoryTableStorageDescription(object, factory, MemoryTableStorageFormat.identifier));
+                    object.setStorageDescription(new VirtualTableStorageDescription(object, factory, VirtualTableStorageFormat.identifier));
                 }
                 else {
                     object.setStorageDescription(getDefaultStorageDescription(object));

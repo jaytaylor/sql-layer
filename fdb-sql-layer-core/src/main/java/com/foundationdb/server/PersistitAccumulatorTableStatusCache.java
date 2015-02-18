@@ -19,7 +19,7 @@ package com.foundationdb.server;
 
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.qp.virtual.VirtualScanFactory;
 import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.server.error.PersistitAdapterException;
 import com.foundationdb.server.service.session.Session;
@@ -34,7 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
-    private Map<Integer,MemoryTableStatus> memoryStatuses = new HashMap<>();
+    private Map<Integer,VirtualTableStatus> memoryStatuses = new HashMap<>();
     private TreeService treeService;
 
     public PersistitAccumulatorTableStatusCache(TreeService treeService) {
@@ -57,13 +57,13 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     }
 
     @Override
-    public synchronized TableStatus getOrCreateMemoryTableStatus(int tableID, MemoryTableFactory factory) {
-        MemoryTableStatus ts = memoryStatuses.get(tableID);
+    public synchronized TableStatus getOrCreateVirtualTableStatus(int tableID, VirtualScanFactory factory) {
+        VirtualTableStatus ts = memoryStatuses.get(tableID);
         if(ts == null) {
             if(factory == null) {
                 throw new IllegalArgumentException("Null factory");
             }
-            ts = new MemoryTableStatus(tableID, factory);
+            ts = new VirtualTableStatus(tableID, factory);
             memoryStatuses.put(tableID, ts);
         }
         return ts;

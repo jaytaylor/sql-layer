@@ -35,10 +35,9 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.TestAISBuilder;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.util.ChangedTableDescription;
-import com.foundationdb.qp.memoryadapter.MemoryAdapter;
-import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.qp.virtual.VirtualAdapter;
+import com.foundationdb.qp.virtual.VirtualScanFactory;
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
@@ -69,7 +68,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
+import static com.foundationdb.qp.virtual.VirtualGroupCursor.GroupScan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
@@ -83,7 +82,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
     private SchemaManager schemaManager;
     private NameGenerator nameGenerator;
     private BasicInfoSchemaTablesServiceImpl bist;
-    private MemoryAdapter adapter;
+    private VirtualAdapter adapter;
 
     @Before
     public void setUp() throws Exception {
@@ -95,7 +94,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         createTables();
         bist = new BasicInfoSchemaTablesServiceImpl(schemaManager, null, null);
         bist.attachFactories(ais);
-        adapter = new MemoryAdapter(null, null);
+        adapter = new VirtualAdapter(null, null);
     }
 
     private static void simpleTable(TestAISBuilder builder, String group, String schema, String table, String parentName, boolean withPk) {
@@ -332,10 +331,10 @@ public class BasicInfoSchemaTablesServiceImplTest {
                                     "com.foundationdb.procs.Proc1", "call");
     }
 
-    private MemoryTableFactory getFactory(TableName name) {
+    private VirtualScanFactory getFactory(TableName name) {
         Table table = ais.getTable(name);
         assertNotNull("No such table: " + name, table);
-        MemoryTableFactory factory = MemoryAdapter.getMemoryTableFactory(table);
+        VirtualScanFactory factory = VirtualAdapter.getFactory(table);
         assertNotNull("No factory for table " + name, factory);
         return factory;
     }
@@ -832,9 +831,9 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
-        public TableName registerMemoryInformationSchemaTable(Table newTable, MemoryTableFactory factory) {
+        public TableName registerVirtualTable(Table newTable, VirtualScanFactory factory) {
             Group group = newTable.getGroup();
-            storageFormatRegistry.registerMemoryFactory(group.getName(), factory);
+            storageFormatRegistry.registerVirtualScanFactory(group.getName(), factory);
             // No copying or name registry; just apply right now.
             group.setStorageDescription(null);
             storageFormatRegistry.finishStorageDescription(group, null);
@@ -842,8 +841,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
-        public void unRegisterMemoryInformationSchemaTable(TableName tableName) {
-            storageFormatRegistry.unregisterMemoryFactory(tableName);
+        public void unRegisterVirtualTable(TableName tableName) {
+            storageFormatRegistry.unregisterVirtualScanFactory(tableName);
         }
 
         @Override

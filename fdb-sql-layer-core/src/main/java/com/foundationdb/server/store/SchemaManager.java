@@ -31,7 +31,7 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.util.ChangedTableDescription;
-import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.qp.virtual.VirtualScanFactory;
 import com.foundationdb.server.error.NoSuchSchemaException;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;
@@ -81,22 +81,22 @@ public interface SchemaManager {
     /**
      * Create a new table in the {@link TableName#INFORMATION_SCHEMA}
      * schema. This table will be be populated on demand and accessed through
-     * the given {@link MemoryTableFactory}.
+     * the given {@link VirtualScanFactory}.
      *
      * @param newTable New table to create.
      * @param factory Factory to service this table.
      *
      * @return Name of the table that was created.
      */
-    TableName registerMemoryInformationSchemaTable(Table newTable, MemoryTableFactory factory);
+    TableName registerVirtualTable(Table newTable, VirtualScanFactory factory);
 
     /**
      * Delete the definition of a table in the {@link TableName#INFORMATION_SCHEMA}
-     * schema. The table must exist and be a memory table.
+     * schema. The table must exist and be a virtual table.
      *
      * @param tableName Table to delete.
      */
-    void unRegisterMemoryInformationSchemaTable(TableName tableName);
+    void unRegisterVirtualTable(TableName tableName);
 
     /** Mark the {@code hKey} has already been handled with respect to online DDL. */
     void addOnlineHandledHKey(Session session, int tableID, Key hKey);

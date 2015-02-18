@@ -21,7 +21,7 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.CacheValueGenerator;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.qp.memoryadapter.MemoryAdapter;
+import com.foundationdb.qp.virtual.VirtualAdapter;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
@@ -99,8 +99,8 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     }
 
     private StoreAdapter getAdapter(Session session, Table table) {
-        if (table.hasMemoryTableFactory())
-            return new MemoryAdapter(session, configService);
+        if (table.isVirtual())
+            return new VirtualAdapter(session, configService);
         return store.createAdapter(session);
     }
 

@@ -18,27 +18,27 @@
 package com.foundationdb.server;
 
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.qp.virtual.VirtualScanFactory;
 import com.foundationdb.server.service.session.Session;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class MemoryOnlyTableStatusCache implements TableStatusCache {
-    private final Map<Integer,MemoryTableStatus> tableStatusMap = new HashMap<>();
+    private final Map<Integer,VirtualTableStatus> tableStatusMap = new HashMap<>();
             
     @Override
     public synchronized TableStatus createTableStatus (Table table) {
-        return new MemoryTableStatus (table.getTableId(), null);
+        return new VirtualTableStatus(table.getTableId(), null);
     }
     
     @Override
     public synchronized TableStatus createTableStatus(int tableID) {
-        return new MemoryTableStatus(tableID, null);
+        return new VirtualTableStatus(tableID, null);
     }
 
     @Override
-    public synchronized TableStatus getOrCreateMemoryTableStatus(int tableID, MemoryTableFactory factory) {
+    public synchronized TableStatus getOrCreateVirtualTableStatus(int tableID, VirtualScanFactory factory) {
         return getInternalTableStatus(tableID, factory);
     }
 
@@ -52,10 +52,10 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
         tableStatusMap.remove(table.getTableId());
     }
 
-    private MemoryTableStatus getInternalTableStatus(int tableID, MemoryTableFactory factory) {
-        MemoryTableStatus ts = tableStatusMap.get(tableID);
+    private VirtualTableStatus getInternalTableStatus(int tableID, VirtualScanFactory factory) {
+        VirtualTableStatus ts = tableStatusMap.get(tableID);
         if(ts == null) {
-            ts = new MemoryTableStatus(tableID, factory);
+            ts = new VirtualTableStatus(tableID, factory);
             tableStatusMap.put(tableID, ts);
         }
         return ts;

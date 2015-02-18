@@ -15,12 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.server.test.it.memorytable;
+package com.foundationdb.qp.virtual;
 
 import static org.junit.Assert.*;
-
-import com.foundationdb.qp.memoryadapter.MemoryGroupCursor;
-import com.foundationdb.qp.util.SchemaCache;
 
 import org.junit.After;
 import org.junit.Before;
@@ -30,20 +27,18 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
-import com.foundationdb.qp.memoryadapter.MemoryAdapter;
-import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.sql.ServerSessionITBase;
 
-public class MemoryAdapterIT extends ServerSessionITBase {
+public class VirtualAdapterIT extends ServerSessionITBase {
     private static final TableName TEST_NAME = new TableName (TableName.INFORMATION_SCHEMA, "test");
     private SchemaManager schemaManager;
     private Table table;
     
-    private void registerISTable(final Table table, final MemoryTableFactory factory) throws Exception {
-        schemaManager.registerMemoryInformationSchemaTable(table, factory);
+    private void registerISTable(final Table table, final VirtualScanFactory factory) throws Exception {
+        schemaManager.registerVirtualTable(table, factory);
     }
 
     @Before
@@ -54,7 +49,7 @@ public class MemoryAdapterIT extends ServerSessionITBase {
     @After
     public void unRegister() {
         if(ais().getTable(TEST_NAME) != null) {
-            schemaManager.unRegisterMemoryInformationSchemaTable(TEST_NAME);
+            schemaManager.unRegisterVirtualTable(TEST_NAME);
         }
     }
 
@@ -62,19 +57,19 @@ public class MemoryAdapterIT extends ServerSessionITBase {
     public void insertFactoryTest() throws Exception {
   
         table = AISBBasedBuilder.create(ddl().getTypesTranslator()).table(TEST_NAME.getSchemaName(),TEST_NAME.getTableName()).colInt("c1").pk("c1").ais().getTable(TEST_NAME);
-        MemoryTableFactory factory = new TestFactory (TEST_NAME);
+        VirtualScanFactory factory = new TestFactory (TEST_NAME);
 
         registerISTable(table, factory);
  
         Table table = ais().getTable(TEST_NAME);
         assertNotNull (table);
-        assertTrue (table.hasMemoryTableFactory());
+        assertTrue (table.isVirtual());
     }
 
     @Test
     public void testGetAdapter() throws Exception {
         table = AISBBasedBuilder.create(ddl().getTypesTranslator()).table(TEST_NAME.getSchemaName(),TEST_NAME.getTableName()).colInt("c1").pk("c1").ais().getTable(TEST_NAME);
-        MemoryTableFactory factory = new TestFactory (TEST_NAME);
+        VirtualScanFactory factory = new TestFactory (TEST_NAME);
         registerISTable(table, factory);
         Table newtable = ais().getTable(TEST_NAME);
         
@@ -82,10 +77,11 @@ public class MemoryAdapterIT extends ServerSessionITBase {
 
         StoreAdapter adapter = sqlSession.getStoreHolder().getAdapter(newtable);
         assertNotNull (adapter);
-        assertTrue (adapter instanceof MemoryAdapter);
+        assertTrue (adapter instanceof VirtualAdapter);
     }
 
-    private class TestFactory implements MemoryTableFactory {
+    private class TestFactory implements VirtualScanFactory
+    {
         
         private TableName name;
         public TestFactory (TableName name) {
@@ -93,7 +89,7 @@ public class MemoryAdapterIT extends ServerSessionITBase {
         }
 
         @Override
-        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adaper, Group group) {
+        public VirtualGroupCursor.GroupScan getGroupScan(VirtualAdapter adaper, Group group) {
             return null;
         }
 

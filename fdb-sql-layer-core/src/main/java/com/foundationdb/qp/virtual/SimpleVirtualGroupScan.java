@@ -15,32 +15,41 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.qp.memoryadapter;
+package com.foundationdb.qp.virtual;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.qp.row.ValuesHolderRow;
+import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.util.SchemaCache;
 
-public abstract class BasicFactoryBase implements MemoryTableFactory {
-    private final TableName sourceTable;
-    
-    public BasicFactoryBase(TableName sourceTable) {
-        this.sourceTable = sourceTable;
+import java.util.Iterator;
+
+public abstract class SimpleVirtualGroupScan<T> implements VirtualGroupCursor.GroupScan {
+
+    protected abstract Object[] createRow(T data, int hiddenPk);
+
+    @Override
+    public Row next() {
+        if (!iterator.hasNext())
+            return null;
+        Object[] rowContents = createRow(iterator.next(), ++hiddenPk);
+        return new ValuesHolderRow(rowType, rowContents);
     }
 
     @Override
-    public TableName getName() {
-        return sourceTable;
+    public void close() {
+        // nothing
     }
 
-    public RowType getRowType(AkibanInformationSchema ais) {
-        Table table = ais.getTable(sourceTable);
-        return SchemaCache.globalSchema(ais).tableRowType(table);
+    public SimpleVirtualGroupScan(AkibanInformationSchema ais, TableName tableName, Iterator<? extends T> iterator) {
+        this.iterator = iterator;
+        Table table = ais.getTable(tableName);
+        this.rowType = SchemaCache.globalSchema(ais).tableRowType(table);
     }
-    
-    public static String boolResult(boolean bool) {
-        return bool ? "YES" : "NO";
-    }
+    private final Iterator<? extends T> iterator;
+    private final RowType rowType;
+    private int hiddenPk = 0;
 }

@@ -42,7 +42,7 @@ import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.model.validation.AISInvariants;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.ais.util.ChangedTableDescription;
-import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.qp.virtual.VirtualScanFactory;
 import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.error.DuplicateRoutineNameException;
 import com.foundationdb.server.error.DuplicateSQLJJarNameException;
@@ -84,7 +84,6 @@ import com.google.common.collect.Multimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -143,7 +142,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     protected abstract void storedAISChange(Session session,
                                             AkibanInformationSchema newAIS,
                                             Collection<String> schemas);
-    /** validateAndFreeze, serializeMemoryTables, buildRowDefs */
+    /** validateAndFreeze, serializeVirtualTables, buildRowDefs */
     protected abstract void unStoredAISChange(Session session, AkibanInformationSchema newAIS);
     /** Called immediately prior to {@link #storedAISChange} when renaming a table */
     protected abstract void renamingTable(Session session, TableName oldName, TableName newName);
@@ -278,14 +277,14 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     }
 
     @Override
-    public TableName registerMemoryInformationSchemaTable(final Table newTable, final MemoryTableFactory factory) {
+    public TableName registerVirtualTable(final Table newTable, final VirtualScanFactory factory) {
         if(factory == null) {
-            throw new IllegalArgumentException("MemoryTableFactory may not be null");
+            throw new IllegalArgumentException("VirtualScanFactory may not be null");
         }
         final Group group = newTable.getGroup();
         // Factory will actually get applied at the end of AISMerge.merge() onto
         // a new table.
-        storageFormatRegistry.registerMemoryFactory(group.getName(), factory);
+        storageFormatRegistry.registerVirtualScanFactory(group.getName(), factory);
         try(Session session = sessionService.createSession()) {
             txnService.run(session, new Runnable() {
                 @Override
@@ -299,7 +298,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     }
 
     @Override
-    public void unRegisterMemoryInformationSchemaTable(final TableName tableName) {
+    public void unRegisterVirtualTable(final TableName tableName) {
         try(Session session = sessionService.createSession()) {
             txnService.run(session, new Runnable() {
                 @Override
@@ -308,7 +307,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
                 }
             });
         }
-        storageFormatRegistry.unregisterMemoryFactory(tableName);
+        storageFormatRegistry.unregisterVirtualScanFactory(tableName);
     }
 
     @Override
@@ -825,7 +824,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     }
 
     private TableName createTableCommon(Session session, Table newTable, boolean isInternal,
-                                        Integer version, boolean memoryTable) {
+                                        Integer version, boolean isVirtualTable) {
         final TableName newName = newTable.getName();
         checkTableName(session, newName, false, isInternal);
         AISInvariants.checkJoinTo(newTable.getParentJoin(), newName, isInternal);
@@ -839,16 +838,16 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         ensureUuids(mergedTable);
 
         if(version == null) {
-            version = 0; // New user or memory table
+            version = 0; // New user or virtual table
         }
         mergedTable.setVersion(version);
         newTableVersions(session, Collections.singletonMap(mergedTable.getTableId(), version));
 
         assignNewOrdinal(mergedTable);
 
-        if(memoryTable) {
+        if(isVirtualTable) {
             // Memory only table changed, no reason to re-serialize
-            assert mergedTable.hasMemoryTableFactory();
+            assert mergedTable.isVirtual();
             unStoredAISChange(session, newAIS);
         } else {
             saveAISChange(session, newAIS, Collections.singleton(newName.getSchemaName()));
@@ -866,7 +865,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
     }
 
     private void dropTableCommon(Session session, TableName tableName, final DropBehavior dropBehavior,
-                                 final boolean isInternal, final boolean mustBeMemory) {
+                                 final boolean isInternal, final boolean mustBeVirtual) {
         checkTableName(session, tableName, true, isInternal);
         final AkibanInformationSchema oldAIS = getAISForChange(session, !isInternal);
         final Table table = oldAIS.getTable(tableName);
@@ -880,8 +879,8 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
         table.visit(new AbstractVisitor() {
             @Override
             public void visit(Table table) {
-                if(mustBeMemory && !table.hasMemoryTableFactory()) {
-                    throw new IllegalArgumentException("Cannot un-register non-memory table");
+                if(mustBeVirtual && !table.isVirtual()) {
+                    throw new IllegalArgumentException("Cannot un-register non-virtual table");
                 }
 
                 if((dropBehavior == DropBehavior.RESTRICT) && !table.getChildJoins().isEmpty()) {
@@ -906,7 +905,7 @@ public abstract class AbstractSchemaManager implements Service, SchemaManager {
             clearTableStatus(session, oldAIS.getTable(tableID));
         }
 
-        if(table.hasMemoryTableFactory()) {
+        if(table.isVirtual()) {
             unStoredAISChange(session, newAIS);
         } else {
             saveAISChange(session, newAIS, schemas, tableIDs);

@@ -16,20 +16,16 @@
  */
 package com.foundationdb.server;
 
-import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.qp.virtual.VirtualScanFactory;
 import com.foundationdb.server.service.session.Session;
 
-public class MemoryTableStatus implements TableStatus
+public class VirtualTableStatus implements TableStatus
 {
     private final int expectedID;
-    private final MemoryTableFactory factory;
+    private final VirtualScanFactory factory;
     private long rowCount = 0;
 
-    public MemoryTableStatus(int expectedID) {
-        this(expectedID, null);
-    }
-
-    public MemoryTableStatus(int expectedID, MemoryTableFactory factory) {
+    public VirtualTableStatus(int expectedID, VirtualScanFactory factory) {
         this.expectedID = expectedID;
         this.factory = factory;
     }
@@ -47,7 +43,7 @@ public class MemoryTableStatus implements TableStatus
     @Override
     public synchronized void setRowCount(Session session, long rowCount) {
         if(factory != null) {
-            throw new IllegalArgumentException("Cannot set row count for memory table");
+            throw new IllegalArgumentException("Cannot set row count for virtual table");
         }
         this.rowCount = rowCount;
     }

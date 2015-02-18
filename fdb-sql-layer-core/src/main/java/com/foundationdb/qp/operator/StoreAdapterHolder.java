@@ -18,7 +18,7 @@
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.qp.memoryadapter.MemoryAdapter;
+import com.foundationdb.qp.virtual.VirtualAdapter;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;
@@ -26,14 +26,14 @@ import com.foundationdb.server.store.Store;
 public class StoreAdapterHolder
 {
     private StoreAdapter storeAdapter;
-    private StoreAdapter memoryAdapter;
+    private StoreAdapter virtualAdapter;
 
     public StoreAdapterHolder() {
     }
 
     public void init(Session session, ConfigurationService config, Store store) {
         storeAdapter = store.createAdapter(session);
-        memoryAdapter = new MemoryAdapter(session, config);
+        virtualAdapter = new VirtualAdapter(session, config);
     }
 
     public StoreAdapter getAdapter() {
@@ -41,6 +41,6 @@ public class StoreAdapterHolder
     }
 
     public StoreAdapter getAdapter(Table table) {
-        return table.hasMemoryTableFactory() ? memoryAdapter : storeAdapter;
+        return table.isVirtual() ? virtualAdapter : storeAdapter;
     }
 }

@@ -20,8 +20,8 @@ package com.foundationdb.server.service.is;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
-import com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
+import com.foundationdb.qp.virtual.BasicFactoryBase;
+import com.foundationdb.qp.virtual.VirtualGroupCursor.GroupScan;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.store.SchemaManager;
 
@@ -47,17 +47,17 @@ public class SchemaTablesService {
         } catch(Exception e) {
             throw new RuntimeException(e);
         }
-        schemaManager.registerMemoryInformationSchemaTable(table, factory);
+        schemaManager.registerVirtualTable(table, factory);
     }
     
     protected void attach (AkibanInformationSchema ais, TableName name, BasicFactoryBase factory) {
         Table table = ais.getTable(name);
         assert table != null;
-        schemaManager.registerMemoryInformationSchemaTable(table, factory);
+        schemaManager.registerVirtualTable(table, factory);
     }
 
     protected void attach (Table table, BasicFactoryBase factory) {
-        schemaManager.registerMemoryInformationSchemaTable(table, factory);
+        schemaManager.registerVirtualTable(table, factory);
     }
     
     protected abstract class BaseScan implements GroupScan {
