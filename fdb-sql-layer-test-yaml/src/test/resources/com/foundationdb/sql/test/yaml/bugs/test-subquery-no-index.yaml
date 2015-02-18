@@ -1,0 +1,26 @@
+# sql-layer issue 1244
+---
+- CreateTable: customers (
+    id INTEGER NOT NULL,
+    rand_id INTEGER NULL,
+    name VARCHAR(20) NULL,
+    customer_info VARCHAR(100) NULL,
+    birthday DATE NULL,
+    PRIMARY KEY (id))
+---
+- CreateTable: orders (
+    id INTEGER NOT NULL,
+    order_info VARCHAR(200) NOT NULL,
+    order_date DATE NULL,
+    customer_id INTEGER NULL,
+    PRIMARY KEY (id),
+    GROUPING FOREIGN KEY(customer_id) REFERENCES customers (id))
+---
+- Statement: INSERT INTO customers VALUES (1, 15, 'ed', 'Ed Jones', '2018-02-25')
+---
+- Statement: INSERT INTO orders VALUES (1, 'a large order', '2018-02-25', 1)
+
+# Failed due ValuesHolderRow#ancestorHKey() not being implemented
+---
+- Statement: SELECT customers.id, (SELECT orders.order_date FROM orders WHERE customers.id = orders.customer_id) AS anon_1 FROM customers WHERE customers.rand_id > 1 ORDER BY customers.rand_id
+- output_already_ordered: [ [1, '2018-02-25'] ]
