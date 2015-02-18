@@ -18,7 +18,7 @@
 package com.foundationdb.qp.operator;
 
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.qp.virtual.VirtualAdapter;
+import com.foundationdb.qp.virtualadapter.VirtualAdapter;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.Store;

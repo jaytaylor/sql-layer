@@ -19,7 +19,7 @@ package com.foundationdb.server;
 
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
-import com.foundationdb.qp.virtual.VirtualScanFactory;
+import com.foundationdb.qp.virtualadapter.VirtualScanFactory;
 import com.foundationdb.qp.storeadapter.PersistitAdapter;
 import com.foundationdb.server.error.PersistitAdapterException;
 import com.foundationdb.server.service.session.Session;

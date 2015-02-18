@@ -20,8 +20,8 @@ package com.foundationdb.server.service.is;
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.qp.virtual.BasicFactoryBase;
-import com.foundationdb.qp.virtual.VirtualGroupCursor.GroupScan;
+import com.foundationdb.qp.virtualadapter.BasicFactoryBase;
+import com.foundationdb.qp.virtualadapter.VirtualGroupCursor.GroupScan;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.server.store.SchemaManager;
 

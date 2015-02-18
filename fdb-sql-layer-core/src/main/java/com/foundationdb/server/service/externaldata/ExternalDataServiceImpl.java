@@ -21,7 +21,7 @@ import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.CacheValueGenerator;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.qp.virtual.VirtualAdapter;
+import com.foundationdb.qp.virtualadapter.VirtualAdapter;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;

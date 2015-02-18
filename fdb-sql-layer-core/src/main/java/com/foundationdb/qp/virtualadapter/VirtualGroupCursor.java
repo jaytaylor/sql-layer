@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.qp.virtual;
+package com.foundationdb.qp.virtualadapter;
 
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.qp.operator.CursorLifecycle;

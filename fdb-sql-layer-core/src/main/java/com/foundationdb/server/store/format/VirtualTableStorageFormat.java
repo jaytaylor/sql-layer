@@ -22,7 +22,7 @@ import com.foundationdb.ais.model.HasStorage;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.CommonProtobuf;
-import com.foundationdb.qp.virtual.VirtualScanFactory;
+import com.foundationdb.qp.virtualadapter.VirtualScanFactory;
 
 import java.util.Map;
 

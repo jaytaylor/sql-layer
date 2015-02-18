@@ -24,7 +24,7 @@ import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 import com.foundationdb.MutationType;
 import com.foundationdb.Transaction;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.qp.virtual.VirtualScanFactory;
+import com.foundationdb.qp.virtualadapter.VirtualScanFactory;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple2;

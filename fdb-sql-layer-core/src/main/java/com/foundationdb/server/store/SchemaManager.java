@@ -31,7 +31,7 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.util.ChangedTableDescription;
-import com.foundationdb.qp.virtual.VirtualScanFactory;
+import com.foundationdb.qp.virtualadapter.VirtualScanFactory;
 import com.foundationdb.server.error.NoSuchSchemaException;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.Session;

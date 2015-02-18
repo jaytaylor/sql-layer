@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.qp.virtual;
+package com.foundationdb.qp.virtualadapter;
 
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.service.session.Session;
 
-import static com.foundationdb.qp.virtual.VirtualGroupCursor.GroupScan;
+import static com.foundationdb.qp.virtualadapter.VirtualGroupCursor.GroupScan;
 
 public interface VirtualScanFactory
 {

@@ -42,7 +42,7 @@ import com.foundationdb.ais.model.View;
 import com.foundationdb.ais.model.validation.AISInvariants;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.ais.util.ChangedTableDescription;
-import com.foundationdb.qp.virtual.VirtualScanFactory;
+import com.foundationdb.qp.virtualadapter.VirtualScanFactory;
 import com.foundationdb.server.collation.AkCollatorFactory;
 import com.foundationdb.server.error.DuplicateRoutineNameException;
 import com.foundationdb.server.error.DuplicateSQLJJarNameException;

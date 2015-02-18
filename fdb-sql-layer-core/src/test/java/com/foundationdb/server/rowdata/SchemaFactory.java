@@ -26,7 +26,7 @@ import com.foundationdb.ais.model.Routine;
 import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.View;
-import com.foundationdb.qp.virtual.VirtualAdapter;
+import com.foundationdb.qp.virtualadapter.VirtualAdapter;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.SimpleTableStatusCache;
 import com.foundationdb.server.TableStatus;

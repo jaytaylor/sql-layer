@@ -16,7 +16,6 @@
  */
 package com.foundationdb.qp.operator;
 
-import com.foundationdb.qp.virtual.VirtualGroupCursor;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.api.dml.ColumnSelector;
 
@@ -44,7 +43,7 @@ import com.foundationdb.server.api.dml.ColumnSelector;
  *  * @see com.foundationdb.qp.storeadapter.indexcursor.IndexCursorSpatial_NearPoint
  *  * @see com.foundationdb.qp.storeadapter.indexcursor.IndexCursorUnidrectional
  *  
- * @see com.foundationdb.qp.virtual.VirtualGroupCursor
+ * @see com.foundationdb.qp.virtualadapter.VirtualGroupCursor
  * @see com.foundationdb.qp.storeadapter.FDBGroupCursor
  * @see com.foundationdb.qp.storeadapter.PersistitGroupCursor
  */

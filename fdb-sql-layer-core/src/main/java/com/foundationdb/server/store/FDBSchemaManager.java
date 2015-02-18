@@ -35,7 +35,7 @@ import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.blob.BlobAsync;
 import com.foundationdb.directory.DirectorySubspace;
 import com.foundationdb.directory.PathUtil;
-import com.foundationdb.qp.virtual.VirtualAdapter;
+import com.foundationdb.qp.virtualadapter.VirtualAdapter;
 import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.server.FDBTableStatusCache;
 import com.foundationdb.server.TableStatus;
