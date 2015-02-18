@@ -54,38 +54,45 @@ public class BlobIT extends PostgresServerITBase {
         Connection conn = getConnection();
         UUID idA =  UUID.randomUUID();
         
-        PreparedStatement pstmt = conn.prepareCall("CALL sys.create_specific_blob( ? )");
-        pstmt.setString(1, idA.toString());
-        pstmt.execute();
-        ResultSet rs = pstmt.getResultSet();
+        PreparedStatement preparedStatement = conn.prepareCall("CALL sys.create_specific_blob( ? )");
+        preparedStatement.setString(1, idA.toString());
+        preparedStatement.execute();
+        ResultSet rs = preparedStatement.getResultSet();
         rs.next();
         String idOut = rs.getObject(1).toString();
         Assert.assertTrue(idA.toString().equals(idOut));
-        pstmt.close();
+        preparedStatement.close();
         
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        LobService ls = lobService();
         Assert.assertTrue(ls.existsLob(getTransaction(), idA));
         commitOrRollback();
         conn.close();
         
-        Thread.sleep(100L);
-        
-        Assert.assertFalse(ls.existsLob(getTransaction(), idA));
+        long totalTime = 0L;
+        while (ls.existsLob(getTransaction(), idA)) {
+            commitOrRollback();
+            long period = 100L;
+            Thread.sleep(period);
+            totalTime += period;
+            if (totalTime > 5000L) {
+                Assert.fail("lob should be cleaned up within 5 s");
+            }
+        }
         commitOrRollback();
     }
 
     @Test
-    public void testDeleteLobsWithTable() throws Exception {
+    public void testDropTableWithBLob() throws Exception {
         int n = 5;
         Connection conn = getConnection();
         Statement stmt = conn.createStatement();
         stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
         
-        PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
         for (int i = 0; i < n; i++ ) {
-            pstmt.setInt(1, i);
-            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
-            pstmt.execute();
+            preparedStatement.setInt(1, i);
+            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
         }
         String[] ids = new String[n];
         
@@ -97,7 +104,7 @@ public class BlobIT extends PostgresServerITBase {
         }
         rs.close();
 
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        LobService ls = lobService();
         for (int k = 0; k < n; k++) {
             Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids[k])));
         }
@@ -105,7 +112,7 @@ public class BlobIT extends PostgresServerITBase {
         
         stmt.execute(("DROP TABLE t1"));
         stmt.close();
-        pstmt.close();
+        preparedStatement.close();
         conn.close();
         
         for (int k = 0; k < n; k++) {
@@ -115,19 +122,19 @@ public class BlobIT extends PostgresServerITBase {
     }
 
     @Test
-    public void testDeleteLobsWithTableMultipleColumns() throws Exception {
+    public void testDropTableWithMultipleBlobColumns() throws Exception {
         int n = 5;
         Connection conn = getConnection();
         Statement stmt = conn.createStatement();
         stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, blA BLOB, blB BLOB, blC BLOB)");
 
-        PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES (?,?,?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?,?,?)");
         for (int i = 0; i < n; i++ ) {
-            pstmt.setInt(1, i);
-            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
-            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
-            pstmt.setBlob(4, new ByteArrayInputStream(generateBytes(dataSize)));
-            pstmt.execute();
+            preparedStatement.setInt(1, i);
+            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBlob(4, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
         }
         String[] idsA = new String[n];
         String[] idsB = new String[n];
@@ -144,7 +151,7 @@ public class BlobIT extends PostgresServerITBase {
         }
         rs.close();
 
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        LobService ls = lobService();
         for (int k = 0; k < n; k++) {
             Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(idsA[k])));
             Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(idsB[k])));
@@ -154,7 +161,7 @@ public class BlobIT extends PostgresServerITBase {
 
         stmt.execute(("DROP TABLE t1"));
         stmt.close();
-        pstmt.close();
+        preparedStatement.close();
         conn.close();
 
         for (int k = 0; k < n; k++) {
@@ -172,12 +179,12 @@ public class BlobIT extends PostgresServerITBase {
         Statement stmt = conn.createStatement();
         stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB, bl2 BLOB)");
 
-        PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES (?,?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?,?)");
         for (int i = 0; i < n; i++ ) {
-            pstmt.setInt(1, i);
-            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
-            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
-            pstmt.execute();
+            preparedStatement.setInt(1, i);
+            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
         }
         String[] idsA = new String[n];
         String[] idsB = new String[n];
@@ -191,7 +198,7 @@ public class BlobIT extends PostgresServerITBase {
         }
         rs.close();
         
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        LobService ls = lobService();
         for (int k = 0; k < n; k++) {
             Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(idsA[k])));
             Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(idsB[k])));
@@ -200,7 +207,7 @@ public class BlobIT extends PostgresServerITBase {
 
         stmt.execute(("TRUNCATE TABLE t1"));
         stmt.close();
-        pstmt.close();
+        preparedStatement.close();
         conn.close();
 
         for (int k = 0; k < n; k++) {
@@ -211,7 +218,7 @@ public class BlobIT extends PostgresServerITBase {
     }
 
     @Test
-    public void testDeleteLobsWithGroupA() throws Exception {
+    public void testDropGroupParentAndChildHaveBlobs() throws Exception {
         int n = 5;
         Connection conn = getConnection();
         Statement stmt = conn.createStatement();
@@ -219,18 +226,18 @@ public class BlobIT extends PostgresServerITBase {
         stmt.execute("CREATE TABLE t2 (id_t2 INT PRIMARY KEY, id_t1 INT, bl_t2 BLOB)");
         stmt.execute("ALTER TABLE t2 ADD GROUPING FOREIGN KEY (id_t1) REFERENCES t1(id)");
         
-        PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
         for (int i = 0; i < n; i++ ) {
-            pstmt.setInt(1, i);
-            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
-            pstmt.execute();
+            preparedStatement.setInt(1, i);
+            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
         }
-        pstmt = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
+        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
         for (int ii = 0; ii < n; ii++ ) {
-            pstmt.setInt(1, ii*10);
-            pstmt.setInt(2, ii);
-            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
-            pstmt.execute();
+            preparedStatement.setInt(1, ii*10);
+            preparedStatement.setInt(2, ii);
+            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
         }
         String[] ids_t1 = new String[n];
         stmt.execute("SELECT id_blob(bl) FROM t1");
@@ -249,7 +256,7 @@ public class BlobIT extends PostgresServerITBase {
             ids_t2[jj] = rs.getString(1);
         }
 
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        LobService ls = lobService();
         for (int k = 0; k < n; k++) {
             Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_t1[k])));
             Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_t2[k])));
@@ -258,7 +265,7 @@ public class BlobIT extends PostgresServerITBase {
         
         stmt.execute(("DROP GROUP t1"));
         stmt.close();
-        pstmt.close();
+        preparedStatement.close();
         conn.close();
 
         for (int k = 0; k < n; k++) {
@@ -269,7 +276,7 @@ public class BlobIT extends PostgresServerITBase {
     }
 
     @Test
-    public void testDeleteLobsWithGroupB() throws Exception {
+    public void testDropGroupChildHasBlob() throws Exception {
         int n = 5;
         Connection conn = getConnection();
         Statement stmt = conn.createStatement();
@@ -277,17 +284,17 @@ public class BlobIT extends PostgresServerITBase {
         stmt.execute("CREATE TABLE t2 (id_t2 INT PRIMARY KEY, id_t1 INT, bl_t2 BLOB)");
         stmt.execute("ALTER TABLE t2 ADD GROUPING FOREIGN KEY (id_t1) REFERENCES t1(id)");
 
-        PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES (?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?)");
         for (int i = 0; i < n; i++ ) {
-            pstmt.setInt(1, i);
-            pstmt.execute();
+            preparedStatement.setInt(1, i);
+            preparedStatement.execute();
         }
-        pstmt = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
+        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
         for (int ii = 0; ii < n; ii++ ) {
-            pstmt.setInt(1, ii*10);
-            pstmt.setInt(2, ii);
-            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
-            pstmt.execute();
+            preparedStatement.setInt(1, ii*10);
+            preparedStatement.setInt(2, ii);
+            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
         }
 
         String[] ids_t2 = new String[n];
@@ -298,7 +305,7 @@ public class BlobIT extends PostgresServerITBase {
             ids_t2[jj] = rs.getString(1);
         }
 
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        LobService ls = lobService();
         for (int k = 0; k < n; k++) {
             Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_t2[k])));
         }
@@ -306,7 +313,7 @@ public class BlobIT extends PostgresServerITBase {
         
         stmt.execute(("DROP GROUP t1"));
         stmt.close();
-        pstmt.close();
+        preparedStatement.close();
         conn.close();
 
         for (int k = 0; k < n; k++) {
@@ -316,17 +323,17 @@ public class BlobIT extends PostgresServerITBase {
     }
 
     @Test
-    public void testDeleteLobsWithGroupC() throws Exception {
+    public void testDropGroupSingleTable() throws Exception {
         int n = 5;
         Connection conn = getConnection();
         Statement stmt = conn.createStatement();
         stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
 
-        PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
         for (int i = 0; i < n; i++ ) {
-            pstmt.setInt(1, i);
-            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
-            pstmt.execute();
+            preparedStatement.setInt(1, i);
+            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
         }
         String[] ids = new String[n];
 
@@ -337,7 +344,7 @@ public class BlobIT extends PostgresServerITBase {
             ids[j] = rs.getString(1);
         }
         rs.close();
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        LobService ls = lobService();
         for (int k = 0; k < n; k++) {
             Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids[k])));
         }
@@ -345,7 +352,7 @@ public class BlobIT extends PostgresServerITBase {
 
         stmt.execute(("DROP GROUP t1"));
         stmt.close();
-        pstmt.close();
+        preparedStatement.close();
         conn.close();
 
         for (int k = 0; k < n; k++) {
@@ -355,7 +362,7 @@ public class BlobIT extends PostgresServerITBase {
     }
 
     @Test
-    public void testDeleteLobsWithGroupD() throws Exception {
+    public void testDropChildTable() throws Exception {
         int n = 5;
         Connection conn = getConnection();
         Statement stmt = conn.createStatement();
@@ -363,20 +370,20 @@ public class BlobIT extends PostgresServerITBase {
         stmt.execute("CREATE TABLE t2 (id_t2 INT PRIMARY KEY, id_t1 INT, bl_t2 BLOB)");
         stmt.execute("ALTER TABLE t2 ADD GROUPING FOREIGN KEY (id_t1) REFERENCES t1(id)");
 
-        PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
         for (int i = 0; i < n; i++ ) {
-            pstmt.setInt(1, i);
-            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
-            pstmt.execute();
+            preparedStatement.setInt(1, i);
+            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
         }
-        pstmt = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
+        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
         for (int ii = 0; ii < n; ii++ ) {
-            pstmt.setInt(1, ii*10);
-            pstmt.setInt(2, ii);
-            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
-            pstmt.execute();
+            preparedStatement.setInt(1, ii*10);
+            preparedStatement.setInt(2, ii);
+            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
         }
-        pstmt.close();
+        preparedStatement.close();
         
         String[] ids_t1 = new String[n];
         stmt.execute("SELECT id_blob(bl) FROM t1");
@@ -396,7 +403,7 @@ public class BlobIT extends PostgresServerITBase {
         }
         rs.close();
 
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        LobService ls = lobService();
         Transaction tr = getTransaction();
         for (int k = 0; k < n; k++) {
             Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t1[k])));
@@ -417,7 +424,7 @@ public class BlobIT extends PostgresServerITBase {
     }
 
     @Test
-    public void testDeleteLobsWithGroupE() throws Exception {
+    public void testDropGroupingForeinKey() throws Exception {
         int n = 5;
         Connection conn = getConnection();
         Statement stmt = conn.createStatement();
@@ -425,18 +432,18 @@ public class BlobIT extends PostgresServerITBase {
         stmt.execute("CREATE TABLE t2 (id_t2 INT PRIMARY KEY, id_t1 INT, bl_t2 BLOB)");
         stmt.execute("ALTER TABLE t2 ADD GROUPING FOREIGN KEY (id_t1) REFERENCES t1(id)");
 
-        PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
         for (int i = 0; i < n; i++ ) {
-            pstmt.setInt(1, i);
-            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
-            pstmt.execute();
+            preparedStatement.setInt(1, i);
+            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
         }
-        pstmt = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
+        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
         for (int ii = 0; ii < n; ii++ ) {
-            pstmt.setInt(1, ii*10);
-            pstmt.setInt(2, ii);
-            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
-            pstmt.execute();
+            preparedStatement.setInt(1, ii*10);
+            preparedStatement.setInt(2, ii);
+            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
         }
         String[] ids_t1 = new String[n];
         stmt.execute("SELECT id_blob(bl) FROM t1");
@@ -457,10 +464,10 @@ public class BlobIT extends PostgresServerITBase {
 
         stmt.execute(("ALTER TABLE t2 DROP GROUPING FOREIGN KEY"));
         stmt.close();
-        pstmt.close();
+        preparedStatement.close();
         conn.close();
 
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        LobService ls = lobService();
         for (int k = 0; k < n; k++) {
             Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_t1[k])));
             Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_t2[k])));
@@ -469,19 +476,19 @@ public class BlobIT extends PostgresServerITBase {
     }
     
     @Test
-    public void testDeleteLobsWithSchema() throws Exception {
+    public void testDropSchemaWithSingleTable() throws Exception {
         int n = 5;
         Connection conn = getConnection();
         Statement stmt = conn.createStatement();
         stmt.execute("CREATE TABLE testx.t1 (id INT PRIMARY KEY, bl BLOB)");
 
-        PreparedStatement pstmt = conn.prepareCall("INSERT INTO testx.t1 VALUES (?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO testx.t1 VALUES (?,?)");
         for (int i = 0; i < n; i++ ) {
-            pstmt.setInt(1, i);
-            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
-            pstmt.execute();
+            preparedStatement.setInt(1, i);
+            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
         }
-        pstmt.close();
+        preparedStatement.close();
         String[] ids = new String[n];
 
         stmt.execute("SELECT id_blob(bl) FROM testx.t1");
@@ -492,7 +499,7 @@ public class BlobIT extends PostgresServerITBase {
         }
         rs.close();
 
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        LobService ls = lobService();
         for (int k = 0; k < n; k++) {
             Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids[k])));
         }
@@ -517,17 +524,17 @@ public class BlobIT extends PostgresServerITBase {
         stmt.execute("CREATE TABLE t.t2 (id_t2 INT PRIMARY KEY, id_t1 INT, bl_t2 BLOB)");
         stmt.execute("ALTER TABLE t.t2 ADD GROUPING FOREIGN KEY (id_t1) REFERENCES t.t1(id)");
 
-        PreparedStatement pstmt = conn.prepareCall("INSERT INTO t.t1 VALUES (?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t.t1 VALUES (?)");
         for (int i = 0; i < n; i++ ) {
-            pstmt.setInt(1, i);
-            pstmt.execute();
+            preparedStatement.setInt(1, i);
+            preparedStatement.execute();
         }
-        pstmt = conn.prepareCall("INSERT INTO t.t2 VALUES (?,?,?)");
+        preparedStatement = conn.prepareCall("INSERT INTO t.t2 VALUES (?,?,?)");
         for (int ii = 0; ii < n; ii++ ) {
-            pstmt.setInt(1, ii*10);
-            pstmt.setInt(2, ii);
-            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
-            pstmt.execute();
+            preparedStatement.setInt(1, ii*10);
+            preparedStatement.setInt(2, ii);
+            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
         }
 
         String[] ids_t2 = new String[n];
@@ -538,7 +545,7 @@ public class BlobIT extends PostgresServerITBase {
             ids_t2[jj] = rs.getString(1);
         }
 
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        LobService ls = lobService();
         for (int k = 0; k < n; k++) {
             Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_t2[k])));
         }
@@ -546,7 +553,7 @@ public class BlobIT extends PostgresServerITBase {
         
         stmt.execute(("DROP SCHEMA t CASCADE"));
         stmt.close();
-        pstmt.close();
+        preparedStatement.close();
         conn.close();
 
         for (int k = 0; k < n; k++) {
@@ -556,19 +563,19 @@ public class BlobIT extends PostgresServerITBase {
     }
 
     @Test
-    public void testDropLobColumnA() throws Exception {
+    public void testDropLobColumn() throws Exception {
         int n = 5;
         Connection conn = getConnection();
         Statement stmt = conn.createStatement();
         stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
 
-        PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
         for (int i = 0; i < n; i++ ) {
-            pstmt.setInt(1, i);
-            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
-            pstmt.execute();
+            preparedStatement.setInt(1, i);
+            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
         }
-        pstmt.close();
+        preparedStatement.close();
         String[] ids = new String[n];
         
         stmt.execute("SELECT id_blob(bl) FROM t1");
@@ -578,7 +585,7 @@ public class BlobIT extends PostgresServerITBase {
             ids[j] = rs.getString(1);
         }
         rs.close();
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        LobService ls = lobService();
         for (int k = 0; k < n; k++) {
             Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids[k])));
         }
@@ -595,19 +602,19 @@ public class BlobIT extends PostgresServerITBase {
     }
 
     @Test
-    public void testDropLobColumnB() throws Exception {
+    public void testDropNonLobColumn() throws Exception {
         int n = 1;
         Connection conn = getConnection();
         Statement stmt = conn.createStatement();
         stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB, col3 int)");
 
-        PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES (?,?, 1)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?, 1)");
         for (int i = 0; i < n; i++ ) {
-            pstmt.setInt(1, i);
-            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
-            pstmt.execute();
+            preparedStatement.setInt(1, i);
+            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
         }
-        pstmt.close();
+        preparedStatement.close();
         String[] ids = new String[n];
 
         stmt.execute("SELECT id_blob(bl) FROM t1");
@@ -621,7 +628,7 @@ public class BlobIT extends PostgresServerITBase {
         stmt.close();
         conn.close();
 
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        LobService ls = lobService();
         for (int k = 0; k < n; k++) {
             Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids[k])));
         }
@@ -630,7 +637,7 @@ public class BlobIT extends PostgresServerITBase {
 
 
     @Test
-    public void testDropLobColumnC() throws Exception {
+    public void testDropLobColumnInChildTable() throws Exception {
         int n = 5;
         Connection conn = getConnection();
         Statement stmt = conn.createStatement();
@@ -638,17 +645,17 @@ public class BlobIT extends PostgresServerITBase {
         stmt.execute("CREATE TABLE t.t2 (id_t2 INT PRIMARY KEY, id_t1 INT, bl_t2 BLOB)");
         stmt.execute("ALTER TABLE t.t2 ADD GROUPING FOREIGN KEY (id_t1) REFERENCES t.t1(id)");
 
-        PreparedStatement pstmt = conn.prepareCall("INSERT INTO t.t1 VALUES (?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t.t1 VALUES (?)");
         for (int i = 0; i < n; i++ ) {
-            pstmt.setInt(1, i);
-            pstmt.execute();
+            preparedStatement.setInt(1, i);
+            preparedStatement.execute();
         }
-        pstmt = conn.prepareCall("INSERT INTO t.t2 VALUES (?,?,?)");
+        preparedStatement = conn.prepareCall("INSERT INTO t.t2 VALUES (?,?,?)");
         for (int ii = 0; ii < n; ii++ ) {
-            pstmt.setInt(1, ii*10);
-            pstmt.setInt(2, ii);
-            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
-            pstmt.execute();
+            preparedStatement.setInt(1, ii*10);
+            preparedStatement.setInt(2, ii);
+            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
         }
 
         String[] ids_t2 = new String[n];
@@ -659,7 +666,7 @@ public class BlobIT extends PostgresServerITBase {
             ids_t2[jj] = rs.getString(1);
         }
 
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        LobService ls = lobService();
         for (int k = 0; k < n; k++) {
             Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_t2[k])));
         }
@@ -668,7 +675,7 @@ public class BlobIT extends PostgresServerITBase {
         
         stmt.execute(("ALTER TABLE t.t2 DROP COLUMN bl_t2"));
         stmt.close();
-        pstmt.close();
+        preparedStatement.close();
         conn.close();
 
         for (int k = 0; k < n; k++) {
@@ -678,7 +685,7 @@ public class BlobIT extends PostgresServerITBase {
     }
 
     @Test
-    public void testDropLobColumnD() throws Exception {
+    public void testDropNonLobColumnInChildTable() throws Exception {
         int n = 5;
         Connection conn = getConnection();
         Statement stmt = conn.createStatement();
@@ -686,17 +693,17 @@ public class BlobIT extends PostgresServerITBase {
         stmt.execute("CREATE TABLE t.t2 (id_t2 INT PRIMARY KEY, id_t1 INT, bl_t2 BLOB, col4 INT)");
         stmt.execute("ALTER TABLE t.t2 ADD GROUPING FOREIGN KEY (id_t1) REFERENCES t.t1(id)");
 
-        PreparedStatement pstmt = conn.prepareCall("INSERT INTO t.t1 VALUES (?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t.t1 VALUES (?)");
         for (int i = 0; i < n; i++) {
-            pstmt.setInt(1, i);
-            pstmt.execute();
+            preparedStatement.setInt(1, i);
+            preparedStatement.execute();
         }
-        pstmt = conn.prepareCall("INSERT INTO t.t2 VALUES (?,?,?,1)");
+        preparedStatement = conn.prepareCall("INSERT INTO t.t2 VALUES (?,?,?,1)");
         for (int ii = 0; ii < n; ii++) {
-            pstmt.setInt(1, ii * 10);
-            pstmt.setInt(2, ii);
-            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
-            pstmt.execute();
+            preparedStatement.setInt(1, ii * 10);
+            preparedStatement.setInt(2, ii);
+            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
         }
 
         String[] ids_t2 = new String[n];
@@ -709,10 +716,10 @@ public class BlobIT extends PostgresServerITBase {
 
         stmt.execute(("ALTER TABLE t.t2 DROP COLUMN col4"));
         stmt.close();
-        pstmt.close();
+        preparedStatement.close();
         conn.close();
 
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        LobService ls = lobService();
         for (int k = 0; k < n; k++) {
             Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_t2[k])));
         }
@@ -720,7 +727,7 @@ public class BlobIT extends PostgresServerITBase {
     }
 
     @Test
-    public void testDropLobColumnE() throws Exception {
+    public void testDropLobColumnInParentTable() throws Exception {
         int n = 5;
         Connection conn = getConnection();
         Statement stmt = conn.createStatement();
@@ -728,18 +735,18 @@ public class BlobIT extends PostgresServerITBase {
         stmt.execute("CREATE TABLE t2 (id_t2 INT PRIMARY KEY, id_t1 INT, bl_t2 BLOB)");
         stmt.execute("ALTER TABLE t2 ADD GROUPING FOREIGN KEY (id_t1) REFERENCES t1(id)");
 
-        PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
         for (int i = 0; i < n; i++ ) {
-            pstmt.setInt(1, i);
-            pstmt.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
-            pstmt.execute();
+            preparedStatement.setInt(1, i);
+            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
         }
-        pstmt = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
+        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
         for (int ii = 0; ii < n; ii++ ) {
-            pstmt.setInt(1, ii*10);
-            pstmt.setInt(2, ii);
-            pstmt.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
-            pstmt.execute();
+            preparedStatement.setInt(1, ii*10);
+            preparedStatement.setInt(2, ii);
+            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
         }
         String[] ids_t1 = new String[n];
         stmt.execute("SELECT id_blob(bl) FROM t1");
@@ -758,7 +765,7 @@ public class BlobIT extends PostgresServerITBase {
             ids_t2[jj] = rs.getString(1);
         }
 
-        LobService ls = serviceManager().getServiceByClass(LobService.class);
+        LobService ls = lobService();
         for (int k = 0; k < n; k++) {
             Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_t1[k])));
             Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_t2[k])));
@@ -767,7 +774,7 @@ public class BlobIT extends PostgresServerITBase {
         
         stmt.execute(("ALTER TABLE t1 DROP COLUMN bl"));
         stmt.close();
-        pstmt.close();
+        preparedStatement.close();
         conn.close();
 
         for (int k = 0; k < n; k++) {
@@ -804,10 +811,10 @@ public class BlobIT extends PostgresServerITBase {
         Statement stmt = conn.createStatement();
         stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
         
-        PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES ( 1, ?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES ( 1, ?)");
         int lengthInMb = 9;
-        pstmt.setBlob(1, getInputStreamData(lengthInMb));
-        pstmt.execute();
+        preparedStatement.setBlob(1, getInputStreamData(lengthInMb));
+        preparedStatement.execute();
         
         ResultSet rs = stmt.executeQuery("SELECT bl from t1");
         rs.next();
@@ -823,19 +830,450 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
     }
 
+    @Test
+    public void testDeleteRowsFromRoot() throws Exception {
+        int n = 5;
+        Connection conn = getConnection();
+        Statement stmt = conn.createStatement();
+        stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
+
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        for (int i = 0; i < n; i++ ) {
+            preparedStatement.setInt(1, i);
+            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
+        }
+        String[] ids = new String[n];
+
+        stmt.execute("SELECT id_blob(bl) FROM t1");
+        ResultSet rs = stmt.getResultSet();
+        for (int j = 0; j < n; j++) {
+            rs.next();
+            ids[j] = rs.getString(1);
+        }
+        rs.close();
+
+        LobService ls = lobService();
+        for (int k = 0; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids[k])));
+        }
+        commitOrRollback();
+
+        stmt.execute(("DELETE FROM t1 WHERE id > 2"));
+        stmt.close();
+        preparedStatement.close();
+        conn.close();
+
+        for (int k = 0; k < 2; k++) {
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids[k])));
+        }
+        for (int k = 2; k < n; k++) {
+            Assert.assertFalse(ls.existsLob(getTransaction(), UUID.fromString(ids[k])));
+        }
+        commitOrRollback();
+    }
+
+    @Test
+    public void testDeleteRowsFromChildTable() throws Exception {
+        int n = 5;
+        Connection conn = getConnection();
+        Statement stmt = conn.createStatement();
+        stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
+        stmt.execute("CREATE TABLE t2 (id_t2 INT PRIMARY KEY, id_t1 INT, bl_t2 BLOB)");
+        stmt.execute("ALTER TABLE t2 ADD GROUPING FOREIGN KEY (id_t1) REFERENCES t1(id)");
+
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        for (int i = 0; i < n; i++ ) {
+            preparedStatement.setInt(1, i);
+            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
+        }
+        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
+        for (int ii = 0; ii < n; ii++ ) {
+            preparedStatement.setInt(1, ii*10);
+            preparedStatement.setInt(2, ii);
+            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
+        }
+        preparedStatement.close();
+
+        String[] ids_t1 = new String[n];
+        stmt.execute("SELECT id_blob(bl) FROM t1");
+        ResultSet rs = stmt.getResultSet();
+        for (int j = 0; j < n; j++) {
+            rs.next();
+            ids_t1[j] = rs.getString(1);
+        }
+        rs.close();
+
+        String[] ids_t2 = new String[n];
+        stmt.execute("SELECT id_blob(bl_t2) FROM t2");
+        rs = stmt.getResultSet();
+        for (int jj = 0; jj < n; jj++) {
+            rs.next();
+            ids_t2[jj] = rs.getString(1);
+        }
+        rs.close();
+
+        LobService ls = lobService();
+        Transaction tr = getTransaction();
+        for (int k = 0; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t1[k])));
+            Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t2[k])));
+        }
+        commitOrRollback();
+
+        stmt.execute(("DELETE FROM t2 where id_t2 > 2"));
+        stmt.close();
+        conn.close();
+
+        tr = getTransaction();
+
+        for (int k = 0; k < 2; k++) {
+            Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t1[k])));
+            Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t2[k])));
+        }
+        
+        for (int k = 2; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t1[k])));
+            Assert.assertFalse(ls.existsLob(tr, UUID.fromString(ids_t2[k])));
+        }
+        commitOrRollback();
+    }
+
+    @Test
+    public void testDeleteRowsFromParentTable() throws Exception {
+        int n = 5;
+        Connection conn = getConnection();
+        Statement stmt = conn.createStatement();
+        stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
+        stmt.execute("CREATE TABLE t2 (id_t2 INT PRIMARY KEY, id_t1 INT, bl_t2 BLOB)");
+        stmt.execute("ALTER TABLE t2 ADD GROUPING FOREIGN KEY (id_t1) REFERENCES t1(id)");
+
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        for (int i = 0; i < n; i++ ) {
+            preparedStatement.setInt(1, i);
+            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
+        }
+        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
+        for (int ii = 0; ii < n; ii++ ) {
+            preparedStatement.setInt(1, ii*10);
+            preparedStatement.setInt(2, ii);
+            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
+        }
+        preparedStatement.close();
+
+        String[] ids_t1 = new String[n];
+        stmt.execute("SELECT id_blob(bl) FROM t1");
+        ResultSet rs = stmt.getResultSet();
+        for (int j = 0; j < n; j++) {
+            rs.next();
+            ids_t1[j] = rs.getString(1);
+        }
+        rs.close();
+
+        String[] ids_t2 = new String[n];
+        stmt.execute("SELECT id_blob(bl_t2) FROM t2");
+        rs = stmt.getResultSet();
+        for (int jj = 0; jj < n; jj++) {
+            rs.next();
+            ids_t2[jj] = rs.getString(1);
+        }
+        rs.close();
+
+        LobService ls = lobService();
+        Transaction tr = getTransaction();
+        for (int k = 0; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t1[k])));
+            Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t2[k])));
+        }
+        commitOrRollback();
+
+        stmt.execute(("DELETE FROM t1 where id > 2"));
+        stmt.close();
+        conn.close();
+
+        tr = getTransaction();
+
+        for (int k = 0; k < 2; k++) {
+            Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t1[k])));
+            Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t2[k])));
+        }
+
+        for (int k = 2; k < n; k++) {
+            Assert.assertFalse(ls.existsLob(tr, UUID.fromString(ids_t1[k])));
+            Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t2[k])));
+        }
+        commitOrRollback();
+    }
+
+    @Test
+    public void testUpdateRowFromSingleTable() throws Exception {
+        int n = 5;
+        Connection conn = getConnection();
+        Statement stmt = conn.createStatement();
+        stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
+
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        for (int i = 0; i < n; i++ ) {
+            preparedStatement.setInt(1, i);
+            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
+        }
+        String[] ids = new String[n];
+
+        stmt.execute("SELECT id_blob(bl) FROM t1");
+        ResultSet rs = stmt.getResultSet();
+        for (int j = 0; j < n; j++) {
+            rs.next();
+            ids[j] = rs.getString(1);
+        }
+        rs.close();
+
+        LobService ls = lobService();
+        for (int k = 0; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids[k])));
+        }
+        commitOrRollback();
+
+        stmt.execute(("UPDATE t1 SET bl = create_long_blob(unhex('010203')) WHERE id = 2"));
+        stmt.execute("SELECT id_blob(bl), isTrue(unwrap_blob(bl) = unhex('010203')) from t1 WHERE id = 2");
+        ResultSet resultSet = stmt.getResultSet();
+        resultSet.next();
+        String blobId = resultSet.getString(1);
+        Assert.assertTrue(resultSet.getBoolean(2));
+        stmt.close();
+        preparedStatement.close();
+        conn.close();
+
+        for (int k = 0; k < 2; k++) {
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids[k])));
+        }
+        Assert.assertFalse(ls.existsLob(getTransaction(), UUID.fromString(ids[2])));
+        Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(blobId)));
+        for (int k = 3; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids[k])));
+        }
+        commitOrRollback();
+    }
+
+    @Test
+    public void testUpdateRowsFromSingleTable() throws Exception {
+        int n = 5;
+        Connection conn = getConnection();
+        Statement stmt = conn.createStatement();
+        stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
+
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        for (int i = 0; i < n; i++ ) {
+            preparedStatement.setInt(1, i);
+            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
+        }
+        String[] ids = new String[n];
+
+        stmt.execute("SELECT id_blob(bl) FROM t1");
+        ResultSet rs = stmt.getResultSet();
+        for (int j = 0; j < n; j++) {
+            rs.next();
+            ids[j] = rs.getString(1);
+        }
+        rs.close();
+
+        LobService ls = lobService();
+        for (int k = 0; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids[k])));
+        }
+        commitOrRollback();
+
+        stmt.execute(("UPDATE t1 SET bl = create_long_blob(unhex('010203')) WHERE id > 2"));
+        stmt.execute("SELECT id_blob(bl) FROM t1 WHERE id > 2");
+        ResultSet resultSet = stmt.getResultSet();
+        String[] ids_new = new String[n-3];
+        for (int j = 3; j < n; j++) {
+            resultSet.next();
+            ids_new[j-3] = resultSet.getString(1);
+        }
+        stmt.close();
+        preparedStatement.close();
+        conn.close();
+
+        for (int k = 0; k <= 2; k++) {
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids[k])));
+        }
+        for (int k = 3; k < n; k++) {
+            Assert.assertFalse(ls.existsLob(getTransaction(), UUID.fromString(ids[k])));
+            Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_new[k-3])));
+        }
+        commitOrRollback();
+    }
+    
+    @Test
+    public void testUpdateRowFromChildTable() throws Exception {
+        int n = 5;
+        Connection conn = getConnection();
+        Statement stmt = conn.createStatement();
+        stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
+        stmt.execute("CREATE TABLE t2 (id_t2 INT PRIMARY KEY, id_t1 INT, bl_t2 BLOB)");
+        stmt.execute("ALTER TABLE t2 ADD GROUPING FOREIGN KEY (id_t1) REFERENCES t1(id)");
+
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        for (int i = 0; i < n; i++ ) {
+            preparedStatement.setInt(1, i);
+            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
+        }
+        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
+        for (int ii = 0; ii < n; ii++ ) {
+            preparedStatement.setInt(1, ii*10);
+            preparedStatement.setInt(2, ii);
+            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
+        }
+        preparedStatement.close();
+
+        String[] ids_t1 = new String[n];
+        stmt.execute("SELECT id_blob(bl) FROM t1");
+        ResultSet rs = stmt.getResultSet();
+        for (int j = 0; j < n; j++) {
+            rs.next();
+            ids_t1[j] = rs.getString(1);
+        }
+        rs.close();
+
+        String[] ids_t2 = new String[n];
+        stmt.execute("SELECT id_blob(bl_t2) FROM t2");
+        rs = stmt.getResultSet();
+        for (int jj = 0; jj < n; jj++) {
+            rs.next();
+            ids_t2[jj] = rs.getString(1);
+        }
+        rs.close();
+
+        LobService ls = lobService();
+        Transaction tr = getTransaction();
+        for (int k = 0; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t1[k])));
+            Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t2[k])));
+        }
+        commitOrRollback();
+
+        stmt.execute("UPDATE t2 SET bl_t2 = create_long_blob(unhex('030405')) WHERE id_t2 = 2");
+        stmt.execute("SELECT id_blob(bl_t2), isTrue(unwrap_blob(bl_t2) = unhex('030405')) FROM t2 WHERE id_t2 = 2");
+        ResultSet resultSet = stmt.getResultSet();
+        Assert.assertTrue(resultSet.next());
+        String blobId = resultSet.getString(1);
+        Assert.assertTrue(resultSet.getBoolean(2));
+        stmt.close();
+        conn.close();
+
+        tr = getTransaction();
+
+        for (int k = 0; k < 2; k++) {
+            Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t1[k])));
+            Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t2[k])));
+        }
+        Assert.assertFalse(ls.existsLob(getTransaction(), UUID.fromString(ids_t2[2])));
+        Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_t1[2])));
+        Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(blobId)));
+        for (int k = 2; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t1[k])));
+            Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t2[k])));
+        }
+        commitOrRollback();
+    }
+
+    @Test
+    public void testUpdateRowFromParentTable() throws Exception {
+        int n = 5;
+        Connection conn = getConnection();
+        Statement stmt = conn.createStatement();
+        stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
+        stmt.execute("CREATE TABLE t2 (id_t2 INT PRIMARY KEY, id_t1 INT, bl_t2 BLOB)");
+        stmt.execute("ALTER TABLE t2 ADD GROUPING FOREIGN KEY (id_t1) REFERENCES t1(id)");
+
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        for (int i = 0; i < n; i++ ) {
+            preparedStatement.setInt(1, i);
+            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
+        }
+        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
+        for (int ii = 0; ii < n; ii++ ) {
+            preparedStatement.setInt(1, ii*10);
+            preparedStatement.setInt(2, ii);
+            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
+        }
+        preparedStatement.close();
+
+        String[] ids_t1 = new String[n];
+        stmt.execute("SELECT id_blob(bl) FROM t1");
+        ResultSet rs = stmt.getResultSet();
+        for (int j = 0; j < n; j++) {
+            rs.next();
+            ids_t1[j] = rs.getString(1);
+        }
+        rs.close();
+
+        String[] ids_t2 = new String[n];
+        stmt.execute("SELECT id_blob(bl_t2) FROM t2");
+        rs = stmt.getResultSet();
+        for (int jj = 0; jj < n; jj++) {
+            rs.next();
+            ids_t2[jj] = rs.getString(1);
+        }
+        rs.close();
+
+        LobService ls = lobService();
+        Transaction tr = getTransaction();
+        for (int k = 0; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t1[k])));
+            Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t2[k])));
+        }
+        commitOrRollback();
+
+        stmt.execute("UPDATE t1 SET bl = create_long_blob(unhex('030405')) WHERE id = 2");
+        stmt.execute("SELECT id_blob(bl), isTrue(unwrap_blob(bl) = unhex('030405')) FROM t1 WHERE id = 2");
+        ResultSet resultSet = stmt.getResultSet();
+        Assert.assertTrue(resultSet.next());
+        String blobId = resultSet.getString(1);
+        Assert.assertTrue(resultSet.getBoolean(2));
+        stmt.close();
+        conn.close();
+
+        tr = getTransaction();
+
+        for (int k = 0; k < 2; k++) {
+            Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t1[k])));
+            Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t2[k])));
+        }
+        Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(ids_t2[2])));
+        Assert.assertFalse(ls.existsLob(getTransaction(), UUID.fromString(ids_t1[2])));
+        Assert.assertTrue(ls.existsLob(getTransaction(), UUID.fromString(blobId)));
+        for (int k = 2; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t1[k])));
+            Assert.assertTrue(ls.existsLob(tr, UUID.fromString(ids_t2[k])));
+        }
+        commitOrRollback();
+    }
+        
+
     //@Test
     public void blobPerformanceA() throws Exception {
         Connection conn = getConnection();
         Statement stmt = conn.createStatement();
         stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
 
-        PreparedStatement pstmt = conn.prepareCall("INSERT INTO t1 VALUES ( 1, ?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES ( 1, ?)");
         int lengthInMb = 9;
         long start = System.currentTimeMillis();
-        pstmt.setBlob(1, getInputStreamData(lengthInMb) );
+        preparedStatement.setBlob(1, getInputStreamData(lengthInMb) );
         long stop = System.currentTimeMillis();
         System.out.println("Writing --> time: " + ((stop - start)) + "ms, speed: " + (1000*(new Float(lengthInMb)/(stop-start)))+ " MB/sec");
-        pstmt.execute();
+        preparedStatement.execute();
 
         ResultSet rs = stmt.executeQuery("SELECT bl from t1");
         rs.next();
