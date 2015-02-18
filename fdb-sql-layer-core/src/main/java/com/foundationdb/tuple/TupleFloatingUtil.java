@@ -26,11 +26,9 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
-import java.nio.charset.Charset;
 
 import com.foundationdb.tuple.TupleUtil.DecodeResult;
 import com.foundationdb.util.WrappingByteSource;
-import com.foundationdb.server.service.blob.BlobRef;
 
 /**
  * 

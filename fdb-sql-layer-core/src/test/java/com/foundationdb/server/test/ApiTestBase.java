@@ -48,6 +48,7 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.util.SchemaCache;
+import com.foundationdb.server.service.blob.LobService;
 import com.foundationdb.server.store.FDBHolder;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.ais.AISCloner;
@@ -443,6 +444,10 @@ public class ApiTestBase {
 
     protected SecurityService securityService() {
         return sm.getServiceByClass(SecurityService.class);
+    }
+    
+    protected LobService lobService() {
+        return sm.getServiceByClass(LobService.class);
     }
 
     protected IndexStatisticsService indexStatsService() {

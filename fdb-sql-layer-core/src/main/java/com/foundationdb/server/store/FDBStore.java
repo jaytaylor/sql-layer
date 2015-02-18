@@ -47,9 +47,7 @@ import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.qp.storeadapter.indexrow.FDBIndexRow;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.error.DuplicateKeyException;
-import com.foundationdb.server.error.FDBNotCommittedException;
-import com.foundationdb.server.error.LobException;
+import com.foundationdb.server.error.*;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.blob.BlobRef;
@@ -707,17 +705,22 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                 // ensure correct state of the leading bit
                 BlobRef blobRefTmp = new BlobRef(value, state, blobRefInit.getLobType(), blobRefInit.getRequestedLobType());
                 
-                if (blobRefTmp.isLongLob() && !isBlobReturnModeUnwrapped()) { // only set in WRAPPED mode
-                    type = BlobRef.LobType.LONG_LOB;
-                } else if (blobRefTmp.isShortLob() && !isBlobReturnModeUnwrapped()) { // only set in WRAPPED mode
-                    if (blobRefTmp.getBytes().length >= AkBlob.LOB_SWITCH_SIZE) {
-                        UUID id = UUID.randomUUID();
-                        lobService.createNewLob(tr, id);
-                        lobService.writeBlob(tr, id, 0, blobRefTmp.getBytes());
-                        value = updateValue(id);
+                if (!isBlobReturnModeUnwrapped()) {
+                    if (blobRefTmp.isLongLob()) {
                         type = BlobRef.LobType.LONG_LOB;
+                    }
+                    else if (blobRefTmp.isShortLob()) { 
+                        if (blobRefTmp.getBytes().length >= AkBlob.LOB_SWITCH_SIZE) {
+                            UUID id = UUID.randomUUID();
+                            lobService.createNewLob(tr, id);
+                            lobService.writeBlob(tr, id, 0, blobRefTmp.getBytes());
+                            value = updateValue(id);
+                            type = BlobRef.LobType.LONG_LOB;
+                        } else {
+                            type = BlobRef.LobType.SHORT_LOB;
+                        }
                     } else {
-                        type = BlobRef.LobType.SHORT_LOB;
+                        throw new AkibanInternalException("Unexpected state");
                     }
                 } else { // only in UNWRAPPED mode, value needs updating, adding leading bit and correct value content (guid)
                     // first verify if specific requested format is allowed --> should be done in functions.
