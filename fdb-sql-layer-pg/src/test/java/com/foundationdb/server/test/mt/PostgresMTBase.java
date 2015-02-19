@@ -140,6 +140,13 @@ public class PostgresMTBase extends MTBase
                         }
                         s = null;
                     } else if(code.isRollbackClass()) {
+                        try {
+                            if(!conn.getAutoCommit()) {
+                                conn.rollback();
+                            }
+                        } catch(SQLException e1) {
+                            throw new RuntimeException("Error rolling back", e1);
+                        }
                         // retry after slight delay
                         delay();
                     } else {
