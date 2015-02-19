@@ -61,23 +61,13 @@ public class LobRoutines {
             txnService.beginTransaction(session);
             startedTransaction = true;
         }
-        FDBTransactionService.TransactionState txnState = txnService.getTransaction(session);
-        try {
-            txnState.getTransaction().run(new Function<Transaction, Void>() {
-                @Override
-                public Void apply(Transaction tr) {
-                    LobService ls = getLobService();
-                    ls.createNewLob(session, id);
-                    return null;
-                }
-            });
-            if (startedTransaction) {
-                txnService.commitOrRetryTransaction(session);
-            }
-        } finally {
-            if (startedTransaction) {
-                txnService.rollbackTransactionIfOpen(session);
-            }
+        LobService ls = getLobService();
+        ls.createNewLob(session, id);
+        if (startedTransaction) {
+            txnService.commitOrRetryTransaction(session);
+        }
+        if (startedTransaction) {
+            txnService.rollbackTransactionIfOpen(session);
         }
         context.getServer().addCreatedLob(id);
         return id.toString();
@@ -95,23 +85,14 @@ public class LobRoutines {
             startedTransaction = true;
         }
         final UUID id = UUID.fromString(blobId);
-        FDBTransactionService.TransactionState txnState = txnService.getTransaction(session);
-        try {
-            size = txnState.getTransaction().run(new Function<Transaction, Long>() {
-                @Override
-                public Long apply(Transaction tr) {
-                    LobService ls = getLobService();
-                    ls.verifyAccessPermission(session, context, id);
-                    return ls.sizeBlob(session, id);
-                }
-            });
-            if (startedTransaction) {
-                txnService.commitOrRetryTransaction(session);
-            }
-        } finally {
-            if (startedTransaction) {
-                txnService.rollbackTransactionIfOpen(session);
-            }
+        LobService ls = getLobService();
+        ls.verifyAccessPermission(session, context, id);
+        size = ls.sizeBlob(session, id);
+        if (startedTransaction) {
+            txnService.commitOrRetryTransaction(session);
+        }
+        if (startedTransaction) {
+            txnService.rollbackTransactionIfOpen(session);
         }
         return size;
     }
@@ -127,23 +108,14 @@ public class LobRoutines {
             txnService.beginTransaction(session);
             startedTransaction = true;
         }
-        FDBTransactionService.TransactionState txnState = txnService.getTransaction(session);
-        try {
-            output = txnState.getTransaction().run(new Function<Transaction, byte[]>() {
-                @Override
-                public byte[] apply(Transaction tr) {
-                    LobService ls = getLobService();
-                    ls.verifyAccessPermission(session, context, id);
-                    return ls.readBlob(session, id, offset, length);
-                }
-            });
-            if (startedTransaction) {
-                txnService.commitOrRetryTransaction(session);
-            }
-        } finally {
-            if (startedTransaction) {
-                txnService.rollbackTransactionIfOpen(session);
-            }
+        LobService ls = getLobService();
+        ls.verifyAccessPermission(session, context, id);
+        output = ls.readBlob(session, id, offset, length);
+        if (startedTransaction) {
+            txnService.commitOrRetryTransaction(session);
+        }
+        if (startedTransaction) {
+            txnService.rollbackTransactionIfOpen(session);
         }
         out[0] = output; 
     }
@@ -158,24 +130,14 @@ public class LobRoutines {
             txnService.beginTransaction(session);
             startedTransaction = true;
         }
-        FDBTransactionService.TransactionState txnState = txnService.getTransaction(session);
-        try {
-            txnState.getTransaction().run(new Function<Transaction, Void>() {
-                @Override
-                public Void apply(Transaction tr) {
-                    LobService ls = getLobService();
-                    ls.verifyAccessPermission(session, context, id);
-                    ls.writeBlob(session, id, offset, data);
-                    return null;
-                }
-            });
-            if (startedTransaction) {
-                txnService.commitOrRetryTransaction(session);
-            }
-        } finally {
-            if (startedTransaction) {
-                txnService.rollbackTransactionIfOpen(session);
-            }
+        LobService ls = getLobService();
+        ls.verifyAccessPermission(session, context, id);
+        ls.writeBlob(session, id, offset, data);
+        if (startedTransaction) {
+            txnService.commitOrRetryTransaction(session);
+        }
+        if (startedTransaction) {
+            txnService.rollbackTransactionIfOpen(session);
         }
     }
 
@@ -189,24 +151,14 @@ public class LobRoutines {
             txnService.beginTransaction(session);
             startedTransaction = true;
         }
-        FDBTransactionService.TransactionState txnState = txnService.getTransaction(session);
-        try {
-            txnState.getTransaction().run(new Function<Transaction, Void>() {
-                @Override
-                public Void apply(Transaction tr) {
-                    LobService ls = getLobService();
-                    ls.verifyAccessPermission(session, context, id);
-                    ls.appendBlob(session, id, data);
-                    return null;
-                }
-            });
-            if (startedTransaction) {
-                txnService.commitOrRetryTransaction(session);
-            }
-        } finally {
-            if (startedTransaction) {
-                txnService.rollbackTransactionIfOpen(session);
-            }
+        LobService ls = getLobService();
+        ls.verifyAccessPermission(session, context, id);
+        ls.appendBlob(session, id, data);
+        if (startedTransaction) {
+            txnService.commitOrRetryTransaction(session);
+        }
+        if (startedTransaction) {
+            txnService.rollbackTransactionIfOpen(session);
         }
     }
 
@@ -220,24 +172,14 @@ public class LobRoutines {
             txnService.beginTransaction(session);
             startedTransaction = true;
         }
-        FDBTransactionService.TransactionState txnState = txnService.getTransaction(session);
-        try {
-            txnState.getTransaction().run(new Function<Transaction, Void>() {
-                @Override
-                public Void apply(Transaction tr) {
-                    LobService ls = getLobService();
-                    ls.verifyAccessPermission(session, context, id);
-                    ls.truncateBlob(session, id, newLength);
-                    return null;
-                }
-            });
-            if (startedTransaction) {
-                txnService.commitOrRetryTransaction(session);
-            }
-        } finally {
-            if (startedTransaction) {
-                txnService.rollbackTransactionIfOpen(session);
-            }
+        LobService ls = getLobService();
+        ls.verifyAccessPermission(session, context, id);
+        ls.truncateBlob(session, id, newLength);
+        if (startedTransaction) {
+            txnService.commitOrRetryTransaction(session);
+        }
+        if (startedTransaction) {
+            txnService.rollbackTransactionIfOpen(session);
         }
     }
     
