@@ -48,8 +48,8 @@ public class SQLBlob extends BlobAsync {
                         if(tableIdBytes == null) {
                             return null;
                         }
-                        int tableIDString = (int)Tuple2.fromBytes(tableIdBytes).getLong(0);
-                        return Integer.valueOf(tableIDString);
+                        int tableId = (int)Tuple2.fromBytes(tableIdBytes).getLong(0);
+                        return Integer.valueOf(tableId);
                     }
                 });
             }
