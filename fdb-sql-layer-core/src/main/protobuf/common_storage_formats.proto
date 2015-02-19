@@ -7,8 +7,8 @@ package akiban_schema.protobuf;
 option java_package = "com.foundationdb.ais.protobuf";
 option java_outer_classname = "CommonProtobuf";
 
-enum MemoryTableType {
-    MEMORY_TABLE_FACTORY = 1;
+enum VirtualTableType {
+    VIRTUAL_SCAN_FACTORY = 1;
 }
 
 message ProtobufRowFormat {
@@ -21,7 +21,7 @@ message ProtobufRowFormat {
 }
 
 extend Storage {
-    optional MemoryTableType memory_table = 1001;
+    optional VirtualTableType virtual_table = 1001;
     optional string full_text_index_path = 1002;
     optional ProtobufRowFormat protobuf_row = 1003;
 }

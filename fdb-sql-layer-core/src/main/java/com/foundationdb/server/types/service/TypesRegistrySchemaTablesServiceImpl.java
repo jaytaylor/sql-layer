@@ -27,10 +27,10 @@ import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
 import com.foundationdb.ais.model.aisb2.NewTableBuilder;
-import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
-import com.foundationdb.qp.memoryadapter.MemoryAdapter;
-import com.foundationdb.qp.memoryadapter.MemoryGroupCursor;
-import com.foundationdb.qp.memoryadapter.SimpleMemoryGroupScan;
+import com.foundationdb.qp.virtualadapter.BasicFactoryBase;
+import com.foundationdb.qp.virtualadapter.VirtualAdapter;
+import com.foundationdb.qp.virtualadapter.VirtualGroupCursor;
+import com.foundationdb.qp.virtualadapter.SimpleVirtualGroupScan;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.is.SchemaTablesService;
 import com.foundationdb.server.service.session.Session;
@@ -107,14 +107,14 @@ implements Service, TypesRegistrySchemaTablesService {
         }
 
         @Override
-        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public VirtualGroupCursor.GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             Collection<Map<TClass, TCast>> castsBySource = getTypeRegistry().getCastsResolver().castsBySource();
             Collection<TCast> castsCollections = new ArrayList<>(castsBySource.size());
             for (Map<?, TCast> castMap : castsBySource) {
                 castsCollections.addAll(castMap.values());
             }
             
-            return new SimpleMemoryGroupScan<TCast>(group.getAIS(), getName(), castsCollections.iterator()) {
+            return new SimpleVirtualGroupScan<TCast>(group.getAIS(), getName(), castsCollections.iterator()) {
                 @Override
                 protected Object[] createRow(TCast data, int hiddenPk) {
                     return new Object[] {
@@ -156,11 +156,11 @@ implements Service, TypesRegistrySchemaTablesService {
         }
 
         @Override
-        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public VirtualGroupCursor.GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             Iterator<? extends TValidatedOverload> allOverloads = Iterators.concat(
                     getTypeRegistry().getScalarsResolver().getRegistry().iterator(),
                     getTypeRegistry().getAggregatesResolver().getRegistry().iterator());
-            return new SimpleMemoryGroupScan<TValidatedOverload>(group.getAIS(), getName(), allOverloads) {
+            return new SimpleVirtualGroupScan<TValidatedOverload>(group.getAIS(), getName(), allOverloads) {
                 @Override
                 protected Object[] createRow(TValidatedOverload data, int hiddenPk) {
                     return new Object[] {

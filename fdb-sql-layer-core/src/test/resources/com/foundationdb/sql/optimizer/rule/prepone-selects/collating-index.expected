@@ -3,7 +3,7 @@ SelectQuery@420434a7
     Project@162c6b3a[tc.c2]
       Select@3e33b835[]
         Flatten@1ae8fe08(tc)
-          Select@367dcd05[like(tc.c1,%XYZ%)]
+          Select@367dcd05[like(tc.c1,'%XYZ%')]
             AncestorLookup@7d1f1f35(tc -> [tc])
-              SingleIndexScan@63a10c0(Index(test.tc.tc_c1[IndexColumn(c1)]), NONE, >A, rows = 1, cost = 12.9874)
+              SingleIndexScan@63a10c0(Index(test.tc.tc_c1[IndexColumn(c1)]), NONE, >'A', rows = 1, cost = 12.9874)
               TableSource@759715d(tc - TableGroup@4e21b071(tc))

@@ -3,9 +3,9 @@ SelectQuery@32fb6aed
     Project@2dbc1c4b[COUNT(*)]
       Select@18e59762[]
         AggregateSource@935afb3(UNGROUPED,[])
-          Select@23a2157e[IN(c2.name, [AAA, BBB, CCC, DDD, EEE, FFF, GGG, HHH, III])]
+          Select@23a2157e[IN(c2.name, ['AAA', 'BBB', 'CCC', 'DDD', 'EEE', 'FFF', 'GGG', 'HHH', 'III'])]
             JoinNode@67a8a86a(INNER/NESTED_LOOPS)
-              TableGroupJoinTree@1d5ba091(TableGroup@3c671557(customers), c1 INNER a2 INNER o1 INNER i1 - SingleIndexScan@250e74de(Index(test.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), NONE, =1234, =2010-01-01, rows = 1, cost = 110.272))
+              TableGroupJoinTree@1d5ba091(TableGroup@3c671557(customers), c1 INNER a2 INNER o1 INNER i1 - SingleIndexScan@250e74de(Index(test.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), NONE, ='1234', =DATE '2010-01-01', rows = 1, cost = 110.272))
                 TableSource@7226d669(c1 - TableGroup@3c671557(customers))
                   TableSource@23042826(a2 - TableGroupJoin@6a8a9ea5(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))
                   TableSource@53c6c20b(o1 - TableGroupJoin@32b59948(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

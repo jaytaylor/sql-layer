@@ -1,8 +1,8 @@
 MultiIndexIntersectScan@34f974f6(compare 1
-    skip 1: SingleIndexScan@656ddda5(Index(test.items.sku[IndexColumn(sku)]), =1234)
-    skip 1: SingleIndexScan@ff2afa9(Index(test.items.sku[IndexColumn(sku)]), =4567)
+    skip 1: SingleIndexScan@656ddda5(Index(test.items.sku[IndexColumn(sku)]), ='1234')
+    skip 1: SingleIndexScan@ff2afa9(Index(test.items.sku[IndexColumn(sku)]), ='4567')
     -> NONE, rows = 1, cost = 399.632)
 MultiIndexIntersectScan@5ea886d(compare 1
-    skip 1: SingleIndexScan@ff2afa9(Index(test.items.sku[IndexColumn(sku)]), =4567)
-    skip 1: SingleIndexScan@656ddda5(Index(test.items.sku[IndexColumn(sku)]), =1234)
+    skip 1: SingleIndexScan@ff2afa9(Index(test.items.sku[IndexColumn(sku)]), ='4567')
+    skip 1: SingleIndexScan@656ddda5(Index(test.items.sku[IndexColumn(sku)]), ='1234')
     -> NONE, rows = 1, cost = 399.632)

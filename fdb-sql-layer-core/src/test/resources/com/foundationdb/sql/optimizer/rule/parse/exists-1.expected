@@ -5,5 +5,5 @@ SelectQuery@68a53de4
         TableSource@435bb0f(parent)
 
 Subquery@1cad157f
-  Select@638bd7f1[child.pid == parent.id, child.name == Bill]
+  Select@638bd7f1[child.pid == parent.id, child.name == 'Bill']
     TableSource@720e4245(child)

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.qp.memoryadapter;
+package com.foundationdb.qp.virtualadapter;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
@@ -42,33 +42,33 @@ import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.tree.KeyCreator;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.store.format.MemoryTableStorageDescription;
+import com.foundationdb.server.store.format.VirtualTableStorageDescription;
 import com.foundationdb.util.tap.InOutTap;
 
 import java.util.Collection;
 
-public class MemoryAdapter extends StoreAdapter {
+public class VirtualAdapter extends StoreAdapter {
 
-    public MemoryAdapter(Session session,
+    public VirtualAdapter(Session session,
                 ConfigurationService config) {
         super (session, config);
     }
 
-    public static MemoryTableFactory getMemoryTableFactory(Table table) {
-        // NOTE: This assumes that a memory table group never has more
+    public static VirtualScanFactory getFactory(Table table) {
+        // NOTE: This assumes that a virtual table group never has more
         // than one table or at least that they all have equivalent
         // factories.
-        return getMemoryTableFactory(table.getGroup());
+        return getFactory(table.getGroup());
     }
 
-    public static MemoryTableFactory getMemoryTableFactory(Group group) {
-        return ((MemoryTableStorageDescription)group.getStorageDescription())
-            .getMemoryTableFactory();
+    public static VirtualScanFactory getFactory(Group group) {
+        return ((VirtualTableStorageDescription)group.getStorageDescription())
+            .getVirtualScanFactory();
     }
 
     @Override
     public GroupCursor newGroupCursor(Group group) {
-        return new MemoryGroupCursor(this, group);
+        return new VirtualGroupCursor(this, group);
     }
 
 

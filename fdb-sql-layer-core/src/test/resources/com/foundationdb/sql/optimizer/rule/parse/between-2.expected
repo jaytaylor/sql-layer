@@ -1,5 +1,5 @@
 SelectQuery@15c2791c
   ResultSet@129d286d[iid]
     Project@bc915a7[items.iid]
-      Select@3eac8cfc[items.sku >= 3, items.sku <= 8, items.quan >= 10, items.quan <= 100]
+      Select@3eac8cfc[items.sku >= '3', items.sku <= '8', items.quan >= 10, items.quan <= 100]
         TableSource@325c1489(items)

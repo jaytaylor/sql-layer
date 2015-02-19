@@ -4,5 +4,5 @@ SelectQuery@f74f6ef
       Select@6094cbe2[]
         Flatten@a15670a(orders)
           BranchLookup@31fc6b2(addresses -> orders via customers)
-            SingleIndexScan@1cc33893(Index(test.customers.cname_and_state[IndexColumn(name), IndexColumn(state)]), NONE, =Jones, =MA, rows = 720, cost = 30648.6)
+            SingleIndexScan@1cc33893(Index(test.customers.cname_and_state[IndexColumn(name), IndexColumn(state)]), NONE, ='Jones', ='MA', rows = 720, cost = 30648.6)
             TableSource@4cd98b00(orders - TableGroupJoin@101ebf5c(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

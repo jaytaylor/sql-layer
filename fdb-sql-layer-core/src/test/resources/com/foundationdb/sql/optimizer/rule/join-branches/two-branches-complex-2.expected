@@ -8,6 +8,6 @@ SelectQuery@78f6e005
               TableSource@52ec1f9e(customers - TableGroup@1769c398(customers))
               TableSource@c0fe89a(addresses - TableGroupJoin@11ba4159(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))
           Flatten@5ce8787a(customers LEFT orders)
-            Select@223dc13d[orders.order_date != 2011-01-01]
+            Select@223dc13d[orders.order_date != DATE '2011-01-01']
               BranchLookup@4b69d75d(customers -> orders)
                 TableSource@686fdca5(orders - TableGroupJoin@20a83c2a(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

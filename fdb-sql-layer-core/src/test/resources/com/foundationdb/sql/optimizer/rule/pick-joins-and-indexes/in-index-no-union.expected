@@ -3,8 +3,8 @@ SelectQuery@55de5f0b
     Project@665d7a8d[orders.order_date, items.sku, items.quan]
       Select@318f37c[]
         JoinNode@5b19537a(INNER/NESTED_LOOPS)
-          ExpressionsSource@60b25809([[1234], [4567], [6666]])
-          TableGroupJoinTree@57e603e6(TableGroup@61d22f35(customers), customers INNER orders INNER items - SingleIndexScan@751bbe4f(Index(test.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), NONE, =Smith, =VALUES[0], rows = 1, cost = 109.587))
+          ExpressionsSource@60b25809([['1234'], ['4567'], ['6666']])
+          TableGroupJoinTree@57e603e6(TableGroup@61d22f35(customers), customers INNER orders INNER items - SingleIndexScan@751bbe4f(Index(test.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), NONE, ='Smith', =VALUES[0], rows = 1, cost = 109.587))
             TableSource@640eac4a(customers - TableGroup@61d22f35(customers))
               TableSource@7f516197(orders - TableGroupJoin@2d0a238e(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
                 TableSource@37de41ce(items - TableGroupJoin@1dad8678(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

@@ -1,8 +1,8 @@
 MultiIndexIntersectScan@42f5ebb1(compare 1
-    skip 1: SingleIndexScan@1f44d3cf(Index(test.addresses.state[IndexColumn(state)]), =MA)
-    skip 1: SingleIndexScan@5fadcb12(Index(test.orders.order_date[IndexColumn(order_date)]), =2001-02-03)
+    skip 1: SingleIndexScan@1f44d3cf(Index(test.addresses.state[IndexColumn(state)]), ='MA')
+    skip 1: SingleIndexScan@5fadcb12(Index(test.orders.order_date[IndexColumn(order_date)]), =DATE '2001-02-03')
     -> NONE, rows = 1, cost = 212.809)
 MultiIndexIntersectScan@aef3bd1(compare 1
-    skip 1: SingleIndexScan@5fadcb12(Index(test.orders.order_date[IndexColumn(order_date)]), =2001-02-03)
-    skip 1: SingleIndexScan@1f44d3cf(Index(test.addresses.state[IndexColumn(state)]), =MA)
+    skip 1: SingleIndexScan@5fadcb12(Index(test.orders.order_date[IndexColumn(order_date)]), =DATE '2001-02-03')
+    skip 1: SingleIndexScan@1f44d3cf(Index(test.addresses.state[IndexColumn(state)]), ='MA')
     -> NONE, rows = 1, cost = 212.809)

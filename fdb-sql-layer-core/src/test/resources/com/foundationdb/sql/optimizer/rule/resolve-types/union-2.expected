@@ -6,6 +6,6 @@ SelectQuery@61ea1d79
           Select@6b660158[]
             ExpressionsSource@75e26f7d([[]])
       ResultSet@6505b401[_SQL_COL_2]
-        Project@596ce177[1.0]
+        Project@596ce177[1.000000e+00]
           Select@7b46797e[]
             ExpressionsSource@17e9e00c([[]])

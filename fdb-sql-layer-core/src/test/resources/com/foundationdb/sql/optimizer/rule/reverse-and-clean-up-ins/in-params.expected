@@ -6,6 +6,6 @@ SelectQuery@13b33a0e
         Select@6cd24e3f[]
           Flatten@bdee400(orders INNER items)
             AncestorLookup@564ac216(items -> [orders, items])
-              SingleIndexScan@460c5e9c(Index(test.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), NONE, =Smith, =VALUES[0], rows = 1, cost = 109.637)
+              SingleIndexScan@460c5e9c(Index(test.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), NONE, ='Smith', =VALUES[0], rows = 1, cost = 109.637)
               TableSource@d4dd758(orders - TableGroupJoin@561777b1(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
               TableSource@da0225b(items - TableGroupJoin@1eb3319f(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

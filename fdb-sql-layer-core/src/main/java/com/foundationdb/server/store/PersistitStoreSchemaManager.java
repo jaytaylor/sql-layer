@@ -32,9 +32,9 @@ import com.foundationdb.ais.model.validation.AISValidations;
 import com.foundationdb.ais.protobuf.ProtobufReader;
 import com.foundationdb.ais.protobuf.ProtobufWriter;
 import com.foundationdb.ais.protobuf.ProtobufWriter.WriteSelector;
-import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
-import com.foundationdb.qp.memoryadapter.MemoryAdapter;
-import com.foundationdb.qp.memoryadapter.MemoryGroupCursor;
+import com.foundationdb.qp.virtualadapter.BasicFactoryBase;
+import com.foundationdb.qp.virtualadapter.VirtualAdapter;
+import com.foundationdb.qp.virtualadapter.VirtualGroupCursor;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
@@ -716,8 +716,9 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         // This used to be done in RowDefBuilder#build() but no longer.
         for (final Table table : newAis.getTables().values()) {
             final TableStatus status;
-            if (table.hasMemoryTableFactory()) {
-                status = treeService.getTableStatusCache().getOrCreateMemoryTableStatus(table.getTableId(), MemoryAdapter.getMemoryTableFactory(table));
+            if (table.isVirtual()) {
+                status = treeService.getTableStatusCache().getOrCreateVirtualTableStatus(table.getTableId(),
+                                                                                         VirtualAdapter.getFactory(table));
             } else {
                 status = treeService.getTableStatusCache().createTableStatus(table);
             }
@@ -760,7 +761,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
                 selector = new ProtobufWriter.SingleSchemaSelector(schema) {
                     @Override
                     public Columnar getSelected(Columnar columnar) {
-                        if(columnar.isTable() && ((Table)columnar).hasMemoryTableFactory()) {
+                        if(columnar.isTable() && ((Table)columnar).isVirtual()) {
                             return null;
                         }
                         return columnar;
@@ -791,12 +792,12 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         return buffer;
     }
 
-    private void saveMemoryTables(Exchange ex, AkibanInformationSchema newAIS) throws PersistitException {
-        // Want *just* non-persisted memory tables and system routines
+    private void saveVirtualTables(Exchange ex, AkibanInformationSchema newAIS) throws PersistitException {
+        // Want *just* non-persisted virtual tables and system routines
         final ProtobufWriter.WriteSelector selector = new ProtobufWriter.TableFilterSelector() {
             @Override
             public Columnar getSelected(Columnar columnar) {
-                if(columnar.isAISTable() && ((Table)columnar).hasMemoryTableFactory()) {
+                if(columnar.isAISTable() && ((Table)columnar).isVirtual()) {
                     return columnar;
                 }
                 return null;
@@ -928,11 +929,11 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         }
     }
 
-    private void serializeMemoryTables(Session session, AkibanInformationSchema newAIS) {
+    private void serializeVirtualTables(Session session, AkibanInformationSchema newAIS) {
         Exchange ex = null;
         try {
             ex = schemaTreeExchange(session);
-            saveMemoryTables(ex, newAIS);
+            saveVirtualTables(ex, newAIS);
             treeService.releaseExchange(session, ex);
             ex = null;
         } catch(PersistitException | RollbackException e) {
@@ -948,7 +949,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     protected void unStoredAISChange(Session session, AkibanInformationSchema newAIS) {
         try {
             createValidatedShared(session, newAIS, GenValue.NEW, GenMap.NO_PUT);
-            serializeMemoryTables(session, newAIS);
+            serializeVirtualTables(session, newAIS);
             buildRowDefs(session, newAIS);
             addCallbacksForAISChange(session);
         } catch(PersistitException | RollbackException e) {
@@ -1125,14 +1126,14 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
     }
 
     /** Public for test only. Should not generally be called. */
-    public void cleanupDelayedTrees(final Session session, final boolean clearMemoryTables) throws PersistitException {
+    public void cleanupDelayedTrees(final Session session, final boolean clearVirtualTables) throws PersistitException {
         treeService.visitStorage(
                 session,
                 new TreeVisitor() {
                     @Override
                     public void visit(final Exchange ex) throws PersistitException {
-                        if(clearMemoryTables) {
-                            // Don't reload memory table definitions
+                        if(clearVirtualTables) {
+                            // Don't reload virtual table definitions
                             ex.clear().append(S_K_PROTOBUF_MEM).remove();
                         }
                         // Clear old trees
@@ -1308,7 +1309,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
             super(new TableName(TableName.INFORMATION_SCHEMA, "schema_manager_summary"));
         }
 
-        private class Scan implements MemoryGroupCursor.GroupScan {
+        private class Scan implements VirtualGroupCursor.GroupScan {
             private final RowType rowType;
             private int pkCounter = 0;
 
@@ -1341,7 +1342,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
         }
 
         @Override
-        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public VirtualGroupCursor.GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             return new Scan(getRowType(group.getAIS()));
         }
 
@@ -1372,7 +1373,7 @@ public class PersistitStoreSchemaManager extends AbstractSchemaManager {
 
         AkibanInformationSchema ais = builder.ais();
         Table table = ais.getTable(factory.getName());
-        registerMemoryInformationSchemaTable(table, factory);
+        registerVirtualTable(table, factory);
     }
 
     @Override

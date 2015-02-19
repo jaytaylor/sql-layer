@@ -112,11 +112,6 @@ public abstract class StoreAdapter
         return id;
     }
 
-    public enum AdapterType {
-        STORE_ADAPTER,
-        MEMORY_ADAPTER
-    }
-    
     public final ConfigurationService getConfig() {
         return config;
     }

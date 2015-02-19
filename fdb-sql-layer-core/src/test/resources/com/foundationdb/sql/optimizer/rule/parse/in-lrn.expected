@@ -1,7 +1,7 @@
 SelectQuery@483b5a12
   ResultSet@309678ca[oid, cid, name, order_date, iid, sku, quan, price]
     Project@66d42eb1[orders.oid, customers.cid, customers.name, orders.order_date, items.iid, items.sku, items.quan, items.price]
-      Select@74459b34[or(customers.name != Jones,items.sku != 4567), or(customers.name != Smith,items.sku != 1234)]
+      Select@74459b34[or(customers.name != 'Jones',items.sku != '4567'), or(customers.name != 'Smith',items.sku != '1234')]
         JoinNode@5d0ae8f(INNER[orders.oid == items.oid])
           JoinNode@47743144(INNER[customers.cid == orders.cid])
             TableSource@1d4e8c02(customers)

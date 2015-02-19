@@ -402,7 +402,7 @@ public enum ErrorCode {
     DUPLICATE_INDEXID       ("50", "01P", Importance.DEBUG, DuplicateIndexIdException.class),
     STORAGE_DESCRIPTION_INVALID ("50", "01Q", Importance.DEBUG, StorageDescriptionInvalidException.class),
     GROUP_MIXED_TABLE_TYPES ("50", "01S", Importance.DEBUG, GroupMixedTableTypes.class),
-    GROUP_MULTIPLE_MEM_TABLES ("50", "01T", Importance.DEBUG, GroupMultipleMemoryTables.class),
+    GROUP_MULTIPLE_VIRTUAL_TABLES("50", "01T", Importance.DEBUG, GroupMultipleVirtualTables.class),
     JOIN_PARENT_NO_PK       ("50", "01U", Importance.DEBUG, JoinParentNoExplicitPK.class),
     DUPLICATE_SEQUENCE      ("50", "01V", Importance.DEBUG, DuplicateSequenceNameException.class),
     INDEX_COLUMN_IS_PARTIAL ("50", "01W", Importance.DEBUG, IndexColumnIsPartialException.class),

@@ -6,7 +6,7 @@ SelectQuery@7aa30a4e
           Flatten@3e3e3c83(customers INNER o1 INNER i1)
             BranchLookup@7ffe9999(customers -> orders)
               AncestorLookup@67f6dc61(addresses -> [customers])
-                SingleIndexScan@2453f89f(Index(test.addresses.state[IndexColumn(state)]), NONE, =MA, rows = 600000, cost = 2.57381e+07)
+                SingleIndexScan@2453f89f(Index(test.addresses.state[IndexColumn(state)]), NONE, ='MA', rows = 600000, cost = 2.57381e+07)
                 TableSource@60f00e0f(customers - TableGroup@51da6868(customers))
               TableSource@6276e1db(o1 - TableGroupJoin@34139285(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
               TableSource@6ae6235d(i1 - TableGroupJoin@70f87478(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

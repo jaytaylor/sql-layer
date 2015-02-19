@@ -1,11 +1,11 @@
 SelectQuery@1271ba
   ResultSet@3ae86a5f[cid]
     Project@709fa12f[customers.cid]
-      Select@f4e6d[addresses.state == CA]
+      Select@f4e6d[addresses.state == 'CA']
         Product@5c68b20(customers)
           Flatten@2dd7e4d6(customers INNER orders)
             AncestorLookup@38f0b51d(items -> [customers, orders])
-              MultiIndexIntersectScan@4302a01f(INTERSECT(compare 1, skip 1: SingleIndexScan@615e7597(Index(test.items.sku[IndexColumn(sku)]), , =0147) AND skip 1: SingleIndexScan@6dc8f3cd(Index(test.addresses.state[IndexColumn(state)]), , =CA)), NONE, rows = 1, cost = 1335.53)
+              MultiIndexIntersectScan@4302a01f(INTERSECT(compare 1, skip 1: SingleIndexScan@615e7597(Index(test.items.sku[IndexColumn(sku)]), , ='0147') AND skip 1: SingleIndexScan@6dc8f3cd(Index(test.addresses.state[IndexColumn(state)]), , ='CA')), NONE, rows = 1, cost = 1335.53)
               TableSource@61f873dd(customers - TableGroup@48586403(customers))
               TableSource@76749ebc(orders - TableGroupJoin@5a347448(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
           Flatten@29be513c(customers INNER addresses)

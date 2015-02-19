@@ -5,7 +5,7 @@ SelectQuery@133c4539
         JoinNode@3798d24d(INNER/NESTED_LOOPS[zoo.id == animal.zoo_id])
           TableGroupJoinTree@309ac35b(TableGroup@39dc44b6(zoo), zoo - GroupScan@1216d9bf(Group(test.zoo), rows = 1, cost = 1.00000))
             TableSource@616fc39b(zoo - TableGroup@39dc44b6(zoo))
-          JoinNode@6cacff32(INNER/NESTED_LOOPS[animal.description == Lizard, mother.id == animal.mother_id])
+          JoinNode@6cacff32(INNER/NESTED_LOOPS[animal.description == 'Lizard', mother.id == animal.mother_id])
             TableGroupJoinTree@68cefc31(TableGroup@4b3d2eb(animal), animal - GroupScan@51a6635b(Group(test.animal), rows = 1, cost = 1.82000))
               TableSource@5eaeecf0(animal - TableGroup@7c29a8c3(animal))
             TableGroupJoinTree@7e7eb4f6(TableGroup@6ca21395(parent), mother - SingleIndexScan@58f59add(Index(test.parent.name[IndexColumn(name)]), covering/NONE, rows = 1, cost = 8.81100))

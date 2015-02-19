@@ -4,7 +4,7 @@ SelectQuery@62d844a9
       Select@56f2c96c[]
         Flatten@48c5186e(customers RIGHT orders RIGHT items)
           AncestorLookup@3c70315(items -> [customers, orders, items])
-            SingleIndexScan@7e9b59a2(Index(test.items.sku[IndexColumn(sku)]), NONE, >1, rows = 1, cost = 205.630)
+            SingleIndexScan@7e9b59a2(Index(test.items.sku[IndexColumn(sku)]), NONE, >'1', rows = 1, cost = 205.630)
             TableSource@2b8ca663(customers - TableGroup@919db9e(customers))
             TableSource@1effc3eb(orders - TableGroupJoin@a166bd(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
             TableSource@29978933(items - TableGroupJoin@6460029d(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

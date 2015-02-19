@@ -1,5 +1,5 @@
 SelectQuery@606e76b4
   ResultSet@743354e1[_SQL_COL_1, _SQL_COL_2, _SQL_COL_3, _SQL_COL_4]
-    Project@5609bb60[true, true, true, rand() == rand()]
+    Project@5609bb60[TRUE, TRUE, TRUE, rand() == rand()]
       Select@18ecc7c1[]
         ExpressionsSource@612e5caf([[]])

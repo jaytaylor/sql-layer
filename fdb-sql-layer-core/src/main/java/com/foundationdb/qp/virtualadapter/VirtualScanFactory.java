@@ -15,18 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.foundationdb.qp.memoryadapter;
+package com.foundationdb.qp.virtualadapter;
 
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.service.session.Session;
 
-import static com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
+import static com.foundationdb.qp.virtualadapter.VirtualGroupCursor.GroupScan;
 
-public interface MemoryTableFactory {
+public interface VirtualScanFactory
+{
     public TableName getName();
     
-    public GroupScan getGroupScan(MemoryAdapter adapter, Group group);
+    public GroupScan getGroupScan(VirtualAdapter adapter, Group group);
 
     public long rowCount(Session session);
 }

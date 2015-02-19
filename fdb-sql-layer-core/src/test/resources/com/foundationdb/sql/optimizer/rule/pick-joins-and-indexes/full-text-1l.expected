@@ -3,5 +3,5 @@ SelectQuery@1df474cb
     Limit@6b3aa232(LIMIT 5)
       Project@566eb79d[customers.cid, customers.name]
         Select@7ed8d0bf[]
-          TableGroupJoinTree@4c70eca8(TableGroup@9c130cd(customers), customers - FullTextScan@6a6ae7bb(customers - PARSE(customers.name, john) LIMIT 5))
+          TableGroupJoinTree@4c70eca8(TableGroup@9c130cd(customers), customers - FullTextScan@6a6ae7bb(customers - PARSE(customers.name, 'john') LIMIT 5))
             TableSource@1092ecbd(customers - TableGroup@9c130cd(customers))

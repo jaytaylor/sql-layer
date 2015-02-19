@@ -19,10 +19,10 @@ package com.foundationdb.server.error;
 
 import com.foundationdb.ais.model.TableName;
 
-public class GroupMultipleMemoryTables extends InvalidOperationException {
+public class GroupMultipleVirtualTables extends InvalidOperationException {
     
-    public GroupMultipleMemoryTables (TableName parentTable, TableName childTable) {
-        super (ErrorCode.GROUP_MULTIPLE_MEM_TABLES, 
+    public GroupMultipleVirtualTables(TableName parentTable, TableName childTable) {
+        super (ErrorCode.GROUP_MULTIPLE_VIRTUAL_TABLES,
                 parentTable.getSchemaName(), parentTable.getTableName(),
                 childTable.getSchemaName(), childTable.getTableName());
     }

@@ -26,6 +26,7 @@ import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.RowCursorImpl;
 import com.foundationdb.qp.row.ImmutableRow;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +46,11 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
         super(resultOperator, aisGeneration, resultSetMetaData, parameterMetaData);
     }
     
+    @Override
+    public StatementTypes getStatementType() {
+        return StatementTypes.DML_STMT;
+    }
+
     @Override
     public ExecuteResults execute(EmbeddedQueryContext context, QueryBindings bindings) {
         int updateCount = 0;

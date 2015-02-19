@@ -1,7 +1,7 @@
 SelectQuery@2e00e753
   ResultSet@3d5311bd[order_date, sku, quan]
     Project@18b1aebf[orders.order_date, items.sku, items.quan]
-      Select@39478a43[or(customers.name == Smith,IN(items.sku, [1234, 6666, 9876]))]
+      Select@39478a43[or(customers.name == 'Smith',IN(items.sku, ['1234', '6666', '9876']))]
         Flatten@2c979e8b(customers INNER orders INNER items)
           GroupScan@1629ce8c(Group(test.customers), rows = 20000, cost = 896436)
             TableSource@39cf4a2c(customers - TableGroup@12b754b2(customers))

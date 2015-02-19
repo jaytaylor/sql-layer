@@ -1,8 +1,8 @@
 MultiIndexIntersectScan@5c5c0d0e(compare 2
-    skip 1: SingleIndexScan@1f5d4181(Index(test.addresses.city[IndexColumn(city)]), =Boston)
-    skip 1: SingleIndexScan@23778c3d(Index(test.addresses.state[IndexColumn(state)]), =MA)
+    skip 1: SingleIndexScan@1f5d4181(Index(test.addresses.city[IndexColumn(city)]), ='Boston')
+    skip 1: SingleIndexScan@23778c3d(Index(test.addresses.state[IndexColumn(state)]), ='MA')
     -> NONE, rows = 1, cost = 19.8716)
 MultiIndexIntersectScan@7d980afb(compare 2
-    skip 1: SingleIndexScan@23778c3d(Index(test.addresses.state[IndexColumn(state)]), =MA)
-    skip 1: SingleIndexScan@1f5d4181(Index(test.addresses.city[IndexColumn(city)]), =Boston)
+    skip 1: SingleIndexScan@23778c3d(Index(test.addresses.state[IndexColumn(state)]), ='MA')
+    skip 1: SingleIndexScan@1f5d4181(Index(test.addresses.city[IndexColumn(city)]), ='Boston')
     -> NONE, rows = 1, cost = 19.8716)

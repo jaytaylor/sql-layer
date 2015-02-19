@@ -18,7 +18,7 @@
 package com.foundationdb.sql.embedded;
 
 import com.foundationdb.qp.operator.QueryBindings;
-
+import com.foundationdb.server.service.monitor.SessionMonitor.StatementTypes;
 import com.foundationdb.sql.aisddl.AISDDL;
 import com.foundationdb.sql.parser.DDLStatementNode;
 
@@ -38,6 +38,11 @@ class ExecutableDDLStatement extends ExecutableStatement
         return new ExecuteResults();
     }
 
+    @Override
+    public StatementTypes getStatementType() {
+        return StatementTypes.DDL_STMT;
+    }
+    
     @Override
     public TransactionMode getTransactionMode() {
         return TransactionMode.IMPLICIT_COMMIT;

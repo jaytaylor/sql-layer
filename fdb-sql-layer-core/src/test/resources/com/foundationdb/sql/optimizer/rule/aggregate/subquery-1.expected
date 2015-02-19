@@ -8,7 +8,7 @@ Subquery@1ec37acf
   Project@3b31a09c[customers.cid == GROUP[0]]
     Select@33b3bbd0[]
       AggregateSource@37278020([orders.cid, orders.order_date],[])
-        Select@5cef6f34[items.sku == 1234]
+        Select@5cef6f34[items.sku == '1234']
           JoinNode@6b6dee96(INNER[orders.oid == items.oid])
             TableSource@24cd12a(orders)
             TableSource@1381d94(items)

@@ -1,7 +1,7 @@
 SelectQuery@69826fcd
   ResultSet@727a31d8[name, name]
     Project@345e969f[parent.name, child.name]
-      Select@2df2bb95[parent.state == VT]
+      Select@2df2bb95[parent.state == 'VT']
         TableGroupJoinTree@1af94ac4(TableGroup@44ded648(parent), parent LEFT child - GroupScan@1c6344b(Group(test.parent), rows = 1, cost = 92.8200))
           TableSource@49f94818(parent - TableGroup@44ded648(parent))
             TableSource@cec4599(child - TableGroupJoin@df9f4c3(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(test.parent))))

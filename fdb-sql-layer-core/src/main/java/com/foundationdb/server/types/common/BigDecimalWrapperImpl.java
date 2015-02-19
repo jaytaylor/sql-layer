@@ -24,6 +24,21 @@ public class BigDecimalWrapperImpl implements BigDecimalWrapper {
 
     public static final BigDecimalWrapperImpl ZERO = new BigDecimalWrapperImpl(BigDecimal.ZERO);
 
+    public static int sqlPrecision(BigDecimal bd) {
+        int precision = bd.precision();
+        int scale = bd.scale();
+        if (precision < scale) {
+            // BigDecimal interprets something like "0.01" as having a scale of 2 and precision of 1.
+            precision = scale;
+        }
+        return precision;
+    }
+
+    public static int sqlScale(BigDecimal bd) {
+        return bd.scale();
+    }
+
+
     private BigDecimal value;
 
     public BigDecimalWrapperImpl(BigDecimal value) {
@@ -135,13 +150,13 @@ public class BigDecimalWrapperImpl implements BigDecimalWrapper {
     @Override
     public int getScale()
     {
-        return value.scale();
+        return sqlScale(value);
     }
 
     @Override
     public int getPrecision()
     {
-        return value.precision();
+        return sqlPrecision(value);
     }
 
     @Override

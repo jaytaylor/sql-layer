@@ -1,5 +1,5 @@
 SelectQuery@2c963168
   ResultSet@3885b9b6[_SQL_COL_1, _SQL_COL_2]
-    Project@536378b7[plus(1,1), concatenate(abc,xyz)]
+    Project@536378b7[plus(1,1), concatenate('abc','xyz')]
       Select@278a6126[]
         ExpressionsSource@6df01a11([[]])

@@ -1,0 +1,12 @@
+# sql-layer issue 815
+---
+- CreateTable: t(pk INTEGER NOT NULL PRIMARY KEY, col0 INTEGER, col1 FLOAT, col2 VARCHAR(32), col3 INTEGER, col4 FLOAT, col5 VARCHAR(32))
+---
+- Statement: CREATE INDEX idx_col0 on t (col0)
+---
+- Statement: INSERT INTO t VALUES(0,544,473.59,'lupfg',846,31.38,'crmer')
+
+# Failed with IllegalStateException
+---
+- Statement: SELECT pk, col0 FROM t WHERE (col0 BETWEEN 302 AND 864 OR col0 > 504) ORDER BY 2 DESC,1
+- output: [ [0,544] ]

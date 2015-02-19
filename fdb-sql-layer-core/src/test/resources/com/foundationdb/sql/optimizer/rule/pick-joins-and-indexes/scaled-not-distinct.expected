@@ -2,5 +2,5 @@ SelectQuery@5b14a306
   ResultSet@27db0da1[oid]
     Project@1e5bd978[orders.oid]
       Select@202264da[]
-        TableGroupJoinTree@320b34b1(TableGroup@633a1778(customers), orders - SingleIndexScan@7adafa2c(Index(test.orders.order_date[IndexColumn(order_date)]), covering/NONE, =2011-03-03, rows = 200, cost = 144.858))
+        TableGroupJoinTree@320b34b1(TableGroup@633a1778(customers), orders - SingleIndexScan@7adafa2c(Index(test.orders.order_date[IndexColumn(order_date)]), covering/NONE, =DATE '2011-03-03', rows = 200, cost = 144.858))
           TableSource@1cad7d80(orders - TableGroup@633a1778(customers))

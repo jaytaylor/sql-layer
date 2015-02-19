@@ -18,36 +18,28 @@
 package com.foundationdb.ais.model.validation;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
-import com.foundationdb.ais.model.Group;
-import com.foundationdb.ais.model.Table;
-import com.foundationdb.server.error.GroupMixedTableTypes;
+import com.foundationdb.ais.model.Join;
+import com.foundationdb.server.error.GroupMultipleVirtualTables;
 
 /**
- * Validates that groups do not mix memory tables and Storage tables in the same group.
+ * Validate the current assumption of groups with a virtual table contain only one
+ * table, that is, there is no muti-table groups with the virtual tables.
+ * (The VirtualTablesNotMixed validation ensures virtual tables are not mixed with other
+ *  types of tables). 
+ *  TODO: It would be nice to remove this limitation of the current system. 
  * @author tjoneslo
  *
  */
-public class MemoryTablesNotMixed implements AISValidation {
-    
+public class VirtualTableSingleTableGroup implements AISValidation {
+
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        for (Group group : ais.getGroups().values()) {
-            validateGroup (ais, group, output);
-        }
-    }
-
-    private static void validateGroup (AkibanInformationSchema ais, Group group, AISValidationOutput output) {
-        Table rootTable = group.getRoot();
-        if(rootTable == null) {
-            return; // Caught elsewhere
-        }
-        boolean rootMemoryTable = rootTable.hasMemoryTableFactory();
-        for (Table table : ais.getTables().values()) {
-            if (table.getGroup() == group &&
-                    table.hasMemoryTableFactory() != rootMemoryTable) {
+        for (Join join : ais.getJoins().values()) {
+            if (join.getChild().isVirtual()) {
                 output.reportFailure(new AISValidationFailure (
-                        new GroupMixedTableTypes(group.getName(), rootMemoryTable, table.getName())));
+                        new GroupMultipleVirtualTables(join.getParent().getName(), join.getChild().getName())));
             }
         }
     }
+
 }
