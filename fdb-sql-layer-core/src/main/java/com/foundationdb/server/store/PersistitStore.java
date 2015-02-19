@@ -32,9 +32,8 @@ import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.AccumulatorAdapter;
 import com.foundationdb.server.AccumulatorAdapter.AccumInfo;
+import com.foundationdb.server.error.*;
 import com.foundationdb.server.error.DuplicateKeyException;
-import com.foundationdb.server.error.QueryCanceledException;
-import com.foundationdb.server.error.TableVersionChangedException;
 import com.foundationdb.server.rowdata.*;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
@@ -49,6 +48,7 @@ import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.PersistitStorageDescription;
 import com.foundationdb.server.store.format.protobuf.PersistitProtobufRow;
 import com.foundationdb.server.store.format.protobuf.PersistitProtobufValueCoder;
+import com.foundationdb.server.types.aksql.aktypes.*;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.google.inject.Inject;
 import com.persistit.*;
@@ -397,7 +397,9 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
 
     @Override
     Row storeLobs(Session session, Row row) {
-        // check row for not containing blobs, throw exception
+        if (AkBlob.containsBlob(row.rowType())) {
+            throw new LobException("Persistit does not support lobs");
+        }
         return row;
     }
 
