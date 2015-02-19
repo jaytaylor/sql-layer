@@ -433,6 +433,7 @@ public class OnlineHelper implements RowListener
     
     
     private LobCheck checkForDropLob(Table root, Collection<ChangeSet> changeSets, AkibanInformationSchema oldAIS) {
+        LobCheck lc = null;
         for (ChangeSet cs : changeSets) {
             if (cs.hasChangeLevel() && cs.getChangeLevel().equals(ChangeLevel.TABLE.name())) {
                 Table oldTable = oldAIS.getTable(cs.getOldSchema(), cs.getOldName());
@@ -443,17 +444,17 @@ public class OnlineHelper implements RowListener
                             String oldColName = change.getOldName();
                             Column col = oldTable.getColumn(oldColName);
                             if (AkBlob.isBlob(col.getType().typeClass())){
-                                LobCheck lc = new LobCheck();
+                                assert lc == null; // change set can only contain a single column drop
+                                lc = new LobCheck();
                                 lc. tableId = oldTable.getTableId();
                                 lc.columnPos = col.getPosition();
-                                return lc;
                             }
                         }
                     }
                 }
             }
         }
-        return null;
+        return lc;
     }
 
     private class LobCheck {

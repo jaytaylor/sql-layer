@@ -18,6 +18,8 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.*;
+import com.foundationdb.ais.model.*;
+import com.foundationdb.ais.util.TableChange;
 import com.foundationdb.server.service.blob.LobService;
 import com.foundationdb.server.service.is.*;
 import com.foundationdb.server.service.servicemanager.*;
@@ -1281,54 +1283,38 @@ public class BlobIT extends PostgresServerITBase {
         }
         commitOrRollback();
     }
-        
-    
-    //@Test
+
+
+
+    @Test (expected=AssertionError.class)
     public void dropMultipleBlobColumns() throws Exception {
         final String schema = "test";
         final String table = "t1";
+        TableName tableName = new TableName(schema, table);
+
         final int tId = createTable(schema, table, "id INT PRIMARY KEY, bl_1 BLOB, bl_2 BLOB");
         Statement stmt = getConnection().createStatement();
         stmt.execute("INSERT INTO t1 VALUES (1, create_long_blob(unhex('010203')), create_long_blob(unhex('020304')))");
         stmt.close();
 
-        final SchemaManager schemaManager = serviceManager().getSchemaManager();
-        getAndOrStartTransaction();
-        schemaManager.startOnline(session());
-        TableChanges.ChangeSet.Builder builder = TableChanges.ChangeSet.newBuilder();
-        builder.setChangeLevel("GROUP")
-                .setTableId(tId)
-                .setOldSchema(schema)
-                .setOldName(table)
-                .setNewSchema(schema)
-                .setNewName(table);
-        builder.addColumnChange(TableChanges.Change.newBuilder().setChangeType("DROP").setOldName("bl_1"));
-        builder.addColumnChange(TableChanges.Change.newBuilder().setChangeType("DROP").setOldName("bl_2"));
-        schemaManager.addOnlineChangeSet(session(), builder.build());
-        commitOrRollback();
-        
-        store().getOnlineHelper().alterTable(session(), queryContext(newStoreAdapter(session())));
-        schemaManager.finishOnline(session());
-        commitOrRollback();
-        Assert.assertEquals(3, ais().getTable(tId).getColumns().size());
+        TestAISBuilder builder = new TestAISBuilder(typesRegistry());
+        builder.table(schema, table);
+        builder.column(schema, table, "id", 0, "MCOMPAT", "int", false);
+        builder.pk(schema, table);
+        builder.indexColumn(schema, table, Index.PRIMARY, "id", 0, true, null);
+        builder.basicSchemaIsComplete();
+        builder.createGroup(table, schema);
+        builder.addTableToGroup(tableName, schema, table);
+        builder.groupingIsComplete();
+        Table newTable = builder.akibanInformationSchema().getTable(schema, table);
 
-        transactionallyUnchecked(new Runnable() {
-            @Override
-            public void run() {
-                schemaManager.startOnline(session());
-                TableChanges.ChangeSet.Builder builder = TableChanges.ChangeSet.newBuilder();
-                builder.setChangeLevel("GROUP")
-                        .setTableId(tId)
-                        .setOldSchema(schema)
-                        .setOldName(table)
-                        .setNewSchema(schema)
-                        .setNewName(table);
-                builder.addColumnChange(TableChanges.Change.newBuilder().setChangeType("DROP").setOldName("bl_1"));
-                schemaManager.addOnlineChangeSet(session(), builder.build());
-                schemaManager.finishOnline(session());
-            }
-        });
-        Assert.assertEquals(2, ais().getTable(tId).getColumns().size());
+        List<TableChange> changes = new ArrayList<>();
+        changes.add(TableChange.createDrop("bl_1"));
+        changes.add(TableChange.createDrop("bl_2"));
+        List<com.foundationdb.ais.util.TableChange> indexChanges = new ArrayList<>();
+        
+        // throws an assert in OnlineHelper checkForDropLob
+        ddl().alterTable(session(), tableName, newTable, changes, indexChanges, queryContext(newStoreAdapter(session())));
     }
 
     //@Test
