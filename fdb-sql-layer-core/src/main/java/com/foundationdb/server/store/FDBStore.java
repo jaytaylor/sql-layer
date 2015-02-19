@@ -612,6 +612,11 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         return FDBNotCommittedException.class;
     }
 
+    @Override
+    public boolean isRestartable() {
+        return true;
+    }
+
     //
     // KeyCreator
     //

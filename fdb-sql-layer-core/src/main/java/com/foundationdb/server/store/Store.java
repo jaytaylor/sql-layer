@@ -153,4 +153,6 @@ public interface Store extends KeyCreator {
     /** (Test helper) Get exception thrown for online DML vs DDL violation */
     Class<? extends Exception> getOnlineDMLFailureException();
 
+    /** (Test helper) Can be restarted and keep data. */
+    boolean isRestartable();
 }

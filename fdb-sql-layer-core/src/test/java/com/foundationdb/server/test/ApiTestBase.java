@@ -98,6 +98,7 @@ import com.foundationdb.util.tap.TapReport;
 import com.geophile.z.Space;
 import org.junit.Assert;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 
 import com.foundationdb.server.store.Store;
@@ -110,6 +111,7 @@ import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.session.Session;
 import org.junit.Rule;
+import org.junit.internal.AssumptionViolatedException;
 import org.junit.rules.MethodRule;
 import org.junit.rules.TestName;
 import org.junit.rules.TestRule;
@@ -241,6 +243,11 @@ public class ApiTestBase {
         public void failed(Throwable e, Description description)  {
             needServicesRestart = true;
         }
+
+        @Override
+        public void skipped(AssumptionViolatedException e, Description description) {
+            needServicesRestart = true;
+        }
     };
 
     /**
@@ -346,6 +353,7 @@ public class ApiTestBase {
     }
 
     public void safeRestartTestServices(Map<String, String> propertiesToPreserve) throws Exception {
+        Assume.assumeTrue("Store#isRestartable()", store().isRestartable());
         final boolean original = TestConfigService.getDoCleanOnUnload();
         try {
             TestConfigService.setDoCleanOnUnload(defaultDoCleanOnUnload());

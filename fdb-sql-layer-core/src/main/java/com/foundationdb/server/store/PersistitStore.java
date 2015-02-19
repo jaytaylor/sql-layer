@@ -572,6 +572,11 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
         return TableVersionChangedException.class;
     }
 
+    @Override
+    public boolean isRestartable() {
+        return true;
+    }
+
     private static final Callback CLEAR_SESSION_TABLES_CALLBACK = new Callback() {
         @Override
         public void run(Session session, long timestamp) {
