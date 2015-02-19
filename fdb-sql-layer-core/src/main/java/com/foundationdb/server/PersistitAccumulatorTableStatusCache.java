@@ -52,11 +52,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     }
     
     @Override
-    public synchronized TableStatus createTableStatus(int tableID) {
-        return new AccumulatorStatus(tableID);
-    }
-
-    @Override
     public synchronized TableStatus getOrCreateVirtualTableStatus(int tableID, VirtualScanFactory factory) {
         VirtualTableStatus ts = memoryStatuses.get(tableID);
         if(ts == null) {
@@ -101,10 +96,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             this.expectedID = table.getTableId();
             Tree tree = getTreeForTable(table);
             rowCount = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, tree);
-        }
-
-        public AccumulatorStatus(int expectedID) {
-            this.expectedID = expectedID;
         }
 
         @Override
