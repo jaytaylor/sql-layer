@@ -20,8 +20,8 @@ package com.foundationdb.server.types.aksql.akfuncs;
 
 import com.foundationdb.server.types.TScalar;
 import com.foundationdb.server.types.aksql.aktypes.AkBlob;
-import com.foundationdb.server.types.common.funcs.IdBlob;
+import com.foundationdb.server.types.common.funcs.BlobId;
 
-public class AkIdBlob {
-    public static final TScalar ID_BLOB = IdBlob.idBlob(AkBlob.INSTANCE);
+public class AkBlobId {
+    public static final TScalar BLOB_ID = BlobId.blobId(AkBlob.INSTANCE);
 }

@@ -30,8 +30,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.sql.*;
-import java.util.UUID;
-import java.util.Random;
+import java.util.*;
 
 public class BlobIT extends PostgresServerITBase {
     int dataSize = 100000;
@@ -92,7 +91,7 @@ public class BlobIT extends PostgresServerITBase {
         }
         String[] ids = new String[n];
         
-        stmt.execute("SELECT id_blob(bl) FROM t1");
+        stmt.execute("SELECT blob_id(bl) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
@@ -139,7 +138,7 @@ public class BlobIT extends PostgresServerITBase {
         String[] idsC = new String[n];
 
         
-        stmt.execute("SELECT id_blob(blA), id_blob(blB), id_blob(blC) FROM t1");
+        stmt.execute("SELECT blob_id(blA), blob_id(blB), blob_id(blC) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
@@ -190,7 +189,7 @@ public class BlobIT extends PostgresServerITBase {
         String[] idsA = new String[n];
         String[] idsB = new String[n];
 
-        stmt.execute("SELECT id_blob(bl), id_blob(bl2) FROM t1");
+        stmt.execute("SELECT blob_id(bl), blob_id(bl2) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
@@ -243,7 +242,7 @@ public class BlobIT extends PostgresServerITBase {
             preparedStatement.execute();
         }
         String[] ids_t1 = new String[n];
-        stmt.execute("SELECT id_blob(bl) FROM t1");
+        stmt.execute("SELECT blob_id(bl) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
@@ -252,7 +251,7 @@ public class BlobIT extends PostgresServerITBase {
         rs.close();
 
         String[] ids_t2 = new String[n];
-        stmt.execute("SELECT id_blob(bl_t2) FROM t2");
+        stmt.execute("SELECT blob_id(bl_t2) FROM t2");
         rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
@@ -303,7 +302,7 @@ public class BlobIT extends PostgresServerITBase {
         }
 
         String[] ids_t2 = new String[n];
-        stmt.execute("SELECT id_blob(bl_t2) FROM t2");
+        stmt.execute("SELECT blob_id(bl_t2) FROM t2");
         ResultSet rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
@@ -344,7 +343,7 @@ public class BlobIT extends PostgresServerITBase {
         }
         String[] ids = new String[n];
 
-        stmt.execute("SELECT id_blob(bl) FROM t1");
+        stmt.execute("SELECT blob_id(bl) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
@@ -395,7 +394,7 @@ public class BlobIT extends PostgresServerITBase {
         preparedStatement.close();
         
         String[] ids_t1 = new String[n];
-        stmt.execute("SELECT id_blob(bl) FROM t1");
+        stmt.execute("SELECT blob_id(bl) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
@@ -404,7 +403,7 @@ public class BlobIT extends PostgresServerITBase {
         rs.close();
 
         String[] ids_t2 = new String[n];
-        stmt.execute("SELECT id_blob(bl_t2) FROM t2");
+        stmt.execute("SELECT blob_id(bl_t2) FROM t2");
         rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
@@ -455,7 +454,7 @@ public class BlobIT extends PostgresServerITBase {
             preparedStatement.execute();
         }
         String[] ids_t1 = new String[n];
-        stmt.execute("SELECT id_blob(bl) FROM t1");
+        stmt.execute("SELECT blob_id(bl) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
@@ -464,7 +463,7 @@ public class BlobIT extends PostgresServerITBase {
         rs.close();
 
         String[] ids_t2 = new String[n];
-        stmt.execute("SELECT id_blob(bl_t2) FROM t2");
+        stmt.execute("SELECT blob_id(bl_t2) FROM t2");
         rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
@@ -501,7 +500,7 @@ public class BlobIT extends PostgresServerITBase {
         preparedStatement.close();
         String[] ids = new String[n];
 
-        stmt.execute("SELECT id_blob(bl) FROM testx.t1");
+        stmt.execute("SELECT blob_id(bl) FROM testx.t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
@@ -550,7 +549,7 @@ public class BlobIT extends PostgresServerITBase {
         }
 
         String[] ids_t2 = new String[n];
-        stmt.execute("SELECT id_blob(bl_t2) FROM t.t2");
+        stmt.execute("SELECT blob_id(bl_t2) FROM t.t2");
         ResultSet rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
@@ -592,7 +591,7 @@ public class BlobIT extends PostgresServerITBase {
         preparedStatement.close();
         String[] ids = new String[n];
         
-        stmt.execute("SELECT id_blob(bl) FROM t1");
+        stmt.execute("SELECT blob_id(bl) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
@@ -633,7 +632,7 @@ public class BlobIT extends PostgresServerITBase {
         preparedStatement.close();
         String[] ids = new String[n];
 
-        stmt.execute("SELECT id_blob(bl) FROM t1");
+        stmt.execute("SELECT blob_id(bl) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
@@ -676,7 +675,7 @@ public class BlobIT extends PostgresServerITBase {
         }
 
         String[] ids_t2 = new String[n];
-        stmt.execute("SELECT id_blob(bl_t2) FROM t.t2");
+        stmt.execute("SELECT blob_id(bl_t2) FROM t.t2");
         ResultSet rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
@@ -726,7 +725,7 @@ public class BlobIT extends PostgresServerITBase {
         }
 
         String[] ids_t2 = new String[n];
-        stmt.execute("SELECT id_blob(bl_t2) FROM t.t2");
+        stmt.execute("SELECT blob_id(bl_t2) FROM t.t2");
         ResultSet rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
@@ -769,7 +768,7 @@ public class BlobIT extends PostgresServerITBase {
             preparedStatement.execute();
         }
         String[] ids_t1 = new String[n];
-        stmt.execute("SELECT id_blob(bl) FROM t1");
+        stmt.execute("SELECT blob_id(bl) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
@@ -778,7 +777,7 @@ public class BlobIT extends PostgresServerITBase {
         rs.close();
 
         String[] ids_t2 = new String[n];
-        stmt.execute("SELECT id_blob(bl_t2) FROM t2");
+        stmt.execute("SELECT blob_id(bl_t2) FROM t2");
         rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
@@ -867,7 +866,7 @@ public class BlobIT extends PostgresServerITBase {
         }
         String[] ids = new String[n];
 
-        stmt.execute("SELECT id_blob(bl) FROM t1");
+        stmt.execute("SELECT blob_id(bl) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
@@ -922,7 +921,7 @@ public class BlobIT extends PostgresServerITBase {
         preparedStatement.close();
 
         String[] ids_t1 = new String[n];
-        stmt.execute("SELECT id_blob(bl) FROM t1");
+        stmt.execute("SELECT blob_id(bl) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
@@ -931,7 +930,7 @@ public class BlobIT extends PostgresServerITBase {
         rs.close();
 
         String[] ids_t2 = new String[n];
-        stmt.execute("SELECT id_blob(bl_t2) FROM t2");
+        stmt.execute("SELECT blob_id(bl_t2) FROM t2");
         rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
@@ -989,7 +988,7 @@ public class BlobIT extends PostgresServerITBase {
         preparedStatement.close();
 
         String[] ids_t1 = new String[n];
-        stmt.execute("SELECT id_blob(bl) FROM t1");
+        stmt.execute("SELECT blob_id(bl) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
@@ -998,7 +997,7 @@ public class BlobIT extends PostgresServerITBase {
         rs.close();
 
         String[] ids_t2 = new String[n];
-        stmt.execute("SELECT id_blob(bl_t2) FROM t2");
+        stmt.execute("SELECT blob_id(bl_t2) FROM t2");
         rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
@@ -1046,7 +1045,7 @@ public class BlobIT extends PostgresServerITBase {
         }
         String[] ids = new String[n];
 
-        stmt.execute("SELECT id_blob(bl) FROM t1");
+        stmt.execute("SELECT blob_id(bl) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
@@ -1062,7 +1061,7 @@ public class BlobIT extends PostgresServerITBase {
         commitOrRollback();
 
         stmt.execute(("UPDATE t1 SET bl = create_long_blob(unhex('010203')) WHERE id = 2"));
-        stmt.execute("SELECT id_blob(bl), isTrue(unwrap_blob(bl) = unhex('010203')) from t1 WHERE id = 2");
+        stmt.execute("SELECT blob_id(bl), isTrue(unwrap_blob(bl) = unhex('010203')) from t1 WHERE id = 2");
         ResultSet resultSet = stmt.getResultSet();
         resultSet.next();
         String blobId = resultSet.getString(1);
@@ -1098,7 +1097,7 @@ public class BlobIT extends PostgresServerITBase {
         }
         String[] ids = new String[n];
 
-        stmt.execute("SELECT id_blob(bl) FROM t1");
+        stmt.execute("SELECT blob_id(bl) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
@@ -1114,7 +1113,7 @@ public class BlobIT extends PostgresServerITBase {
         commitOrRollback();
 
         stmt.execute(("UPDATE t1 SET bl = create_long_blob(unhex('010203')) WHERE id > 2"));
-        stmt.execute("SELECT id_blob(bl) FROM t1 WHERE id > 2");
+        stmt.execute("SELECT blob_id(bl) FROM t1 WHERE id > 2");
         ResultSet resultSet = stmt.getResultSet();
         String[] ids_new = new String[n-3];
         for (int j = 3; j < n; j++) {
@@ -1161,7 +1160,7 @@ public class BlobIT extends PostgresServerITBase {
         preparedStatement.close();
 
         String[] ids_t1 = new String[n];
-        stmt.execute("SELECT id_blob(bl) FROM t1");
+        stmt.execute("SELECT blob_id(bl) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
@@ -1170,7 +1169,7 @@ public class BlobIT extends PostgresServerITBase {
         rs.close();
 
         String[] ids_t2 = new String[n];
-        stmt.execute("SELECT id_blob(bl_t2) FROM t2");
+        stmt.execute("SELECT blob_id(bl_t2) FROM t2");
         rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
@@ -1187,7 +1186,7 @@ public class BlobIT extends PostgresServerITBase {
         commitOrRollback();
 
         stmt.execute("UPDATE t2 SET bl_t2 = create_long_blob(unhex('030405')) WHERE id_t2 = 2");
-        stmt.execute("SELECT id_blob(bl_t2) FROM t2 WHERE id_t2 = 2");
+        stmt.execute("SELECT blob_id(bl_t2) FROM t2 WHERE id_t2 = 2");
         ResultSet resultSet = stmt.getResultSet();
         resultSet.next();
         String blobId = resultSet.getString(1);
@@ -1234,7 +1233,7 @@ public class BlobIT extends PostgresServerITBase {
         preparedStatement.close();
 
         String[] ids_t1 = new String[n];
-        stmt.execute("SELECT id_blob(bl) FROM t1");
+        stmt.execute("SELECT blob_id(bl) FROM t1");
         ResultSet rs = stmt.getResultSet();
         for (int j = 0; j < n; j++) {
             rs.next();
@@ -1243,7 +1242,7 @@ public class BlobIT extends PostgresServerITBase {
         rs.close();
 
         String[] ids_t2 = new String[n];
-        stmt.execute("SELECT id_blob(bl_t2) FROM t2");
+        stmt.execute("SELECT blob_id(bl_t2) FROM t2");
         rs = stmt.getResultSet();
         for (int jj = 0; jj < n; jj++) {
             rs.next();
@@ -1260,7 +1259,7 @@ public class BlobIT extends PostgresServerITBase {
         commitOrRollback();
 
         stmt.execute("UPDATE t1 SET bl = create_long_blob(unhex('030405')) WHERE id = 2");
-        stmt.execute("SELECT id_blob(bl), isTrue(unwrap_blob(bl) = unhex('030405')) FROM t1 WHERE id = 2");
+        stmt.execute("SELECT blob_id(bl), isTrue(unwrap_blob(bl) = unhex('030405')) FROM t1 WHERE id = 2");
         ResultSet resultSet = stmt.getResultSet();
         Assert.assertTrue(resultSet.next());
         String blobId = resultSet.getString(1);
@@ -1283,6 +1282,54 @@ public class BlobIT extends PostgresServerITBase {
         commitOrRollback();
     }
         
+    
+    //@Test
+    public void dropMultipleBlobColumns() throws Exception {
+        final String schema = "test";
+        final String table = "t1";
+        final int tId = createTable(schema, table, "id INT PRIMARY KEY, bl_1 BLOB, bl_2 BLOB");
+        Statement stmt = getConnection().createStatement();
+        stmt.execute("INSERT INTO t1 VALUES (1, create_long_blob(unhex('010203')), create_long_blob(unhex('020304')))");
+        stmt.close();
+
+        final SchemaManager schemaManager = serviceManager().getSchemaManager();
+        getAndOrStartTransaction();
+        schemaManager.startOnline(session());
+        TableChanges.ChangeSet.Builder builder = TableChanges.ChangeSet.newBuilder();
+        builder.setChangeLevel("GROUP")
+                .setTableId(tId)
+                .setOldSchema(schema)
+                .setOldName(table)
+                .setNewSchema(schema)
+                .setNewName(table);
+        builder.addColumnChange(TableChanges.Change.newBuilder().setChangeType("DROP").setOldName("bl_1"));
+        builder.addColumnChange(TableChanges.Change.newBuilder().setChangeType("DROP").setOldName("bl_2"));
+        schemaManager.addOnlineChangeSet(session(), builder.build());
+        commitOrRollback();
+        
+        store().getOnlineHelper().alterTable(session(), queryContext(newStoreAdapter(session())));
+        schemaManager.finishOnline(session());
+        commitOrRollback();
+        Assert.assertEquals(3, ais().getTable(tId).getColumns().size());
+
+        transactionallyUnchecked(new Runnable() {
+            @Override
+            public void run() {
+                schemaManager.startOnline(session());
+                TableChanges.ChangeSet.Builder builder = TableChanges.ChangeSet.newBuilder();
+                builder.setChangeLevel("GROUP")
+                        .setTableId(tId)
+                        .setOldSchema(schema)
+                        .setOldName(table)
+                        .setNewSchema(schema)
+                        .setNewName(table);
+                builder.addColumnChange(TableChanges.Change.newBuilder().setChangeType("DROP").setOldName("bl_1"));
+                schemaManager.addOnlineChangeSet(session(), builder.build());
+                schemaManager.finishOnline(session());
+            }
+        });
+        Assert.assertEquals(2, ais().getTable(tId).getColumns().size());
+    }
 
     //@Test
     public void blobPerformanceA() throws Exception {

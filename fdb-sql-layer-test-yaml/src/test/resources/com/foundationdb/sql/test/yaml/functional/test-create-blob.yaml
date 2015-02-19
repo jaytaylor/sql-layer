@@ -3,16 +3,20 @@
 ---
 - Statement: INSERT INTO blob VALUES (0, create_blob(unhex(repeat('0E', 300000))));
 ---
-- Statement: INSERT INTO blob VALUES (1, create_blob(unhex(repeat('0E', 2000))));
+- Statement: INSERT INTO blob VALUES (1, create_blob(unhex('02030405060708')));
 ---
-- Statement: INSERT INTO blob VALUES (2, create_blob('deadbeef'));
+- Statement: SELECT unwrap_blob(bl) FROM blob WHERE id = 1;
+- output: [[!!binary 'AgMEBQYHCA==']]
 ---
-- Statement: INSERT INTO blob VALUES (3, create_blob());
+- Statement: INSERT INTO blob VALUES (2, create_blob());
 ---
-- Statement: INSERT INTO blob VALUES (4, null);
+- Statement: SELECT unwrap_blob(bl) FROM blob WHERE id = 2;
+- output: [[!!binary '']]
+---
+- Statement: INSERT INTO blob VALUES (3, null);
 ---
 - Statement: SELECT bl FROM blob
-- row_count: 5
+- row_count: 4
 ---
 - Statement: DROP TABLE blob
 ...

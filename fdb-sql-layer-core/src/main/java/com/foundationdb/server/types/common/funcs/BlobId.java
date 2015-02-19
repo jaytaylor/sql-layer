@@ -33,15 +33,15 @@ import com.foundationdb.server.types.value.ValueTarget;
 
 import java.util.UUID;
 
-public class IdBlob extends TScalarBase {
+public class BlobId extends TScalarBase {
     NoAttrTClass blob;
 
-    public static TScalar idBlob(final NoAttrTClass blob) {
-        return new IdBlob(blob);
+    public static TScalar blobId(final NoAttrTClass blob) {
+        return new BlobId(blob);
     }
 
 
-    private IdBlob(NoAttrTClass blob) {
+    private BlobId(NoAttrTClass blob) {
         this.blob = blob;
     }
 
@@ -73,7 +73,7 @@ public class IdBlob extends TScalarBase {
 
     @Override
     public String displayName() {
-        return "ID_BLOB";
+        return "BLOB_ID";
     }
 
     @Override
