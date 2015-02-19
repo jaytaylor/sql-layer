@@ -146,7 +146,7 @@ public interface Store extends KeyCreator {
     String getName();
 
     /** (Test helper) Get names of all StorageDescriptions in use. */
-    Collection<String> getStorageDescriptionNames();
+    Collection<String> getStorageDescriptionNames(Session session);
 
     OnlineHelper getOnlineHelper();
 

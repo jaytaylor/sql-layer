@@ -581,7 +581,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
 
     @Override
-    public Collection<String> getStorageDescriptionNames() {
+    public Collection<String> getStorageDescriptionNames(Session session) {
         final List<List<String>> dataDirs = Arrays.asList(
             Arrays.asList(FDBNameGenerator.DATA_PATH_NAME, FDBNameGenerator.TABLE_PATH_NAME),
             Arrays.asList(FDBNameGenerator.DATA_PATH_NAME, FDBNameGenerator.SEQUENCE_PATH_NAME),

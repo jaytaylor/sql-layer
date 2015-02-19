@@ -201,7 +201,7 @@ public abstract class ITBase extends ApiTestBase {
     public void lookForDanglingStorage() throws Exception {
         // Collect all trees storage currently has
         Set<String> storeTrees = new TreeSet<>();
-        storeTrees.addAll(store().getStorageDescriptionNames());
+        storeTrees.addAll(store().getStorageDescriptionNames(session()));
 
         // Collect all trees in AIS
         Set<String> smTrees = serviceManager().getSchemaManager().getTreeNames(session());

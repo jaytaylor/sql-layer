@@ -563,7 +563,7 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     }
 
     @Override
-    public Collection<String> getStorageDescriptionNames() {
+    public Collection<String> getStorageDescriptionNames(Session session) {
         return treeService.getAllTreeNames();
     }
 
