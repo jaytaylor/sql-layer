@@ -93,7 +93,7 @@ public class BlobAsyncIT extends FDBITBase
             @Override
             public Void apply(Transaction tr) {
                 BlobAsync blob = new BlobAsync(getDir(tr));
-                blob.write(tr, 0L, testBytes).get();
+                blob.write(tr, 0, testBytes).get();
 
                 blob.truncate(tr, 50).get();
                 byte[] readBytes = blob.read(tr).get();
@@ -183,7 +183,7 @@ public class BlobAsyncIT extends FDBITBase
             @Override
             public Void apply(Transaction tr) {
                 BlobAsync blob = new BlobAsync(getDir(tr));
-                blob.write(tr, 0L, testBytes).get();
+                blob.write(tr, 0, testBytes).get();
                 assertEquals(Long.valueOf(len), blob.getSize(tr).get());
                 byte[] readBytes = blob.read(tr).get();
                 if(len == 0) {
