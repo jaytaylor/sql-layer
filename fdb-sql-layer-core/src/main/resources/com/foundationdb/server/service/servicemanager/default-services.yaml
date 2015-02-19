@@ -33,6 +33,18 @@
     #com.foundationdb.server.service.text.FullTextIndexService: com.foundationdb.server.service.text.FullTextIndexServiceImpl
     ##
     ##
+    ## Memory
+    ##
+    #com.foundationdb.server.store.SchemaManager : com.foundationdb.server.store.MemorySchemaManager
+    #com.foundationdb.server.store.Store : com.foundationdb.server.store.MemoryStore
+    #com.foundationdb.server.store.statistics.IndexStatisticsService : com.foundationdb.server.store.statistics.MemoryIndexStatisticsService
+    #com.foundationdb.server.service.transaction.TransactionService : com.foundationdb.server.store.MemoryTransactionService
+    #com.foundationdb.server.service.statusmonitor.StatusMonitorService : com.foundationdb.server.service.statusmonitor.DummyStatusMonitor
+    #com.foundationdb.server.service.metrics.MetricsService : com.foundationdb.server.service.metrics.DummyMetricsService
+    #com.foundationdb.sql.optimizer.rule.cost.CostModelFactory : com.foundationdb.sql.optimizer.rule.cost.PersistitCostModelService
+    #com.foundationdb.server.service.text.FullTextIndexService: com.foundationdb.server.service.text.ThrowingFullTextService
+    ##
+    ##
     ## FoundationDB
     ##
     com.foundationdb.server.store.FDBHolder : com.foundationdb.server.store.FDBHolderImpl
