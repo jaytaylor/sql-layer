@@ -34,7 +34,6 @@ public interface LobService {
     public void createNewLob(Session session, UUID lobId);
     public boolean existsLob(Session session, UUID lobId);
     public void deleteLob(Session session, UUID lobId);
-    public void moveLob(Session session, UUID oldId, UUID newId);
     public void linkTableBlob(Session session, UUID lobId, int tableId);
     public long sizeBlob(Session session, UUID lobId);
     public byte[] readBlob(Session session, UUID lobId, long offset, int length);

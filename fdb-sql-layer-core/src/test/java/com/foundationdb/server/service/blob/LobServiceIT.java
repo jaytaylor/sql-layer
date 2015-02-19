@@ -42,59 +42,26 @@ public class LobServiceIT extends ITBase {
         UUID id = UUID.randomUUID();
         getTransaction();
         ls.createNewLob(session(), id);
-        commit();
-
-        getTransaction();
         ls.appendBlob(session(), id, data);
-        commit();
-        
-        getTransaction();
         Assert.assertEquals(ls.sizeBlob(session(), id), new Long(data.length).longValue());
-        commit();
-        
-        // blob transfer to new address
-        UUID newPath = UUID.randomUUID();
-        getTransaction();
-        ls.moveLob(session(), id, newPath);
-        commit();
         
         // data retrieval
-        getTransaction();
-        byte[] output = ls.readBlob(session(), newPath, 0, data.length);
-        commit();
+        byte[] output = ls.readBlob(session(), id, 0, data.length);
         Assert.assertArrayEquals(data, output);
-        getTransaction();
-        output = ls.readBlob(session(), newPath);
-        commit();
+        output = ls.readBlob(session(), id);
         Assert.assertArrayEquals(data, output);
         
-        getTransaction();
-        ls.truncateBlob(session(), newPath, 2L);
-        commit();
-        getTransaction();
-        Assert.assertEquals(ls.sizeBlob(session(), newPath), 2L);
-        commit();
-        
-        getTransaction();
-        ls.truncateBlob(session(), newPath, 0L);
-        commit();
-        
-        getTransaction();
-        Assert.assertEquals(ls.sizeBlob(session(), newPath), 0L);
-        commit();
-        getTransaction();
-        ls.appendBlob(session(), newPath, data);
-        commit();
-        getTransaction();
-        output = ls.readBlob(session(), newPath);
-        commit();
+        ls.truncateBlob(session(), id, 2L);
+        Assert.assertEquals(ls.sizeBlob(session(), id), 2L);
+        ls.truncateBlob(session(), id, 0L);
+        Assert.assertEquals(ls.sizeBlob(session(), id), 0L);
+        ls.appendBlob(session(), id, data);
+        output = ls.readBlob(session(), id);
         Assert.assertArrayEquals(data, output);        
         
-        getTransaction();
-        ls.deleteLob(session(), newPath);
-        commit();
-        getTransaction();
-        Assert.assertFalse(ls.existsLob(session(), newPath));
+        ls.deleteLob(session(), id);
+        Assert.assertFalse(ls.existsLob(session(), id));
+        ls.createNewLob(session(), id);
         commit();
     }
     

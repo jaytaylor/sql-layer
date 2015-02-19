@@ -100,11 +100,13 @@ public class FDBLobService implements Service, LobService {
         transactionService.addCallback(session, TransactionService.CallbackType.PRE_COMMIT, new TransactionService.Callback() {
             @Override
             public void run(Session session, long timestamp) {
-                if (existsLob(session, lobId)){
+                try {
                     SQLBlob blob = openBlob(getTxc(session), lobId);
                     if (!(blob.isLinked(getTxc(session))).get()) {
                         deleteLob(session, lobId);
                     }
+                } catch (LobException le){
+                    // lob already gone
                 }
             }
         });
@@ -129,21 +131,6 @@ public class FDBLobService implements Service, LobService {
         for (Future<Boolean> item : done) {
             item.get();
         }
-    }
-
-    @Override
-    public void moveLob(Session session, final UUID oldId, UUID newId) {
-        List<String> newPathTmp = new ArrayList<>(lobDirectory.getPath());
-        newPathTmp.add(newId.toString());
-        final List<String> newPath = new ArrayList<>(newPathTmp);
-        getTxc(session).run(new Function<Transaction, Void>() {
-            @Override
-            public Void apply(Transaction tr) {
-                DirectorySubspace ds = lobDirectory.open(tr, Arrays.asList(oldId.toString())).get();
-                ds.moveTo(tr, newPath).get();
-                return null;
-            }
-        });
     }
 
     @Override
