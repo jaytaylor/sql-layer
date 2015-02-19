@@ -20,12 +20,11 @@ package com.foundationdb.server.test.it.dxl;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Arrays;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.foundationdb.qp.row.Row;
+import com.foundationdb.ais.model.GroupIndex;
 import com.foundationdb.util.Exceptions;
 import org.junit.Test;
 
@@ -64,7 +63,24 @@ public class WriteSkewIT extends ITBase
                 writeRow(threadPrivateSession, grandchildRowDef.getRowDefId(), 2, 2, 22200);
             }
         };
-        runTest(threadA, threadB);
+        runTest(
+            threadA,
+            threadB,
+            new Runnable() {
+                @Override
+                public void run() {
+                    expectRows(
+                        getTable(parent).getGroup(),
+                        row(parent, 1, 100),
+                        row(child, 1, 1, 1100),
+                        row(grandchild, 1, 1, 11100),
+                        row(parent, 2, 200),
+                        row(child, 2, 2, 2200),
+                        row(grandchild, 2, 2, 22200)
+                    );
+                }
+            }
+        );
     }
 
     // Test case from description of bug 1078331
@@ -92,10 +108,24 @@ public class WriteSkewIT extends ITBase
                           row(threadPrivateSession, childRowDef.getRowDefId(), 11, 2, 1100));
             }
         };
-        runTest(threadA, threadB);
+        runTest(
+            threadA,
+            threadB,
+            new Runnable() {
+                @Override
+                public void run() {
+                    GroupIndex index = getTable(parent).getGroup().getIndex(groupIndexName);
+                    expectRows(
+                        index,
+                        row(index, 100, null, 1, null),
+                        row(index, 2200, 1100, 2, 11)
+                    );
+                }
+            }
+        );
     }
 
-    private void runTest(TestThread sessionA, TestThread sessionB) throws InterruptedException
+    private void runTest(TestThread sessionA, TestThread sessionB, Runnable bothPassedCheck) throws InterruptedException
     {
         sessionA.start();
         sessionB.start();
@@ -116,7 +146,11 @@ public class WriteSkewIT extends ITBase
         sessionA.join(10000);
         sessionB.join(10000);
         assertNull(sessionA.termination());
-        assertTrue("sessionB termination was rollback", Exceptions.isRollbackException(sessionB.termination()));
+        if(sessionB.termination != null) {
+            assertTrue("sessionB termination was rollback", Exceptions.isRollbackException(sessionB.termination()));
+        } else {
+            bothPassedCheck.run();
+        }
     }
 
     private void createDatabase() throws InvalidOperationException
@@ -141,7 +175,7 @@ public class WriteSkewIT extends ITBase
         parentRowDef = getRowDef(parent);
         childRowDef = getRowDef(child);
         grandchildRowDef = getRowDef(grandchild);
-        createLeftGroupIndex(TableName.create(SCHEMA, "parent"), "idx_pxcy", "parent.x", "child.y");
+        createLeftGroupIndex(TableName.create(SCHEMA, "parent"), groupIndexName, "parent.x", "child.y");
     }
 
     private int parent;
@@ -152,6 +186,7 @@ public class WriteSkewIT extends ITBase
     private RowDef grandchildRowDef;
     
     private final AtomicBoolean exceptionInAnyThread = new AtomicBoolean(false);
+    private final String groupIndexName = "idx_pxcy";
     
     abstract private class TestThread extends Thread
     {
