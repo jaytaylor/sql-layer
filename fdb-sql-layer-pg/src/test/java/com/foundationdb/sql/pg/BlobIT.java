@@ -47,7 +47,7 @@ public class BlobIT extends PostgresServerITBase {
     public void testCleanUpLobs() throws Exception {
         Connection conn = getConnection();
         UUID idA =  UUID.randomUUID();
-        
+        conn.setAutoCommit(false);
         PreparedStatement preparedStatement = conn.prepareCall("CALL sys.create_specific_blob( ? )");
         preparedStatement.setString(1, idA.toString());
         preparedStatement.execute();
@@ -56,25 +56,11 @@ public class BlobIT extends PostgresServerITBase {
         String idOut = rs.getObject(1).toString();
         Assert.assertTrue(idA.toString().equals(idOut));
         preparedStatement.close();
-        
-        LobService ls = lobService();
-        getAndOrStartTransaction();
-        Assert.assertTrue(ls.existsLob(session(), idA));
-        commitOrRollback();
+        conn.commit();
         conn.close();
-        
-        long totalTime = 0L;
         getAndOrStartTransaction();
-        while (ls.existsLob(session(), idA)) {
-            commitOrRollback();
-            getAndOrStartTransaction();
-            long period = 100L;
-            Thread.sleep(period);
-            totalTime += period;
-            if (totalTime > 5000L) {
-                Assert.fail("lob should be cleaned up within 5 s");
-            }
-        }
+        LobService ls = lobService();
+        Assert.assertFalse(ls.existsLob(session(), idA));
         commitOrRollback();
     }
 

@@ -95,8 +95,19 @@ public class FDBLobService implements Service, LobService {
 
     
     @Override
-    public void createNewLob(Session session, UUID lobId) {
+    public void createNewLob(Session session, final UUID lobId) {
         lobDirectory.create(getTxc(session), Arrays.asList(lobId.toString())).get();
+        transactionService.addCallback(session, TransactionService.CallbackType.PRE_COMMIT, new TransactionService.Callback() {
+            @Override
+            public void run(Session session, long timestamp) {
+                if (existsLob(session, lobId)){
+                    SQLBlob blob = openBlob(getTxc(session), lobId);
+                    if (!(blob.isLinked(getTxc(session))).get()) {
+                        deleteLob(session, lobId);
+                    }
+                }
+            }
+        });
     }
 
     @Override

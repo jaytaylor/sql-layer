@@ -69,7 +69,6 @@ public class LobRoutines {
         if (startedTransaction) {
             txnService.rollbackTransactionIfOpen(session);
         }
-        context.getServer().addCreatedLob(id);
         return id.toString();
     }
     

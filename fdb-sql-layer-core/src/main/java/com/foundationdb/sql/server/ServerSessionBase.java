@@ -171,18 +171,6 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
     
     @Override
-    public void addCreatedLob(UUID lobId) {
-        lobsCreated.add(lobId);
-    }
-    
-
-    protected void cleanUpLobs() {
-        List<UUID> toDo = new ArrayList<>(lobsCreated);
-        lobService.checkAndCleanBlobs(toDo);
-        lobsCreated.clear();
-    }
-    
-    @Override
     public String getSessionSetting(String key) {
         return getProperty(key);
     }

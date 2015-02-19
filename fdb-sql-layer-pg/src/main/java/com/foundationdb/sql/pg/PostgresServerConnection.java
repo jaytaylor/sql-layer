@@ -146,7 +146,6 @@ public class PostgresServerConnection extends ServerSessionBase
 
     public void stop() {
         running = false;
-        cleanUpLobs();
         // Can only wake up stream read by closing down socket.
         try {
             socket.close();
