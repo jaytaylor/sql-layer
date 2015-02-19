@@ -38,6 +38,7 @@ import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
 import com.foundationdb.qp.expression.ExpressionRow;
+import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
@@ -866,13 +867,19 @@ public class ApiTestBase {
 
     protected Operator scanIndexPlan(Index index) {
         Schema schema = SchemaCache.globalSchema(index.getAIS());
-        return API.indexScan_Default(schema.indexRowType(index), false, null);
+        return API.indexScan_Default(schema.indexRowType(index),
+                                     false,
+                                     IndexKeyRange.unbounded(schema.indexRowType(index)),
+                                     schema.tableRowType(index.rootMostTable()));
     }
 
     protected final List<Row> scanAllIndex(Index index) {
         AkibanInformationSchema ais = ais();
         Schema schema = SchemaCache.globalSchema(ais);
-        Operator plan = API.indexScan_Default(schema.indexRowType(index), false, null);
+        Operator plan = API.indexScan_Default(schema.indexRowType(index),
+                                              false,
+                                              IndexKeyRange.unbounded(schema.indexRowType(index)),
+                                              schema.tableRowType(index.rootMostTable()));
         return runPlan(session(), schema, plan);
     }
 
@@ -1153,6 +1160,14 @@ public class ApiTestBase {
 
     protected void expectRows(Index index, Collection<Row> expectedRows) {
         expectRows(scanIndexPlan(index), false, expectedRows);
+    }
+
+    protected void expectRows(Group group, Row... expectedRows) {
+        expectRows(
+            API.groupScan_Default(group),
+            false,
+            Arrays.asList(expectedRows)
+        );
     }
 
     protected void expectRowsSkipInternal(Index index, Row... expectedRows) {
