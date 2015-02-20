@@ -59,13 +59,15 @@ public class LobRoutines {
             txnService.beginTransaction(session);
             startedTransaction = true;
         }
-        LobService ls = getLobService();
-        ls.createNewLob(session, id);
-        if (startedTransaction) {
-            txnService.commitOrRetryTransaction(session);
-        }
-        if (startedTransaction) {
-            txnService.rollbackTransactionIfOpen(session);
+        try {
+            getLobService().createNewLob(session, id);
+            if (startedTransaction) {
+                txnService.commitOrRetryTransaction(session);
+            }
+        } finally {
+            if (startedTransaction) {
+                txnService.rollbackTransactionIfOpen(session);
+            }
         }
         return id.toString();
     }
@@ -82,14 +84,18 @@ public class LobRoutines {
             startedTransaction = true;
         }
         final UUID id = UUID.fromString(blobId);
-        LobService ls = getLobService();
-        ls.verifyAccessPermission(session, context, id);
-        size = ls.sizeBlob(session, id);
-        if (startedTransaction) {
-            txnService.commitOrRetryTransaction(session);
-        }
-        if (startedTransaction) {
-            txnService.rollbackTransactionIfOpen(session);
+        
+        try {
+            LobService ls = getLobService();
+            ls.verifyAccessPermission(session, context, id);
+            size = ls.sizeBlob(session, id);
+            if (startedTransaction) {
+                txnService.commitOrRetryTransaction(session);
+            }
+        } finally {
+            if (startedTransaction) {
+                txnService.rollbackTransactionIfOpen(session);
+            }
         }
         return size;
     }
@@ -127,14 +133,18 @@ public class LobRoutines {
             txnService.beginTransaction(session);
             startedTransaction = true;
         }
-        LobService ls = getLobService();
-        ls.verifyAccessPermission(session, context, id);
-        ls.writeBlob(session, id, offset, data);
-        if (startedTransaction) {
-            txnService.commitOrRetryTransaction(session);
-        }
-        if (startedTransaction) {
-            txnService.rollbackTransactionIfOpen(session);
+        try {
+            LobService ls = getLobService();
+            ls.verifyAccessPermission(session, context, id);
+            ls.writeBlob(session, id, offset, data);
+
+            if (startedTransaction) {
+                txnService.commitOrRetryTransaction(session);
+            }
+        } finally {
+            if (startedTransaction) {
+                txnService.rollbackTransactionIfOpen(session);
+            }
         }
     }
 
@@ -148,14 +158,17 @@ public class LobRoutines {
             txnService.beginTransaction(session);
             startedTransaction = true;
         }
-        LobService ls = getLobService();
-        ls.verifyAccessPermission(session, context, id);
-        ls.appendBlob(session, id, data);
-        if (startedTransaction) {
-            txnService.commitOrRetryTransaction(session);
-        }
-        if (startedTransaction) {
-            txnService.rollbackTransactionIfOpen(session);
+        try {
+            LobService ls = getLobService();
+            ls.verifyAccessPermission(session, context, id);
+            ls.appendBlob(session, id, data);
+            if (startedTransaction) {
+                txnService.commitOrRetryTransaction(session);
+            }
+        } finally {
+            if (startedTransaction) {
+                txnService.rollbackTransactionIfOpen(session);
+            }
         }
     }
 
@@ -169,14 +182,17 @@ public class LobRoutines {
             txnService.beginTransaction(session);
             startedTransaction = true;
         }
-        LobService ls = getLobService();
-        ls.verifyAccessPermission(session, context, id);
-        ls.truncateBlob(session, id, newLength);
-        if (startedTransaction) {
-            txnService.commitOrRetryTransaction(session);
-        }
-        if (startedTransaction) {
-            txnService.rollbackTransactionIfOpen(session);
+        try {
+            LobService ls = getLobService();
+            ls.verifyAccessPermission(session, context, id);
+            ls.truncateBlob(session, id, newLength);
+            if (startedTransaction) {
+                txnService.commitOrRetryTransaction(session);
+            }
+        } finally {
+            if (startedTransaction) {
+                txnService.rollbackTransactionIfOpen(session);
+            }
         }
     }
     

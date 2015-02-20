@@ -32,7 +32,7 @@ import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.FDBHolder;
 import com.foundationdb.server.store.FDBTransactionService;
 import com.foundationdb.server.types.aksql.aktypes.AkGUID;
-import com.foundationdb.tuple.Tuple;
+import com.foundationdb.tuple.Tuple2;
 import com.google.inject.Inject;
 
 import java.util.Arrays;
@@ -167,7 +167,7 @@ public class FDBLobService implements Service, LobService {
     }
     
     private Subspace getLobSubspace(UUID lobId) {
-        return lobDirectory.get(Tuple.from(AkGUID.uuidToBytes(lobId)));
+        return lobDirectory.get(Tuple2.from(AkGUID.uuidToBytes(lobId)));
     }
     
     private Transaction getTxc(Session session) {
