@@ -22,7 +22,6 @@ import com.foundationdb.qp.expression.IndexBound;
 import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.BindingsAwareCursor;
-import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
@@ -32,7 +31,6 @@ import com.foundationdb.server.api.dml.ColumnSelector;
 import com.foundationdb.server.api.dml.IndexRowPrefixSelector;
 import com.foundationdb.server.spatial.GeophileCursor;
 import com.foundationdb.server.spatial.GeophileIndex;
-import com.foundationdb.server.spatial.Spatial;
 import com.foundationdb.server.spatial.TransformingIterator;
 import com.foundationdb.server.types.texpressions.TPreparedField;
 import com.foundationdb.server.types.value.Value;
@@ -61,7 +59,7 @@ import java.util.Map;
 
 // A scan of an IndexCursorSpatial_InBox will be implemented as one or more IndexCursorUnidirectional scans.
 
-class IndexCursorSpatial_InBox extends IndexCursor
+public class IndexCursorSpatial_InBox extends IndexCursor
 {
     @Override
     public void open()
@@ -70,6 +68,8 @@ class IndexCursorSpatial_InBox extends IndexCursor
         // iterationHelper.closeIteration() closes the PersistitIndexCursor, releasing its Exchange.
         // This iteration uses the Exchanges in the IndexScanRowStates owned by each cursor of the MultiCursor.
         iterationHelper.closeIteration();
+        createSpatialJoinCursor();
+        geophileCursor.rebind(bindings);
         spatialJoinCursor.open();
     }
 
@@ -85,13 +85,6 @@ class IndexCursorSpatial_InBox extends IndexCursor
     {
         super.close();
         spatialJoinCursor.close();
-    }
-
-    @Override
-    public void rebind(QueryBindings bindings)
-    {
-        super.rebind(bindings);
-        geophileCursor.rebind(bindings);
     }
 
     // IndexCursorSpatial_InBox interface
@@ -116,26 +109,41 @@ class IndexCursorSpatial_InBox extends IndexCursor
         this.index = keyRange.indexRowType().index();
         assert index.isSpatial() : index;
         this.space = this.index.space();
+        this.openEarly = openEarly;
+    }
+
+    private void createSpatialJoinCursor()
+    {
         this.loExpressions = keyRange.lo().boundExpressions(context, bindings);
-        this.hiExpressions = keyRange.hi().boundExpressions(context, bindings);
         final SpatialObject spatialObject = spatialObject();
         // Set up spatial join and iterator over spatial join output
         SpatialJoin spatialJoin =
             SpatialJoin.newSpatialJoin(SPATIAL_JOIN_DUPLICATION,
                                        null,
-                                       null,
-                                       LOG.isDebugEnabled() ? SPATIAL_JOIN_OBSERVER : null);
+                                       SPATIAL_JOIN_LEFT_OBSERVER,
+                                       LOG.isDebugEnabled()
+                                       ? SPATIAL_JOIN_RIGHT_DEBUG_OBSERVER
+                                       : SPATIAL_JOIN_RIGHT_OBSERVER);
         Iterator<Pair<RecordWithSpatialObject, IndexRow>> spatialJoinIterator;
         try {
             // Set up spatial index over the index
-            GeophileIndex dataIndex = dataIndex(context, openEarly, spatialObject);
-            SpatialIndex<IndexRow> dataSpatialIndex = SpatialIndex.newSpatialIndex(space, dataIndex);
+            SpatialIndex<IndexRow> dataSpatialIndex =
+                SpatialIndex.newSpatialIndex(space, dataIndex(context, openEarly, spatialObject));
             // Set up spatial index over query object
             SortedArray<RecordWithSpatialObject> queryIndex = new SortedArray.OfBaseRecord();
             SpatialIndex<RecordWithSpatialObject> querySpatialIndex = SpatialIndex.newSpatialIndex(space, queryIndex);
-            RecordWithSpatialObject record = new RecordWithSpatialObject();
-            record.spatialObject(spatialObject);
-            querySpatialIndex.add(spatialObject, record, MAX_Z);
+            Record.Factory<RecordWithSpatialObject> recordFactory =
+                new Record.Factory<RecordWithSpatialObject>()
+                {
+                    @Override
+                    public RecordWithSpatialObject newRecord()
+                    {
+                        RecordWithSpatialObject record = new RecordWithSpatialObject();
+                        record.spatialObject(spatialObject);
+                        return record;
+                    }
+                };
+            querySpatialIndex.add(spatialObject, recordFactory, MAX_Z);
             spatialJoinIterator = spatialJoin.iterator(querySpatialIndex, dataSpatialIndex);
             if (LOG.isDebugEnabled()) {
                 logQueryIndex(queryIndex);
@@ -201,8 +209,8 @@ class IndexCursorSpatial_InBox extends IndexCursor
         long[] zValues = new long[MAX_Z];
         space.decompose(spatialObject, zValues);
         int zColumn = index.firstSpatialArgument();
-        Value hiValue = new Value(InternalIndexTypes.LONG.instance(false));
-        hiValue.putInt64(Long.MAX_VALUE);
+        Value toEnd = new Value(InternalIndexTypes.LONG.instance(false));
+        toEnd.putInt64(Long.MAX_VALUE);
         for (int i = 0; i < zValues.length && zValues[i] != SpaceImpl.Z_NULL; i++) {
             long z = zValues[i];
             // Need to do an index lookup for z and each ancestor
@@ -225,7 +233,7 @@ class IndexCursorSpatial_InBox extends IndexCursor
                     Value loValue = new Value(InternalIndexTypes.LONG.instance(false));
                     loValue.putInt64(Space.zLo(z));
                     zLoRow.value(zColumn, loValue);
-                    zHiRow.value(zColumn, hiValue);
+                    zHiRow.value(zColumn, toEnd);
                     zKeyRange = IndexKeyRange.bounded(physicalRowType, zLo, true, zHi, true);
                     zKeyRanges.put(z, zKeyRange);
                     z = z == SpaceImpl.Z_MIN ? SpaceImpl.Z_NULL : SpaceImpl.parent(z);
@@ -269,19 +277,30 @@ class IndexCursorSpatial_InBox extends IndexCursor
     // Class state
 
     private static final SpatialJoin.Duplicates SPATIAL_JOIN_DUPLICATION = SpatialJoin.Duplicates.EXCLUDE;
-    private static final int MAX_Z = 4;
-    private static final SpatialJoin.InputObserver SPATIAL_JOIN_OBSERVER =
+    public static final int MAX_Z = 4;
+    // SPATIAL_JOIN_LEFT/RIGHT_OBSERVERs are public so that they can be set by ITs
+    public static SpatialJoin.InputObserver SPATIAL_JOIN_LEFT_OBSERVER = null;
+    public static SpatialJoin.InputObserver SPATIAL_JOIN_RIGHT_OBSERVER = null;
+    private static SpatialJoin.InputObserver SPATIAL_JOIN_RIGHT_DEBUG_OBSERVER =
         new SpatialJoin.InputObserver()
         {
             @Override public void randomAccess(Cursor cursor, long z)
             {
-                LOG.debug("Random access using {}: {}", cursor, SpaceImpl.formatZ(z));
+                // LOG.debug("Random access using {}: {}", cursor, SpaceImpl.formatZ(z));
+                System.out.format("Random access using %s: %s\n", cursor, SpaceImpl.formatZ(z));
             }
 
             @Override
             public void sequentialAccess(Cursor cursor, long zRandomAccess, Record record)
             {
+/*
                 LOG.debug("    Sequential access using {} {} -> {}: {}",
+                          cursor,
+                          SpaceImpl.formatZ(zRandomAccess),
+                          record == null ? SpaceImpl.Z_NULL : SpaceImpl.formatZ(record.z()),
+                          record);
+*/
+                System.out.format("    Sequential access using %s %s -> %s: %s\n",
                           cursor,
                           SpaceImpl.formatZ(zRandomAccess),
                           record == null ? SpaceImpl.Z_NULL : SpaceImpl.formatZ(record.z()),
@@ -298,8 +317,8 @@ class IndexCursorSpatial_InBox extends IndexCursor
     private final Space space;
     private final Index index;
     private final IndexKeyRange keyRange;
-    private final ValueRecord loExpressions;
-    private final ValueRecord hiExpressions;
+    private final boolean openEarly;
+    private ValueRecord loExpressions;
     private GeophileCursor geophileCursor;
     private BindingsAwareCursor spatialJoinCursor;
 }

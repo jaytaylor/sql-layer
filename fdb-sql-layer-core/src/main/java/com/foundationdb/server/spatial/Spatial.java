@@ -30,6 +30,8 @@ import com.vividsolutions.jts.io.WKBWriter;
 import com.vividsolutions.jts.io.WKTReader;
 import com.vividsolutions.jts.io.WKTWriter;
 
+import java.util.logging.Level;
+
 /*
 
 The lat/lon coordinate system is
@@ -99,6 +101,11 @@ public class Spatial
             geometry instanceof Point
             ? JTS.spatialObject(space, (Point) geometry)
             : JTS.spatialObject(space, geometry);
+    }
+
+    static
+    {
+        java.util.logging.Logger.getLogger("").setLevel(Level.FINE);
     }
 
     public static final int LAT_LON_DIMENSIONS = 2;

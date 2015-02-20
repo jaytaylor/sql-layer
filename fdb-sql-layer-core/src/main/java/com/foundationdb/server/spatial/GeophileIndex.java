@@ -23,7 +23,7 @@ import com.foundationdb.qp.rowtype.IndexRowType;
 import com.geophile.z.Cursor;
 import com.geophile.z.DuplicateRecordException;
 import com.geophile.z.Index;
-import com.geophile.z.RecordFilter;
+import com.geophile.z.Record;
 
 import java.io.IOException;
 
@@ -38,7 +38,7 @@ public class GeophileIndex extends Index<IndexRow>
     }
 
     @Override
-    public boolean remove(long z, RecordFilter<IndexRow> recordFilter) throws IOException, InterruptedException
+    public boolean remove(long z, Record.Filter<IndexRow> recordFilter) throws IOException, InterruptedException
     {
         throw new UnsupportedOperationException();
     }

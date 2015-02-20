@@ -47,7 +47,7 @@ public class TypeValidator
 
     public static boolean isSupportedForNonPointSpatialIndex(TInstance type) {
         TClass tclass = TInstance.tClass(type);
-        return ((tclass != null) && isSupportedForNonPointSpatialIndex(tclass));
+        return tclass instanceof TString || tclass instanceof TBinary;
     }
 
     public static boolean isSupportedForIndex(TClass type) {
@@ -60,20 +60,6 @@ public class TypeValidator
             return false;
         default:
             return true;
-        }
-    }
-
-    public static boolean isSupportedForNonPointSpatialIndex(TClass type) {
-        // TBD: What blob/clob types are permitted for serialized spatial objects?
-        switch (type.jdbcType()) {
-        case Types.BLOB:
-        case Types.CLOB:
-        case Types.LONGVARBINARY:
-        case Types.LONGVARCHAR:
-        case Types.LONGNVARCHAR:
-            return true;
-        default:
-            return false;
         }
     }
 
