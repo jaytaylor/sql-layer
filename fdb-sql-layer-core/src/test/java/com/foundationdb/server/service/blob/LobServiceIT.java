@@ -103,7 +103,7 @@ public class LobServiceIT extends ITBase {
     
     private void commit() {
         TransactionService ts = txnService();
-        ts.commitOrRetryTransaction(session());
+        ts.commitTransaction(session());
         ts.rollbackTransactionIfOpen(session());
     }
 }

@@ -1386,7 +1386,7 @@ public class BlobIT extends PostgresServerITBase {
     private void commitOrRollback() {
         TransactionService ts = txnService();
         try {
-            ts.commitOrRetryTransaction(session());
+            ts.commitTransaction(session());
         } finally {
             ts.rollbackTransactionIfOpen(session());
         }

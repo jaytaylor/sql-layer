@@ -62,7 +62,7 @@ public class LobRoutines {
         try {
             getLobService().createNewLob(session, id);
             if (startedTransaction) {
-                txnService.commitOrRetryTransaction(session);
+                txnService.commitTransaction(session);
             }
         } finally {
             if (startedTransaction) {
@@ -90,7 +90,7 @@ public class LobRoutines {
             ls.verifyAccessPermission(session, context, id);
             size = ls.sizeBlob(session, id);
             if (startedTransaction) {
-                txnService.commitOrRetryTransaction(session);
+                txnService.commitTransaction(session);
             }
         } finally {
             if (startedTransaction) {
@@ -116,7 +116,7 @@ public class LobRoutines {
             ls.verifyAccessPermission(session, context, id);
             output = ls.readBlob(session, id, offset, length);
             if (startedTransaction) {
-                txnService.commitOrRetryTransaction(session);
+                txnService.commitTransaction(session);
             }
         } finally {
             if (startedTransaction) {
@@ -142,7 +142,7 @@ public class LobRoutines {
             ls.writeBlob(session, id, offset, data);
 
             if (startedTransaction) {
-                txnService.commitOrRetryTransaction(session);
+                txnService.commitTransaction(session);
             }
         } finally {
             if (startedTransaction) {
@@ -166,7 +166,7 @@ public class LobRoutines {
             ls.verifyAccessPermission(session, context, id);
             ls.appendBlob(session, id, data);
             if (startedTransaction) {
-                txnService.commitOrRetryTransaction(session);
+                txnService.commitTransaction(session);
             }
         } finally {
             if (startedTransaction) {
@@ -190,7 +190,7 @@ public class LobRoutines {
             ls.verifyAccessPermission(session, context, id);
             ls.truncateBlob(session, id, newLength);
             if (startedTransaction) {
-                txnService.commitOrRetryTransaction(session);
+                txnService.commitTransaction(session);
             }
         } finally {
             if (startedTransaction) {
