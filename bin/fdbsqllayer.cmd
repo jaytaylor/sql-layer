@@ -101,9 +101,6 @@ IF "%1"=="-j" (
   SET FDBSQL_LOGCONF=%2
   SHIFT
   SHIFT
-) ELSE IF "%1"=="-g" (
-  SET JVM_OPTS=%JVM_OPTS% -Dcom.persistit.showgui=true
-  SHIFT
 ) ELSE IF "%1"=="-m" (
   SET SERVICE_MODE=%2
   SHIFT
@@ -202,9 +199,7 @@ GOTO EOF
 
 :VERSION
 FOR /F "usebackq" %%V IN (`java -cp "%CLASSPATH%" com.foundationdb.server.GetVersion`) DO SET SERVER_VERSION=%%V
-FOR /F "usebackq" %%V IN (`java -cp "%CLASSPATH%" com.persistit.GetVersion`) DO SET PERSISTIT_VERSION=%%V
 ECHO server   : %SERVER_VERSION%
-ECHO persistit: %PERSISTIT_VERSION%
 ECHO.
 "%PRUNSRV%" //VS
 GOTO EOF

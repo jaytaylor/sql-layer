@@ -341,7 +341,7 @@ public class ApiTestBase {
 
     protected Map<String, String> defaultPropertiesToPreserveOnRestart() {
         return Collections.singletonMap(
-                TestConfigService.DATA_PATH_KEY,
+                TestConfigService.TEXT_INDEX_PATH_KEY,
                 TestConfigService.dataDirectory().getAbsolutePath());
     }
 
