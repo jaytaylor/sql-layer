@@ -56,9 +56,8 @@ The rows deleted are returned through the cursor interface.
 <h1>Assumptions</h1>
 
 The rows provided by the input operator includes all of the columns
-for the HKEY to allow the persistit layer to lookup the row in the
-btree to remove it. Failure results in a RowNotFoundException being
-thrown and the operation aborted.
+for the HKEY to allow the full row to be looked up. Failure results
+in a RowNotFoundException being thrown and the operation aborted.
 
 The operator assumes (but does not require) that all rows provided are
 of the same RowType.

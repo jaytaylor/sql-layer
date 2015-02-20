@@ -51,7 +51,7 @@ public final class TruncateTableIT extends ITBase {
     /*
      * Bug appeared after truncate was implemented as 'scan all rows and delete'.
      * Manifested as a corrupt RowData when doing a non-primary index scan after the truncate.
-     * Turned out that PersistitStore.deleteRow() requires all index columns be present in the passed RowData.
+     * Store requires all index columns be present in the passed row.
      */
     @Test
     public void bug687225() throws InvalidOperationException {

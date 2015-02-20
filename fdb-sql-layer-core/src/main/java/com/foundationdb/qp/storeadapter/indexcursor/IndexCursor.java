@@ -53,8 +53,6 @@ public abstract class IndexCursor extends RowCursorImpl implements BindingsAware
     public void close()
     {
         try {
-            // The FDB implementation here does nothing, but the persistit ones do stuff that at the very least
-            // could get to a NullPointerException.
             iterationHelper.closeIteration();
         } finally {
             super.close();

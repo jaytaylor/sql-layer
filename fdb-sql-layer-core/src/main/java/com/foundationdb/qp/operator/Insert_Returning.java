@@ -45,10 +45,7 @@ Inserts new rows into a table.
 <h1>Behaviour</h1>
 
 For each row in the insert operator, the row in inserted into the
-table. In practice, this is currently done via
-<i>StoreAdapater#insertRow</i>, which is implemented by
-<i>PersistitAdapater#insertRow</i>, which invokes
-<i>PersistitStore#insertRow</i>
+table. In practice, this is currently done via {@link StoreAdapter#writeRow}.
 
 As next is called, each row is inserted as a side effect of pulling
 rows through the InsertReturning operator. Rows are returned unchanged. 
