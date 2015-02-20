@@ -22,15 +22,12 @@ import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.error.QueryCanceledException;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.session.Session;
-import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.FDBScanTransactionOptions;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.FDBStoreDataHelper;
-import com.foundationdb.server.store.FDBTransactionService;
 import com.persistit.Key;
 
 import org.slf4j.Logger;
@@ -44,13 +41,11 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
     private static final Logger logger = LoggerFactory.getLogger(FDBStoreIndexStatistics.class);
 
     private final IndexStatisticsService indexStatisticsService;
-    private final FDBTransactionService txnService;
     private final long samplerCountLimit;
 
-    public FDBStoreIndexStatistics(FDBStore store, IndexStatisticsService indexStatisticsService, TransactionService txnService, ConfigurationService configurationService) {
+    public FDBStoreIndexStatistics(FDBStore store, IndexStatisticsService indexStatisticsService, ConfigurationService configurationService) {
         super(store);
         this.indexStatisticsService = indexStatisticsService;
-        this.txnService = (FDBTransactionService)txnService;
         this.samplerCountLimit = Long.parseLong(configurationService.getProperty(SAMPLER_COUNT_LIMIT_PROPERTY));
     }
 
@@ -72,10 +67,11 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
         IndexStatistics result = null;
         getStore().groupKeyAndDescendantsIterator(session, storeData, FDBScanTransactionOptions.SNAPSHOT);
         while(storeData.next()) {
+            FDBStoreDataHelper.unpackKey(storeData);
             if(result == null) {
-                result = decodeHeader(storeData, index, schema);
+                result = decodeHeader(session, storeData, index, schema);
             } else {
-                decodeEntry(storeData, result, schema);
+                decodeEntry(session, storeData, result, schema);
             }
         }
         if ((result != null) && logger.isDebugEnabled()) {
@@ -96,7 +92,8 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
             .append((long) index.getIndexId());
         getStore().groupKeyAndDescendantsIterator(session, storeData, FDBScanTransactionOptions.NORMAL);
         while(storeData.next()) {
-            Row row = FDBStoreDataHelper.expandRow(SchemaCache.globalSchema(index.getAIS()), storeData);
+            FDBStoreDataHelper.unpackKey(storeData);
+            Row row = getStore().expandRow(session, storeData, SchemaCache.globalSchema(index.getAIS()));
             getStore().deleteRow(session, row, false);
         }
     }
@@ -170,15 +167,17 @@ public class FDBStoreIndexStatistics extends AbstractStoreIndexStatistics<FDBSto
     // Internal
     //
 
-    protected IndexStatistics decodeHeader(FDBStoreData storeData,
+    protected IndexStatistics decodeHeader(Session session,
+                                           FDBStoreData storeData,
                                            Index index, 
                                            Schema schema) {
-        return decodeIndexStatisticsRow(FDBStoreDataHelper.expandRow(schema, storeData), index);
+        return decodeIndexStatisticsRow(getStore().expandRow(session, storeData, schema), index);
     }
 
-    protected void decodeEntry(FDBStoreData storeData,
+    protected void decodeEntry(Session session,
+                               FDBStoreData storeData,
                                IndexStatistics indexStatistics,
                                Schema schema) {
-        decodeIndexStatisticsEntryRow(FDBStoreDataHelper.expandRow(schema, storeData), indexStatistics);
+        decodeIndexStatisticsEntryRow(getStore().expandRow(session, storeData, schema), indexStatistics);
     }
 }
