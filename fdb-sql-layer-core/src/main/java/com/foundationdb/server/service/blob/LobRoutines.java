@@ -182,11 +182,6 @@ public class LobRoutines {
         }
     }
     
-
-    public static void runLobGarbageCollector() {
-        getLobService().runLobGarbageCollector();
-    }
-    
     private static LobService getLobService() {
         QueryContext context = ServerCallContextStack.getCallingContext();
         ServiceManager serviceManager = context.getServiceManager();

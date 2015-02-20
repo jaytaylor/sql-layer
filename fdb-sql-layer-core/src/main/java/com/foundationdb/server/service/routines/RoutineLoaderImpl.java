@@ -404,9 +404,6 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
                 .paramStringIn("lob_id", PATH_MAX)
                 .returnString("lob_id", 36)
                 .externalName(LobRoutines.class.getCanonicalName(), "createNewSpecificLob");
-        aisb.procedure("run_lob_garbage_collector")
-                .language("java", Routine.CallingConvention.JAVA)
-                .externalName(LobRoutines.class.getCanonicalName(), "runLobGarbageCollector");
 
         aisb.procedure("size_blob")
                 .language("java", Routine.CallingConvention.JAVA)

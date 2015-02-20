@@ -57,45 +57,6 @@ public class FDBLobService implements Service, LobService {
         this.serviceManager = serviceManager;
         this.securityService = securityService;
     }
-    
-    @Override
-    public void checkAndCleanBlobs(List<?> lobIds) {
-        DirectorySubspace ds;
-        SQLBlob blob;
-        TransactionContext tcx = getTxc();
-        List<UUID> toDo = new ArrayList<>();        
-        if (lobIds.size() > 0 ) {
-            for (Object lob : lobIds) {
-                // List may be over complete, existence is not sure
-                if (lob instanceof String) {
-                    List<String> path = Arrays.asList((String)lob);
-                    if (lobDirectory.exists(tcx, path).get()) {
-                        ds = lobDirectory.open(tcx, path).get();
-                        blob = new SQLBlob(ds);
-                        if (!blob.isLinked(tcx).get()) {
-                            toDo.add(UUID.fromString((String)lob));
-                        }
-                    }
-                } else if (lob instanceof UUID) {
-                    List<String> path = Arrays.asList(lob.toString());
-                    if (lobDirectory.exists(tcx, path).get()) {
-                        ds = lobDirectory.open(tcx, path).get();
-                        blob = new SQLBlob(ds);
-                        if (!blob.isLinked(tcx).get()) {
-                            toDo.add((UUID) lob);
-                        }
-                    }                    
-                }
-            }
-            deleteLobs(toDo.toArray(new UUID[toDo.size()]));
-        }
-    }
-
-    @Override
-    public void runLobGarbageCollector() {
-        List<String> lobs = lobDirectory.list(getTxc()).get();
-        checkAndCleanBlobs(lobs);
-    }
 
     @Override
     public void createNewLob(Session session, final UUID lobId) {
@@ -125,19 +86,10 @@ public class FDBLobService implements Service, LobService {
 
     @Override
     public void deleteLob(Session session, UUID lobId) {
+        // clear content
         getTxc(session).clear(getLobSubspace(lobId).range());
+        // clear existence value
         getTxc(session).clear(getLobSubspace(lobId).pack());
-    }
-
-    @Override
-    public void deleteLobs(UUID[] lobIds) {
-        List<Future<Boolean>> done = new ArrayList<>();
-        for (UUID lob : lobIds) {
-            done.add(lobDirectory.removeIfExists(getTxc(), Arrays.asList(lob.toString())));
-        }
-        for (Future<Boolean> item : done) {
-            item.get();
-        }
     }
 
     @Override

@@ -22,7 +22,6 @@ import com.foundationdb.server.store.FDBTransactionService;
 import com.foundationdb.server.test.it.ITBase;
 import com.foundationdb.Transaction;
 import java.util.UUID;
-import java.util.Random;
 
 import org.junit.*;
 
@@ -40,7 +39,7 @@ public class LobServiceIT extends ITBase {
 
         // blob creation
         UUID id = UUID.randomUUID();
-        getTransaction();
+        getOrBeginTransaction();
         ls.createNewLob(session(), id);
         ls.appendBlob(session(), id, data);
         Assert.assertEquals(ls.sizeBlob(session(), id), new Long(data.length).longValue());
@@ -70,7 +69,7 @@ public class LobServiceIT extends ITBase {
         // registration
         this.ls = serviceManager().getServiceByClass(LobService.class);
         Assert.assertNotNull(ls);
-        getTransaction();
+        getOrBeginTransaction();
         idA = UUID.randomUUID();
         idB = UUID.randomUUID();
         ls.createNewLob(session(), idA);
@@ -80,19 +79,15 @@ public class LobServiceIT extends ITBase {
     }
     
     @Test
-    public void blobGarbageCollector() {
-        // run collector
-        ls.runLobGarbageCollector();
-        
-        // check cleaning
-        getTransaction();
+    public void checkBlobCleanUp() {
+        getOrBeginTransaction();
         Assert.assertTrue(ls.existsLob(session(), idA));
         Assert.assertFalse(ls.existsLob(session(), idB));
         commit();
     }
     
     
-    private Transaction getTransaction() {
+    private Transaction getOrBeginTransaction() {
         TransactionService txnService = txnService();
         if (txnService instanceof FDBTransactionService) {
             if ( txnService.isTransactionActive(session())) {
@@ -110,12 +105,5 @@ public class LobServiceIT extends ITBase {
         TransactionService ts = txnService();
         ts.commitOrRetryTransaction(session());
         ts.rollbackTransactionIfOpen(session());
-    }
-
-    private byte[] generateBytes(int length) {
-        byte[] inp = new byte[length];
-        Random random = new Random();
-        random.nextBytes(inp);
-        return inp;
     }
 }

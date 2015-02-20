@@ -25,12 +25,6 @@ import java.util.List;
 import java.util.UUID;
 
 public interface LobService {
-
-    public void checkAndCleanBlobs(List<?> lobIds);
-    
-    public void deleteLobs(UUID[] lobIds);
-    public void runLobGarbageCollector();
-
     public void createNewLob(Session session, UUID lobId);
     public boolean existsLob(Session session, UUID lobId);
     public void deleteLob(Session session, UUID lobId);
