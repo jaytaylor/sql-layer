@@ -31,7 +31,6 @@ import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.FDBHolder;
 import com.foundationdb.server.store.FDBTransactionService;
-import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 import com.foundationdb.tuple.Tuple2;
 import com.google.inject.Inject;
 
@@ -67,7 +66,7 @@ public class FDBLobService implements Service, LobService {
                     if (!(blob.isLinked(getTxc(session))).get()) {
                         deleteLob(session, lobId);
                     }
-                } catch (LobException le){
+                } catch (LobException le) {
                     // lob already gone
                 }
             }
@@ -167,7 +166,8 @@ public class FDBLobService implements Service, LobService {
     }
     
     private Subspace getLobSubspace(UUID lobId) {
-        return lobDirectory.get(Tuple2.from(AkGUID.uuidToBytes(lobId)));
+        Tuple2 tuple = new Tuple2();
+        return lobDirectory.get(tuple.add(lobId));
     }
     
     private Transaction getTxc(Session session) {
