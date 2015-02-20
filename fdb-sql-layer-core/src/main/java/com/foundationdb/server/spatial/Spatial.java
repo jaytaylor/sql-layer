@@ -105,7 +105,7 @@ public class Spatial
 
     static
     {
-        java.util.logging.Logger.getLogger("").setLevel(Level.FINE);
+        // java.util.logging.Logger.getLogger("").setLevel(Level.FINE);
     }
 
     public static final int LAT_LON_DIMENSIONS = 2;
