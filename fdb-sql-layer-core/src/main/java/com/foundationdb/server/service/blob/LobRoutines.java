@@ -18,8 +18,6 @@
 package com.foundationdb.server.service.blob;
 
 
-import com.foundationdb.Transaction;
-import com.foundationdb.async.Function;
 import com.foundationdb.server.error.LobException;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.session.Session;

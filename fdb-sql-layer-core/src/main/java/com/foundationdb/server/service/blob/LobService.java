@@ -21,7 +21,6 @@ package com.foundationdb.server.service.blob;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.qp.operator.QueryContext;
 
-import java.util.List;
 import java.util.UUID;
 
 public interface LobService {
