@@ -65,8 +65,7 @@ public class IndexCursorSpatial_InBox extends IndexCursor
     public void open()
     {
         super.open();
-        // iterationHelper.closeIteration() closes the PersistitIndexCursor, releasing its Exchange.
-        // This iteration uses the Exchanges in the IndexScanRowStates owned by each cursor of the MultiCursor.
+        // Close any underlying store data still open
         iterationHelper.closeIteration();
         createSpatialJoinCursor();
         geophileCursor.rebind(bindings);

@@ -625,7 +625,7 @@ public class AISMerge {
                     column.getDefaultValue(), column.getDefaultFunction());
             Column newColumn = targetTable.getColumnsIncludingInternal().get(column.getPosition());
             newColumn.setUuid(column.getUuid());
-            if (!table.hasMemoryTableFactory() && column.getDefaultIdentity() != null) {
+            if (!table.isVirtual() && column.getDefaultIdentity() != null) {
                 addIdentitySequence(builder, schemaName, tableName, column.getName(),
                                     column.getDefaultIdentity(), column.getIdentityGenerator());
             }

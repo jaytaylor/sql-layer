@@ -10,5 +10,5 @@ SelectQuery@53847a91
               ResultSet@4323b632[cid, order_date]
                 Project@63e6ef5d[orders.cid, orders.order_date]
                   Select@5d8eaf0d[]
-                    TableGroupJoinTree@4ad8d990(TableGroup@bdd6a16(customers), orders - SingleIndexScan@755fd06f(Index(test.orders.order_date[IndexColumn(order_date)]), covering/NONE, =2011-01-01, =c.cid, rows = 1, cost = 6.07540))
+                    TableGroupJoinTree@4ad8d990(TableGroup@bdd6a16(customers), orders - SingleIndexScan@755fd06f(Index(test.orders.order_date[IndexColumn(order_date)]), covering/NONE, =DATE '2011-01-01', =c.cid, rows = 1, cost = 6.07540))
                       TableSource@6dffcd26(orders - TableGroup@bdd6a16(customers))

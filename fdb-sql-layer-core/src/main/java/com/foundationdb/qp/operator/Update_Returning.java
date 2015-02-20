@@ -47,11 +47,8 @@ Provides row update functionality.
 <h1>Behavior</h1>
 
 For each row from the input operator's cursor, it invokes <i>updateFunction.evaluate</i> to
-get the new version of the row. It then performs the update in an
-unspecified way (in practice, this is currently done via
-<i>StoreAdapater.updateRow</i>, which is implemented by
-<i>PersistitAdapater.updateRow</i>, which invokes
-<i>PersistitStore.updateRow</i>).
+get the new version of the row. It then performs the update of the row in the table.
+In praactice, this is currently done via {@link StoreAdapter#updateRow}.
 
 The updated row is then returned to the caller as with other operators. 
 

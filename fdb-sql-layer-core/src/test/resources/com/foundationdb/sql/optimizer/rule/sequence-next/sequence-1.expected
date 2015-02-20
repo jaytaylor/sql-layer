@@ -1,5 +1,5 @@
 SelectQuery@78f46198
   ResultSet@74338031[_SQL_COL_1]
-    Project@61254c90[nextval(test,customer_id)]
+    Project@61254c90[nextval('test','customer_id')]
       Select@57c5b3c3[]
         TableSource@749cf439(customers)

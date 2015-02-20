@@ -696,12 +696,14 @@ public class FDBTransactionService implements TransactionService {
 
     @Override
     public IsolationLevel actualIsolationLevel(IsolationLevel level) {
-        // NOTE: This does not promote to the next tightest supported
-        // level, but instead requires an exact match for a special one.
         switch (level) {
-        case SNAPSHOT_ISOLATION_LEVEL:
+        case READ_UNCOMMITTED_ISOLATION_LEVEL:
         case READ_COMMITTED_NO_SNAPSHOT_ISOLATION_LEVEL:
-            return level;
+            return IsolationLevel.READ_COMMITTED_NO_SNAPSHOT_ISOLATION_LEVEL;
+        case READ_COMMITTED_ISOLATION_LEVEL:
+        case REPEATABLE_READ_ISOLATION_LEVEL:
+        case SNAPSHOT_ISOLATION_LEVEL:
+            return IsolationLevel.SNAPSHOT_ISOLATION_LEVEL;
         default:
             return IsolationLevel.SERIALIZABLE_ISOLATION_LEVEL;
         }
@@ -711,6 +713,7 @@ public class FDBTransactionService implements TransactionService {
     public IsolationLevel setIsolationLevel(Session session, IsolationLevel level) {
         TransactionState txn = getTransaction(session);
         FDBScanTransactionOptions scanOptions;
+        level = actualIsolationLevel(level);
         switch (level) {
         case SNAPSHOT_ISOLATION_LEVEL:
             scanOptions = FDBScanTransactionOptions.SNAPSHOT;
@@ -718,9 +721,11 @@ public class FDBTransactionService implements TransactionService {
         case READ_COMMITTED_NO_SNAPSHOT_ISOLATION_LEVEL:
             scanOptions = txn.periodicallyCommitScanOptions();
             break;
-        default:
-            level = IsolationLevel.SERIALIZABLE_ISOLATION_LEVEL;
+        case SERIALIZABLE_ISOLATION_LEVEL:
             scanOptions = FDBScanTransactionOptions.NORMAL;
+            break;
+        default:
+            throw new IllegalArgumentException();
         }
         txn.setScanOptions(scanOptions);
         return level;

@@ -1,7 +1,7 @@
 SelectQuery@316c8d02
   ResultSet@4d9d97a7[name, order_date]
     Project@254f7cc0[customers.name, orders.order_date]
-      Select@5873463[customers.name >= A, customers.name <= Z]
-        TableGroupJoinTree@6f80526a(TableGroup@51a2e656(customers), customers INNER orders - SingleIndexScan@1dc041f9(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >=2010-01-01, <=2010-02-28, rows = 1, cost = 110.281))
+      Select@5873463[customers.name >= 'A', customers.name <= 'Z']
+        TableGroupJoinTree@6f80526a(TableGroup@51a2e656(customers), customers INNER orders - SingleIndexScan@1dc041f9(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >=DATE '2010-01-01', <=DATE '2010-02-28', rows = 1, cost = 110.281))
           TableSource@7749a3e(customers - TableGroup@51a2e656(customers))
             TableSource@783a6044(orders - TableGroupJoin@392b51b1(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

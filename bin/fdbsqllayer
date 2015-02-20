@@ -160,9 +160,7 @@ get_version()
     CLASSPATH="$JAR_FILE":"$DEP_DIR"/*
 
     server_version=$(exec "$JAVA" -cp "$CLASSPATH" com.foundationdb.server.GetVersion)
-    persistit_version=$(exec "$JAVA" -cp "$CLASSPATH" com.persistit.GetVersion)
     echo "server   : ${server_version}"
-    echo "persistit: ${persistit_version}"
 }
 
 wait_on_pid()
@@ -189,11 +187,10 @@ launch_service()
     infer_home_dir "$1"
     foreground=$2
     props=$3
-    usegui=$4
-    pidpath=$5
-    infer_jar_file "$6"
-    infer_dep_dir "$7"
-    FDBSQL_CONF=$8
+    pidpath=$4
+    infer_jar_file "$5"
+    infer_dep_dir "$6"
+    FDBSQL_CONF=$7
     infer_jar_rf_file 
     set_security_manager 
 
@@ -209,10 +206,6 @@ launch_service()
 
     if [ -f "$FDBSQL_CONF/jvm.options" ]; then
         . "$FDBSQL_CONF/jvm.options"
-    fi
-
-    if [ -n "$usegui" ]; then
-        fdbsql_parms="$fdbsql_parms -Dcom.persistit.showgui=true"
     fi
 
     fdbsql_parms="$fdbsql_parms -Dfdbsql.home=$FDBSQL_HOME -Dfdbsql.config_dir=$FDBSQL_CONF"
@@ -286,17 +279,12 @@ while true; do
             mode="window"
             shift
         ;;
-        -g)
-            gui="yes"
-            shift
-        ;;
         -h)
-            echo "Usage: $0 [-c conf_dir] [-d dep_dir] [-D prop] [-f] [-g] [-h] [-H home_dir] [-j jar_file] [-k] [-p pid_file] [-s] [-w] [-v]"
+            echo "Usage: $0 [-c conf_dir] [-d dep_dir] [-D prop] [-f] [-h] [-H home_dir] [-j jar_file] [-k] [-p pid_file] [-s] [-w] [-v]"
             echo "-c configuration directory to use"
             echo "-d directory with jar dependencies"
             echo "-D extra property to pass to JVM, can be repeated"
             echo "-f launch the SQL layer process in the foreground"
-            echo "-g launch the persistit GUI"
             echo "-h print this help message"
             echo "-H directory to use for home"
             echo "-j specify a jar file to use"
@@ -358,7 +346,7 @@ while true; do
 done
 
 # Start up the service
-launch_service "$homedir" "$mode" "$properties" "$gui" "$pidfile" "$jarfile" "$depdir" "$conf"
+launch_service "$homedir" "$mode" "$properties" "$pidfile" "$jarfile" "$depdir" "$conf"
 
 exit $?
 

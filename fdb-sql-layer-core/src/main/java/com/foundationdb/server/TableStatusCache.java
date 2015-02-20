@@ -18,36 +18,21 @@
 package com.foundationdb.server;
 
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.qp.virtualadapter.VirtualScanFactory;
 import com.foundationdb.server.rowdata.RowDef;
 import com.foundationdb.server.service.session.Session;
 
 public interface TableStatusCache {
-    /**
-     * Create a new TableStatus that will later be attached to the given
-     * tableID. It will not usable until {@link TableStatus#setRowDef(RowDef)}
-     * is called.
-     * @param tableID ID of the table.
-     * @return Associated TableStatus.
-     */
-    TableStatus createTableStatus(int tableID);
+    /** Create a new TableStatus that will later be attached to the given tableID. */
     TableStatus createTableStatus(Table table);
 
     /**
-     * Retrieve, or create, a new table status for a memory table that will be
-     * serviced by the given factory. Unlike statuses returned from the
-     * {@link #createTableStatus(int)} method, these are saved by the TableStatusCache.
-     * @param tableID ID of the table.
-     * @param factory Factory providing rowCount.
-     * @return Associated TableStatus;
+     * Retrieve, or create, a new table status for a virtual table that will be
+     * serviced by the given factory. These are saved by the TableStatusCache.
      */
-    TableStatus getOrCreateMemoryTableStatus(int tableID, MemoryTableFactory factory);
+    TableStatus getOrCreateVirtualTableStatus(int tableID, VirtualScanFactory factory);
 
-    /**
-     * Clean up any AIS associated state stored by this cache or any of its
-     * TableStatuses. At a minimum, this will set the RowDef of each TableStatus
-     * to <code>null</code>.
-     */
+    /** Clean up any AIS associated state stored by this cache or any of its TableStatuses. */
     void detachAIS();
 
     /** Permanently remove any state associated with the given table. */

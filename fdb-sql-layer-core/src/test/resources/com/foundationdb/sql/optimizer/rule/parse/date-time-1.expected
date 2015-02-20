@@ -1,5 +1,5 @@
 SelectQuery@2322bce
   ResultSet@20c3e967[_SQL_COL_1, _SQL_COL_2, _SQL_COL_3, _SQL_COL_4, _SQL_COL_5, _SQL_COL_6, _SQL_COL_7, _SQL_COL_8, _SQL_COL_9]
-    Project@1e1079ff[date(2011-01-01), time(12:59), timestamp(2011-01-01,01:01:01), year(orders.order_date), month(orders.order_date), day(orders.order_date), hour(current_time()), minute(current_time()), second(current_timestamp())]
+    Project@1e1079ff[date('2011-01-01'), time('12:59'), timestamp('2011-01-01','01:01:01'), year(orders.order_date), month(orders.order_date), day(orders.order_date), hour(current_time()), minute(current_time()), second(current_timestamp())]
       Select@6da5db4b[]
         TableSource@23e0512a(orders)

@@ -2,4 +2,4 @@ SelectQuery@1ef3d1b
   ResultSet@60407166[order_date, sku]
     Project@26d510e8[orders.order_date, items.sku]
       Select@932fe[]
-        SingleIndexScan@1f2428d(Index(test.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), covering/SORTED, <8888, rows = 20000, cost = 15517.6)
+        SingleIndexScan@1f2428d(Index(test.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), covering/SORTED, <'8888', rows = 20000, cost = 15517.6)

@@ -1,5 +1,5 @@
 SelectQuery@4e099474
   ResultSet@56f173b2[_SQL_COL_1]
-    Project@5e2d7b6[nextval(test,customers-1)]
+    Project@5e2d7b6[nextval('test','customers-1')]
       Select@6fbff0be[]
         ExpressionsSource@22568343([[]])

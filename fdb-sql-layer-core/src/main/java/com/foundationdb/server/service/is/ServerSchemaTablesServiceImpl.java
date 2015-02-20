@@ -25,16 +25,17 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import com.foundationdb.ais.model.AkibanInformationSchema;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.ais.model.aisb2.AISBBasedBuilder;
 import com.foundationdb.ais.model.aisb2.NewAISBuilder;
-import com.foundationdb.qp.memoryadapter.BasicFactoryBase;
-import com.foundationdb.qp.memoryadapter.MemoryAdapter;
-import com.foundationdb.qp.memoryadapter.MemoryGroupCursor.GroupScan;
-import com.foundationdb.qp.memoryadapter.SimpleMemoryGroupScan;
+import com.foundationdb.qp.virtualadapter.BasicFactoryBase;
+import com.foundationdb.qp.virtualadapter.VirtualAdapter;
+import com.foundationdb.qp.virtualadapter.VirtualGroupCursor.GroupScan;
+import com.foundationdb.qp.virtualadapter.SimpleVirtualGroupScan;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
@@ -200,7 +201,7 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             return new Scan(adapter.getSession(), getRowType(group.getAIS()));
         }
         
@@ -240,9 +241,9 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             Iterator<ServerMonitor> servers = monitor.getServerMonitors().values().iterator(); 
-            return new SimpleMemoryGroupScan<ServerMonitor> (group.getAIS(), getName(), servers) {
+            return new SimpleVirtualGroupScan<ServerMonitor>(group.getAIS(), getName(), servers) {
                 @Override
                 protected Object[] createRow(ServerMonitor data, int hiddenPk) {
                     return new Object[] {
@@ -269,7 +270,7 @@ public class ServerSchemaTablesServiceImpl
         }
         
         @Override 
-        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             return new Scan(adapter.getSession(), getRowType(group.getAIS()));
         }
         
@@ -311,9 +312,9 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             Iterator<SessionMonitor> sessions = getAccessibleSessions(adapter.getSession()).iterator();
-            return new SimpleMemoryGroupScan<SessionMonitor> (group.getAIS(), getName(), sessions) {
+            return new SimpleVirtualGroupScan<SessionMonitor>(group.getAIS(), getName(), sessions) {
                 @Override
                 protected Object[] createRow(SessionMonitor data, int hiddenPk) {
                     MonitorStage stage = data.getCurrentStage();
@@ -357,9 +358,9 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             Iterator<ErrorCode> errorCodes = Iterators.forArray(ErrorCode.values());
-            return new SimpleMemoryGroupScan<ErrorCode> (group.getAIS(), getName(), errorCodes) {
+            return new SimpleVirtualGroupScan<ErrorCode>(group.getAIS(), getName(), errorCodes) {
                 @Override
                 protected Object[] createRow(ErrorCode data, int hiddenPk) {
                     return new Object[] {
@@ -386,9 +387,9 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             Iterator<ErrorCodeClass> errorCodes = ErrorCodeClass.getClasses().iterator();
-            return new SimpleMemoryGroupScan<ErrorCodeClass> (group.getAIS(), getName(), errorCodes) {
+            return new SimpleVirtualGroupScan<ErrorCodeClass>(group.getAIS(), getName(), errorCodes) {
                 @Override
                 protected Object[] createRow(ErrorCodeClass data, int hiddenPk) {
                     return new Object[] {
@@ -412,9 +413,9 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             Iterator<Map.Entry<String,String>> properties = configService.getProperties().entrySet().iterator();
-            return new SimpleMemoryGroupScan<Map.Entry<String,String>> (group.getAIS(), getName(), properties) {
+            return new SimpleVirtualGroupScan<Entry<String,String>>(group.getAIS(), getName(), properties) {
                 @Override
                 protected Object[] createRow(Map.Entry<String,String> data, int hiddenPk) {
                     return new Object[] {
@@ -438,9 +439,9 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             Iterator<MemoryPoolMXBean> memoryPools = ManagementFactory.getMemoryPoolMXBeans().iterator();
-            return new SimpleMemoryGroupScan<MemoryPoolMXBean> (group.getAIS(), getName(), memoryPools) {
+            return new SimpleVirtualGroupScan<MemoryPoolMXBean>(group.getAIS(), getName(), memoryPools) {
                 @Override
                 protected Object[] createRow(MemoryPoolMXBean data, int hiddenPk) {
                     return new Object[] {
@@ -467,9 +468,9 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             Iterator<GarbageCollectorMXBean> collectors = ManagementFactory.getGarbageCollectorMXBeans().iterator();
-            return new SimpleMemoryGroupScan<GarbageCollectorMXBean> (group.getAIS(), getName(), collectors) {
+            return new SimpleVirtualGroupScan<GarbageCollectorMXBean>(group.getAIS(), getName(), collectors) {
                 @Override
                 protected Object[] createRow(GarbageCollectorMXBean data, int hiddenPk) {
                     return new Object[] {
@@ -498,9 +499,9 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             Iterator<TapReport> taps = Iterators.forArray(Tap.getReport(".*"));
-            return new SimpleMemoryGroupScan<TapReport> (group.getAIS(), getName(), taps) {
+            return new SimpleVirtualGroupScan<TapReport>(group.getAIS(), getName(), taps) {
                 @Override
                 protected Object[] createRow(TapReport data, int hiddenPk) {
                     return new Object[] {
@@ -527,7 +528,7 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             return new Scan(adapter.getSession(), getRowType(group.getAIS()));
         }
 
@@ -576,7 +577,7 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             return new Scan(adapter.getSession(), getRowType( group.getAIS()));
         }
 
@@ -625,9 +626,9 @@ public class ServerSchemaTablesServiceImpl
         }
 
         @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter, Group group) {
+        public GroupScan getGroupScan(VirtualAdapter adapter, Group group) {
             Iterator<UserMonitor> users = getAccessibleUsers(adapter.getSession()).iterator();
-            return new SimpleMemoryGroupScan<UserMonitor> (group.getAIS(), getName(), users) {
+            return new SimpleVirtualGroupScan<UserMonitor>(group.getAIS(), getName(), users) {
                 @Override
                 protected Object[] createRow(UserMonitor data, int hiddenPk) {
                     return new Object[] {

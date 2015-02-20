@@ -138,7 +138,7 @@ public class ConstantExpression extends BaseExpression
             return "NULL";
 
         StringBuilder sb = new StringBuilder();
-        getType().format(valueSource, AkibanAppender.of(sb));
+        getType().formatAsLiteral(valueSource, AkibanAppender.of(sb));
         return sb.toString();
     }
 

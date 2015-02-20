@@ -1,7 +1,7 @@
 SelectQuery@44282c90
   ResultSet@2985c4e5[order_date, sku, quan]
     MapJoin@49f4acf()
-      ExpressionsSource@1d696397([[Adams, 6666], [Jones, 4567], [Smith, 1234]])
+      ExpressionsSource@1d696397([['Adams', '6666'], ['Jones', '4567'], ['Smith', '1234']])
       Project@d41abaf[orders.order_date, items.sku, items.quan]
         Select@526e74f5[]
           Flatten@2b938c68(orders INNER items)

@@ -561,7 +561,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         else {
             transactionOptions = FDBScanTransactionOptions.SNAPSHOT;
         }
-        indexIterator(session, storeData, false, false, false, transactionOptions);
+        indexIterator(session, storeData, false, false, true, false, transactionOptions);
         while(storeData.next()) {
             // Key
             unpackKey(storeData);
@@ -581,7 +581,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
 
     @Override
-    public Collection<String> getStorageDescriptionNames() {
+    public Collection<String> getStorageDescriptionNames(Session session) {
         final List<List<String>> dataDirs = Arrays.asList(
             Arrays.asList(FDBNameGenerator.DATA_PATH_NAME, FDBNameGenerator.TABLE_PATH_NAME),
             Arrays.asList(FDBNameGenerator.DATA_PATH_NAME, FDBNameGenerator.SEQUENCE_PATH_NAME),
@@ -610,6 +610,11 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     @Override
     public Class<? extends Exception> getOnlineDMLFailureException() {
         return FDBNotCommittedException.class;
+    }
+
+    @Override
+    public boolean isRestartable() {
+        return true;
     }
 
     //
@@ -673,14 +678,14 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     /** Iterate over the whole index. */
     public void indexIterator(Session session, FDBStoreData storeData,
                               FDBScanTransactionOptions transactionOptions) {
-        indexIterator(session, storeData, false, false, false, transactionOptions);
+        indexIterator(session, storeData, false, false, true, false, transactionOptions);
     }
 
     public void indexIterator(Session session, FDBStoreData storeData,
-                              boolean key, boolean inclusive, boolean reverse,
+                              boolean key, boolean startInclusive, boolean endInclusive, boolean reverse,
                               FDBScanTransactionOptions transactionOptions) {
         storeData.storageDescription.indexIterator(this, session, storeData,
-                                                   key, inclusive, reverse,
+                                                   key, startInclusive, endInclusive, reverse,
                                                    transactionOptions);
     }
 

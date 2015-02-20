@@ -50,7 +50,7 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
     public void open()
     {
         super.open();
-        // iterationHelper.closeIteration() closes the PersistitIndexCursor, releasing its Exchange.
+        // Close any store data still open.
         iterationHelper.closeIteration();
         geCursor.open();
         geNeedToAdvance = true;

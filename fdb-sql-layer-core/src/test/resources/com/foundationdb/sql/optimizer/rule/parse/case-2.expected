@@ -1,5 +1,5 @@
 SelectQuery@1290b1e8
   ResultSet@598fffdd[_SQL_COL_1]
-    Project@7ce7341a[if(items.sku == 1234,apples,if(items.sku == 9876,oranges,unknown))]
+    Project@7ce7341a[if(items.sku == '1234','apples',if(items.sku == '9876','oranges','unknown'))]
       Select@116db99a[]
         TableSource@3ab43666(items)

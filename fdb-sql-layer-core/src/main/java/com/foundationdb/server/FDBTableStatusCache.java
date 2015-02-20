@@ -24,7 +24,7 @@ import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 import com.foundationdb.MutationType;
 import com.foundationdb.Transaction;
 import com.foundationdb.ais.model.Table;
-import com.foundationdb.qp.memoryadapter.MemoryTableFactory;
+import com.foundationdb.qp.virtualadapter.VirtualScanFactory;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple2;
@@ -56,7 +56,7 @@ public class FDBTableStatusCache implements TableStatusCache {
     private static final byte[] ROW_COUNT_PACKED = Tuple2.from("rowCount").pack();
 
     private final FDBTransactionService txnService;
-    private final Map<Integer,MemoryTableStatus> memoryTableStatusMap = new HashMap<>();
+    private final Map<Integer,VirtualTableStatus> virtualTableStatusMap = new HashMap<>();
 
     private byte[] packedTableStatusPrefix;
 
@@ -73,16 +73,11 @@ public class FDBTableStatusCache implements TableStatusCache {
     }
 
     @Override
-    public synchronized TableStatus createTableStatus(int tableID) {
-        return new FDBTableStatus(tableID);
-    }
-
-    @Override
-    public synchronized TableStatus getOrCreateMemoryTableStatus(int tableID, MemoryTableFactory factory) {
-        MemoryTableStatus status = memoryTableStatusMap.get(tableID);
+    public synchronized TableStatus getOrCreateVirtualTableStatus(int tableID, VirtualScanFactory factory) {
+        VirtualTableStatus status = virtualTableStatusMap.get(tableID);
         if(status == null) {
-            status = new MemoryTableStatus(tableID, factory);
-            memoryTableStatusMap.put(tableID, status);
+            status = new VirtualTableStatus(tableID, factory);
+            virtualTableStatusMap.put(tableID, status);
         }
         return status;
     }
@@ -98,8 +93,8 @@ public class FDBTableStatusCache implements TableStatusCache {
         if(status instanceof FDBTableStatus) {
             ((FDBTableStatus)status).clearState(session);
         } else if(status != null) {
-            assert status instanceof MemoryTableStatus : status;
-            memoryTableStatusMap.remove(table.getTableId());
+            assert status instanceof VirtualTableStatus : status;
+            virtualTableStatusMap.remove(table.getTableId());
         }
     }
 
@@ -129,11 +124,6 @@ public class FDBTableStatusCache implements TableStatusCache {
             this.tableID = table.getTableId();
             byte[] prefixBytes = FDBStoreDataHelper.prefixBytes(table.getPrimaryKeyIncludingInternal().getIndex());
             this.rowCountKey = ByteArrayUtil.join(packedTableStatusPrefix, prefixBytes, ROW_COUNT_PACKED);
-        }
-        
-        public FDBTableStatus(int tableID) {
-            this.tableID = tableID;
-
         }
 
         @Override

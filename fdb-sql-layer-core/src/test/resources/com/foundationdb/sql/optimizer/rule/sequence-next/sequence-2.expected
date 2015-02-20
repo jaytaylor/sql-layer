@@ -1,3 +1,3 @@
 DMLStatement@18b7f500(customers)
   InsertStatement@2ca5b206(customers[customers.cid, customers.name])
-    ExpressionsSource@324abed0([[nextval(test,customers_1), fred]])
+    ExpressionsSource@324abed0([[nextval('test','customers_1'), 'fred']])

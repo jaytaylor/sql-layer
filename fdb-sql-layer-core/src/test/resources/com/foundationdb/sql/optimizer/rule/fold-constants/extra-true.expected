@@ -1,7 +1,7 @@
 SelectQuery@58e22f2b
   ResultSet@36867fc9[name, order_date]
     Project@382f8116[customers.name, orders.order_date]
-      Select@15412e75[customers.name != Jones]
+      Select@15412e75[customers.name != 'Jones']
         JoinNode@6a510e39(INNER[customers.cid == orders.cid])
           TableSource@4245c97b(customers)
           TableSource@73aecc3a(orders)

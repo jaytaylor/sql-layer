@@ -3,7 +3,7 @@ SelectQuery@5e8c39d7
     Project@1d46ee9c[orders.order_date, child.name]
       Select@1bdb52c8[]
         JoinNode@5c17d6c1(INNER/NESTED_LOOPS)
-          TableGroupJoinTree@1f2c4f94(TableGroup@655daa9e(customers), customers INNER orders - SingleIndexScan@686c9f0f(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >2011-01-01, rows = 860, cost = 88811.7))
+          TableGroupJoinTree@1f2c4f94(TableGroup@655daa9e(customers), customers INNER orders - SingleIndexScan@686c9f0f(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >DATE '2011-01-01', rows = 860, cost = 88811.7))
             TableSource@5a10c276(customers - TableGroup@655daa9e(customers))
               TableSource@24eff2c(orders - TableGroupJoin@333ec758(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
           TableGroupJoinTree@4bb9305f(TableGroup@5e917cb0(parent), parent INNER child - SingleIndexScan@21913751(Index(test.parent.name[IndexColumn(name)]), NONE, =customers.name, rows = 10, cost = 434.931))

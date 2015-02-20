@@ -220,7 +220,7 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
             sleep = sleepTime;
         }
         for (Index index : indexes) {
-            assert !index.leafMostTable().hasMemoryTableFactory() : index;
+            assert !index.leafMostTable().isVirtual() : index;
             IndexStatistics indexStatistics = storeStats.computeIndexStatistics(session, index, on, sleep);
             storeStats.storeIndexStatistics(session, index, indexStatistics);
             updates.put(index, indexStatistics);

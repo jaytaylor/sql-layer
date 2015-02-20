@@ -42,6 +42,7 @@ public class FDBStoreData {
     // What way, if any, persistitKey has been nudged
     public NudgeDir nudgeDir;
     public Key endKey;
+    public boolean exactEnd;
     
     public FDBStoreData(Session session, FDBStorageDescription storageDescription, Key persistitKey, Key endKey) {
         this.storageDescription = storageDescription;

@@ -20,15 +20,9 @@ package com.foundationdb.server.test.pt.qp;
 import com.foundationdb.ais.model.*;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.qp.storeadapter.PersistitAdapter;
-import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.rowtype.IndexRowType;
-import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
-import com.foundationdb.server.service.servicemanager.GuicedServiceManager.BindingsConfigurationProvider;
-import com.foundationdb.server.store.PersistitStore;
-import com.foundationdb.server.test.it.PersistitITBase;
-import com.foundationdb.server.test.it.qp.TestRow;
 import com.foundationdb.server.test.pt.PTBase;
 
 import java.util.ArrayList;
@@ -38,21 +32,9 @@ import java.util.Map;
 
 public class QPProfilePTBase extends PTBase
 {
-    // TODO: Remove this need. See newGroupRow() below.
-
-    @Override
-    protected BindingsConfigurationProvider serviceBindingsProvider() {
-        return PersistitITBase.doBind(super.serviceBindingsProvider());
-    }
-
     @Override
     protected Map<String, String> startupConfigProperties() {
         return uniqueStartupConfigProperties(getClass());
-    }
-
-    PersistitAdapter persistitAdapter() {
-        PersistitStore store = (PersistitStore)store();
-        return store.createAdapter(session());
     }
 
     protected Group group(int tableId)
@@ -82,7 +64,7 @@ public class QPProfilePTBase extends PTBase
     }
 
     protected Schema schema;
-    protected PersistitAdapter adapter;
+    protected StoreAdapter adapter;
     protected QueryContext queryContext;
     protected QueryBindings queryBindings;
 }

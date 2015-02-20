@@ -7,7 +7,7 @@ SelectQuery@22c7db5b
             Subquery@585d023d
               OnlyIfEmpty@78e7a6e9
                 Select@7cae71e4[]
-                  TableGroupJoinTree@17d39634(TableGroup@442a3c24(customers), orders INNER items - SingleIndexScan@44444c5a(Index(test.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), covering/NONE, =1234, >2010-10-10, rows = 88, cost = 73.8348))
+                  TableGroupJoinTree@17d39634(TableGroup@442a3c24(customers), orders INNER items - SingleIndexScan@44444c5a(Index(test.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), covering/NONE, ='1234', >DATE '2010-10-10', rows = 88, cost = 73.8348))
                     TableSource@24ae5291(orders - TableGroup@442a3c24(customers))
                       TableSource@30aec067(items - TableGroupJoin@30d28272(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))
           TableGroupJoinTree@746dfccb(TableGroup@60efaf24(customers), customers - SingleIndexScan@26dbe848(Index(test.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 74.1740))

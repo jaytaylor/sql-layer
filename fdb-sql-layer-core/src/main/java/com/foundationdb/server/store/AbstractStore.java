@@ -559,7 +559,9 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
             deleteSequences(session, Collections.singleton(table.getIdentityColumn().getIdentityGenerator()));
         }
         // And the group tree
-        removeTree(session, table.getGroup());
+        if(table.isRoot()) {
+            removeTree(session, table.getGroup());
+        }
     }
 
     @Override

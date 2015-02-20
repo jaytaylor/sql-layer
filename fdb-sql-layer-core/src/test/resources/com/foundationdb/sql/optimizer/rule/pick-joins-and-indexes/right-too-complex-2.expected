@@ -2,7 +2,7 @@ SelectQuery@27daad50
   ResultSet@5a873a1[name, order_date]
     Project@763f51ed[customers.name, orders.order_date]
       Select@371bdb41[]
-        JoinNode@33077ec8(LEFT/NESTED_LOOPS[customers.name != Smith])
+        JoinNode@33077ec8(LEFT/NESTED_LOOPS[customers.name != 'Smith'])
           TableGroupJoinTree@42b52a93(TableGroup@311496a4(customers), orders - SingleIndexScan@1ceb0bc(Index(test.orders.order_date[IndexColumn(order_date)]), covering/NONE, rows = 1000, cost = 702.778))
             TableSource@6149b9d9(orders - TableGroup@311496a4(customers))
           TableGroupJoinTree@3fe3b1c(TableGroup@311496a4(customers), customers - GroupLoopScan@27a3344d(orders - customers, rows = 1, cost = 7.01160))

@@ -3,14 +3,14 @@ SelectQuery@6f93ee4
     MapJoin@d325aef()
       Flatten@64f007ad(orders)
         BranchLookup@4a8822a0(customers -> customers)
-          SingleIndexScan@2f995c9a(Index(test.customers.name[IndexColumn(name)]), NONE, =Smith, rows = 10, cost = 601.614)
+          SingleIndexScan@2f995c9a(Index(test.customers.name[IndexColumn(name)]), NONE, ='Smith', rows = 10, cost = 601.614)
           TableSource@59e3bddb(orders - TableGroupJoin@7d8e9adf(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
       Project@5c66b06b[orders.order_date]
         Select@59c87031[]
           Limit@1d59e6df(LIMIT 1)
             Select@54140fee[]
               Flatten@7e7f8062(items)
-                Select@64c5e2cf[items.sku == 1234]
+                Select@64c5e2cf[items.sku == '1234']
                   AncestorLookup@7badb7b8(items -> [items])
                     SingleIndexScan@49f8d077(Index(test.items.__akiban_fk_1[IndexColumn(oid)]), NONE, =orders.oid, rows = 1, cost = 188.762)
                     TableSource@2a8c7be5(items - TableGroup@6e3e5a91(customers))

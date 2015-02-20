@@ -2,7 +2,7 @@ SelectQuery@110faf4c
   ResultSet@1cbdaf54[sku]
     Project@6941c289[items.sku]
       Select@5c4ae65b[]
-        TableGroupJoinTree@579d4b58(TableGroup@6da0cbb2(customers), customers INNER orders INNER items - SingleIndexScan@1f0c039e(Index(test.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), covering/SORTED, UNIONs of [% = Adams, % = Jones, % = Smith], rows = 3, cost = 19.3716))
+        TableGroupJoinTree@579d4b58(TableGroup@6da0cbb2(customers), customers INNER orders INNER items - SingleIndexScan@1f0c039e(Index(test.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), covering/SORTED, UNIONs of [% = 'Adams', % = 'Jones', % = 'Smith'], rows = 3, cost = 19.3716))
           TableSource@21bcd536(customers - TableGroup@6da0cbb2(customers))
             TableSource@fe57659(orders - TableGroupJoin@4dc189fe(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
               TableSource@56f77412(items - TableGroupJoin@5d4aaa93(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

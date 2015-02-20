@@ -6,6 +6,6 @@ SelectQuery@59c35536
 
 Subquery@119417c0
   ResultSet@769bca67[_SQL_COL_3, _SQL_COL_4]
-    Project@9442c03[abcxyz, 2]
+    Project@9442c03['abcxyz', 2]
       Select@6e056d06[]
         ExpressionsSource@5aa57db5([[]])

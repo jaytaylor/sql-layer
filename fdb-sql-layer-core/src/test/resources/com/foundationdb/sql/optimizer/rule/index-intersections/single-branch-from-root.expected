@@ -1,4 +1,4 @@
 MultiIndexIntersectScan@3d96e589(compare 1
-    skip 1: SingleIndexScan@7db7a4f5(Index(test.items.sku[IndexColumn(sku)]), =1234)
-    skip 1: SingleIndexScan@23af114e(Index(test.customers.name[IndexColumn(name)]), =Alpha)
+    skip 1: SingleIndexScan@7db7a4f5(Index(test.items.sku[IndexColumn(sku)]), ='1234')
+    skip 1: SingleIndexScan@23af114e(Index(test.customers.name[IndexColumn(name)]), ='Alpha')
     -> NONE, rows = 1, cost = 212.172)

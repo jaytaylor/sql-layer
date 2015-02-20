@@ -38,6 +38,7 @@ import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
 import com.foundationdb.qp.expression.ExpressionRow;
+import com.foundationdb.qp.expression.IndexKeyRange;
 import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
@@ -98,6 +99,7 @@ import com.foundationdb.util.tap.TapReport;
 import com.geophile.z.Space;
 import org.junit.Assert;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 
 import com.foundationdb.server.store.Store;
@@ -110,6 +112,7 @@ import com.foundationdb.server.error.NoSuchTableException;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.session.Session;
 import org.junit.Rule;
+import org.junit.internal.AssumptionViolatedException;
 import org.junit.rules.MethodRule;
 import org.junit.rules.TestName;
 import org.junit.rules.TestRule;
@@ -241,6 +244,11 @@ public class ApiTestBase {
         public void failed(Throwable e, Description description)  {
             needServicesRestart = true;
         }
+
+        @Override
+        public void skipped(AssumptionViolatedException e, Description description) {
+            needServicesRestart = true;
+        }
     };
 
     /**
@@ -333,7 +341,7 @@ public class ApiTestBase {
 
     protected Map<String, String> defaultPropertiesToPreserveOnRestart() {
         return Collections.singletonMap(
-                TestConfigService.DATA_PATH_KEY,
+                TestConfigService.TEXT_INDEX_PATH_KEY,
                 TestConfigService.dataDirectory().getAbsolutePath());
     }
 
@@ -346,6 +354,7 @@ public class ApiTestBase {
     }
 
     public void safeRestartTestServices(Map<String, String> propertiesToPreserve) throws Exception {
+        Assume.assumeTrue("Store#isRestartable()", store().isRestartable());
         final boolean original = TestConfigService.getDoCleanOnUnload();
         try {
             TestConfigService.setDoCleanOnUnload(defaultDoCleanOnUnload());
@@ -858,13 +867,19 @@ public class ApiTestBase {
 
     protected Operator scanIndexPlan(Index index) {
         Schema schema = SchemaCache.globalSchema(index.getAIS());
-        return API.indexScan_Default(schema.indexRowType(index), false, null);
+        return API.indexScan_Default(schema.indexRowType(index),
+                                     false,
+                                     IndexKeyRange.unbounded(schema.indexRowType(index)),
+                                     schema.tableRowType(index.rootMostTable()));
     }
 
     protected final List<Row> scanAllIndex(Index index) {
         AkibanInformationSchema ais = ais();
         Schema schema = SchemaCache.globalSchema(ais);
-        Operator plan = API.indexScan_Default(schema.indexRowType(index), false, null);
+        Operator plan = API.indexScan_Default(schema.indexRowType(index),
+                                              false,
+                                              IndexKeyRange.unbounded(schema.indexRowType(index)),
+                                              schema.tableRowType(index.rootMostTable()));
         return runPlan(session(), schema, plan);
     }
 
@@ -1145,6 +1160,14 @@ public class ApiTestBase {
 
     protected void expectRows(Index index, Collection<Row> expectedRows) {
         expectRows(scanIndexPlan(index), false, expectedRows);
+    }
+
+    protected void expectRows(Group group, Row... expectedRows) {
+        expectRows(
+            API.groupScan_Default(group),
+            false,
+            Arrays.asList(expectedRows)
+        );
     }
 
     protected void expectRowsSkipInternal(Index index, Row... expectedRows) {

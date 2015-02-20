@@ -19,7 +19,6 @@ package com.foundationdb.server.test;
 
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.servicemanager.GuicedServiceManager;
-import com.foundationdb.server.test.it.PersistitITBase;
 import com.foundationdb.sql.LayerInfoInterface;
 import com.foundationdb.sql.Main;
 import com.google.inject.Inject;
@@ -32,8 +31,8 @@ public final class FailureOnStartupIT extends ApiTestBase {
 
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
-        return PersistitITBase.doBind(super.serviceBindingsProvider())
-                              .bind(LayerInfoInterface.class, BadLayerInfoInterface.class);
+        return super.serviceBindingsProvider()
+                    .bind(LayerInfoInterface.class, BadLayerInfoInterface.class);
     }
 
     @Override

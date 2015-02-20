@@ -6,7 +6,7 @@ SelectQuery@355ccfb1
           AncestorLookup@52e80740(orders -> [customers])
             Select@7f342545[items.quan > 100]
               BranchLookup@387b1641(orders -> orders)
-                SingleIndexScan@18f2225f(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >2011-01-01, rows = 17200, cost = 1.55446e+06)
+                SingleIndexScan@18f2225f(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >DATE '2011-01-01', rows = 17200, cost = 1.55446e+06)
                 TableSource@46798249(orders - TableGroupJoin@488d12e4(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
                 TableSource@54128635(items - TableGroupJoin@40ae97c4(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))
             TableSource@23e45a5c(customers - TableGroup@66de609(customers))

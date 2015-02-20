@@ -58,6 +58,9 @@ public class ConcurrentStatisticsMT extends PostgresMTBase
                         } else {
                             throw new RuntimeException(e);
                         }
+                        if(!conn.getAutoCommit()) {
+                            conn.rollback();
+                        }
                     }
                 }
             } catch(Exception e) {

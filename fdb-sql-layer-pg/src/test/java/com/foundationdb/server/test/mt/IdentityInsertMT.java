@@ -128,6 +128,7 @@ public class IdentityInsertMT extends PostgresMTBase
                     fail(String.format("Non-retryable error on step %d: (%s) %s\n", i, e.getSQLState(), e.getMessage()));
                 } else {
                     LOG.debug("  Retryable error: {}", e.getSQLState());
+                    s.getConnection().rollback();
                 }
             }
         }

@@ -78,11 +78,6 @@ public class MonitoredDDLThread extends MonitoredThread
     }
 
     @Override
-    protected boolean doRetryOnTableVersionChange() {
-        return true;
-    }
-
-    @Override
     protected void runInternal(Session session) {
         getServiceHolder().getDDLFunctions().setOnlineDDLMonitor(onlineDDLMonitor);
         try {

@@ -1,4 +1,4 @@
 DMLStatement@3549a5f8(items)
-  UpdateStatement@72504b57(items[items.sku = ABCX])
-    Select@75827762[items.sku == ABCD]
+  UpdateStatement@72504b57(items[items.sku = 'ABCX'])
+    Select@75827762[items.sku == 'ABCD']
       TableSource@486bff33(items)

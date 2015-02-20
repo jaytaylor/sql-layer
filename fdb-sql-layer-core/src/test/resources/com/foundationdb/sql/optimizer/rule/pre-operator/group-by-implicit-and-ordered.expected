@@ -5,6 +5,6 @@ SelectQuery@18092f1
         Project@6b5656fc[orders.oid, orders.order_date, items.quan]
           Flatten@1ac4c0ee(orders INNER items)
             AncestorLookup@7168f171(items -> [orders, items])
-              SingleIndexScan@20c36be2(Index(test.customers.sku_and_date_2[IndexColumn(sku), IndexColumn(order_date), IndexColumn(oid)]), SORTED/reverse, =1234, rows = 97, cost = 10084.4)
+              SingleIndexScan@20c36be2(Index(test.customers.sku_and_date_2[IndexColumn(sku), IndexColumn(order_date), IndexColumn(oid)]), SORTED/reverse, ='1234', rows = 97, cost = 10084.4)
               TableSource@21b9d8f4(orders - TableGroup@7ddfd33b(customers))
               TableSource@7b843310(items - TableGroupJoin@71a5070c(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

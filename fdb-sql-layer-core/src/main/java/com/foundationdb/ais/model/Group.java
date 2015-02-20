@@ -92,9 +92,9 @@ public class Group extends HasStorage implements Visitable
         return indexMap;
     }
 
-    public boolean hasMemoryTableFactory()
+    public boolean isVirtual()
     {
-        return (storageDescription != null) && storageDescription.isMemoryTableFactory();
+        return (storageDescription != null) && storageDescription.isVirtual();
     }
 
     // HasStorage

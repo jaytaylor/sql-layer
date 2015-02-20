@@ -7,4 +7,4 @@ SelectQuery@2d4c8822
 
 Subquery@dc0adca
   Project@22e1469c[customers.name == VALUES[0]]
-    ExpressionsSource@73e2bda7([[Smith], [Jones], [Sanchez]])
+    ExpressionsSource@73e2bda7([['Smith'], ['Jones'], ['Sanchez']])
