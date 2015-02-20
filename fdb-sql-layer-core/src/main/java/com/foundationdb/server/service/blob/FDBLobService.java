@@ -21,6 +21,7 @@ import com.foundationdb.async.Future;
 import com.foundationdb.async.Function;
 import com.foundationdb.Transaction;
 import com.foundationdb.blob.SQLBlob;
+import com.foundationdb.subspace.Subspace;
 import com.foundationdb.directory.DirectorySubspace;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.error.LobException;
@@ -33,6 +34,8 @@ import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.FDBHolder;
 import com.foundationdb.server.store.FDBTransactionService;
+import com.foundationdb.server.types.aksql.aktypes.AkGUID;
+import com.foundationdb.tuple.Tuple;
 import com.google.inject.Inject;
 
 import java.util.Arrays;
@@ -41,6 +44,7 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 public class FDBLobService implements Service, LobService {
+    private static byte[] LOB_EXISTS = {0x01};
     private DirectorySubspace lobDirectory;
     private FDBHolder fdbHolder;
     private FDBTransactionService transactionService;
@@ -93,15 +97,17 @@ public class FDBLobService implements Service, LobService {
         checkAndCleanBlobs(lobs);
     }
 
-    
     @Override
     public void createNewLob(Session session, final UUID lobId) {
-        lobDirectory.create(getTxc(session), Arrays.asList(lobId.toString())).get();
+        if (existsLob(session, lobId)) {
+            throw new LobException("Lob already exists");
+        }
+        getTxc(session).set(getLobSubspace(lobId).pack(), LOB_EXISTS);
         transactionService.addCallback(session, TransactionService.CallbackType.PRE_COMMIT, new TransactionService.Callback() {
             @Override
             public void run(Session session, long timestamp) {
                 try {
-                    SQLBlob blob = openBlob(getTxc(session), lobId);
+                    SQLBlob blob = openBlob(session, lobId);
                     if (!(blob.isLinked(getTxc(session))).get()) {
                         deleteLob(session, lobId);
                     }
@@ -114,12 +120,13 @@ public class FDBLobService implements Service, LobService {
 
     @Override
     public boolean existsLob(Session session, UUID lobId) {
-        return lobDirectory.exists(getTxc(session), Arrays.asList(lobId.toString())).get();
+        return getTxc(session).get(getLobSubspace(lobId).pack()).get() != null;
     }
 
     @Override
     public void deleteLob(Session session, UUID lobId) {
-        lobDirectory.removeIfExists(getTxc(session), Arrays.asList(lobId.toString())).get();
+        getTxc(session).clear(getLobSubspace(lobId).range());
+        getTxc(session).clear(getLobSubspace(lobId).pack());
     }
 
     @Override
@@ -134,11 +141,11 @@ public class FDBLobService implements Service, LobService {
     }
 
     @Override
-    public void linkTableBlob(Session session, final UUID lobId, final int tableId) {
+    public void linkTableBlob(final Session session, final UUID lobId, final int tableId) {
         getTxc(session).run(new Function<Transaction, Void>() {
             @Override
             public Void apply(Transaction tr) {
-                SQLBlob blob = openBlob(tr, lobId);
+                SQLBlob blob = openBlob(session, lobId);
                 if (blob.isLinked(tr).get()) {
                     if (blob.getLinkedTable(tr).get() != tableId) {
                         throw new LobException("lob is already linked to a table");
@@ -152,22 +159,22 @@ public class FDBLobService implements Service, LobService {
     }
 
     @Override
-    public long sizeBlob(Session session, final UUID lobId) {
+    public long sizeBlob(final Session session, final UUID lobId) {
         return getTxc(session).run(new Function<Transaction, Long>() {
             @Override
             public Long apply(Transaction tr) {
-                SQLBlob blob = openBlob(tr, lobId);
+                SQLBlob blob = openBlob(session, lobId);
                 return blob.getSize(tr).get();
             }
         });
     }
 
     @Override
-    public byte[] readBlob(Session session, final UUID lobId, final long offset, final int length) {
+    public byte[] readBlob(final Session session, final UUID lobId, final long offset, final int length) {
         byte[] res =  getTxc(session).run(new Function<Transaction, byte[]>() {
             @Override
             public byte[] apply(Transaction tr) {
-                SQLBlob blob = openBlob(tr, lobId);
+                SQLBlob blob = openBlob(session, lobId);
                 return blob.read(tr, offset, length).get();
             }
         });
@@ -175,22 +182,22 @@ public class FDBLobService implements Service, LobService {
     }
 
     @Override
-    public byte[] readBlob(Session session, final UUID lobId) {
+    public byte[] readBlob(final Session session, final UUID lobId) {
         return getTxc(session).run(new Function<Transaction, byte[]>() {
             @Override
             public byte[] apply(Transaction tr) {
-                SQLBlob blob = openBlob(tr, lobId);
+                SQLBlob blob = openBlob(session, lobId);
                 return blob.read(tr).get();
             }
         });
     }
 
     @Override
-    public void writeBlob(Session session, final UUID lobId, final long offset, final byte[] data) {
+    public void writeBlob(final Session session, final UUID lobId, final long offset, final byte[] data) {
         getTxc(session).run(new Function<Transaction, Void>() {
             @Override
             public Void apply(Transaction tr) {
-                SQLBlob blob = openBlob(tr, lobId);
+                SQLBlob blob = openBlob(session, lobId);
                 blob.write(tr, offset, data).get();
                 return null;
             }
@@ -198,11 +205,11 @@ public class FDBLobService implements Service, LobService {
     }
 
     @Override
-    public void appendBlob(Session session, final UUID lobId, final byte[] data) {
+    public void appendBlob(final Session session, final UUID lobId, final byte[] data) {
             getTxc(session).run(new Function<Transaction, Void>() {
                 @Override
                 public Void apply(Transaction tr) {
-                    SQLBlob blob = openBlob(tr, lobId);
+                    SQLBlob blob = openBlob(session, lobId);
                     blob.append(tr, data).get();
                     return null;
                 }
@@ -210,11 +217,11 @@ public class FDBLobService implements Service, LobService {
     }
 
     @Override
-    public void truncateBlob(Session session, final UUID lobId, final long size) {
+    public void truncateBlob(final Session session, final UUID lobId, final long size) {
         getTxc(session).run(new Function<Transaction, Void>() {
             @Override
             public Void apply(Transaction tr) {
-                SQLBlob blob = openBlob(tr, lobId);
+                SQLBlob blob = openBlob(session, lobId);
                 blob.truncate(tr, size).get();
                 return null;
             }
@@ -229,11 +236,11 @@ public class FDBLobService implements Service, LobService {
     }
     
     @Override
-    public void verifyAccessPermission(Session session, final QueryContext context, final UUID lobId) {
+    public void verifyAccessPermission(final Session session, final QueryContext context, final UUID lobId) {
         getTxc(session).run(new Function<Transaction, Void>() {
             @Override
             public Void apply(Transaction tr) {
-                SQLBlob blob = openBlob(tr, lobId);
+                SQLBlob blob = openBlob(session, lobId);
                 Integer tableId = blob.getLinkedTable(tr).get();
                 if (tableId == null) {
                     return null;
@@ -247,21 +254,24 @@ public class FDBLobService implements Service, LobService {
         });
     }
 
-    private SQLBlob openBlob(TransactionContext tcx, UUID lobId) {
-        try {
-            DirectorySubspace ds = lobDirectory.open(tcx, Arrays.asList(lobId.toString())).get();
-            return new SQLBlob(ds);
+    private SQLBlob openBlob(Session session, UUID lobId) {
+        if(existsLob(session, lobId)) {
+            return new SQLBlob(getLobSubspace(lobId));
         }
-        catch (NoSuchDirectoryException nsde) {
+        else {
             throw new LobException("lob with id: "+ lobId +" does not exist");
         }
+    }
+    
+    private Subspace getLobSubspace(UUID lobId) {
+        return lobDirectory.get(Tuple.from(AkGUID.uuidToBytes(lobId)));
     }
     
     private TransactionContext getTxc(){
         return fdbHolder.getTransactionContext();
     }
     
-    private TransactionContext getTxc(Session session) {
+    private Transaction getTxc(Session session) {
         return transactionService.getTransaction(session).getTransaction();
     } 
     
