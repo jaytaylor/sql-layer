@@ -27,7 +27,8 @@ import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.server.api.dml.ColumnSelector;
 
-class PersistitIndexCursor extends RowCursorImpl implements BindingsAwareCursor
+/** Wraps an {@link IndexCursor}, providing {@link #jump} and {@link IndexScanSelector} support. */
+class StoreAdapterIndexCursor extends RowCursorImpl implements BindingsAwareCursor
 {
     // Cursor interface
 
@@ -64,6 +65,7 @@ class PersistitIndexCursor extends RowCursorImpl implements BindingsAwareCursor
         CursorLifecycle.checkIdleOrActive(this);
         Index index = indexRowType.index();
         assert !index.isSpatial(); // Jump not yet supported for spatial indexes
+        // TODO: Couldn't IndexCursor handle this?
         rowState.openIteration();
         indexCursor.jump(row, columnSelector);
         state = CursorLifecycle.CursorState.ACTIVE;
@@ -87,16 +89,13 @@ class PersistitIndexCursor extends RowCursorImpl implements BindingsAwareCursor
 
     // For use by this package
 
-    PersistitIndexCursor(QueryContext context,
-                         IndexRowType indexRowType,
-                         IndexKeyRange keyRange,
-                         API.Ordering ordering,
-                         IndexScanSelector selector,
-                         boolean openAllSubCursors)
+    StoreAdapterIndexCursor(QueryContext context,
+                            IndexRowType indexRowType,
+                            IndexKeyRange keyRange,
+                            API.Ordering ordering,
+                            IndexScanSelector selector,
+                            boolean openAllSubCursors)
     {
-        this.keyRange = keyRange;
-        this.ordering = ordering;
-        this.context = context;
         this.indexRowType = indexRowType;
         this.isTableIndex = indexRowType.index().isTableIndex();
         this.selector = selector;
@@ -108,10 +107,7 @@ class PersistitIndexCursor extends RowCursorImpl implements BindingsAwareCursor
 
     // Object state
 
-    private final QueryContext context;
     private final IndexRowType indexRowType;
-    private final IndexKeyRange keyRange;
-    private final API.Ordering ordering;
     private final boolean isTableIndex;
     private final IterationHelper rowState;
     private IndexCursor indexCursor;

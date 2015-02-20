@@ -21,7 +21,6 @@ import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.ExpressionGenerator;
 import com.foundationdb.qp.operator.Operator;
-import com.foundationdb.qp.storeadapter.TempVolume;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
 import org.junit.Test;
@@ -31,7 +30,6 @@ import java.util.Collections;
 
 import static com.foundationdb.qp.operator.API.*;
 import static com.foundationdb.server.test.ExpressionGenerators.field;
-import static org.junit.Assert.assertEquals;
 
 public class Sort_GeneralIT extends OperatorITBase
 {
@@ -438,9 +436,7 @@ public class Sort_GeneralIT extends OperatorITBase
             row(itemRowType, 111L, 11L),
         };
         for (int i = 0; i < 10; i++) {
-            assertEquals("has temp volume state", false, TempVolume.hasTempState(session()));
             compareRows(expected, cursor(plan, queryContext, queryBindings));
-            assertEquals("has temp volume state", false, TempVolume.hasTempState(session()));
         }
     }
     

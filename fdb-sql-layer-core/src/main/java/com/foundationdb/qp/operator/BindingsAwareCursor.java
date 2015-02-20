@@ -21,16 +21,6 @@ package com.foundationdb.qp.operator;
  * A RowCursor which also support rebinding from the QueryBindings
  * 
  * @see GroupCursor, @see Rebindable
- *
- * Used by
- * @see AncestorLookup_Nested$AncestorCursor
- * @see BranchLookup_Nested$BranchCursor
- * @See GroupScan_Default$HKeyBoundCursor
- * 
- * @see com.foundationdb.qp.util.MultiCursor
- * @See PersistitIndexCursor
- * 
- * @See IndexCursor
  */
 public interface BindingsAwareCursor extends RowCursor
 {

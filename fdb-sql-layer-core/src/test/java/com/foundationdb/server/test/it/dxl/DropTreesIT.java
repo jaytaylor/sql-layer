@@ -27,10 +27,7 @@ import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
 import com.foundationdb.server.error.UnsupportedDropException;
 import com.foundationdb.server.service.transaction.TransactionService.CloseableTransaction;
-import com.foundationdb.server.store.PersistitStoreSchemaManager;
-import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.test.it.ITBase;
-import com.persistit.exception.PersistitException;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -61,21 +58,8 @@ public final class DropTreesIT extends ITBase {
     }
 
     private void expectNoTree(Object hasTreeLink) throws Exception {
-        cleanupTrees();
         HasStorage link = treeLink(hasTreeLink);
         assertFalse("tree should not exist: " + link.getStorageNameString(), treeExists(link));
-    }
-
-    void cleanupTrees() {
-        SchemaManager schemaManager = serviceManager().getSchemaManager();
-        if(schemaManager instanceof PersistitStoreSchemaManager) {
-            PersistitStoreSchemaManager pssm = (PersistitStoreSchemaManager)schemaManager;
-            try {
-                pssm.cleanupDelayedTrees(session(), false);
-            } catch(PersistitException e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 
     private static Index createSimpleIndex(Table curTable, String columnName) {

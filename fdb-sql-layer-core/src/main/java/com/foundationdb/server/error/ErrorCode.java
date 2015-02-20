@@ -255,13 +255,12 @@ public enum ErrorCode {
     
     // Class 40 - transaction rollback
     QUERY_TIMEOUT           ("40", "000", Importance.ERROR, QueryTimedOutException.class),
-    PERSISTIT_ROLLBACK      ("40", "001", Importance.ERROR, PersistitRollbackException.class),
+    //40001
     FDB_NOT_COMMITTED       ("40", "002", Importance.ERROR, FDBNotCommittedException.class),
     FDB_COMMIT_UNKNOWN_RESULT ("40", "003", Importance.ERROR, FDBCommitUnknownResultException.class),
     FDB_PAST_VERSION        ("40", "004", Importance.ERROR, FDBPastVersionException.class),
     FDB_FUTURE_VERSION      ("40", "005", Importance.ERROR, FDBFutureVersionException.class),
-    //40006-9 open
-    TABLE_VERSION_CHANGED   ("40", "00A", Importance.ERROR, TableVersionChangedException.class),
+    //40006-A open
     LOCK_TIMEOUT            ("40", "00B", Importance.DEBUG, LockTimeoutException.class),
 
     // Class 42 - syntax error or access rule violation
@@ -448,7 +447,7 @@ public enum ErrorCode {
     //5200D
     QUERY_LOG_CLOSE_FAIL    ("52", "00E", Importance.ERROR, QueryLogCloseException.class),
     INVALID_PORT            ("52", "00F", Importance.ERROR, InvalidPortException.class), 
-    INVALID_VOLUME          ("52", "010", Importance.ERROR, InvalidVolumeException.class),
+    //52010
     INVALID_OPTIMIZER_PROPERTY ("52", "011", Importance.ERROR, InvalidOptimizerPropertyException.class),
     IS_TABLE_VERSION_MISMATCH ("52", "012", Importance.ERROR, ISTableVersionMismatchException.class),
     NO_CLUSTER_FILE         ("52", "013", Importance.ERROR, NoClusterFileException.class),
@@ -459,15 +458,15 @@ public enum ErrorCode {
 
     // Class 53 - Internal error 
     INTERNAL_ERROR          ("53", "000", Importance.ERROR, null),
-    INTERNAL_CORRUPTION     ("53", "001", Importance.ERROR, RowDataCorruptionException.class),
+    //53001
     //53002
-    PERSISTIT_ERROR         ("53", "003", Importance.ERROR, PersistitAdapterException.class),
+    //53003
     FDB_ERROR               ("53", "004", Importance.ERROR, FDBAdapterException.class),
-    ROW_OUTPUT              ("53", "005", Importance.DEBUG, RowOutputException.class),
-    SCAN_RETRY_ABANDONDED   ("53", "006", Importance.ERROR, ScanRetryAbandonedException.class),
+    //53005
+    //53006
     METADATA_VERSION_OLD    ("53", "007", Importance.ERROR, MetadataVersionTooOldException.class),
     METADATA_VERSION_NEWER  ("53", "008", Importance.ERROR, MetadataVersionNewerException.class),
-    TABLEDEF_MISMATCH       ("53", "009", Importance.DEBUG, TableDefinitionMismatchException.class),
+    //53009
     PROTOBUF_READ           ("53", "00A", Importance.ERROR, ProtobufReadException.class),
     PROTOBUF_WRITE          ("53", "00B", Importance.ERROR, ProtobufWriteException.class),
     //5300C

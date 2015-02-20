@@ -25,27 +25,6 @@ import com.foundationdb.server.api.dml.ColumnSelector;
  *  Implements the state checking for the CursorBase, but not any of the
  *  operations methods. If you change this, also change @See OperatorExecutionBase
  *  as the two set of state implementations should match. 
- *
- * @see AncestorLookup_Nested$AncestorCursor
- * @see BranchLookup_Nested$BranchCursor
- * @see GroupScan_Default$HKeyBoundCursor
- * 
- *
- * @see SorterToCursorAdapter
- * @see com.foundationdb.qp.storeadapter.indexcursor.MergeJoinSorter$KeyFinalCursor
- * @see com.foundationdb.qp.storeadapter.PersistitIndexCursor
- * @see com.foundationdb.server.service.text.FullTextCursor
- * @see com.foundationdb.sql.embedded.ExecutableModifyOperatorStatement$SpoolCursor
- * 
- * @see com.foundationdb.qp.storeadapter.indexcursor.IndexCursor
- *  * @see com.foundationdb.qp.storeadapter.indexcursor.IndexCursorMixedOrder
- *  * @see com.foundationdb.qp.storeadapter.indexcursor.IndexCursorSpatial_InBox
- *  * @see com.foundationdb.qp.storeadapter.indexcursor.IndexCursorSpatial_NearPoint
- *  * @see com.foundationdb.qp.storeadapter.indexcursor.IndexCursorUnidrectional
- *  
- * @see com.foundationdb.qp.virtualadapter.VirtualGroupCursor
- * @see com.foundationdb.qp.storeadapter.FDBGroupCursor
- * @see com.foundationdb.qp.storeadapter.PersistitGroupCursor
  */
 public abstract class RowCursorImpl implements RowCursor {
 

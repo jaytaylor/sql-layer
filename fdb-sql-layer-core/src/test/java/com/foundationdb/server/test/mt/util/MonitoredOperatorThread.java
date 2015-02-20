@@ -61,11 +61,6 @@ public class MonitoredOperatorThread extends MonitoredThread
     }
 
     @Override
-    protected boolean doRetryOnTableVersionChange() {
-        return false;
-    }
-
-    @Override
     protected void runInternal(Session session) {
         to(Stage.PRE_BEGIN);
         boolean success = false;

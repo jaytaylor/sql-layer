@@ -72,7 +72,7 @@ public class MemoryAdapter extends StoreAdapter
                                     Ordering ordering,
                                     IndexScanSelector scanSelector,
                                     boolean openAllSubCursors) {
-        return new PersistitIndexCursor(context,
+        return new StoreAdapterIndexCursor(context,
                                         rowType,
                                         keyRange,
                                         ordering,
