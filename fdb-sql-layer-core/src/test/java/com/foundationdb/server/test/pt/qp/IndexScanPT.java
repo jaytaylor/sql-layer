@@ -24,7 +24,6 @@ import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.api.dml.SetColumnSelector;
 import com.foundationdb.server.error.InvalidOperationException;
@@ -52,7 +51,7 @@ public class IndexScanPT extends QPProfilePTBase
         schema = SchemaCache.globalSchema(ais());
         tRowType = schema.tableRowType(table(t));
         idxRowType = indexType(t, "x");
-        adapter = persistitAdapter();
+        adapter = newStoreAdapter();
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }
