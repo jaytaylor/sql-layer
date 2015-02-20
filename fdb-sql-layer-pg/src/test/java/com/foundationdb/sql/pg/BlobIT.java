@@ -1197,6 +1197,152 @@ public class BlobIT extends PostgresServerITBase {
     }
 
     @Test
+    public void testUpdateRowFromChildTableProtobuf() throws Exception {
+        int n = 5;
+        Connection conn = getConnection();
+        Statement stmt = conn.createStatement();
+        stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB) STORAGE_FORMAT protobuf");
+        stmt.execute("CREATE TABLE t2 (id_t2 INT PRIMARY KEY, id_t1 INT, bl_t2 BLOB) STORAGE_FORMAT protobuf");
+        stmt.execute("ALTER TABLE t2 ADD GROUPING FOREIGN KEY (id_t1) REFERENCES t1(id)");
+
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        for (int i = 0; i < n; i++ ) {
+            preparedStatement.setInt(1, i);
+            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
+        }
+        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
+        for (int ii = 0; ii < n; ii++ ) {
+            preparedStatement.setInt(1, ii);
+            preparedStatement.setInt(2, ii);
+            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
+        }
+        preparedStatement.close();
+
+        String[] ids_t1 = new String[n];
+        stmt.execute("SELECT blob_id(bl) FROM t1");
+        ResultSet rs = stmt.getResultSet();
+        for (int j = 0; j < n; j++) {
+            rs.next();
+            ids_t1[j] = rs.getString(1);
+        }
+        rs.close();
+
+        String[] ids_t2 = new String[n];
+        stmt.execute("SELECT blob_id(bl_t2) FROM t2");
+        rs = stmt.getResultSet();
+        for (int jj = 0; jj < n; jj++) {
+            rs.next();
+            ids_t2[jj] = rs.getString(1);
+        }
+        rs.close();
+
+        LobService ls = lobService();
+        getAndOrStartTransaction();
+        for (int k = 0; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(session(), UUID.fromString(ids_t1[k])));
+            Assert.assertTrue(ls.existsLob(session(), UUID.fromString(ids_t2[k])));
+        }
+        commitOrRollback();
+
+        stmt.execute("UPDATE t2 SET bl_t2 = create_long_blob(unhex('030405')) WHERE id_t2 = 2");
+        stmt.execute("SELECT blob_id(bl_t2) FROM t2 WHERE id_t2 = 2");
+        ResultSet resultSet = stmt.getResultSet();
+        resultSet.next();
+        String blobId = resultSet.getString(1);
+        stmt.close();
+        conn.close();
+
+        getAndOrStartTransaction();
+        for (int k = 0; k < 2; k++) {
+            Assert.assertTrue(ls.existsLob(session(), UUID.fromString(ids_t1[k])));
+            Assert.assertTrue(ls.existsLob(session(), UUID.fromString(ids_t2[k])));
+        }
+        Assert.assertFalse(ls.existsLob(session(), UUID.fromString(ids_t2[2])));
+        Assert.assertTrue(ls.existsLob(session(), UUID.fromString(ids_t1[2])));
+        Assert.assertTrue(ls.existsLob(session(), UUID.fromString(blobId)));
+        for (int k = 3; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(session(), UUID.fromString(ids_t1[k])));
+            Assert.assertTrue(ls.existsLob(session(), UUID.fromString(ids_t2[k])));
+        }
+        commitOrRollback();
+    }
+
+    @Test
+    public void testUpdateRowFromChildTableColumnKeys() throws Exception {
+        int n = 5;
+        Connection conn = getConnection();
+        Statement stmt = conn.createStatement();
+        stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB) STORAGE_FORMAT column_keys");
+        stmt.execute("CREATE TABLE t2 (id_t2 INT PRIMARY KEY, id_t1 INT, bl_t2 BLOB) STORAGE_FORMAT column_keys");
+        stmt.execute("ALTER TABLE t2 ADD GROUPING FOREIGN KEY (id_t1) REFERENCES t1(id)");
+
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        for (int i = 0; i < n; i++ ) {
+            preparedStatement.setInt(1, i);
+            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
+        }
+        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
+        for (int ii = 0; ii < n; ii++ ) {
+            preparedStatement.setInt(1, ii);
+            preparedStatement.setInt(2, ii);
+            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.execute();
+        }
+        preparedStatement.close();
+
+        String[] ids_t1 = new String[n];
+        stmt.execute("SELECT blob_id(bl) FROM t1");
+        ResultSet rs = stmt.getResultSet();
+        for (int j = 0; j < n; j++) {
+            rs.next();
+            ids_t1[j] = rs.getString(1);
+        }
+        rs.close();
+
+        String[] ids_t2 = new String[n];
+        stmt.execute("SELECT blob_id(bl_t2) FROM t2");
+        rs = stmt.getResultSet();
+        for (int jj = 0; jj < n; jj++) {
+            rs.next();
+            ids_t2[jj] = rs.getString(1);
+        }
+        rs.close();
+
+        LobService ls = lobService();
+        getAndOrStartTransaction();
+        for (int k = 0; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(session(), UUID.fromString(ids_t1[k])));
+            Assert.assertTrue(ls.existsLob(session(), UUID.fromString(ids_t2[k])));
+        }
+        commitOrRollback();
+
+        stmt.execute("UPDATE t2 SET bl_t2 = create_long_blob(unhex('030405')) WHERE id_t2 = 2");
+        stmt.execute("SELECT blob_id(bl_t2) FROM t2 WHERE id_t2 = 2");
+        ResultSet resultSet = stmt.getResultSet();
+        resultSet.next();
+        String blobId = resultSet.getString(1);
+        stmt.close();
+        conn.close();
+
+        getAndOrStartTransaction();
+        for (int k = 0; k < 2; k++) {
+            Assert.assertTrue(ls.existsLob(session(), UUID.fromString(ids_t1[k])));
+            Assert.assertTrue(ls.existsLob(session(), UUID.fromString(ids_t2[k])));
+        }
+        Assert.assertFalse(ls.existsLob(session(), UUID.fromString(ids_t2[2])));
+        Assert.assertTrue(ls.existsLob(session(), UUID.fromString(ids_t1[2])));
+        Assert.assertTrue(ls.existsLob(session(), UUID.fromString(blobId)));
+        for (int k = 3; k < n; k++) {
+            Assert.assertTrue(ls.existsLob(session(), UUID.fromString(ids_t1[k])));
+            Assert.assertTrue(ls.existsLob(session(), UUID.fromString(ids_t2[k])));
+        }
+        commitOrRollback();
+    }
+    
+    @Test
     public void testUpdateRowFromParentTable() throws Exception {
         int n = 5;
         Connection conn = getConnection();
@@ -1307,7 +1453,7 @@ public class BlobIT extends PostgresServerITBase {
     public void protobufSDInUnwrappedMode() throws Exception {
         Statement stmt = getConnection().createStatement();
         stmt.execute("CREATE TABLE t2 (id INT PRIMARY KEY, bl_1 BLOB, bl_2 BLOB) STORAGE_FORMAT protobuf");
-        stmt.execute("INSERT INTO t2 VALUES (1, create_long_blob(unhex('010203')), create_long_blob(unhex('020304')))");
+        stmt.execute("INSERT INTO t2 VALUES (1, create_long_blob(unhex('010203')), create_short_blob(unhex('020304')))");
         stmt.close();
         
         if (configService().getProperty("fdbsql.blob.return_unwrapped").equalsIgnoreCase("true")){
@@ -1326,8 +1472,8 @@ public class BlobIT extends PostgresServerITBase {
     @Test
     public void columnKeysInUnwrappedMode() throws Exception {
         Statement stmt = getConnection().createStatement();
-        stmt.execute("CREATE TABLE t2 (id INT PRIMARY KEY, bl_1 BLOB, bl_2 BLOB) STORAGE_FORMAT protobuf");
-        stmt.execute("INSERT INTO t2 VALUES (1, create_long_blob(unhex('010203')), create_long_blob(unhex('020304')))");
+        stmt.execute("CREATE TABLE t2 (id INT PRIMARY KEY, bl_1 BLOB, bl_2 BLOB) STORAGE_FORMAT column_keys");
+        stmt.execute("INSERT INTO t2 VALUES (1, create_long_blob(unhex('010203')), create_short_blob(unhex('020304')))");
         stmt.close();
 
         if (configService().getProperty("fdbsql.blob.return_unwrapped").equalsIgnoreCase("true")){

@@ -190,6 +190,7 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
                     if (oldBlob == null) {
                         continue;
                     }
+                    
                     byte[] blobData = store.getBlobData(session, oldBlob);
                     if (blobData == null) {
                         blobData = new byte[0];
@@ -217,7 +218,12 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
             return null;
         }
         if ( object instanceof BlobRef) {
-            return  (BlobRef) object;
+            BlobRef blob = (BlobRef) object;
+            // needed for protobuf storage format
+            if (!blob.isLongLob() && !blob.isShortLob()){
+                blob = new BlobRef(blob.getValue(), BlobRef.LeadingBitState.YES);
+            }
+            return blob;
         }
         throw new AkibanInternalException("Value must be a blob");
     }
