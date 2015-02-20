@@ -17,9 +17,11 @@
 
 package com.foundationdb.sql.pg;
 
+import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.sql.jdbc.core.BaseConnection;
 import com.foundationdb.sql.jdbc.core.ProtocolConnection;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -47,6 +49,8 @@ public class TransactionPeriodicallyCommitIT extends PostgresServerITBase {
 
     @Before
     public void createSimpleSchema() throws Exception {
+        // SQL based but actually depends on row sizes and config names.
+        Assume.assumeTrue("FDBStore", store() instanceof FDBStore);
         String sqlCreate = "CREATE TABLE fake.T1 (c1 integer not null primary key)";
         getConnection().createStatement().execute(sqlCreate);
     }

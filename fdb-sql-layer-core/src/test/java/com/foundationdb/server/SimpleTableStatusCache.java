@@ -33,11 +33,6 @@ public class SimpleTableStatusCache implements TableStatusCache {
     }
     
     @Override
-    public synchronized TableStatus createTableStatus(int tableID) {
-        return new SimpleTableStatus(tableID);
-    }
-
-    @Override
     public synchronized TableStatus getOrCreateVirtualTableStatus(int tableID, VirtualScanFactory factory) {
         VirtualTableStatus status = virtualStatusMap.get(tableID);
         if(status == null) {

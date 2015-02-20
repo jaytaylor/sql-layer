@@ -146,11 +146,13 @@ public interface Store extends KeyCreator {
     String getName();
 
     /** (Test helper) Get names of all StorageDescriptions in use. */
-    Collection<String> getStorageDescriptionNames();
+    Collection<String> getStorageDescriptionNames(Session session);
 
     OnlineHelper getOnlineHelper();
 
     /** (Test helper) Get exception thrown for online DML vs DDL violation */
     Class<? extends Exception> getOnlineDMLFailureException();
 
+    /** (Test helper) Can be restarted and keep data. */
+    boolean isRestartable();
 }

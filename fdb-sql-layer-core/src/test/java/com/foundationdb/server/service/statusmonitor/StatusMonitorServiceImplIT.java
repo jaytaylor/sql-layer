@@ -37,11 +37,11 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.junit.Assert.*;
 
-public class StatusMonitorServiceIT extends FDBITBase {
+public class StatusMonitorServiceImplIT extends FDBITBase {
 
     /** For use by classes that cannot extend this class directly */
     public static BindingsConfigurationProvider doBind(BindingsConfigurationProvider provider) {
-        return provider.require(StatusMonitorService.class)
+        return provider.bindAndRequire(StatusMonitorService.class, StatusMonitorServiceImpl.class)
                 .require(BasicInfoSchemaTablesService.class)
                 .require(ServerSchemaTablesService.class);
     }

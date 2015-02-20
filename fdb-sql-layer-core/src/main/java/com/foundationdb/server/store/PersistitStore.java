@@ -563,13 +563,18 @@ public class PersistitStore extends AbstractStore<PersistitStore,Exchange,Persis
     }
 
     @Override
-    public Collection<String> getStorageDescriptionNames() {
+    public Collection<String> getStorageDescriptionNames(Session session) {
         return treeService.getAllTreeNames();
     }
 
     @Override
     public Class<? extends Exception> getOnlineDMLFailureException() {
         return TableVersionChangedException.class;
+    }
+
+    @Override
+    public boolean isRestartable() {
+        return true;
     }
 
     private static final Callback CLEAR_SESSION_TABLES_CALLBACK = new Callback() {

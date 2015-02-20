@@ -262,6 +262,7 @@ public enum ErrorCode {
     FDB_FUTURE_VERSION      ("40", "005", Importance.ERROR, FDBFutureVersionException.class),
     //40006-9 open
     TABLE_VERSION_CHANGED   ("40", "00A", Importance.ERROR, TableVersionChangedException.class),
+    LOCK_TIMEOUT            ("40", "00B", Importance.DEBUG, LockTimeoutException.class),
 
     // Class 42 - syntax error or access rule violation
     // These exceptions are re-thrown errors from the parser and from the
