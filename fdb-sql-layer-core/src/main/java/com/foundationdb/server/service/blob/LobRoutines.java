@@ -111,14 +111,17 @@ public class LobRoutines {
             txnService.beginTransaction(session);
             startedTransaction = true;
         }
-        LobService ls = getLobService();
-        ls.verifyAccessPermission(session, context, id);
-        output = ls.readBlob(session, id, offset, length);
-        if (startedTransaction) {
-            txnService.commitOrRetryTransaction(session);
-        }
-        if (startedTransaction) {
-            txnService.rollbackTransactionIfOpen(session);
+        try {
+            LobService ls = getLobService();
+            ls.verifyAccessPermission(session, context, id);
+            output = ls.readBlob(session, id, offset, length);
+            if (startedTransaction) {
+                txnService.commitOrRetryTransaction(session);
+            }
+        } finally {
+            if (startedTransaction) {
+                txnService.rollbackTransactionIfOpen(session);
+            }
         }
         out[0] = output; 
     }
