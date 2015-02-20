@@ -35,10 +35,8 @@ import com.foundationdb.server.service.listener.TableListener;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.session.SessionService;
 import com.foundationdb.server.service.transaction.TransactionService;
-import com.foundationdb.server.store.FDBSchemaManager;
 import com.foundationdb.server.store.SchemaManager;
 import com.foundationdb.server.store.Store;
-import com.foundationdb.server.store.format.FDBStorageDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +68,6 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
 
     protected final Store store;
     protected final TransactionService txnService;
-    // Following couple only used by JMX method, where there is no context.
     protected final SchemaManager schemaManager;
     protected final SessionService sessionService;
     protected final ConfigurationService configurationService;
@@ -392,26 +389,6 @@ public abstract class AbstractIndexStatisticsService implements IndexStatisticsS
                 .on("table_id", "table_id")
                 .and("index_id", "index_id");
 
-        // TODO: Use "tuple" as storage description
-        // TODO: What happens if we're using a different schema manager? 
-        if (schemaManager instanceof FDBSchemaManager) {
-            Group istn = builder.unvalidatedAIS().getTable(INDEX_STATISTICS_TABLE_NAME).getGroup();
-            istn.setStorageDescription(new FDBStorageDescription(istn, "rowdata"));
-
-            Collection<TableIndex> collection = builder.unvalidatedAIS().getTable(INDEX_STATISTICS_TABLE_NAME).getIndexes();
-            for (TableIndex ti : collection) {
-                ti.setStorageDescription(new FDBStorageDescription(ti, "rowdata"));
-            }
-
-            Group isetn = builder.unvalidatedAIS().getTable(INDEX_STATISTICS_ENTRY_TABLE_NAME).getGroup();
-            isetn.setStorageDescription(new FDBStorageDescription(isetn, "rowdata"));
-
-            Collection<TableIndex> collection_isetn = builder.unvalidatedAIS().getTable(INDEX_STATISTICS_ENTRY_TABLE_NAME).getIndexes();
-            for (TableIndex ti : collection_isetn) {
-                ti.setStorageDescription(new FDBStorageDescription(ti, "rowdata"));
-            }
-        }
-        
         builder.procedure(TableName.SYS_SCHEMA, "index_stats_delete")
                .language("java", Routine.CallingConvention.JAVA)
                .paramStringIn("schema_name", 128)
