@@ -285,21 +285,13 @@ public class IndexCursorSpatial_InBox extends IndexCursor
         {
             @Override public void randomAccess(Cursor cursor, long z)
             {
-                // LOG.debug("Random access using {}: {}", cursor, SpaceImpl.formatZ(z));
-                System.out.format("Random access using %s: %s\n", cursor, SpaceImpl.formatZ(z));
+                LOG.debug("Random access using {}: {}", cursor, SpaceImpl.formatZ(z));
             }
 
             @Override
             public void sequentialAccess(Cursor cursor, long zRandomAccess, Record record)
             {
-/*
                 LOG.debug("    Sequential access using {} {} -> {}: {}",
-                          cursor,
-                          SpaceImpl.formatZ(zRandomAccess),
-                          record == null ? SpaceImpl.Z_NULL : SpaceImpl.formatZ(record.z()),
-                          record);
-*/
-                System.out.format("    Sequential access using %s %s -> %s: %s\n",
                           cursor,
                           SpaceImpl.formatZ(zRandomAccess),
                           record == null ? SpaceImpl.Z_NULL : SpaceImpl.formatZ(record.z()),
