@@ -158,9 +158,9 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     /** Clear all lob related data */
     public abstract void dropAllLobs(Session session);
 
-    protected abstract void registerLobForOnlineDelete(Session session, String schemaName, String tableName, UUID uuid);
+    protected abstract void registerLobForOnlineDelete(Session session, TableName tableName, UUID uuid);
 
-    protected abstract void executeLobOnlineDelete(Session session, String schemaName, String tableName);
+    protected abstract void executeLobOnlineDelete(Session session, TableName tableName);
 
     
     //

@@ -25,6 +25,7 @@ import com.foundationdb.ais.model.Sequence;
 import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
+import com.foundationdb.ais.model.TableName;
 import com.foundationdb.qp.operator.StoreAdapter;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
@@ -34,8 +35,7 @@ import com.foundationdb.qp.storeadapter.MemoryAdapter;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.qp.storeadapter.indexrow.MemoryIndexRow;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.error.DuplicateKeyException;
-import com.foundationdb.server.error.LockTimeoutException;
+import com.foundationdb.server.error.*;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -44,6 +44,7 @@ import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.MemoryStorageDescription;
+import com.foundationdb.server.types.aksql.aktypes.*;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.util.Strings;
 import com.google.inject.Inject;
@@ -406,7 +407,36 @@ public class MemoryStore extends AbstractStore<MemoryStore, MemoryStoreData, Mem
     public Class<? extends Exception> getOnlineDMLFailureException() {
         return LockTimeoutException.class;
     }
+    
+    @Override
+    public Row storeLobs(Session session, Row row){
+        // lobs not supported
+        if (AkBlob.containsBlob(row.rowType())) {
+            throw new LobException("MemoryStore does not support blobs");
+        }
+        return row;
+    }
 
+    @Override
+    void deleteLobs(Session session, Row row) {
+        // lobs not supported
+    }
+
+    @Override
+    public void dropAllLobs(Session session) {
+        // lobs not supported
+    }
+
+    @Override
+    protected void registerLobForOnlineDelete(Session session, TableName table, UUID uuid) {
+        // lobs not supported
+    }
+
+    @Override
+    protected void executeLobOnlineDelete(Session session, TableName table) {
+        // lobs not supported
+    }
+    
     @Override
     public boolean isRestartable() {
         return false;

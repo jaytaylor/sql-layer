@@ -557,7 +557,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                     // - move dataOnline/foo to data/foo/
                     try {
                         if (rootDir.exists(txn, dataPath).get()) {
-                            executeLobOnlineDelete(session, oldName.getSchemaName(), oldName.getTableName());
+                            executeLobOnlineDelete(session, oldName);
                             for(String subPath : rootDir.list(txn, dataPath).get()) {
                                 List<String> subDataPath = PathUtil.extend(dataPath, subPath);
                                 List<String> subOnlinePath = PathUtil.extend(onlinePath, subPath);
@@ -798,8 +798,8 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
     
     @Override
-    protected void registerLobForOnlineDelete(Session session, String schemaName, String tableRootName, UUID lobId) {
-        List<String> path = FDBNameGenerator.onlineLobPath(schemaName, tableRootName);
+    protected void registerLobForOnlineDelete(Session session, TableName tableRootName, UUID lobId) {
+        List<String> path = FDBNameGenerator.onlineLobPath(tableRootName.getSchemaName(), tableRootName.getTableName());
         TransactionState tr = txnService.getTransaction(session);
         DirectorySubspace dir = rootDir.createOrOpen(tr.getTransaction(), path).get();
         byte[] key = dir.pack(AkGUID.uuidToBytes(lobId));
@@ -807,8 +807,8 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
     
     @Override
-    protected void executeLobOnlineDelete(Session session, String schemaName, String tableName) {
-        List<String> onlineLobPath = FDBNameGenerator.onlineLobPath(schemaName, tableName);
+    protected void executeLobOnlineDelete(Session session, TableName table) {
+        List<String> onlineLobPath = FDBNameGenerator.onlineLobPath(table.getSchemaName(), table.getTableName());
         TransactionState tr = txnService.getTransaction(session);
         if (rootDir.exists(tr.getTransaction(), onlineLobPath).get()) {
             DirectorySubspace dir = rootDir.createOrOpen(tr.getTransaction(), onlineLobPath).get();

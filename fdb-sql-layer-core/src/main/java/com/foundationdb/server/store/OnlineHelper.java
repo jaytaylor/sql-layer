@@ -472,7 +472,7 @@ public class OnlineHelper implements RowListener
                     UUID blobId = ((BlobRef) blob).getId();
                     if (store instanceof FDBStore) {
                         TableName rootTable = oldRow.rowType().table().getGroup().getName();
-                        ((FDBStore) store).registerLobForOnlineDelete(session, rootTable.getSchemaName(), rootTable.getTableName(), blobId);
+                        ((FDBStore) store).registerLobForOnlineDelete(session, rootTable, blobId);
                     }
                 }
             }
