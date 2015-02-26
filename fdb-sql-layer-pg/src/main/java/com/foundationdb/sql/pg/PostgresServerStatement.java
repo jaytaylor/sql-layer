@@ -234,15 +234,14 @@ public class PostgresServerStatement extends PostgresStatementResults
         if (cased == "statementCacheCapacity") {
             String capacityString = value;
             if (value == null) {
-                //fdbsql.postgres.statementCacheCapacity=0
                 capacityString = server.getProperties().getProperty("statementCacheCapacity");
             }
             int capacity = Integer.parseInt(capacityString);
             server.setStatementCacheCapacity(capacity);
-            LOG.error("Setting statementCacheCapacity {}", capacity);
+            LOG.trace("Setting statementCacheCapacity {}", capacity);
         } else if (cased == "resetStatementCache") {
             server.resetStatementCache();
-            LOG.error("resetStatementCache");
+            LOG.trace("resetStatementCache");
         } else {
             if (value == null)
                 server.getProperties().remove(variable);

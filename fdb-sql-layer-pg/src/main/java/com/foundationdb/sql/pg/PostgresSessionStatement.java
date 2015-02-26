@@ -48,8 +48,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.slf4j.LoggerFactory;
-
 /** SQL statements that affect session / environment state. */
 public class PostgresSessionStatement extends PostgresStatementResults
                                       implements PostgresStatement
@@ -298,7 +296,6 @@ public class PostgresSessionStatement extends PostgresStatementResults
         String value;
         if (variable == "statementCacheCapacity") {
             value = Integer.toString(server.getStatementCacheCapacity());
-            LoggerFactory.getLogger(PostgresSessionStatement.class).error("statementCacheCapacity: {}", value);
         } else {
             value = server.getSessionSetting(variable);
             if (value == null)
