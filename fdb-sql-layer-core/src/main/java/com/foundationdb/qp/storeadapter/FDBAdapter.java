@@ -106,7 +106,7 @@ public class FDBAdapter extends StoreAdapter {
                                     API.Ordering ordering,
                                     IndexScanSelector scanSelector,
                                     boolean openAllSubCursors) {
-        return new PersistitIndexCursor(context,
+        return new StoreAdapterIndexCursor(context,
                 rowType,
                 keyRange,
                 ordering,

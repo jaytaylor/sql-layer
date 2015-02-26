@@ -73,11 +73,6 @@ public class FDBTableStatusCache implements TableStatusCache {
     }
 
     @Override
-    public synchronized TableStatus createTableStatus(int tableID) {
-        return new FDBTableStatus(tableID);
-    }
-
-    @Override
     public synchronized TableStatus getOrCreateVirtualTableStatus(int tableID, VirtualScanFactory factory) {
         VirtualTableStatus status = virtualTableStatusMap.get(tableID);
         if(status == null) {
@@ -129,11 +124,6 @@ public class FDBTableStatusCache implements TableStatusCache {
             this.tableID = table.getTableId();
             byte[] prefixBytes = FDBStoreDataHelper.prefixBytes(table.getPrimaryKeyIncludingInternal().getIndex());
             this.rowCountKey = ByteArrayUtil.join(packedTableStatusPrefix, prefixBytes, ROW_COUNT_PACKED);
-        }
-        
-        public FDBTableStatus(int tableID) {
-            this.tableID = tableID;
-
         }
 
         @Override

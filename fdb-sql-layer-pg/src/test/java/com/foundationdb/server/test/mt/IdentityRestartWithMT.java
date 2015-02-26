@@ -172,10 +172,11 @@ public class IdentityRestartWithMT extends PostgresMTBase
                 try {
                     ch.step(random);
                 } catch(SQLException e) {
-                    if(!ErrorCode.FDB_NOT_COMMITTED.getFormattedValue().equals(e.getSQLState())) {
+                    if(!ErrorCode.valueOfCode(e.getSQLState()).isRollbackClass()) {
                         fail("Unexpected failure during " + Arrays.toString(ch.mode) + "[" + ch.step + "]: " + e.getMessage());
                     } else {
                         LOG.debug(e.getMessage());
+                        ch.s.execute(SQL_ROLLBACK);
                         ch.changeMode(random);
                     }
                 }

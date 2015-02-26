@@ -629,7 +629,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
 
     @Override
-    public Collection<String> getStorageDescriptionNames() {
+    public Collection<String> getStorageDescriptionNames(Session session) {
         final List<List<String>> dataDirs = Arrays.asList(
             Arrays.asList(FDBNameGenerator.DATA_PATH_NAME, FDBNameGenerator.TABLE_PATH_NAME),
             Arrays.asList(FDBNameGenerator.DATA_PATH_NAME, FDBNameGenerator.SEQUENCE_PATH_NAME),
@@ -759,7 +759,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         res[0] = BlobRef.LONG_LOB;
         return res;
     }
-
+    
     private byte[] updateValue(byte[] data) {
         byte[] res = new byte[data.length+1];
         System.arraycopy(data, 0, res, 1, data.length);
@@ -820,6 +820,11 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
             }
             rootDir.removeIfExists(tr.getTransaction(), onlineLobPath).get();
         }
+    }
+    
+    @Override
+    public boolean isRestartable() {
+        return true;
     }
     
     //

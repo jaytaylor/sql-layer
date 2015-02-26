@@ -598,15 +598,20 @@ public abstract class ConstraintHandler<SType extends AbstractStore,SDType,SSDTy
     
     public static String formatKey(Session session, Index index, Key key,
                                    List<Column> reportColumns, List<Column> indexColumns) {
-        StringBuilder str = new StringBuilder();
         key.reset();
+        Object[] reportColumnValues = new Object[reportColumns.size()];
         for (int i = 0; i < index.getKeyColumns().size(); i++) {
-            if (i > 0) {
+            int idx = indexColumns.indexOf(index.getKeyColumns().get(i).getColumn());
+            reportColumnValues[idx] = key.decode();
+        }
+        StringBuilder str = new StringBuilder();
+        for(int i = 0; i < reportColumns.size(); ++i) {
+            if (str.length() > 0) {
                 str.append(" and ");
             }
-            str.append(reportColumns.get(indexColumns.indexOf(index.getKeyColumns().get(i).getColumn())).getName());
+            str.append(reportColumns.get(i).getName());
             str.append(" = ");
-            str.append(key.decode());
+            str.append(reportColumnValues[i]);
         }
         return str.toString();
     }

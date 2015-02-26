@@ -58,12 +58,6 @@ public class AlterTableITBase extends ITBase {
 
     protected Map<Integer,List<String>> checkedIndexes = new HashMap<>();
 
-    // Workaround for bug1052594 (Persistit brings trees back to life, this deletes data dir)
-    @Override
-    protected Map<String, String> startupConfigProperties() {
-        return uniqueStartupConfigProperties(AlterTableITBase.class);
-    }
-
     @After
     public void lookForCheckedIndexes() {
         for(Map.Entry<Integer, List<String>> entry : checkedIndexes.entrySet()) {

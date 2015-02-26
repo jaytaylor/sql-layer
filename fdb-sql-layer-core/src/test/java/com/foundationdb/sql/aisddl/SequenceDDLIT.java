@@ -110,8 +110,11 @@ public class SequenceDDLIT extends AISDDLITBase {
         txnService().rollbackTransactionIfOpen(session());
 
         txnService().beginTransaction(session());
-        // Expected gap, see nextValue() impl
-        assertEquals("next val c", 3, adapter.sequenceNextValue(s1));
+        // Gap allowed, see nextValue() impl
+        long nextVal1 = adapter.sequenceNextValue(s1);
+        if(nextVal1 < 2) {
+            fail("Expected next val >= 2: " + nextVal1);
+        }
         txnService().commitTransaction(session());
 
         safeRestartTestServices();
@@ -119,9 +122,9 @@ public class SequenceDDLIT extends AISDDLITBase {
 
         s1 = ais().getSequence(seqName);
         txnService().beginTransaction(session());
-        long nextVal = adapter.sequenceNextValue(s1);
-        if(nextVal <= 3) {
-            fail("Expected val > 3: " + nextVal);
+        long nextVal2 = adapter.sequenceNextValue(s1);
+        if(nextVal2 <= nextVal1) {
+            fail("Expected next val > previous next val " + nextVal1 + ": " + nextVal2);
         }
         txnService().commitTransaction(session());
         dropSequence(seqName);
