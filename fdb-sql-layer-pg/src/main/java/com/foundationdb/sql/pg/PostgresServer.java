@@ -55,7 +55,7 @@ import javax.security.auth.login.LoginException;
  * to process requests.
  * Also keeps global state for shutdown and inter-connection communication like cancel.
 */
-public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
+public class PostgresServer implements Runnable, ServerMonitor {
     public static final String COMMON_PROPERTIES_PREFIX = "fdbsql.sql.";
     public static final String SERVER_PROPERTIES_PREFIX = "fdbsql.postgres.";
     protected static final String SERVER_TYPE = "Postgres";
@@ -73,7 +73,7 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     private final ServerServiceRequirements reqs;
     private ServerSocket socket = null;
     private volatile boolean running = false;
-    private volatile long startTimeMillis, startTimeNanos;
+    private volatile long startTimeMillis;
     private boolean listening = false;
     private int nconnections = 0;
     private Map<Integer,PostgresServerConnection> connections =
@@ -131,7 +131,6 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     public void start() {
         running = true;
         startTimeMillis = System.currentTimeMillis();
-        startTimeNanos = System.nanoTime();
         thread = new Thread(this, THREAD_NAME_PREFIX + getPort());
         thread.start();
     }
@@ -259,22 +258,18 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
         return new ArrayList<>(connections.values());
     }
 
-    @Override
     public String getSqlString(int sessionId) {
         return getConnection(sessionId).getSessionMonitor().getCurrentStatement();
     }
     
-    @Override
     public String getRemoteAddress(int sessionId) {
         return getConnection(sessionId).getSessionMonitor().getRemoteAddress();
     }
 
-    @Override
     public void cancelQuery(int sessionId) {
         getConnection(sessionId).cancelQuery(null, "JMX");
     }
 
-    @Override
     public void killConnection(int sessionId) {
         PostgresServerConnection conn = getConnection(sessionId);
         conn.cancelQuery("your session being disconnected", "JMX");
@@ -349,36 +344,10 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
         }
     }
 
-    @Override
+    // used for testing
     public Set<Integer> getCurrentSessions() {
         return new HashSet<>(connections.keySet());
 
-    }
-
-    @Override
-    public Date getStartTime(int sessionId) {
-        return new Date(getConnection(sessionId).getSessionMonitor().getStartTimeMillis());
-    }
-
-    @Override
-    public long getProcessingTime(int sessionId) {
-        return getConnection(sessionId).getSessionMonitor().getNonIdleTimeNanos();
-    }
-
-    @Override
-    public long getEventTime(int sessionId, String eventName) {
-        return getConnection(sessionId).getSessionMonitor().getLastTimeStageNanos(MonitorStage.valueOf(eventName));
-    }
-
-    @Override
-    public long getTotalEventTime(int sessionId, String eventName) {
-        return getConnection(sessionId).getSessionMonitor().getTotalTimeStageNanos(MonitorStage.valueOf(eventName));
-    }
-
-    @Override
-    public long getUptime()
-    {
-        return (System.nanoTime() - startTimeNanos);
     }
 
     /** For testing, set the server's idea of the current time. */

@@ -26,7 +26,6 @@ import com.foundationdb.server.service.dxl.DXLService;
 import com.foundationdb.server.service.is.BasicInfoSchemaTablesService;
 import com.foundationdb.server.service.metrics.MetricsService;
 import com.foundationdb.server.service.monitor.MonitorService;
-import com.foundationdb.server.service.jmx.JmxManageable;
 import com.foundationdb.server.service.routines.RoutineLoader;
 import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.service.session.SessionService;
@@ -43,7 +42,7 @@ import com.google.inject.Inject;
 /** The PostgreSQL server service.
  * @see PostgresServer
 */
-public class PostgresServerManager implements PostgresService, Service, JmxManageable {
+public class PostgresServerManager implements PostgresService, Service {
     private final ServerServiceRequirements reqs;
     private final BasicInfoSchemaTablesService infoSchemaService;
     private PostgresServer server = null;
@@ -115,10 +114,4 @@ public class PostgresServerManager implements PostgresService, Service, JmxManag
         return server;
     }
 
-    /*** JmxManageable ***/
-    
-    @Override
-    public JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("PostgresServer", server, PostgresMXBean.class);
-    }
-}
+ }
