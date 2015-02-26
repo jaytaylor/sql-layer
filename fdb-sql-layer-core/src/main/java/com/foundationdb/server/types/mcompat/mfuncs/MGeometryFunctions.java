@@ -35,8 +35,10 @@ import com.foundationdb.server.types.mcompat.mtypes.MString;
 public class MGeometryFunctions
 {
     // TODO: VARBINARY not allowed for index definition currently.
-    public static final TScalar MGEOWKB = new GeoWKB(MBinary.BLOB, AkGeometry.INSTANCE);
-    public static final TScalar MGEOWKT = new GeoWKT(MString.VARCHAR, AkGeometry.INSTANCE);
+    public static final TScalar MGEOWKB_BLOB = new GeoWKB(MBinary.BLOB, AkGeometry.INSTANCE);
+    public static final TScalar MGEOWKB_VARBINARY = new GeoWKB(MBinary.VARBINARY, AkGeometry.INSTANCE);
+    public static final TScalar MGEOWKT_TEXT = new GeoWKT(MString.TEXT, AkGeometry.INSTANCE);
+    public static final TScalar MGEOWKT_VARCHAR = new GeoWKT(MString.VARCHAR, AkGeometry.INSTANCE);
     public static final TScalar MGEOTYPESTRING = new GeoTypeString(MString.VARCHAR, AkGeometry.INSTANCE);
 
     public static final TScalar[] MGEOOVERLAPS = GeoOverlaps.create(AkGeometry.INSTANCE);

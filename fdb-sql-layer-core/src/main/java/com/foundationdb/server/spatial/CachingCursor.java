@@ -96,9 +96,7 @@ public class CachingCursor implements BindingsAwareCursor
         ((BindingsAwareCursor) input).rebind(bindings);
     }
 
-
     // RowOrientedCursorBase interface
-
 
     @Override
     public void jump(Row row, ColumnSelector columnSelector)
