@@ -1,5 +1,5 @@
-    /**
- * Copyright (C) 2009-2013 FoundationDB, LLC
+/**
+ * Copyright (C) 2009-2015 FoundationDB, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -24,32 +24,44 @@ import com.foundationdb.qp.operator.API;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.row.AbstractRow;
+import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.IndexRowType;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.TableRowType;
+import com.foundationdb.qp.storeadapter.indexcursor.IndexCursorSpatial_InBox;
 import com.foundationdb.server.api.dml.SetColumnSelector;
-import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.spatial.Spatial;
+import com.foundationdb.server.spatial.TestRecord;
+import com.foundationdb.server.spatial.TreeIndex;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
+import com.geophile.z.Pair;
+import com.geophile.z.Record;
 import com.geophile.z.Space;
+import com.geophile.z.SpatialIndex;
+import com.geophile.z.SpatialJoin;
 import com.geophile.z.SpatialObject;
+import com.geophile.z.space.SpaceImpl;
+import com.geophile.z.spatialobject.d2.Box;
 import com.geophile.z.spatialobject.jts.JTS;
 import com.geophile.z.spatialobject.jts.JTSSpatialObject;
 import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.io.ParseException;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -259,9 +271,10 @@ public class SpatialObjectsIndexIT extends OperatorITBase
                 Point point = (Point) jtsSpatialObject.geometry();
                 double x = point.getX();
                 double y = point.getY();
-                JTSSpatialObject shiftedPoint = point(x, y + 1);
+                double shiftedY = y == Spatial.MAX_LON ? y - 1 : y + 1;
+                JTSSpatialObject shiftedPoint = point(x, shiftedY);
                 Row oldRow = row(table, id, x, y, jtsSpatialObject, jtsSpatialObject);
-                Row newRow = row(table, id, x, y + 1, shiftedPoint, shiftedPoint);
+                Row newRow = row(table, id, x, shiftedY, shiftedPoint, shiftedPoint);
                 recordZToId(id, shiftedPoint);
                 updateRow(oldRow, newRow);
             }
@@ -314,38 +327,127 @@ public class SpatialObjectsIndexIT extends OperatorITBase
     }
 
     @Test
-    public void testSpatialQuery()
+    public void testSpatialQuery() throws IOException, InterruptedException
     {
-        // TODO: lat/lon and wkb indexes
         final int ID_COLUMN = 1;
         loadDB();
-        // dumpIndex(wktIndexRowType);
         final int QUERIES = 100;
         for (int q = 0; q < QUERIES; q++) {
             try (TransactionContext t = new TransactionContext()) {
                 JTSSpatialObject queryBox = randomBox();
-                // Get the right answer
-                Set<Integer> expected = new HashSet<>();
-                for (int id = 0; id < points.size(); id++) {
-                    if (points.get(id).geometry().overlaps(queryBox.geometry())) {
-                        expected.add(id);
+                Set<Integer> expected;
+                {
+                    // Get the right answer
+                    expected = new HashSet<>();
+                    for (int id = 0; id < points.size(); id++) {
+                        if (points.get(id).geometry().overlaps(queryBox.geometry())) {
+                            expected.add(id);
+                        }
                     }
                 }
-                // Get the query result using the box index
-                Set<Integer> actual = new HashSet<>();
-                IndexBound boxBound = new IndexBound(row(wktIndexRowType, queryBox),
-                                                     new SetColumnSelector(0));
-                IndexKeyRange box = IndexKeyRange.spatialObject(wktIndexRowType, boxBound);
-                Operator plan = indexScan_Default(wktIndexRowType, box, lookaheadQuantum());
-                Cursor cursor = API.cursor(plan, queryContext, queryBindings);
-                cursor.openTopLevel();
-                Row row;
-                while ((row = cursor.next()) != null) {
-                    int id = getLong(row, ID_COLUMN).intValue();
-                    actual.add(id);
+                List<SpatialJoinEvent> expectedEvents = new ArrayList<>();
+                {
+                    // Get the expected access pattern
+                    TestRecordFactory recordFactory = new TestRecordFactory();
+                    // data
+                    int id = 0;
+                    TreeIndex dataIndex = new TreeIndex();
+                    SpatialIndex<TestRecord> dataSpatialIndex = SpatialIndex.newSpatialIndex(SPACE, dataIndex);
+                    for (double lat = Spatial.MIN_LAT; lat <= Spatial.MAX_LAT; lat += DELTA_LAT) {
+                        for (double lon = Spatial.MIN_LON; lon <= Spatial.MAX_LON; lon += DELTA_LON) {
+                            com.geophile.z.spatialobject.d2.Point point = new com.geophile.z.spatialobject.d2.Point(lat, lon);
+                            dataSpatialIndex.add(point, recordFactory.initialize(point, id++));
+                        }
+                    }
+                    // query
+                    TreeIndex queryIndex = new TreeIndex();
+                    SpatialIndex<TestRecord> querySpatialIndex = SpatialIndex.newSpatialIndex(SPACE, queryIndex);
+                    Envelope envelope = queryBox.geometry().getEnvelopeInternal();
+                    Box box = new Box(envelope.getMinX(),
+                                      envelope.getMaxX(),
+                                      envelope.getMinY(),
+                                      envelope.getMaxY());
+                    querySpatialIndex.add(box, recordFactory.initialize(box, 0), IndexCursorSpatial_InBox.MAX_Z);
+                    // spatial join
+                    SpatialJoin spatialJoin =
+                        SpatialJoin.newSpatialJoin(SpatialJoin.Duplicates.INCLUDE,
+                                                   null,
+                                                   new SpatialJoinObserver(Operand.QUERY, expectedEvents),
+                                                   new SpatialJoinObserver(Operand.DATA, expectedEvents));
+                    Iterator<Pair<TestRecord, TestRecord>> iterator = spatialJoin.iterator(querySpatialIndex, dataSpatialIndex);
+                    while (iterator.hasNext()) {
+                        iterator.next();
+                    }
                 }
-                // There should be no false negatives
-                assertTrue(actual.containsAll(expected));
+                { // WKT
+                    // Set up collection of spatial join events
+                    List<SpatialJoinEvent> actualEvents = new ArrayList<>();
+                    IndexCursorSpatial_InBox.SPATIAL_JOIN_LEFT_OBSERVER = new SpatialJoinObserver(Operand.QUERY, actualEvents);
+                    IndexCursorSpatial_InBox.SPATIAL_JOIN_RIGHT_OBSERVER = new SpatialJoinObserver(Operand.DATA, actualEvents);
+                    // Get the query result using the wkt index
+                    Set<Integer> actual = new HashSet<>();
+                    IndexBound boxBound = new IndexBound(row(wktIndexRowType, queryBox),
+                                                         new SetColumnSelector(0));
+                    IndexKeyRange box = IndexKeyRange.spatialObject(wktIndexRowType, boxBound);
+                    Operator plan = indexScan_Default(wktIndexRowType, box, lookaheadQuantum());
+                    Cursor cursor = API.cursor(plan, queryContext, queryBindings);
+                    cursor.openTopLevel();
+                    Row row;
+                    while ((row = cursor.next()) != null) {
+                        int id = getLong(row, ID_COLUMN).intValue();
+                        actual.add(id);
+                    }
+                    // There should be no false negatives
+                    assertTrue(actual.containsAll(expected));
+                    // Check access pattern
+                    assertEquals(expectedEvents, actualEvents);
+                }
+                { // WKB
+                    // Set up collection of spatial join events
+                    List<SpatialJoinEvent> actualEvents = new ArrayList<>();
+                    IndexCursorSpatial_InBox.SPATIAL_JOIN_LEFT_OBSERVER = new SpatialJoinObserver(Operand.QUERY, actualEvents);
+                    IndexCursorSpatial_InBox.SPATIAL_JOIN_RIGHT_OBSERVER = new SpatialJoinObserver(Operand.DATA, actualEvents);
+                    // Get the query result using the wkb index
+                    Set<Integer> actual = new HashSet<>();
+                    IndexBound boxBound = new IndexBound(row(wkbIndexRowType, queryBox),
+                                                         new SetColumnSelector(0));
+                    IndexKeyRange box = IndexKeyRange.spatialObject(wkbIndexRowType, boxBound);
+                    Operator plan = indexScan_Default(wkbIndexRowType, box, lookaheadQuantum());
+                    Cursor cursor = API.cursor(plan, queryContext, queryBindings);
+                    cursor.openTopLevel();
+                    Row row;
+                    while ((row = cursor.next()) != null) {
+                        int id = getLong(row, ID_COLUMN).intValue();
+                        actual.add(id);
+                    }
+                    // There should be no false negatives
+                    assertTrue(actual.containsAll(expected));
+                    // Check access pattern
+                    assertEquals(expectedEvents, actualEvents);
+                }
+                { // LAT/LON
+                    // Set up collection of spatial join events
+                    List<SpatialJoinEvent> actualEvents = new ArrayList<>();
+                    IndexCursorSpatial_InBox.SPATIAL_JOIN_LEFT_OBSERVER = new SpatialJoinObserver(Operand.QUERY, actualEvents);
+                    IndexCursorSpatial_InBox.SPATIAL_JOIN_RIGHT_OBSERVER = new SpatialJoinObserver(Operand.DATA, actualEvents);
+                    // Get the query result using the lat/lon index
+                    Set<Integer> actual = new HashSet<>();
+                    IndexBound boxBound = new IndexBound(row(latLonIndexRowType, queryBox),
+                                                         new SetColumnSelector(0));
+                    IndexKeyRange box = IndexKeyRange.spatialObject(latLonIndexRowType, boxBound);
+                    Operator plan = indexScan_Default(latLonIndexRowType, box, lookaheadQuantum());
+                    Cursor cursor = API.cursor(plan, queryContext, queryBindings);
+                    cursor.openTopLevel();
+                    Row row;
+                    while ((row = cursor.next()) != null) {
+                        int id = getLong(row, ID_COLUMN).intValue();
+                        actual.add(id);
+                    }
+                    // There should be no false negatives
+                    assertTrue(actual.containsAll(expected));
+                    // Check access pattern
+                    assertEquals(expectedEvents, actualEvents);
+                }
             }
         }
     }
@@ -354,8 +456,8 @@ public class SpatialObjectsIndexIT extends OperatorITBase
     {
         try (TransactionContext t = new TransactionContext()) {
             int id = 0;
-            for (long lat = LAT_LO; lat <= LAT_HI; lat += DLAT) {
-                for (long lon = LON_LO; lon < LON_HI; lon += DLON) {
+            for (long lat = LAT_LO; lat <= LAT_HI; lat += DELTA_LAT) {
+                for (long lon = LON_LO; lon <= LON_HI; lon += DELTA_LON) {
                     JTSSpatialObject point = point(lat, lon);
                     writeRow(session(), row(table, id, lat, lon, point, point));
                     recordZToId(id, point);
@@ -442,19 +544,13 @@ public class SpatialObjectsIndexIT extends OperatorITBase
 
     private void dumpIndex(IndexRowType indexRowType)
     {
-        System.out.println("Boxes dump");
-        for (int id = 0; id < points.size(); id++) {
-            System.out.format("    %s: %s\n", id, points.get(id));
-        }
-        System.out.println();
-        System.out.println("Index dump");
         Operator plan = indexScan_Default(indexRowType);
         Cursor cursor = cursor(plan, queryContext, queryBindings);
         try {
             cursor.openTopLevel();
-            Row row;
-            while ((row = cursor.next()) != null) {
-                System.out.format("    %s\n", row);
+            IndexRow row;
+            while ((row = (IndexRow) cursor.next()) != null) {
+                System.out.format("    %s\n", SpaceImpl.formatZ(row.z()));
             }
         } finally {
             cursor.closeTopLevel();
@@ -477,12 +573,13 @@ public class SpatialObjectsIndexIT extends OperatorITBase
         return bigDecimalWrapper.asBigDecimal().doubleValue();
     }
 
-    private static final int LAT_LO = -90;
-    private static final int LAT_HI = 90;
-    private static final int LON_LO = -180;
-    private static final int LON_HI = 180;
-    private static final int DLAT = 10;
-    private static final int DLON = 10;
+    private static final Space SPACE = Spatial.createLatLonSpace();
+    private static final int LAT_LO = (int) Spatial.MIN_LAT;
+    private static final int LAT_HI = (int) Spatial.MAX_LAT;
+    private static final int LON_LO = (int) Spatial.MIN_LON;
+    private static final int LON_HI = (int) Spatial.MAX_LON;
+    private static final int DELTA_LAT = 10;
+    private static final int DELTA_LON = 10;
     private static final int QUERY_WIDTH = 30;
     private static final GeometryFactory FACTORY = new GeometryFactory();
 
@@ -496,4 +593,114 @@ public class SpatialObjectsIndexIT extends OperatorITBase
     List<JTSSpatialObject> points = new ArrayList<>();
     private int nIds;
     Random random = new Random(1234567);
-}
+
+    private static class TestRecordFactory implements Record.Factory<TestRecord>
+    {
+        @Override
+        public TestRecord newRecord()
+        {
+            return new TestRecord(spatialObject, id);
+        }
+
+        public TestRecordFactory initialize(SpatialObject spatialObject, int id)
+        {
+            this.spatialObject = spatialObject;
+            this.id = id;
+            return this;
+        }
+
+        private SpatialObject spatialObject;
+        private int id;
+    }
+
+    private static class SpatialJoinObserver extends SpatialJoin.InputObserver
+    {
+        @Override
+        public void enter(long z)
+        {
+            events.add(new SpatialJoinEvent(operand, SpatialJoinEventType.ENTER, z));
+            // System.out.format("%s: ENTER %s\n", operand, SpaceImpl.formatZ(z));
+        }
+
+        @Override
+        public void exit(long z)
+        {
+            events.add(new SpatialJoinEvent(operand, SpatialJoinEventType.EXIT, z));
+            // System.out.format("%s: EXIT  %s\n", operand, SpaceImpl.formatZ(z));
+        }
+
+        @Override
+        public void randomAccess(com.geophile.z.Cursor cursor, long z)
+        {
+            events.add(new SpatialJoinEvent(operand, SpatialJoinEventType.RANDOM_ACCESS, z));
+            // System.out.format("%s:     GOTO %s\n", operand, SpaceImpl.formatZ(z));
+        }
+
+        @Override
+        public void sequentialAccess(com.geophile.z.Cursor cursor, long zRandomAccess, Record record)
+        {
+            events.add(new SpatialJoinEvent(operand,
+                                            SpatialJoinEventType.SEQUENTIAL_ACCESS,
+                                            record == null ? Space.Z_NULL : record.z()));
+/*
+            System.out.format("%s:     NEXT %s -> %s\n",
+                              operand,
+                              SpaceImpl.formatZ(zRandomAccess),
+                              record == null ? null : SpaceImpl.formatZ(record.z()));
+*/
+        }
+
+        SpatialJoinObserver(Operand operand, List<SpatialJoinEvent> events)
+        {
+            this.operand = operand;
+            this.events = events;
+        }
+
+        private final Operand operand;
+        private final List<SpatialJoinEvent> events;
+    }
+
+    enum Operand
+    {
+        QUERY, DATA
+    }
+
+    enum SpatialJoinEventType
+    {
+        RANDOM_ACCESS, SEQUENTIAL_ACCESS, ENTER, EXIT
+    }
+
+    private static class SpatialJoinEvent
+    {
+        @Override
+        public String toString()
+        {
+            return String.format("%s: %s %s",
+                                 operand == Operand.DATA ? "DATA " : "QUERY", SpaceImpl.formatZ(z), eventType);
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            boolean eq = false;
+            if (obj.getClass() == this.getClass()) {
+                SpatialJoinEvent that = (SpatialJoinEvent) obj;
+                eq =
+                    this.operand == that.operand &&
+                    this.eventType == that.eventType &&
+                    this.z == that.z;
+            }
+            return eq;
+        }
+
+        public SpatialJoinEvent(Operand operand, SpatialJoinEventType eventType, long z)
+        {
+            this.operand = operand;
+            this.eventType = eventType;
+            this.z = z;
+        }
+
+        private final Operand operand;
+        private final SpatialJoinEventType eventType;
+        private final long z;
+    }}

@@ -17,10 +17,8 @@
 
 package com.foundationdb.server.spatial;
 
-import com.foundationdb.qp.operator.CursorBase;
 import com.foundationdb.qp.operator.QueryBindings;
 import com.foundationdb.qp.row.IndexRow;
-import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.storeadapter.indexcursor.IndexCursor;
 import com.geophile.z.Cursor;
 import com.geophile.z.space.SpaceImpl;
@@ -60,8 +58,7 @@ public class GeophileCursor extends Cursor<IndexRow>
     @Override
     public boolean deleteCurrent() throws IOException, InterruptedException
     {
-        assert false;
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     // GeophileCursor interface

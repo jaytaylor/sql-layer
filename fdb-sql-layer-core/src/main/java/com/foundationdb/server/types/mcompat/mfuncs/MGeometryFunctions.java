@@ -30,6 +30,7 @@ import com.foundationdb.server.types.common.funcs.GeoWithinDistance;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.mcompat.mtypes.MString;
+import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 
 @SuppressWarnings("unused")
 public class MGeometryFunctions
@@ -37,6 +38,9 @@ public class MGeometryFunctions
     // TODO: VARBINARY not allowed for index definition currently.
     public static final TScalar MGEOWKB = new GeoWKB(AkBlob.INSTANCE, AkGeometry.INSTANCE);
     public static final TScalar MGEOWKT = new GeoWKT(MString.VARCHAR, AkGeometry.INSTANCE);
+    public static final TScalar MGEOWKB_VARBINARY = new GeoWKB(MBinary.VARBINARY, AkGeometry.INSTANCE);
+    public static final TScalar MGEOWKT_TEXT = new GeoWKT(MString.TEXT, AkGeometry.INSTANCE);
+    public static final TScalar MGEOWKT_VARCHAR = new GeoWKT(MString.VARCHAR, AkGeometry.INSTANCE);
     public static final TScalar MGEOTYPESTRING = new GeoTypeString(MString.VARCHAR, AkGeometry.INSTANCE);
 
     public static final TScalar[] MGEOOVERLAPS = GeoOverlaps.create(AkGeometry.INSTANCE);

@@ -61,25 +61,26 @@ public class GeoWKB extends TScalarBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
         byte[] data = new byte[0];
-        BlobRef blob;
+
         if (inputs.get(0).hasAnyValue()) {
             Object o = inputs.get(0).getObject();
             if (o instanceof BlobRef) {
+                BlobRef blob;
                 blob = (BlobRef) o;
-            } else {
-                throw new InvalidArgumentTypeException("Should be a blob column");
-            }
-            String mode = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.RETURN_UNWRAPPED);
-            if (mode.equalsIgnoreCase(AkBlob.UNWRAPPED)){
-                data = blob.getBytes();
-            }
-            else {
-                if (blob.isShortLob()) {
+                String mode = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.RETURN_UNWRAPPED);
+                if (mode.equalsIgnoreCase(AkBlob.UNWRAPPED)){
                     data = blob.getBytes();
-                } else {
-                    LobService ls = context.getQueryContext().getServiceManager().getServiceByClass(LobService.class);
-                    data = ls.readBlob(context.getQueryContext().getSession(), blob.getId());
                 }
+                else {
+                    if (blob.isShortLob()) {
+                        data = blob.getBytes();
+                    } else {
+                        LobService ls = context.getQueryContext().getServiceManager().getServiceByClass(LobService.class);
+                        data = ls.readBlob(context.getQueryContext().getSession(), blob.getId());
+                    }
+                }
+            } else if (o instanceof byte[]) {
+                data = (byte[])o;
             }
         }
         

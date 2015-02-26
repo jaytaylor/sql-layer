@@ -65,6 +65,7 @@ import com.foundationdb.util.AkibanAppender;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
+import com.geophile.z.space.SpaceImpl;
 import com.persistit.Key;
 
 import org.slf4j.Logger;
