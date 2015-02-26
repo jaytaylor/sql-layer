@@ -33,13 +33,7 @@ public interface PostgresMXBean {
      * @return client's IP address
      */
     String getRemoteAddress(int sessionId);
-
-    //int getStatementCacheCapacity();
-    //void setStatementCacheCapacity(int capacity);
-    //int getStatementCacheHits();
-    //int getStatementCacheMisses();
-    //void resetStatementCache();
-    
+  
     Set<Integer> getCurrentSessions();
 
     /*
