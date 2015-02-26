@@ -28,7 +28,6 @@ import com.foundationdb.server.store.*;
 
 import org.junit.*;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.sql.*;
@@ -71,10 +70,10 @@ public class BlobIT extends PostgresServerITBase {
         Statement stmt = conn.createStatement();
         stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
         
-        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,create_long_blob(?))");
         for (int i = 0; i < n; i++ ) {
             preparedStatement.setInt(1, i);
-            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(2, generateBytes(dataSize));
             preparedStatement.execute();
         }
         String[] ids = new String[n];
@@ -113,12 +112,12 @@ public class BlobIT extends PostgresServerITBase {
         Statement stmt = conn.createStatement();
         stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, blA BLOB, blB BLOB, blC BLOB)");
 
-        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?,?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?, create_long_blob(?), create_long_blob(?), create_long_blob(?))");
         for (int i = 0; i < n; i++ ) {
             preparedStatement.setInt(1, i);
-            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
-            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
-            preparedStatement.setBlob(4, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(2, generateBytes(dataSize));
+            preparedStatement.setBytes(3, generateBytes(dataSize));
+            preparedStatement.setBytes(4, generateBytes(dataSize));
             preparedStatement.execute();
         }
         String[] idsA = new String[n];
@@ -167,11 +166,11 @@ public class BlobIT extends PostgresServerITBase {
         Statement stmt = conn.createStatement();
         stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB, bl2 BLOB)");
 
-        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?, create_long_blob(?), create_long_blob(?))");
         for (int i = 0; i < n; i++ ) {
             preparedStatement.setInt(1, i);
-            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
-            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(2, generateBytes(dataSize));
+            preparedStatement.setBytes(3, generateBytes(dataSize));
             preparedStatement.execute();
         }
         String[] idsA = new String[n];
@@ -216,17 +215,17 @@ public class BlobIT extends PostgresServerITBase {
         stmt.execute("CREATE TABLE t2 (id_t2 INT PRIMARY KEY, id_t1 INT, bl_t2 BLOB)");
         stmt.execute("ALTER TABLE t2 ADD GROUPING FOREIGN KEY (id_t1) REFERENCES t1(id)");
         
-        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?, create_long_blob(?))");
         for (int i = 0; i < n; i++ ) {
             preparedStatement.setInt(1, i);
-            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(2, generateBytes(dataSize));
             preparedStatement.execute();
         }
-        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
+        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,create_long_blob(?))");
         for (int ii = 0; ii < n; ii++ ) {
             preparedStatement.setInt(1, ii*10);
             preparedStatement.setInt(2, ii);
-            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(3, generateBytes(dataSize));
             preparedStatement.execute();
         }
         String[] ids_t1 = new String[n];
@@ -281,11 +280,11 @@ public class BlobIT extends PostgresServerITBase {
             preparedStatement.setInt(1, i);
             preparedStatement.execute();
         }
-        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
+        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,create_long_blob(?))");
         for (int ii = 0; ii < n; ii++ ) {
             preparedStatement.setInt(1, ii*10);
             preparedStatement.setInt(2, ii);
-            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(3, generateBytes(dataSize));
             preparedStatement.execute();
         }
 
@@ -323,10 +322,10 @@ public class BlobIT extends PostgresServerITBase {
         Statement stmt = conn.createStatement();
         stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
 
-        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?, create_long_blob(?))");
         for (int i = 0; i < n; i++ ) {
             preparedStatement.setInt(1, i);
-            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(2, generateBytes(dataSize));
             preparedStatement.execute();
         }
         String[] ids = new String[n];
@@ -366,17 +365,17 @@ public class BlobIT extends PostgresServerITBase {
         stmt.execute("CREATE TABLE t2 (id_t2 INT PRIMARY KEY, id_t1 INT, bl_t2 BLOB)");
         stmt.execute("ALTER TABLE t2 ADD GROUPING FOREIGN KEY (id_t1) REFERENCES t1(id)");
 
-        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?, create_long_blob(?))");
         for (int i = 0; i < n; i++ ) {
             preparedStatement.setInt(1, i);
-            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(2, generateBytes(dataSize));
             preparedStatement.execute();
         }
         preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
         for (int ii = 0; ii < n; ii++ ) {
             preparedStatement.setInt(1, ii*10);
             preparedStatement.setInt(2, ii);
-            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(3, generateBytes(dataSize));
             preparedStatement.execute();
         }
         preparedStatement.close();
@@ -428,17 +427,17 @@ public class BlobIT extends PostgresServerITBase {
         stmt.execute("CREATE TABLE t2 (id_t2 INT PRIMARY KEY, id_t1 INT, bl_t2 BLOB)");
         stmt.execute("ALTER TABLE t2 ADD GROUPING FOREIGN KEY (id_t1) REFERENCES t1(id)");
 
-        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?, create_long_blob(?))");
         for (int i = 0; i < n; i++ ) {
             preparedStatement.setInt(1, i);
-            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(2, generateBytes(dataSize));
             preparedStatement.execute();
         }
-        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
+        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?, create_long_blob(?))");
         for (int ii = 0; ii < n; ii++ ) {
             preparedStatement.setInt(1, ii*10);
             preparedStatement.setInt(2, ii);
-            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(3, generateBytes(dataSize));
             preparedStatement.execute();
         }
         String[] ids_t1 = new String[n];
@@ -479,10 +478,10 @@ public class BlobIT extends PostgresServerITBase {
         Statement stmt = conn.createStatement();
         stmt.execute("CREATE TABLE testx.t1 (id INT PRIMARY KEY, bl BLOB)");
 
-        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO testx.t1 VALUES (?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO testx.t1 VALUES (?, create_long_blob(?))");
         for (int i = 0; i < n; i++ ) {
             preparedStatement.setInt(1, i);
-            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(2, generateBytes(dataSize));
             preparedStatement.execute();
         }
         preparedStatement.close();
@@ -528,11 +527,11 @@ public class BlobIT extends PostgresServerITBase {
             preparedStatement.setInt(1, i);
             preparedStatement.execute();
         }
-        preparedStatement = conn.prepareCall("INSERT INTO t.t2 VALUES (?,?,?)");
+        preparedStatement = conn.prepareCall("INSERT INTO t.t2 VALUES (?,?,create_long_blob(?))");
         for (int ii = 0; ii < n; ii++ ) {
             preparedStatement.setInt(1, ii*10);
             preparedStatement.setInt(2, ii);
-            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(3, generateBytes(dataSize));
             preparedStatement.execute();
         }
 
@@ -570,10 +569,10 @@ public class BlobIT extends PostgresServerITBase {
         Statement stmt = conn.createStatement();
         stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
 
-        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,create_long_blob(?))");
         for (int i = 0; i < n; i++ ) {
             preparedStatement.setInt(1, i);
-            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(2, generateBytes(dataSize));
             preparedStatement.execute();
         }
         preparedStatement.close();
@@ -611,10 +610,10 @@ public class BlobIT extends PostgresServerITBase {
         Statement stmt = conn.createStatement();
         stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB, col3 int)");
 
-        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?, 1)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?, create_long_blob(?), 1)");
         for (int i = 0; i < n; i++ ) {
             preparedStatement.setInt(1, i);
-            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(2, generateBytes(dataSize));
             preparedStatement.execute();
         }
         preparedStatement.close();
@@ -654,11 +653,11 @@ public class BlobIT extends PostgresServerITBase {
             preparedStatement.setInt(1, i);
             preparedStatement.execute();
         }
-        preparedStatement = conn.prepareCall("INSERT INTO t.t2 VALUES (?,?,?)");
+        preparedStatement = conn.prepareCall("INSERT INTO t.t2 VALUES (?,?,create_long_blob(?))");
         for (int ii = 0; ii < n; ii++ ) {
             preparedStatement.setInt(1, ii*10);
             preparedStatement.setInt(2, ii);
-            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(3, generateBytes(dataSize));
             preparedStatement.execute();
         }
 
@@ -704,11 +703,11 @@ public class BlobIT extends PostgresServerITBase {
             preparedStatement.setInt(1, i);
             preparedStatement.execute();
         }
-        preparedStatement = conn.prepareCall("INSERT INTO t.t2 VALUES (?,?,?,1)");
+        preparedStatement = conn.prepareCall("INSERT INTO t.t2 VALUES (?,?,create_long_blob(?),1)");
         for (int ii = 0; ii < n; ii++) {
             preparedStatement.setInt(1, ii * 10);
             preparedStatement.setInt(2, ii);
-            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(3, generateBytes(dataSize));
             preparedStatement.execute();
         }
 
@@ -742,17 +741,17 @@ public class BlobIT extends PostgresServerITBase {
         stmt.execute("CREATE TABLE t2 (id_t2 INT PRIMARY KEY, id_t1 INT, bl_t2 BLOB)");
         stmt.execute("ALTER TABLE t2 ADD GROUPING FOREIGN KEY (id_t1) REFERENCES t1(id)");
 
-        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?, create_long_blob(?))");
         for (int i = 0; i < n; i++ ) {
             preparedStatement.setInt(1, i);
-            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(2, generateBytes(dataSize));
             preparedStatement.execute();
         }
-        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
+        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,create_long_blob(?))");
         for (int ii = 0; ii < n; ii++ ) {
             preparedStatement.setInt(1, ii*10);
             preparedStatement.setInt(2, ii);
-            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(3, generateBytes(dataSize));
             preparedStatement.execute();
         }
         String[] ids_t1 = new String[n];
@@ -814,7 +813,7 @@ public class BlobIT extends PostgresServerITBase {
         conn.close();
     }
 
-    @Test
+    //@Test
     public void createLargeBlob() throws Exception {
         Connection conn = getConnection();
         Statement stmt = conn.createStatement();
@@ -846,10 +845,10 @@ public class BlobIT extends PostgresServerITBase {
         Statement stmt = conn.createStatement();
         stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
 
-        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?, create_long_blob(?))");
         for (int i = 0; i < n; i++ ) {
             preparedStatement.setInt(1, i);
-            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(2, generateBytes(dataSize));
             preparedStatement.execute();
         }
         String[] ids = new String[n];
@@ -893,17 +892,17 @@ public class BlobIT extends PostgresServerITBase {
         stmt.execute("CREATE TABLE t2 (id_t2 INT PRIMARY KEY, id_t1 INT, bl_t2 BLOB)");
         stmt.execute("ALTER TABLE t2 ADD GROUPING FOREIGN KEY (id_t1) REFERENCES t1(id)");
 
-        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?, create_long_blob(?))");
         for (int i = 0; i < n; i++ ) {
             preparedStatement.setInt(1, i);
-            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(2, generateBytes(dataSize));
             preparedStatement.execute();
         }
-        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
+        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,create_long_blob(?))");
         for (int ii = 0; ii < n; ii++ ) {
             preparedStatement.setInt(1, ii);
             preparedStatement.setInt(2, ii);
-            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(3, generateBytes(dataSize));
             preparedStatement.execute();
         }
         preparedStatement.close();
@@ -960,17 +959,17 @@ public class BlobIT extends PostgresServerITBase {
         stmt.execute("CREATE TABLE t2 (id_t2 INT PRIMARY KEY, id_t1 INT, bl_t2 BLOB)");
         stmt.execute("ALTER TABLE t2 ADD GROUPING FOREIGN KEY (id_t1) REFERENCES t1(id)");
 
-        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,create_long_blob(?))");
         for (int i = 0; i < n; i++ ) {
             preparedStatement.setInt(1, i);
-            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(2, generateBytes(dataSize));
             preparedStatement.execute();
         }
-        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
+        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,create_long_blob(?))");
         for (int ii = 0; ii < n; ii++ ) {
             preparedStatement.setInt(1, ii);
             preparedStatement.setInt(2, ii);
-            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(3, generateBytes(dataSize));
             preparedStatement.execute();
         }
         preparedStatement.close();
@@ -1025,10 +1024,10 @@ public class BlobIT extends PostgresServerITBase {
         Statement stmt = conn.createStatement();
         stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
 
-        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?, create_long_blob(?))");
         for (int i = 0; i < n; i++ ) {
             preparedStatement.setInt(1, i);
-            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(2, generateBytes(dataSize));
             preparedStatement.execute();
         }
         String[] ids = new String[n];
@@ -1077,10 +1076,10 @@ public class BlobIT extends PostgresServerITBase {
         Statement stmt = conn.createStatement();
         stmt.execute("CREATE TABLE t1 (id INT PRIMARY KEY, bl BLOB)");
 
-        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?, create_long_blob(?))");
         for (int i = 0; i < n; i++ ) {
             preparedStatement.setInt(1, i);
-            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(2, generateBytes(dataSize));
             preparedStatement.execute();
         }
         String[] ids = new String[n];
@@ -1132,17 +1131,17 @@ public class BlobIT extends PostgresServerITBase {
         stmt.execute("CREATE TABLE t2 (id_t2 INT PRIMARY KEY, id_t1 INT, bl_t2 BLOB)");
         stmt.execute("ALTER TABLE t2 ADD GROUPING FOREIGN KEY (id_t1) REFERENCES t1(id)");
 
-        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,create_long_blob(?))");
         for (int i = 0; i < n; i++ ) {
             preparedStatement.setInt(1, i);
-            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(2, generateBytes(dataSize));
             preparedStatement.execute();
         }
-        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
+        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,create_long_blob(?))");
         for (int ii = 0; ii < n; ii++ ) {
             preparedStatement.setInt(1, ii);
             preparedStatement.setInt(2, ii);
-            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(3, generateBytes(dataSize));
             preparedStatement.execute();
         }
         preparedStatement.close();
@@ -1205,17 +1204,17 @@ public class BlobIT extends PostgresServerITBase {
         stmt.execute("CREATE TABLE t2 (id_t2 INT PRIMARY KEY, id_t1 INT, bl_t2 BLOB)");
         stmt.execute("ALTER TABLE t2 ADD GROUPING FOREIGN KEY (id_t1) REFERENCES t1(id)");
 
-        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?,?)");
+        PreparedStatement preparedStatement = conn.prepareCall("INSERT INTO t1 VALUES (?, create_long_blob(?))");
         for (int i = 0; i < n; i++ ) {
             preparedStatement.setInt(1, i);
-            preparedStatement.setBlob(2, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(2, generateBytes(dataSize));
             preparedStatement.execute();
         }
-        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?,?)");
+        preparedStatement = conn.prepareCall("INSERT INTO t2 VALUES (?,?, create_long_blob(?))");
         for (int ii = 0; ii < n; ii++ ) {
             preparedStatement.setInt(1, ii);
             preparedStatement.setInt(2, ii);
-            preparedStatement.setBlob(3, new ByteArrayInputStream(generateBytes(dataSize)));
+            preparedStatement.setBytes(3, generateBytes(dataSize));
             preparedStatement.execute();
         }
         preparedStatement.close();
