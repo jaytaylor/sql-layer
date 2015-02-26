@@ -34,11 +34,11 @@ public interface PostgresMXBean {
      */
     String getRemoteAddress(int sessionId);
 
-    int getStatementCacheCapacity();
-    void setStatementCacheCapacity(int capacity);
-    int getStatementCacheHits();
-    int getStatementCacheMisses();
-    void resetStatementCache();
+    //int getStatementCacheCapacity();
+    //void setStatementCacheCapacity(int capacity);
+    //int getStatementCacheHits();
+    //int getStatementCacheMisses();
+    //void resetStatementCache();
     
     Set<Integer> getCurrentSessions();
 

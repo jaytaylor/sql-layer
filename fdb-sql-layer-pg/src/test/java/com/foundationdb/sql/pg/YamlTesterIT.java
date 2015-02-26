@@ -1957,11 +1957,11 @@ public class YamlTesterIT extends PostgresServerITBase {
     public void testJMXOutputWrongSize() throws Exception {
         testYamlFail ("---\n" +
                 "- JMX: com.foundationdb:type=PostgresServer\n" + 
-                "- get: StatementCacheCapacity\n" + 
+                "- get: Uptime\n" + 
                 "- output: [['100', '200']]");
         testYamlFail ("---\n" +
                 "- JMX: com.foundationdb:type=PostgresServer\n" + 
-                "- get: StatementCacheCapacity\n" + 
+                "- get: Uptime\n" + 
                 "- output: [['100'], ['200']]");
     }
     
@@ -1969,7 +1969,7 @@ public class YamlTesterIT extends PostgresServerITBase {
     public void testJMXSplitWrongSize() throws Exception {
         testYamlFail ("---\n" +
                 "- JMX: com.foundationdb:type=PostgresServer\n" + 
-                "- get: StatementCacheCapacity\n" + 
+                "- get: Uptime\n" + 
                 "- split_result: [['100', '200']]");
     }
     
@@ -1977,12 +1977,12 @@ public class YamlTesterIT extends PostgresServerITBase {
     public void testJMXoutputAndSplit() throws Exception {
         testYamlFail ("---\n" +
                 "- JMX: com.foundationdb:type=PostgresServer\n" + 
-                "- get: StatementCacheCapacity\n" + 
+                "- get: Uptime\n" + 
                 "- split_result: ['100']]\n" + 
                 "- output: [['100']]");
         testYamlFail ("---\n" +
                 "- JMX: com.foundationdb:type=PostgresServer\n" + 
-                "- get: StatementCacheCapacity\n" + 
+                "- get: Uptime\n" + 
                 "- output: [['100']]\n" +
                 "- split_result: ['100']]"); 
         
@@ -1992,16 +1992,16 @@ public class YamlTesterIT extends PostgresServerITBase {
     public void testJMXOutput() throws Exception {
         testYaml ("---\n" +
         "- JMX: com.foundationdb:type=PostgresServer\n" + 
-        "- get: StatementCacheCapacity\n" + 
-        "- output: [['0']]");
+        "- get: Uptime\n" + 
+        "- output: [[!dc time]]");
     }
     
     @Test 
     public void testJMXSplit() throws Exception {
         testYaml("---\n" +
         "- JMX: com.foundationdb:type=PostgresServer\n" + 
-        "- get: StatementCacheCapacity\n" + 
-        "- split_result: [['0']]");
+        "- get: Uptime\n" + 
+        "- split_result: [[!dc time]]");
     }
 
     @Test

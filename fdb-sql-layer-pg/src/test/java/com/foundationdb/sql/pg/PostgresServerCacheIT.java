@@ -18,7 +18,6 @@
 package com.foundationdb.sql.pg;
 
 import com.foundationdb.qp.row.Row;
-import com.foundationdb.server.api.dml.scan.NewRow;
 
 import org.junit.Before;
 import org.junit.Test;

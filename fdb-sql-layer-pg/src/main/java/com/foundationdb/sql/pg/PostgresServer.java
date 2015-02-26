@@ -316,12 +316,10 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
         return statementCache;
     }
 
-    @Override
     public int getStatementCacheCapacity() {
         return statementCacheCapacity;
     }
 
-    @Override
     public void setStatementCacheCapacity(int capacity) {
         statementCacheCapacity = capacity;
         synchronized (statementCaches) {
@@ -334,17 +332,14 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
         }
     }
 
-    @Override
     public int getStatementCacheHits() {
         return cacheCounters.getHits();
     }
 
-    @Override
     public int getStatementCacheMisses() {
         return cacheCounters.getMisses();
     }
     
-    @Override
     public void resetStatementCache() {
         synchronized (statementCaches) {
             cacheCounters.reset();
