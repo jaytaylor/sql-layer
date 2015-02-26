@@ -776,7 +776,8 @@ public class PostgresServerConnection extends ServerSessionBase
         for (int i = 0; i < nparams; i++)
             paramTypes[i] = messenger.readInt();
         sessionMonitor.startStatement(sql, stmtName);
-        logger.debug("Parse: {} = {} with types {}", stmtName, sql, paramTypes);
+        if (logger.isDebugEnabled())
+            logger.debug("Parse: " + stmtName + " = {} with types {}", sql, paramTypes);
         
         PostgresQueryContext context = new PostgresQueryContext(this);
         updateAIS(context);
@@ -798,7 +799,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 }
             }
         }
-         if (pstmt == null) {
+        if (pstmt == null) {
             for (PostgresStatementParser parser : unparsedGenerators) {
                 pstmt = parser.parse(this, sql, null);
                 if (pstmt != null) {
@@ -1091,6 +1092,10 @@ public class PostgresServerConnection extends ServerSessionBase
         statementCache = getStatementCache();
     }
 
+    public int getStatementCacheCapacity() {
+        return server.getStatementCacheCapacity();
+    }
+    
     protected ServerStatementCache<PostgresStatement>  getStatementCache() {
         // Statement cache depends on some connection settings.
         return server.getStatementCache(Arrays.asList(parser.getFeatures(),

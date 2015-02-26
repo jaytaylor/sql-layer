@@ -48,6 +48,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.slf4j.LoggerFactory;
+
 /** SQL statements that affect session / environment state. */
 public class PostgresSessionStatement extends PostgresStatementResults
                                       implements PostgresStatement
@@ -68,7 +70,7 @@ public class PostgresSessionStatement extends PostgresStatementResults
         // Output.
         "OutputFormat", "maxNotificationLevel", "zeroDateTimeBehavior", "binary_output", "jsonbinary_output",
         // Optimization. (Dummy for testing of statement cache.)
-        "optimizerDummySetting",
+        "optimizerDummySetting", "statementCacheCapacity", "resetStatementCache",
         // Execution.
         "constraintCheckTime", "queryTimeoutSec", "transactionPeriodicallyCommit",
         // Compatible and translated.
@@ -293,9 +295,15 @@ public class PostgresSessionStatement extends PostgresStatementResults
         String cased = allowedConfiguration(variable);
         if (cased != null)
             variable = cased;
-        String value = server.getSessionSetting(variable);
-        if (value == null)
-            throw new UnsupportedConfigurationException (variable);
+        String value;
+        if (variable == "statementCacheCapacity") {
+            value = Integer.toString(server.getStatementCacheCapacity());
+            LoggerFactory.getLogger(PostgresSessionStatement.class).error("statementCacheCapacity: {}", value);
+        } else {
+            value = server.getSessionSetting(variable);
+            if (value == null)
+                throw new UnsupportedConfigurationException (variable);
+        }
         PostgresType columnType = PostgresEmulatedMetaDataStatement.getColumnTypes(context.getTypesTranslator()).get(SHOW_PG_TYPE);
         PostgresMessenger messenger = server.getMessenger();
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());

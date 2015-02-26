@@ -65,4 +65,7 @@ public interface PostgresServerSession extends ServerSession
 
     /** Remove declared cursor with given name. */
     public void closeBoundPortal(String name);
+    
+    public int getStatementCacheCapacity();
+
 }

@@ -230,13 +230,28 @@ public class PostgresServerStatement extends PostgresStatementResults
         String cased = PostgresSessionStatement.allowedConfiguration(variable);
         if (cased == null)
             throw new UnsupportedConfigurationException (variable);
-        if (value == null)
-            server.getProperties().remove(variable);
-        else
-            server.getProperties().setProperty(variable, value);
-        for (PostgresServerConnection conn : server.getConnections()) {
-            if (!conn.getProperties().containsKey(variable)) {
-                conn.setProperty(variable, null); // As though SET x TO DEFAULT.
+        
+        if (cased == "statementCacheCapacity") {
+            String capacityString = value;
+            if (value == null) {
+                //fdbsql.postgres.statementCacheCapacity=0
+                capacityString = server.getProperties().getProperty("statementCacheCapacity");
+            }
+            int capacity = Integer.parseInt(capacityString);
+            server.setStatementCacheCapacity(capacity);
+            LOG.error("Setting statementCacheCapacity {}", capacity);
+        } else if (cased == "resetStatementCache") {
+            server.resetStatementCache();
+            LOG.error("resetStatementCache");
+        } else {
+            if (value == null)
+                server.getProperties().remove(variable);
+            else
+                server.getProperties().setProperty(variable, value);
+            for (PostgresServerConnection conn : server.getConnections()) {
+                if (!conn.getProperties().containsKey(variable)) {
+                    conn.setProperty(variable, null); // As though SET x TO DEFAULT.
+                }
             }
         }
     }
