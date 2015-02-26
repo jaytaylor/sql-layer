@@ -1,0 +1,19 @@
+# sql-layer issue 751
+---
+- CreateTable: t(a VARCHAR(32), b VARCHAR(32));
+---
+- Statement: INSERT INTO t VALUES ('hello', 'world')
+
+# Failed with NullPointerException
+---
+- Statement: CREATE VIEW v1(a_and_b) AS SELECT CONCAT(a, ' ', b) FROM t
+---
+- Statement: SELECT * FROM v1
+- output: [ ['hello world'] ]
+
+# Failed with UnknownType
+---
+- Statement: CREATE VIEW v2 AS SELECT CONCAT(a, ' ', b) FROM t;
+---
+- Statement: SELECT * FROM v1
+- output: [ ['hello world'] ]

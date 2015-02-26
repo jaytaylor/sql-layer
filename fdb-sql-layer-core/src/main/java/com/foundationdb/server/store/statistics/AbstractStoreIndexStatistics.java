@@ -18,7 +18,6 @@
 package com.foundationdb.server.store.statistics;
 
 import com.foundationdb.ais.model.Index;
-import com.foundationdb.ais.model.Table;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.ValuesHolderRow;
 import com.foundationdb.qp.rowtype.RowType;
@@ -73,18 +72,6 @@ public abstract class AbstractStoreIndexStatistics<S extends Store> {
             default:
                 throw new IllegalStateException("Unknown index type: " + index);
         }
-    }
-
-    protected RowType getIndexStatsRowType (Session session) {
-        Table table = store.getAIS(session).getTable(INDEX_STATISTICS_TABLE_NAME);
-        assert (table != null);
-        return SchemaCache.globalSchema(table.getAIS()).tableRowType(table);
-    }
-    
-    protected RowType getIndexStatsEntryRowType (Session session) {
-        Table table = store.getAIS(session).getTable(INDEX_STATISTICS_ENTRY_TABLE_NAME);
-        assert (table != null);
-        return SchemaCache.globalSchema(table.getAIS()).tableRowType(table);
     }
     
     /* Storage formats.

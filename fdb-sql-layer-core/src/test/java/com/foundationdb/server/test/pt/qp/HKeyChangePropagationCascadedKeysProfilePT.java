@@ -25,7 +25,6 @@ import com.foundationdb.qp.operator.UpdateFunction;
 import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.RowType;
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.util.tap.Tap;
 
@@ -82,7 +81,7 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
         child1RowType = schema.tableRowType(table(child1));
         child2RowType = schema.tableRowType(table(child2));
         group = group(grandparent);
-        adapter = persistitAdapter();
+        adapter = newStoreAdapter();
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
         // The following is adapter from super.setUpProfiling. Leave taps disabled, they'll be enabled after loading

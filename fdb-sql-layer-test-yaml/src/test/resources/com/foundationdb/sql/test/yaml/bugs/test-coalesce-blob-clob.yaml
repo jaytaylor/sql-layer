@@ -1,0 +1,8 @@
+# sql-layer issue 267
+---
+- CreateTable: t (id INT NOT NULL PRIMARY KEY, b BLOB, c CLOB)
+---
+- Statement: INSERT INTO t VALUES (1, null, null), (2, x'010203', null), (3, null, '123'), (4, x'040506', '456')
+---
+- Statement: SELECT COUNT(*) FROM t WHERE COALESCE(b, c) IS NOT NULL
+- output: [ [3] ]

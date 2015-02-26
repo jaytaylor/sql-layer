@@ -29,7 +29,7 @@ import com.foundationdb.server.types.value.ValueSource;
 import com.geophile.z.Cursor;
 import com.geophile.z.DuplicateRecordException;
 import com.geophile.z.Index;
-import com.geophile.z.RecordFilter;
+import com.geophile.z.Record;
 import com.persistit.Key;
 import com.persistit.Value;
 import org.junit.Test;
@@ -311,7 +311,7 @@ public class CachingCursorTest
         }
 
         @Override
-        public boolean remove(long z, RecordFilter<TestRecord> recordFilter)
+        public boolean remove(long z, Record.Filter<TestRecord> recordFilter)
             throws IOException, InterruptedException
         {
             fail();

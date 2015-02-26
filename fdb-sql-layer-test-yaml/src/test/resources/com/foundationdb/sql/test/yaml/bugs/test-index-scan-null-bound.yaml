@@ -1,0 +1,14 @@
+# sql-layer issue 448
+---
+- CreateTable: t1 (i int primary key not null, j int)
+---
+- Statement: insert into t1 values (1, null)
+---
+- CreateTable: t2 (i int primary key not null)
+---
+- Statement: insert into t2 values (1)
+
+# Failed with IllegalArgumentException
+---
+- Statement: select * from t1,t2 where t1.i = 1 and t2.i <= t1.j
+- row_count: 0

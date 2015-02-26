@@ -21,6 +21,11 @@ grant codeBase "file:${mvn.settings.localRepository}/-" {
   permission java.util.PropertyPermission "*", "read";
 };
 
+/* Externally configurable path. For e.g. IDE root dir. */
+ grant codeBase "file:${fdbsql.test.extra_policy_path}/-" {
+   permission java.security.AllPermission;
+ };
+
 grant {
   permission java.io.FilePermission "${java.io.tmpdir}${/}-", "read,write,delete";
   permission java.io.FilePermission "${mvn.main.basedir}/*/target/surefire/-", "read,write";

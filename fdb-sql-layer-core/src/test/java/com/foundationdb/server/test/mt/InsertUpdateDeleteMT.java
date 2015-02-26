@@ -26,11 +26,15 @@ import com.foundationdb.server.test.mt.util.ThreadMonitor.Stage;
 import com.foundationdb.server.test.mt.util.ConcurrentTestBuilderImpl;
 import com.foundationdb.server.test.mt.util.OperatorCreator;
 import com.foundationdb.server.test.mt.util.TimeMarkerComparison;
+import com.foundationdb.sql.parser.IsolationLevel;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 
 /** Basic isolation between SELECTs and concurrent DML. */
@@ -49,6 +53,10 @@ public final class InsertUpdateDeleteMT extends MTBase
 
     @Before
     public void createAndLoad() {
+        Assume.assumeThat(
+            txnService().actualIsolationLevel(IsolationLevel.SNAPSHOT_ISOLATION_LEVEL),
+            is(equalTo(IsolationLevel.SNAPSHOT_ISOLATION_LEVEL))
+        );
         tID = createTable(SCHEMA, TABLE, "id INT NOT NULL PRIMARY KEY, x INT, y INT");
         createIndex(SCHEMA, TABLE, "x", "x");
         tableRowType = SchemaCache.globalSchema(ais()).tableRowType(tID);

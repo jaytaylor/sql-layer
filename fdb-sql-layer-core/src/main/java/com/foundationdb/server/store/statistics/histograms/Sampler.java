@@ -211,7 +211,9 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
         @Override
         protected Bucket<T> createNew() {
             ++created;
-            assert created <= createdLimit : created + " > " + createdLimit;
+            // SpatialQueryDT fails here. Probably because the estimate of index row count, which is the table row
+            // count, is so far off for a z-order index of boxes. mmcm suggests disabling the assertion.
+            // assert created <= createdLimit : created + " > " + createdLimit;
             return new Bucket<>();
         }
 

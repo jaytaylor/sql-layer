@@ -21,7 +21,6 @@ import com.foundationdb.ais.model.Group;
 import com.foundationdb.qp.operator.Cursor;
 import com.foundationdb.qp.operator.Operator;
 import com.foundationdb.qp.rowtype.IndexRowType;
-import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.qp.rowtype.TableRowType;
 import com.foundationdb.qp.util.SchemaCache;
 import com.foundationdb.server.error.InvalidOperationException;
@@ -82,7 +81,7 @@ public class SimpleJoinPT extends QPProfilePTBase
         customerCidIndexRowType = indexType(customer, "cid");
         addressAddressIndexRowType = indexType(address, "address");
         coi = group(customer);
-        adapter = persistitAdapter();
+        adapter = newStoreAdapter();
         queryContext = queryContext(adapter);
         queryBindings = queryContext.createBindings();
     }

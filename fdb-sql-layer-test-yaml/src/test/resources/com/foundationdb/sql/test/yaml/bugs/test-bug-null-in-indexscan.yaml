@@ -13,6 +13,17 @@
 - params: [[null]]
 - row_count: 0
 ---
+- Statement: SELECT * from t where x IN (null);
+- row_count: 0
+---
+- Statement: SELECT * From t where x in (?);
+- params: [[null]]
+- row_count: 0
+---
+# Stop here on random context test because of PREPARE statement. 
+- Properties: random-context
+- suppressed: true
+---
 - Statement:  PREPARE foo AS SELECT * FROM t WHERE x = ?
 ---
 - Statement: EXECUTE foo(null);
@@ -24,12 +35,5 @@
 - row_count: 0
 ---
 - Statement: EXECUTE foo2 (null, 1)
-- row_count: 0
----
-- Statement: SELECT * from t where x IN (null);
-- row_count: 0
----
-- Statement: SELECT * From t where x in (?);
-- params: [[null]]
 - row_count: 0
 ...

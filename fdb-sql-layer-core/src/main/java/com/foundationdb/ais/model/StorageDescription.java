@@ -78,7 +78,7 @@ public abstract class StorageDescription
 
     /** Does this describe something that lives in memory rather than
      * persistently? */
-    public boolean isMemoryTableFactory() {
+    public boolean isVirtual() {
         return false;
     }
 

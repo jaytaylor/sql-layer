@@ -64,6 +64,7 @@ import com.foundationdb.util.AkibanAppender;
 import com.foundationdb.util.tap.InOutTap;
 import com.foundationdb.util.tap.PointTap;
 import com.foundationdb.util.tap.Tap;
+import com.geophile.z.space.SpaceImpl;
 import com.persistit.Key;
 
 import org.slf4j.Logger;
@@ -558,7 +559,9 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
             deleteSequences(session, Collections.singleton(table.getIdentityColumn().getIdentityGenerator()));
         }
         // And the group tree
-        removeTree(session, table.getGroup());
+        if(table.isRoot()) {
+            removeTree(session, table.getGroup());
+        }
     }
 
     @Override

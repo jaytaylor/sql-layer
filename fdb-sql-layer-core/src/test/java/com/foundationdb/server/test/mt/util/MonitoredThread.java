@@ -19,7 +19,6 @@ package com.foundationdb.server.test.mt.util;
 
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.server.error.InvalidOperationException;
-import com.foundationdb.server.error.TableVersionChangedException;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.test.mt.util.ThreadMonitor.Stage;
 import org.slf4j.Logger;
@@ -62,7 +61,6 @@ public abstract class MonitoredThread extends Thread implements HasTimeMarker
     //
 
     protected abstract boolean doRetryOnRollback();
-    protected abstract boolean doRetryOnTableVersionChange();
 
     public final boolean hadRollback() {
         return hadRollback;
@@ -129,9 +127,7 @@ public abstract class MonitoredThread extends Thread implements HasTimeMarker
                     break;
                 } catch(InvalidOperationException e) {
                     hadRollback |= e.getCode().isRollbackClass();
-                    if((e instanceof TableVersionChangedException) && !doRetryOnTableVersionChange()) {
-                        throw e;
-                    } else if(!e.getCode().isRollbackClass() || !doRetryOnRollback()) {
+                    if(!e.getCode().isRollbackClass() || !doRetryOnRollback()) {
                         throw e;
                     }
                     LOG.debug("retrying due to", e);

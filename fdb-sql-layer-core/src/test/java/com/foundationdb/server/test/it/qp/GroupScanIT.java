@@ -39,7 +39,7 @@ import static org.junit.Assert.assertSame;
  * 2. Retrieve row with hkey, without descendents.
  * 3. Retrieve row with hkey, with descendents.
  * 4. Retrieve rows satisfying range condition on hkey.
- * These correspond to the four ways in which the underlying cursor can be used, (e.g. PersistitGroupCursor).
+ * These correspond to the four ways in which the underlying cursor (e.g. FDBGroupCursor) can be used.
  */
 
 public class GroupScanIT extends OperatorITBase

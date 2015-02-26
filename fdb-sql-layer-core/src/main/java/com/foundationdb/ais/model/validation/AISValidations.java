@@ -39,8 +39,8 @@ public final class AISValidations {
     public static final AISValidation JOIN_COLUMN_TYPES_MATCH = new JoinColumnTypesMatch();
     public static final AISValidation JOIN_TO_ONE_PARENT = new JoinToOneParent();
     public static final AISValidation JOIN_TO_PARENT_PK = new JoinToParentPK();
-    public static final AISValidation MEMORY_TABLES_NOT_MIXED = new MemoryTablesNotMixed();
-    public static final AISValidation MEMORY_TABLES_SINGLE = new MemoryTableSingleTableGroup();
+    public static final AISValidation VIRTUAL_TABLES_NOT_MIXED = new VirtualTablesNotMixed();
+    public static final AISValidation VIRTUAL_TABLES_SINGLE = new VirtualTableSingleTableGroup();
     public static final AISValidation ORDINAL_ORDERING = new OrdinalOrdering();
     public static final AISValidation PRIMARY_KEY_IS_NOT_NULL = new PrimaryKeyIsNotNull();
     public static final AISValidation REFERENCES_CORRECT = new ReferencesCorrect();
@@ -73,8 +73,8 @@ public final class AISValidations {
             JOIN_COLUMN_TYPES_MATCH,
             JOIN_TO_ONE_PARENT,
             JOIN_TO_PARENT_PK,
-            MEMORY_TABLES_NOT_MIXED,
-            MEMORY_TABLES_SINGLE,
+            VIRTUAL_TABLES_NOT_MIXED,
+            VIRTUAL_TABLES_SINGLE,
             PRIMARY_KEY_IS_NOT_NULL,
             REFERENCES_CORRECT,
             SEQUENCE_VALUES_VALID,

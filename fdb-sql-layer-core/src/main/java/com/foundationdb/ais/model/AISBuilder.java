@@ -685,8 +685,8 @@ public class AISBuilder {
             Index index = table.getPrimaryKeyIncludingInternal().getIndex();
             finishStorageDescription(index);
 
-            // endTable on non-memory tables may have created a new sequence, set its tree name if so
-            if (!table.hasMemoryTableFactory()) {
+            // endTable on non-virtual tables may have created a new sequence, set its tree name if so
+            if (!table.isVirtual()) {
                 Column column = index.getKeyColumns().get(0).getColumn();
                 if (column.isAkibanPKColumn()) {
                     Sequence sequence = column.getIdentityGenerator();

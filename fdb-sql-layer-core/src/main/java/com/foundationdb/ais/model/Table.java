@@ -499,9 +499,9 @@ public class Table extends Columnar implements HasGroup, Visitable
         return hKeyDependentTables;
     }
 
-    public boolean hasMemoryTableFactory()
+    public boolean isVirtual()
     {
-        return (group != null) && group.hasMemoryTableFactory();
+        return (group != null) && group.isVirtual();
     }
 
     public boolean hasVersion()
