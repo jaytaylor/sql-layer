@@ -776,8 +776,7 @@ public class PostgresServerConnection extends ServerSessionBase
         for (int i = 0; i < nparams; i++)
             paramTypes[i] = messenger.readInt();
         sessionMonitor.startStatement(sql, stmtName);
-        if (logger.isDebugEnabled())
-            logger.debug("Parse: " + stmtName + " = {} with types {}", sql, paramTypes);
+        logger.debug("Parse: {} = {} with types {}", stmtName, sql, paramTypes);
         
         PostgresQueryContext context = new PostgresQueryContext(this);
         updateAIS(context);
