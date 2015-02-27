@@ -22,6 +22,7 @@ import com.foundationdb.server.error.UnsupportedColumnDataTypeException;
 import com.foundationdb.server.error.UnsupportedDataTypeException;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.aksql.aktypes.AkBlob;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 import com.foundationdb.server.types.aksql.aktypes.AkInterval;
@@ -360,7 +361,7 @@ public abstract class TypesTranslator
             return typeForJDBCType(Types.DOUBLE, sqlType.isNullable(),
                     schemaName, tableName, columnName);
         case TypeId.FormatIds.BLOB_TYPE_ID:
-            return typeForJDBCType(Types.LONGVARBINARY, sqlType.isNullable(), // TODO: Types.BLOB
+            return typeForJDBCType(Types.BLOB, sqlType.isNullable(),
                     schemaName, tableName, columnName);
         /* Width attribute types. */
         case TypeId.FormatIds.BIT_TYPE_ID:
@@ -509,6 +510,8 @@ public abstract class TypesTranslator
     public TClass typeClassForJDBCType(int jdbcType,
                                        String schemaName, String tableName, String columnName) {
         switch (jdbcType) {
+        case Types.BLOB:
+            return AkBlob.INSTANCE;
         case Types.BOOLEAN:
             return AkBool.INSTANCE;
         case Types.ARRAY:

@@ -17,7 +17,8 @@
 
 package com.foundationdb.server.store;
 
-import com.foundationdb.KeyValue;
+import com.foundationdb.*;
+import com.foundationdb.async.Function;
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Group;
 import com.foundationdb.ais.model.HasStorage;
@@ -27,22 +28,28 @@ import com.foundationdb.ais.model.StorageDescription;
 import com.foundationdb.ais.model.Table;
 import com.foundationdb.ais.model.TableIndex;
 import com.foundationdb.ais.model.TableName;
+import com.foundationdb.ais.model.AbstractVisitor;
+import com.foundationdb.ais.model.GroupsContainsLobsVisitor;
 import com.foundationdb.ais.util.TableChange.ChangeType;
 import com.foundationdb.ais.util.TableChangeValidator.ChangeLevel;
+import com.foundationdb.async.AsyncIterator;
 import com.foundationdb.directory.DirectorySubspace;
 import com.foundationdb.directory.PathUtil;
 import com.foundationdb.qp.row.IndexRow;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.WriteIndexRow;
+import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.storeadapter.FDBAdapter;
 import com.foundationdb.qp.storeadapter.indexrow.FDBIndexRow;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.error.DuplicateKeyException;
-import com.foundationdb.server.error.FDBNotCommittedException;
+import com.foundationdb.server.error.*;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
+import com.foundationdb.server.service.blob.BlobRef;
+import com.foundationdb.server.service.blob.LobService;
 import com.foundationdb.server.service.config.ConfigurationService;
 import com.foundationdb.server.service.listener.ListenerService;
 import com.foundationdb.server.service.metrics.LongMetric;
@@ -53,12 +60,12 @@ import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 import com.foundationdb.server.store.TableChanges.Change;
 import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.format.FDBStorageDescription;
+import com.foundationdb.server.types.aksql.aktypes.AkBlob;
+import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.util.ReadWriteMap;
-import com.foundationdb.Range;
-import com.foundationdb.Transaction;
-import com.foundationdb.async.Function;
 import com.foundationdb.tuple.Tuple2;
+import com.foundationdb.tuple.Tuple;
 import com.google.inject.Inject;
 import com.persistit.Key;
 import com.persistit.Persistit;
@@ -74,6 +81,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
 
 import static com.foundationdb.server.store.FDBStoreDataHelper.*;
 
@@ -87,6 +95,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     private final FDBTransactionService txnService;
     private final MetricsService metricsService;
     private final ReadWriteMap<Object, SequenceCache> sequenceCache;
+    private static LobService lobService;
 
     private static final String ROWS_FETCHED_METRIC = "SQLLayerRowsFetched";
     private static final String ROWS_STORED_METRIC = "SQLLayerRowsStored";
@@ -122,6 +131,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         }
         this.metricsService = metricsService;
         this.sequenceCache = ReadWriteMap.wrapFair(new HashMap<Object, SequenceCache>());
+        lobService = serviceManager.getServiceByClass(LobService.class);
     }
 
     @Override
@@ -369,6 +379,17 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     }
 
     @Override
+    public void dropGroup(final Session session, Group group) {
+        deleteLobs(session, group);
+        group.getRoot().visit(new AbstractVisitor() {
+            @Override
+            public void visit(Table table) {
+                removeTrees(session, table);
+            }
+        });
+    }
+
+    @Override
     public void removeTrees(Session session, Table table) {
         // Table and indexes (and group and group indexes if root table)
         removeIfExists(session, rootDir, FDBNameGenerator.dataPath(table.getName()));
@@ -386,9 +407,35 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
 
     @Override
     public void removeTree(Session session, HasStorage object) {
+        deleteLobs(session, object);
         truncateTree(session, object);
     }
 
+    private void deleteLobs(Session session, HasStorage object) {
+        if (object instanceof com.foundationdb.ais.model.Group) {
+            Group group = (Group)object;
+            GroupsContainsLobsVisitor visitor = new GroupsContainsLobsVisitor();
+            group.visit(visitor);
+            if (visitor.containsLob()) {
+                deleteLobsChecked(session, group);
+            }
+        }
+    }
+    
+    private void deleteLobsChecked(Session session, Group group) {
+        FDBStoreData storeData = createStoreData(session, group);
+        groupIterator(session, storeData, FDBScanTransactionOptions.NORMAL);
+        while (storeData.next()) {
+            Row row = expandGroupData(session, storeData, SchemaCache.globalSchema(group.getAIS()));
+            deleteLobs(session, row);
+        }
+    }
+    
+    @Override
+    public void dropAllLobs(Session session) {
+        lobService.clearAllLobs(session);
+    }
+    
     @Override
     public void truncateIndexes(Session session, Collection<? extends Index> indexes) {
         for(Index index : indexes) {
@@ -412,7 +459,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     @Override
     public boolean treeExists(Session session, StorageDescription storageDescription) {
         TransactionState txn = txnService.getTransaction(session);
-        return txn.getRangeExists(Range.startsWith(prefixBytes((FDBStorageDescription)storageDescription)), 1);
+        return txn.getRangeExists(Range.startsWith(prefixBytes((FDBStorageDescription) storageDescription)), 1);
     }
 
     @Override
@@ -510,6 +557,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
                     // - move dataOnline/foo to data/foo/
                     try {
                         if (rootDir.exists(txn, dataPath).get()) {
+                            executeLobOnlineDelete(session, oldName);
                             for(String subPath : rootDir.list(txn, dataPath).get()) {
                                 List<String> subDataPath = PathUtil.extend(dataPath, subPath);
                                 List<String> subOnlinePath = PathUtil.extend(onlinePath, subPath);
@@ -611,12 +659,174 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
     public Class<? extends Exception> getOnlineDMLFailureException() {
         return FDBNotCommittedException.class;
     }
-
+    
+    @Override
+    protected Row storeLobs(Session session, Row row) {
+        RowType rowType = row.rowType();
+        OverlayingRow resRow = new OverlayingRow(row);
+        Boolean changedRow = false;
+        
+        for ( int i = 0; i < rowType.nFields(); i++ ) {
+            if (AkBlob.isBlob(rowType.typeAt(i).typeClass())) {
+                int tableId = rowType.table().getTableId();
+                BlobRef blobRefInit = (BlobRef)row.value(i).getObject();
+                
+                if (blobRefInit == null) {
+                    continue;
+                }
+                BlobRef.LeadingBitState state;
+                BlobRef.LobType type;
+                byte[] value = blobRefInit.getValue();
+                
+                // The contract: 
+                //    if blobReturnMode == UNWRAPPED 
+                //        - all BlobRef value contains no leading bit 
+                //        - data is always the data to be stored, never GUID of the blob
+                //        - all output to users is data only
+                //    if blobReturnMode == WRAPPED
+                //        - all input contains a leading bit
+                //        - if leading bit == LONG_BLOB
+                //              data is GUID of the blob
+                //          else data is content of the blob (which can be long or short blob)
+                // 
+                // all output of this function contains a leading bit of a type depending on the storage
+                // 
+                //
+                
+                if (isBlobReturnModeUnwrapped()) {
+                    state = BlobRef.LeadingBitState.NO;
+                } else {
+                    state = BlobRef.LeadingBitState.YES;
+                }
+                // ensure correct state of the leading bit
+                BlobRef blobRefTmp = new BlobRef(value, state, blobRefInit.getLobType(), blobRefInit.getRequestedLobType());
+                
+                if (!isBlobReturnModeUnwrapped()) {
+                    if (blobRefTmp.isLongLob()) {
+                        type = BlobRef.LobType.LONG_LOB;
+                    }
+                    else if (blobRefTmp.isShortLob()) { 
+                        if (blobRefTmp.getBytes().length >= AkBlob.LOB_SWITCH_SIZE) {
+                            UUID id = writeDataToNewBlob(session, blobRefTmp.getBytes());
+                            value = updateValue(id);
+                            type = BlobRef.LobType.LONG_LOB;
+                        } else {
+                            type = BlobRef.LobType.SHORT_LOB;
+                        }
+                    } else {
+                        throw new AkibanInternalException("Unexpected state");
+                    }
+                } else { // only in UNWRAPPED mode, value needs updating, adding leading bit and correct value content (guid)
+                    // first verify if specific requested format is allowed --> should be done in functions.
+                    if (blobRefTmp.getRequestedLobType() == BlobRef.LobType.LONG_LOB || 
+                            blobRefTmp.getBytes().length >= AkBlob.LOB_SWITCH_SIZE) {
+                        if (blobRefInit.isReturnedBlobInUnwrappedMode()){
+                            type = BlobRef.LobType.LONG_LOB;
+                            value = updateValue(blobRefInit.getId());
+                        } else {
+                            UUID id = writeDataToNewBlob(session, blobRefTmp.getBytes());
+                            type = BlobRef.LobType.LONG_LOB;
+                            value = updateValue(id);
+                        }
+                    }
+                    else {
+                        type = BlobRef.LobType.SHORT_LOB;
+                        value = updateValue(blobRefTmp.getBytes());
+                    }
+                }
+                BlobRef blobRef = new BlobRef(value, BlobRef.LeadingBitState.YES, type, BlobRef.LobType.UNKNOWN);
+                if (blobRef.isLongLob()) {
+                    lobService.linkTableBlob(session, blobRef.getId(), tableId);
+                }
+                resRow.overlay(i, blobRef);
+                changedRow = true;
+            }
+        }
+        return changedRow ? resRow : row;
+    }
+    
+    public static UUID writeDataToNewBlob(Session session, byte[] data) {
+        UUID id = UUID.randomUUID();
+        lobService.createNewLob(session, id);
+        lobService.writeBlob(session, id, 0, data);
+        return id;
+    }
+    
+    
+    private byte[] updateValue(UUID id) {
+        byte[] res = new byte[17];
+        System.arraycopy(AkGUID.uuidToBytes(id), 0, res, 1, 16);
+        res[0] = BlobRef.LONG_LOB;
+        return res;
+    }
+    
+    private byte[] updateValue(byte[] data) {
+        byte[] res = new byte[data.length+1];
+        System.arraycopy(data, 0, res, 1, data.length);
+        res[0] = BlobRef.SHORT_LOB;
+        return res;
+    }
+    
+    public byte[] getBlobData(Session session, BlobRef blob) {
+        if (blob.isShortLob()) {
+            return blob.getBytes();
+        } else if (blob.isLongLob()) {
+            return lobService.readBlob(session, blob.getId());
+        } else {
+            throw new LobException("Type of lob not available");
+        }
+    }
+    
+    public boolean isBlobReturnModeUnwrapped() {
+        return configService.getProperty(AkBlob.RETURN_UNWRAPPED).equalsIgnoreCase(AkBlob.UNWRAPPED) ? true : false;
+    }
+    
+    @Override
+    protected void deleteLobs(Session session, Row row) {
+        RowType rowType = row.rowType();
+        for( int i = 0; i < rowType.nFields(); i++ ) {
+            if (AkBlob.isBlob(rowType.typeAt(i).typeClass())) {
+                BlobRef blobRef = (BlobRef)row.value(i).getObject();
+                if (blobRef == null) {
+                    continue;
+                }
+                if (blobRef.isLongLob()) {
+                    lobService.deleteLob(session, blobRef.getId());
+                }
+            }
+        }        
+    }
+    
+    @Override
+    protected void registerLobForOnlineDelete(Session session, TableName tableRootName, UUID lobId) {
+        List<String> path = FDBNameGenerator.onlineLobPath(tableRootName.getSchemaName(), tableRootName.getTableName());
+        TransactionState tr = txnService.getTransaction(session);
+        DirectorySubspace dir = rootDir.createOrOpen(tr.getTransaction(), path).get();
+        byte[] key = dir.pack(AkGUID.uuidToBytes(lobId));
+        tr.setBytes(key, EMPTY_BYTE_ARRAY);
+    }
+    
+    @Override
+    protected void executeLobOnlineDelete(Session session, TableName table) {
+        List<String> onlineLobPath = FDBNameGenerator.onlineLobPath(table.getSchemaName(), table.getTableName());
+        TransactionState tr = txnService.getTransaction(session);
+        if (rootDir.exists(tr.getTransaction(), onlineLobPath).get()) {
+            DirectorySubspace dir = rootDir.createOrOpen(tr.getTransaction(), onlineLobPath).get();
+            AsyncIterator<KeyValue> it = tr.getRangeIterator(dir.range()).iterator();
+            while(it.hasNext()) {
+                KeyValue kv = it.next();
+                Tuple t = dir.unpack(kv.getKey());
+                lobService.deleteLob(session, AkGUID.bytesToUUID(t.getBytes(0), 0));
+            }
+            rootDir.removeIfExists(tr.getTransaction(), onlineLobPath).get();
+        }
+    }
+    
     @Override
     public boolean isRestartable() {
         return true;
     }
-
+    
     //
     // KeyCreator
     //

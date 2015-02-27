@@ -21,6 +21,7 @@ import com.foundationdb.junit.SelectedParameterizedRunner;
 import com.foundationdb.server.types.aksql.AkBundle;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.aksql.aktypes.AkGUID;
+import com.foundationdb.server.types.aksql.aktypes.AkBlob;
 import com.foundationdb.server.types.aksql.aktypes.AkGeometry;
 import com.foundationdb.server.types.aksql.aktypes.AkInterval;
 import com.foundationdb.server.types.aksql.aktypes.AkResultSet;
@@ -46,7 +47,8 @@ public class AkTypesComparisonTest extends TypeComparisonTestBase
             Arrays.asList(
                 AkGeometry.INSTANCE,
                 AkGUID.INSTANCE,
-                AkResultSet.INSTANCE
+                AkResultSet.INSTANCE,
+                AkBlob.INSTANCE    
             )
         );
     }

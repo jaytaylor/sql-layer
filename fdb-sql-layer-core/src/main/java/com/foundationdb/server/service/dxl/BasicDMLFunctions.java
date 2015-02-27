@@ -88,6 +88,8 @@ class BasicDMLFunctions implements DMLFunctions {
                 }
             }
         }
+        if (BasicDDLFunctions.containsBlob(table))
+            return false;
         return true;
     }
 

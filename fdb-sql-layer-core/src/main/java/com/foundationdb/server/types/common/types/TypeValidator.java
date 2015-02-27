@@ -19,7 +19,7 @@ package com.foundationdb.server.types.common.types;
 
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.aksql.aktypes.AkGUID;
+import com.foundationdb.server.types.aksql.aktypes.*;
 
 import java.sql.Types;
 
@@ -47,14 +47,13 @@ public class TypeValidator
 
     public static boolean isSupportedForNonPointSpatialIndex(TInstance type) {
         TClass tclass = TInstance.tClass(type);
-        return tclass instanceof TString || tclass instanceof TBinary;
+        return tclass instanceof TString || tclass instanceof TBinary || tclass instanceof AkBlob;
     }
 
     public static boolean isSupportedForIndex(TClass type) {
         switch (type.jdbcType()) {
         case Types.BLOB:
         case Types.CLOB:
-        case Types.LONGVARBINARY:
         case Types.LONGVARCHAR:
         case Types.LONGNVARCHAR:
             return false;
@@ -139,7 +138,6 @@ public class TypeValidator
         case Types.VARBINARY:
             return Types.VARBINARY;
         case Types.LONGVARBINARY:
-        case Types.BLOB:
             return Types.LONGVARBINARY;
         default:
             return jdbcType;

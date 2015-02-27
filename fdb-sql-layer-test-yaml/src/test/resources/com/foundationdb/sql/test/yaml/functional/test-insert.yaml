@@ -33,10 +33,10 @@
 - Statement: DELETE from all_types
 
 ---
-- Statement: INSERT INTO all_types (blob_field) VALUES ('deadbeef')
+- Statement: INSERT INTO all_types (blob_field) VALUES (create_short_blob(unhex('04')))
 ---
-- Statement: SELECT (blob_field) from all_types
-- output: [[!utf8-bytes 'deadbeef']]
+- Statement: SELECT unwrap_blob(blob_field) from all_types
+- output: [[!!binary 'BA==']]
 ---
 - Statement: DELETE from all_types
 

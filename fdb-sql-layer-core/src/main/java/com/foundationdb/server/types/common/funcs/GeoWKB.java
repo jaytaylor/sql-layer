@@ -18,11 +18,15 @@
 package com.foundationdb.server.types.common.funcs;
 
 import com.foundationdb.server.error.InvalidSpatialObjectException;
+import com.foundationdb.server.error.InvalidArgumentTypeException;
+import com.foundationdb.server.service.blob.BlobRef;
+import com.foundationdb.server.service.blob.LobService;
 import com.foundationdb.server.types.LazyList;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.TPreptimeContext;
+import com.foundationdb.server.types.aksql.aktypes.AkBlob;
 import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.texpressions.TScalarBase;
 import com.foundationdb.server.types.value.ValueSource;
@@ -56,10 +60,33 @@ public class GeoWKB extends TScalarBase
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends ValueSource> inputs, ValueTarget output) {
-        byte[] wkb = inputs.get(0).getBytes();
+        byte[] data = new byte[0];
+
+        if (inputs.get(0).hasAnyValue()) {
+            Object o = inputs.get(0).getObject();
+            if (o instanceof BlobRef) {
+                BlobRef blob;
+                blob = (BlobRef) o;
+                String mode = context.getQueryContext().getStore().getConfig().getProperty(AkBlob.RETURN_UNWRAPPED);
+                if (mode.equalsIgnoreCase(AkBlob.UNWRAPPED)){
+                    data = blob.getBytes();
+                }
+                else {
+                    if (blob.isShortLob()) {
+                        data = blob.getBytes();
+                    } else {
+                        LobService ls = context.getQueryContext().getServiceManager().getServiceByClass(LobService.class);
+                        data = ls.readBlob(context.getQueryContext().getSession(), blob.getId());
+                    }
+                }
+            } else if (o instanceof byte[]) {
+                data = (byte[])o;
+            }
+        }
+        
         WKBReader reader = (WKBReader)context.preptimeObjectAt(READER_CONTEXT_POS);
         try {
-            Geometry geometry = reader.read(wkb);
+            Geometry geometry = reader.read(data);
             output.putObject(geometry);
         } catch(ParseException e) {
             throw new InvalidSpatialObjectException(e.getMessage());

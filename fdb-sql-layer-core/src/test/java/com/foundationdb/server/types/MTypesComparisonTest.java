@@ -83,10 +83,6 @@ public class MTypesComparisonTest extends TypeComparisonTestBase
             ),
             Arrays.asList(
                 MBinary.VARBINARY,
-                MBinary.TINYBLOB,
-                MBinary.BLOB,
-                MBinary.MEDIUMBLOB,
-                MBinary.LONGBLOB,
                 MString.CHAR,
                 MString.VARCHAR,
                 MString.TINYTEXT,

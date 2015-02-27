@@ -20,6 +20,7 @@ package com.foundationdb.server.types.value;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.collation.AkCollator;
 import com.foundationdb.server.spatial.Spatial;
+import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
@@ -27,6 +28,7 @@ import com.foundationdb.server.types.TPreptimeValue;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.aksql.aktypes.AkGeometry;
 import com.foundationdb.server.types.aksql.aktypes.AkGUID;
+import com.foundationdb.server.types.aksql.aktypes.AkBlob;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
 import com.foundationdb.server.types.common.types.StringFactory;
@@ -104,6 +106,9 @@ public final class ValueSources {
         else if (type == null) {
             value = fromObject(object);
         }
+        else if (object instanceof BlobRef) {
+            value.putObject(object);
+        }
         else {
             switch (TInstance.underlyingType(type)) {
             case INT_8:
@@ -127,8 +132,12 @@ public final class ValueSources {
                     value.putBytes((byte[])object);
                 else if (object instanceof ByteSource)
                     value.putBytes(((ByteSource)object).toByteSubarray());
-                else if (object instanceof JTSSpatialObject)
-                    value.putBytes(Spatial.serializeWKB((JTSSpatialObject) object));
+                else if (object instanceof JTSSpatialObject) {
+                    if (AkBlob.isBlob(type.typeClass())) {
+                        byte[] content = Spatial.serializeWKB((JTSSpatialObject) object);
+                        value.putObject(new BlobRef(content));
+                    }
+                }
                 break;
             case STRING:
                 if ((object instanceof JTSSpatialObject)) {
@@ -283,6 +292,11 @@ public final class ValueSources {
             value = new Value(type);
             value.putObject(object);
         }
+        else if (object instanceof BlobRef) {
+            type = AkBlob.INSTANCE.instance(false);
+            value = new Value(type);
+            value.putObject(type);
+        }
         else {
             throw new UnsupportedOperationException("can't convert " + object + " of type " + object.getClass());
         }
@@ -347,6 +361,13 @@ public final class ValueSources {
             }
             logger.error("GUID with underlying object of : {}", source.getObject().getClass());
         }
+
+        if (AkBlob.isBlob(source.getType().typeClass())) {
+            if (source.getObject() instanceof BlobRef) {
+                return ((BlobRef)source.getObject()).getValue();
+            }
+            logger.error("Blob with underlying object of : {}", source.getObject().getClass());
+        }
         
         if (source.getType().typeClass() == AkGeometry.INSTANCE.widestComparable()) {
             if (source.getObject() instanceof Geometry) {
@@ -355,11 +376,7 @@ public final class ValueSources {
             logger.error("Geometry with underlying object of : {}", source.getObject().getClass());
         }
 
-        if (source.getType().typeClass() == MBinary.LONGBLOB ||
-             source.getType().typeClass() == MBinary.BLOB ||
-             source.getType().typeClass() == MBinary.MEDIUMBLOB ||
-             source.getType().typeClass() == MBinary.TINYBLOB ||
-             source.getType().typeClass() == MBinary.VARBINARY) {
+        if (source.getType().typeClass() == MBinary.VARBINARY) {
             return new WrappingByteSource(source.getBytes());
         }
         

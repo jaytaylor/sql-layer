@@ -187,10 +187,10 @@ public enum ErrorCode {
     EXTERNAL_ROW_READER_EXCEPTION ("22", "505", Importance.DEBUG, ExternalRowReaderException.class),
     SECURITY                ("22", "506", Importance.ERROR, SecurityException.class),
     STORAGE_KEY_SIZE_EXCEEDED("22", "507", Importance.ERROR, StorageKeySizeExceededException.class),
-
     NO_SUCH_FUNCTION_OVERLOAD("22", "508", Importance.DEBUG, NoSuchFunctionOverloadException.class),
     ARGUMENT_TYPE_REQUIRED   ("22", "509", Importance.DEBUG, ArgumentTypeRequiredException.class),
     NO_COMMON_TYPE           ("22", "510", Importance.DEBUG, NoCommonTypeException.class),
+    LOB_EXCEPTION           ("22", "511", Importance.DEBUG, LobException.class),
 
         // SubClass 6xx - Spatial objects
     INVALID_SPATIAL_OBJECT("22", "601", Importance.DEBUG, InvalidSpatialObjectException.class),

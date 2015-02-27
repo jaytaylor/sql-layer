@@ -37,7 +37,6 @@ import com.foundationdb.server.spatial.TreeIndex;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueSources;
-import com.foundationdb.util.WrappingByteSource;
 import com.geophile.z.Pair;
 import com.geophile.z.Record;
 import com.geophile.z.Space;
@@ -560,7 +559,7 @@ public class SpatialObjectsIndexIT extends OperatorITBase
 
     private SpatialObject wkbToSpatialObject(ValueSource valueSource) throws ParseException
     {
-        return Spatial.deserializeWKB(space, ((WrappingByteSource) ValueSources.toObject(valueSource)).toByteSubarray());
+        return Spatial.deserializeWKB(space, (byte[])ValueSources.toObject(valueSource));
     }
 
     private SpatialObject wktToSpatialObject(ValueSource valueSource) throws ParseException

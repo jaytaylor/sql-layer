@@ -1,0 +1,24 @@
+---
+- CreateTable: blob  (id INT PRIMARY KEY, bl BLOB)
+---
+- Statement: INSERT INTO blob VALUES (1, create_short_blob(unhex('02030405060708')));
+---
+- Statement: SELECT bl FROM blob;
+- output_types: [VARCHAR FOR BIT DATA]
+---
+- Statement: SELECT unwrap_blob(bl) FROM blob;
+- output: [[!!binary 'AgMEBQYHCA==']]
+---
+- Statement: INSERT INTO blob VALUES (2, create_short_blob());
+---
+- Statement: SELECT unwrap_blob(bl) FROM blob WHERE id = 2;
+- output: [[!!binary '']]
+---
+- Statement: INSERT INTO blob VALUES (4, create_short_blob('deadbeef'));
+---
+- Statement: SELECT bl FROM blob;
+- row_count: 3
+---
+- Statement: INSERT INTO blob VALUES (3, create_short_blob(unhex(repeat('05', 50001))));
+- error: [22511]
+...

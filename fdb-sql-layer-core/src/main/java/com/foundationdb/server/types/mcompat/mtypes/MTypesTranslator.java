@@ -47,9 +47,6 @@ public class MTypesTranslator extends TypesTranslator
         case Types.BINARY:
         case Types.BIT:
             return MBinary.BINARY;
-        case Types.BLOB:
-        case Types.LONGVARBINARY:
-            return MBinary.LONGBLOB;
         case Types.CHAR:
         case Types.NCHAR:
             return MString.CHAR;
@@ -170,20 +167,6 @@ public class MTypesTranslator extends TypesTranslator
                         schemaName, tableName, columnName);
             }
             break;
-        case TypeId.FormatIds.BLOB_TYPE_ID:
-            if (typeId == TypeId.TINYBLOB_ID) {
-                return MBinary.TINYBLOB.instance(sqlType.isNullable());
-            }
-            if (typeId == TypeId.BLOB_ID) {
-                return MBinary.BLOB.instance(sqlType.isNullable());
-            }
-            if (typeId == TypeId.MEDIUMBLOB_ID) {
-                return MBinary.MEDIUMBLOB.instance(sqlType.isNullable());
-            }
-            if (typeId == TypeId.LONGBLOB_ID) {
-                return MBinary.LONGBLOB.instance(sqlType.isNullable());
-            }
-            break;
         }
         return super.typeForSQLType(typeId, sqlType,
                 defaultCharsetId, defaultCollationId,
@@ -232,11 +215,7 @@ public class MTypesTranslator extends TypesTranslator
         if (tclass == MDateAndTime.TIME)
             return java.sql.Time.class;
         if ((tclass == MBinary.VARBINARY) ||
-            (tclass == MBinary.BINARY) ||
-            (tclass == MBinary.TINYBLOB) ||
-            (tclass == MBinary.MEDIUMBLOB) ||
-            (tclass == MBinary.BLOB) ||
-            (tclass == MBinary.LONGBLOB))
+            (tclass == MBinary.BINARY))
             return byte[].class;
         return super.jdbcClass(type);
     }

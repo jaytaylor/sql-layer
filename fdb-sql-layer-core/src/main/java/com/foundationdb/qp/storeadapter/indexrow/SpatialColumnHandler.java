@@ -23,13 +23,12 @@ import com.foundationdb.ais.model.IndexColumn;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.row.WriteIndexRow;
 import com.foundationdb.server.error.InvalidSpatialObjectException;
+import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.types.TBigDecimal;
-import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
-import com.foundationdb.server.types.mcompat.mtypes.MString;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.spatial.Spatial;
 import com.geophile.z.Space;
@@ -116,7 +115,7 @@ public class SpatialColumnHandler
             try {
                 switch (indexMethod) {
                     case GEO_WKB:
-                        byte[] spatialObjectBytes = source.getBytes();
+                        byte[] spatialObjectBytes = ((BlobRef)source.getObject()).getBytes();
                         spatialObject = Spatial.deserializeWKB(space, spatialObjectBytes);
                         break;
                     case GEO_WKT:

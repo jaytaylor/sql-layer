@@ -45,6 +45,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 
 /** A session has the state needed to execute SQL statements and
  * return results to the client. */

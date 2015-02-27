@@ -1,0 +1,27 @@
+---
+- CreateTable: blob  (id INT PRIMARY KEY, bl BLOB)
+---
+- Statement: INSERT INTO blob VALUES (0, create_long_blob(unhex('AB')));
+--- # output is for byte transformed to string
+- Statement: SELECT unwrap_blob(bl) FROM blob WHERE id = 0;
+- output: [[ !!binary 'qw==' ]]
+--- 
+- Statement: INSERT INTO blob VALUES (1, create_short_blob(unhex('050505')));
+---
+- Statement: SELECT unwrap_blob(bl) FROM blob WHERE id = 1;
+- output: [[ !!binary 'BQUF' ]]
+--- 
+- Statement: INSERT INTO blob VALUES (2, create_blob('deadbeef'));
+---
+- Statement: SELECT  unwrap_blob(bl) FROM blob WHERE id = 2;
+- output: [[ !!binary 'ZGVhZGJlZWY=' ]]
+---
+- Statement: INSERT INTO blob VALUES (3, create_blob());
+---
+- Statement: SELECT unwrap_blob(bl) FROM blob WHERE id = 3;
+- output: [[!!binary '' ]]
+---
+- Statement: INSERT INTO blob VALUES (4, null);
+---
+- Statement: SELECT bl, unwrap_blob(bl), bl FROM blob WHERE id = 4;
+- output: [[null, null, null]]

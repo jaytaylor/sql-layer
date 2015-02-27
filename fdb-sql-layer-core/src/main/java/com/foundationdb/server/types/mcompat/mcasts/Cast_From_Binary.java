@@ -16,61 +16,30 @@
  */
 package com.foundationdb.server.types.mcompat.mcasts;
 
-import com.foundationdb.server.error.AkibanInternalException;
+import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.types.TCast;
 import com.foundationdb.server.types.TCastBase;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.TPreptimeValue;
-import com.foundationdb.server.types.common.types.StringAttribute;
+import com.foundationdb.server.types.aksql.aktypes.AkBlob;
 import com.foundationdb.server.types.common.types.TBinary;
+import com.foundationdb.server.types.common.types.NoAttrTClass;
 import com.foundationdb.server.types.common.types.TBinary.Attrs;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 
-import java.io.UnsupportedEncodingException;
 
 public final class Cast_From_Binary {
 
     private Cast_From_Binary() {}
 
     public static final TCast BINARY_TO_VARBINARY = new BinaryToBinary(MBinary.BINARY, MBinary.VARBINARY);
-    public static final TCast BINARY_TO_BLOB = new BinaryToBinary(MBinary.BINARY, MBinary.BLOB);
-    public static final TCast BINARY_TO_LONGBLOB = new BinaryToBinary(MBinary.BINARY, MBinary.LONGBLOB);
-    public static final TCast BINARY_TO_MEDIUMBLOB = new BinaryToBinary(MBinary.BINARY, MBinary.MEDIUMBLOB);
-    public static final TCast BINARY_TO_TINYBLOB = new BinaryToBinary(MBinary.BINARY, MBinary.TINYBLOB);
-
     public static final TCast VARBINARY_TO_BINARY = new BinaryToBinary(MBinary.VARBINARY, MBinary.BINARY);
-    public static final TCast VARBINARY_TO_BLOB = new BinaryToBinary(MBinary.VARBINARY, MBinary.BLOB);
-    public static final TCast VARBINARY_TO_LONGBLOB = new BinaryToBinary(MBinary.VARBINARY, MBinary.LONGBLOB);
-    public static final TCast VARBINARY_TO_MEDIUMBLOB = new BinaryToBinary(MBinary.VARBINARY, MBinary.MEDIUMBLOB);
-    public static final TCast VARBINARY_TO_TINYBLOB = new BinaryToBinary(MBinary.VARBINARY, MBinary.TINYBLOB);
-
-    public static final TCast BLOB_TO_BINARY = new BinaryToBinary(MBinary.BLOB, MBinary.BINARY);
-    public static final TCast BLOB_TO_VARBINARY = new BinaryToBinary(MBinary.BLOB, MBinary.VARBINARY);
-    public static final TCast BLOB_TO_LONGBLOB = new BinaryToBinary(MBinary.BLOB, MBinary.LONGBLOB);
-    public static final TCast BLOB_TO_MEDIUMBLOB = new BinaryToBinary(MBinary.BLOB, MBinary.MEDIUMBLOB);
-    public static final TCast BLOB_TO_TINYBLOB = new BinaryToBinary(MBinary.BLOB, MBinary.TINYBLOB);
-
-    public static final TCast LONGBLOB_TO_BINARY = new BinaryToBinary(MBinary.LONGBLOB, MBinary.BINARY);
-    public static final TCast LONGBLOB_TO_VARBINARY = new BinaryToBinary(MBinary.LONGBLOB, MBinary.VARBINARY);
-    public static final TCast LONGBLOB_TO_BLOB = new BinaryToBinary(MBinary.LONGBLOB, MBinary.BLOB);
-    public static final TCast LONGBLOB_TO_MEDIUMBLOB = new BinaryToBinary(MBinary.LONGBLOB, MBinary.MEDIUMBLOB);
-    public static final TCast LONGBLOB_TO_TINYBLOB = new BinaryToBinary(MBinary.LONGBLOB, MBinary.TINYBLOB);
-
-    public static final TCast MEDIUMBLOB_TO_BINARY = new BinaryToBinary(MBinary.MEDIUMBLOB, MBinary.BINARY);
-    public static final TCast MEDIUMBLOB_TO_VARBINARY = new BinaryToBinary(MBinary.MEDIUMBLOB, MBinary.VARBINARY);
-    public static final TCast MEDIUMBLOB_TO_BLOB = new BinaryToBinary(MBinary.MEDIUMBLOB, MBinary.BLOB);
-    public static final TCast MEDIUMBLOB_TO_LONGBLOB = new BinaryToBinary(MBinary.MEDIUMBLOB, MBinary.LONGBLOB);
-    public static final TCast MEDIUMBLOB_TO_TINYBLOB = new BinaryToBinary(MBinary.MEDIUMBLOB, MBinary.TINYBLOB);
-
-    public static final TCast TINYBLOB_TO_BINARY = new BinaryToBinary(MBinary.TINYBLOB, MBinary.BINARY);
-    public static final TCast TINYBLOB_TO_VARBINARY = new BinaryToBinary(MBinary.TINYBLOB, MBinary.VARBINARY);
-    public static final TCast TINYBLOB_TO_BLOB = new BinaryToBinary(MBinary.TINYBLOB, MBinary.BLOB);
-    public static final TCast TINYBLOB_TO_LONGBLOB = new BinaryToBinary(MBinary.TINYBLOB, MBinary.LONGBLOB);
-    public static final TCast TINYBLOB_TO_MEDIUMBLOB = new BinaryToBinary(MBinary.TINYBLOB, MBinary.MEDIUMBLOB);
-
+    public static final TCast VARBINARY_TO_AKBLOB = new BinaryToAkBlob(MBinary.VARBINARY, AkBlob.INSTANCE);
+    public static final TCast BINARY_TO_AKBLOB = new BinaryToAkBlob(MBinary.BINARY, AkBlob.INSTANCE);
+    
     private static class BinaryToBinary extends TCastBase {
         private BinaryToBinary(TBinary sourceClass, TBinary targetClass) {
             super(sourceClass, targetClass);
@@ -95,6 +64,24 @@ public final class Cast_From_Binary {
             TInstance sourceType =  source.type();
             return targetClass().instance(sourceType.attribute(Attrs.LENGTH),
                     source.isNullable());
+        }
+    }
+    
+    private static class  BinaryToAkBlob extends TCastBase {
+        private BinaryToAkBlob(TBinary sourceClass, NoAttrTClass targetClass) {
+            super(sourceClass, targetClass);
+        }
+
+        @Override
+        public void doEvaluate(TExecutionContext context, ValueSource source, ValueTarget target) {
+            byte[] in = source.getBytes();
+            BlobRef blob = new BlobRef(in);
+            target.putObject(blob);
+        }
+
+        @Override
+        public TInstance preferredTarget(TPreptimeValue source) {
+            return targetClass().instance(source.isNullable());
         }
     }
 }

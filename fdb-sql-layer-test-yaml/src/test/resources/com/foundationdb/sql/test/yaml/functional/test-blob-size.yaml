@@ -1,0 +1,18 @@
+---
+- CreateTable: blob  (id INT PRIMARY KEY, bl BLOB)
+---
+- Statement: INSERT INTO blob VALUES (0, create_short_blob(unhex(repeat('0E', 120))));
+---
+- Statement: INSERT INTO blob VALUES (1, create_long_blob(unhex(repeat('0E', 240))));
+---
+- Statement: INSERT INTO blob VALUES (2, create_short_blob());
+---
+- Statement: INSERT INTO blob VALUES (3, create_long_blob());
+---
+- Statement: INSERT INTO blob VALUES (4, null);
+---
+- Statement: SELECT id, blob_size(bl) FROM blob ORDER BY id ASC
+- output: [[0, 120], [1, 240], [2, 0], [3, 0], [4, null]]
+---
+- Statement: DROP TABLE blob
+...

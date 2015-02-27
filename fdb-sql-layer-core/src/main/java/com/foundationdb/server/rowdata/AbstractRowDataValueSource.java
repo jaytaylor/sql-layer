@@ -23,6 +23,7 @@ import java.util.UUID;
 import com.foundationdb.server.AkServerUtil;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.aksql.aktypes.AkBlob;
 import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
 import com.foundationdb.server.types.common.types.TBigDecimal;
@@ -31,7 +32,7 @@ import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
 import com.foundationdb.server.types.mcompat.mtypes.MNumeric;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.AkibanAppender;
-
+import com.foundationdb.server.service.blob.BlobRef;
 
 abstract class AbstractRowDataValueSource implements ValueSource {
 
@@ -112,7 +113,6 @@ abstract class AbstractRowDataValueSource implements ValueSource {
 
     @Override
     public byte[] getBytes() {
-
         long offsetAndWidth = getRawOffsetAndWidth();
         if (offsetAndWidth == 0) {
             return null;
@@ -140,7 +140,9 @@ abstract class AbstractRowDataValueSource implements ValueSource {
             return getDecimal();
         } else if (fieldDef().column().getType().typeClass() instanceof AkGUID) {
             return getGUID();
-        } else {
+        } else if (fieldDef().column().getType().typeClass() instanceof AkBlob) {
+            return getBlob();
+        }  else {
             assert false : "Unable to get object for type: " + fieldDef();
         }
         return null;
@@ -152,6 +154,17 @@ abstract class AbstractRowDataValueSource implements ValueSource {
     protected abstract FieldDef fieldDef();
 
     
+    private BlobRef getBlob() {
+        long offsetAndWidth = getRawOffsetAndWidth();
+        if (offsetAndWidth == 0) {
+            return null;
+        }
+        int offset = (int) offsetAndWidth + fieldDef().getPrefixSize();
+        int size = (int) (offsetAndWidth >>> 32) - fieldDef().getPrefixSize();
+        byte[] bytes = new byte[size];
+        System.arraycopy(bytes(), offset, bytes, 0, size);
+        return new BlobRef(bytes, BlobRef.LeadingBitState.YES);
+    }
     
     // for use within this class
     private UUID getGUID() {
@@ -167,7 +180,7 @@ abstract class AbstractRowDataValueSource implements ValueSource {
         if (location == 0) {
             return null;
         } else {
-            return AkGUID.bytesToUUID(bytes, offset+prefixSize);
+            return AkGUID.bytesToUUID(bytes, offset + prefixSize);
         }
     }
     

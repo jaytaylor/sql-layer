@@ -3,7 +3,7 @@
 
 ---
 - Statement: "INSERT INTO all_types(bigint_field, varchar_field, char_multi_field, clob_field, blob_field)
-                VALUES (127, 'foo', 'barbarbar', 'zap', '\u2603')"
+                VALUES (127, 'foo', 'barbarbar', 'zap', create_short_blob('\u2603'))"
 
 ---
 - Statement: SELECT HEX(bigint_field) FROM all_types
@@ -19,8 +19,7 @@
 - output: [['7A6170']]
 ---
 - Statement: SELECT HEX(blob_field) FROM all_types
-- output: [['E29883']]
-
+- error: [22508]
 ---
 - Statement: SELECT HEX( CAST(X'010203' AS VARCHAR(32) FOR BIT DATA) )
 - output: [['010203']]

@@ -66,11 +66,6 @@ public class MTypesTranslatorTest extends TypesTranslatorTest
         testType("MEDIUMTEXT", "MCOMPAT_ MEDIUMTEXT(16777215, UTF8, UCS_BINARY)");
         testType("LONGTEXT", "MCOMPAT_ LONGTEXT(2147483647, UTF8, UCS_BINARY)");
 
-        testType("BLOB", "MCOMPAT_ BLOB(65535)");
-        testType("TINYBLOB", "MCOMPAT_ TINYBLOB(255)");
-        testType("MEDIUMBLOB", "MCOMPAT_ MEDIUMBLOB(16777215)");
-        testType("LONGBLOB", "MCOMPAT_ LONGBLOB(2147483647)");
-
         testType("BOOLEAN", "AKSQL_ BOOLEAN");
     }
     

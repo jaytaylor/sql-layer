@@ -27,18 +27,26 @@ public interface NewRoutineBuilder {
     NewRoutineBuilder returnLong(String name);
 
     NewRoutineBuilder returnString(String name, int length);
-
+    
+    NewRoutineBuilder returnVarBinary(String name, int length);
+    
     NewRoutineBuilder paramBooleanIn(String name);
 
     NewRoutineBuilder paramLongIn(String name);
+    
+    NewRoutineBuilder paramIntegerIn(String name);
 
     NewRoutineBuilder paramStringIn(String name, int length);
 
+    NewRoutineBuilder paramVarBinaryIn(String name, int length);
+    
     NewRoutineBuilder paramDoubleIn(String name);
 
     NewRoutineBuilder paramLongOut(String name);
 
     NewRoutineBuilder paramStringOut(String name, int length);
+    
+    NewRoutineBuilder paramVarBinaryOut(String name, int length);
 
     NewRoutineBuilder paramDoubleOut(String name);
     

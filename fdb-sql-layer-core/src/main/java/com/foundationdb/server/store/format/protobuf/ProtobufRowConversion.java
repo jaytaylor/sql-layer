@@ -17,9 +17,12 @@
 
 package com.foundationdb.server.store.format.protobuf;
 
+import com.foundationdb.server.error.*;
 import com.foundationdb.server.rowdata.ConversionHelperBigDecimal;
+import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.aksql.aktypes.AkBlob;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.common.BigDecimalWrapper;
 import com.foundationdb.server.types.common.BigDecimalWrapperImpl;
@@ -138,24 +141,18 @@ public abstract class ProtobufRowConversion
                          new BytesConversion());
         TYPE_MAPPING.put(MBinary.BINARY,
                          TYPE_MAPPING.get(MBinary.VARBINARY));
+        TYPE_MAPPING.put(AkBlob.INSTANCE,
+                        new BlobConversion());
         TYPE_MAPPING.put(MString.VARCHAR,
                          new CompatibleConversion(Type.TYPE_STRING, UnderlyingType.STRING));
         TYPE_MAPPING.put(MString.CHAR,
                          TYPE_MAPPING.get(MString.VARCHAR));
-        TYPE_MAPPING.put(MBinary.TINYBLOB,
-                         TYPE_MAPPING.get(MBinary.VARBINARY));
         TYPE_MAPPING.put(MString.TINYTEXT,
                          TYPE_MAPPING.get(MString.VARCHAR));
-        TYPE_MAPPING.put(MBinary.BLOB,
-                         TYPE_MAPPING.get(MBinary.VARBINARY));
         TYPE_MAPPING.put(MString.TEXT,
                          TYPE_MAPPING.get(MString.VARCHAR));
-        TYPE_MAPPING.put(MBinary.MEDIUMBLOB,
-                         TYPE_MAPPING.get(MBinary.VARBINARY));
         TYPE_MAPPING.put(MString.MEDIUMTEXT,
                          TYPE_MAPPING.get(MString.VARCHAR));
-        TYPE_MAPPING.put(MBinary.LONGBLOB,
-                         TYPE_MAPPING.get(MBinary.VARBINARY));
         TYPE_MAPPING.put(MString.LONGTEXT,
                          TYPE_MAPPING.get(MString.VARCHAR));
     }
@@ -278,6 +275,28 @@ public abstract class ProtobufRowConversion
         @Override
         protected Object rawFromValue(ValueSource value) {
             return ByteString.copyFrom(value.getBytes());
+        }
+    }
+
+    static final class BlobConversion extends ProtobufRowConversion {
+        @Override
+        public Type getType() {
+            return Type.TYPE_BYTES;
+        }
+
+        @Override
+        protected Object valueFromRaw(Object raw) {
+            return new BlobRef(((ByteString)raw).toByteArray());
+        }
+
+        @Override
+        protected Object rawFromValue(ValueSource value) {
+            Object bl = value.getObject();
+            if (bl instanceof BlobRef) {
+                BlobRef blob = (BlobRef)bl;
+                return ByteString.copyFrom(blob.getValue());
+            }
+            throw new AkibanInternalException("bl must be a blob object");
         }
     }
 

@@ -1,0 +1,13 @@
+---
+- CreateTable: blob  (id INT PRIMARY KEY, bl BLOB)
+---
+- Statement: INSERT INTO blob VALUES (0, create_long_blob(unhex(repeat('0E', 200))));
+---
+- Statement: INSERT INTO blob VALUES (1, create_short_blob(unhex(repeat('0E', 200))));
+---
+- Statement: SELECT blob_id(bl) FROM blob WHERE blob_id(bl) IS NOT NULL
+- row_count: 1
+- output_types: [GUID]
+---
+- Statement: SELECT blob_id(bl) FROM blob WHERE blob_id(bl) IS NULL
+- row_count: 1

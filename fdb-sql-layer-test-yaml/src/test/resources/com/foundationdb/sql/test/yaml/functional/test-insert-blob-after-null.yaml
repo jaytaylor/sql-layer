@@ -2,5 +2,5 @@
 ---
 - CreateTable: t (blob_field blob)
 ---
-- Statement: INSERT INTO t (blob_field) VALUES (null), ('abc')
+- Statement: INSERT INTO t (blob_field) VALUES (null), (create_short_blob('abc'))
 ...

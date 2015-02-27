@@ -325,6 +325,7 @@ public class BoxTableIndexScanIT extends OperatorITBase
         }
     }
 
+
     @Test
     public void testSpatialQuery()
     {

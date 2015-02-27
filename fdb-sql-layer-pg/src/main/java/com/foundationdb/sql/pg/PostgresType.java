@@ -25,7 +25,6 @@ import com.foundationdb.sql.types.TypeId;
 
 import com.foundationdb.ais.model.Column;
 import com.foundationdb.ais.model.Parameter;
-import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.UnknownDataTypeException;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
@@ -446,8 +445,8 @@ public class PostgresType extends ServerType
         case TypeId.FormatIds.VARBIT_TYPE_ID:
             oid = TypeOid.BYTEA_TYPE_OID;
             break;
-        case TypeId.FormatIds.BLOB_TYPE_ID:
-            oid = TypeOid.TEXT_TYPE_OID;
+        case TypeId.FormatIds.BLOB_TYPE_ID: // may need update
+            oid = TypeOid.BYTEA_TYPE_OID;
             break;
         case TypeId.FormatIds.VARCHAR_TYPE_ID:
             oid = TypeOid.VARCHAR_TYPE_OID;

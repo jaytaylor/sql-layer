@@ -154,7 +154,7 @@ public final class CreateIndexesIT extends ITBase
         AkibanInformationSchema ais = createAISWithTable(tId);
         Table table = ais.getTable("test", "t");
         Index index = TableIndex.create(ais, table, "id", 0, false, false);
-        Column refCol = Column.create(table, "id", 0, typesRegistry().getTypeClass("MCOMPAT", "BLOB").instance(true));
+        Column refCol = Column.create(table, "id", 0, typesRegistry().getTypeClass("AKSQL", "BLOB").instance(true));
         IndexColumn.create(index, refCol, 0, true, 0);
         ddl().createIndexes(session(), Arrays.asList(index));
     }

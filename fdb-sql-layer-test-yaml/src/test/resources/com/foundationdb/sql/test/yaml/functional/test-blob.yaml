@@ -1,9 +1,26 @@
 ---
+- CreateTable: blob  (id INT PRIMARY KEY, bl BLOB)
+---
+- Statement: INSERT INTO blob VALUES (1, X'0102030405060708' )
+---
+- Statement: SELECT id, unwrap_blob(bl) FROM blob
+- row_count: 1
+---
+- Statement: UPDATE blob set bl = unhex('0102030400000000') where id = 1 returning id, bl
+- row_count: 1
+---
+- Statement: SELECT id, unwrap_blob(bl) FROM blob
+- row_count: 1
+---
 - Include: all-types-schema.yaml
 ---
 - Statement: "INSERT INTO all_types(bigint_field, blob_field)
-                VALUES (1, 'abc'), (2, X'0102'), (3, X'80'), (4, UNHEX('00FFFE01'))"
+                VALUES (2, X'0102030405060708'), (3, X'0102030405060708'), (4, UNHEX('0102030405060708'))"
 ---
-- Statement: SELECT HEX(blob_field) FROM all_types ORDER BY bigint_field
-- output_already_ordered: [['616263'],['0102'],['80'],['00FFFE01']]
+- Statement: SELECT blob_field FROM all_types ORDER BY bigint_field
+- output_already_ordered: [[!!binary 'AQIDBAUGBwg='],[!!binary 'AQIDBAUGBwg='],[!!binary 'AQIDBAUGBwg=']]
+
+--- # Cannot create an index on a blob column
+- Statement: ALTER TABLE blob ADD INDEX (bl)
+- error: [5000A]
 ...

@@ -20,7 +20,7 @@ package com.foundationdb.sql;
 import com.foundationdb.qp.operator.QueryContext;
 import com.foundationdb.server.error.ErrorCode;
 import com.foundationdb.server.service.metrics.MetricsService;
-import com.foundationdb.server.service.security.DummySecurityService;
+import com.foundationdb.server.service.security.SecurityService;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
 import com.foundationdb.server.test.it.ITBase;
@@ -68,7 +68,7 @@ public class ServerSessionITBase extends ITBase {
                                                 serviceManager().getServiceByClass(TypesRegistryService.class),
                                                 routineLoader(),
                                                 txnService(),
-                                                new DummySecurityService(),
+                                                serviceManager().getServiceByClass(SecurityService.class),
                                                 new TestCostModelFactory(),
                                                 serviceManager().getServiceByClass(MetricsService.class),
                                                 serviceManager()));

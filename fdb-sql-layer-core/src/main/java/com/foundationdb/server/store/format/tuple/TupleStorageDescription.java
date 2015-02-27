@@ -30,14 +30,18 @@ import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.FDBProtobuf.TupleUsage;
 import com.foundationdb.ais.protobuf.FDBProtobuf;
 import com.foundationdb.qp.row.Row;
+import com.foundationdb.qp.row.OverlayingRow;
 import com.foundationdb.qp.rowtype.RowType;
 import com.foundationdb.qp.rowtype.Schema;
 import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
+import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.FDBStore;
 import com.foundationdb.server.store.FDBStoreData;
 import com.foundationdb.server.store.format.FDBStorageDescription;
+import com.foundationdb.server.types.aksql.aktypes.AkBlob;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple2;
 import com.persistit.Key;
@@ -264,12 +268,54 @@ public class TupleStorageDescription extends FDBStorageDescription
             Tuple2 tuple = Tuple2.fromBytes(storeData.rawValue);
             Table table = tableFromOrdinals((Group)object, storeData.persistitKey);
             RowType rowType = schema.tableRowType(table);
-            
             Row row = TupleRowDataConverter.tupleToRow(tuple, rowType);
+            row = overlayBlobData(rowType, row, store, session);
             return row; 
         } else {
             return super.expandRow(store, session, storeData, schema);
         }
+    }
+    
+    private Row overlayBlobData(RowType rowType, Row row, FDBStore store, Session session) {
+        Row result = row;
+        if (store.isBlobReturnModeUnwrapped()) {
+            OverlayingRow newRow = new OverlayingRow(row);
+            for( int blobIndex = 0; blobIndex < rowType.nFields(); blobIndex ++) {
+                if (AkBlob.isBlob(rowType.typeAt(blobIndex).typeClass())) {
+                    BlobRef oldBlob = getBlobFromRow(row.value(blobIndex));
+                    if (oldBlob == null) {
+                        continue;
+                    }
+                    byte[] blobData = store.getBlobData(session, oldBlob);
+                    if (blobData == null) {
+                        blobData = new byte[0];
+                    }
+
+                    BlobRef newBlob = new BlobRef(blobData, BlobRef.LeadingBitState.NO);
+                    newBlob.setIsReturnedBlobInUnwrappedMode(true);
+                    if (oldBlob.isLongLob()) {
+                        newBlob.setId(oldBlob.getId());
+                        newBlob.setLobType(BlobRef.LobType.LONG_LOB);
+                    } else {
+                        newBlob.setLobType(BlobRef.LobType.SHORT_LOB);
+                    }
+                    newRow.overlay(blobIndex, newBlob);
+                    result = newRow;
+                }
+            }
+        }
+        return result;
+    }
+    
+    private BlobRef getBlobFromRow(ValueSource value) {
+        Object object = value.getObject();
+        if ( object == null ) {
+            return null;
+        }
+        if ( object instanceof BlobRef) {
+            return  (BlobRef) object;
+        }
+        throw new AkibanInternalException("Value must be a blob");
     }
     
     public static Table tableFromOrdinals(Group group, Key hkey) {

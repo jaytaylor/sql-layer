@@ -88,6 +88,7 @@ import com.foundationdb.server.store.TableChanges.ChangeSet;
 import com.foundationdb.server.store.TableChanges;
 import com.foundationdb.server.store.format.StorageFormatRegistry;
 import com.foundationdb.server.store.statistics.IndexStatisticsService;
+import com.foundationdb.server.types.aksql.aktypes.AkBlob;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistry;
 import com.foundationdb.sql.StandardException;
@@ -282,7 +283,7 @@ public class BasicDDLFunctions implements DDLFunctions {
         }
 
         DMLFunctions dml = new BasicDMLFunctions(schemaManager(), store(), listenerService);
-        if(table.isRoot()) {
+        if(table.isRoot() && !containsBlob(table)) {
             // Root table and no child tables, can delete all associated trees
             store().removeTrees(session, table);
         } else {
@@ -302,6 +303,14 @@ public class BasicDDLFunctions implements DDLFunctions {
                 SchemaManager.DropBehavior.RESTRICT);
     }
 
+    public static boolean containsBlob(Table table) {
+        for (Column column : table.getColumns()) {
+            if (AkBlob.isBlob(column.getType().typeClass()))
+                return true;
+        }
+        return false;
+    }
+    
     @Override
     public ChangeLevel alterTable(final Session session,
                                   final TableName tableName,
@@ -419,6 +428,8 @@ public class BasicDDLFunctions implements DDLFunctions {
             }
             schemaManager().dropNonSystemSchemas(session);
             store().dropNonSystemSchemas(session, schemas);
+            store().dropAllLobs(session);
+            // drop full text indexes
             txnService.commitTransaction(session);
         } finally {
             txnService.rollbackTransactionIfOpen(session);
@@ -437,22 +448,24 @@ public class BasicDDLFunctions implements DDLFunctions {
         }
 
         // Find all groups and tables in the schema
-        Set<Group> groupsToDrop = new HashSet<>();
         List<Table> explicitlyDroppedTables = new ArrayList<>();
         List<Table> implicitlyDroppedTables = new ArrayList<>();
 
         for(Table table : schema.getTables().values()) {
-            groupsToDrop.add(table.getGroup());
             // Cannot drop entire group if parent is not in the same schema
             final Join parentJoin = table.getParentJoin();
-            if(parentJoin != null) {
+            
+            if (containsBlob(table)) {
+                explicitlyDroppedTables.add(table);
+            } else if(parentJoin != null) {
                 final Table parentTable = parentJoin.getParent();
-                if(!parentTable.getName().getSchemaName().equals(schemaName)) {
+                if (!parentTable.getName().getSchemaName().equals(schemaName)) {
                     explicitlyDroppedTables.add(table);
                 } else {
                     implicitlyDroppedTables.add(table);
                 }
-            } else {
+            }
+            else {
                 implicitlyDroppedTables.add(table);
             }
             // All children must be in the same schema
@@ -825,12 +838,12 @@ public class BasicDDLFunctions implements DDLFunctions {
     public void createSQLJJar(Session session, SQLJJar sqljJar) {
         schemaManager().createSQLJJar(session, sqljJar);
     }
-    
+
     @Override
     public void replaceSQLJJar(Session session, SQLJJar sqljJar) {
         schemaManager().replaceSQLJJar(session, sqljJar);
     }
-    
+
     @Override
     public void dropSQLJJar(Session session, TableName jarName) {
         schemaManager().dropSQLJJar(session, jarName);

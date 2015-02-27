@@ -28,6 +28,7 @@ import com.foundationdb.server.error.NoTransactionInProgressException;
 import com.foundationdb.server.error.TransactionAbortedException;
 import com.foundationdb.server.error.TransactionInProgressException;
 import com.foundationdb.server.error.TransactionReadOnlyException;
+import com.foundationdb.server.service.blob.LobService;
 import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.ServiceManager;
@@ -71,9 +72,12 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     protected ServerValueEncoder.ZeroDateTimeBehavior zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.NONE;
     protected FormatOptions options = new FormatOptions();    
     protected QueryContext.NotificationLevel maxNotificationLevel = QueryContext.NotificationLevel.INFO;
-
+    private Set<UUID> lobsCreated = new HashSet<>();
+    private LobService lobService;
+    
     public ServerSessionBase(ServerServiceRequirements reqs) {
         this.reqs = reqs;
+        lobService = getServiceManager().getServiceByClass(LobService.class);
     }
 
     @Override
@@ -165,7 +169,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         super.setDefaultSchemaName(defaultSchemaName);
         sessionChanged();
     }
-
+    
     @Override
     public String getSessionSetting(String key) {
         return getProperty(key);

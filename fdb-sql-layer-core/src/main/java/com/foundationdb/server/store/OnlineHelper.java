@@ -55,6 +55,8 @@ import com.foundationdb.server.error.InvalidOperationException;
 import com.foundationdb.server.error.NoSuchRowException;
 import com.foundationdb.server.error.NotAllowedByConfigException;
 import com.foundationdb.server.error.SQLParserInternalException;
+import com.foundationdb.server.service.blob.BlobRef;
+import com.foundationdb.server.types.aksql.aktypes.AkBlob;
 import com.foundationdb.server.types.common.types.TypesTranslator;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.service.dxl.DelegatingContext;
@@ -70,6 +72,7 @@ import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.texpressions.TCastExpression;
 import com.foundationdb.server.types.texpressions.TPreparedExpression;
 import com.foundationdb.server.types.texpressions.TPreparedField;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.sql.StandardException;
 import com.foundationdb.sql.optimizer.CreateAsCompiler;
 import com.foundationdb.sql.optimizer.plan.BasePlannable;
@@ -90,6 +93,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.UUID;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -393,7 +397,7 @@ public class OnlineHelper implements RowListener
         }
     }
 
-    private void alterInternal(Session session, QueryContext context) {
+    private void alterInternal(final Session session, QueryContext context) {
         final Collection<ChangeSet> changeSets = schemaManager.getOnlineChangeSets(session);
         final ChangeLevel changeLevel = commonChangeLevel(changeSets);
         assert (changeLevel == ChangeLevel.TABLE || changeLevel == ChangeLevel.GROUP) : changeSets;
@@ -407,19 +411,75 @@ public class OnlineHelper implements RowListener
 
         final TransformCache transformCache = getTransformCache(session, null);
         Set<Table> origRoots = findOldRoots(changeSets, origAIS, newAIS);
-
+        
         for(Table root : origRoots) {
+            final LobCheck lobCheckRes = checkForDropLob(root, changeSets, origAIS);
+
             Operator plan = API.groupScan_Default(root.getGroup());
             runPlan(session, contextIfNull(context, origAdapter), schemaManager, txnService, plan, new RowHandler() {
                 @Override
                 public void handleRow(Row oldRow) {
                     TableTransform transform = transformCache.get(oldRow.rowType().typeId());
                     Row newRow = transformRow(origContext, origBindings, transform, oldRow);
+                    if (lobCheckRes != null ) {
+                        registerLob(session, oldRow, lobCheckRes.tableId, lobCheckRes.columnPos);
+                    }
                     origAdapter.writeRow(newRow, transform.tableIndexes, transform.groupIndexes);
                 }
             });
         }
     }
+    
+    
+    
+    private LobCheck checkForDropLob(Table root, Collection<ChangeSet> changeSets, AkibanInformationSchema oldAIS) {
+        LobCheck lc = null;
+        for (ChangeSet cs : changeSets) {
+            if (cs.hasChangeLevel() && cs.getChangeLevel().equals(ChangeLevel.TABLE.name())) {
+                Table oldTable = oldAIS.getTable(cs.getOldSchema(), cs.getOldName());
+                if (oldTable.getGroup().getRoot() == root) {
+                    for( int i =0; i < cs.getColumnChangeCount(); i++) {
+                        Change change = cs.getColumnChange(i);
+                        if (change.hasChangeType() && change.getChangeType().equals("DROP")) {
+                            String oldColName = change.getOldName();
+                            Column col = oldTable.getColumn(oldColName);
+                            if (AkBlob.isBlob(col.getType().typeClass())){
+                                assert lc == null; // change set can only contain a single column drop
+                                lc = new LobCheck();
+                                lc. tableId = oldTable.getTableId();
+                                lc.columnPos = col.getPosition();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return lc;
+    }
+
+    private class LobCheck {
+        public int tableId;
+        public int columnPos;
+    }
+    
+    
+    private void registerLob(Session session, Row oldRow, int tableId, int dropField) {
+        if (oldRow.rowType().typeId() == tableId) {
+            ValueSource val = oldRow.value(dropField);
+            Object blob = val.getObject();
+            if (blob instanceof BlobRef) {
+                if (((BlobRef) blob).isLongLob()) {
+                    UUID blobId = ((BlobRef) blob).getId();
+                    if (store instanceof FDBStore) {
+                        TableName rootTable = oldRow.rowType().table().getGroup().getName();
+                        ((FDBStore) store).registerLobForOnlineDelete(session, rootTable, blobId);
+                    }
+                }
+            }
+        }
+    }
+    
+    
 
     private void buildTableIndexes(final Session session,
                                    QueryContext context,

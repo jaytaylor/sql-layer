@@ -18,6 +18,7 @@
 package com.foundationdb.server.types.service;
 
 import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.aksql.aktypes.*;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
@@ -41,5 +42,5 @@ public class TestTypesRegistry extends TypesRegistry
                               MDateAndTime.DATE, MDateAndTime.DATETIME, MDateAndTime.TIMESTAMP,
                               MDateAndTime.YEAR,
                               MString.CHAR, MString.VARCHAR, MString.TEXT,
-                              MBinary.VARBINARY, MBinary.BLOB);
+                              MBinary.VARBINARY, AkBlob.INSTANCE);
 }

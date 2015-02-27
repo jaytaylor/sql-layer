@@ -28,12 +28,12 @@
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types
-    (year_field, bigint_field, bigint_unsigned_field, blob_field, tinyint_field, boolean_field, char_field, char_multi_field,
+    (year_field, bigint_field, bigint_unsigned_field, tinyint_field, boolean_field, char_field, char_multi_field,
      clob_field, date_field, decimal_field, double_field, float_field, integer_field, numeric_field, real_field, smallint_field,
      time_field, timestamp_field, varchar_field, datetime_field)
     VALUES
-    ('1970', 1, 1, '1', 1, true, '1', '1', '1', '0001-01-01', 1, 1, 1, 1, 1, 1, 1, '11:11:11', '1970-01-01 00:00:00', '1', '1970-01-01 00:00:00'),
-    ('0000', 0, 0,  '', 0, false, '',  '',  '', '0000-00-00', 0, 0, 0, 0, 0, 0, 0, '00:00:00', '0000-00-00 00:00:00',  '', '0000-00-00 00:00:00')
+    ('1970', 1, 1, 1, true, '1', '1', '1', '0001-01-01', 1, 1, 1, 1, 1, 1, 1, '11:11:11', '1970-01-01 00:00:00', '1', '1970-01-01 00:00:00'),
+    ('0000', 0, 0, 0, false, '',  '',  '', '0000-00-00', 0, 0, 0, 0, 0, 0, 0, '00:00:00', '0000-00-00 00:00:00',  '', '0000-00-00 00:00:00')
 
 # TRUE cases
 ---
@@ -45,9 +45,6 @@
 ---
 - Statement: SELECT boolean_field, bigint_unsigned_field FROM all_types WHERE bigint_unsigned_field IS TRUE;
 - output: [[true, 1]]
----
-- Statement: SELECT boolean_field, blob_field FROM all_types WHERE blob_field IS TRUE;
-- output: [[true, !utf8-bytes '1']]
 ---
 - Statement: SELECT boolean_field, tinyint_field FROM all_types WHERE tinyint_field IS TRUE;
 - output: [[true, 1]]
@@ -110,9 +107,6 @@
 ---
 - Statement: SELECT boolean_field, bigint_unsigned_field FROM all_types WHERE bigint_unsigned_field IS FALSE;
 - output: [[false, 0]]
----
-- Statement: SELECT boolean_field, blob_field FROM all_types WHERE blob_field IS FALSE;
-- output: [[false, !!binary '']]
 ---
 - Statement: SELECT boolean_field, tinyint_field FROM all_types WHERE tinyint_field IS FALSE;
 - output: [[false, 0]]

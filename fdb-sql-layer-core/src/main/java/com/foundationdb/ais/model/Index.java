@@ -21,6 +21,7 @@ import com.foundationdb.ais.model.validation.AISInvariants;
 import com.foundationdb.qp.storeadapter.SpatialHelper;
 import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
+import com.foundationdb.server.types.aksql.aktypes.AkBlob;
 import com.foundationdb.server.types.common.types.TBigDecimal;
 import com.foundationdb.server.types.common.types.TBinary;
 import com.foundationdb.server.types.common.types.TString;
@@ -364,7 +365,8 @@ public abstract class Index extends HasStorage implements Visitable, Constraint
         // TBD: Is this right? What types can store serialized spatial objects?
         return
             columnType instanceof TBinary ||
-            columnType instanceof TString;
+            columnType instanceof TString ||
+            columnType instanceof AkBlob;
     }
 
     public static final String PRIMARY = "PRIMARY";

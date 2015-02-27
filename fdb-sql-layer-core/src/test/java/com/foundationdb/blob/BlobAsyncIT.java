@@ -184,7 +184,7 @@ public class BlobAsyncIT extends FDBITBase
             public Void apply(Transaction tr) {
                 BlobAsync blob = new BlobAsync(getDir(tr));
                 blob.write(tr, 0, testBytes).get();
-                assertEquals(Integer.valueOf(len), blob.getSize(tr).get());
+                assertEquals(Long.valueOf(len), blob.getSize(tr).get());
                 byte[] readBytes = blob.read(tr).get();
                 if(len == 0) {
                     assertNull(readBytes);

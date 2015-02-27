@@ -57,6 +57,7 @@ import com.foundationdb.server.service.listener.RowListener;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
 import com.foundationdb.server.types.TClass;
+import com.foundationdb.server.types.aksql.aktypes.*;
 import com.foundationdb.server.types.service.TypesRegistryService;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.sql.optimizer.rule.PlanGenerator;
@@ -75,6 +76,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 
 public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType extends StoreStorageDescription<SType,SDType>> implements Store {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractStore.class);
@@ -148,6 +150,20 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
     /** Hook for tracking tables Session has written to. */
     protected abstract void trackTableWrite(Session session, Table table);
 
+    /** Handles actions for proper or storage of lobs */
+    abstract Row storeLobs(Session session, Row row);
+    
+    /** Handles actions for clearing lobs*/
+    abstract void deleteLobs(Session session, Row row);
+    
+    /** Clear all lob related data */
+    public abstract void dropAllLobs(Session session);
+
+    protected abstract void registerLobForOnlineDelete(Session session, TableName tableName, UUID uuid);
+
+    protected abstract void executeLobOnlineDelete(Session session, TableName tableName);
+
+    
     //
     // AbstractStore
     //
@@ -608,16 +624,21 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
 
     private void writeRowInternal(final Session session,
                                 SDType storeData,
-                                final Row row,
+                                final Row rowInp,
                                 Collection<TableIndex> indexes,
                                 BitSet tablesRequiringHKeyMaintenance,
                                 boolean propagateHKeyChanges) {
         //TODO: It may be useful to move the constructHKey to higher in the
         // stack, and store the result in the row to avoid building it 
         // multiple times for GroupIndex maintenance. 
+
+        final Row row;
+        
+        row = storeLobs(session, rowInp);
+        
         final Key hKey = getKey(session, storeData);
         this.constructHKey(session, row, hKey);
-
+        
         packRow(session, storeData, row);
         store(session, storeData);
         
@@ -715,6 +736,7 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
             }
         }
 
+        deleteLobs(session, row);
         // Remove the group row
         clear(session, storeData);
         rowTable.tableStatus().rowDeleted(session);
@@ -747,10 +769,13 @@ public abstract class AbstractStore<SType extends AbstractStore,SDType,SSDType e
             tablesRequiringHKeyMaintenance = hKeyDependentTableOrdinals(oldRow.rowType());
         } else if (propagateHKeyChanges) {
             tablesRequiringHKeyMaintenance = analyzeFieldChanges(oldRow, newRow);
-        }
-
+        } 
+        
+        boolean oldRowContainsBlob = AkBlob.containsBlob(oldRow.rowType());
+        boolean newRowContainsBlob = AkBlob.containsBlob(newRow.rowType());
+        
         // May still be null (i.e. no pk or fk changes), check again
-        if(tablesRequiringHKeyMaintenance == null) {
+        if(tablesRequiringHKeyMaintenance == null && !oldRowContainsBlob && !newRowContainsBlob) {
             packRow(session, storeData, newRow);
 
             for(RowListener listener : listenerService.getRowListeners()) {

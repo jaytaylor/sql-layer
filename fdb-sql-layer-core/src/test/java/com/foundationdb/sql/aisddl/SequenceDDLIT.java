@@ -70,13 +70,14 @@ public class SequenceDDLIT extends AISDDLITBase {
     
     @Test (expected=NoSuchSequenceException.class)
     public void doubleDropSequence() throws Exception {
+        int startNo = ais().getSequences().size();
         String sql = "CREATE SEQUENCE test.new_sequence";
         executeDDL(sql);
         assertNotNull (ais().getSequence(new TableName ("test", "new_sequence")));
 
         sql = "DROP SEQUENCE test.new_sequence restrict";
         executeDDL(sql);
-        assertEquals (0, ais().getSequences().size());
+        assertEquals (0, startNo - ais().getSequences().size());
 
         // fails for the second one due to non-existence of the sequence. 
         executeDDL(sql);
@@ -198,7 +199,8 @@ public class SequenceDDLIT extends AISDDLITBase {
     }
     
     private void dropSequence (TableName seqName) throws Exception {
+        int startNo = ais().getSequences().size();
         executeDDL ("DROP SEQUENCE " + seqName + " RESTRICT");
-        assertEquals (0, ais().getSequences().size());
+        assertEquals (1, startNo - ais().getSequences().size());
     }
 }

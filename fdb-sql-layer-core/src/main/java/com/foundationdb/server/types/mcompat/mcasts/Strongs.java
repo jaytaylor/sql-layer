@@ -31,7 +31,7 @@ public final class Strongs {
     public static final TStrongCasts fromStrings = TStrongCasts.
             from(
                 MString.VARCHAR, MString.CHAR, MString.TINYTEXT, MString.TEXT, MString.MEDIUMTEXT, MString.LONGTEXT,
-                MBinary.VARBINARY, MBinary.BINARY, MBinary.TINYBLOB, MBinary.BLOB, MBinary.MEDIUMBLOB, MBinary.LONGBLOB)
+                MBinary.VARBINARY, MBinary.BINARY)
             .to(MDateAndTime.DATE,
                 MDateAndTime.DATETIME,
                 MDateAndTime.TIME,
@@ -45,12 +45,12 @@ public final class Strongs {
             .to(MString.VARCHAR);
 
     public static final TStrongCasts blobsToBinary = TStrongCasts
-            .from(MBinary.BINARY, MBinary.TINYBLOB, MBinary.BLOB, MBinary.MEDIUMBLOB, MBinary.LONGBLOB)
+            .from(MBinary.BINARY)
             .to(MBinary.VARBINARY);
 
     public static final TStrongCasts charsToBinaries = TStrongCasts
             .from(MString.VARCHAR, MString.CHAR, MString.TINYTEXT, MString.TEXT, MString.MEDIUMTEXT, MString.LONGTEXT)
-            .to(MBinary.VARBINARY, MBinary.BINARY, MBinary.TINYBLOB, MBinary.BLOB, MBinary.MEDIUMBLOB, MBinary.LONGBLOB);
+            .to(MBinary.VARBINARY, MBinary.BINARY);
 
     public static final TStrongCasts fromChar = TStrongCasts.from(MString.CHAR).to(
             MString.TINYTEXT,
@@ -74,27 +74,6 @@ public final class Strongs {
             MString.LONGTEXT
     );
 
-    public static final TStrongCasts fromBinary = TStrongCasts.from(MBinary.BINARY).to(
-            MBinary.TINYBLOB,
-            MBinary.BLOB,
-            MBinary.MEDIUMBLOB,
-            MBinary.LONGBLOB
-    );
-
-    public static final TStrongCasts fromTinyblob = TStrongCasts.from(MBinary.TINYBLOB).to(
-            MBinary.BLOB,
-            MBinary.MEDIUMBLOB,
-            MBinary.LONGBLOB
-    );
-
-    public static final TStrongCasts fromBlob = TStrongCasts.from(MBinary.BLOB).to(
-            MBinary.MEDIUMBLOB,
-            MBinary.LONGBLOB
-    );
-
-    public static final TStrongCasts fromMediumblob = TStrongCasts.from(MBinary.MEDIUMBLOB).to(
-            MBinary.LONGBLOB
-    );
 
     public static final TStrongCasts fromTinyint = TStrongCasts.from(MNumeric.TINYINT).to(
             MNumeric.SMALLINT,
@@ -224,10 +203,6 @@ public final class Strongs {
             MApproximateNumber.DOUBLE_UNSIGNED,
             MBinary.VARBINARY,
             MBinary.BINARY,
-            MBinary.TINYBLOB,
-            MBinary.MEDIUMBLOB,
-            MBinary.BLOB,
-            MBinary.LONGBLOB,
             MDateAndTime.DATE,
             MDateAndTime.DATETIME,
             MDateAndTime.TIME,

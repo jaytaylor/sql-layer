@@ -32,6 +32,7 @@ import com.foundationdb.server.types.TClass;
 import com.foundationdb.server.types.TInstance;
 import com.foundationdb.server.types.aksql.aktypes.AkBool;
 import com.foundationdb.server.types.aksql.aktypes.AkGUID;
+import com.foundationdb.server.types.aksql.aktypes.AkBlob;
 import com.foundationdb.server.types.mcompat.mtypes.MApproximateNumber;
 import com.foundationdb.server.types.mcompat.mtypes.MBinary;
 import com.foundationdb.server.types.mcompat.mtypes.MDateAndTime;
@@ -60,10 +61,10 @@ public class TupleRowDataConverter
         MNumeric.DECIMAL, MNumeric.DECIMAL_UNSIGNED, MApproximateNumber.DOUBLE,
         MApproximateNumber.DOUBLE_UNSIGNED, MApproximateNumber.FLOAT, MApproximateNumber.FLOAT_UNSIGNED,
         MBinary.VARBINARY, MBinary.BINARY, MString.VARCHAR, MString.CHAR,
-        MBinary.TINYBLOB, MString.TINYTEXT, MBinary.BLOB, MString.TEXT,
-        MBinary.MEDIUMBLOB, MString.MEDIUMTEXT, MBinary.LONGBLOB, MString.LONGTEXT,
+        MString.TINYTEXT, MString.TEXT,
+        MString.MEDIUMTEXT, MString.LONGTEXT,
         MDateAndTime.TIMESTAMP, MDateAndTime.DATE, MDateAndTime.TIME, MDateAndTime.DATETIME,
-        MDateAndTime.YEAR, AkGUID.INSTANCE, AkBool.INSTANCE
+        MDateAndTime.YEAR, AkGUID.INSTANCE, AkBool.INSTANCE, AkBlob.INSTANCE
     ));
 
     protected static void checkColumn(Column column, List<String> illegal) {
