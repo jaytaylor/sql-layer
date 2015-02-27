@@ -1449,43 +1449,39 @@ public class BlobIT extends PostgresServerITBase {
     }
 
     @Test
-    public void protobufSDInUnwrappedMode() throws Exception {
+    public void protobufStorageFormat() throws Exception {
         Statement stmt = getConnection().createStatement();
         stmt.execute("CREATE TABLE t2 (id INT PRIMARY KEY, bl_1 BLOB, bl_2 BLOB) STORAGE_FORMAT protobuf");
         stmt.execute("INSERT INTO t2 VALUES (1, create_long_blob(unhex('010203')), create_short_blob(unhex('020304')))");
         stmt.close();
-        
-        if (configService().getProperty("fdbsql.blob.return_unwrapped").equalsIgnoreCase("true")){
-            stmt = getConnection().createStatement();
-            stmt.execute("SELECT bl_1, bl_2 FROM t2");
-            ResultSet rs = stmt.getResultSet();
-            Assert.assertTrue(rs.next());
-            byte[] out1 = rs.getBytes(1);
-            byte[] out2 = rs.getBytes(2);
-            Assert.assertArrayEquals(new byte[]{0x01,0x02,0x03}, out1);
-            Assert.assertArrayEquals(new byte[]{0x02,0x03,0x04}, out2);
-            stmt.close();
-        }
+
+        stmt = getConnection().createStatement();
+        stmt.execute("SELECT unwrap_blob(bl_1), unwrap_blob(bl_2) FROM t2");
+        ResultSet rs = stmt.getResultSet();
+        Assert.assertTrue(rs.next());
+        byte[] out1 = rs.getBytes(1);
+        byte[] out2 = rs.getBytes(2);
+        Assert.assertArrayEquals(new byte[]{0x01,0x02,0x03}, out1);
+        Assert.assertArrayEquals(new byte[]{0x02,0x03,0x04}, out2);
+        stmt.close();
     }
     
     @Test
-    public void columnKeysInUnwrappedMode() throws Exception {
+    public void columnKeysStorageFormat() throws Exception {
         Statement stmt = getConnection().createStatement();
         stmt.execute("CREATE TABLE t2 (id INT PRIMARY KEY, bl_1 BLOB, bl_2 BLOB) STORAGE_FORMAT column_keys");
         stmt.execute("INSERT INTO t2 VALUES (1, create_long_blob(unhex('010203')), create_short_blob(unhex('020304')))");
         stmt.close();
 
-        if (configService().getProperty("fdbsql.blob.return_unwrapped").equalsIgnoreCase("true")){
-            stmt = getConnection().createStatement();
-            stmt.execute("SELECT bl_1, bl_2 FROM t2");
-            ResultSet rs = stmt.getResultSet();
-            Assert.assertTrue(rs.next());
-            byte[] out1 = rs.getBytes(1);
-            byte[] out2 = rs.getBytes(2);
-            Assert.assertArrayEquals(new byte[]{0x01,0x02,0x03}, out1);
-            Assert.assertArrayEquals(new byte[]{0x02,0x03,0x04}, out2);
-            stmt.close();
-        }
+        stmt = getConnection().createStatement();
+        stmt.execute("SELECT unwrap_blob(bl_1), unwrap_blob(bl_2) FROM t2");
+        ResultSet rs = stmt.getResultSet();
+        Assert.assertTrue(rs.next());
+        byte[] out1 = rs.getBytes(1);
+        byte[] out2 = rs.getBytes(2);
+        Assert.assertArrayEquals(new byte[]{0x01,0x02,0x03}, out1);
+        Assert.assertArrayEquals(new byte[]{0x02,0x03,0x04}, out2);
+        stmt.close();
     }
     
     //@Test
