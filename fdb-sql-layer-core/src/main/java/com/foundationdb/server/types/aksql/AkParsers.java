@@ -17,16 +17,13 @@
 
 package com.foundationdb.server.types.aksql;
 
-import com.foundationdb.server.error.*;
-import com.foundationdb.server.service.blob.BlobRef;
+import com.foundationdb.server.error.LobUnsupportedException;
+import com.foundationdb.server.error.InvalidGuidFormatException;
 import com.foundationdb.server.types.TExecutionContext;
 import com.foundationdb.server.types.TParser;
-import com.foundationdb.server.types.common.types.StringAttribute;
-import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
 
-import java.io.UnsupportedEncodingException;
 import java.util.UUID;
 
 public class AkParsers
@@ -95,7 +92,7 @@ public class AkParsers
     {
         @Override
         public void parse(TExecutionContext context, ValueSource source, ValueTarget target) {
-            throw new LobException("String parsing unsupported");
+            throw new LobUnsupportedException("String parsing unsupported");
         }
     };
 }

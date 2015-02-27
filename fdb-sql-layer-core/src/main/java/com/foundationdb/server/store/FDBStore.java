@@ -773,7 +773,7 @@ public class FDBStore extends AbstractStore<FDBStore,FDBStoreData,FDBStorageDesc
         } else if (blob.isLongLob()) {
             return lobService.readBlob(session, blob.getId());
         } else {
-            throw new LobException("Type of lob not available");
+            throw new LobContentException("Type of lob not available");
         }
     }
     

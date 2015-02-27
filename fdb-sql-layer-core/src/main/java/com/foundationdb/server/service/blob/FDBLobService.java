@@ -22,7 +22,9 @@ import com.foundationdb.blob.SQLBlob;
 import com.foundationdb.subspace.Subspace;
 import com.foundationdb.directory.DirectorySubspace;
 import com.foundationdb.qp.operator.QueryContext;
-import com.foundationdb.server.error.LobException;
+import com.foundationdb.server.error.LobNotFoundException;
+import com.foundationdb.server.error.LobContentException;
+import com.foundationdb.server.error.LobDuplicateException;
 import com.foundationdb.TransactionContext;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.Service;
@@ -55,7 +57,7 @@ public class FDBLobService implements Service, LobService {
     @Override
     public void createNewLob(Session session, final UUID lobId) {
         if (existsLob(session, lobId)) {
-            throw new LobException("Lob already exists");
+            throw new LobDuplicateException(lobId.toString());
         }
         getTxc(session).set(getLobSubspace(lobId).pack(), LOB_EXISTS);
         transactionService.addCallback(session, TransactionService.CallbackType.PRE_COMMIT, new TransactionService.Callback() {
@@ -66,7 +68,7 @@ public class FDBLobService implements Service, LobService {
                     if (!(blob.isLinked(getTxc(session))).get()) {
                         deleteLob(session, lobId);
                     }
-                } catch (LobException le) {
+                } catch (LobNotFoundException le) {
                     // lob already gone
                 }
             }
@@ -92,7 +94,7 @@ public class FDBLobService implements Service, LobService {
         SQLBlob blob = openBlob(session, lobId);
         if (blob.isLinked(tr).get()) {
             if (blob.getLinkedTable(tr).get() != tableId) {
-                throw new LobException("lob is already linked to a table");
+                throw new LobContentException("lob is already linked to a table");
             }
             return;
         }
@@ -152,7 +154,7 @@ public class FDBLobService implements Service, LobService {
         }
         String schemaName = context.getServiceManager().getSchemaManager().getAis(context.getSession()).getTable(tableId).getName().getSchemaName();
         if (!securityService.isAccessible(context.getSession(), schemaName)) {
-            throw new LobException("Cannot find lob");
+            throw new LobNotFoundException(lobId.toString());
         }
     }
 
@@ -161,7 +163,7 @@ public class FDBLobService implements Service, LobService {
             return new SQLBlob(getLobSubspace(lobId));
         }
         else {
-            throw new LobException("lob with id: "+ lobId +" does not exist");
+            throw new LobNotFoundException(lobId.toString());
         }
     }
     

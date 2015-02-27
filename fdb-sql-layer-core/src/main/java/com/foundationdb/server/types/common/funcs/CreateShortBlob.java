@@ -30,7 +30,7 @@ import com.foundationdb.server.types.texpressions.TInputSetBuilder;
 import com.foundationdb.server.types.TOverloadResult;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.server.types.value.ValueTarget;
-import com.foundationdb.server.error.LobException;
+import com.foundationdb.server.error.LobContentException;
 
 
 public class CreateShortBlob extends TScalarBase {
@@ -61,7 +61,7 @@ public class CreateShortBlob extends TScalarBase {
         if (inputs.size() == 1) {
             data = inputs.get(0).getBytes();
             if ( data.length > AkBlob.LOB_SWITCH_SIZE ) {
-                throw new LobException("Lob size too large for small lob");
+                throw new LobContentException("Lob size too large for small lob");
             }
         }
 

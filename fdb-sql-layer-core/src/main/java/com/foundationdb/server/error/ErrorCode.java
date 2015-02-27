@@ -190,12 +190,17 @@ public enum ErrorCode {
     NO_SUCH_FUNCTION_OVERLOAD("22", "508", Importance.DEBUG, NoSuchFunctionOverloadException.class),
     ARGUMENT_TYPE_REQUIRED   ("22", "509", Importance.DEBUG, ArgumentTypeRequiredException.class),
     NO_COMMON_TYPE           ("22", "510", Importance.DEBUG, NoCommonTypeException.class),
-    LOB_EXCEPTION           ("22", "511", Importance.DEBUG, LobException.class),
 
         // SubClass 6xx - Spatial objects
     INVALID_SPATIAL_OBJECT("22", "601", Importance.DEBUG, InvalidSpatialObjectException.class),
     UNSUPPORTED_SPATIAL_CAST("22", "602", Importance.DEBUG, UnsupportedSpatialCast.class),
 
+        // SubClass 7xx - Lobs
+    LOB_NOT_FOUND           ("22", "701", Importance.DEBUG, LobNotFoundException.class),
+    LOB_DUPLICATE           ("22", "702", Importance.DEBUG, LobDuplicateException.class),
+    LOB_UNSUPPORTED         ("22", "703", Importance.DEBUG, LobUnsupportedException.class),
+    LOB_CONTENT             ("22", "704", Importance.DEBUG, LobContentException.class),
+    
     // Class 23 - integrity constraint violation
     DUPLICATE_KEY           ("23", "501", Importance.DEBUG, DuplicateKeyException.class),
     NOT_NULL_VIOLATION      ("23", "502", Importance.ERROR, NotNullViolationException.class),

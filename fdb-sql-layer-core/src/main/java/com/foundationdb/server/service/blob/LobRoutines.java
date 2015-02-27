@@ -18,7 +18,7 @@
 package com.foundationdb.server.service.blob;
 
 
-import com.foundationdb.server.error.LobException;
+import com.foundationdb.server.error.LobUnsupportedException;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.service.transaction.TransactionService;
@@ -213,6 +213,6 @@ public class LobRoutines {
             return ((FDBTransactionService) txnService);
         } 
         else 
-            throw new LobException("Unsupported transaction service");
+            throw new LobUnsupportedException("Unsupported transaction service");
     }
 }
