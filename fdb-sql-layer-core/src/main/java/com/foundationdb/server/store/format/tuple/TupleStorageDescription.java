@@ -276,48 +276,6 @@ public class TupleStorageDescription extends FDBStorageDescription
         }
     }
     
-    private Row overlayBlobData(RowType rowType, Row row, FDBStore store, Session session) {
-        Row result = row;
-        if (store.isBlobReturnModeUnwrapped()) {
-            OverlayingRow newRow = new OverlayingRow(row);
-            for( int blobIndex = 0; blobIndex < rowType.nFields(); blobIndex ++) {
-                if (AkBlob.isBlob(rowType.typeAt(blobIndex).typeClass())) {
-                    BlobRef oldBlob = getBlobFromRow(row.value(blobIndex));
-                    if (oldBlob == null) {
-                        continue;
-                    }
-                    byte[] blobData = store.getBlobData(session, oldBlob);
-                    if (blobData == null) {
-                        blobData = new byte[0];
-                    }
-
-                    BlobRef newBlob = new BlobRef(blobData, BlobRef.LeadingBitState.NO);
-                    newBlob.setIsReturnedBlobInUnwrappedMode(true);
-                    if (oldBlob.isLongLob()) {
-                        newBlob.setId(oldBlob.getId());
-                        newBlob.setLobType(BlobRef.LobType.LONG_LOB);
-                    } else {
-                        newBlob.setLobType(BlobRef.LobType.SHORT_LOB);
-                    }
-                    newRow.overlay(blobIndex, newBlob);
-                    result = newRow;
-                }
-            }
-        }
-        return result;
-    }
-    
-    private BlobRef getBlobFromRow(ValueSource value) {
-        Object object = value.getObject();
-        if ( object == null ) {
-            return null;
-        }
-        if ( object instanceof BlobRef) {
-            return  (BlobRef) object;
-        }
-        throw new AkibanInternalException("Value must be a blob");
-    }
-    
     public static Table tableFromOrdinals(Group group, Key hkey) {
         Table root = group.getRoot();
         Table table = root;

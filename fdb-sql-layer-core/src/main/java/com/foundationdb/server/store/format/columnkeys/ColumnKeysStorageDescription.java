@@ -145,6 +145,7 @@ public class ColumnKeysStorageDescription extends FDBStorageDescription
             objects[i] = value.get(rowType.fieldColumn(i).getName());
         }
         Row row = new ValuesHolderRow(rowType, objects);
+        row = overlayBlobData(rowType, row, store, session);
         return row;
     }
     

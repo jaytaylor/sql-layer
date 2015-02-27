@@ -25,6 +25,9 @@ import com.foundationdb.ais.protobuf.AISProtobuf.Storage;
 import com.foundationdb.ais.protobuf.FDBProtobuf;
 import com.foundationdb.qp.row.Row;
 import com.foundationdb.qp.rowtype.Schema;
+import com.foundationdb.qp.rowtype.RowType;
+import com.foundationdb.qp.row.OverlayingRow;
+import com.foundationdb.server.error.AkibanInternalException;
 import com.foundationdb.server.error.StorageDescriptionInvalidException;
 import com.foundationdb.server.service.session.Session;
 import com.foundationdb.server.store.FDBScanTransactionOptions;
@@ -35,9 +38,12 @@ import com.foundationdb.server.store.FDBStoreDataKeyValueIterator;
 import com.foundationdb.server.store.FDBStoreDataSingleKeyValueIterator;
 import com.foundationdb.server.store.FDBTransactionService.TransactionState;
 import com.foundationdb.server.store.StoreStorageDescription;
+import com.foundationdb.server.types.aksql.aktypes.AkBlob;
+import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.KeySelector;
 import com.foundationdb.Transaction;
 import com.foundationdb.async.Future;
+import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.tuple.ByteArrayUtil;
 import com.foundationdb.tuple.Tuple2;
 import com.google.protobuf.ByteString;
@@ -174,6 +180,54 @@ public class FDBStorageDescription extends StoreStorageDescription<FDBStore,FDBS
         key.setEncodedSize(keyBytes.length);
     }
 
+    protected Row overlayBlobData(RowType rowType, Row row, FDBStore store, Session session) {
+        Row result = row;
+        if (store.isBlobReturnModeUnwrapped()) {
+            OverlayingRow newRow = new OverlayingRow(row);
+            for( int blobIndex = 0; blobIndex < rowType.nFields(); blobIndex ++) {
+                if (AkBlob.isBlob(rowType.typeAt(blobIndex).typeClass())) {
+                    BlobRef oldBlob = getBlobFromRow(row.value(blobIndex));
+                    if (oldBlob == null) {
+                        continue;
+                    }
+                    
+                    byte[] blobData = store.getBlobData(session, oldBlob);
+                    if (blobData == null) {
+                        blobData = new byte[0];
+                    }
+
+                    BlobRef newBlob = new BlobRef(blobData, BlobRef.LeadingBitState.NO);
+                    newBlob.setIsReturnedBlobInUnwrappedMode(true);
+                    if (oldBlob.isLongLob()) {
+                        newBlob.setId(oldBlob.getId());
+                        newBlob.setLobType(BlobRef.LobType.LONG_LOB);
+                    } else {
+                        newBlob.setLobType(BlobRef.LobType.SHORT_LOB);
+                    }
+                    newRow.overlay(blobIndex, newBlob);
+                    result = newRow;
+                }
+            }
+        }
+        return result;
+    }
+
+    private BlobRef getBlobFromRow(ValueSource value) {
+        Object object = value.getObject();
+        if ( object == null ) {
+            return null;
+        }
+        if ( object instanceof BlobRef) {
+            BlobRef blob = (BlobRef) object;
+            // needed for protobuf storage format
+            if (!blob.isLongLob() && !blob.isShortLob()){
+                blob = new BlobRef(blob.getValue(), BlobRef.LeadingBitState.YES);
+            }
+            return blob;
+        }
+        throw new AkibanInternalException("Value must be a blob");
+    }
+    
     /** Store contents of <code>storeData</code> into database.  
      * Usually, key comes from <code>storeData.rawKey</code> via {@link getKeyBytes}
      * and value comes from <code>storeData.rawValue</code> via {@link #packRowData}.
