@@ -69,7 +69,7 @@ public class TFormatter {
         BLOB {
             @Override
             public void format(TInstance type, ValueSource source, AkibanAppender out) {
-                throw new LobUnsupportedException("Formatting as string is unsupported");
+                throw new LobUnsupportedException("Formatting BLOB as string is unsupported");
             }
 
             @Override
