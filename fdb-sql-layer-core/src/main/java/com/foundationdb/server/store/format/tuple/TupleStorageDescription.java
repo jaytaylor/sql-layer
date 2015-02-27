@@ -276,7 +276,7 @@ public class TupleStorageDescription extends FDBStorageDescription
         }
     }
     
-    private Row overlayBlobData(RowType rowType, Row row, FDBStore store, Session session) {
+    private Row overlayBlobData_(RowType rowType, Row row, FDBStore store, Session session) {
         Row result = row;
         if (store.isBlobReturnModeUnwrapped()) {
             OverlayingRow newRow = new OverlayingRow(row);

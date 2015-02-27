@@ -130,6 +130,8 @@ public class FDBProtobufStorageDescription extends TupleStorageDescription imple
             nex.initCause(ex);
             throw nex;
         }
-        return rowConverter.decode(msg);
+        Row row = rowConverter.decode(msg);
+        row = overlayBlobData(row.rowType(), row, store, session);
+        return row;
     }
 }
