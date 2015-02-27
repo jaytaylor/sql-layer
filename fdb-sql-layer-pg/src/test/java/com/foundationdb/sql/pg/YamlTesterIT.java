@@ -1952,58 +1952,6 @@ public class YamlTesterIT extends PostgresServerITBase {
                      "- output_already_ordered: [[-4, 'abc'],[1, 'A']]");
     }
     
-    
-    @Test
-    public void testJMXOutputWrongSize() throws Exception {
-        testYamlFail ("---\n" +
-                "- JMX: com.foundationdb:type=PostgresServer\n" + 
-                "- get: StatementCacheCapacity\n" + 
-                "- output: [['100', '200']]");
-        testYamlFail ("---\n" +
-                "- JMX: com.foundationdb:type=PostgresServer\n" + 
-                "- get: StatementCacheCapacity\n" + 
-                "- output: [['100'], ['200']]");
-    }
-    
-    @Test
-    public void testJMXSplitWrongSize() throws Exception {
-        testYamlFail ("---\n" +
-                "- JMX: com.foundationdb:type=PostgresServer\n" + 
-                "- get: StatementCacheCapacity\n" + 
-                "- split_result: [['100', '200']]");
-    }
-    
-    @Test
-    public void testJMXoutputAndSplit() throws Exception {
-        testYamlFail ("---\n" +
-                "- JMX: com.foundationdb:type=PostgresServer\n" + 
-                "- get: StatementCacheCapacity\n" + 
-                "- split_result: ['100']]\n" + 
-                "- output: [['100']]");
-        testYamlFail ("---\n" +
-                "- JMX: com.foundationdb:type=PostgresServer\n" + 
-                "- get: StatementCacheCapacity\n" + 
-                "- output: [['100']]\n" +
-                "- split_result: ['100']]"); 
-        
-    }
-    
-    @Test 
-    public void testJMXOutput() throws Exception {
-        testYaml ("---\n" +
-        "- JMX: com.foundationdb:type=PostgresServer\n" + 
-        "- get: StatementCacheCapacity\n" + 
-        "- output: [['0']]");
-    }
-    
-    @Test 
-    public void testJMXSplit() throws Exception {
-        testYaml("---\n" +
-        "- JMX: com.foundationdb:type=PostgresServer\n" + 
-        "- get: StatementCacheCapacity\n" + 
-        "- split_result: [['0']]");
-    }
-
     @Test
     public void testRetryCountDefault() throws Exception {
         testYaml("---\n" +
