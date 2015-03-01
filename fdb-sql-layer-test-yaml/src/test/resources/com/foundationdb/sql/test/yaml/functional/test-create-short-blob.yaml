@@ -20,5 +20,5 @@
 - row_count: 3
 ---
 - Statement: INSERT INTO blob VALUES (3, create_short_blob(unhex(repeat('05', 50001))));
-- error: [22511]
+- error: [22704]
 ...
