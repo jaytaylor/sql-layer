@@ -18,8 +18,8 @@
 package com.foundationdb.server.error;
 
 
-public class LobException extends InvalidOperationException {
-    public LobException(String description) {
-        super(ErrorCode.LOB_EXCEPTION, description);
+public class LobContentException extends InvalidOperationException {
+    public LobContentException(String description) {
+        super(ErrorCode.LOB_CONTENT, description);
     }
 }

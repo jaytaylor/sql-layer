@@ -17,7 +17,7 @@
 
 package com.foundationdb.server.service.blob;
 
-import com.foundationdb.server.error.LobException;
+import com.foundationdb.server.error.LobContentException;
 import com.foundationdb.server.types.aksql.aktypes.AkGUID;
 
 import java.util.UUID;
@@ -57,18 +57,18 @@ public class BlobRef {
             } else if (storeTypeBit == LONG_LOB) {
                 lobType = LobType.LONG_LOB;
             } else {
-                throw new LobException("Invalid leading bit -");                
+                throw new LobContentException("Invalid leading bit -");                
             }
             
             if (isShortLob()) {
                 data = Arrays.copyOfRange(value, 1, value.length);
             } else if (isLongLob()) {
                 if (value.length != 17){
-                    throw new LobException("invalid id length");
+                    throw new LobContentException("invalid id length");
                 }
                 id = AkGUID.bytesToUUID(value, 1);
             } else {
-                throw new LobException("Invalid store type");
+                throw new LobContentException("Invalid store type");
             }
         } else {
             data = value;

@@ -35,7 +35,9 @@ import com.foundationdb.qp.storeadapter.MemoryAdapter;
 import com.foundationdb.qp.storeadapter.indexrow.SpatialColumnHandler;
 import com.foundationdb.qp.storeadapter.indexrow.MemoryIndexRow;
 import com.foundationdb.qp.util.SchemaCache;
-import com.foundationdb.server.error.*;
+import com.foundationdb.server.error.LobUnsupportedException;
+import com.foundationdb.server.error.DuplicateKeyException;
+import com.foundationdb.server.error.LockTimeoutException;
 import com.foundationdb.server.service.Service;
 import com.foundationdb.server.service.ServiceManager;
 import com.foundationdb.server.service.config.ConfigurationService;
@@ -412,7 +414,7 @@ public class MemoryStore extends AbstractStore<MemoryStore, MemoryStoreData, Mem
     public Row storeLobs(Session session, Row row){
         // lobs not supported
         if (AkBlob.containsBlob(row.rowType())) {
-            throw new LobException("MemoryStore does not support blobs");
+            throw new LobUnsupportedException("MemoryStore does not support blobs");
         }
         return row;
     }

@@ -22,7 +22,7 @@ import java.util.List;
 
 import com.foundationdb.*;
 import com.foundationdb.async.*;
-import com.foundationdb.server.error.LobException;
+import com.foundationdb.server.error.LobContentException;
 import com.foundationdb.tuple.Tuple;
 import com.foundationdb.tuple.Tuple2;
 import com.foundationdb.tuple.ByteArrayUtil;
@@ -398,7 +398,7 @@ public class BlobAsync {
                     @Override
                     public Future<byte[]> apply(Long size) {
                         if (size > Integer.MAX_VALUE) {
-                            throw new LobException("Lob too large to return entire lob");
+                            throw new LobContentException("Lob too large to return entire lob");
                         }
                         return read(tr, Long.valueOf(0), Integer.valueOf(size.intValue()));
                     }

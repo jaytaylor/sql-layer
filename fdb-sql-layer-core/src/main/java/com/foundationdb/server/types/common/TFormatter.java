@@ -17,16 +17,14 @@
 
 package com.foundationdb.server.types.common;
 
-import com.foundationdb.server.error.*;
+import com.foundationdb.server.error.LobUnsupportedException;
 import com.foundationdb.server.service.blob.BlobRef;
 import com.foundationdb.server.types.FormatOptions;
 import com.foundationdb.server.types.TClassFormatter;
 import com.foundationdb.server.types.TInstance;
-import com.foundationdb.server.types.common.types.StringFactory;
 import com.foundationdb.server.types.value.ValueSource;
 import com.foundationdb.util.AkibanAppender;
 import com.foundationdb.util.Strings;
-import java.nio.charset.Charset;
 import java.util.UUID;
 
 public class TFormatter {
@@ -71,7 +69,7 @@ public class TFormatter {
         BLOB {
             @Override
             public void format(TInstance type, ValueSource source, AkibanAppender out) {
-                throw new LobException("Unsupported format");
+                throw new LobUnsupportedException("Formatting BLOB as string is unsupported");
             }
 
             @Override
